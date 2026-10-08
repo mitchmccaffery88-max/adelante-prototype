@@ -6,7 +6,7 @@
 // `backfilled`). Suggestions are computed from tags only — never hardcoded ids.
 // Draft — pending clinical sign-off.
 import {
-  liveLibraryItems,
+  liveLibraryItems, liveExercises,
   liveRecoveryLessons,
   liveRecoveryModules,
   liveAdvocateLibraryCategories,
@@ -81,6 +81,9 @@ function backfill(kind: TaggedKind, id: string, extra: { categoryId?: string; mo
     m.stages = ["first_30", "days_30_90"];
     m.populations = ["justice_involved"];
   }
+  if (extra.moduleId === "when-recovery-gets-hard" || id === "when-recovery-gets-hard") m.asam = [3, 5];
+  if (extra.moduleId === "understanding-my-addiction" || id === "understanding-my-addiction") m.asam = [4];
+  if (extra.moduleId === "finding-my-people" || id === "finding-my-people") m.asam = [6];
   if (extra.categoryId === "strengthen-recovery") m.asam = [5];
   if (id === "back-on-feet-housing") m.asam = [6];
   if (
@@ -156,7 +159,7 @@ export function taggedCatalog(): TaggedItem[] {
       part2: part2Required("recovery_lesson"),
     });
   }
-  for (const e of EXERCISES) {
+  for (const e of liveExercises()) {
     if (e.placeholder) continue;
     const meta = backfill("exercise", e.id, { part2Sensitive: e.part2Sensitive });
     out.push({

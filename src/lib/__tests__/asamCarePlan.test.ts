@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AdelanteEHR, demoScenarioPatientId } from "@/lib/ehr";
+import { taggedItem } from "@/lib/contentTags";
 import { ASAM_DIMENSIONS } from "@/lib/asam";
 import { cosignAsamAssessment, signAsamAssessment } from "@/lib/asamFlow";
 import { runAction } from "@/lib/actions/runAction";
@@ -75,7 +76,7 @@ describe("C1 — ASAM → care plan suggestions", () => {
     expect(g.source).toMatchObject({ kind: "asam", asamId: a.id, asamVersion: a.version, dimensionKey: "d3", rating: 3 });
     expect(asamProvenanceLabel(g)).toBe(`ASAM v${a.version} · Dimension 3 (rating 3)`);
     // Recovery-module intervention became a (SUD) assignment.
-    expect(getStructuredPlan(p.id).assignments.some((x) => x.goalId === g.id && x.activityId === "when-recovery-gets-hard" && x.sud)).toBe(true);
+    expect(getStructuredPlan(p.id).assignments.some((x) => x.goalId === g.id && taggedItem(x.activityId ?? "")?.meta.asam?.includes(3) && x.sud)).toBe(true);
 
     expect(run("physician", BAGGA.staffId, "dismissAsamSuggestion", p.id, s5.id, "", me).ok).toBe(false);
     expect(run("physician", BAGGA.staffId, "dismissAsamSuggestion", p.id, s5.id, "Already addressed in plan", me).ok).toBe(true);
@@ -120,7 +121,7 @@ describe("C1 — ASAM → care plan suggestions", () => {
     const s = listAsamSuggestions(p.id, "physician").find((x) => x.dimensionKey === "d6")!;
     expect(open.length).toBeGreaterThan(0);
     expect(s.needIds.sort()).toEqual(open.sort());
-    expect(s.interventions.some((i) => i.moduleId === "finding-my-people")).toBe(true);
+    expect(s.interventions.some((i) => i.moduleId && taggedItem(i.moduleId)?.meta.asam?.includes(6))).toBe(true);
     const me = { name: BAGGA.name, role: BAGGA.role, staffId: BAGGA.staffId };
     run("physician", BAGGA.staffId, "acceptAsamSuggestion", p.id, s.id, me);
     const g = getStructuredPlan(p.id).goals.find((x) => x.source?.suggestionId === s.id)!;

@@ -16,10 +16,13 @@ import {
 } from "./i18n.recovery";
 import { benefitsEn, benefitsEs } from "./i18n.benefits";
 
+import { playerEn, playerEs } from "./i18n.player";
+
 type Lang = "en" | "es";
 
 const dict = {
   en: {
+    ...playerEn,
     // §Phase 5b — Recovery modules. Merged into THE dictionary; same `t()`.
     ...recoveryUiEn,
     ...recoveryModuleEn,
@@ -423,6 +426,7 @@ const dict = {
   },
 
   es: {
+    ...playerEs,
     ...recoveryUiEs,
     ...recoveryModuleEs,
     ...benefitsEs,

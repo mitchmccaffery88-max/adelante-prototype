@@ -73,10 +73,10 @@
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-sage: var(--sage);
-  --color-sage-soft: var(--sage-soft);
+  --color-sage-soft: var(--accent);
   --color-sage-foreground: var(--sage-foreground);
   --color-amber: var(--amber);
-  --color-amber-soft: var(--amber-soft);
+  --color-amber-soft: var(--secondary);
   --color-amber-foreground: var(--amber-foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
@@ -377,3 +377,16 @@
     0 1px 2px oklch(0.24 0.028 55 / 0.04),
     0 8px 24px -12px oklch(0.24 0.028 55 / 0.08);
 }
+
+/* Patient player patterns; all visual roles resolve from patient semantic tokens. */
+.patient-player p, .patient-player li, .patient-player label { font-size: 1.0625rem; line-height: 1.6; }
+.patient-player h1, .patient-player h2, .patient-player h3 { letter-spacing: 0; font-weight: 600; }
+.patient-player button, .patient-player a[role="button"] { min-height: 44px; }
+.patient-player .player-card { border-radius: 1.5rem; }
+.breath-shape { width: 130px; height: 130px; margin: 35px auto; border-radius: 40%; background: var(--sage); border: 3px solid var(--primary); transition: transform var(--breath-seconds, 4s) linear; }
+.breath-shape.phase-0, .breath-shape.phase-1 { transform: scale(1.35); }
+.breath-shape.phase-2, .breath-shape.phase-3 { transform: scale(.75); }
+.breath-shape.is-paused { transition: none; }
+.patient-player .grounding-panel { background: linear-gradient(135deg, var(--accent), var(--accent)); }
+.patient-player .completion-panel { background: linear-gradient(110deg, var(--accent), var(--secondary)); }
+@media (prefers-reduced-motion: reduce) { .breath-shape { display: none; } .patient-player * { transition: none !important; scroll-behavior: auto; } }

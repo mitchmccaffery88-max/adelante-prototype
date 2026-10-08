@@ -8,6 +8,7 @@
 // hidden from roles failing roleSeesAsamSection (structuredCarePlan masking).
 // Templates, thresholds and patient wording: Draft — pending clinical sign-off.
 // No licensed ASAM text is used — only the public dimension names.
+import { taggedCatalog } from "./contentTags";
 import { AdelanteEHR, type Patient } from "./ehr";
 import { ASAM_DIMENSIONS, type AsamAssessment } from "./asam";
 import type { StaffRole } from "./roles";
@@ -63,7 +64,7 @@ export const ASAM_PLAN_TEMPLATES: Record<string, Template> = {
     problem: "Emotional or mental health symptoms affect recovery.",
     goal: "Lower PHQ-9 or GAD-7 score by 5 points by the review date.",
     measure: "PHQ-9 / GAD-7 change from baseline",
-    interventions: [{ text: "Weekly individual counseling" }, { text: "Recovery lesson on handling hard moments", moduleId: "when-recovery-gets-hard" }],
+    interventions: [{ text: "Weekly individual counseling" }, { text: "Recovery lesson on handling hard moments" }],
     patient: { en: "Feel calmer and better each week.", es: "Sentirme más tranquilo y mejor cada semana." },
     steps: { en: ["Go to my counseling visits.", "Do my lesson on hard moments."], es: ["Ir a mis citas de consejería.", "Hacer mi lección sobre momentos difíciles."] },
   },
@@ -71,7 +72,7 @@ export const ASAM_PLAN_TEMPLATES: Record<string, Template> = {
     problem: "Mixed readiness to make changes.",
     goal: "Name two personal reasons for change and attend 3 of 4 planned sessions in 30 days.",
     measure: "Sessions attended / planned",
-    interventions: [{ text: "Motivational interviewing in sessions" }, { text: "Recovery lesson on understanding use", moduleId: "understanding-my-addiction" }],
+    interventions: [{ text: "Motivational interviewing in sessions" }, { text: "Recovery lesson on understanding use" }],
     patient: { en: "Think about why change matters to me.", es: "Pensar por qué el cambio es importante para mí." },
     steps: { en: ["Write down two reasons.", "Go to my visits."], es: ["Escribir dos razones.", "Ir a mis citas."] },
   },
@@ -79,7 +80,7 @@ export const ASAM_PLAN_TEMPLATES: Record<string, Template> = {
     problem: "Risk of continued use or return to use.",
     goal: "Use a written relapse-prevention plan and report use honestly at every visit for 30 days.",
     measure: "Plan completed; self-report at each visit",
-    interventions: [{ text: "Build a relapse-prevention plan together" }, { text: "Recovery lesson on handling hard moments", moduleId: "when-recovery-gets-hard" }],
+    interventions: [{ text: "Build a relapse-prevention plan together" }, { text: "Recovery lesson on handling hard moments" }],
     patient: { en: "Have a plan for hard days.", es: "Tener un plan para los días difíciles." },
     steps: { en: ["Make my plan with my team.", "Use my plan when I have cravings."], es: ["Hacer mi plan con mi equipo.", "Usar mi plan cuando tenga antojos."] },
   },
@@ -87,7 +88,7 @@ export const ASAM_PLAN_TEMPLATES: Record<string, Template> = {
     problem: "Living environment does not yet support recovery.",
     goal: "Take one step on each open social need (housing, food, transport) within 30 days.",
     measure: "Open social needs moved one step on the ladder",
-    interventions: [{ text: "Work open social needs with the care manager" }, { text: "Recovery lesson on building support", moduleId: "finding-my-people" }],
+    interventions: [{ text: "Work open social needs with the care manager" }, { text: "Recovery lesson on building support" }],
     patient: { en: "Have a safe place and people who help.", es: "Tener un lugar seguro y personas que me ayuden." },
     steps: { en: ["Work on my needs with my care manager.", "Do my lesson on finding support."], es: ["Trabajar en mis necesidades con mi coordinador.", "Hacer mi lección sobre encontrar apoyo."] },
   },
@@ -163,8 +164,9 @@ export function syncAsamPlan(patientId: string): void {
     for (const old of list) if (old.dimensionKey === dim.key && old.status === "suggested") old.status = "superseded";
     const signed = new Date(a.cosignedAt ?? a.signedAt ?? Date.now());
     const reentry = inReentryWindow(p) && (dim.key === "d5" || dim.key === "d6");
-    const interventions = [...t.interventions];
-    if (reentry && interventions.length < 2) interventions.push({ text: "Re-entry Journey", moduleId: "first-days-out" });
+    const matches = taggedCatalog().filter((item) => item.meta.asam?.includes(Number(dim.key.slice(1))));
+    const interventions: AsamIntervention[] = t.interventions.slice(0, 1);
+    for (const item of matches.slice(0, 1)) interventions.push({ text: item.title, moduleId: item.id });
     list.push({
       id: uid(),
       patientId,

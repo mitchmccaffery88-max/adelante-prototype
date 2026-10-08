@@ -11,6 +11,9 @@ import { useI18n, useRecoveryText } from "@/lib/i18n";
 import type { LibraryActivity } from "@/lib/library";
 import { TOOL_FLOW_LIMITS, type RecoveryLesson } from "@/lib/recovery";
 import { ModuleTemplate, type ModuleStep } from "@/components/library/ModuleTemplate";
+import { savePlayerResponse, completePlayerLesson } from "@/lib/patientPlayerActions";
+import { relatedPlayerContent } from "@/lib/playerEngagement";
+import { ClosingPreview } from "@/components/library/ClosingPreview";
 import { GuidedToolFlow, type ToolGroup } from "@/components/recovery/GuidedToolFlow";
 import { matchExerciseForLesson } from "@/lib/recovery.exerciseMatch";
 import { dimensionsForLesson } from "@/lib/lessonRatings";
@@ -86,7 +89,7 @@ export function RecoveryLessonView({
   patientId: string;
   onDone?: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { rt, esPending } = useRecoveryText();
   const completed = useEhr(() =>
     AdelanteEHR.completedRecoveryLessons(patientId).includes(lesson.id),
@@ -110,28 +113,23 @@ export function RecoveryLessonView({
   );
 
   function complete() {
-    const res = AdelanteEHR.completeRecoveryLesson(patientId, lesson.id, {
+    const res = completePlayerLesson(patientId, lesson.id, "recovery", {
       warningSigns,
       supportPeople,
       ...(todayAction[0] ? { todayAction: todayAction[0] } : {}),
-    });
+    }, lang);
     if (!res.completed) return;
-    toast.success(
-      res.alreadyComplete
-        ? "Updated your plan in your toolkit."
-        : `Saved "${lesson.toolkitLabel}" to your toolkit.`,
-    );
-    onDone?.();
+
   }
 
   // §Phase B — Part A/B tools step. Sub-position persists through the SAME
   // lessonResponses row the player already writes (`subIndex`), so returning
   // to a lesson lands back on the sub-tab the patient left.
-  const [part, setPart] = useState<"a" | "b">("a");
+  const [part, setPart] = useState<"a" | "b">(response?.toolPart ?? "a");
   const subIndex = response?.subIndex ?? 0;
   const setSubIndex = (i: number) => {
     setPart("b");
-    AdelanteEHR.saveLessonResponse(patientId, "recovery", lesson.id, { subIndex: i });
+    savePlayerResponse(patientId, "recovery", lesson.id, { subIndex: i });
   };
   const match = matchExerciseForLesson(lesson);
   const groups: ToolGroup[] = [
@@ -163,7 +161,7 @@ export function RecoveryLessonView({
       labelFor: (opt, i) => rt(`rec.${id}.todo.${i}`, opt),
       max: TOOL_FLOW_LIMITS.todayActions,
       value: todayAction,
-      onChange: setTodayAction,
+      onChange: (next) => { setTodayAction(next); savePlayerResponse(patientId, "recovery", lesson.id, { todayAction: next[0] }); },
     },
   ];
   const toolsDone = subIndex >= groups.length;
@@ -223,7 +221,7 @@ export function RecoveryLessonView({
             ifPicks: response?.ifThen?.ifPicks ?? [],
             thenPicks: response?.ifThen?.thenPicks ?? [],
             onChange: (next: { ifPicks: string[]; thenPicks: string[] }) =>
-              AdelanteEHR.saveLessonResponse(patientId, "recovery", lesson.id, { ifThen: next }),
+              savePlayerResponse(patientId, "recovery", lesson.id, { ifThen: next }),
           },
         ]
       : []),
@@ -232,7 +230,7 @@ export function RecoveryLessonView({
       label: t("recStepReflect"),
       reflection: adelReflectionText || t("recAdelFallbackReflection"),
       question: adelQuestionText || t("recAdelFallbackQuestion"),
-      recommends,
+      recommends: relatedPlayerContent(lesson.id, lang),
     },
     {
       kind: "text",
@@ -249,10 +247,11 @@ export function RecoveryLessonView({
       continueHint: t("modFinishToolsHint"),
       content: (
         <GuidedToolFlow
+          patientId={patientId} lessonId={lesson.id} surface="recovery"
           match={match}
           groups={groups}
           part={part}
-          onPartChange={setPart}
+          onPartChange={(next) => { setPart(next); savePlayerResponse(patientId, "recovery", lesson.id, { toolPart: next }); }}
           subIndex={subIndex}
           onSubIndexChange={setSubIndex}
         />
@@ -261,10 +260,7 @@ export function RecoveryLessonView({
     // §Phase C — "after" ratings, same dimensions, delta tiles.
     { kind: "rating", label: t("modRateAfterLabel"), phase: "after", dimensions },
     {
-      kind: "text",
-      label: t("recStepToolkit"),
-      icon: <Wrench className="h-3.5 w-3.5" />,
-      body: `Finishing saves "${rt(`rec.${id}.toolkitLabel`, lesson.toolkitLabel)}" — with what you picked above — to your toolkit.`,
+      kind: "custom", label: t("playerPreview"), content: <ClosingPreview tool={rt(`rec.${id}.toolkitLabel`, lesson.toolkitLabel)} response={response} supports={supportPeople} onChange={(patch) => savePlayerResponse(patientId, "recovery", lesson.id, patch)} />,
     },
   ];
 
@@ -272,6 +268,7 @@ export function RecoveryLessonView({
 
   return (
     <ModuleTemplate
+      patientId={patientId} sensitive
       title={rt(`rec.${id}.title`, lesson.title)}
       minutes={lesson.minutes}
       completed={completed}
@@ -316,7 +313,7 @@ export function RecoveryLessonView({
       steps={steps}
       response={response}
       onResponseChange={(patch) =>
-        AdelanteEHR.saveLessonResponse(patientId, "recovery", lesson.id, patch)
+        savePlayerResponse(patientId, "recovery", lesson.id, patch)
       }
       completeLabel={completed ? t("recUpdatePlan") : t("recFinishSave")}
       onComplete={complete}

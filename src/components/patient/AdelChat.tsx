@@ -91,7 +91,7 @@ interface Turn {
 const GREETING =
   "Hi — I'm Adel. I'm here to listen and help you find your way around the app. What's going on today?";
 
-export function AdelChat({ resourceId, initialAsk, threadId: resumeId }: { resourceId?: string; initialAsk?: string; threadId?: string } = {}) {
+export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: { topic?: string; resourceId?: string; initialAsk?: string; threadId?: string } = {}) {
   const { lang: uiLang } = useI18n();
   const hl = uiLang === "es" ? "es" : "en";
   const hc = ADEL_HISTORY_COPY[hl];
@@ -309,7 +309,8 @@ export function AdelChat({ resourceId, initialAsk, threadId: resumeId }: { resou
   }
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-2xl flex-col gap-3 px-4 py-6 sm:px-6">
+    <div className="patient-theme mx-auto flex min-h-[70vh] max-w-2xl flex-col gap-3 px-4 py-6 sm:px-6">
+      {topic && <p className="rounded-xl bg-accent p-3">{topic}</p>}
       <header className="space-y-2">
         <h1 className="font-display text-3xl text-foreground">Adel</h1>
         <p className="text-base text-muted-foreground">

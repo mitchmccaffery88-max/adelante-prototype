@@ -38,8 +38,12 @@ import type { RecoveryLesson } from "./recovery";
  * baseline is the answer.
  */
 export interface ContentResolver {
+  exercise?: (id: string) => import("./library").Exercise | undefined;
   libraryItem: (id: string) => LibraryItem | undefined;
   recoveryLesson: (id: string) => RecoveryLesson | undefined;
+  libraryItems?: () => LibraryItem[];
+  exercises?: () => import("./library").Exercise[];
+  protectedId?: (id: string) => boolean;
 }
 
 let contentResolver: ContentResolver | undefined;
@@ -121,7 +125,7 @@ export interface PatientEngagement {
 }
 
 /** Which lesson system a response belongs to — ids live in separate namespaces. */
-export type LessonSurface = "library" | "recovery";
+export type LessonSurface = "library" | "recovery" | "exercise";
 
 export function lessonResponseKey(surface: LessonSurface, lessonId: string): string {
   return `${surface}:${lessonId}`;
@@ -138,6 +142,13 @@ export function lessonResponseKey(surface: LessonSurface, lessonId: string): str
 export interface LessonResponse {
   /** Last step the patient was on (0-based). */
   stepIndex?: number;
+  stepTotal?: number;
+  todayAction?: string;
+  confidence?: number;
+  adelIndex?: number;
+  exerciseInputs?: Record<string, Record<string, string>>;
+  toolPart?: "a" | "b";
+  finishedAt?: string;
   /**
    * §Lesson-player Phase A — position WITHIN the current step, for steps that
    * paginate internally (Part A/B, one scenario at a time). One value per
@@ -213,6 +224,7 @@ export function subscribeEngagement(l: Listener): () => void {
 export type EngagementAuditEvent = {
   patientId: string;
   action:
+    | "patient_toolkit_saved"
     | "library_item_completed"
     | "library_exercise_completed"
     | "recovery_lesson_completed"
@@ -358,6 +370,12 @@ export function engagementRecords(patientIds?: string[]): PatientEngagement[] {
   const all = [...records.values()].map((r) => ({
     ...structuredClone(r),
     lessonResponses: {},
+    recoveryToolFlows: {},
+    completedLibraryItems: r.completedLibraryItems.filter((id) => !contentResolver?.protectedId?.(id)),
+    completedExercises: r.completedExercises.filter((id) => !contentResolver?.protectedId?.(id)),
+    completedRecoveryLessons: [],
+    completedAt: Object.fromEntries(Object.entries(r.completedAt ?? {}).filter(([key]) => !contentResolver?.protectedId?.(key.slice(key.indexOf(":") + 1)))),
+    savedToolkitItems: r.savedToolkitItems.map((t) => ({ ...t, id: contentResolver?.protectedId?.(t.id) ? "protected-content" : t.id, label: "Saved tool" })),
   }));
   if (!patientIds) return all;
   const want = new Set(patientIds);
@@ -394,9 +412,11 @@ export function saveToolkitItem(
   input: { id: string; label: string; from: ToolkitOrigin },
 ): SavedToolkitItem {
   const r = row(patientId);
+  auditSink?.({ patientId, action: "patient_toolkit_saved", actorRole: "patient", detail: { source: input.from } });
   const existing = r.savedToolkitItems.find((t) => t.id === input.id);
   if (existing) {
     existing.label = input.label;
+    existing.createdAt = new Date().toISOString();
     touch(r);
     notify();
     return { ...existing };
@@ -441,6 +461,7 @@ export function saveLessonResponse(
     ...(prev ?? {}),
     ...patch,
     ...(patch.text ? { text: { ...(prev?.text ?? {}), ...patch.text } } : {}),
+    ...(patch.exerciseInputs ? { exerciseInputs: { ...(prev?.exerciseInputs ?? {}), ...Object.fromEntries(Object.entries(patch.exerciseInputs).map(([id, values]) => [id, { ...(prev?.exerciseInputs?.[id] ?? {}), ...values }])) } } : {}),
     // §Phase C — rating maps merge per-dimension, like `text` does per-field.
     ...(patch.ratingsBefore
       ? { ratingsBefore: { ...(prev?.ratingsBefore ?? {}), ...patch.ratingsBefore } }
@@ -468,7 +489,7 @@ export function saveLessonResponse(
       patientId,
       action: "lesson_response_started",
       actorRole: opts.actorRole ?? "patient",
-      detail: { surface, lessonId },
+      detail: { surface, lessonId: isProtectedEngagementContent(lessonId) ? "protected-content" : lessonId },
     });
   }
   notify();
@@ -515,9 +536,9 @@ export function completeLibraryItem(
       action: "library_item_completed",
       actorRole: opts.actorRole ?? "patient",
       detail: {
-        itemId,
-        categoryId: item.categoryId,
-        title: item.title,
+        itemId: isProtectedEngagementContent(itemId) ? "protected-content" : itemId,
+        categoryId: isProtectedEngagementContent(itemId) ? "protected-content" : item.categoryId,
+        title: item.part2Sensitive || contentResolver?.protectedId?.(itemId) ? "Protected content" : item.title,
         minutes: item.minutes,
       },
     });
@@ -533,7 +554,7 @@ export function completeExercise(
   exerciseId: string,
   opts: { saveToolkit?: boolean; actorRole?: string } = {},
 ): { completed: boolean; alreadyComplete: boolean } {
-  const ex = getExercise(exerciseId);
+  const ex = contentResolver?.exercise?.(exerciseId) ?? getExercise(exerciseId);
   if (!ex) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedExercises.includes(exerciseId);
@@ -550,7 +571,7 @@ export function completeExercise(
       patientId,
       action: "library_exercise_completed",
       actorRole: opts.actorRole ?? "patient",
-      detail: { exerciseId, title: ex.title, type: ex.type, minutes: ex.minutes },
+      detail: { exerciseId: isProtectedEngagementContent(exerciseId) ? "protected-content" : exerciseId, title: ex.part2Sensitive ? "Protected content" : ex.title, type: ex.type, minutes: ex.minutes },
     });
     emitCompletion({ patientId, kind: "exercise", id: exerciseId });
   }
@@ -604,7 +625,7 @@ export function completeRecoveryLesson(
       detail: {
         lessonId,
         moduleId: lesson.moduleId,
-        title: lesson.title,
+        title: "Protected content",
         minutes: lesson.minutes,
         warningSignCount: warningSigns.length,
         supportPersonCount: supportPeople.length,
@@ -622,3 +643,9 @@ export function __resetEngagement(): void {
   records.clear();
   notify();
 }
+
+export function resolvedExercise(id: string) { return contentResolver?.exercise?.(id) ?? getExercise(id); }
+export function resolvedLibraryItems() { return contentResolver?.libraryItems?.() ?? []; }
+export function resolvedExercises() { return contentResolver?.exercises?.() ?? []; }
+export function resolvedLibraryItem(id: string) { return resolveLibraryItem(id); }
+export function isProtectedEngagementContent(id: string) { return Boolean(contentResolver?.protectedId?.(id) || getLibraryItem(id)?.part2Sensitive || getExercise(id)?.part2Sensitive || getRecoveryLesson(id)); }

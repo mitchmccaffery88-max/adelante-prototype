@@ -21,15 +21,15 @@ export default defineConfig({
   // first section; give every assertion the same 15s headroom.
   expect: { timeout: 15_000 },
   use: {
-    baseURL: process.env["E2E_BASE_URL"] ?? "http://localhost:8080",
+    baseURL: process.env["E2E_BASE_URL"] ?? "http://localhost:4173",
     trace: "retain-on-failure",
-    viewport: { width: 1280, height: 1400 },
+    viewport: { width: 1280, height: 1800 },
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
-    command: "bun run dev",
-    url: process.env["E2E_BASE_URL"] ?? "http://localhost:8080",
-    reuseExistingServer: true,
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 1800 } } }],
+  webServer: process.env["E2E_BASE_URL"] ? undefined : {
+    command: "bun run preview:e2e",
+    url: process.env["E2E_BASE_URL"] ?? "http://localhost:4173",
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

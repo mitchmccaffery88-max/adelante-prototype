@@ -99,7 +99,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                 <span className="text-xs font-medium uppercase tracking-wider text-primary">
                   {t("recModuleLabel")} {mod.order}
                 </span>
-                <h2 className="font-display text-xl text-foreground">
+                <h2 className="font-semibold text-xl text-foreground">
                   {rt(`rec.mod.${mod.id}.name`, mod.name)}
                 </h2>
                 {mod.reentryFocus && (
@@ -116,7 +116,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
               <p className="text-sm font-medium text-foreground">
                 {t("recMissionLabel")}: {rt(`rec.mod.${mod.id}.mission`, mod.mission)}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 {rt(`rec.mod.${mod.id}.subtitle`, mod.subtitle)}
               </p>
               {/* A module with no transcribed lessons reports its REAL count
@@ -124,22 +124,22 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                   stalled module. Modules WITH lessons show the real fraction
                   next to the progress bar below instead. */}
               {prog.total === 0 && (
-                <p className="text-xs text-muted-foreground">{t("recPendingProgress")}</p>
+                <p className="text-xs text-foreground">{t("recPendingProgress")}</p>
               )}
             </div>
 
             {gated ? (
-              <p className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">
+              <p className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 text-sm text-foreground">
                 <Lock className="h-4 w-4" aria-hidden /> {t("recGatedBody")}
               </p>
             ) : mod.contentPending ? (
-              <p className="rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">
+              <p className="rounded-lg bg-secondary/50 p-3 text-sm text-foreground">
                 {t("recPendingBody")}
               </p>
             ) : (
               <>
                 <div>
-                  <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
+                  <div className="mb-1.5 flex justify-between text-xs text-foreground">
                     <span>
                       {prog.completed} {t("recProgressOf")} {prog.total} {t("recProgressLessons")}
                     </span>
@@ -159,7 +159,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                               <CheckCircle2 className="h-4 w-4 text-primary" aria-label="Completed" />
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-foreground">
                             {l.minutes} {t("recMinutesShort")}
                           </div>
                         </div>

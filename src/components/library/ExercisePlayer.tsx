@@ -3,14 +3,31 @@
 // One component per content variant of the `ExerciseContent` discriminated
 // union. Adding a new variant is a compile error here until it is handled,
 // which is the point of the union.
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { savePlayerResponse, savePlayerToolkit } from "@/lib/patientPlayerActions";
+import type { LessonSurface } from "@/lib/engagement";
+import { useI18n } from "@/lib/i18n";
+import { LessonReadAloud } from "@/components/voice/LessonReadAloud";
+import { BreathingPractice } from "./BreathingPractice";
+import { Clock, Wrench, X } from "lucide-react";
+import { toast } from "sonner";
 import type { Exercise, ExerciseContent } from "@/lib/library";
+
+const InputContext = createContext<{ values: Record<string, string>; set: (key: string, value: string) => void }>({ values: {}, set: () => {} });
+function useFields() {
+  const { values, set } = useContext(InputContext);
+  return [values, (next: Record<string, string> | ((v: Record<string, string>) => Record<string, string>)) => {
+    const result = typeof next === "function" ? next(values) : next;
+    for (const [key, value] of Object.entries(result)) set(key, value);
+  }] as const;
+}
 
 function mmss(total: number): string {
   const m = Math.floor(total / 60);
@@ -55,11 +72,11 @@ export function ExerciseTimer({
   );
   return (
     <div className="space-y-3">
-      <div className="font-display text-4xl tabular-nums text-navy">{mmss(left)}</div>
+      <div className="font-display text-4xl tabular-nums text-foreground">{mmss(left)}</div>
       <Progress value={(elapsed / c.seconds) * 100} className="h-2" />
-      <p className="text-sm text-muted-foreground">{c.prompts[promptIdx]}</p>
+      <p className="text-sm text-foreground">{c.prompts[promptIdx]}</p>
       {left === 0 && c.closing && (
-        <p className="rounded-lg bg-teal/10 p-3 text-sm text-teal">{c.closing}</p>
+        <p className="rounded-lg bg-accent p-3 text-sm text-primary">{c.closing}</p>
       )}
       <div className="flex gap-2">
         <Button type="button" onClick={() => setRunning((r) => !r)}>
@@ -80,52 +97,18 @@ export function ExerciseTimer({
   );
 }
 
-const PHASES = ["Breathe in", "Hold", "Breathe out", "Hold"] as const;
-
 function BreathingBody({ c }: { c: Extract<ExerciseContent, { type: "breathing" }> }) {
-  const durations = [c.inhaleSec, c.holdSec, c.exhaleSec, c.holdAfterSec];
-  const [phase, setPhase] = useState(0);
-  const [count, setCount] = useState(c.inhaleSec);
-  const [cycle, setCycle] = useState(0);
-  const [running, setRunning] = useState(false);
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => {
-      setCount((v) => {
-        if (v > 1) return v - 1;
-        setPhase((p) => {
-          const next = (p + 1) % 4;
-          if (next === 0) setCycle((k) => k + 1);
-          setCount(durations[next] ?? 4);
-          return next;
-        });
-        return durations[(phase + 1) % 4] ?? 4;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, [running, phase]);
-  useEffect(() => {
-    if (cycle >= c.cycles) setRunning(false);
-  }, [cycle, c.cycles]);
-  return (
-    <div className="space-y-3">
-      <div className="text-xs uppercase tracking-wider text-teal">
-        Cycle {Math.min(cycle + 1, c.cycles)} of {c.cycles}
-      </div>
-      <div className="font-display text-3xl text-navy">{PHASES[phase]}</div>
-      <div className="font-display text-5xl tabular-nums text-teal">{count}</div>
-      <Button type="button" onClick={() => setRunning((r) => !r)}>
-        {running ? "Pause" : "Start"}
-      </Button>
-    </div>
-  );
+  const { values, set } = useContext(InputContext);
+  return <BreathingPractice {...c} completed={Number(values.cycles ?? 0)} onCycles={(n) => set("cycles", String(n))} />;
 }
 
 function ChecklistBody({ c }: { c: Extract<ExerciseContent, { type: "checklist" }> }) {
-  const [checked, setChecked] = useState<string[]>([]);
+  const { values, set } = useContext(InputContext);
+  const checked: string[] = JSON.parse(values.checked ?? "[]");
+  const setChecked = (next: string[] | ((prev: string[]) => string[])) => set("checked", JSON.stringify(typeof next === "function" ? next(checked) : next));
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{c.intro}</p>
+      <p className="text-sm text-foreground">{c.intro}</p>
       <ul className="space-y-2">
         {c.items.map((item) => (
           <li key={item} className="flex items-start gap-2 text-sm">
@@ -140,19 +123,19 @@ function ChecklistBody({ c }: { c: Extract<ExerciseContent, { type: "checklist" 
           </li>
         ))}
       </ul>
-      {c.closing && <p className="text-sm text-muted-foreground">{c.closing}</p>}
+      {c.closing && <p className="text-sm text-foreground">{c.closing}</p>}
     </div>
   );
 }
 
 function WorksheetBody({ c }: { c: Extract<ExerciseContent, { type: "worksheet" }> }) {
-  const [vals, setVals] = useState<Record<string, string>>({});
+  const [vals, setVals] = useFields();
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{c.intro}</p>
+      <p className="text-sm text-foreground">{c.intro}</p>
       {c.fields.map((f) => (
         <div key={f.id} className="space-y-1">
-          <label className="text-sm font-medium text-navy" htmlFor={`ws-${f.id}`}>
+          <label className="text-sm font-medium text-foreground" htmlFor={`ws-${f.id}`}>
             {f.label}
           </label>
           {f.multiline ? (
@@ -193,21 +176,18 @@ function WorksheetBody({ c }: { c: Extract<ExerciseContent, { type: "worksheet" 
 }
 
 function MapperBody({ c }: { c: Extract<ExerciseContent, { type: "mapper" }> }) {
-  const [zones, setZones] = useState<Record<string, string>>({});
+  const [zones, setZones] = useFields();
+  const { t } = useI18n();
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{c.intro}</p>
+      <p className="text-sm text-foreground">{c.intro}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         {c.columns.map((col) => (
           <div key={col.id} className="space-y-1 rounded-lg border p-3">
-            <div className="text-sm font-medium text-navy">{col.label}</div>
-            <p className="text-xs text-muted-foreground">{col.hint}</p>
-            <Textarea
-              rows={3}
-              aria-label={col.label}
-              value={zones[col.id] ?? ""}
-              onChange={(e) => setZones((z) => ({ ...z, [col.id]: e.target.value }))}
-            />
+            <div className="text-sm font-medium text-foreground">{col.label}</div>
+            <p className="text-xs text-foreground">{col.hint}</p>
+            <div className="flex flex-wrap gap-2">{(zones[col.id] ?? "").split("\n").filter(Boolean).map((item) => <Button key={item} variant="secondary" className="min-h-11 rounded-full" aria-label={`${t("playerRemove")} ${item}`} onClick={() => setZones({ ...zones, [col.id]: (zones[col.id] ?? "").split("\n").filter((v) => v !== item).join("\n") })}>{item}<X className="ml-2 size-4" /></Button>)}</div>
+            <Input aria-label={col.label} placeholder={t("playerAdd")} onKeyDown={(event) => { if (event.key === "Enter" && event.currentTarget.value.trim()) { const value = event.currentTarget.value.trim(); setZones({ ...zones, [col.id]: [...new Set([...(zones[col.id] ?? "").split("\n").filter(Boolean), value])].join("\n") }); event.currentTarget.value = ""; } }} />
             {col.suggestions && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {col.suggestions.map((s) => (
@@ -219,7 +199,7 @@ function MapperBody({ c }: { c: Extract<ExerciseContent, { type: "mapper" }> }) 
                     onClick={() =>
                       setZones((z) => {
                         const cur = z[col.id] ?? "";
-                        return { ...z, [col.id]: cur ? `${cur}\n${s}` : s };
+                        return { ...z, [col.id]: [...new Set([...cur.split("\n").filter(Boolean), s])].join("\n") };
                       })
                     }
                   >
@@ -236,17 +216,20 @@ function MapperBody({ c }: { c: Extract<ExerciseContent, { type: "mapper" }> }) 
 }
 
 function CalculatorBody({ c }: { c: Extract<ExerciseContent, { type: "calculator" }> }) {
-  const [vals, setVals] = useState<Record<string, string>>({});
-  const [against, setAgainst] = useState("");
+  const [vals, setVals] = useFields();
+  const { set } = useContext(InputContext);
+  const against = vals.against ?? "";
+  const setAgainst = (v: string) => set("against", v);
+  const { t } = useI18n();
   const total = c.rows.reduce((sum, r) => sum + (Number(vals[r.id]) || 0), 0);
   const income = c.incomeRows
     ? c.incomeRows.reduce((sum, r) => sum + (Number(vals[r.id]) || 0), 0)
     : Number(against) || 0;
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{c.intro}</p>
+      <p className="text-sm text-foreground">{c.intro}</p>
       <div className="space-y-2">
-        <div className="text-sm font-medium text-navy">{c.againstLabel}</div>
+        <div className="text-sm font-medium text-foreground">{c.againstLabel}</div>
         {c.incomeRows ? (
           c.incomeRows.map((r) => (
             <div key={r.id} className="space-y-1">
@@ -270,7 +253,7 @@ function CalculatorBody({ c }: { c: Extract<ExerciseContent, { type: "calculator
             onChange={(e) => setAgainst(e.target.value)}
           />
         )}
-        <div className="pt-2 text-sm font-medium text-navy">{c.totalLabel}</div>
+        <div className="pt-2 text-sm font-medium text-foreground">{c.totalLabel}</div>
         {c.rows.map((r) => (
           <div key={r.id} className="space-y-1">
             <label className="text-sm" htmlFor={`calc-${r.id}`}>
@@ -291,21 +274,23 @@ function CalculatorBody({ c }: { c: Extract<ExerciseContent, { type: "calculator
           <span className="font-medium tabular-nums">{total.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
-          <span>Left over</span>
+          <span>{t("playerLeft")}</span>
           <span className="font-medium tabular-nums">{(income - total).toFixed(2)}</span>
         </div>
       </div>
-      {c.closing && <p className="text-sm text-muted-foreground">{c.closing}</p>}
+      {c.closing && <p className="text-sm text-foreground">{c.closing}</p>}
     </div>
   );
 }
 
 function ScaleBody({ c }: { c: Extract<ExerciseContent, { type: "scale" }> }) {
-  const [value, setValue] = useState(c.min);
+  const { values, set } = useContext(InputContext);
+  const value = Number(values.scale ?? c.min);
+  const setValue = (n: number) => set("scale", String(n));
   const band = c.bands.find((b) => value <= b.upTo) ?? c.bands[c.bands.length - 1];
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{c.intro}</p>
+      <p className="text-sm text-foreground">{c.intro}</p>
       <Slider
         value={[value]}
         min={c.min}
@@ -314,17 +299,17 @@ function ScaleBody({ c }: { c: Extract<ExerciseContent, { type: "scale" }> }) {
         onValueChange={(v) => setValue(v[0] ?? c.min)}
         aria-label={c.intro}
       />
-      <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="flex justify-between text-xs text-foreground">
         <span>{c.minLabel}</span>
-        <span className="font-display text-lg text-navy">{value}</span>
+        <span className="font-display text-lg text-foreground">{value}</span>
         <span>{c.maxLabel}</span>
       </div>
       {band && (
         <div className="rounded-lg bg-secondary/50 p-3 text-sm">
-          <div className="font-medium text-navy">{band.label}</div>
-          {band.guidance && <p className="text-muted-foreground">{band.guidance}</p>}
+          <div className="font-medium text-foreground">{band.label}</div>
+          {band.guidance && <p className="text-foreground">{band.guidance}</p>}
           {band.moves && (
-            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
+            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-foreground">
               {band.moves.map((m) => (
                 <li key={m}>{m}</li>
               ))}
@@ -336,7 +321,7 @@ function ScaleBody({ c }: { c: Extract<ExerciseContent, { type: "scale" }> }) {
   );
 }
 
-export function ExerciseBody({ exercise }: { exercise: Exercise }) {
+function VariantBody({ exercise }: { exercise: Exercise }) {
   const c = exercise.content;
   switch (c.type) {
     case "timer":
@@ -354,4 +339,35 @@ export function ExerciseBody({ exercise }: { exercise: Exercise }) {
     case "scale":
       return <ScaleBody c={c} />;
   }
+}
+
+export function exerciseSummary(exercise: Exercise, values: Record<string, string>): string {
+  const c = exercise.content;
+  if (c.type === "breathing") return `${Number(values.cycles ?? 0)} rounds of breathing`;
+  if (c.type === "calculator") {
+    const out = c.rows.reduce((n, row) => n + (Number(values[row.id]) || 0), 0);
+    const income = c.incomeRows ? c.incomeRows.reduce((n, row) => n + (Number(values[row.id]) || 0), 0) : Number(values.against) || 0;
+    return `In $${income.toFixed(2)}, out $${out.toFixed(2)}, left $${(income - out).toFixed(2)}`;
+  }
+  if (c.type === "checklist") return `${JSON.parse(values.checked ?? "[]").length} / ${c.items.length}`;
+  if (c.type === "timer") return `${values.elapsed ?? 0} / ${c.seconds} seconds`;
+  return Object.values(values).filter(Boolean).join(" · ") || exercise.title;
+}
+export function ExerciseBody({ exercise, patientId: provided, lessonId, surface = "exercise" }: { exercise: Exercise; patientId?: string; lessonId?: string; surface?: LessonSurface }) {
+  const patientId = useEhr(() => provided ?? AdelanteEHR.getCurrentPatientId());
+  const { t, lang } = useI18n();
+  const id = lessonId ?? exercise.id;
+  const response = useEhr(() => AdelanteEHR.lessonResponse(patientId, surface, id));
+  const values = response?.exerciseInputs?.[exercise.id] ?? {};
+  const set = (key: string, value: string) => savePlayerResponse(patientId, surface, id, { exerciseInputs: { [exercise.id]: { [key]: value } } });
+  const raw = exerciseSummary(exercise, values);
+  const summary = exercise.content.type === "breathing" ? `${Number(values.cycles ?? 0)} ${t("playerRounds")}` : exercise.content.type === "calculator" ? raw.replace("In", t("playerMoneyIn")).replace("out", t("playerMoneyOut")).replace("left", t("playerMoneyLeft")) : raw;
+  return <InputContext.Provider value={{ values, set }}><section className="patient-theme patient-player space-y-5">
+    <header className="flex items-start gap-3 rounded-2xl bg-accent p-4 text-accent-foreground"><Wrench className="mt-1 size-6 shrink-0" /><div><h2 className="text-2xl font-semibold">{exercise.title}</h2><p className="flex items-center gap-2"><Clock className="size-4" />{exercise.minutes} {t("playerMinutes")} · {exercise.content.type}</p><p>{exercise.purpose}</p></div></header>
+    <LessonReadAloud text={`${exercise.title}. ${exercise.purpose}`} stepKey={exercise.id} sensitive={exercise.part2Sensitive} />
+    {lang === "es" && <p>{t("playerDraft")}</p>}
+    <VariantBody exercise={exercise} />
+    <p className="rounded-xl bg-secondary p-3" data-testid="exercise-summary">{summary}</p>
+    <Button className="min-h-11 rounded-full" onClick={() => { savePlayerToolkit(patientId, exercise.id, `${exercise.title} — ${summary}`, "exercise"); toast.success(t("playerSaved")); }}>{t("playerSave")}</Button>
+  </section></InputContext.Provider>;
 }

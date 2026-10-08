@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "preview:e2e": "vite preview --config vite.preview.config.ts --host 0.0.0.0 --port 4173 --strictPort",
+    "build:e2e": "vite build --mode e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

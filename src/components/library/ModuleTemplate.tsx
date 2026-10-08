@@ -8,6 +8,10 @@
 // of `ModuleStep`s; the extra recovery steps (the tool-flow selects) are just
 // another step kind here, not a second renderer. Do NOT add a parallel lesson
 // component — add a step kind.
+import { LessonReadAloud } from "@/components/voice/LessonReadAloud";
+import { BreathingPractice } from "./BreathingPractice";
+import { GroundingPractice } from "./GroundingPractice";
+import { AdelConversation } from "./AdelConversation";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -101,9 +105,9 @@ function Activity({
             onValueChange={(v) => setRating(v[0] ?? activity.min)}
             aria-label={activity.prompt}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="flex justify-between text-xs text-foreground">
             <span>{activity.minLabel}</span>
-            <span className="font-display text-base text-navy">{rating}</span>
+            <span className="font-semibold text-base text-foreground">{rating}</span>
             <span>{activity.maxLabel}</span>
           </div>
         </div>
@@ -133,7 +137,7 @@ function Activity({
     case "reflection":
       return (
         <div className="space-y-2">
-          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <h3 className="font-semibold text-base text-foreground">{activity.title}</h3>
           <p className="text-sm">{activity.prompt}</p>
           <div className="flex flex-wrap gap-2">
             {activity.cards.map((card) => (
@@ -160,12 +164,12 @@ function Activity({
     case "timeline":
       return (
         <div className="space-y-2">
-          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <h3 className="font-semibold text-base text-foreground">{activity.title}</h3>
           <p className="text-sm">{activity.prompt}</p>
           <ol className="space-y-2">
             {activity.steps.map((step, i) => (
               <li key={step} className="flex items-start gap-2 text-sm">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] text-navy">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] text-foreground">
                   {i + 1}
                 </span>
                 <span>{step}</span>
@@ -175,24 +179,11 @@ function Activity({
         </div>
       );
     case "breathing":
-      return (
-        <div className="space-y-2">
-          <h3 className="font-display text-base text-navy">{activity.title}</h3>
-          <p className="text-sm">{activity.prompt}</p>
-          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span className="rounded-full bg-secondary/60 px-3 py-1">In {activity.inhaleSec}</span>
-            <span className="rounded-full bg-secondary/60 px-3 py-1">Hold {activity.holdSec}</span>
-            <span className="rounded-full bg-secondary/60 px-3 py-1">Out {activity.exhaleSec}</span>
-            <span className="rounded-full bg-secondary/60 px-3 py-1">
-              {activity.rounds} rounds
-            </span>
-          </div>
-        </div>
-      );
+      return <BreathingPractice inhaleSec={activity.inhaleSec} holdSec={activity.holdSec} exhaleSec={activity.exhaleSec} cycles={activity.rounds} completed={scores.breathCycles ?? 0} onCycles={(n) => setScores({ ...scores, breathCycles: n })} />;
     case "sliders":
       return (
         <div className="space-y-3">
-          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <h3 className="font-semibold text-base text-foreground">{activity.title}</h3>
           <p className="text-sm">{activity.prompt}</p>
           {activity.sliders.map((s) => (
             <div key={s.id} className="space-y-1">
@@ -205,9 +196,9 @@ function Activity({
                 onValueChange={(v) => setScores({ ...scores, [s.id]: v[0] ?? 0 })}
                 aria-label={s.label}
               />
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex justify-between text-xs text-foreground">
                 <span>{s.minLabel}</span>
-                <span className="text-navy">{scores[s.id] ?? 0}</span>
+                <span className="text-foreground">{scores[s.id] ?? 0}</span>
                 <span>{s.maxLabel}</span>
               </div>
             </div>
@@ -215,25 +206,7 @@ function Activity({
         </div>
       );
     case "grounding":
-      return (
-        <div className="space-y-2">
-          <h3 className="font-display text-base text-navy">{activity.title}</h3>
-          <p className="text-sm">{activity.prompt}</p>
-          {activity.senses.map((s) => (
-            <div key={s.label} className="space-y-1">
-              <label className="text-sm font-medium text-navy" htmlFor={`gr-${s.label}`}>
-                {s.count} things you can {s.label.toLowerCase()}
-              </label>
-              <Textarea
-                id={`gr-${s.label}`}
-                rows={2}
-                value={text(`grounding:${s.label}`)}
-                onChange={(e) => setText(`grounding:${s.label}`, e.target.value)}
-              />
-            </div>
-          ))}
-        </div>
-      );
+      return <GroundingPractice activity={activity} response={response} onChange={onChange} />;
     case "decision":
       // §Lesson-player Phase B — scenario-practice presentation. Same authored
       // data ({label, feedback, good}); richer treatment: the prompt reads as a
@@ -256,14 +229,14 @@ function PracticeStep({
   const picked = activity.choices.find((c) => c.label === choice);
   return (
     <div className="space-y-3">
-      <h3 className="font-display text-base text-navy">{activity.title}</h3>
-      <div className="rounded-lg border-l-4 border-teal bg-secondary/40 p-3">
-        <div className="text-[11px] font-medium uppercase tracking-wider text-teal">
+      <h3 className="font-semibold text-base text-foreground">{activity.title}</h3>
+      <div className="rounded-lg border-l-4 border-primary bg-secondary/40 p-3">
+        <div className="text-[11px] font-medium uppercase tracking-wider text-primary">
           {t("modPracticeScenario")}
         </div>
-        <p className="text-sm text-navy">{activity.prompt}</p>
+        <p className="text-sm text-foreground">{activity.prompt}</p>
       </div>
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <p className="text-xs font-medium uppercase tracking-wider text-foreground">
         {t("modPracticeChoose")}
       </p>
       <div className="space-y-2">
@@ -278,7 +251,7 @@ function PracticeStep({
               className="h-auto w-full justify-start whitespace-normal text-left"
               onClick={() => setChoice(c.label)}
             >
-              <span className="mr-2 font-display">{String.fromCharCode(65 + i)}.</span>
+              <span className="mr-2 font-semibold">{String.fromCharCode(65 + i)}.</span>
               {c.label}
             </Button>
           );
@@ -287,7 +260,7 @@ function PracticeStep({
       {picked && (
         <div
           className={`space-y-1 rounded-lg p-3 text-sm ${
-            picked.good ? "bg-teal/10 text-teal" : "bg-gold/10 text-navy"
+            picked.good ? "bg-primary/10 text-primary" : "bg-gold/10 text-foreground"
           }`}
           role="status"
         >
@@ -301,7 +274,7 @@ function PracticeStep({
           </div>
           <p>{picked.feedback}</p>
           {!picked.good && (
-            <p className="text-xs text-muted-foreground">{t("modPracticeTryAnother")}</p>
+            <p className="text-xs text-foreground">{t("modPracticeTryAnother")}</p>
           )}
         </div>
       )}
@@ -332,11 +305,11 @@ function Step({
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-teal">
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-primary">
           {icon}
           {t("modStepLabel")} {n} {t("modStepOf")} {total}
         </div>
-        <h2 className="font-display text-xl text-navy">{label}</h2>
+        <h2 className="font-semibold text-xl text-foreground">{label}</h2>
       </div>
       {children}
     </section>
@@ -384,18 +357,19 @@ function StepProgress({
               aria-current={current ? "step" : undefined}
               disabled={!visited}
               onClick={() => visited && onJump(i)}
-              className={`h-2.5 min-w-[1.25rem] flex-1 rounded-full transition-colors ${
+              className={`h-11 min-w-[1.25rem] flex-1 rounded-full transition-colors ${
                 current
-                  ? "bg-teal ring-2 ring-teal/40 ring-offset-1 ring-offset-background"
+                  ? "bg-primary ring-2 ring-primary/40 ring-offset-1 ring-offset-background"
                   : visited
-                    ? "bg-teal/60 hover:bg-teal"
+                    ? "bg-primary/60 hover:bg-primary"
                     : "cursor-default bg-secondary"
               }`}
             />
           );
         })}
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-base text-foreground">{index + 1}. {labels[index]}</p>
+      <p className="text-xs text-foreground">
         {index + 1}/{total} {t("modStepsWord")} · {maxVisited + 1} {t("modStepOf")} {total}{" "}
         {t("modVisitedCount")}
       </p>
@@ -430,8 +404,8 @@ export function SubTabProgress({
   if (total <= 1) return null;
   return (
     <div className="flex items-center gap-2">
-      {label && <span className="text-xs font-medium text-muted-foreground">{label}</span>}
-      <span className="text-xs text-muted-foreground">
+      {label && <span className="text-xs font-medium text-foreground">{label}</span>}
+      <span className="text-xs text-foreground">
         {index + 1} {t("modStepOf")} {total}
       </span>
       <div className="flex items-center gap-1" role="group" aria-label={label ?? undefined}>
@@ -446,7 +420,7 @@ export function SubTabProgress({
               aria-current={i === index ? "true" : undefined}
               onClick={() => onJump(i)}
               className={`h-2 w-2 rounded-full transition-colors ${
-                i === index ? "bg-teal ring-2 ring-teal/30" : "bg-secondary hover:bg-teal/50"
+                i === index ? "bg-primary ring-2 ring-primary/30" : "bg-secondary hover:bg-primary/50"
               }`}
             />
           );
@@ -551,7 +525,7 @@ function RatingScale({
   );
   return (
     <div className="space-y-1.5">
-      <p className="text-sm font-medium text-navy">{dimension.label}</p>
+      <p className="text-sm font-medium text-foreground">{dimension.label}</p>
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={dimension.label}>
         {scores.map((n) => (
           <Button
@@ -568,7 +542,7 @@ function RatingScale({
           </Button>
         ))}
       </div>
-      <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="flex justify-between text-xs text-foreground">
         <span>{dimension.lowLabel}</span>
         <span>{dimension.highLabel}</span>
       </div>
@@ -598,7 +572,7 @@ export function RatingStep({
   const hasBefore = dimensions.some((d) => typeof before?.[d.id] === "number");
   return (
     <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-foreground">
         {phase === "before" ? t("modRateBeforeIntro") : t("modRateAfterIntro")}
       </p>
       <div className="space-y-4">
@@ -611,13 +585,13 @@ export function RatingStep({
           />
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">{t("modRateSkipNote")}</p>
+      <p className="text-xs text-foreground">{t("modRateSkipNote")}</p>
 
       {phase === "after" && (
         <div className="space-y-2 border-t border-border pt-4">
-          <p className="text-sm font-medium text-navy">{t("modRateChange")}</p>
+          <p className="text-sm font-medium text-foreground">{t("modRateChange")}</p>
           {!hasBefore ? (
-            <p className="text-sm text-muted-foreground">{t("modRateNoBefore")}</p>
+            <p className="text-sm text-foreground">{t("modRateNoBefore")}</p>
           ) : (
             <>
               <div className="grid gap-2 sm:grid-cols-3">
@@ -628,10 +602,10 @@ export function RatingStep({
                   const diff = typeof a === "number" && typeof b === "number" ? a - b : null;
                   const tone =
                     verdict === "better"
-                      ? "border-teal/40 bg-teal/10 text-teal"
+                      ? "border-primary/40 bg-primary/10 text-primary"
                       : verdict === "worse"
-                        ? "border-gold bg-gold/10 text-gold-foreground"
-                        : "border-border bg-secondary/40 text-muted-foreground";
+                        ? "border-border bg-gold/10 text-foreground"
+                        : "border-border bg-secondary/40 text-foreground";
                   const Icon =
                     diff === null || diff === 0 ? Minus : diff > 0 ? TrendingUp : TrendingDown;
                   return (
@@ -656,7 +630,7 @@ export function RatingStep({
                   );
                 })}
               </div>
-              <p className="text-xs text-muted-foreground">{t("modRateHonest")}</p>
+              <p className="text-xs text-foreground">{t("modRateHonest")}</p>
             </>
           )}
         </div>
@@ -685,13 +659,13 @@ export function AdelStep({
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-2 rounded-lg bg-secondary/50 p-3">
-        <MessageCircleHeart className="mt-0.5 h-4 w-4 shrink-0 text-teal" aria-hidden />
+        <MessageCircleHeart className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">{t("modAdelIntro")}</p>
-          <p className="text-sm italic text-navy">{reflection}</p>
+          <p className="text-xs text-foreground">{t("modAdelIntro")}</p>
+          <p className="text-sm italic text-foreground">{reflection}</p>
         </div>
       </div>
-      <p className="text-sm font-medium text-navy">{question}</p>
+      <p className="text-sm font-medium text-foreground">{question}</p>
       <Textarea
         rows={4}
         aria-label={question}
@@ -699,21 +673,21 @@ export function AdelStep({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
-      {savedNote && <p className="text-xs text-muted-foreground">{t("modSavedNote")}</p>}
+      {savedNote && <p className="text-xs text-foreground">{t("modSavedNote")}</p>}
       {recommends.length > 0 && (
         <div className="space-y-2 pt-1">
-          <p className="text-xs font-medium text-muted-foreground">{t("modAdelRecommends")}</p>
+          <p className="text-xs font-medium text-foreground">{t("modAdelRecommends")}</p>
           <div className="flex flex-wrap gap-2">
             {recommends.map((r) => (
               <Link
                 key={`${r.to}-${r.label}`}
                 to={r.to}
                 search={r.search}
-                className="rounded-full border border-teal/40 bg-teal/5 px-3 py-1.5 text-xs text-teal hover:bg-teal/10"
+                className="rounded-full border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs text-primary hover:bg-primary/10"
                 title={r.reason}
               >
                 {r.label}
-                <span className="ml-1 text-muted-foreground">· {r.reason}</span>
+                <span className="ml-1 text-foreground">· {r.reason}</span>
               </Link>
             ))}
           </div>
@@ -746,8 +720,8 @@ export function LearnStages({ stages }: { stages: LearnStage[] }) {
         titles={stages.map((s) => s.title)}
         onJump={setI}
       />
-      <h3 className="font-display text-lg text-navy">{stage.title}</h3>
-      <p className="whitespace-pre-wrap text-sm text-muted-foreground">{stage.body}</p>
+      <h3 className="font-semibold text-lg text-foreground">{stage.title}</h3>
+      <p className="whitespace-pre-wrap text-sm text-foreground">{stage.body}</p>
       {stages.length > 1 && (
         <div className="flex gap-2">
           <Button
@@ -798,7 +772,7 @@ export function IfThenStep({
   };
   const column = (side: "if" | "then", title: string, options: string[], picks: string[]) => (
     <div className="space-y-2">
-      <p className="text-xs font-medium uppercase tracking-wider text-teal">{title}</p>
+      <p className="text-xs font-medium uppercase tracking-wider text-primary">{title}</p>
       <div className="flex flex-col gap-1.5">
         {options
           .filter((o) => o.trim())
@@ -824,13 +798,13 @@ export function IfThenStep({
   const pairs = ifPicks.length > 0 && thenPicks.length > 0;
   return (
     <div className="space-y-4" data-testid="ifthen-step">
-      <p className="text-sm font-medium text-navy">{t("modIfThenTitle")}</p>
+      <p className="text-sm font-medium text-foreground">{t("modIfThenTitle")}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {column("if", t("modIfThenIf"), practice.ifOptions, ifPicks)}
         {column("then", t("modIfThenThen"), practice.thenOptions, thenPicks)}
       </div>
       {pairs ? (
-        <div className="space-y-1 rounded-lg bg-secondary/50 p-3 text-sm text-navy">
+        <div className="space-y-1 rounded-lg bg-secondary/50 p-3 text-sm text-foreground">
           {ifPicks.map((i) => (
             <p key={i}>
               <span className="font-medium">{t("modIfThenIfWord")}</span> {i}{" "}
@@ -839,7 +813,7 @@ export function IfThenStep({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">{t("modIfThenHint")}</p>
+        <p className="text-xs text-foreground">{t("modIfThenHint")}</p>
       )}
     </div>
   );
@@ -894,7 +868,7 @@ export function SelectStep({
           );
         })}
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-foreground">
         {single
           ? t("modPickOne")
           : `${t("modPickUpTo")} ${max}. ${value.length} ${t("modSelectedOf")} ${max} ${t("modSelectedSuffix")}`}
@@ -905,6 +879,8 @@ export function SelectStep({
 
 export function ModuleTemplate({
   title,
+  patientId,
+  sensitive = false,
   subtitle,
   minutes,
   completed,
@@ -918,6 +894,8 @@ export function ModuleTemplate({
   onResponseChange,
 }: {
   title: string;
+  patientId?: string;
+  sensitive?: boolean;
   subtitle?: string;
   minutes: number;
   completed?: boolean;
@@ -949,6 +927,7 @@ export function ModuleTemplate({
   const [maxVisited, setMaxVisited] = useState(() =>
     Math.min(Math.max(savedStep ?? 0, 0), total - 1),
   );
+  const [celebrate, setCelebrate] = useState(false);
   const [restarted, setRestarted] = useState(false);
   const [seededFor, setSeededFor] = useState(resumeKey);
   useEffect(() => {
@@ -959,6 +938,7 @@ export function ModuleTemplate({
       setIndex(seed);
       setMaxVisited(seed);
       setRestarted(false);
+      setCelebrate(false);
     }
   }, [resumeKey, seededFor, savedStep, total]);
 
@@ -970,7 +950,7 @@ export function ModuleTemplate({
     const clamped = Math.min(Math.max(next, 0), total - 1);
     setIndex(clamped);
     setMaxVisited((m) => Math.max(m, clamped));
-    patch({ stepIndex: clamped });
+    patch({ stepIndex: clamped, stepTotal: total });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -985,27 +965,31 @@ export function ModuleTemplate({
     go(0);
   }
 
+  useEffect(() => { if (response?.stepTotal !== total && onResponseChange) onResponseChange({ stepIndex: index, stepTotal: total }); }, [total, response?.stepTotal]);
   if (!step) return null;
+  const spoken = step.kind === "text" || step.kind === "learn" ? [step.heading, step.body].filter(Boolean).join(". ") : step.kind === "adel" || step.kind === "reflect" ? `${step.reflection}. ${step.question}` : step.kind === "activity" ? ["title" in step.activity ? step.activity.title : "", "prompt" in step.activity ? step.activity.prompt : ""].filter(Boolean).join(". ") : step.kind === "select" ? step.prompt : step.label;
+  if (celebrate) return <Card className="patient-theme patient-player completion-panel space-y-6 rounded-3xl p-8 text-center shadow-sm"><CheckCircle2 className="mx-auto size-12 text-primary" /><h1 className="text-3xl font-semibold">{t("playerComplete")}</h1><p>{t("playerCompleteBody")}</p><Button asChild className="rounded-full"><Link to="/home">{t("playerContinue")}</Link></Button><Button variant="outline" className="ml-2 rounded-full" onClick={() => { setCelebrate(false); restart(); }}>{t("modRestart")}</Button></Card>;
+
 
   return (
-    <Card className="space-y-6 p-6">
+    <Card className="patient-theme patient-player space-y-6 rounded-3xl p-5 shadow-sm sm:p-8">
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-2xl text-navy">{title}</h1>
+          <h1 className="font-semibold text-2xl text-foreground">{title}</h1>
           {completed && (
-            <Badge className="border-0 bg-teal/15 text-teal">
+            <Badge className="border-0 bg-primary/15 text-primary">
               <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> {t("modCompleted")}
             </Badge>
           )}
           {placeholder && (
-            <Badge variant="outline" className="border-gold text-gold-foreground">
+            <Badge variant="outline" className="border-border text-foreground">
               {t("modPlaceholderBadge")}
             </Badge>
           )}
           {badges}
         </div>
-        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {subtitle && <p className="text-sm text-foreground">{subtitle}</p>}
+        <div className="flex items-center gap-1.5 text-xs text-foreground">
           <Clock className="h-3.5 w-3.5" /> {t("modAbout")} {minutes} {t("modMinutes")}
         </div>
         {notice}
@@ -1018,20 +1002,21 @@ export function ModuleTemplate({
         onJump={go}
       />
       {restarted && index === 0 && (
-        <p className="rounded-lg bg-secondary/50 p-2 text-xs text-muted-foreground">
+        <p className="rounded-lg bg-secondary/50 p-2 text-xs text-foreground">
           {t("modRestarted")}
         </p>
       )}
 
+      <LessonReadAloud text={spoken} stepKey={step.kind} sensitive={sensitive} />
       <Step n={index + 1} total={total} label={step.label} icon={step.icon}>
         {step.kind === "text" && (
           <>
-            {step.heading && <h3 className="font-display text-lg text-navy">{step.heading}</h3>}
+            {step.heading && <h3 className="font-semibold text-lg text-foreground">{step.heading}</h3>}
             <p
               className={
                 step.boxed
-                  ? "rounded-lg bg-secondary/50 p-3 text-sm text-navy"
-                  : "text-sm text-muted-foreground"
+                  ? "rounded-2xl bg-accent p-6 text-center text-2xl font-semibold text-foreground"
+                  : "text-sm text-foreground"
               }
             >
               {step.body}
@@ -1040,29 +1025,29 @@ export function ModuleTemplate({
         )}
         {step.kind === "learn" && (
           <>
-            {step.heading && <h3 className="font-display text-lg text-navy">{step.heading}</h3>}
+            {step.heading && <h3 className="font-semibold text-lg text-foreground">{step.heading}</h3>}
             {step.stages && step.stages.length > 0 ? (
               <LearnStages stages={step.stages} />
             ) : (
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{step.body}</p>
+              <p className="whitespace-pre-wrap text-sm text-foreground">{step.body}</p>
             )}
           </>
         )}
         {step.kind === "ifthen" && (
-          <IfThenStep
+          <div className="space-y-5"><IfThenStep
             practice={step.practice}
             ifPicks={step.ifPicks}
             thenPicks={step.thenPicks}
             onChange={step.onChange}
-          />
+          /><label>{t("playerConfidence")} · {response?.confidence ?? t("playerUnanswered")}</label><div role="group" aria-label={t("playerConfidence")}><Slider aria-label={t("playerConfidence")} min={0} max={10} step={1} value={response?.confidence === undefined ? [] : [response.confidence]} onValueChange={(v) => patch({ confidence: v[0] })} />{response?.confidence === undefined && <Button variant="outline" className="rounded-full" onClick={() => patch({ confidence: 0 })}>{t("playerConfidenceStart")}</Button>}</div></div>
         )}
         {step.kind === "activity" && (
           <Activity activity={step.activity} response={response} onChange={patch} />
         )}
         {step.kind === "reflect" && (
           <>
-            <p className="text-sm italic text-muted-foreground">{step.reflection}</p>
-            <p className="text-sm font-medium text-navy">{step.question}</p>
+            <p className="text-sm italic text-foreground">{step.reflection}</p>
+            <p className="text-sm font-medium text-foreground">{step.question}</p>
             <Textarea
               rows={3}
               aria-label={step.question}
@@ -1070,7 +1055,7 @@ export function ModuleTemplate({
               onChange={(e) => patch({ text: { reflect: e.target.value } })}
             />
             {onResponseChange && (
-              <p className="text-xs text-muted-foreground">{t("modSavedNote")}</p>
+              <p className="text-xs text-foreground">{t("modSavedNote")}</p>
             )}
           </>
         )}
@@ -1100,13 +1085,10 @@ export function ModuleTemplate({
           />
         )}
         {step.kind === "adel" && (
-          <AdelStep
+          <AdelConversation patientId={patientId ?? ""} topic={title} response={response} onChange={patch}
             reflection={step.reflection}
             question={step.question}
             recommends={step.recommends}
-            value={response?.text?.["reflect"] ?? ""}
-            onChange={(next) => patch({ text: { reflect: next } })}
-            savedNote={Boolean(onResponseChange)}
           />
         )}
         {step.kind === "custom" && step.content}
@@ -1119,7 +1101,7 @@ export function ModuleTemplate({
         </Button>
         {last ? (
           <>
-            <Button type="button" onClick={onComplete}>
+            <Button type="button" className="rounded-full" onClick={() => { onComplete(); patch({ finishedAt: new Date().toISOString() }); setCelebrate(true); }}>
               {completeLabel}
             </Button>
             <Button type="button" variant="ghost" onClick={restart}>
@@ -1131,12 +1113,13 @@ export function ModuleTemplate({
             <Button
               type="button"
               disabled={step.kind === "custom" && step.canContinue === false}
+              className="rounded-full"
               onClick={() => go(index + 1)}
             >
               {t("modContinue")} <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
             </Button>
             {step.kind === "custom" && step.canContinue === false && step.continueHint && (
-              <span className="text-xs text-muted-foreground">{step.continueHint}</span>
+              <span className="text-xs text-foreground">{step.continueHint}</span>
             )}
           </>
         )}

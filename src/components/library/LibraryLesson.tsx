@@ -3,6 +3,11 @@
 // it maps `LibraryItem` fields onto the shared `ModuleTemplate` steps. The
 // Recovery module system renders through that same component, with two extra
 // tool-flow steps — there is exactly one lesson renderer in this codebase.
+import { savePlayerResponse, completePlayerLesson } from "@/lib/patientPlayerActions";
+import { relatedPlayerContent } from "@/lib/playerEngagement";
+import { matchExerciseForLibraryLesson } from "@/lib/playerPractice";
+import { GuidedToolFlow } from "@/components/recovery/GuidedToolFlow";
+import { ClosingPreview } from "./ClosingPreview";
 import { Lightbulb, Sparkles, Target, Wrench } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
@@ -27,7 +32,7 @@ export function LibraryLesson({
   patientId: string;
   onDone?: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const completed = useEhr(() => AdelanteEHR.completedLibraryItems(patientId).includes(item.id));
   // §Build 2 — the patient's saved work for this lesson, read through the same
   // subscribed facade every other engagement read uses.
@@ -46,22 +51,17 @@ export function LibraryLesson({
   });
   const ifThen = hasIfThen(item.ifThenPractice) ? item.ifThenPractice : undefined;
   const showRecovery = useEhr(() => recoveryJourneyVisible(AdelanteEHR.getPatient(patientId)));
-  const recommends = recommendsForLibraryItem(item).filter(
+  const recommends = relatedPlayerContent(item.id, lang).filter(
     (recommendation) => recommendation.to !== "/recovery-journey" || showRecovery,
   );
 
 
   function complete() {
-    const res = AdelanteEHR.completeLibraryItem(patientId, item.id);
-    if (!res.completed) return;
-    toast.success(
-      res.alreadyComplete
-        ? "Already in your toolkit."
-        : `Saved "${item.toolkitLabel}" to your toolkit.`,
-    );
-    onDone?.();
+    completePlayerLesson(patientId, item.id, "library", undefined, lang);
   }
 
+  const match = matchExerciseForLibraryLesson(item);
+  const write = (patch: import("@/lib/engagement").LessonResponsePatch) => savePlayerResponse(patientId, "library", item.id, patch);
   const steps: ModuleStep[] = [
     { kind: "text", label: t("libStepProblem"), body: item.problem },
     // §Build 3 — per-item check-in when authored, the shared line when not.
@@ -76,7 +76,7 @@ export function LibraryLesson({
           max: checkInOptions.length,
           value: response?.checkIn ?? [],
           onChange: (next: string[]) =>
-            AdelanteEHR.saveLessonResponse(patientId, "library", item.id, { checkIn: next }),
+            savePlayerResponse(patientId, "library", item.id, { checkIn: next }),
         }
       : {
           kind: "text" as const,
@@ -94,6 +94,7 @@ export function LibraryLesson({
       ...(learnStages.length > 0 ? { stages: learnStages } : {}),
     },
     { kind: "activity", label: t("libStepActivity"), activity: item.activity },
+    ...(match ? [{ kind: "custom" as const, label: t("playerPractice"), canContinue: Boolean(response?.todayAction), continueHint: t("playerChoose"), content: <GuidedToolFlow patientId={patientId} lessonId={item.id} surface="library" match={match} groups={[{ key: "action", label: t("playerToday"), prompt: t("playerChoose"), options: [item.action].filter(Boolean), max: 1, value: response?.todayAction ? [response.todayAction] : [], onChange: (next) => write({ todayAction: next[0] }) }]} part={response?.toolPart ?? "a"} onPartChange={(part) => write({ toolPart: part })} subIndex={response?.subIndex ?? 0} onSubIndexChange={(subIndex) => write({ subIndex })} /> }] : []),
     ...(ifThen
       ? [
           {
@@ -103,7 +104,7 @@ export function LibraryLesson({
             ifPicks: response?.ifThen?.ifPicks ?? [],
             thenPicks: response?.ifThen?.thenPicks ?? [],
             onChange: (next: { ifPicks: string[]; thenPicks: string[] }) =>
-              AdelanteEHR.saveLessonResponse(patientId, "library", item.id, { ifThen: next }),
+              savePlayerResponse(patientId, "library", item.id, { ifThen: next }),
           },
         ]
       : []),
@@ -122,24 +123,19 @@ export function LibraryLesson({
       boxed: true,
     },
     {
-      kind: "text",
-      label: t("libStepAction"),
-      icon: <Target className="h-3.5 w-3.5" />,
-      body: item.action,
+      kind: "select", label: t("playerToday"), prompt: t("playerChoose"), options: [item.action].filter(Boolean), max: 1, value: response?.todayAction ? [response.todayAction] : [], onChange: (next) => write({ todayAction: next[0] }),
     },
     // §Phase C — "after" ratings, same dimensions, with the delta tiles.
     { kind: "rating", label: t("modRateAfterLabel"), phase: "after", dimensions },
     {
-      kind: "text",
-      label: t("libStepToolkit"),
-      icon: <Wrench className="h-3.5 w-3.5" />,
-      body: `Finishing saves "${item.toolkitLabel}" to your toolkit so you can find it again.`,
+      kind: "custom", label: t("playerPreview"), content: <ClosingPreview tool={item.toolkitLabel} response={response} onChange={write} />,
     },
   ];
 
 
   return (
     <ModuleTemplate
+      patientId={patientId} sensitive={item.part2Sensitive}
       title={item.title}
       minutes={item.minutes}
       completed={completed}
@@ -147,9 +143,9 @@ export function LibraryLesson({
       steps={steps}
       response={response}
       onResponseChange={(patch) =>
-        AdelanteEHR.saveLessonResponse(patientId, "library", item.id, patch)
+        savePlayerResponse(patientId, "library", item.id, patch)
       }
-      completeLabel={completed ? "Mark complete again" : "Finish and save to my toolkit"}
+      completeLabel={t("playerFinish")}
       onComplete={complete}
     />
   );
