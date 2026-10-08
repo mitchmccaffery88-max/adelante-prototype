@@ -36,6 +36,7 @@ import { useActingStaff } from "@/lib/roles";
 import { ClientDate } from "@/components/ClientDate";
 import { ContentForm } from "./ContentForm";
 import { ContentPreview } from "./ContentPreview";
+import { ResourceVerificationQueue } from "./ResourceVerificationQueue";
 import { CONTENT_TYPES, contentType } from "@/lib/contentTypes";
 import {
   canAuthorContent,
@@ -371,6 +372,8 @@ function ManageTab({ version }: { version: number }) {
           </Card>
           <ContentPreview descriptor={descriptor} body={body} />
         </div>
+      ) : typeId === "community_resource" ? (
+        <ResourceVerificationQueue />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="p-5">
@@ -604,12 +607,10 @@ export function ContentAdminWorkspace() {
     <div className="space-y-4">
       <div>
         <h1 className="flex items-center gap-2 font-display text-2xl text-navy">
-          <FileEdit className="h-5 w-5 text-teal" /> Patient content management
+          <FileEdit className="h-5 w-5 shrink-0 text-teal" /> Patient Content &amp; Resources Center
         </h1>
         <p className="text-sm text-muted-foreground">
-          Author and publish what patients see — Library lessons, Recovery-module lessons, community
-          resources and naloxone access points — without a code deployment. Full revision history,
-          and no second approver required.
+          Manage what patients see: education, recovery content, community resources and naloxone sites. Verify resources with the provider before they go live.
         </p>
       </div>
       <Tabs defaultValue="manage">

@@ -49,9 +49,10 @@ import { addSiteClosedDay, addTimeOff, canEditSiteCalendar, canManageStaffCalend
 import { calendarSync } from "@/lib/vendors/calendarSync";
 import { addThreadParticipant, canMessageStaff, flagThreadSud, markMentionDone, markThreadRead, postThreadMessage, reopenStaffThread, resolveStaffThread, startStaffThread } from "@/lib/staffThreads";
 import { addStaffMemberWithReason, deactivateStaffMember, reactivateStaffMember, updateStaffMember } from "@/lib/staffLifecycle";
+import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-08.continuity";
+export const REGISTRY_VERSION = "2026-10-08.resource-verification";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -118,6 +119,19 @@ export function cosignRouteLabel(staffId?: string): string {
 }
 
 export const CHART_ACTIONS: ChartAction[] = [
+  {
+    id: "resource_verify",
+    label: { en: "Verify and publish resource", es: "Verificar y publicar recurso" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "RESOURCE_VERIFIER_ROLES",
+    store: refs(["verifyResource", (input: VerifyInput & { details: Parameters<typeof updateResourceDetails>[1] }) => {
+      updateResourceDetails(input.resourceId, input.details);
+      return verifyResource(input);
+    }]),
+    allowed: ({ role }) => RESOURCE_VERIFIER_ROLES.includes(role) ? ok() : hide("This role cannot publish a community resource."),
+  },
   {
     id: "progress_note",
     label: { en: "Progress note", es: "Nota de progreso" },

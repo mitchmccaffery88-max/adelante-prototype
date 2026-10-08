@@ -73,6 +73,9 @@ test.describe("staff sidebar matches the RBAC gates", () => {
         .map((e) => e.id)
         .sort();
       expect(await visibleNavIds(page)).toEqual(expected);
+      if (staffNavForRole(role).some((e) => e.id === "admin-content")) {
+        await expect(page.locator('a[data-nav-id="admin-content"]')).toHaveText("Patient Content & Resources Center");
+      }
     });
 
     test(`${role}: no gated entry leaks into the sidebar`, async ({ page }) => {

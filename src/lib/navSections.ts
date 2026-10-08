@@ -656,7 +656,7 @@ export const STAFF_NAV: NavEntry[] = [
     // §Content Management — same config tier as note templates: not patient
     // data, but what every patient is SHOWN.
     id: "admin-content",
-    label: "Patient content",
+    label: "Patient Content & Resources Center",
     desc: "Lessons, community resources & naloxone access — author and publish",
     icon: FileEdit,
     to: "/admin-content",

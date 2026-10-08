@@ -1,6 +1,7 @@
 # Roadmap
 
 ## In progress
+- [ ] Focused resource verification move and Patient Content & Resources Center rename; coordination priorities, access parity, full unit suite and selected browser checks. Browser stability and seed changes explicitly deferred.
 
 ## Done
 - [x] Section 6 item 3: cancel requests (patient/advocate), staff cancel with reason, no-show, late-cancel label (draft), ASAM task reopening, claim guard, reporting, demo data.

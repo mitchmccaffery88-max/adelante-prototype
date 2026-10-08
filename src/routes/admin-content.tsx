@@ -4,16 +4,16 @@ import { ContentAdminWorkspace } from "@/components/admin/ContentAdminWorkspace"
 export const Route = createFileRoute("/admin-content")({
   head: () => ({
     meta: [
-      { title: "Patient content management — Adelante" },
+      { title: "Patient Content & Resources Center — Adelante" },
       {
         name: "description",
         content:
-          "Author, review and publish the Library and Recovery-module lessons patients see, with revision history and a second-reviewer approval step.",
+          "Manage what patients see: education, recovery content, community resources and naloxone sites. Verify resources with the provider before they go live.",
       },
-      { property: "og:title", content: "Patient content management — Adelante" },
+      { property: "og:title", content: "Patient Content & Resources Center — Adelante" },
       {
         property: "og:description",
-        content: "Draft, review and publish patient-facing lesson content without a deployment.",
+        content: "Manage what patients see: education, recovery content, community resources and naloxone sites. Verify resources with the provider before they go live.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
