@@ -63,6 +63,7 @@ export type CredentialKind =
   | "board_cert"
   | "cv"
   | "caqh"
+  | "degree"
   | "other";
 export type CredentialStatus = "current" | "expiring" | "expired" | "missing" | "under_review";
 
