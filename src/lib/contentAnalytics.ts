@@ -20,7 +20,8 @@ export function seedSimulatedContentSample(_input?: { actor?: unknown; note?: st
   if (!sampleSeeded) {
     let n = 7;
     const rnd = () => ((n = (n * 9301 + 49297) % 233280) / 233280);
-    const stepItems = liveCurricula().flatMap((j) => j.steps).flatMap((s) => (s.type === "library_lesson" ? [{ surface: "library" as const, id: s.id }] : s.type === "exercise" ? [{ surface: "exercise" as const, id: s.id }] : []));
+    type SampleItem = { surface: "library" | "exercise"; id: string };
+    const stepItems: SampleItem[] = liveCurricula().flatMap((j) => j.steps).flatMap((s): SampleItem[] => (s.type === "library_lesson" ? [{ surface: "library", id: s.id }] : s.type === "exercise" ? [{ surface: "exercise", id: s.id }] : []));
     const all: { surface: "library" | "exercise"; id: string }[] = [...stepItems, ...liveLibraryItems().slice(0, 10).map((l) => ({ surface: "library" as const, id: l.id })), ...liveExercises().map((e) => ({ surface: "exercise" as const, id: e.id }))];
     const items = all.filter((it, i) => all.findIndex((x) => x.surface === it.surface && x.id === it.id) === i);
     for (const pid of SIMULATED_SAMPLE_IDS) for (const it of items) {
