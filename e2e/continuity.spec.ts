@@ -70,7 +70,9 @@ test("MAT continuity, coverage at release, deactivation, intake median, screener
   // Leave, then come back: the two answers must still be there (checked via the UI;
   // importing the module from the test can hit a different HMR instance).
   await go(page, "/home");
-  await page.getByRole("button", { name: "Cambiar idioma a español" }).click();
+  // Under parallel load /home can hydrate late; make sure the switch really took.
+  const es = page.getByRole("button", { name: "Cambiar idioma a español" });
+  await expect(async () => { await es.click(); await expect(es).toHaveAttribute("aria-pressed", "true", { timeout: 1000 }); }).toPass({ timeout: 20_000 });
   await go(page, "/rescreen/phq-9");
   await expect(page.getByTestId("screener-draft-resume-banner")).toContainText("Continúa donde lo dejaste", { timeout: 15_000 });
   await expect(page.locator('[data-testid^="rescreen-q-"] [role="radio"][aria-checked="true"]')).toHaveCount(2);

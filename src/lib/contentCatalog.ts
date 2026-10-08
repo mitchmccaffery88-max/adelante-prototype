@@ -36,7 +36,7 @@ import {
   liveRecoveryModuleList,
 } from "@/lib/contentTypes";
 import { setContentResolver } from "@/lib/engagement";
-import { setAdelLessonSource } from "@/lib/adelPrompt";
+import { setAdelLessonSource, setAdelExerciseSource } from "@/lib/adelPrompt";
 // Side-effect import: Module 1 lessons 6–10 are authored as PUBLISHED managed
 // content rather than shipped-array entries, so they must be seeded before any
 // surface resolves the live catalog.
@@ -247,6 +247,7 @@ setContentResolver({
   protectedId: (id) => Boolean(liveLibraryItem(id)?.part2Sensitive || LIBRARY_ITEMS.find(item => item.id === id)?.part2Sensitive || RECOVERY_LESSONS.some(item => item.id === id) || liveRecoveryLesson(id) || liveExercise(id)?.part2Sensitive || (publishedContent("library_lesson", id)?.["meta"] as { part2?: boolean } | undefined)?.part2),
 });
 setAdelLessonSource(() => livePatientLibraryItems());
+setAdelExerciseSource(() => liveExercises());
 
 // ---------------------------------------------------------------------------
 // §Referential integrity — the real implementation of the store's guard.

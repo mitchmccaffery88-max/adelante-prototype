@@ -34,3 +34,17 @@ export function inventoryCsv(role: StaffRole) {
   const quote = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   return [["title", "type", "status", "tags", "ES status", "owner", "last reviewed", "next review"], ...staffContentInventory(role).map((e) => { const m = metaOf(e.body); return [contentType(e.typeId).titleOf(e.body), e.typeId, e.status, [...(m.sdoh ?? []), ...(m.stages ?? []), ...(m.asam ?? [])].join(";"), m.esStatus, m.owner, m.lastReviewed, m.nextReview]; })].map((r) => r.map(quote).join(",")).join("\r\n");
 }
+
+/**
+ * §F8 Which mode the center opens in. sys_admin → Audit; clinical reviewers
+ * (PMHNP, physician, coordinator) → Review when items wait, else Browse;
+ * content authors without a clinical role → Manage; clinicians → Browse.
+ */
+export type ContentMode = "browse" | "manage" | "review" | "audit";
+export function defaultContentMode(role: StaffRole, waiting: number, canAuthor: boolean): ContentMode {
+  if (role === "sys_admin") return "audit";
+  if (["pmhnp", "physician", "clinical_coordinator"].includes(role)) return waiting > 0 ? "review" : "browse";
+  const clinical = canAccess(role, "care_plan").level !== "none" && !canAccess(role, "care_plan").locked;
+  if (canAuthor && !clinical) return "manage";
+  return "browse";
+}

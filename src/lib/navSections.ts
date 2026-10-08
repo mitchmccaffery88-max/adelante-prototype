@@ -911,6 +911,8 @@ export type PatientRoute =
   // §Standalone route items — read-only aggregation of the tools the patient
   // built inside lessons. Reached from the Recovery Journey header.
   | "/toolkit"
+  // §F6 Journeys — ordered lessons/practice (Tools area).
+  | "/journeys"
   | "/resources/saved";
 
 export interface PatientNavEntry {
@@ -992,6 +994,8 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
   // duplicated tiles were removed from My Care, so an anchor would now scroll
   // to nothing.
   { id: "medication", labelKey: "navMedication", to: "/medications", icon: Pill, mobile: false },
+  // §F6 Tools area — the patient's ordered Journeys.
+  { id: "journeys", labelKey: "navMyJourneys", to: "/journeys", icon: Map, mobile: false },
   { id: "profile", labelKey: "navProfile", to: "/profile", icon: UserCog, mobile: false },
   { id: "documents", labelKey: "navDocuments", to: "/documents", icon: FileText, mobile: false },
   {

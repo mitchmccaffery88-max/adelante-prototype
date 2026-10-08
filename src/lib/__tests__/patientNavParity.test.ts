@@ -19,6 +19,7 @@ describe("patient nav registry", () => {
       "peer-navigator",
       "appointments",
       "medication",
+      "journeys",
       "profile",
       "documents",
       "weekly-recap",
@@ -54,6 +55,7 @@ describe("patient nav registry", () => {
       "/schedule",
       // §P1 My Care de-clutter — real routes, no longer /home hash anchors.
       "/medications",
+      "/journeys",
       "/profile",
       "/documents",
       "/weekly-recap",

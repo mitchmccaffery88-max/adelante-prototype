@@ -1,5 +1,4 @@
 import { ContentAssignmentPreview } from "@/components/admin/ContentAssignmentPreview";
-import { LearningHistory } from "./LearningHistory";
 // Staff structured care plan editor. Same access as the chart's care plan
 // section; SUD-linked goals/assignments/problems filtered by staffPlanView.
 import { act, actFor } from "@/lib/actions/act";
@@ -325,7 +324,6 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
         </section>
       )}
       <p className="text-[11px] text-muted-foreground">Suggestion thresholds, draft ICD-10 Z-codes and patient wording: {PLAN_DRAFT_LABEL}.</p>
-      <LearningHistory patientId={patientId} />
     </Card>
   );
 }
