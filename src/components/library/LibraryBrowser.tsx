@@ -68,7 +68,7 @@ export function LibraryBrowser({
             setOpenItem(null);
           }}
         >
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to the library
+          <ArrowLeft className="mr-1 h-4 w-4" /> {t("playerLibraryBack")}
         </Button>
         <LibraryLesson
           item={lesson}
@@ -87,7 +87,7 @@ export function LibraryBrowser({
     return (
       <PatientPage>
         <Button type="button" variant="ghost" onClick={() => setOpenExercise(null)}>
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to the library
+          <ArrowLeft className="mr-1 h-4 w-4" /> {t("playerLibraryBack")}
         </Button>
         <Card className="space-y-4 p-6">
           <div className="space-y-1">

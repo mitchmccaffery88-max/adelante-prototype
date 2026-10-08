@@ -6,6 +6,7 @@
 import { savePlayerResponse, completePlayerLesson } from "@/lib/patientPlayerActions";
 import { relatedPlayerContent } from "@/lib/playerEngagement";
 import { matchExerciseForLibraryLesson } from "@/lib/playerPractice";
+import { publishedContent } from "@/lib/contentPublishing";
 import { GuidedToolFlow } from "@/components/recovery/GuidedToolFlow";
 import { ClosingPreview } from "./ClosingPreview";
 import { Lightbulb, Sparkles, Target, Wrench } from "lucide-react";
@@ -33,6 +34,9 @@ export function LibraryLesson({
   onDone?: () => void;
 }) {
   const { t, lang } = useI18n();
+  // Translation overlays never alter the content identity or saved answer keys.
+  const es = publishedContent("library_lesson", item.id)?.es;
+  if (lang === "es" && es && typeof es === "object") item = { ...item, ...es as Partial<LibraryItem>, id: item.id };
   const completed = useEhr(() => AdelanteEHR.completedLibraryItems(patientId).includes(item.id));
   // §Build 2 — the patient's saved work for this lesson, read through the same
   // subscribed facade every other engagement read uses.

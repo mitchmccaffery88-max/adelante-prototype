@@ -143,6 +143,7 @@ export interface LessonResponse {
   /** Last step the patient was on (0-based). */
   stepIndex?: number;
   stepTotal?: number;
+  maxVisited?: number;
   todayAction?: string;
   confidence?: number;
   adelIndex?: number;

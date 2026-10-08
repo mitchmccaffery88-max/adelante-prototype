@@ -361,9 +361,10 @@ export function ExerciseBody({ exercise, patientId: provided, lessonId, surface 
   const values = response?.exerciseInputs?.[exercise.id] ?? {};
   const set = (key: string, value: string) => savePlayerResponse(patientId, surface, id, { exerciseInputs: { [exercise.id]: { [key]: value } } });
   const raw = exerciseSummary(exercise, values);
-  const summary = exercise.content.type === "breathing" ? `${Number(values.cycles ?? 0)} ${t("playerRounds")}` : exercise.content.type === "calculator" ? raw.replace("In", t("playerMoneyIn")).replace("out", t("playerMoneyOut")).replace("left", t("playerMoneyLeft")) : raw;
+  const summary = exercise.content.type === "breathing" ? `${Number(values.cycles ?? 0)} ${t("playerRounds")}` : exercise.content.type === "calculator" ? raw.replace("In", t("playerMoneyIn")).replace("out", t("playerMoneyOut")).replace("left", t("playerMoneyLeft")) : exercise.content.type === "timer" ? raw.replace("seconds", t("playerSeconds")) : raw;
+  const types = { breathing: "playerBreathingType", timer: "playerTimerType", checklist: "playerChecklistType", worksheet: "playerWorksheetType", mapper: "playerMapperType", calculator: "playerCalculatorType", scale: "playerScaleType" } as const;
   return <InputContext.Provider value={{ values, set }}><section className="patient-theme patient-player space-y-5">
-    <header className="flex items-start gap-3 rounded-2xl bg-accent p-4 text-accent-foreground"><Wrench className="mt-1 size-6 shrink-0" /><div><h2 className="text-2xl font-semibold">{exercise.title}</h2><p className="flex items-center gap-2"><Clock className="size-4" />{exercise.minutes} {t("playerMinutes")} · {exercise.content.type}</p><p>{exercise.purpose}</p></div></header>
+    <header className="flex items-start gap-3 rounded-2xl bg-accent p-4 text-accent-foreground"><Wrench className="mt-1 size-6 shrink-0" /><div><h2 className="text-2xl font-semibold">{exercise.title}</h2><p className="flex items-center gap-2"><Clock className="size-4" />{exercise.minutes} {t("playerMinutes")} · {t(types[exercise.content.type])}</p><p>{exercise.purpose}</p></div></header>
     <LessonReadAloud text={`${exercise.title}. ${exercise.purpose}`} stepKey={exercise.id} sensitive={exercise.part2Sensitive} />
     {lang === "es" && <p>{t("playerDraft")}</p>}
     <VariantBody exercise={exercise} />

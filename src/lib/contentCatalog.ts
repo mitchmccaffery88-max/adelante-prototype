@@ -241,7 +241,7 @@ setContentResolver({
   exercise: liveExercise,
   libraryItem: liveLibraryItem,
   recoveryLesson: liveRecoveryLesson,
-  protectedId: (id) => Boolean(liveLibraryItem(id)?.part2Sensitive || liveRecoveryLesson(id) || liveExercise(id)?.part2Sensitive || (publishedContent("library_lesson", id)?.["meta"] as { part2?: boolean } | undefined)?.part2),
+  protectedId: (id) => Boolean(liveLibraryItem(id)?.part2Sensitive || LIBRARY_ITEMS.find(item => item.id === id)?.part2Sensitive || RECOVERY_LESSONS.some(item => item.id === id) || liveRecoveryLesson(id) || liveExercise(id)?.part2Sensitive || (publishedContent("library_lesson", id)?.["meta"] as { part2?: boolean } | undefined)?.part2),
 });
 setAdelLessonSource(() => livePatientLibraryItems());
 

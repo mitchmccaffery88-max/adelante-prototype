@@ -925,7 +925,7 @@ export function ModuleTemplate({
   const [index, setIndex] = useState(() => Math.min(Math.max(savedStep ?? 0, 0), total - 1));
   const resumeKey = useMemo(() => `${title}:${total}`, [title, total]);
   const [maxVisited, setMaxVisited] = useState(() =>
-    Math.min(Math.max(savedStep ?? 0, 0), total - 1),
+    Math.min(Math.max(response?.maxVisited ?? savedStep ?? 0, 0), total - 1),
   );
   const [celebrate, setCelebrate] = useState(false);
   const [restarted, setRestarted] = useState(false);
@@ -936,7 +936,7 @@ export function ModuleTemplate({
       setSeededFor(resumeKey);
       const seed = Math.min(Math.max(savedStep ?? 0, 0), total - 1);
       setIndex(seed);
-      setMaxVisited(seed);
+      setMaxVisited(Math.max(seed, Math.min(response?.maxVisited ?? seed, total - 1)));
       setRestarted(false);
       setCelebrate(false);
     }
@@ -950,7 +950,7 @@ export function ModuleTemplate({
     const clamped = Math.min(Math.max(next, 0), total - 1);
     setIndex(clamped);
     setMaxVisited((m) => Math.max(m, clamped));
-    patch({ stepIndex: clamped, stepTotal: total });
+    patch({ stepIndex: clamped, stepTotal: total, maxVisited: Math.max(maxVisited, clamped) });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
