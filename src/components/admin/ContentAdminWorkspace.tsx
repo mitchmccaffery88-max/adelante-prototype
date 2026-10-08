@@ -373,7 +373,11 @@ function ManageTab({ version }: { version: number }) {
           <ContentPreview descriptor={descriptor} body={body} />
         </div>
       ) : typeId === "community_resource" ? (
-        <ResourceVerificationQueue />
+        <ResourceVerificationQueue onEdit={(id) => {
+          const existing = getContentEntry("community_resource", id);
+          if (existing) open(id, existing.body);
+          else openBaseline(id);
+        }} />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="p-5">

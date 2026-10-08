@@ -26,7 +26,7 @@ import {
   verifyResource,
 } from "@/lib/communityResources";
 
-export function ResourceVerificationQueue() {
+export function ResourceVerificationQueue({ onEdit }: { onEdit?: (id: string) => void }) {
   const { role, staffId, staffName } = useActingStaff();
   const [filter, setFilter] = useState("not_verified");
   const snapshot = useSyncExternalStore(
@@ -65,6 +65,7 @@ export function ResourceVerificationQueue() {
             actorName={staffName}
             actorStaffId={staffId ?? undefined}
             actorRole={role}
+            onEdit={onEdit}
           />
         ))}
         {shown.length === 0 && (
@@ -81,12 +82,14 @@ function VerifyRow({
   actorName,
   actorStaffId,
   actorRole,
+  onEdit,
 }: {
   resource: ReturnType<typeof resourceVerificationQueue>[number];
   canVerify: boolean;
   actorName: string;
   actorStaffId?: string;
   actorRole: Parameters<typeof verifyResource>[0]["actorRole"];
+  onEdit?: (id: string) => void;
 }) {
   const [address, setAddress] = useState(resource.address);
   const [name, setName] = useState(resource.name);
@@ -159,6 +162,7 @@ function VerifyRow({
       <Button type="button" size="sm" disabled={!canVerify} onClick={publish}>
         Verify and publish
       </Button>
+      {onEdit && <Button type="button" size="sm" variant="outline" onClick={() => onEdit(resource.id)}>Edit listing</Button>}
     </li>
   );
 }

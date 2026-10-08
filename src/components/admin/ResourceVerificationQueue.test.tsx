@@ -26,7 +26,7 @@ describe("resource verification location and access", () => {
     expect(route.indexOf('data-testid="unassigned-list"')).toBeLessThan(route.indexOf("{canAct && <PostEnrollmentSetupCard"));
     const content = readFileSync("src/components/admin/ContentAdminWorkspace.tsx", "utf8");
     expect(content).toContain('typeId === "community_resource"');
-    expect(content).toContain("<ResourceVerificationQueue />");
+    expect(content).toContain("<ResourceVerificationQueue onEdit=");
   });
 
   it("renames the menu, breadcrumb source and route metadata without changing the URL", () => {

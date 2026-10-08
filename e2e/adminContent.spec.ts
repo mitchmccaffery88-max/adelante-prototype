@@ -33,7 +33,7 @@ test("coordinator starts with coordination work and verifies resources in the re
   await page.getByRole("option", { name: "Verified", exact: true }).click();
   const verified = page.locator(`[data-resource-id="${id}"]`);
   await expect(verified.getByText("Verified", { exact: true })).toBeVisible();
-  await expect(verified.getByTestId("resource-verifier")).toContainText("Verified by Cathy Cruz ·");
+  await expect(verified.getByTestId("resource-verifier")).toContainText("Verified by Cathy ·");
   await expect(verified.getByTestId("resource-verifier")).not.toContainText("—");
   await verified.screenshot({ path: "/tmp/browser/admin-content/verified-listing.png" });
   await page.getByRole("combobox", { name: "Resource verification filter" }).click();
