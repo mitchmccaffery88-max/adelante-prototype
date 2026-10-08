@@ -18,12 +18,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt, type CredentialKind } from "@/lib/ehr-ext";
-import { useActingStaff } from "@/lib/roles";
+import { STAFF_ROSTER, useActingStaff } from "@/lib/roles";
 import {
   CREDENTIAL_ASSIST_NOTE,
   CREDENTIAL_NO_RECORD_NOTE,
   canAssistCredentials,
   credentialAccessFor,
+  credentialKindsFor,
+  CREDENTIAL_KIND_LABEL,
 } from "@/lib/credentialAccess";
 import {
   CREDENTIAL_ACCEPT_ATTR,
@@ -71,7 +73,8 @@ function CredentialsPage() {
   const allowedKinds = credentialKindsFor(ownerRole);
   const creds = useEhrExt(() => (targetId ? AdelanteEHRExt.credentialsForClinician(targetId) : []));
 
-  const [kind, setKind] = useState<CredentialKind>("license");
+  const [pickedKind, setKind] = useState<CredentialKind>("license");
+  const kind: CredentialKind = allowedKinds.includes(pickedKind) ? pickedKind : allowedKinds[0];
   const [number, setNumber] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [file, setFile] = useState<CredentialFilePayload | null>(null);
