@@ -3,6 +3,8 @@ import { ContentAssignmentPreview } from "@/components/admin/ContentAssignmentPr
 // section; SUD-linked goals/assignments/problems filtered by staffPlanView.
 import { act, actFor } from "@/lib/actions/act";
 import "@/lib/contentTags";
+import "@/lib/flagJourneys";
+import { FLAG_REVIEW_LABEL } from "@/lib/structuredCarePlan";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useEhr } from "@/lib/ehr";
@@ -209,7 +211,21 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                       • {a.label.en} — {a.frequency}
                       <ContentAssignmentPreview id={a.activityId} />
                       {a.kind !== "sdoh_referral" && `, ${w.done} of ${w.target} this week`}
-                      <span className="text-muted-foreground"> · {a.reason === "rule" ? "Adel suggestion, accepted" : "Ad hoc"} by {a.assignedBy}</span>
+                      {a.autoAdded ? (
+                        <span className="ml-1 inline-flex flex-wrap items-center gap-1" data-testid="auto-added">
+                          <Badge variant="secondary" className="text-[10px]">Auto-added</Badge>
+                          <span className="text-muted-foreground">{a.autoAdded.trigger} (Draft)</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground"> · {a.reason === "rule" ? "Adel suggestion, accepted" : "Ad hoc"} by {a.assignedBy}</span>
+                      )}
+                      {a.flagReview && !a.flagReview.resolved && (
+                        <span className="ml-1 inline-flex items-center gap-1" data-testid="flag-review">
+                          <Badge variant="outline" className="text-[10px]">{FLAG_REVIEW_LABEL}</Badge>
+                          <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "kept", "Kept after flag review", { name: me.staffName, role: me.role }); toast.success("Kept on the plan"); } catch (e) { toast.error((e as Error).message); } }}>Keep</Button>
+                          <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "retired", "Retired after flag review", { name: me.staffName, role: me.role }); toast.success("Retired — progress kept"); } catch (e) { toast.error((e as Error).message); } }}>Retire</Button>
+                        </span>
+                      )}
                     </li>
                   );
                 })}
