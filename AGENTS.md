@@ -10,6 +10,7 @@ Standing rules — apply to ALL work, every change, any folder:
 - Demo seeds only through real store functions.
 
 Full per-module rules: `src/lib/AGENTS.md` — read before changing app logic.
+- Resource verification and existing listing edits share the community-resource view in `/admin-content`; verification uses `runAction("resource_verify")` and the existing verifier/store gates. Why: one listing workflow, unchanged role access and published revision provenance.
 
 <!-- LOVABLE:BEGIN -->
 - Clinician tiles and merged action rows derive through `clinicianWorkspace.ts`; dashboard “+ New” uses `CHART_ACTIONS` plus `dashboardActionBus.ts`. Why: one acting-person scope, one permission registry, no duplicate queues.

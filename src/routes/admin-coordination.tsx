@@ -10,7 +10,7 @@ import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { STAFF_ROSTER, getSupervisor, requiresSupervision, useActingStaff } from "@/lib/roles";
 import { ClientDate } from "@/components/ClientDate";
 import { PostEnrollmentSetupCard } from "@/components/PostEnrollmentSetupCard";
-import { ResourceVerificationQueue } from "@/components/admin/ResourceVerificationQueue";
+import { reassignNeededItems } from "@/lib/staffLifecycle";
 import {
   COORDINATION_ACTION_LABEL,
   REASSIGN_REASONS,
@@ -48,6 +48,7 @@ function CoordinationPage() {
   const appts = useEhr(() => AdelanteEHR.listAppointments());
   const audit = useEhr(() => listCoordinationAudit());
   const unassigned = useEhr(() => listUnassignedPatients());
+  const reassignNeeded = useEhr(() => reassignNeededItems());
 
   const canAct = canActOnCoordination(actor.role);
   if (!canViewCoordination(actor.role))
@@ -82,7 +83,18 @@ function CoordinationPage() {
         <Link to="/admin" className="text-sm underline">← Admin</Link>
       </header>
 
-      {canAct && <ResourceVerificationQueue />}
+      {canAct && reassignNeeded.length > 0 && (
+        <section data-testid="reassign-needed" className="space-y-2">
+          <h2 className="font-semibold">Reassign needed</h2>
+          <ul className="divide-y text-sm">
+            {reassignNeeded.map((row) => (
+              <li key={row.staffId} className="py-2">
+                <b>{row.name}</b> · {row.counts.notesToSign} notes to sign · {row.counts.tasks} tasks · {row.counts.escalations} escalations · {row.counts.caseload} patients
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Card className="p-4" data-testid="coverage-list">
         <h2 className="font-semibold mb-2">Frozen clinicians · appointments needing coverage ({affectedAppts.length})</h2>
@@ -137,7 +149,7 @@ function CoordinationPage() {
             const cl = clinicians.find((c) => c.id === p.clinicianId);
             const staff = STAFF_ROSTER.find((s) => s.clinicianId === p.clinicianId);
             const trainee = staff ? requiresSupervision(staff.role) : false;
-            const sup = trainee ? getSupervisor(staff!.id) : undefined;
+            const sup = trainee && staff ? getSupervisor(staff.id) : undefined;
             return (
               <li key={p.clinicianId} className="flex items-center justify-between gap-2 rounded border p-2 text-sm">
                 <div>
@@ -189,6 +201,11 @@ function CoordinationPage() {
           </ul>
         )}
       </Card>
+      )}
+      {canAct && (
+        <p className="text-sm text-muted-foreground">
+          Related: <Link to="/admin-content" className="underline">Resource verification → Patient Content &amp; Resources Center</Link>
+        </p>
       )}
     </div>
   );
