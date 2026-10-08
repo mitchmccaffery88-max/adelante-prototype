@@ -65,7 +65,7 @@ test("Luis listens twice, breathes, saves practice, resumes, answers Adel and co
 test("Spanish lesson controls and protected advocate progress contain no private answer or title", async ({ page }) => {
   const patientId = await ready(page);
   await page.getByRole("button", { name: "Cambiar idioma a español" }).click();
-  await go(page, "/recovery-journey?lesson=first-days-out-1");
+  await go(page, "/recovery-journey?lesson=fdo-first-72-hours");
   await expect(page.getByText(/voz simulada/).first()).toBeVisible();
   await expect(page.getByText(/Borrador/).first()).toBeVisible();
   await page.getByRole("button", { name: "Escuchar", exact: true }).click();
@@ -74,12 +74,12 @@ test("Spanish lesson controls and protected advocate progress contain no private
   const privacy = await page.evaluate(async pid => {
     const { eng } = await (window as any).__adelante.content();
     const e = (window as any).__adelante.AdelanteEHR;
-    eng.saveLessonResponse(pid, "recovery", "first-days-out-1", { text: { support: "Secret support" }, todayAction: "Private action" });
-    eng.completeRecoveryLesson(pid, "first-days-out-1", {});
+    eng.saveLessonResponse(pid, "recovery", "fdo-first-72-hours", { text: { support: "Secret support" }, todayAction: "Private action" });
+    eng.completeRecoveryLesson(pid, "fdo-first-72-hours", {});
     const link = e.listAdvocateLinks(pid)[0];
     return { cohort: JSON.stringify(eng.engagementRecords([pid])), progress: link ? JSON.stringify(e.advocateLibraryProgress(link.id)) : null };
   }, patientId);
-  expect(privacy.cohort).not.toMatch(/Secret support|Private action|first-days-out-1/);
+  expect(privacy.cohort).not.toMatch(/Secret support|Private action|fdo-first-72-hours/);
   expect(privacy.progress).not.toBeNull();
-  expect(privacy.progress).not.toMatch(/Secret support|Private action|first-days-out-1/);
+  expect(privacy.progress).not.toMatch(/Secret support|Private action|fdo-first-72-hours/);
 });
