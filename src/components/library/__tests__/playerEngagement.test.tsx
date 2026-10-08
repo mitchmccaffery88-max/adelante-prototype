@@ -15,6 +15,9 @@ import { getEngagement, engagementRecords, saveLessonResponse } from "@/lib/enga
 import { latestInProgress, latestTodayAction } from "@/lib/playerEngagement";
 import { EXERCISES, type LibraryActivity } from "@/lib/library";
 import { savePlayerResponse } from "@/lib/patientPlayerActions";
+import { completePlayerLesson } from "@/lib/patientPlayerActions";
+import { ClosingPreview } from "../ClosingPreview";
+import { matchExerciseForLibraryLesson } from "@/lib/playerPractice";
 const speak = vi.fn(), stop = vi.fn(), enabled = { value: false };
 vi.mock("@/hooks/useAdelVoice", () => ({ useAdelVoice: () => ({ enabled: enabled.value, setEnabled: vi.fn(), speak, stop, replay: vi.fn(), rate: "normal", setRate: vi.fn(), speaking: false }) }));
 vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
@@ -22,6 +25,22 @@ const wrap = (ui: React.ReactNode) => render(<I18nProvider>{ui}</I18nProvider>);
 beforeEach(() => { enabled.value = false; localStorage.clear(); speak.mockClear(); stop.mockClear(); window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 describe("patient player engagement", () => {
+ it("exact toolkit preview persists and confirmation saves the same values", () => {
+   const patient = AdelanteEHR.listPatients()[0]; AdelanteEHR.setCurrentPatientId(patient.id);
+   const lesson = liveLibraryItems().find(l => !l.placeholder)!;
+   savePlayerResponse(patient.id, "library", lesson.id, { todayAction: "One walk", text: { reminder: "playerTodayReminder", support: "Private contact" } });
+   const response = AdelanteEHR.lessonResponse(patient.id, "library", lesson.id);
+   wrap(<ClosingPreview tool={lesson.toolkitLabel} response={response} onChange={p => savePlayerResponse(patient.id, "library", lesson.id, p)} />);
+   const preview = AdelanteEHR.lessonResponse(patient.id, "library", lesson.id)?.text?.toolkitPreview;
+   expect(preview).toContain("Private contact"); expect(preview).toContain("Later today");
+   completePlayerLesson(patient.id, lesson.id, "library");
+   expect(AdelanteEHR.savedToolkitItems(patient.id).find(t => t.id === lesson.id)?.label).toBe(preview);
+ });
+ it("practice uses semantic matching but skips a lesson with no tag or semantic match", () => {
+   const base = liveLibraryItems().find(l => l.id === "ss-calming-my-mind")!;
+   expect(matchExerciseForLibraryLesson(base)?.exercise).toBeTruthy();
+   expect(matchExerciseForLibraryLesson({ ...base, id: "unmapped-practice", title: "Neutral", learnBody: "", toolkitLabel: "", insight: "", action: "" })).toBeUndefined();
+ });
  it("breathing phases use their own seconds, skip empty hold, and stop at the cap", () => { const d = [2,1,3,0]; let s = startBreath(d); s = tickBreath(s,d,1); expect(s).toMatchObject({ phase:0,left:1 }); s=tickBreath(s,d,1); expect(s).toMatchObject({phase:1,left:1}); s=tickBreath(s,d,1); expect(s).toMatchObject({phase:2,left:3}); for(let n=0;n<3;n++) s=tickBreath(s,d,1); expect(s).toMatchObject({cycles:1,finished:true}); expect(tickBreath(s,d,1)).toEqual(s); });
  it("Start/Pause controls the live countdown and animation phase", () => { vi.useFakeTimers(); wrap(<BreathingPractice inhaleSec={2} holdSec={1} exhaleSec={2} cycles={2}/>); fireEvent.click(screen.getByRole("button",{name:"Start"})); act(()=>vi.advanceTimersByTime(2000)); expect(screen.getByTestId("breath-shape").getAttribute("data-phase") ?? screen.getByTestId("breath-shape").parentElement?.getAttribute("data-phase")).toBe("1"); fireEvent.click(screen.getByRole("button",{name:"Pause"})); const timer=screen.getByRole("timer").textContent; act(()=>vi.advanceTimersByTime(4000)); expect(screen.getByRole("timer").textContent).toBe(timer); });
  it("reduced motion removes the animated shape, not the countdown", () => { window.matchMedia=vi.fn().mockReturnValue({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()}); wrap(<BreathingPractice inhaleSec={4} holdSec={4} exhaleSec={4} cycles={3}/>); expect(screen.queryByTestId("breath-shape")).toBeNull(); expect(screen.getByRole("timer").textContent).toBe("4"); });

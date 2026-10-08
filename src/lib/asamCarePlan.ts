@@ -29,7 +29,7 @@ export const ASAM_PLAN_CONFIG = {
 
 export interface AsamIntervention {
   text: string;
-  /** Recovery-module activity id (PLAN_ACTIVITIES) — becomes an assignment on accept. */
+  /** Published catalog id selected by Draft C3 dimension tags; assigned on accept. */
   moduleId?: string;
 }
 interface Template {
@@ -164,7 +164,7 @@ export function syncAsamPlan(patientId: string): void {
     for (const old of list) if (old.dimensionKey === dim.key && old.status === "suggested") old.status = "superseded";
     const signed = new Date(a.cosignedAt ?? a.signedAt ?? Date.now());
     const reentry = inReentryWindow(p) && (dim.key === "d5" || dim.key === "d6");
-    const matches = taggedCatalog().filter((item) => item.meta.asam?.includes(Number(dim.key.slice(1))));
+    const matches = taggedCatalog().filter((item) => item.kind !== "module" && item.meta.asam?.includes(Number(dim.key.slice(1))));
     const interventions: AsamIntervention[] = t.interventions.slice(0, 1);
     for (const item of matches.slice(0, 1)) interventions.push({ text: item.title, moduleId: item.id });
     list.push({

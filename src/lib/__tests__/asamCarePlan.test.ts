@@ -50,6 +50,9 @@ describe("C1 — ASAM → care plan suggestions", () => {
       expect(s.goal).toBeTruthy();
       expect(s.interventions.length).toBeGreaterThanOrEqual(1);
       expect(s.interventions.length).toBeLessThanOrEqual(2);
+      for (const intervention of s.interventions.filter(i => i.moduleId)) {
+        expect(taggedItem(intervention.moduleId!)?.meta.asam).toContain(Number(s.dimensionKey.slice(1)));
+      }
       expect(s.reviewDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
     expect(getStructuredPlan(p.id).goals.length).toBe(goalsBefore);
