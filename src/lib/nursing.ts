@@ -210,7 +210,8 @@ export function administerClinicDose(input: {
   };
   doses.push(d);
   audit("clinic_med_given", input.patientId, input.actor, { orderId: o.id, doseId: d.id, cosignRequired: !!supervisorStaffId });
-  if (supervisorStaffId) notifyRole(getStaffMember(supervisorStaffId)!.role, input.patientId, "An LVN medication dose needs your cosign.");
+  // §A3 — narrowed: the named supervising RN; the whole role only when none is assigned.
+  if (supervisorStaffId) AdelanteEHR.notify({ recipientStaffId: supervisorStaffId, category: "task_assigned" as never, subject: "Nursing step waiting", body: "An LVN medication dose needs your cosign.", linkRoute: "/nurse", patientId: input.patientId } as never);
   return d;
 }
 

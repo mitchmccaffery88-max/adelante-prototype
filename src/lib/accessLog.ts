@@ -69,6 +69,7 @@ export interface AccessRow {
   /** System events (Brief computes) — never a person viewing. */
   system?: boolean;
   triggeredBy?: string[];
+  patientId?: string;
 }
 
 /** V2 — the staff member opened the Adel Brief. Same 5-minute collapse as record views. */
@@ -93,6 +94,7 @@ export function accessEventsFor(patientId?: string): AccessRow[] {
         action: e.action,
         system: d["system"] === true || undefined,
         triggeredBy: d["triggeredBy"] as string[] | undefined,
+        patientId: e.patientId,
       };
     });
 }

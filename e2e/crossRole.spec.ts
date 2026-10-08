@@ -34,6 +34,8 @@ async function luisId(page: Page): Promise<string> {
 /** Returns false when the role can't reach the chart at all (no search hit / no chart). */
 async function openChartTab(page: Page, tab: RegExp, dob: string): Promise<boolean> {
   const box = page.getByPlaceholder(/Search patients/);
+  // §Access A2 — roles without chart entry have no search field at all.
+  if (!(await box.first().isVisible({ timeout: 8_000 }).catch(() => false))) return false;
   await box.click();
   await box.fill("Camacho");
   const opt = page.getByRole("option").filter({ hasText: dob }).first();

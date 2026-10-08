@@ -224,7 +224,7 @@ describe("care message Part 2 flagging", () => {
 
     const all = AdelanteEHR.listNotificationsFor(cmName, "ecm_provider");
     expect(all.length).toBeGreaterThan(cmBefore);
-    const visibility = all.filter((n) => n.body.includes("flagged for Part 2 protection"));
+    const visibility = all.filter((n) => n.subject === "A message needs your review");
     expect(visibility.length).toBeGreaterThan(0);
     expect(AdelanteEHR.listNotificationsFor("nobody", "therapist").length).toBeGreaterThan(thBefore);
   });

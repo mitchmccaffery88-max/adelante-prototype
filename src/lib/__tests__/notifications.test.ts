@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AdelanteEHR } from "@/lib/ehr";
+import { AdelanteEHR, isNotificationReadBy, type AppNotification } from "@/lib/ehr";
 
 const patientId = () => AdelanteEHR.listPatients()[0].id;
 
@@ -51,15 +51,15 @@ describe("notification feed — Phase 1", () => {
     expect(other.some((n) => n.category === "task_assigned")).toBe(false);
   });
 
-  it("marks one read without touching the others", () => {
+  it("marks one read without touching the others (per person — §A3)", () => {
+    const read = (n: AppNotification) => isNotificationReadBy(n, "Priya Raman");
     const rows = AdelanteEHR.listNotificationsFor("Priya Raman", "clinical_coordinator");
-    const before = rows.filter((n) => !n.readAt).length;
-    AdelanteEHR.markNotificationRead(rows[0].id, "Priya Raman");
+    const before = rows.filter((n) => !read(n)).length;
+    const target = rows.find((n) => !read(n))!;
+    AdelanteEHR.markNotificationRead(target.id, "Priya Raman");
     const after = AdelanteEHR.listNotificationsFor("Priya Raman", "clinical_coordinator");
-    expect(after.filter((n) => !n.readAt).length).toBe(before - 1);
+    expect(after.filter((n) => !read(n)).length).toBe(before - 1);
     AdelanteEHR.markAllNotificationsRead("Priya Raman", "clinical_coordinator");
-    expect(
-      AdelanteEHR.listNotificationsFor("Priya Raman", "clinical_coordinator").every((n) => n.readAt),
-    ).toBe(true);
+    expect(AdelanteEHR.listNotificationsFor("Priya Raman", "clinical_coordinator").every(read)).toBe(true);
   });
 });

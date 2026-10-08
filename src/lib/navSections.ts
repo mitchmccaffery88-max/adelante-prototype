@@ -8,6 +8,7 @@ import { canViewCoordination } from "@/lib/coordinationRoles";
 import { IN_FACILITY_NAV_IDS, inFacilityEnabled } from "@/lib/inFacility";
 import { canOpenCaseloadReview } from "@/lib/caseloadRoles";
 import { DATA_EXCHANGE_ROLES } from "@/lib/dataExchangeRoles";
+import { COMPLIANCE_ROLES } from "@/lib/complianceRoles";
 // §Platform nav — RBAC-driven navigation registry (Phase 1).
 //
 // This is the cross-patient sibling of `recordSections.tsx`: one registry, one
@@ -141,6 +142,8 @@ export type NavGate =
   | { kind: "clinical_referrals" }
   /** HIE operations hub — sys_admin / clinical_coordinator only (DATA_EXCHANGE_ROLES). */
   | { kind: "data_exchange" }
+  /** §Access A1 — Quality & compliance (sys_admin, credentialing coordinator). */
+  | { kind: "compliance" }
   | { kind: "county_reporting" }
   | { kind: "nursing_workspace" }
   | { kind: "care_partner_directory" }
@@ -700,6 +703,16 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["documents"] },
   },
   {
+    // §Access A1 — outside-caseload report, unusual volume, restricted-record opens.
+    id: "quality-compliance",
+    label: "Quality & compliance",
+    desc: "Chart access monitoring (Draft)",
+    icon: FileSearch,
+    to: "/quality-compliance",
+    group: "administration",
+    gate: { kind: "compliance" },
+  },
+  {
     id: "admin-credentialing",
     label: "Credentialing",
     desc: "Licenses, DEA & enrollments",
@@ -811,6 +824,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "coordination_desk") return canViewCoordination(role);
   if (entry.gate.kind === "caseload_review") return canOpenCaseloadReview(role);
   if (entry.gate.kind === "data_exchange") return DATA_EXCHANGE_ROLES.has(role);
+  if (entry.gate.kind === "compliance") return COMPLIANCE_ROLES.includes(role);
   if (entry.gate.kind === "county_reporting") return canViewCountyReporting(role);
   if (entry.gate.kind === "nursing_workspace") return NURSING_ROLES.includes(role);
   if (entry.gate.kind === "care_partner_directory") return canReadPartnerDirectory(role);

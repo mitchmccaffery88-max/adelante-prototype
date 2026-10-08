@@ -13,6 +13,7 @@ import { useActingStaff } from "@/lib/roles";
 import { useEhr } from "@/lib/ehr";
 import { myOpenItems } from "@/lib/myWork";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
+import { isStaffWorkPage } from "@/lib/searchPlacement";
 import { AskAdelPanel } from "@/components/AskAdelPanel";
 import { HydratedCount } from "@/components/HydratedCount";
 
@@ -94,7 +95,7 @@ export function StaffBreadcrumbs() {
 
       {/* Standardized right-hand controls — role-driven, not page-driven. */}
       <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:justify-end">
-        <StaffPatientSearch />
+        {isStaffWorkPage(pathname) && <StaffPatientSearch />}
         {/* §Phase 5e — prototype assistant entry point; hides itself for a
             role with no question and no shortcut. */}
         <AskAdelPanel />

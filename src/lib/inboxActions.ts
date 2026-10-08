@@ -340,7 +340,7 @@ export function seedInboxActionsDemo() {
 export function stripTaskPrefix(subject: string): string {
   let s = subject.trim();
   for (;;) {
-    const next = s.replace(/^(follow up|task assigned)\s*[—–:-]\s*/i, "");
+    const next = s.replace(/^(follow up|task assigned|new task)\s*[—–:-]\s*/i, "");
     if (next === s) return s;
     s = next.trim();
   }

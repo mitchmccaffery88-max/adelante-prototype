@@ -1,3 +1,4 @@
+import { STAFF_ROSTER } from "./roles";
 // §B3/B4 — outpatient episodes of care and higher-level-of-care referrals.
 // Separate from the in-facility pre-release episodes (unchanged). All writes
 // audit through AdelanteEHR._recordAudit; notifications are Part 2-safe.
@@ -92,7 +93,15 @@ const audit = (action: string, patientId: string, actor: Actor, detail: Record<s
   AdelanteEHR._recordAudit({ category: "clinical", action, patientId, actorId: actor.name, actorRole: actor.role, detail });
 function notifyTeam(patientId: string, subject: string, body: string, category: "episode_changed" | "hloc_referral") {
   const p = AdelanteEHR.getPatient(patientId);
-  if (p?.primaryClinicianId)
+  // §A3 — narrowed: the patient's assigned therapist / primary clinician (named people), not every therapist.
+  const team = new Set<string>();
+  for (const id of [p?.primaryClinicianId, p?.prescriberStaffId, p?.caseManagerId]) {
+    const m = id ? STAFF_ROSTER.find((s) => (s.id === id || s.clinicianId === id) && s.active !== false && s.role !== "sys_admin") : undefined;
+    if (m && (m.role === "therapist" || id === p?.primaryClinicianId)) team.add(m.id);
+  }
+  for (const sid of team)
+    AdelanteEHR.notify({ recipientStaffId: sid, category, subject, body, linkRoute: "/record/$patientId", linkParams: { patientId }, patientId });
+  if (team.size === 0 && p?.primaryClinicianId)
     AdelanteEHR.notify({ recipientRole: "therapist", category, subject, body, linkRoute: "/record/$patientId", linkParams: { patientId }, patientId });
   AdelanteEHR.notify({ recipientRole: "clinical_coordinator", category, subject, body, linkRoute: "/record/$patientId", linkParams: { patientId }, patientId });
 }

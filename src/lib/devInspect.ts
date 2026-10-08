@@ -27,6 +27,16 @@ export function installDevInspect(navigate?: (to: string) => void) {
       ]);
       return { cp, ct, tags, sc, eng };
     },
+    /** §Access batch — same module instances the app uses. */
+    access: async () => {
+      const [ca, st, ra, nr] = await Promise.all([
+        import("@/lib/chartAccess"),
+        import("@/lib/staffThreads"),
+        import("@/lib/actions/runAction"),
+        import("@/lib/notificationRouting"),
+      ]);
+      return { ca, st, ra, nr };
+    },
     /** V1 — Brief consistency check over every patient × staff role. */
     checkBrief: async () => {
       const [{ checkAllBriefs }, { STAFF_ROLES }] = await Promise.all([import("@/lib/adelBriefCheck"), import("@/lib/roles")]);

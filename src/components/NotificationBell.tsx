@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { AdelanteEHR, useEhr, type AppNotification } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, isNotificationReadBy, type AppNotification } from "@/lib/ehr";
+import { syncBellPointers, bellFilterMatch, type BellFilter } from "@/lib/notificationRouting";
 import { useActingStaff } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -41,8 +42,20 @@ export function NotificationBell({
       : AdelanteEHR.listMemberNotifications(audience, memberId),
   );
   const [hydrated, setHydrated] = useState(false);
+  const [filter, setFilter] = useState<BellFilter>("all");
   useEffect(() => setHydrated(true), []);
-  const unread = hydrated ? rows.filter((n) => !n.readAt).length : 0;
+  const isRead = (n: AppNotification) => (isMember ? !!n.readAt : isNotificationReadBy(n, staffName, staffId));
+  // §A3 — keep task pointers in step with My work (on load, every 15s, on open).
+  const sync = () => { if (!isMember && staffId) { try { syncBellPointers({ staffId, staffName, role }); } catch { /* derived rows unavailable */ } } };
+  useEffect(() => {
+    if (!hydrated || isMember || !staffId) return;
+    sync();
+    const t = setInterval(sync, 15_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, staffId, role]);
+  const unread = hydrated ? rows.filter((n) => !isRead(n)).length : 0;
+  const shown = isMember ? rows : rows.filter((n) => bellFilterMatch(n.kind, filter));
 
   const open = (n: AppNotification) => {
     if (isMember) {
@@ -50,7 +63,7 @@ export function NotificationBell({
       if (n.linkRoute) navigate({ to: n.linkRoute });
       return;
     }
-    AdelanteEHR.markNotificationRead(n.id, staffName);
+    AdelanteEHR.markNotificationRead(n.id, staffName, staffId);
     if (!n.linkRoute) return;
     const params = n.linkParams ?? {};
     if (n.linkRoute === "/record/$patientId" && params.patientId) {
@@ -65,7 +78,7 @@ export function NotificationBell({
   };
 
   return (
-    <Popover>
+    <Popover onOpenChange={(o) => { if (o) sync(); }}>
       <PopoverTrigger
         aria-label={`Notifications${unread ? ` — ${unread} unread` : ""}`}
         className={cn(
@@ -97,29 +110,36 @@ export function NotificationBell({
             {isMember && lang === "es" ? "Marcar todo leído" : "Mark all read"}
           </Button>
         </div>
+        {!isMember && (
+          <div className="flex gap-1 border-b px-2 py-1.5" role="group" aria-label="Notification filter">
+            {(["all", "tasks", "updates", "mentions"] as BellFilter[]).map((f) => (
+              <Button key={f} size="sm" variant={filter === f ? "secondary" : "ghost"} className="h-7 px-2 text-xs capitalize" aria-pressed={filter === f} onClick={() => setFilter(f)}>{f}</Button>
+            ))}
+          </div>
+        )}
         <ScrollArea className="max-h-80">
-          {rows.length === 0 ? (
+          {shown.length === 0 ? (
             <p className="px-3 py-6 text-center text-xs text-muted-foreground">
               {isMember ? (lang === "es" ? "No hay avisos nuevos." : "No new notifications.") : `No notifications for ${staffName}.`}
             </p>
           ) : (
             <ul className="divide-y">
-              {rows.slice(0, 30).map((n) => (
-                <li key={n.id}>
+              {shown.slice(0, 30).map((n) => (
+                <li key={n.id} data-testid="bell-item" data-kind={n.kind ?? "update"} data-read={isRead(n) ? "true" : "false"}>
                   <button
                     type="button"
                     onClick={() => open(n)}
                     className={cn(
                       "w-full px-3 py-2 text-left hover:bg-secondary/60",
-                      !n.readAt && "bg-teal/5",
+                      !isRead(n) && "bg-teal/5",
                     )}
                   >
                     <span className="flex items-center gap-2">
-                      {!n.readAt && <span className="h-1.5 w-1.5 rounded-full bg-teal" />}
+                      {!isRead(n) && <span className="h-1.5 w-1.5 rounded-full bg-teal" />}
                       <span
                         className={cn(
                           "text-xs text-navy",
-                          !n.readAt ? "font-semibold" : "font-medium opacity-80",
+                          !isRead(n) ? "font-semibold" : "font-medium opacity-80",
                         )}
                       >
                         {n.subject}

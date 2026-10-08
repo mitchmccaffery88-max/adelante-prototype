@@ -238,12 +238,16 @@ export function postThreadMessage(threadId: string, input: { body: string; refs?
   const me = t.participants.find((p) => p.staffId === actor.staffId)!;
   me.lastReadAt = msg.at;
   // Replying clears the author's own open mention items in this thread.
-  for (const m of mentions) if (m.threadId === t.id && m.staffId === actor.staffId && !m.clearedAt) { m.clearedAt = msg.at; m.clearedBy = "reply"; }
+  for (const m of mentions) if (m.threadId === t.id && m.staffId === actor.staffId && !m.clearedAt) { m.clearedAt = msg.at; m.clearedBy = "reply"; AdelanteEHR.closeTaskPointer(`reply:${m.id}`); }
   for (const sid of msg.mentions) {
-    mentions.push({ id: id("men"), threadId: t.id, messageId: msg.id, staffId: sid, patientId: t.patientId, createdAt: msg.at });
+    const men: MentionItem = { id: id("men"), threadId: t.id, messageId: msg.id, staffId: sid, patientId: t.patientId, createdAt: msg.at };
+    mentions.push(men);
+    // §A3 — @mention → the mentioned person only, neutral text, linked to "Reply needed".
+    AdelanteEHR.notify({ recipientStaffId: sid, category: "task_assigned", kind: "mention", taskKey: `reply:${men.id}`, subject: MENTION_NOTIFY_SUBJECT, body: THREAD_NOTIFY_BODY, linkRoute: "/message-queue" });
   }
   for (const p of t.participants) {
     if (p.staffId === actor.staffId) continue;
+    if (msg.mentions.includes(p.staffId)) continue;
     AdelanteEHR.notify({
       recipientStaffId: p.staffId,
       category: "task_assigned",
@@ -296,6 +300,7 @@ export function markMentionDone(mentionId: string, actor: ThreadActor): MentionI
   if (m.clearedAt) return m;
   m.clearedAt = new Date().toISOString();
   m.clearedBy = "done";
+  AdelanteEHR.closeTaskPointer(`reply:${m.id}`);
   const t = getOrThrow(m.threadId);
   audit("staff_thread_mention_done", t, actor, { mentionId });
   AdelanteEHR._emit();
@@ -324,6 +329,9 @@ export function unreadCount(t: StaffThread, staffId: string): number {
   return t.messages.filter((m) => m.authorStaffId !== staffId && (!me?.lastReadAt || m.at > me.lastReadAt)).length;
 }
 /** Read receipts for a message: who has read up to it. */
+/** §A3 — neutral @mention bell text. */
+export const MENTION_NOTIFY_SUBJECT = "You were mentioned in a team thread";
+
 export function readBy(t: StaffThread, msg: ThreadMessage): string[] {
   return t.participants.filter((p) => p.staffId !== msg.authorStaffId && p.lastReadAt && p.lastReadAt >= msg.at).map((p) => p.name);
 }

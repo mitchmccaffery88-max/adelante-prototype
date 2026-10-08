@@ -349,6 +349,8 @@ export function seedDemoInbox(): void {
   readOne("Luz Herrera", "ecm_provider");
   readOne("Priya Raman", "clinical_coordinator");
   readOne("Dr. M. Bagga", "physician");
+  // §A3 — realistic bell: at most 5 seeded role broadcasts per role.
+  safe(() => { AdelanteEHR.trimRoleBroadcasts(5); });
 }
 
 seedDemoInbox();

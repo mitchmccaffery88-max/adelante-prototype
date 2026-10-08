@@ -8,6 +8,7 @@
 // defence in depth, not a replacement.
 import { STAFF_NAV, canSeeNavEntry, type NavEntry } from "./navSections";
 import type { StaffRole } from "./roles";
+import { chartEntryFor } from "./chartAccess";
 
 /** Where a denied role gets sent, in preference order. */
 const PREFERRED_LANDINGS = [
@@ -68,4 +69,18 @@ export function resolveNavAccess(role: StaffRole, pathname: string): NavAccess {
     redirectTo: safeLandingFor(role),
     message: `${entry.label} isn't available for your role`,
   };
+}
+/**
+ * §Access A1 — /record/$patientId (and the print view) are gated by the chart
+ * entry rule: role + site, Draft — pending exec RBAC review. Notification deep
+ * links land here too, so they follow the same rule. Returns undefined for
+ * any other path.
+ */
+export function resolveChartRouteAccess(role: StaffRole, staffId: string | undefined, pathname: string): NavAccess | undefined {
+  const m = /^\/(?:record|print\/patient-records)\/([^/]+)\/?$/.exec(pathname);
+  if (!m) return undefined;
+  const entry: NavEntry = { id: "chart", label: "Client chart", to: "/record/$patientId", group: "care", gate: { kind: "open" } } as unknown as NavEntry;
+  const e = chartEntryFor(role, staffId, decodeURIComponent(m[1]!));
+  if (e.ok || e.reason === "missing") return { status: "allowed", entry };
+  return { status: "denied", entry, redirectTo: safeLandingFor(role), message: e.message };
 }

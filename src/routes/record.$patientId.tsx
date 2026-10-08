@@ -2,6 +2,7 @@
 // Path is /record/$patientId so it can never collide with the patient-facing
 // self-service view at /patient.
 import { useEffect, useState } from "react";
+import { RestrictedChartGate } from "@/components/chart/RestrictedChartGate";
 import { recordView, ACCESS_LOG_ROLES } from "@/lib/accessLog";
 import { ChartHeader } from "@/components/chart/ChartHeader";
 import { BriefTab } from "@/components/chart/BriefTab";
@@ -99,6 +100,7 @@ function RecordChartPage() {
     );
   }
   return (
+    <RestrictedChartGate patientId={patient.id}>
     <ChartBody
       patientId={patient.id}
       section={section}
@@ -109,6 +111,7 @@ function RecordChartPage() {
         navigate({ to: "/record/$patientId", params: { patientId }, search: { section: id } })
       }
     />
+    </RestrictedChartGate>
   );
 }
 
