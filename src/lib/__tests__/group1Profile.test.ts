@@ -70,6 +70,7 @@ describe("P3 primary / secondary facility and the chart-entry site rule", () => 
     const actor = { role: th.role, staffId: th.id, clinicianId: th.clinicianId };
     const hanford = listSites().find((s) => s.name === DEMO_SECOND_SITE)!;
     const visalia = listSites().find((s) => s.name === "Premier Visalia")!;
+    saveStaffProfile(actor, { ownerId: owner, specialtyTags: [], primarySiteId: visalia.id, secondarySiteIds: [] });
     expect(() => saveStaffHours(actor, { clinicianId: owner, weekday: 6, start: "09:00", end: "10:00", modality: "hybrid", siteId: hanford.id, careTypes: [], reason: "Try" } as never)).toThrow(/profile/);
     saveStaffProfile(actor, { ownerId: owner, specialtyTags: [], primarySiteId: visalia.id, secondarySiteIds: [hanford.id] });
     expect(hourSitesFor(owner)).toContain(hanford.id);
