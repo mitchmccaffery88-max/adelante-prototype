@@ -20,7 +20,7 @@ export function completePlayerLesson(patientId: string, id: string, surface: "li
       const copy = lang === "es" ? playerEs : playerEn;
       const tool = surface === "library" ? liveLibraryItem(id)?.toolkitLabel : liveRecoveryLesson(id)?.toolkitLabel;
       const reminder = response.text?.reminder ? copy[response.text.reminder as keyof typeof copy] : undefined;
-      savePlayerToolkit(patientId, id, [tool, response.todayAction, reminder, response.text?.support, ...(selections?.supportPeople ?? [])].filter(Boolean).join(" · ") || copy.playerResponses, "library");
+      savePlayerToolkit(patientId, id, response.text?.toolkitPreview || [tool, response.todayAction, reminder, response.text?.support, ...(selections?.supportPeople ?? [])].filter(Boolean).join(" · ") || copy.playerResponses, "library");
     }
   }
   return result;

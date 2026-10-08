@@ -25,6 +25,6 @@ export function LessonReadAloud({ text, stepKey, sensitive = false }: { text: st
       </div>
     </div>
     {tapOnly && <p className="text-sm text-foreground">{t("playerTapOnly")}</p>}
-    {voice.speaking && <p role="status" className="rounded-xl bg-accent p-3 text-accent-foreground">{voice.transcript}</p>}
+    {voice.speaking && <p role="status" className="rounded-xl bg-accent p-3 text-accent-foreground"><mark className="bg-accent text-accent-foreground">{voice.activeSentence || voice.transcript}</mark></p>}
   </div>;
 }

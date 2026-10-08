@@ -24,5 +24,5 @@ export function relatedPlayerContent(id: string, lang: "en" | "es" = "en") {
     const a = source.meta[key as "sdoh"] as unknown[] | undefined;
     const b = item.meta[key as "sdoh"] as unknown[] | undefined;
     return a?.some((tag) => b?.includes(tag));
-  })).slice(0, 2).map((item) => ({ label: lang === "es" ? item.titleEs ?? "Español próximamente" : item.title, to: item.to, search: item.search, reason: "Draft — matching content tags" }));
+   })).slice(0, 2).map((item) => ({ label: lang === "es" ? item.titleEs ?? "Español próximamente" : item.title, to: item.to, search: item.search, reason: lang === "es" ? "Borrador — temas relacionados" : "Draft — matching content tags" }));
 }

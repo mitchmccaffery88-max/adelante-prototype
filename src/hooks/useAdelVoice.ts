@@ -33,6 +33,7 @@ export function useAdelVoice(lang: VoiceLang) {
   const [rate, setRate] = useState<VoiceRate>("normal");
   const [speaking, setSpeaking] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [activeSentence, setActiveSentence] = useState("");
   const [listening, setListening] = useState(false);
   const [canListen, setCanListen] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
@@ -43,6 +44,7 @@ export function useAdelVoice(lang: VoiceLang) {
   const stop = useCallback(() => {
     if (ttsSupported()) window.speechSynthesis.cancel();
     setSpeaking(false);
+    setActiveSentence("");
   }, []);
 
   const speak = useCallback((text: string, opts: { force?: boolean } = {}) => {
@@ -51,6 +53,12 @@ export function useAdelVoice(lang: VoiceLang) {
     if (!speakGuard(text, lang) && !opts.force) return;
     window.speechSynthesis.cancel();
     const u = new window.SpeechSynthesisUtterance(text);
+    const sentences = [...text.matchAll(/[^.!?]+[.!?]?/g)];
+    setActiveSentence(sentences[0]?.[0]?.trim() ?? text);
+    u.onboundary = (event) => {
+      const sentence = sentences.find((s, i) => event.charIndex >= (s.index ?? 0) && event.charIndex < (sentences[i + 1]?.index ?? text.length));
+      if (sentence) setActiveSentence(sentence[0].trim());
+    };
     u.lang = speechLangTag(lang);
     u.rate = VOICE_RATE_VALUE[rate];
     const v = pickVoice(lang, window.speechSynthesis.getVoices());
@@ -83,7 +91,7 @@ export function useAdelVoice(lang: VoiceLang) {
   useEffect(() => () => { if (ttsSupported()) window.speechSynthesis.cancel(); recRef.current?.abort(); }, []);
 
   return {
-    enabled, setEnabled: setAdelVoiceOn, rate, setRate, speaking, transcript,
+    enabled, setEnabled: setAdelVoiceOn, rate, setRate, speaking, transcript, activeSentence,
     speak, replay, stop, listen, stopListening, listening, canListen, canSpeak,
   };
 }

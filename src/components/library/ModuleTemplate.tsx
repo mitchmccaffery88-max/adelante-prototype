@@ -1039,7 +1039,7 @@ export function ModuleTemplate({
             ifPicks={step.ifPicks}
             thenPicks={step.thenPicks}
             onChange={step.onChange}
-          /><label>{t("playerConfidence")} · {response?.confidence ?? t("playerUnanswered")}</label><div role="group" aria-label={t("playerConfidence")}><Slider aria-label={t("playerConfidence")} min={0} max={10} step={1} value={response?.confidence === undefined ? [] : [response.confidence]} onValueChange={(v) => patch({ confidence: v[0] })} />{response?.confidence === undefined && <Button variant="outline" className="rounded-full" onClick={() => patch({ confidence: 0 })}>{t("playerConfidenceStart")}</Button>}</div></div>
+          /><label>{t("playerConfidence")} · {response?.confidence ?? t("playerUnanswered")}</label><div role="group" aria-label={t("playerConfidence")} className="flex flex-wrap gap-2">{Array.from({ length: 11 }, (_, n) => <Button key={n} variant={response?.confidence === n ? "default" : "outline"} aria-pressed={response?.confidence === n} className="min-w-11 rounded-full" onClick={() => patch({ confidence: n })}>{n}</Button>)}</div></div>
         )}
         {step.kind === "activity" && (
           <Activity activity={step.activity} response={response} onChange={patch} />
@@ -1096,7 +1096,7 @@ export function ModuleTemplate({
       </Step>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        <Button type="button" variant="outline" disabled={index === 0} onClick={() => go(index - 1)}>
+        <Button type="button" className="rounded-full" variant="outline" disabled={index === 0} onClick={() => go(index - 1)}>
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden /> {t("modBack")}
         </Button>
         {last ? (
