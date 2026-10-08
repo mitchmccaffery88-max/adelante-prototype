@@ -63,6 +63,7 @@ export type CredentialKind =
   | "board_cert"
   | "cv"
   | "caqh"
+  | "degree"
   | "other";
 export type CredentialStatus = "current" | "expiring" | "expired" | "missing" | "under_review";
 
@@ -144,6 +145,8 @@ export interface AvailabilityBlock {
    */
   siteId?: string;
   careTypes: ServiceType[];
+  /** §Group 1 A3 — care-type tags (staffProfile tag list). Empty = all the site offers. */
+  careTags?: string[];
 }
 /** §Calendars L2 — time-off types. Private: other staff only ever see "Out". */
 export type TimeOffType = "vacation" | "sick" | "training";

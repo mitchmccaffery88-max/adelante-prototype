@@ -18,12 +18,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt, type CredentialKind } from "@/lib/ehr-ext";
-import { useActingStaff } from "@/lib/roles";
+import { STAFF_ROSTER, useActingStaff } from "@/lib/roles";
 import {
   CREDENTIAL_ASSIST_NOTE,
   CREDENTIAL_NO_RECORD_NOTE,
   canAssistCredentials,
   credentialAccessFor,
+  credentialKindsFor,
+  CREDENTIAL_KIND_LABEL,
 } from "@/lib/credentialAccess";
 import {
   CREDENTIAL_ACCEPT_ATTR,
@@ -45,15 +47,7 @@ export const Route = createFileRoute("/clinician-credentials")({
   component: CredentialsPage,
 });
 
-const KINDS: { key: CredentialKind; label: string }[] = [
-  { key: "license", label: "State license" },
-  { key: "dea", label: "DEA" },
-  { key: "malpractice", label: "Malpractice COI" },
-  { key: "board_cert", label: "Board certification" },
-  { key: "cv", label: "CV" },
-  { key: "caqh", label: "CAQH attestation" },
-  { key: "other", label: "Other" },
-];
+const KINDS: { key: CredentialKind; label: string }[] = (Object.keys(CREDENTIAL_KIND_LABEL) as CredentialKind[]).map((key) => ({ key, label: CREDENTIAL_KIND_LABEL[key] }));
 
 const statusStyle: Record<string, string> = {
   current: "bg-success/20 text-success",
@@ -75,9 +69,12 @@ function CredentialsPage() {
   const access = credentialAccessFor(acting, targetId || undefined);
   const target = clinicians.find((c) => c.id === targetId);
 
+  const ownerRole = STAFF_ROSTER.find((s) => s.clinicianId === targetId)?.role;
+  const allowedKinds = credentialKindsFor(ownerRole);
   const creds = useEhrExt(() => (targetId ? AdelanteEHRExt.credentialsForClinician(targetId) : []));
 
-  const [kind, setKind] = useState<CredentialKind>("license");
+  const [pickedKind, setKind] = useState<CredentialKind>("license");
+  const kind: CredentialKind = allowedKinds.includes(pickedKind) ? pickedKind : allowedKinds[0];
   const [number, setNumber] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [file, setFile] = useState<CredentialFilePayload | null>(null);
@@ -220,7 +217,7 @@ function CredentialsPage() {
                   <Label>Kind</Label>
                   <Select value={kind} onValueChange={(v) => setKind(v as CredentialKind)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{KINDS.map((k) => <SelectItem key={k.key} value={k.key}>{k.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>{KINDS.filter((k) => allowedKinds.includes(k.key)).map((k) => <SelectItem key={k.key} value={k.key}>{k.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div><Label>Number</Label><Input value={number} onChange={(e) => setNumber(e.target.value)} /></div>

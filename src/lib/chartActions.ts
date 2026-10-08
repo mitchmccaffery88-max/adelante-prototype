@@ -19,7 +19,8 @@ import { EPISODE_ROLES, HLOC_REFERRAL_ROLES } from "@/lib/outpatientCare";
 import { canUseCaseloadReview } from "@/lib/caseloadRoles";
 import { placeLabOrder, requestScreener, recordMetabolic } from "@/lib/chartOrders";
 import { saveScreenerDraft } from "@/lib/screenerDrafts";
-import { addStructuredGoal, assignToGoal } from "@/lib/structuredCarePlan";
+import { addStructuredGoal, assignToGoal, resolveFlagReview } from "@/lib/structuredCarePlan";
+import { addCareTag, canEditTagList, renameCareTag, retireCareTag, saveStaffProfile, setBookingsFrozen, setSiteServices } from "@/lib/staffProfile";
 import { acceptAsamSuggestion, dismissAsamSuggestion, editAsamSuggestion, markAsamGoalReviewed } from "@/lib/asamCarePlan";
 import { canReviewSeverity, reviewSeverityFlag } from "@/lib/severityFlags";
 import { createHlocReferral, dischargeEpisode } from "@/lib/outpatientCare";
@@ -953,6 +954,33 @@ export const CHART_ACTIONS: ChartAction[] = [
     // Every staff member has a calendar; the store refuses edits to someone else's.
     allowed: () => ok(),
   })),
+  // ---- §Group 1 — staff profile, tag list, site services, freeze (store re-checks) ----
+  ...([
+    ["profile_save", "Save my profile", "Guardar mi perfil", "saveStaffProfile", saveStaffProfile],
+    ["bookings_freeze", "Freeze / reactivate bookings", "Congelar / reactivar citas", "setBookingsFrozen", setBookingsFrozen],
+  ] as const).map(([id, en, es, name, fn]): ChartAction => ({
+    id, label: { en, es }, group: "admin", menu: false, needsPatient: false,
+    check: "own profile, or sys_admin / clinical_coordinator",
+    store: refs([name, fn as StoreFn]),
+    allowed: () => ok(),
+  })),
+  ...([
+    ["care_tag_add", "Add specialty / care-type tag", "Agregar etiqueta", "addCareTag", addCareTag],
+    ["care_tag_rename", "Rename tag", "Renombrar etiqueta", "renameCareTag", renameCareTag],
+    ["care_tag_retire", "Retire tag", "Retirar etiqueta", "retireCareTag", retireCareTag],
+    ["site_services_set", "Set site services offered", "Definir servicios de la sede", "setSiteServices", setSiteServices],
+  ] as const).map(([id, en, es, name, fn]): ChartAction => ({
+    id, label: { en, es }, group: "admin", menu: false, needsPatient: false,
+    check: "canEditTagList (sys_admin / clinical_coordinator)",
+    store: refs([name, fn as StoreFn]),
+    allowed: ({ role }) => (canEditTagList(role) ? ok() : hide("Only a system administrator or clinical coordinator can edit this list.")),
+  })),
+  {
+    id: "plan_flag_review", label: { en: "Keep or retire after flag removed", es: "Mantener o retirar tras quitar la marca" }, group: "care", menu: false, needsPatient: true,
+    check: "canEditPlan + Part 2 (store)",
+    store: refs(["resolveFlagReview", resolveFlagReview as StoreFn]),
+    allowed: ({ role }) => (canEditPlan(role) ? ok() : hide("Your role can't change the care plan.")),
+  },
   {
     id: "calendar_reschedule_done", label: { en: "Mark reschedule handled", es: "Marcar reprogramación atendida" }, group: "admin", menu: false, needsPatient: false,
     check: "canManageStaffCalendars (coordinator / sys_admin)",

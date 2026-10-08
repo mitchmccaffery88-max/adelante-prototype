@@ -11,6 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import "../lib/demoInboxSeed";
+import "../lib/flagJourneys";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";

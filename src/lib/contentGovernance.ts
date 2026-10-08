@@ -30,6 +30,8 @@ export interface ContentMeta {
   owner?: string;
   nextReview?: string;
   lastReviewed?: string;
+  /** §Group 1 C2 — specialty flags this journey addresses (Draft): drives automatic care-plan adds. */
+  flags?: ("justice_involved" | "sud")[];
   /** Tags filled in by the shipped-content backfill, not a human. */
   backfilled?: boolean;
 }

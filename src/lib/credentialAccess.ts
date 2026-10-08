@@ -93,3 +93,24 @@ export function credentialAccessFor(
     note: "You can only manage your own credential file.",
   };
 }
+
+// §Group 1 P4 — which credential entry types apply to the file owner's role,
+// and the short summary shown on the profile. Admin roles never see licence
+// or DEA fields; DEA only for prescribers.
+import type { CredentialKind } from "@/lib/ehr-ext";
+const LICENSED_ROLES: StaffRole[] = ["physician", "pmhnp", "nurse_rn", "lvn", "therapist", "sud_counselor", "clinical_trainee"];
+const PRESCRIBER_ROLES: StaffRole[] = ["physician", "pmhnp"];
+export const CREDENTIAL_KIND_LABEL: Record<CredentialKind, string> = {
+  license: "State license", dea: "DEA", malpractice: "Malpractice COI", board_cert: "Board certification", cv: "CV", caqh: "CAQH attestation", degree: "Degree", other: "Other",
+};
+export function credentialKindsFor(role: StaffRole | undefined): CredentialKind[] {
+  if (role && PRESCRIBER_ROLES.includes(role)) return ["license", "dea", "malpractice", "board_cert", "degree", "cv", "caqh", "other"];
+  if (role && LICENSED_ROLES.includes(role)) return ["license", "malpractice", "board_cert", "degree", "cv", "caqh", "other"];
+  return ["degree", "cv", "other"];
+}
+export function credentialSummary(docs: { kind: CredentialKind; expiresAt?: string }[]): string {
+  const lic = docs.filter((d) => d.kind === "license" && d.expiresAt).sort((a, b) => (b.expiresAt ?? "").localeCompare(a.expiresAt ?? ""))[0];
+  const n = docs.length;
+  const count = `${n} document${n === 1 ? "" : "s"}`;
+  return lic ? `Licence valid to ${lic.expiresAt} · ${count}` : count;
+}

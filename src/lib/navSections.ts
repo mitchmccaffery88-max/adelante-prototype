@@ -1,3 +1,4 @@
+import { availabilityPageTitle, isBookableRole } from "./staffProfile";
 import { canBrowseContent } from "./contentStaff";
 import { hasSudReportingAccess } from "@/lib/sudReportingAccess";
 import { canUseEscalations } from "./escalations";
@@ -773,7 +774,7 @@ export const STAFF_NAV: NavEntry[] = [
   },
   {
     id: "my-calendar",
-    label: "My calendar",
+    label: "My availability",
     desc: "Working hours & time off",
     icon: CalendarClock,
     to: "/my-calendar",
@@ -844,7 +845,12 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
 
 /** Flat, gated entry list for a role, in registry order. */
 export function staffNavForRole(role: StaffRole): NavEntry[] {
-  return STAFF_NAV.filter((e) => canSeeNavEntry(role, e));
+  return STAFF_NAV.filter((e) => canSeeNavEntry(role, e)).map((e) => labelForRole(e, role));
+}
+/** §Group 1 A1 — role-specific labels (availability page). Same route, same gate. */
+export function labelForRole(e: NavEntry, role: StaffRole): NavEntry {
+  if (e.id === "my-calendar") return { ...e, label: availabilityPageTitle(role), desc: isBookableRole(role) ? "Hours, care types, time off & bookings" : "Working hours & time off" };
+  return e;
 }
 
 export interface NavGroupView {

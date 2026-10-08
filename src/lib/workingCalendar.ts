@@ -17,6 +17,7 @@ import { AdelanteEHRExt, ehrBus, type AvailabilityBlock, type AvailabilityExcept
 import { DEFAULT_FACILITY_TZ, facilityDateKey, fromFacilityWallClock, toFacilityParts } from "./facilityTime";
 import { listSites, type Site } from "./providerReference";
 import { getStaffMember, STAFF_ROSTER, type StaffRole } from "./roles";
+import { assertBlockTagsOffered, hourSitesFor, DEMO_SECOND_SITE } from "./staffProfile";
 
 export const HOLIDAY_DRAFT_LABEL = "Draft — Premier to confirm";
 export const WORKING_DAY_DRAFT_LABEL = "Draft — pending clinical sign-off";
@@ -473,6 +474,11 @@ export function saveStaffHours(actor: CalendarActor, input: Omit<AvailabilityBlo
   const reason = needReason(input.reason);
   const { reason: _r, ...block } = input;
   void _r;
+  // §Group 1 P3/A3 — hours only at the person's primary/secondary sites, and
+  // only care types the site offers.
+  const site = siteForBlock(block);
+  if (site && !hourSitesFor(input.clinicianId).includes(site)) throw new Error("Add this site to your profile (primary facility or secondary locations) before adding hours there.");
+  assertBlockTagsOffered(block.careTags, site);
   AdelanteEHRExt.upsertAvailabilityBlock(block);
   log(actor, "staff_hours_saved", input.clinicianId, reason);
   changed(input.clinicianId);
@@ -593,6 +599,9 @@ export function seedWorkingCalendars(): void {
   const visalia = listSites().find((s) => s.name === "Premier Visalia");
   if (visalia && !calendars.has(visalia.id))
     createSiteCalendarFromDefaults({ role: "sys_admin", staffId: "system" }, { siteId: visalia.id, locationIds: ["loc-visalia"], reason: "Demo seed — Premier Visalia (holidays Draft — Premier to confirm)" });
+  const second = listSites().find((s) => s.name === DEMO_SECOND_SITE);
+  if (second && !calendars.has(second.id))
+    createSiteCalendarFromDefaults({ role: "sys_admin", staffId: "system" }, { siteId: second.id, reason: "Demo seed — second site (Draft demo, holidays Draft — Premier to confirm)" });
 }
 seedWorkingCalendars();
 

@@ -4,6 +4,7 @@ import { recoveryJourneyVisible } from "./seeking";
 import { liveCurricula, type Curriculum, type CurriculumStep } from "./curriculumTypes";
 import { getEngagement } from "./engagement";
 import { liveRecoveryLessons } from "./contentCatalog";
+import { autoAddedJourneyIds } from "./flagJourneys";
 export function curriculumStepDone(patientId: string, step: CurriculumStep) {
   const e = getEngagement(patientId); if (!e) return false;
   if (step.type === "exercise") return e.completedExercises.includes(step.id);
@@ -21,6 +22,8 @@ export function patientCurriculum(id: string) { return liveCurricula().find((j) 
 
 export function curriculumVisible(patientId: string, j: Curriculum) {
   const p = AdelanteEHR.getPatient(patientId); if (!p) return false;
+  // §Group 1 C2 — a journey auto-added to the patient's own plan is theirs to see.
+  if (autoAddedJourneyIds(patientId).includes(j.id)) return true;
   if ((j.part2Sensitive || j.meta?.part2) && !recoveryJourneyVisible(p)) return false;
   if (j.justiceInvolved && !(p.coverage?.justiceInvolvement === "yes")) return false;
   if (j.positiveSignal && !((p.needs as unknown as Record<string, unknown> | undefined)?.[j.positiveSignal])) return false;
