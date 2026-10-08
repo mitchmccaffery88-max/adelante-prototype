@@ -4,6 +4,7 @@
 // Home tap-to-cycle loop (open -> in_progress -> done -> open) plus the
 // staff-side call shape, asserting the audit row content, not just its count.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { autoAddedJourneyIds } from "@/lib/flagJourneys";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { AdelanteEHR, type AuditEvent } from "@/lib/ehr";
@@ -22,7 +23,8 @@ const goalAudits = (): AuditEvent[] =>
     .reverse();
 
 beforeEach(() => {
-  const patient = AdelanteEHR.listPatients()[0]!;
+  // A patient with no flag-driven journeys: those plan rows render router links.
+  const patient = AdelanteEHR.listPatients().find((p) => !autoAddedJourneyIds(p.id).length) ?? AdelanteEHR.listPatients()[0]!;
   patientId = patient.id;
   AdelanteEHR.addGoal(patientId, `Test goal ${Math.random()}`);
   const goals = AdelanteEHR.getPatient(patientId)!.goals!;
