@@ -1,3 +1,5 @@
+import { isPart2Content } from "./contentGovernance";
+import { initializePracticeContent } from "./curriculumTypes";
 // §Content Management admin tooling — THE LIVE READ PATH.
 //
 // `src/lib/library.ts` and `src/lib/recovery.ts` stay exactly what they were:
@@ -21,7 +23,7 @@ import {
 import { RECOVERY_LESSONS, type RecoveryLesson } from "@/lib/recovery";
 import type { PopulationResolution } from "@/lib/population";
 import {
-  publishedContentOfType, publishedContent,
+  publishedContentOfType, publishedContent, getContentEntry,
   publishedVersion,
   setContentIntegrityGuard,
   subscribeContent,
@@ -105,8 +107,8 @@ function overlay<T extends { id: string }>(baseline: readonly T[], overrides: T[
 // ---------------------------------------------------------------------------
 
 export function liveExercises(): Exercise[] {
-  // Exercises remain shipped content until the staff-authoring descriptor lands.
-  return [...EXERCISES];
+  initializePracticeContent();
+  return publishedContentOfType("exercise").map((b) => ({ ...b, id: String(b.id), part2Sensitive: isPart2Content("exercise", b) }) as unknown as Exercise);
 }
 export function liveExercise(id: string) { return liveExercises().find((item) => item.id === id); }
 
@@ -236,6 +238,7 @@ export function liveRecoveryModule(id: string) {
 // completing a NEWLY PUBLISHED lesson finds its toolkit label and tool-flow
 // option sets instead of silently no-op'ing against the baseline arrays.
 setContentResolver({
+  revision: (surface, id) => getContentEntry(surface === "recovery" ? "recovery_lesson" : surface === "exercise" ? "exercise" : "library_lesson", id)?.publishedRev,
   libraryItems: liveLibraryItems,
   exercises: liveExercises,
   exercise: liveExercise,
@@ -269,6 +272,8 @@ export function containerUsage(typeId: ContentTypeId, id: string): string[] {
 }
 
 setContentIntegrityGuard((typeId, id) => {
+  const journeys = publishedContentOfType("journey").filter((b) => Array.isArray(b.steps) && (b.steps as { type: string; id: string }[]).some((s) => s.type === typeId && s.id === id));
+  if (journeys.length) return "This content is used in a live Journey. Publish a replacement in the Journey before retiring it; a reason is required.";
   const users = containerUsage(typeId, id);
   if (users.length === 0) return undefined;
   const what = typeId === "library_category" ? "library category" : "recovery module";

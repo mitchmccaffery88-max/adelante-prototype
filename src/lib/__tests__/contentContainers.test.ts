@@ -58,7 +58,7 @@ function publishModule(id: string) {
   };
   expect(RECOVERY_MODULE_TYPE.validate(body)).toEqual([]);
   expect(saveContentDraft({ typeId: "recovery_module", id, body, actor: MANAGER }).ok).toBe(true);
-  return publishContent({ typeId: "recovery_module", id, actor: MANAGER });
+  return publishContent({ typeId: "recovery_module", id, actor: { name: "Independent reviewer", staffId: "s-np1", role: "pmhnp" }, note: "Clinical review; Spanish awaiting translation" });
 }
 
 describe("library categories as managed content", () => {

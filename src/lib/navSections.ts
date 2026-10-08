@@ -1,3 +1,4 @@
+import { canBrowseContent } from "./contentStaff";
 import { hasSudReportingAccess } from "@/lib/sudReportingAccess";
 import { canUseEscalations } from "./escalations";
 import { canManageStaffCalendars, canReadSiteCalendar } from "./workingCalendar";
@@ -143,6 +144,7 @@ export type NavGate =
   | { kind: "county_reporting" }
   | { kind: "nursing_workspace" }
   | { kind: "care_partner_directory" }
+  | { kind: "content_library" }
   | { kind: "open" };
 
 export interface NavEntry {
@@ -175,6 +177,7 @@ const LEVEL_RANK: Record<AccessLevel, number> = {
 /** The full registry — every staff-facing surface in the app, gated. */
 export const STAFF_NAV: NavEntry[] = [
   // ----- Care -----
+  { id: "content-library", label: "Content library", desc: "Patient lessons, exercises, Journeys and resources", icon: BookOpen, to: "/content-library", group: "care", gate: { kind: "content_library" } },
   {
     // §Phase 4d — points at the STAFF queue, not the public submission form.
     // The public form stays public at /referral; staff reach it from the
@@ -812,6 +815,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "nursing_workspace") return NURSING_ROLES.includes(role);
   if (entry.gate.kind === "care_partner_directory") return canReadPartnerDirectory(role);
   if (entry.gate.kind === "clinical_referrals") return CLINICAL_REFERRAL_ROLES.has(role);
+  if (entry.gate.kind === "content_library") return canBrowseContent(role);
   // Batch G1: the reporting-only capability opens DMC-ODS readiness without widening screeners_sud.
   if (entry.id === "dmc-ods-readiness" && hasSudReportingAccess(role)) return true;
   const gate = entry.gate;

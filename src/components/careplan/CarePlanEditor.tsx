@@ -1,3 +1,5 @@
+import { ContentAssignmentPreview } from "@/components/admin/ContentAssignmentPreview";
+import { LearningHistory } from "./LearningHistory";
 // Staff structured care plan editor. Same access as the chart's care plan
 // section; SUD-linked goals/assignments/problems filtered by staffPlanView.
 import { act, actFor } from "@/lib/actions/act";
@@ -149,6 +151,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                     <option key={g.id} value={g.id}>{g.clinicalText.slice(0, 40)}</option>
                   ))}
                 </select>
+                <ContentAssignmentPreview id={s.activityId} />
                 <Button size="sm" data-testid={`plan-suggestion-accept-${s.id}`} disabled={!activeGoals.length} onClick={() => run(() => acceptSuggestion(patientId, s.id, suggGoal[s.id] ?? activeGoals[0]!.id, me), "Suggestion accepted")}>
                   Accept
                 </Button>
@@ -205,6 +208,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                   return (
                     <li key={a.id} className="text-xs">
                       • {a.label.en} — {a.frequency}
+                      <ContentAssignmentPreview id={a.activityId} />
                       {a.kind !== "sdoh_referral" && `, ${w.done} of ${w.target} this week`}
                       <span className="text-muted-foreground"> · {a.reason === "rule" ? "Adel suggestion, accepted" : "Ad hoc"} by {a.assignedBy}</span>
                     </li>
@@ -321,6 +325,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
         </section>
       )}
       <p className="text-[11px] text-muted-foreground">Suggestion thresholds, draft ICD-10 Z-codes and patient wording: {PLAN_DRAFT_LABEL}.</p>
+      <LearningHistory patientId={patientId} />
     </Card>
   );
 }

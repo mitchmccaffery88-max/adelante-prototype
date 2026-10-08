@@ -1,3 +1,5 @@
+import { staleContentFor } from "./contentStaff";
+import { contentType } from "./contentTypes";
 import { AdelanteEHR, type Appointment } from "@/lib/ehr";
 import { filterSudMedsForRole, roleSeesAsamSection } from "@/lib/asamReporting";
 import { asamTaskRows } from "@/lib/asamReporting";
@@ -22,7 +24,7 @@ import { NEUTRAL_TYPE_LABEL } from "@/lib/escalations";
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator" | "scheduling";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply" | "author_out" | "reschedule" | "continuity" | "coverage" | "reassign_needed";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply" | "author_out" | "reschedule" | "continuity" | "coverage" | "reassign_needed" | "content_review";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -210,6 +212,7 @@ export function workspaceActionRows(input: {
     const p = t.patientId ? patients.find((x) => x.id === t.patientId) : undefined;
     rows.push({ id: `reply:${m.id}`, kind: "reply", patientId: t.patientId ?? "", patientName: p ? `${p.firstName} ${p.lastName}` : "Team thread", label: "Reply needed — team thread", dueAt: m.createdAt, due: "Reply", group: "now", action: "Reply", sourceId: m.id });
   }
+  for (const e of staleContentFor(actor.staffId ?? "", actor.staffName, actor.role, now)) rows.push({ id: `content-review:${e.typeId}:${e.id}`, kind: "content_review", patientId: "", patientName: "Patient content", label: `Review overdue — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Past review date", group: "today", action: "Review content", sourceId: e.id });
   // Crisis always first, crisis notes pinned right after (top of Needs closing).
   const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "contact"] : ["crisis", "crisis_note", "severity", "escalation", "reply"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {

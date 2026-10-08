@@ -1,3 +1,4 @@
+import { StructuredFields, ExerciseEditor, CurriculumEditor } from "./StructuredPracticeEditor";
 // §Content Management admin tooling — THE STRUCTURED CRUD FORM.
 //
 // Driven entirely by the type descriptor's field spec, so the form matches
@@ -153,8 +154,9 @@ function ActivityEditor({
     );
   }
 
+  const rich = ["breathing", "sliders", "grounding", "decision", "rate"].includes(kind);
   const listKey =
-    kind === "checklist" ? "items" : kind === "timeline" ? "steps" : kind === "write" ? null : "cards";
+    kind === "checklist" ? "items" : kind === "timeline" ? "steps" : kind === "reflection" || kind === "sort" ? "cards" : null;
   const listValue = listKey && Array.isArray(a[listKey]) ? (a[listKey] as string[]) : [];
 
   return (
@@ -215,6 +217,7 @@ function ActivityEditor({
           />
         </div>
       )}
+      {rich && <StructuredFields value={Object.fromEntries(Object.entries(a).filter(([key]) => !["title", "prompt"].includes(key)))} onChange={(next) => set(next)} />}
       {listKey && (
         <div className="space-y-1">
           <Label className="text-xs">Options</Label>
@@ -261,6 +264,8 @@ function FieldEditor({
           {field.help}
         </p>
       )}
+      {field.kind === "exercise" && <ExerciseEditor value={value} onChange={set} />}
+      {field.kind === "curriculum" && <CurriculumEditor value={value} onChange={set} />}
       {field.kind === "text" && (
         <Input
           id={fieldId}

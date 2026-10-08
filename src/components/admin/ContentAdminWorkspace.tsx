@@ -1,3 +1,9 @@
+import { ContentInventoryTable } from "./ContentInventoryTable";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { contentVisibleToStaff } from "@/lib/contentStaff";
+import { ContentBrowse } from "./ContentBrowse";
+import { ContentAudit } from "./ContentAudit";
+import { generatedContentId } from "@/lib/contentStaff";
 // §Content Management admin tooling — the real admin surface.
 //
 // Three real jobs, one page, split the way the work actually splits:
@@ -344,6 +350,8 @@ function RemoveControl({
 const CONTENT_GROUPS: { label: string; types: ContentTypeId[] }[] = [
   { label: "Education", types: ["library_lesson", "library_category"] },
   { label: "Recovery", types: ["recovery_lesson", "recovery_module"] },
+  { label: "Exercises", types: ["exercise"] },
+  { label: "Journeys", types: ["journey"] },
   { label: "Directory", types: ["community_resource", "naloxone_access_point"] },
 ];
 
@@ -354,14 +362,15 @@ function ManageTab({ version }: { version: number }) {
   const [typeId, setTypeId] = useState<ContentTypeId>("library_lesson");
   const descriptor = contentType(typeId);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [manageQuery, setManageQuery] = useState("");
   const [newId, setNewId] = useState("");
   const [body, setBody] = useState<ContentBody | null>(null);
   const [submitNote, setSubmitNote] = useState("");
 
-  const managed = useMemo(() => listContent(typeId), [typeId, version]);
+  const managed = useMemo(() => listContent(typeId).filter((e) => contentVisibleToStaff(role, e.typeId, e.body)), [typeId, version, role]);
   const baselineOnly = useMemo(
-    () => descriptor.baselineIds().filter((id) => !getContentEntry(typeId, id)),
-    [descriptor, typeId, version],
+    () => descriptor.baselineIds().filter((id) => !getContentEntry(typeId, id) && contentVisibleToStaff(role, typeId, descriptor.baselineBody(id) ?? {})),
+    [descriptor, typeId, version, role],
   );
 
   const actor = { staffId: staffId ?? undefined, name: staffName, role };
@@ -383,19 +392,22 @@ function ManageTab({ version }: { version: number }) {
   };
 
   const startNew = () => {
-    const id = newId.trim();
-    if (!id) return toast.error("Give the new entry an id first.");
+    const title = newId.trim();
+    if (!title) return toast.error("Give the new entry a title first.");
+    const id = generatedContentId(typeId, title);
     if (getContentEntry(typeId, id) || descriptor.baselineIds().includes(id))
       return toast.error("That id is already taken.");
-    open(id, { ...descriptor.emptyBody(), id });
+    open(id, { ...descriptor.emptyBody(), id, [typeId === "recovery_module" || typeId === "library_category" ? "name" : "title"]: title });
   };
 
   const save = () => {
     if (!openId || !body) return;
+    if (!submitNote.trim()) return toast.error("A reason is required for this content change.");
     const res = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
       id: openId,
       body,
+      note: submitNote.trim(),
       actor,
       overridesBaseline: descriptor.baselineIds().includes(openId),
       validate: descriptor.validate,
@@ -406,10 +418,12 @@ function ManageTab({ version }: { version: number }) {
 
   const submit = () => {
     if (!openId || !body) return;
+    if (!submitNote.trim()) return toast.error("A reason is required for this content change.");
     const saved = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
       id: openId,
       body,
+      note: submitNote.trim(),
       actor,
       overridesBaseline: descriptor.baselineIds().includes(openId),
     });
@@ -428,15 +442,16 @@ function ManageTab({ version }: { version: number }) {
   };
 
   /**
-   * Direct publish — no second approver. The store still validates and still
-   * checks the role; it just no longer demands a different person.
+   * Editorial publishing is immediate; clinical and Part 2 content goes to independent review.
    */
   const publish = () => {
     if (!openId || !body) return;
+    if (!submitNote.trim()) return toast.error("A reason is required for this content change.");
     const saved = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
       id: openId,
       body,
+      note: submitNote.trim(),
       actor,
       overridesBaseline: descriptor.baselineIds().includes(openId),
     });
@@ -449,7 +464,7 @@ function ManageTab({ version }: { version: number }) {
       setBody(null);
       return;
     }
-    const res = contentAction("content_publish", { typeId, id: openId, actor, validate: descriptor.validate });
+    const res = contentAction("content_publish", { typeId, id: openId, actor, note: submitNote.trim(), validate: descriptor.validate });
     if (!res.ok) return toast.error(res.reason);
     toast.success("Published — patients can see this now.");
     setOpenId(null);
@@ -502,11 +517,11 @@ function ManageTab({ version }: { version: number }) {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">New entry id</Label>
+          <Label className="text-xs">New entry title</Label>
           <div className="flex gap-2">
             <Input
               className="w-56"
-              placeholder="e.g. lib_sleep_reset / res_housing_x"
+              placeholder="e.g. Housing in my first 30 days"
               value={newId}
               onChange={(e) => setNewId(e.target.value)}
               data-testid="new-content-id"
@@ -528,7 +543,9 @@ function ManageTab({ version }: { version: number }) {
         </p>
       )}
 
-      {openId && body ? (
+      <Input aria-label="Search managed content" placeholder="Search this type" value={manageQuery} onChange={(e) => setManageQuery(e.target.value)} />
+      <Sheet open={!!openId && !!body} onOpenChange={(isOpen) => { if (!isOpen) { setOpenId(null); setBody(null); } }}><SheetContent className="top-12 h-[calc(100dvh-3rem)] w-full overflow-y-auto sm:max-w-6xl"><SheetHeader><SheetTitle>Edit {descriptor.label}</SheetTitle></SheetHeader>
+      {openId && body && (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="space-y-4 p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -557,9 +574,10 @@ function ManageTab({ version }: { version: number }) {
               </ul>
             )}
             <div className="space-y-1">
-              <Label className="text-xs">Note (optional)</Label>
+              <Label className="text-xs">Reason (required)</Label>
               <Textarea
                 rows={2}
+                aria-label="Content change reason"
                 value={submitNote}
                 onChange={(e) => setSubmitNote(e.target.value)}
               />
@@ -599,56 +617,20 @@ function ManageTab({ version }: { version: number }) {
           </Card>
           <ContentPreview descriptor={descriptor} body={body} />
         </div>
-      ) : typeId === "community_resource" ? (
+      )}</SheetContent></Sheet>
+      {!openId && (typeId === "community_resource" ? (
         <ResourceVerificationQueue onEdit={(id) => {
           const existing = getContentEntry("community_resource", id);
           if (existing) open(id, existing.body);
           else openBaseline(id);
         }} />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
           <Card className="p-5">
             <p className="text-xs font-medium uppercase tracking-wider text-teal">
               Managed {descriptor.labelPlural.toLowerCase()}
             </p>
-            <ul className="mt-3 space-y-2">
-              {managed.map((e) => (
-                <li
-                  key={e.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground" data-testid="managed-title">
-                      {displayTitle(descriptor, e.id, e.body)}
-                    </p>
-                    <GovernanceChips typeId={e.typeId} body={e.body} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge entry={e} />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openManaged(e.id)}
-                      disabled={e.status === "pending_review"}
-                    >
-                      Edit
-                    </Button>
-                    <RemoveControl
-                      entry={e}
-                      actor={actor}
-                      mayAuthor={mayAuthor}
-                      mayPublish={mayPublish}
-                    />
-                  </div>
-                </li>
-              ))}
-              {managed.length === 0 && (
-                <li className="text-sm text-muted-foreground">
-                  Nothing under admin management yet.
-                </li>
-              )}
-            </ul>
+            <ContentInventoryTable entries={managed.filter((e) => displayTitle(descriptor, e.id, e.body).toLowerCase().includes(manageQuery.toLowerCase()))} edit={openManaged} canReview={mayAuthor} review={(ids, note) => { const res = contentAction("content_mark_reviewed", { typeId, ids, note, actor }); if (!res.ok) toast.error(res.reason); else toast.success("Review recorded with reason."); }} />
           </Card>
           <Card className="p-5">
             <p className="text-xs font-medium uppercase tracking-wider text-teal">
@@ -679,7 +661,7 @@ function ManageTab({ version }: { version: number }) {
             </ul>
           </Card>
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -691,7 +673,7 @@ function ManageTab({ version }: { version: number }) {
 function ReviewTab({ version }: { version: number }) {
   const { role, staffId, staffName } = useActingStaff();
   const mayPublish = canPublishContent(role);
-  const queue = useMemo(() => contentReviewQueue(), [version]);
+  const queue = useMemo(() => contentReviewQueue().filter((e) => contentVisibleToStaff(role, e.typeId, e.body)), [version, role]);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const actor = { staffId: staffId ?? undefined, name: staffName, role };
 
@@ -701,7 +683,7 @@ function ReviewTab({ version }: { version: number }) {
         <ShieldCheck className="h-4 w-4" /> Content review queue
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        An OPTIONAL second pair of eyes — content does not have to pass through here to go live.
+        Clinical and Part 2 content requires an independent clinical reviewer. Editorial content can publish immediately.
         Nothing in this queue is visible to patients until it is published.
         {!mayPublish && " Your role can read this queue but cannot publish."}
       </p>
@@ -789,7 +771,8 @@ function ReviewTab({ version }: { version: number }) {
 // ---------------------------------------------------------------------------
 
 function HistoryTab({ version }: { version: number }) {
-  const all = useMemo(() => listContent(), [version]);
+  const { role } = useActingStaff();
+  const all = useMemo(() => listContent().filter((e) => contentVisibleToStaff(role, e.typeId, e.body)), [version, role]);
   return (
     <Card className="p-5">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
@@ -838,9 +821,9 @@ function HomeDigest({ version }: { version: number }) {
   const { role, staffId, staffName } = useActingStaff();
   const today = new Date().toISOString().slice(0, 10);
   const data = useMemo(() => {
-    const all = listContent();
+    const all = listContent().filter((e) => contentVisibleToStaff(role, e.typeId, e.body));
     const me = staffId ?? staffName;
-    const awaiting = contentReviewQueue().filter((e) => {
+    const awaiting = contentReviewQueue().filter((e) => contentVisibleToStaff(role, e.typeId, e.body)).filter((e) => {
       const author = [...e.revisions].reverse().find((r) => r.action === "created" || r.action === "edited");
       const authorKey = author ? (author.byStaffId ?? author.by) : undefined;
       return canPublishContent(role) && authorKey !== me;
@@ -911,9 +894,10 @@ function HomeDigest({ version }: { version: number }) {
   );
 }
 
-export function ContentAdminWorkspace() {
+export function ContentAdminWorkspace({ browseOnly = false }: { browseOnly?: boolean }) {
   const version = useContentStore();
-  const queueCount = contentReviewQueue().length;
+  const { role } = useActingStaff();
+  const queueCount = contentReviewQueue().filter((e) => contentVisibleToStaff(role, e.typeId, e.body)).length;
   return (
     <div className="space-y-4">
       <div>
@@ -924,15 +908,16 @@ export function ContentAdminWorkspace() {
           Manage what patients see: education, recovery content, community resources and naloxone sites. Verify resources with the provider before they go live.
         </p>
       </div>
-      <Tabs defaultValue="home">
+      <HomeDigest version={version} />
+      <Tabs defaultValue={!browseOnly && role === "sys_admin" ? "manage" : "browse"}>
         <TabsList>
-          <TabsTrigger value="home">Home</TabsTrigger>
-          <TabsTrigger value="manage">Manage</TabsTrigger>
-          <TabsTrigger value="review">Review queue{queueCount ? ` (${queueCount})` : ""}</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="browse">Browse</TabsTrigger>
+          {!browseOnly && <TabsTrigger value="manage">Manage</TabsTrigger>}
+          {!browseOnly && <TabsTrigger value="review">Review{queueCount ? ` (${queueCount})` : ""}</TabsTrigger>}
+          {!browseOnly && <TabsTrigger value="audit">Audit</TabsTrigger>}
         </TabsList>
-        <TabsContent value="home" className="mt-4">
-          <HomeDigest version={version} />
+        <TabsContent value="browse" className="mt-4">
+          <ContentBrowse version={version} />
         </TabsContent>
         <TabsContent value="manage" className="mt-4">
           <ManageTab version={version} />
@@ -940,7 +925,8 @@ export function ContentAdminWorkspace() {
         <TabsContent value="review" className="mt-4">
           <ReviewTab version={version} />
         </TabsContent>
-        <TabsContent value="history" className="mt-4">
+        <TabsContent value="audit" className="mt-4">
+          <ContentAudit version={version} />
           <HistoryTab version={version} />
         </TabsContent>
       </Tabs>

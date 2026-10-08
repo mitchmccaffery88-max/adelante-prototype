@@ -16,6 +16,7 @@ import {
 } from "./i18n.recovery";
 import { benefitsEn, benefitsEs } from "./i18n.benefits";
 
+import { Button } from "@/components/ui/button";
 import { playerEn, playerEs } from "./i18n.player";
 
 type Lang = "en" | "es";
@@ -923,6 +924,17 @@ function StoredLanguageSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stored, patientId]);
   return null;
+}
+
+/** Preview language stays local: never changes a patient's preference. */
+export function ContentPreviewLanguage({ children }: { children: ReactNode }) {
+  const [lang, setLang] = useState<Lang>("en");
+  return <I18nCtx.Provider value={{ lang, setLang, t: (k) => dict[lang][k] }}>
+    <div role="group" aria-label="Preview language" className="mb-3 flex gap-2">
+      <Button variant="outline" type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</Button>
+      <Button variant="outline" type="button" aria-pressed={lang === "es"} onClick={() => setLang("es")}>ES · Draft</Button>
+    </div>{children}
+  </I18nCtx.Provider>;
 }
 
 export const useI18n = () => useContext(I18nCtx);

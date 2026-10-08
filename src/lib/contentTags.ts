@@ -1,3 +1,5 @@
+import { liveCurricula } from "./curriculumTypes";
+import { curriculumProgress } from "./curriculumProgress";
 // §C3/C5 "What this addresses" — the tag read path that drives suggestions in
 // the care plan, patient Adel chat and the patient SDOH sections.
 //
@@ -334,7 +336,7 @@ export function contentCoverage(): CoverageReport {
 // Registration — the care plan reads live content through these.
 // ---------------------------------------------------------------------------
 setPlanActivitySource((): PlanActivity[] =>
-  taggedCatalog().map((t) => ({
+  [...taggedCatalog().map((t) => ({
     id: t.id,
     label: { en: t.title, es: t.titleEs ?? t.title },
     to: t.to,
@@ -342,7 +344,7 @@ setPlanActivitySource((): PlanActivity[] =>
     search: t.search,
     kind: t.kind,
     ...(t.kind === "exercise" ? { exercise: t.id } : {}),
-  })),
+  })), ...liveCurricula().map((j): PlanActivity => ({ id: j.id, label: { en: j.title, es: j.es?.title ?? "Spanish coming soon" }, to: "/journeys", search: { journey: j.id }, sud: j.part2Sensitive === true || j.meta?.part2 === true, kind: "journey" }))],
 );
 
 setTaggedSuggestionSource((patientId, now): PlanSuggestion[] =>
@@ -367,7 +369,8 @@ onContentCompleted((c) => {
   }
   for (const a of plan.assignments) {
     if (!a.active || a.kind !== "activity") continue;
-    if (a.activityId === c.id || (c.moduleId && a.activityId === c.moduleId)) {
+    const journey = liveCurricula().find((j) => j.id === a.activityId);
+    if ((journey && curriculumProgress(c.patientId, journey).complete) || a.activityId === c.id || (c.moduleId && a.activityId === c.moduleId)) {
       try {
         completeAssignment(c.patientId, a.id, { name: "Patient", role: "patient" }, new Date(), "lesson_finished");
       } catch {
