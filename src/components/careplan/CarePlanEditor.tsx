@@ -219,11 +219,11 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                       ) : (
                         <span className="text-muted-foreground"> · {a.reason === "rule" ? "Adel suggestion, accepted" : "Ad hoc"} by {a.assignedBy}</span>
                       )}
-                      {a.flagReview && !a.flagReview.resolved && (
+                      {edit && a.flagReview && !a.flagReview.resolved && (
                         <span className="ml-1 inline-flex items-center gap-1" data-testid="flag-review">
                           <Badge variant="outline" className="text-[10px]">{FLAG_REVIEW_LABEL}</Badge>
-                          <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "kept", "Kept after flag review", { name: me.staffName, role: me.role }); toast.success("Kept on the plan"); } catch (e) { toast.error((e as Error).message); } }}>Keep</Button>
-                          <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "retired", "Retired after flag review", { name: me.staffName, role: me.role }); toast.success("Retired — progress kept"); } catch (e) { toast.error((e as Error).message); } }}>Retire</Button>
+                          <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "kept", "Kept after flag review", me); toast.success("Kept on the plan"); } catch (e) { toast.error((e as Error).message); } }}>Keep</Button>
+                          <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "retired", "Retired after flag review", me); toast.success("Retired — progress kept"); } catch (e) { toast.error((e as Error).message); } }}>Retire</Button>
                         </span>
                       )}
                     </li>
