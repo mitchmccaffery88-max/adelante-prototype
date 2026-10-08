@@ -17,6 +17,9 @@ export default defineConfig({
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 1 : 0,
   reporter: [["list"]],
+  // §C6 Under three parallel browsers a cold page can take >5s to render its
+  // first section; give every assertion the same 15s headroom.
+  expect: { timeout: 15_000 },
   use: {
     baseURL: process.env["E2E_BASE_URL"] ?? "http://localhost:8080",
     trace: "retain-on-failure",
