@@ -972,7 +972,7 @@ export function ModuleTemplate({
 
 
   return (
-    <Card className="patient-theme patient-player space-y-6 rounded-3xl p-5 shadow-sm sm:p-8">
+    <Card className="patient-theme patient-player player-card space-y-6 rounded-3xl p-5 soft-shadow sm:p-8">
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-semibold text-2xl text-foreground">{title}</h1>

@@ -1,6 +1,7 @@
 import type { LibraryItem } from "./library";
 import { liveExercise } from "./contentCatalog";
 import { taggedItem, taggedCatalog } from "./contentTags";
+import { matchExerciseForLesson } from "./recovery.exerciseMatch";
 import type { ExerciseMatch } from "./recovery.exerciseMatch";
 
 /** Live C3 tags match a practice; with no overlap there is no empty step. */
@@ -13,5 +14,8 @@ export function matchExerciseForLibraryLesson(item: LibraryItem): ExerciseMatch 
     return source?.some((value) => target?.includes(value));
   }));
   const exercise = match ? liveExercise(match.id) : undefined;
-  return exercise ? { exercise, tier: "keyword" } : undefined;
+  if (exercise) return { exercise, tier: "keyword" };
+  // Reuse the established semantic match, but never its unconditional fallback.
+  const semantic = matchExerciseForLesson({ ...item, moduleId: "", insight: item.action } as unknown as import("./recovery").RecoveryLesson);
+  return semantic.tier === "keyword" ? semantic : undefined;
 }

@@ -278,7 +278,7 @@ export function acceptAsamSuggestion(patientId: string, id: string, actor: Actor
   s.decidedBy = actor.name;
   s.decidedAt = new Date().toISOString();
   for (const i of s.interventions)
-    if (i.moduleId) assignToGoal({ patientId, goalId: g.id, kind: "activity", activityId: i.moduleId, frequency: "weekly", reason: "rule", suggestionId: s.id, actor });
+    if (i.moduleId && taggedCatalog().some(item => item.id === i.moduleId)) assignToGoal({ patientId, goalId: g.id, kind: "activity", activityId: i.moduleId, frequency: "weekly", reason: "rule", suggestionId: s.id, actor });
   audit("plan_rule_suggestion_accepted", patientId, actor, { suggestionId: id, goalId: g.id, edited: fields.length > 0, fields, linkedNeeds: s.needIds.length });
   return g;
 }

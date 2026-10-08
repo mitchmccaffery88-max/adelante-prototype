@@ -623,8 +623,8 @@ export function completeRecoveryLesson(
       action: "recovery_lesson_completed",
       actorRole: opts.actorRole ?? "patient",
       detail: {
-        lessonId,
-        moduleId: lesson.moduleId,
+        lessonId: "protected-content",
+        moduleId: "protected-content",
         title: "Protected content",
         minutes: lesson.minutes,
         warningSignCount: warningSigns.length,
