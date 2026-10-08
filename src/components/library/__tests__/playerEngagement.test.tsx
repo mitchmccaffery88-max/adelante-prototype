@@ -1,0 +1,57 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { I18nProvider } from "@/lib/i18n";
+import { LANG_STORAGE_KEY } from "@/lib/languagePreference";
+import { BreathingPractice } from "../BreathingPractice";
+import { GroundingPractice } from "../GroundingPractice";
+import { AdelConversation } from "../AdelConversation";
+import { LessonReadAloud } from "@/components/voice/LessonReadAloud";
+import { ExerciseBody, exerciseSummary } from "../ExercisePlayer";
+import { startBreath, tickBreath } from "@/lib/breathing";
+import { AdelanteEHR } from "@/lib/ehr";
+import { liveLibraryItems } from "@/lib/contentCatalog";
+import { getEngagement, engagementRecords, saveLessonResponse } from "@/lib/engagement";
+import { latestInProgress, latestTodayAction } from "@/lib/playerEngagement";
+import { EXERCISES, type LibraryActivity } from "@/lib/library";
+import { savePlayerResponse } from "@/lib/patientPlayerActions";
+import { completePlayerLesson } from "@/lib/patientPlayerActions";
+import { ClosingPreview } from "../ClosingPreview";
+import { matchExerciseForLibraryLesson } from "@/lib/playerPractice";
+const speak = vi.fn(), stop = vi.fn(), enabled = { value: false };
+vi.mock("@/hooks/useAdelVoice", () => ({ useAdelVoice: () => ({ enabled: enabled.value, setEnabled: vi.fn(), speak, stop, replay: vi.fn(), rate: "normal", setRate: vi.fn(), speaking: false }) }));
+vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
+const wrap = (ui: React.ReactNode) => render(<I18nProvider>{ui}</I18nProvider>);
+beforeEach(() => { enabled.value = false; localStorage.clear(); speak.mockClear(); stop.mockClear(); window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }); });
+afterEach(() => { cleanup(); vi.useRealTimers(); });
+describe("patient player engagement", () => {
+ it("exact toolkit preview persists and confirmation saves the same values", () => {
+   const patient = AdelanteEHR.listPatients()[0]; AdelanteEHR.setCurrentPatientId(patient.id);
+   const lesson = liveLibraryItems().find(l => !l.placeholder)!;
+   savePlayerResponse(patient.id, "library", lesson.id, { todayAction: "One walk", text: { reminder: "playerTodayReminder", support: "Private contact" } });
+   const response = AdelanteEHR.lessonResponse(patient.id, "library", lesson.id);
+   wrap(<ClosingPreview tool={lesson.toolkitLabel} response={response} onChange={p => savePlayerResponse(patient.id, "library", lesson.id, p)} />);
+   const preview = AdelanteEHR.lessonResponse(patient.id, "library", lesson.id)?.text?.toolkitPreview;
+   expect(preview).toContain("Private contact"); expect(preview).toContain("Later today");
+   completePlayerLesson(patient.id, lesson.id, "library");
+   expect(AdelanteEHR.savedToolkitItems(patient.id).find(t => t.id === lesson.id)?.label).toBe(preview);
+ });
+ it("practice uses semantic matching but skips a lesson with no tag or semantic match", () => {
+   const base = liveLibraryItems().find(l => l.id === "ss-calming-my-mind")!;
+   expect(matchExerciseForLibraryLesson(base)?.exercise).toBeTruthy();
+   expect(matchExerciseForLibraryLesson({ ...base, id: "unmapped-practice", title: "Neutral", learnBody: "", toolkitLabel: "", insight: "", action: "" })).toBeUndefined();
+ });
+ it("breathing phases use their own seconds, skip empty hold, and stop at the cap", () => { const d = [2,1,3,0]; let s = startBreath(d); s = tickBreath(s,d,1); expect(s).toMatchObject({ phase:0,left:1 }); s=tickBreath(s,d,1); expect(s).toMatchObject({phase:1,left:1}); s=tickBreath(s,d,1); expect(s).toMatchObject({phase:2,left:3}); for(let n=0;n<3;n++) s=tickBreath(s,d,1); expect(s).toMatchObject({cycles:1,finished:true}); expect(tickBreath(s,d,1)).toEqual(s); });
+ it("Start/Pause controls the live countdown and animation phase", () => { vi.useFakeTimers(); wrap(<BreathingPractice inhaleSec={2} holdSec={1} exhaleSec={2} cycles={2}/>); fireEvent.click(screen.getByRole("button",{name:"Start"})); act(()=>vi.advanceTimersByTime(2000)); expect(screen.getByTestId("breath-shape").getAttribute("data-phase") ?? screen.getByTestId("breath-shape").parentElement?.getAttribute("data-phase")).toBe("1"); fireEvent.click(screen.getByRole("button",{name:"Pause"})); const timer=screen.getByRole("timer").textContent; act(()=>vi.advanceTimersByTime(4000)); expect(screen.getByRole("timer").textContent).toBe(timer); });
+ it("reduced motion removes the animated shape, not the countdown", () => { window.matchMedia=vi.fn().mockReturnValue({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()}); wrap(<BreathingPractice inhaleSec={4} holdSec={4} exhaleSec={4} cycles={3}/>); expect(screen.queryByTestId("breath-shape")).toBeNull(); expect(screen.getByRole("timer").textContent).toBe("4"); });
+ it("voice is labelled Simulated; Listen reads displayed text",()=>{wrap(<LessonReadAloud text="One step." stepKey="learn"/>); expect(screen.getByText("Read aloud (Simulated voice)")).toBeTruthy(); fireEvent.click(screen.getByRole("button",{name:"Listen"})); expect(speak).toHaveBeenCalledWith("One step.",{force:true});});
+ it("Spanish voice controls are translated and marked Draft",()=>{localStorage.setItem(LANG_STORAGE_KEY,"es");wrap(<LessonReadAloud text="Un paso." stepKey="learn"/>);expect(screen.getByRole("button",{name:"Escuchar"})).toBeTruthy();expect(screen.getByText(/Simulada|simulada/)).toBeTruthy();});
+ it("tap-only never auto-reads even with session voice on",()=>{enabled.value=true;wrap(<LessonReadAloud text="Protected step." stepKey="dast-10"/>);expect(speak).not.toHaveBeenCalled();fireEvent.click(screen.getByRole("button",{name:"Listen"}));expect(speak).toHaveBeenCalled();});
+ it("grounding shows one sense and saves its answer and position",()=>{const onChange=vi.fn();const activity:Extract<LibraryActivity,{kind:"grounding"}>={kind:"grounding",title:"Ground",senses:[{label:"See",count:5},{label:"Feel",count:4}]} as Extract<LibraryActivity,{kind:"grounding"}>;wrap(<GroundingPractice activity={activity} onChange={onChange}/>);fireEvent.change(screen.getByRole("textbox"),{target:{value:"a tree"}});expect(onChange).toHaveBeenCalledWith({text:{"grounding:See":"a tree"}});fireEvent.click(screen.getByRole("button",{name:"Next"}));expect(onChange).toHaveBeenCalledWith({scores:{groundingIndex:1}});});
+ it("Adel saves each answer and crisis language raises the path immediately",()=>{const p=AdelanteEHR.listPatients()[0];const onChange=vi.fn();wrap(<AdelConversation patientId={p.id} topic="Housing" reflection="A small step." question="What helps?" recommends={[]} response={{updatedAt:"now",text:{"adel:0":"A small step"}}} onChange={onChange}/>);fireEvent.change(screen.getByRole("textbox"),{target:{value:"I want to kill myself"}});expect(onChange).toHaveBeenCalledWith({text:{"adel:0":"I want to kill myself"}});expect(AdelanteEHR.listCrisisEscalations(p.id,{status:"open"}).length).toBeGreaterThan(0);fireEvent.click(screen.getByRole("button",{name:"Share answer"}));expect(onChange).toHaveBeenCalledWith({adelIndex:1});});
+ it("after three answers Adel shows next links and chat, not another question",()=>{wrap(<AdelConversation patientId="p1" topic="Housing" reflection="A step." question="What helps?" recommends={[{label:"Published lesson",reason:"Draft tags",to:"/library",search:{item:"live"}}]} response={{updatedAt:"now",adelIndex:3}} onChange={vi.fn()}/>);expect(screen.queryByRole("textbox")).toBeNull();expect(screen.getByText("Published lesson")).toBeTruthy();expect(screen.getByText("Keep talking with Adel")).toBeTruthy();});
+ it("exercise summaries use actual breathing rounds and calculator inputs",()=>{const breath=EXERCISES.find(e=>e.content.type==="breathing")!;expect(exerciseSummary(breath,{cycles:"3"})).toBe("3 rounds of breathing");const calc=EXERCISES.find(e=>e.content.type==="calculator")!;expect(exerciseSummary(calc,calc.content.type === "calculator" && calc.content.incomeRows?.length ? {[calc.content.incomeRows[0].id]:"100"} : {against:"100"})).toContain("left $100.00");});
+ for(const surface of ["exercise","library","recovery"] as const) it(`exercise saves inputs and toolkit summary from ${surface}`,()=>{const p=AdelanteEHR.listPatients()[0];AdelanteEHR.setCurrentPatientId(p.id);const e=EXERCISES.find(e=>e.content.type==="worksheet")!;wrap(<ExerciseBody exercise={e} patientId={p.id} surface={surface} lessonId={`test-${surface}`}/>);const input=screen.getAllByRole("textbox")[0];fireEvent.change(input,{target:{value:"Private support"}});expect(JSON.stringify(AdelanteEHR.lessonResponse(p.id,surface,`test-${surface}`)?.exerciseInputs)).toContain("Private support");fireEvent.click(screen.getByRole("button",{name:"Save to My Toolkit"}));expect(AdelanteEHR.savedToolkitItems(p.id).find(t=>t.id===e.id)?.label).toContain("Private support");});
+ it("resume and today's action use saved step and real recency; ratings/confidence start absent",()=>{const id="player-test";const lesson=liveLibraryItems()[0];saveLessonResponse(id,"library",lesson.id,{stepIndex:3,stepTotal:11,todayAction:"One walk"});expect(latestInProgress(id)?.response.stepIndex).toBe(3);expect(latestTodayAction(id)?.response.todayAction).toBe("One walk");expect(getEngagement(id)?.lessonResponses[`library:${lesson.id}`]?.confidence).toBeUndefined();expect(getEngagement(id)?.lessonResponses[`library:${lesson.id}`]?.ratingsBefore).toBeUndefined();});
+ it("registry denies cross-patient writes; derived records never contain private free text",()=>{const p=AdelanteEHR.listPatients()[0];AdelanteEHR.setCurrentPatientId(p.id);const other=AdelanteEHR.listPatients().find(x=>x.id!==p.id)!;expect(()=>savePlayerResponse(other.id,"library","test",{text:{support:"Private"}})).toThrow();savePlayerResponse(p.id,"library","test",{text:{support:"Secret support"},todayAction:"Private action"});expect(JSON.stringify(engagementRecords([p.id]))).not.toMatch(/Secret support|Private action|Private support/);});
+});

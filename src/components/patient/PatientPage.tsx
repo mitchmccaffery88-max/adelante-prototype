@@ -34,7 +34,7 @@ export function PatientPage({
 } & Omit<React.HTMLAttributes<HTMLDivElement>, "children" | "className">) {
   return (
     <div
-      className={cn("mx-auto space-y-4 px-4 py-8 sm:px-6", WIDTH[width], className)}
+      className={cn("patient-theme mx-auto space-y-4 px-4 py-8 sm:px-6", WIDTH[width], className)}
       {...rest}
     >
       {children}

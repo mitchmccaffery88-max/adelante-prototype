@@ -4,6 +4,8 @@
 // from the REAL record and `visibleItemsInCategory` drops any lesson whose
 // copy is written for a population this person is not in. Most of the library
 // carries no gate at all and is shown to everyone.
+import { completePlayerExercise } from "@/lib/patientPlayerActions";
+import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
@@ -24,7 +26,7 @@ import { activityKindLabel, categoryEyebrow } from "@/lib/contentDisplay";
 import {
   liveLibraryCategories,
   liveCategoryProgress,
-  liveLibraryItem,
+  liveLibraryItem, liveExercise, liveExercises,
   liveVisibleItemsInCategory,
   usePublishedContentVersion,
 } from "@/lib/contentCatalog";
@@ -37,6 +39,7 @@ export function LibraryBrowser({
   initialItem,
 }: { initialExercise?: string; initialItem?: string } = {}) {
   usePublishedContentVersion();
+  const { t } = useI18n();
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const population = usePopulation(patientId);
   const completedItems = useEhr(() => AdelanteEHR.completedLibraryItems(patientId));
@@ -52,7 +55,7 @@ export function LibraryBrowser({
   if (!patientId) return null;
 
   const lesson = openItem ? liveLibraryItem(openItem) : undefined;
-  const exercise = openExercise ? getExercise(openExercise) : undefined;
+  const exercise = openExercise ? liveExercise(openExercise) : undefined;
 
   if (lesson) {
     return (
@@ -65,7 +68,7 @@ export function LibraryBrowser({
             setOpenItem(null);
           }}
         >
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to the library
+          <ArrowLeft className="mr-1 h-4 w-4" /> {t("playerLibraryBack")}
         </Button>
         <LibraryLesson
           item={lesson}
@@ -84,12 +87,12 @@ export function LibraryBrowser({
     return (
       <PatientPage>
         <Button type="button" variant="ghost" onClick={() => setOpenExercise(null)}>
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to the library
+          <ArrowLeft className="mr-1 h-4 w-4" /> {t("playerLibraryBack")}
         </Button>
         <Card className="space-y-4 p-6">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-2xl text-foreground">{exercise.title}</h1>
+              <h1 className="font-semibold text-2xl text-foreground">{exercise.title}</h1>
               {done && (
                 <Badge className="border-0 bg-accent text-accent-foreground">
                   <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Completed
@@ -101,8 +104,8 @@ export function LibraryBrowser({
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{exercise.subtitle}</p>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <p className="text-sm text-foreground">{exercise.subtitle}</p>
+            <div className="flex items-center gap-1.5 text-xs text-foreground">
               <Clock className="h-3.5 w-3.5" /> About {exercise.minutes} minutes
             </div>
           </div>
@@ -111,19 +114,19 @@ export function LibraryBrowser({
           <Button
             type="button"
             onClick={() => {
-              AdelanteEHR.completeExercise(patientId, exercise.id, { saveToolkit: true });
-              toast.success(`Saved "${exercise.title}" to your toolkit.`);
+              completePlayerExercise(patientId, exercise.id);
+              toast.success(t("playerComplete"));
               setOpenExercise(null);
             }}
           >
-            Finish and save to my toolkit
+            {t("playerFinish")}
           </Button>
         </Card>
       </PatientPage>
     );
   }
 
-  const exercises = visibleExercises(population);
+  const exercises = liveExercises().filter((e) => !e.populations?.length || e.populations.includes(population.track));
 
   return (
     <PatientPage width="browse" className="space-y-6">
@@ -165,19 +168,19 @@ export function LibraryBrowser({
                   </Button>
                   <Card className="space-y-4 p-5">
                     <div className="flex items-start gap-3">
-                      <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-teal">
+                      <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-primary">
                         <CatIcon className="h-5 w-5" aria-hidden />
                       </span>
                       <div className="flex-1">
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-foreground">
                           {categoryEyebrow(current.cat)}
                         </p>
-                        <h2 className="font-display text-xl text-navy">{current.cat.name}</h2>
-                        <p className="text-sm text-muted-foreground">{current.cat.desc}</p>
+                        <h2 className="font-semibold text-xl text-foreground">{current.cat.name}</h2>
+                        <p className="text-sm text-foreground">{current.cat.desc}</p>
                       </div>
                     </div>
                     <div>
-                      <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
+                      <div className="mb-1.5 flex justify-between text-xs text-foreground">
                         <span>
                           {prog.completed} of {prog.total} finished
                         </span>
@@ -196,10 +199,10 @@ export function LibraryBrowser({
                               className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               <div className="flex-1 space-y-1.5">
-                                <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-navy">
+                                <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
                                   {item.title}
                                   {done && (
-                                    <CheckCircle2 className="h-4 w-4 text-teal" aria-label="Completed" />
+                                    <CheckCircle2 className="h-4 w-4 text-primary" aria-label="Completed" />
                                   )}
                                   {item.populations && (
                                     <Badge variant="outline" className="text-[10px]">
@@ -207,8 +210,8 @@ export function LibraryBrowser({
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-sm italic text-muted-foreground">“{item.problem}”</p>
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                <p className="text-sm italic text-foreground">“{item.problem}”</p>
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-foreground">
                                   <span className="inline-flex items-center gap-1">
                                     <Clock className="h-3.5 w-3.5" aria-hidden /> {item.minutes} min
                                   </span>
@@ -217,7 +220,7 @@ export function LibraryBrowser({
                                   </Badge>
                                 </div>
                               </div>
-                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                              <ChevronRight className="h-4 w-4 shrink-0 text-foreground" aria-hidden />
                             </button>
                           </li>
                         );
@@ -241,19 +244,19 @@ export function LibraryBrowser({
                         className="flex w-full flex-col gap-3 rounded-[inherit] p-5 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <div className="flex items-start gap-3">
-                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-teal">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-primary">
                             <CatIcon className="h-5 w-5" aria-hidden />
                           </span>
                           <div className="flex-1">
-                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-foreground">
                               {categoryEyebrow(cat)}
                             </p>
-                            <h2 className="font-display text-lg text-navy">{cat.name}</h2>
-                            <p className="text-sm text-muted-foreground">{cat.desc}</p>
+                            <h2 className="font-semibold text-lg text-foreground">{cat.name}</h2>
+                            <p className="text-sm text-foreground">{cat.desc}</p>
                           </div>
                         </div>
                         <div className="w-full">
-                          <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
+                          <div className="mb-1.5 flex justify-between text-xs text-foreground">
                             <span>
                               {items.length} lesson{items.length === 1 ? "" : "s"} · {prog.completed} done
                             </span>
@@ -276,10 +279,10 @@ export function LibraryBrowser({
             return (
               <Card key={ex.id} className="flex flex-col gap-2 p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-display text-lg text-navy">{ex.title}</h3>
-                  {done && <CheckCircle2 className="h-4 w-4 text-teal" aria-label="Completed" />}
+                  <h3 className="font-semibold text-lg text-foreground">{ex.title}</h3>
+                  {done && <CheckCircle2 className="h-4 w-4 text-primary" aria-label="Completed" />}
                 </div>
-                <p className="flex-1 text-sm text-muted-foreground">{ex.subtitle}</p>
+                <p className="flex-1 text-sm text-foreground">{ex.subtitle}</p>
                 <div className="flex flex-wrap gap-1">
                   {ex.tags.map((tag) => (
                     <Badge key={tag} variant="secondary" className="text-[10px]">
@@ -297,7 +300,7 @@ export function LibraryBrowser({
 
         <TabsContent value="toolkit" className="space-y-3 pt-4">
           {toolkit.length === 0 ? (
-            <Card className="p-6 text-sm text-muted-foreground">
+            <Card className="p-6 text-sm text-foreground">
               Nothing saved yet. Finishing a lesson or an exercise puts its takeaway here.
             </Card>
           ) : (
@@ -305,10 +308,10 @@ export function LibraryBrowser({
               {toolkit.map((t) => (
                 <li key={t.id}>
                   <Card className="flex items-center gap-3 p-3">
-                    <Wrench className="h-4 w-4 text-teal" aria-hidden />
+                    <Wrench className="h-4 w-4 text-primary" aria-hidden />
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-navy">{t.label}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-sm font-medium text-foreground">{t.label}</div>
+                      <div className="text-xs text-foreground">
                         From {t.from === "library" ? "a lesson" : "an exercise"}
                       </div>
                     </div>

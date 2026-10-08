@@ -277,6 +277,7 @@ function appendRevision(
 }
 
 export interface SaveDraftInput {
+  note?: string;
   typeId: ContentTypeId;
   id: string;
   body: ContentBody;
@@ -321,7 +322,7 @@ export function saveContentDraft(input: SaveDraftInput): ContentResult {
   // status. Patients keep seeing `publishedBody` until the new revision is
   // approved — that is the whole point of freezing the snapshot.
   e.status = "draft";
-  appendRevision(e, created ? "created" : "edited", input.actor, "draft");
+  appendRevision(e, created ? "created" : "edited", input.actor, "draft", input.note);
   entries.set(k, e);
   notify();
   return { ok: true, entry: clone(e) };

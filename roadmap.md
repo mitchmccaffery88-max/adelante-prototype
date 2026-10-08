@@ -1,5 +1,19 @@
 # Roadmap
 
+## In progress — Player and engagement (K1–K3, P1–P10)
+- [ ] K1 registry content mutations + additive permissions snapshot
+- [ ] K2 ASAM dimension tag interventions
+- [ ] K3 production-served parallel browsers, warm-up, unchanged assertions
+- [ ] P1/P2 animated breathing, exercise input persistence and toolkit summaries
+- [ ] P3 session Simulated read aloud EN/ES, tap-only safety
+- [ ] P4/P8 Home resume and today's action; unanswered confidence; toolkit preview/completion
+- [ ] P5/P6 shared practice and grounding stepper
+- [ ] P7 three-question Simulated Adel, crisis scan, tag links
+- [ ] P9 patient theme/readability and architecture guidance
+- [ ] P10 Part 2/private-text redaction
+- [ ] Full units, harness typecheck, all parallel browsers, EN/ES/advocate walkthrough
+- [ ] Content tables/search/editor preview: deferred by Mitch to next batch
+
 ## In progress — Content center + care/Adel/SDOH wiring (C0–C6)
 - [x] C0 seeds load on any entry path; titles not ids
 - [x] C1 baseline verification (59/60 — SMART Recovery has no phone), no patient badge, one resource store, verify stamps managed revision

@@ -32,6 +32,7 @@ export interface ToolGroup {
 
 export function GuidedToolFlow({
   match,
+  patientId, lessonId, surface = "recovery",
   groups,
   part,
   onPartChange,
@@ -39,6 +40,7 @@ export function GuidedToolFlow({
   onSubIndexChange,
 }: {
   match: ExerciseMatch;
+  patientId?: string; lessonId?: string; surface?: import("@/lib/engagement").LessonSurface;
   groups: ToolGroup[];
   part: "a" | "b";
   onPartChange: (p: "a" | "b") => void;
@@ -80,14 +82,14 @@ export function GuidedToolFlow({
       {part === "a" ? (
         <div className="space-y-3 rounded-lg border border-border p-4">
           <div className="space-y-1">
-            <h3 className="font-display text-lg text-navy">{match.exercise.title}</h3>
-            <p className="text-sm text-muted-foreground">{match.exercise.subtitle}</p>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="font-semibold text-lg text-foreground">{match.exercise.title}</h3>
+            <p className="text-sm text-foreground">{match.exercise.subtitle}</p>
+            <p className="text-xs text-foreground">
               {match.tier === "keyword" ? t("modPartAMatched") : t("modPartAGeneral")}
             </p>
           </div>
-          <ExerciseBody exercise={match.exercise} />
-          <p className="text-xs text-muted-foreground">{t("modPartANote")}</p>
+          <ExerciseBody exercise={match.exercise} patientId={patientId} lessonId={lessonId} surface={surface} />
+          <p className="text-xs text-foreground">{t("modPartANote")}</p>
         </div>
       ) : (
         <div className="space-y-4 rounded-lg border border-border p-4">
@@ -100,7 +102,7 @@ export function GuidedToolFlow({
           />
           {group ? (
             <>
-              <h3 className="font-display text-lg text-navy">{group.label}</h3>
+              <h3 className="font-semibold text-lg text-foreground">{group.label}</h3>
               <SelectStep
                 prompt={group.prompt}
                 options={group.options}
@@ -110,7 +112,7 @@ export function GuidedToolFlow({
                 onChange={group.onChange}
               />
               {!canAdvance && (
-                <p className="text-xs text-muted-foreground">{t("modNeedOnePick")}</p>
+                <p className="text-xs text-foreground">{t("modNeedOnePick")}</p>
               )}
             </>
           ) : (
@@ -148,21 +150,21 @@ function ToolkitSummary({ groups }: { groups: ToolGroup[] }) {
   const empty = groups.every((g) => g.value.length === 0);
   return (
     <div className="space-y-3">
-      <h3 className="font-display text-lg text-navy">{t("modToolkitTitle")}</h3>
+      <h3 className="font-semibold text-lg text-foreground">{t("modToolkitTitle")}</h3>
       {empty ? (
-        <p className="text-sm text-muted-foreground">{t("modToolkitEmpty")}</p>
+        <p className="text-sm text-foreground">{t("modToolkitEmpty")}</p>
       ) : (
         <div className="space-y-3">
           {groups.map((g) => (
             <div key={g.key} className="space-y-1">
-              <div className="text-xs font-medium uppercase tracking-wider text-teal">{g.label}</div>
+              <div className="text-xs font-medium uppercase tracking-wider text-primary">{g.label}</div>
               {g.value.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("modToolkitNonePicked")}</p>
+                <p className="text-sm text-foreground">{t("modToolkitNonePicked")}</p>
               ) : (
                 <ul className="space-y-1">
                   {g.value.map((v) => (
-                    <li key={v} className="flex items-start gap-2 text-sm text-navy">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal" aria-hidden />
+                    <li key={v} className="flex items-start gap-2 text-sm text-foreground">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                       <span>{g.labelFor ? g.labelFor(v, g.options.indexOf(v)) : v}</span>
                     </li>
                   ))}
@@ -172,7 +174,7 @@ function ToolkitSummary({ groups }: { groups: ToolGroup[] }) {
           ))}
         </div>
       )}
-      <p className="text-xs text-muted-foreground">{t("modToolkitSaveNote")}</p>
+      <p className="text-xs text-foreground">{t("modToolkitSaveNote")}</p>
     </div>
   );
 }

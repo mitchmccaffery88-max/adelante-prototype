@@ -54,20 +54,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     /ChunkLoadError/i.test(msg) ||
     /Loading (chunk|CSS chunk) [\w-]+ failed/i.test(msg);
 
-  // Stale-chunk auto-recovery: try one silent hard-reload before showing the
-  // error screen. If that already happened recently, fall through and render
-  // the user-facing screen with a manual "Reload app" button.
+  // Recovery is explicit: a slow chunk must never wipe in-memory patient work.
   const RELOAD_KEY = "__adelante_chunk_reload_at";
-  const recentlyReloaded =
-    typeof window !== "undefined" &&
-    Date.now() - Number(sessionStorage.getItem(RELOAD_KEY) ?? 0) < 10_000;
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!isChunkError || recentlyReloaded) return;
-    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
-    window.location.reload();
-  }, [isChunkError, recentlyReloaded]);
 
   const hardReload = () => {
     if (typeof window === "undefined") return;

@@ -1,12 +1,12 @@
 // Dev-only: exposes the in-memory store to browser checks so a walk-through
-// can read what actually saved. Never runs in a production build.
+// can read what actually saved. Only DEV or the explicit isolated e2e build enables it.
 import { AdelanteEHR } from "@/lib/ehr";
 import { coverageWorklistRows } from "@/lib/coverageWorklist";
 import { setActingRole, setActingStaff } from "@/lib/roles";
 import { setInFacilityEnabled } from "@/lib/inFacility";
 
 export function installDevInspect(navigate?: (to: string) => void) {
-  if (!import.meta.env.DEV || typeof window === "undefined") return;
+  if (!(import.meta.env.DEV || import.meta.env.VITE_E2E === true) || typeof window === "undefined") return;
   (window as unknown as { __adelante: unknown }).__adelante = {
     AdelanteEHR,
     coverageWorklistRows,

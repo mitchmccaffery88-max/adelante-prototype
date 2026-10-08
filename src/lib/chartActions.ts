@@ -49,10 +49,11 @@ import { addSiteClosedDay, addTimeOff, canEditSiteCalendar, canManageStaffCalend
 import { calendarSync } from "@/lib/vendors/calendarSync";
 import { addThreadParticipant, canMessageStaff, flagThreadSud, markMentionDone, markThreadRead, postThreadMessage, reopenStaffThread, resolveStaffThread, startStaffThread } from "@/lib/staffThreads";
 import { addStaffMemberWithReason, deactivateStaffMember, reactivateStaffMember, updateStaffMember } from "@/lib/staffLifecycle";
+import { canAuthorContent, canPublishContent, saveContentDraft, submitContentForReview, publishContent, returnContentForChanges, retireContent, discardContentDraft } from "@/lib/contentPublishing";
 import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-08.resource-verification";
+export const REGISTRY_VERSION = "2026-10-08.content-player";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -119,6 +120,33 @@ export function cosignRouteLabel(staffId?: string): string {
 }
 
 export const CHART_ACTIONS: ChartAction[] = [
+  { id: "patient_lesson_response", label: { en: "Save lesson response", es: "Guardar respuesta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveLessonResponse", AdelanteEHR.saveLessonResponse]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
+  { id: "patient_toolkit_save", label: { en: "Save toolkit", es: "Guardar herramienta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveToolkitItem", AdelanteEHR.saveToolkitItem]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
+  { id: "patient_lesson_complete", label: { en: "Complete lesson", es: "Completar lección" }, group: "care", menu: false, check: "patient self only", store: refs(["completeExercise", AdelanteEHR.completeExercise], ["completeLibraryItem", AdelanteEHR.completeLibraryItem], ["completeRecoveryLesson", AdelanteEHR.completeRecoveryLesson]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
+  { id: "content_create", label: { en: "Create content", es: "Create content" }, group: "admin", menu: false, needsPatient: false,
+    check: "canAuthorContent", store: refs(["saveContentDraft", saveContentDraft]),
+    allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
+  { id: "content_edit", label: { en: "Edit content", es: "Edit content" }, group: "admin", menu: false, needsPatient: false,
+    check: "canAuthorContent", store: refs(["saveContentDraft", saveContentDraft]),
+    allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
+  { id: "content_submit", label: { en: "Submit content", es: "Submit content" }, group: "admin", menu: false, needsPatient: false,
+    check: "canAuthorContent", store: refs(["submitContentForReview", submitContentForReview]),
+    allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
+  { id: "content_approve", label: { en: "Approve content", es: "Approve content" }, group: "admin", menu: false, needsPatient: false,
+    check: "canPublishContent", store: refs(["publishContent", publishContent]),
+    allowed: ({ role }) => canPublishContent(role) ? ok() : hide("This role cannot take this content action."), },
+  { id: "content_publish", label: { en: "Publish content", es: "Publish content" }, group: "admin", menu: false, needsPatient: false,
+    check: "canPublishContent", store: refs(["publishContent", publishContent]),
+    allowed: ({ role }) => canPublishContent(role) ? ok() : hide("This role cannot take this content action."), },
+  { id: "content_return", label: { en: "Return content", es: "Return content" }, group: "admin", menu: false, needsPatient: false,
+    check: "canPublishContent", store: refs(["returnContentForChanges", returnContentForChanges]),
+    allowed: ({ role }) => canPublishContent(role) ? ok() : hide("This role cannot take this content action."), },
+  { id: "content_withdraw", label: { en: "Withdraw content", es: "Withdraw content" }, group: "admin", menu: false, needsPatient: false,
+    check: "canPublishContent", store: refs(["retireContent", retireContent]),
+    allowed: ({ role }) => canPublishContent(role) ? ok() : hide("This role cannot take this content action."), },
+  { id: "content_discard", label: { en: "Discard content draft", es: "Discard content draft" }, group: "admin", menu: false, needsPatient: false,
+    check: "canAuthorContent", store: refs(["discardContentDraft", discardContentDraft]),
+    allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
   {
     id: "resource_verify",
     label: { en: "Verify and publish resource", es: "Verificar y publicar recurso" },

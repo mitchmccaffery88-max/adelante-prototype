@@ -5,6 +5,8 @@
 // inventing a stand-in — see the "Not built yet" chips and the gap list in the
 // build notes. Nothing here changes a data model, a gate, or an access check:
 // gated data is read through exactly the same call the detail surface uses.
+import { latestInProgress, latestTodayAction } from "@/lib/playerEngagement";
+import { useI18n } from "@/lib/i18n";
 import { categoryName, provenanceFor, URGENCY_LABEL } from "@/lib/whatWouldHelp";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
@@ -141,6 +143,7 @@ export function HomeDashboard({
   patientId: string;
   afterHeader?: React.ReactNode;
 }) {
+  const { t: playerText, lang } = useI18n();
   const [helpOpen, setHelpOpen] = useState(false);
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const population = usePopulation(patientId);
@@ -151,6 +154,8 @@ export function HomeDashboard({
   const doseRows = useEhr(() => AdelanteEHR.patientDoseChecklist(patientId));
   const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(patientId));
   const messages = useEhr(() => AdelanteEHR.listCareMessages(patientId));
+  const inProgress = useEhr(() => latestInProgress(patientId, lang));
+  const today = useEhr(() => latestTodayAction(patientId));
   const engagementKey = useSyncExternalStore(
     subscribeEngagement,
     () => JSON.stringify(savedToolkitItems(patientId).map((t) => t.createdAt)),
@@ -360,12 +365,14 @@ export function HomeDashboard({
           </TileShell>
     ),
   });
+  if (today?.response.todayAction) tiles.push({ key: "today-action", priority: 34, node: <TileShell icon={Check} title={playerText("playerTodayHome")}><p data-testid="today-action">{today.response.todayAction}</p></TileShell> });
   // Continue where you left off — polymorphic on real engagement data
   tiles.push({
     key: "pick-up",
     priority: 35,
     node: (
-          <TileShell icon={BookOpen} title="Pick up where you left off">
+          <TileShell icon={BookOpen} title={playerText("playerResume")}>
+            {inProgress ? <div data-testid="lesson-resume"><p>{inProgress.title}</p><p>{playerText("playerStep")} {(inProgress.response.stepIndex ?? 0) + 1} {playerText("playerOf")} {inProgress.response.stepTotal ?? 1}</p><Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-full"><Link to={inProgress.to} search={inProgress.search}>{playerText("playerContinue")}</Link></Button></div> : <>
             {hasProgress ? (
               <>
                 <p className="text-base">{lastToolkit ? lastToolkit.label : "Keep going"}</p>
@@ -404,7 +411,7 @@ export function HomeDashboard({
                 </Button>
               </>
             )}
-          </TileShell>
+          </>}</TileShell>
     ),
   });
   // Resources near you

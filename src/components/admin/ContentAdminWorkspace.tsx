@@ -15,6 +15,19 @@
 // review queue is still here, as an OPTIONAL second pair of eyes rather than a
 // precondition. None of this touches the per-patient care-plan / cosign /
 // order gates, which are a separate, unchanged clinical control.
+import { runAction } from "@/lib/actions/runAction";
+import type { ContentActor, ContentResult } from "@/lib/contentPublishing";
+
+function contentAction(actionId: string, input: { actor: ContentActor; [key: string]: unknown }): ContentResult {
+  if (!(typeof input.note === "string" && input.note.trim())) {
+    const note = window.prompt("Reason for this content change:");
+    if (!note?.trim()) return { ok: false, reason: "A reason is required." };
+    input = { ...input, note: note.trim() };
+  }
+  const result = runAction<ContentResult>(actionId, { role: input.actor.role, staffId: input.actor.staffId, staffName: input.actor.name }, undefined, { args: [input] });
+  return result.ok ? result.value : { ok: false, reason: result.reason };
+}
+
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -298,8 +311,8 @@ function RemoveControl({
     );
     if (!note?.trim()) return;
     const res = live
-      ? retireContent({ typeId: entry.typeId, id: entry.id, actor, note })
-      : discardContentDraft({ typeId: entry.typeId, id: entry.id, actor, note });
+      ? contentAction("content_withdraw", { typeId: entry.typeId, id: entry.id, actor, note })
+      : contentAction("content_discard", { typeId: entry.typeId, id: entry.id, actor, note });
     if (!res.ok) toast.error(res.reason);
     else
       toast.success(
@@ -379,7 +392,7 @@ function ManageTab({ version }: { version: number }) {
 
   const save = () => {
     if (!openId || !body) return;
-    const res = saveContentDraft({
+    const res = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
       id: openId,
       body,
@@ -393,7 +406,7 @@ function ManageTab({ version }: { version: number }) {
 
   const submit = () => {
     if (!openId || !body) return;
-    const saved = saveContentDraft({
+    const saved = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
       id: openId,
       body,
@@ -401,7 +414,7 @@ function ManageTab({ version }: { version: number }) {
       overridesBaseline: descriptor.baselineIds().includes(openId),
     });
     if (!saved.ok) return toast.error(saved.reason);
-    const res = submitContentForReview({
+    const res = contentAction("content_submit", {
       typeId,
       id: openId,
       actor,
@@ -420,7 +433,7 @@ function ManageTab({ version }: { version: number }) {
    */
   const publish = () => {
     if (!openId || !body) return;
-    const saved = saveContentDraft({
+    const saved = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
       id: openId,
       body,
@@ -429,14 +442,14 @@ function ManageTab({ version }: { version: number }) {
     });
     if (!saved.ok) return toast.error(saved.reason);
     if (needsClinicalSignOff(typeId, body)) {
-      const sub = submitContentForReview({ typeId, id: openId, actor, validate: descriptor.validate, note: submitNote.trim() || undefined });
+      const sub = contentAction("content_submit", { typeId, id: openId, actor, validate: descriptor.validate, note: submitNote.trim() || undefined });
       if (!sub.ok) return toast.error(sub.reason);
       toast.success("Sent to clinical review — a clinical reviewer who isn't the author approves it.");
       setOpenId(null);
       setBody(null);
       return;
     }
-    const res = publishContent({ typeId, id: openId, actor, validate: descriptor.validate });
+    const res = contentAction("content_publish", { typeId, id: openId, actor, validate: descriptor.validate });
     if (!res.ok) return toast.error(res.reason);
     toast.success("Published — patients can see this now.");
     setOpenId(null);
@@ -728,7 +741,7 @@ function ReviewTab({ version }: { version: number }) {
                   disabled={!mayPublish}
                   data-testid={`approve-${e.id}`}
                   onClick={() => {
-                    const res = publishContent({
+                    const res = contentAction("content_approve", {
                       typeId: e.typeId,
                       id: e.id,
                       actor,
@@ -747,7 +760,7 @@ function ReviewTab({ version }: { version: number }) {
                   variant="outline"
                   disabled={!mayPublish}
                   onClick={() => {
-                    const res = returnContentForChanges({
+                    const res = contentAction("content_return", {
                       typeId: e.typeId,
                       id: e.id,
                       actor,

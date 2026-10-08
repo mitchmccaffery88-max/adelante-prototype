@@ -19570,23 +19570,23 @@ export const AdelanteEHR = {
       restricted: boolean;
     }[] = [];
     for (const id of lessonIds) {
-      const item = getLibraryItem(id);
+      const item = Engagement.resolvedLibraryItem(id);
       if (!item) continue;
-      const restricted = Boolean(item.part2Sensitive) && !part2Ok;
+      const restricted = Engagement.isProtectedEngagementContent(id);
       completed.push({
         kind: "lesson",
-        id,
+        id: restricted ? "protected-content" : id,
         title: restricted ? "Protected lesson" : item.title,
         restricted,
       });
     }
     for (const id of exerciseIds) {
-      const ex = getExercise(id);
+      const ex = Engagement.resolvedExercise(id);
       if (!ex) continue;
-      const restricted = Boolean(ex.part2Sensitive) && !part2Ok;
+      const restricted = Engagement.isProtectedEngagementContent(id);
       completed.push({
         kind: "exercise",
-        id,
+        id: restricted ? "protected-content" : id,
         title: restricted ? "Protected exercise" : ex.title,
         restricted,
       });
@@ -19602,9 +19602,9 @@ export const AdelanteEHR = {
       reason: gate.reason,
       part2Disclosed: part2Ok,
       lessonsCompleted: lessonIds.length,
-      lessonsTotal: LIBRARY_ITEMS.length,
+      lessonsTotal: Engagement.resolvedLibraryItems().length || LIBRARY_ITEMS.length,
       exercisesCompleted: exerciseIds.length,
-      exercisesTotal: EXERCISES.length,
+      exercisesTotal: Engagement.resolvedExercises().length || EXERCISES.length,
       completed,
     };
   },

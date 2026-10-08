@@ -14,14 +14,14 @@
 // an admin can edit a live lesson without patients seeing half-written text.
 import { useSyncExternalStore } from "react";
 import {
-  LIBRARY_ITEMS,
+  LIBRARY_ITEMS, EXERCISES, type Exercise,
   isLibraryItemVisible,
   type LibraryItem,
 } from "@/lib/library";
 import { RECOVERY_LESSONS, type RecoveryLesson } from "@/lib/recovery";
 import type { PopulationResolution } from "@/lib/population";
 import {
-  publishedContentOfType,
+  publishedContentOfType, publishedContent,
   publishedVersion,
   setContentIntegrityGuard,
   subscribeContent,
@@ -103,6 +103,12 @@ function overlay<T extends { id: string }>(baseline: readonly T[], overrides: T[
 // ---------------------------------------------------------------------------
 // Library
 // ---------------------------------------------------------------------------
+
+export function liveExercises(): Exercise[] {
+  // Exercises remain shipped content until the staff-authoring descriptor lands.
+  return [...EXERCISES];
+}
+export function liveExercise(id: string) { return liveExercises().find((item) => item.id === id); }
 
 export function liveLibraryItems(): LibraryItem[] {
   const overrides = publishedContentOfType("library_lesson")
@@ -230,8 +236,12 @@ export function liveRecoveryModule(id: string) {
 // completing a NEWLY PUBLISHED lesson finds its toolkit label and tool-flow
 // option sets instead of silently no-op'ing against the baseline arrays.
 setContentResolver({
+  libraryItems: liveLibraryItems,
+  exercises: liveExercises,
+  exercise: liveExercise,
   libraryItem: liveLibraryItem,
   recoveryLesson: liveRecoveryLesson,
+  protectedId: (id) => Boolean(liveLibraryItem(id)?.part2Sensitive || LIBRARY_ITEMS.find(item => item.id === id)?.part2Sensitive || RECOVERY_LESSONS.some(item => item.id === id) || liveRecoveryLesson(id) || liveExercise(id)?.part2Sensitive || (publishedContent("library_lesson", id)?.["meta"] as { part2?: boolean } | undefined)?.part2),
 });
 setAdelLessonSource(() => livePatientLibraryItems());
 
