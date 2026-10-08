@@ -17,10 +17,10 @@ test("MAT continuity, coverage at release, deactivation, intake median, screener
   await page.goto("/clinician");
   await page.waitForFunction(() => !!(window as unknown as W).__adelante?.AdelanteEHR, null, { timeout: 60_000 });
 
-  // 1. Anita (prescriber) — MAT refill needed for the seeded patient at 4 days.
+  // 1. Anita (prescriber) — the seeded patient is at 2 days: escalation.
   await as(page, "s-th3", "pmhnp");
-  await go(page, "/clinician");
-  await expect(page.getByText("MAT refill needed").first()).toBeVisible({ timeout: 15_000 });
+  await go(page, "/escalations");
+  await expect(page.getByText("Medication continuity").first()).toBeVisible({ timeout: 15_000 });
   await page.screenshot({ path: "e2e/screenshots/continuity-anita.png" });
 
   // 2. Coordinator — Coverage at release, one overdue reactivation.

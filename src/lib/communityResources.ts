@@ -32,6 +32,9 @@ import { getStaffMember, type StaffRole } from "@/lib/roles";
 // Ported Adelante Journey directory listings (generated).
 import { PORTED_RESOURCES } from "@/lib/communityResources.ported";
 import {
+  getContentEntry,
+  syncWorkingFacts,
+  listContent,
   publishedContentOfType,
   seedDraftContent,
   seedPublishedContent,
@@ -425,10 +428,46 @@ export function isResourceVerified(r: CommunityResource): boolean {
   return !!(r.address.trim() && r.phone.trim() && r.hours.trim());
 }
 
+/**
+ * §C1 One resource store. The staff read is the CMS record: the shipped
+ * listing overlaid with the managed WORKING body from /admin-content, plus any
+ * listing created in the center that was never shipped. Verification state
+ * (status / verification) stays on the local record, because only
+ * `verifyResource` and `updateResourceDetails` may change it.
+ */
+function managedResource(id: string): CommunityResource | undefined {
+  const local = resources.get(id);
+  const entry = getContentEntry("community_resource", id);
+  if (!local && !entry) return undefined;
+  const body = (entry?.body ?? {}) as Partial<CommunityResource>;
+  const merged = { ...(local ?? {}), ...body, id } as CommunityResource;
+  if (local) {
+    merged.status = local.status;
+    merged.verified = local.verified;
+    merged.verification = local.verification;
+  } else {
+    merged.status = "draft" as CommunityResource["status"];
+    merged.verified = false;
+    delete (merged as Partial<CommunityResource>).verification;
+  }
+  merged.address = merged.address ?? "";
+  merged.phone = merged.phone ?? "";
+  merged.hours = merged.hours ?? "";
+  merged.name = merged.name ?? id;
+  merged.description = merged.description ?? "";
+  return structuredClone(merged);
+}
+
+function allResourceIds(): string[] {
+  const ids = new Set<string>(resources.keys());
+  for (const e of listContent("community_resource")) ids.add(e.id);
+  return [...ids];
+}
+
 export function listResources(categoryId?: string): CommunityResource[] {
-  return [...resources.values()]
-    .filter((r) => !categoryId || r.categoryId === categoryId)
-    .map((r) => structuredClone(r))
+  return allResourceIds()
+    .map((id) => managedResource(id)!)
+    .filter((r) => !!r && (!categoryId || r.categoryId === categoryId))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -514,8 +553,7 @@ export function directionsUrl(r: CommunityResource): string | null {
 
 
 export function getResource(id: string): CommunityResource | undefined {
-  const r = resources.get(id);
-  return r ? structuredClone(r) : undefined;
+  return managedResource(id);
 }
 
 /**
@@ -533,6 +571,7 @@ export function updateResourceDetails(
   const r = resources.get(id);
   if (!r) return undefined;
   Object.assign(r, patch);
+  syncWorkingFacts("community_resource", id, patch as Record<string, unknown>);
   // Editing the facts invalidates a prior confirmation of those facts.
   if (r.status === "verified") {
     r.status = "needs_update";
@@ -572,8 +611,22 @@ export type VerifyResult =
  * refused: the wrong role, a missing fact, an incomplete confirmation.
  */
 export function verifyResource(input: VerifyInput): VerifyResult {
-  const r = resources.get(input.resourceId);
-  if (!r) return { ok: false, reason: "No such resource." };
+  // §C1 Verify stamps the CURRENT MANAGED revision, never the shipped copy:
+  // facts come from the CMS working body when one exists, so a verify can no
+  // longer overwrite edits made in /admin-content.
+  const current = managedResource(input.resourceId);
+  if (!current) return { ok: false, reason: "No such resource." };
+  const r: CommunityResource = resources.get(input.resourceId) ?? structuredClone(current);
+  Object.assign(r, {
+    name: current.name,
+    description: current.description,
+    address: current.address,
+    phone: current.phone,
+    hours: current.hours,
+    website: current.website,
+    categoryId: current.categoryId,
+  });
+  resources.set(r.id, r);
   if (!RESOURCE_VERIFIER_ROLES.includes(input.actorRole))
     return { ok: false, reason: "This role cannot publish a community resource." };
   if (input.actorStaffId && !getStaffMember(input.actorStaffId))
@@ -674,16 +727,49 @@ function applyRecordedVerifications(): void {
       atISO: `${RESOURCE_VERIFIER_CATHY.verifiedOn}T00:00:00.000Z`,
     });
   }
-  // Everything Cathy did NOT verify still becomes managed content — as a
+  applyBaselineVerification();
+  // Everything still unverified becomes managed content — as a
   // draft, so the content manager can source it in /admin-content instead of
   // waiting for a code change. A draft is never served to a patient.
   for (const r of SEED_RESOURCES) {
-    if (CATHY_VERIFIED_RESOURCE_IDS.includes(r.id)) continue;
+    if (isResourceVerified(resources.get(r.id)!)) continue;
     seedDraftContent({
       typeId: "community_resource",
       id: r.id,
       body: structuredClone(r) as unknown as Record<string, unknown>,
     });
+  }
+}
+
+/**
+ * §C1 Baseline verification (Mitch, 8 Oct 2026): the final audit before
+ * official launch. Recorded through the real `verifyResource` on every listing,
+ * on top of any earlier pass (Cathy's revision 1 survives as history). A
+ * listing missing a required fact is NOT forced through — it stays in the
+ * staff queue and is reported in `BASELINE_VERIFICATION_SKIPPED`.
+ */
+export const BASELINE_VERIFIER = {
+  name: "Baseline verification (Mitch)",
+  role: "sys_admin" as StaffRole,
+  on: "2026-10-08",
+  note: "Baseline — final audit before official launch",
+};
+export const BASELINE_VERIFICATION_SKIPPED: string[] = [];
+
+function applyBaselineVerification(): void {
+  BASELINE_VERIFICATION_SKIPPED.length = 0;
+  for (const r of SEED_RESOURCES) {
+    const res = verifyResource({
+      resourceId: r.id,
+      actorName: BASELINE_VERIFIER.name,
+      actorRole: BASELINE_VERIFIER.role,
+      confirmedAddress: true,
+      confirmedPhone: true,
+      confirmedHours: true,
+      note: BASELINE_VERIFIER.note,
+      atISO: `${BASELINE_VERIFIER.on}T12:00:00.000Z`,
+    });
+    if (!res.ok) BASELINE_VERIFICATION_SKIPPED.push(r.id);
   }
 }
 

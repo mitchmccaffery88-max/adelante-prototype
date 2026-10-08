@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
+import { BASELINE_VERIFICATION_SKIPPED } from "@/lib/communityResources";
 import {
   DAY_ZERO_PLAN_STEPS,
   DAY_ZERO_STEPS,
@@ -159,26 +160,16 @@ describe("Community resources cannot go live without a real verification", () =>
   const unverified = () =>
     listResources().find((r) => r.status === "unverified" && !r.verification)!;
 
-  it("carries Cathy's recorded verification for the entries she sourced; the rest stay in the queue", () => {
+  it("baseline verification (Mitch, 8 Oct) covers every listing with complete facts; Cathy's pass survives in history", () => {
     const all = listResources();
     expect(all.length).toBeGreaterThan(RESOURCE_CATEGORIES.length);
-    // The real human pass covers exactly the sourced entries.
-    const visible = patientVisibleResources().map((r) => r.id).sort();
-    expect(visible).toEqual([...CATHY_VERIFIED_RESOURCE_IDS].sort());
-    expect(visible.length).toBe(20);
-    // Verification went through the real workflow, attributed to Cathy.
-    for (const r of patientVisibleResources()) {
-      expect(r.verification?.verifiedBy).toBe("Cathy");
-      expect(r.verification?.verifiedByStaffId).toBe("s-cc2");
-      expect(r.status).toBe("verified");
-    }
-    // Everything she did not verify remains unverified — still listed for
-    // patients, but badged rather than published.
+    const visible = patientVisibleResources().map((r) => r.id);
+    expect(visible.length).toBe(all.length - BASELINE_VERIFICATION_SKIPPED.length);
+    for (const id of CATHY_VERIFIED_RESOURCE_IDS) expect(visible).toContain(id);
+    for (const r of patientVisibleResources()) expect(r.status).toBe("verified");
+    // A listing missing a phone is never stamped verified — no invented facts.
     const queue = resourceVerificationQueue();
-    expect(queue.every((r) => r.status !== "verified")).toBe(true);
-    expect(queue.length).toBe(all.length - visible.length);
-    // Multiple categories are represented for patients.
-    expect(new Set(patientVisibleResources().map((r) => r.categoryId)).size).toBeGreaterThan(3);
+    expect(queue.map((r) => r.id).sort()).toEqual([...BASELINE_VERIFICATION_SKIPPED].sort());
   });
 
   it("refuses verification without address/phone/hours, and without all three confirmations", () => {

@@ -30,6 +30,28 @@ export interface ScreenerDraft {
 }
 
 const drafts = new Map<string, ScreenerDraft>();
+
+// §C6 Survive the one-time stale-chunk reload (and any slow-load reload):
+// drafts mirror into this tab's sessionStorage and rehydrate on load. Cleared
+// when the tab closes; nothing leaves the device. Server-side storage is the
+// SculptSoft handoff.
+const SESSION_KEY = "__adelante_screener_drafts";
+function persistDrafts(): void {
+  try {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify([...drafts.entries()]));
+  } catch {
+    /* storage unavailable — in-memory only */
+  }
+}
+try {
+  if (typeof window !== "undefined") {
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
+    if (raw) for (const [k, v] of JSON.parse(raw) as [string, ScreenerDraft][]) drafts.set(k, v);
+  }
+} catch {
+  /* ignore corrupt storage */
+}
 const draftId = (patientId: string, key: string) => `${patientId}::${key}`;
 
 /** Safety first — mirrors the existing PHQ-9 item 9 / C-SSRS positive rule. Idempotent per draft. */
@@ -66,6 +88,7 @@ export function saveScreenerDraft(
     crisisTriggered: existing?.crisisTriggered,
   };
   drafts.set(id, draft);
+  persistDrafts();
   checkCrisis(patientId, key, draft.answers, draft);
   return draft;
 }
@@ -78,6 +101,7 @@ export function getScreenerDraft(patientId: string, key: string): ScreenerDraft 
 
 export function discardScreenerDraft(patientId: string, key: string): void {
   drafts.delete(draftId(patientId, key));
+  persistDrafts();
 }
 
 /** Active (non-expired) drafts for a patient, across instruments. */
@@ -97,6 +121,7 @@ export function expireScreenerDrafts(now: Date = new Date()): string[] {
     const ageDays = (+now - +new Date(d.savedAt)) / 86_400_000;
     if (ageDays < SCREENER_DRAFT_DAYS) continue;
     drafts.set(id, { ...d, answers: [], choices: {}, expired: true });
+    persistDrafts();
     AdelanteEHR.recordActionEvent({
       action: "screener_draft_expired",
       actorId: "system",

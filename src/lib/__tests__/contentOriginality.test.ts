@@ -91,6 +91,7 @@ describe("the gate runs on the real publish path, not just as documentation", ()
       id: "lib_gate_probe",
       categoryId: "starting-strong",
       title: "Gate probe",
+      meta: { esStatus: "reviewed" },
       minutes: 5,
       order: 98,
       problem: "You keep putting off the one call that would change the week.",

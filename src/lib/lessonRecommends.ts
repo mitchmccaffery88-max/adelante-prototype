@@ -4,8 +4,11 @@
 // the targets are derived from the lesson's own `categoryId` / `moduleId` plus
 // simple keyword overlap against titles that already exist. Deterministic, so
 // the chips do not shuffle between visits.
-import { LIBRARY_ITEMS, getLibraryCategory, type LibraryItem } from "@/lib/library";
-import { RECOVERY_MODULES, RECOVERY_LESSONS, getRecoveryModule, type RecoveryLesson } from "@/lib/recovery";
+import { getLibraryCategory, type LibraryItem } from "@/lib/library";
+import { getRecoveryModule, type RecoveryLesson } from "@/lib/recovery";
+// §C5.5 Published content, not the shipped arrays.
+import { livePatientLibraryItems, liveRecoveryLessons, liveRecoveryModules } from "@/lib/contentCatalog";
+const LIBRARY_ITEMS_LIVE = () => livePatientLibraryItems();
 
 export interface LessonRecommend {
   /** Chip text — always the real title of the thing being linked. */
@@ -37,7 +40,7 @@ function overlap(a: string[], b: string): number {
 /** Up to 3 chips for a Library lesson: siblings first, then a Recovery module. */
 export function recommendsForLibraryItem(item: LibraryItem): LessonRecommend[] {
   const category = getLibraryCategory(item.categoryId);
-  const siblings = LIBRARY_ITEMS.filter(
+  const siblings = LIBRARY_ITEMS_LIVE().filter(
     (i) => i.categoryId === item.categoryId && i.id !== item.id,
   ).sort((a, b) => a.order - b.order);
   const words = tokens(`${item.title} ${item.problem}`);
@@ -52,7 +55,7 @@ export function recommendsForLibraryItem(item: LibraryItem): LessonRecommend[] {
   }));
 
   const moduleWords = tokens(`${item.title} ${item.problem} ${category?.name ?? ""}`);
-  const best = [...RECOVERY_MODULES]
+  const best = [...liveRecoveryModules()]
     .filter((m) => !m.contentPending)
     .sort(
       (a, b) =>
@@ -60,7 +63,7 @@ export function recommendsForLibraryItem(item: LibraryItem): LessonRecommend[] {
         overlap(moduleWords, `${a.name} ${a.mission} ${a.subtitle}`),
     )[0];
   if (best) {
-    const first = RECOVERY_LESSONS.filter((l) => l.moduleId === best.id).sort(
+    const first = liveRecoveryLessons().filter((l) => l.moduleId === best.id).sort(
       (a, b) => a.order - b.order,
     )[0];
     out.push({
@@ -76,7 +79,7 @@ export function recommendsForLibraryItem(item: LibraryItem): LessonRecommend[] {
 /** Up to 3 chips for a Recovery lesson: next lesson in module, then Library. */
 export function recommendsForRecoveryLesson(lesson: RecoveryLesson): LessonRecommend[] {
   const mod = getRecoveryModule(lesson.moduleId);
-  const siblings = RECOVERY_LESSONS.filter(
+  const siblings = liveRecoveryLessons().filter(
     (l) => l.moduleId === lesson.moduleId && l.id !== lesson.id,
   ).sort((a, b) => a.order - b.order);
   const next = siblings.find((l) => l.order > lesson.order) ?? siblings[0];
@@ -91,7 +94,7 @@ export function recommendsForRecoveryLesson(lesson: RecoveryLesson): LessonRecom
   }
 
   const words = tokens(`${lesson.title} ${lesson.problem} ${lesson.toolkitLabel}`);
-  const ranked = [...LIBRARY_ITEMS]
+  const ranked = [...LIBRARY_ITEMS_LIVE()]
     .map((i) => ({ i, score: overlap(words, `${i.title} ${i.problem}`) }))
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score || a.i.id.localeCompare(b.i.id));

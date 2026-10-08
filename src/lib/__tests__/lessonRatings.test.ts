@@ -1,3 +1,4 @@
+import { livePatientLibraryItems, liveRecoveryLessons } from "@/lib/contentCatalog";
 // §Lesson-player Phase C — derived dimensions, delta polarity, recommends.
 import { describe, expect, it } from "vitest";
 import {
@@ -40,8 +41,9 @@ describe("delta polarity", () => {
 
 describe("recommendation chips", () => {
   it("point at real existing content for every lesson", () => {
-    const libIds = new Set(LIBRARY_ITEMS.map((i) => i.id));
-    const recIds = new Set(RECOVERY_LESSONS.map((l) => l.id));
+    // §C5.5 Chips point at PUBLISHED content (shipped + managed).
+    const libIds = new Set(livePatientLibraryItems().map((i) => i.id));
+    const recIds = new Set(liveRecoveryLessons().map((l) => l.id));
     for (const item of LIBRARY_ITEMS) {
       const recs = recommendsForLibraryItem(item);
       expect(recs.length).toBeGreaterThan(0);

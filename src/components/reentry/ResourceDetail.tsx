@@ -25,7 +25,6 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import {
   RESOURCE_CATEGORIES,
   directionsUrl,
-  isResourceVerified,
   patientBrowsableResource,
   subscribeResources,
 } from "@/lib/communityResources";
@@ -79,16 +78,6 @@ export function ResourceDetail({
   return (
     <PatientPage width="reading" data-testid="resource-detail">
       <PatientPageHeader icon={MapPin} title={r.name} lede={r.description} />
-
-      {!isResourceVerified(r) && (
-        <p
-          className="rounded-2xl border border-amber-warm bg-amber-soft p-3 text-sm text-amber-warm-foreground"
-          data-testid="resource-detail-unverified"
-        >
-          Pending verification — nobody on our team has called this listing yet, so the address,
-          phone or hours may have changed. Call ahead before you go.
-        </p>
-      )}
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {category && <span className="rounded-full bg-secondary px-3 py-1">{category.name}</span>}

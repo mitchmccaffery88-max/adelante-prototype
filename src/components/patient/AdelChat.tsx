@@ -18,6 +18,46 @@ import { distressChipCopy, distressChipDecision, isMeetingRequest } from "@/lib/
 import { crisisMatchLanguage } from "@/lib/crisisTextDetection";
 import { crisisCopy } from "@/lib/crisisCopy";
 import { useI18n } from "@/lib/i18n";
+import { suggestContentForPatient, taggedItem } from "@/lib/contentTags";
+import { getStructuredPlan } from "@/lib/structuredCarePlan";
+
+/**
+ * §C5.3 Adel suggests ONE published lesson that matches the patient's own plan,
+ * needs and reentry stage — tags only. Simulated adapter (no model call);
+ * neutral wording; the patient decides whether to open it.
+ */
+function AdelContentSuggestion({ patientId, lang }: { patientId: string; lang: "en" | "es" }) {
+  const pick = useEhr(() => {
+    // Newest assignment first — the step the care team just added.
+    const planned = [...getStructuredPlan(patientId).assignments]
+      .reverse()
+      .filter((a) => a.active && !!a.activityId && a.completions.length === 0)
+      .map((a) => taggedItem(a.activityId ?? ""))
+      .find(Boolean);
+    return planned ?? suggestContentForPatient(patientId, { seesPart2: true, limit: 1 })[0]?.item;
+  });
+  if (!pick) return null;
+  const title = lang === "es" && pick.titleEs ? pick.titleEs : pick.title;
+  return (
+    <div className="rounded-xl border border-teal/30 bg-teal/5 p-3 text-sm" data-testid="adel-content-suggestion">
+      <p className="text-navy">
+        {lang === "es"
+          ? `Algo que podría ayudarte ahora: «${title}». ¿Quieres abrirlo?`
+          : `Something that may help right now: "${title}". Want to open it?`}
+      </p>
+      <div className="mt-2 flex items-center gap-2">
+        <Button asChild size="sm" variant="outline">
+          <Link to={pick.to} search={pick.search} data-testid="adel-suggestion-open">
+            {lang === "es" ? "Abrir" : "Open"}
+          </Link>
+        </Button>
+        <span className="text-[11px] text-muted-foreground">
+          {lang === "es" ? "Simulado — sugerencia de Adel" : "Simulated — Adel suggestion"}
+        </span>
+      </div>
+    </div>
+  );
+}
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -279,6 +319,7 @@ export function AdelChat({ resourceId, initialAsk, threadId: resumeId }: { resou
       </header>
 
       <Card className="soft-shadow flex-1 space-y-3 p-4">
+        {currentPatientId && <AdelContentSuggestion patientId={currentPatientId} lang={hl} />}
         <ul className="space-y-3">
           {turns.map((t, i) => (
             <li key={i} className={cn("flex", t.role === "user" ? "justify-end" : "justify-start")}>

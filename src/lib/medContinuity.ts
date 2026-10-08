@@ -161,7 +161,7 @@ export function sendPatientRefillNudges(now: Date = new Date()): number {
 }
 
 // ---------------------------------------------------------------------------
-// Seed — through store functions only. One MAT patient at 4 days of runway.
+// Seed — through store functions only. One MAT patient at 2 days of runway (escalation shows in demos).
 // ---------------------------------------------------------------------------
 export const MAT_SEED_PATIENT = "Jasmine";
 let seeded = false;
@@ -171,7 +171,7 @@ export function seedMatContinuityDemo(now: Date = new Date()): void {
   const p = AdelanteEHR.listPatients().find((x) => x.firstName === MAT_SEED_PATIENT && x.lastName === "Holt");
   if (!p || (p.orders ?? []).some(isMatOrder)) return;
   AdelanteEHR.setPrescriberOfRecord(p.id, "s-th3", "seed");
-  const start = new Date(+now - 26 * DAY).toISOString().slice(0, 10);
+  const start = new Date(+now - 28 * DAY).toISOString().slice(0, 10);
   const o = AdelanteEHR.addDraftOrder(p.id, {
     drugName: "Buprenorphine-naloxone 8 MG-2 MG Sublingual Film", productName: "Buprenorphine-naloxone 8 MG-2 MG Sublingual Film",
     ingredientNames: ["buprenorphine", "naloxone"], isControlled: true, deaSchedule: "CIII", daysSupply: 30, startDate: start, createdBy: "s-th3",

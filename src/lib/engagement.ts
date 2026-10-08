@@ -44,6 +44,28 @@ export interface ContentResolver {
 
 let contentResolver: ContentResolver | undefined;
 
+/** §C5 Completion hook — the care plan closes matching assignments. */
+export interface ContentCompletion {
+  patientId: string;
+  kind: "library" | "exercise" | "recovery";
+  id: string;
+  moduleId?: string;
+}
+const completionListeners = new Set<(c: ContentCompletion) => void>();
+export function onContentCompleted(fn: (c: ContentCompletion) => void): () => void {
+  completionListeners.add(fn);
+  return () => completionListeners.delete(fn);
+}
+function emitCompletion(c: ContentCompletion): void {
+  for (const fn of completionListeners) {
+    try {
+      fn(c);
+    } catch {
+      /* a plan hook must never break lesson completion */
+    }
+  }
+}
+
 export function setContentResolver(r: ContentResolver | undefined): void {
   contentResolver = r;
 }
@@ -499,6 +521,7 @@ export function completeLibraryItem(
         minutes: item.minutes,
       },
     });
+    emitCompletion({ patientId, kind: "library", id: itemId });
   }
   notify();
   return { completed: true, alreadyComplete: already };
@@ -529,6 +552,7 @@ export function completeExercise(
       actorRole: opts.actorRole ?? "patient",
       detail: { exerciseId, title: ex.title, type: ex.type, minutes: ex.minutes },
     });
+    emitCompletion({ patientId, kind: "exercise", id: exerciseId });
   }
   notify();
   return { completed: true, alreadyComplete: already };
@@ -587,6 +611,7 @@ export function completeRecoveryLesson(
         hasTodayAction: Boolean(r.recoveryToolFlows[lessonId]?.todayAction),
       },
     });
+    emitCompletion({ patientId, kind: "recovery", id: lessonId, moduleId: lesson.moduleId });
   }
   notify();
   return { completed: true, alreadyComplete: already };

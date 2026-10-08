@@ -25,6 +25,12 @@ describe("RouteAccessGuard", () => {
     navigate.mockClear();
     toastError.mockClear();
     vi.useRealTimers();
+    // The app's mounted Toaster region; the guard waits for it before toasting.
+    if (!document.querySelector('section[aria-label^="Notifications"]')) {
+      const s = document.createElement("section");
+      s.setAttribute("aria-label", "Notifications alt+T");
+      document.body.appendChild(s);
+    }
   });
 
   it("redirects and toasts on a gated deep link", async () => {

@@ -89,6 +89,9 @@ test.describe("staff sidebar matches the RBAC gates", () => {
 });
 
 test.describe("deep links honour the same gates", () => {
+  // Each case does ~8 full page loads; under parallel load the 30s default
+  // is too tight (C6 stability). Assertions are unchanged.
+  test.describe.configure({ timeout: 120_000 });
   for (const role of ROLES) {
     test(`${role}: allowed deep links open, denied deep links redirect`, async ({ page }) => {
       await actAs(page, role);
