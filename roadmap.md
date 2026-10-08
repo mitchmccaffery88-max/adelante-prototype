@@ -263,8 +263,8 @@
 - [x] History/continue, delete/clear, 90-day retention, share summary via disclose(), advocate isolation, EN/ES, handoff rows 12–16
 
 ## Staff content center S1–S6
-- [ ] Private real-player Browse + care plan preview
-- [ ] Structured Manage forms + exercises/journeys CMS
-- [ ] Journey patient progress/assignment integrity
-- [ ] Revision-pinned engagement + suppressed Audit/history/stale queue
-- [ ] Full unit and browser validation + handoff
+- [x] Private real-player Browse + care plan preview
+- [x] Structured Manage forms + exercises/journeys CMS
+- [x] Journey patient progress/assignment integrity
+- [x] Revision-pinned engagement + suppressed Audit/history/stale queue
+- [x] Full unit (2,458) + typecheck; browser 54/55 together — continuity.spec screener-resume step intermittent under parallel load only (passes standalone)
