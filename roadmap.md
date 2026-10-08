@@ -1,9 +1,9 @@
 # Roadmap
 
 ## In progress
-- [ ] Focused resource verification move and Patient Content & Resources Center rename; coordination priorities, access parity, full unit suite and selected browser checks. Browser stability and seed changes explicitly deferred.
 
 ## Done
+- [x] Moved resource verification to Patient Content & Resources Center; retained verifier gates and published revision attribution, added filters/counts and verification provenance, restored coordination-first ordering with Reassign needed. All 2,406 unit tests pass and harness typecheck/build is clean; selected sequential browsers: 37 pass including the coordinator content walkthrough, calendar and continuity checks fail (stability/seed work remains deferred).
 - [x] Section 6 item 3: cancel requests (patient/advocate), staff cancel with reason, no-show, late-cancel label (draft), ASAM task reopening, claim guard, reporting, demo data.
 - [x] Advocate demo thread via upload → staff verification of a two-way HIPAA release.
 - [x] Patient and advocate navigation correction: persistent desktop sidebars, phone left drawer, no user top-nav strips, and no staff-link leakage.
