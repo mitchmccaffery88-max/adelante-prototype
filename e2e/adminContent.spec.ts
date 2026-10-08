@@ -20,6 +20,10 @@ test("coordinator starts with coordination work and verifies resources in the re
   await expect(page.getByRole("heading", { name: "Patient Content & Resources Center", exact: true })).toBeVisible();
   await expect(page.locator('a[data-nav-id="admin-content"]')).toHaveText("Patient Content & Resources Center");
   await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Patient Content & Resources Center");
+  // §C2 The center opens on its Home digest; listings live under Manage → Directory.
+  await expect(page.getByText("Awaiting my review")).toBeVisible();
+  await page.getByRole("tab", { name: "Manage" }).click();
+  await page.getByTestId("content-groups").getByRole("button", { name: "Directory" }).click();
   await page.getByTestId("content-type-select").click();
   await page.getByRole("option", { name: "Community resources", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "Resource verification filter" })).toHaveText("Not verified");

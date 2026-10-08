@@ -8,7 +8,6 @@ import {
   MAT_CONTINUITY_DRAFT, MAT_REFILL_TASK_LABEL, PATIENT_REFILL_NUDGE, matContinuityAlerts, continuityForPatient, sendPatientRefillNudges,
 } from "@/lib/medContinuity";
 import { listEscalations, NEUTRAL_TYPE_LABEL } from "@/lib/escalations";
-import { workspaceActionRows } from "@/lib/clinicianWorkspace";
 import { headerAlerts } from "@/lib/chartBrief";
 import { computeAdherence } from "@/lib/adelBrief";
 
@@ -23,12 +22,15 @@ describe("B1 thresholds", () => {
     expect(MAT_CONTINUITY_DRAFT).toMatchObject({ refillNeededDays: 5, escalateDays: 2, releaseBridgeDays: 1 });
     expect(MAT_CONTINUITY_DRAFT.label).toMatch(/^Draft/);
   });
-  it("seeded patient at 4 days → MAT refill needed in the prescriber's Needs my action", () => {
+  it("seeded patient at 2 days → Medication continuity escalation (demo); 4 days → MAT refill needed", () => {
     const a = continuityForPatient(jasmine().id);
     expect(a).toHaveLength(1);
-    expect(a[0]).toMatchObject({ kind: "refill_needed", daysLeft: 4, ownerStaffId: "s-th3", escalation: false });
-    const rows = workspaceActionRows({ actor: ANITA as never, needsClosing: [] });
-    expect(rows.some((r) => r.kind === "continuity" && r.label === MAT_REFILL_TASK_LABEL && r.patientId === jasmine().id)).toBe(true);
+    expect(a[0]).toMatchObject({ daysLeft: 2, ownerStaffId: "s-th3", escalation: true });
+    const four = continuityForPatient(jasmine().id, at(4));
+    expect(four[0]).toMatchObject({ kind: "refill_needed", daysLeft: 4, escalation: false });
+    const esc = listEscalations({ role: "pmhnp", staffId: "s-th3" }).find((r) => r.type === "med_continuity" && r.patientId === jasmine().id);
+    expect(esc?.typeLabel).toBe("Medication continuity");
+    expect(MAT_REFILL_TASK_LABEL).toBe("MAT refill needed");
   });
   it("6 days → nothing; 2 days → Medication continuity escalation owned by the prescriber", () => {
     expect(continuityForPatient(jasmine().id, at(6))).toHaveLength(0);
@@ -52,8 +54,8 @@ describe("B1 thresholds", () => {
     p.prescriberStaffId = undefined; o.attestedBy = "nobody"; o.createdBy = undefined; o.orderingProviderId = undefined;
     try {
       expect(continuityForPatient(p.id)[0].ownerStaffId).toBeUndefined();
-      const coord = workspaceActionRows({ actor: { role: "clinical_coordinator", staffId: "s-cc1", staffName: "Coord" } as never, needsClosing: [] });
-      expect(coord.some((r) => r.kind === "continuity" && r.patientId === p.id)).toBe(true);
+      const coord = listEscalations({ role: "clinical_coordinator", staffId: "s-cc1" });
+      expect(coord.some((r) => r.type === "med_continuity" && r.patientId === p.id)).toBe(true);
     } finally { p.prescriberStaffId = prev; o.attestedBy = saved.a; o.createdBy = saved.c; o.orderingProviderId = saved.op; }
   });
   it("released MAT patient with no active order within 1 day → escalation", () => {
@@ -76,7 +78,7 @@ describe("B1 masking", () => {
     const b = computeAdherence(jasmine(), "pmhnp", new Date()).find((x) => x.id.startsWith("continuity-"))!;
     expect(b.text).toMatch(/source: Refill runway/);
     const h = headerAlerts(jasmine(), "pmhnp", ["medications"]).find((x) => x.id.startsWith("mat-cont"))!;
-    expect(h.label).toMatch(/MAT refill needed — Refill runway/);
+    expect(h.label).toMatch(/Medication continuity — Refill runway/);
   });
   it("patient nudge is neutral EN/ES, no medication name, deduped", () => {
     for (const c of [PATIENT_REFILL_NUDGE.en, PATIENT_REFILL_NUDGE.es]) expect(`${c.subject} ${c.body}`).not.toMatch(/bupren|suboxone|naloxone|naltrex|methadone|MAT|opioid/i);

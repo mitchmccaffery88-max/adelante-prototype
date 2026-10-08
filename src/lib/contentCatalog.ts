@@ -34,6 +34,7 @@ import {
   liveRecoveryModuleList,
 } from "@/lib/contentTypes";
 import { setContentResolver } from "@/lib/engagement";
+import { setAdelLessonSource } from "@/lib/adelPrompt";
 // Side-effect import: Module 1 lessons 6–10 are authored as PUBLISHED managed
 // content rather than shipped-array entries, so they must be seeded before any
 // surface resolves the live catalog.
@@ -232,6 +233,7 @@ setContentResolver({
   libraryItem: liveLibraryItem,
   recoveryLesson: liveRecoveryLesson,
 });
+setAdelLessonSource(() => livePatientLibraryItems());
 
 // ---------------------------------------------------------------------------
 // §Referential integrity — the real implementation of the store's guard.

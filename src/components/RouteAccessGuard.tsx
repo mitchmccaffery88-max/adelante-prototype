@@ -40,10 +40,18 @@ export function RouteAccessGuard() {
       // Deferred a tick: on a cold deep link this effect runs before the
       // Toaster's own mount effect subscribes, and an immediately-emitted
       // toast would be dropped.
-      setTimeout(
-        () => toast.error("Access restricted", { description: access.message }),
-        0,
-      );
+      // Under a slow cold load the Toaster can take longer than one tick, so
+      // wait (up to 5s) until it is in the page before emitting.
+      const started = Date.now();
+      const emit = () => {
+        const ready = typeof document !== "undefined" && !!document.querySelector('section[aria-label^="Notifications"]');
+        if (ready || Date.now() - started > 5000) {
+          toast.error("Access restricted", { description: access.message });
+        } else {
+          setTimeout(emit, 50);
+        }
+      };
+      setTimeout(emit, 0);
     }
     navigate({ to: access.redirectTo, replace: true });
   }, [role, staffId, pathname, navigate]);

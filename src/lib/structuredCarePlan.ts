@@ -73,6 +73,8 @@ export interface PlanAssignment {
   reason: "rule" | "ad_hoc";
   suggestionId?: string;
   completions: string[];
+  /** §C5 where each completion came from ("lesson_finished", "patient", "staff"). */
+  completionSources?: { at: string; source: string }[];
   active: boolean;
   sud: boolean;
 }
@@ -110,11 +112,13 @@ export interface PlanActivity {
   to: "/library" | "/recovery-journey";
   exercise?: string;
   sud: boolean;
+  /** §C5 deep link: `{ item }`, `{ lesson }`, `{ module }` or `{ exercise }`. */
+  search?: Record<string, string>;
+  kind?: "lesson" | "module" | "exercise";
 }
 export const PLAN_ACTIVITIES: PlanActivity[] = [
   { id: "box-breathing", label: { en: "Box breathing", es: "Respiración en caja" }, to: "/library", exercise: "box-breathing", sud: false },
-  { id: "behavioral-activation", label: { en: "Do one thing you enjoy", es: "Haga una cosa que disfrute" }, to: "/library", sud: false },
-  { id: "reentry-journey", label: { en: "Re-entry Journey", es: "Camino de regreso" }, to: "/recovery-journey", sud: false },
+  { id: "ss-daily-rhythm", label: { en: "Creating My Daily Rhythm", es: "Crear mi rutina diaria" }, to: "/library", search: { item: "ss-daily-rhythm" }, sud: false },
   { id: "first-days-out", label: { en: "My First Days Out", es: "Mis primeros días afuera" }, to: "/recovery-journey", sud: false },
   // §C1 — recovery modules offered as interventions on ASAM-derived goals (Part 2).
   { id: "understanding-my-addiction", label: { en: "Recovery lesson: Understanding My Addiction", es: "Lección: Entender mi adicción" }, to: "/recovery-journey", sud: true },
@@ -123,7 +127,35 @@ export const PLAN_ACTIVITIES: PlanActivity[] = [
   { id: "changing-my-everyday-life", label: { en: "Recovery lesson: Changing My Everyday Life", es: "Lección: Cambiar mi vida diaria" }, to: "/recovery-journey", sud: true },
   { id: "building-a-life-that-works", label: { en: "Recovery lesson: Building a Life That Works", es: "Lección: Construir una vida que funcione" }, to: "/recovery-journey", sud: true },
 ];
-export const activityById = (id?: string) => PLAN_ACTIVITIES.find((a) => a.id === id);
+/**
+ * §C5 The assignment picker reads LIVE published content. The catalog
+ * registers the source (see `contentTags.ts`) so this module never imports the
+ * content store; the shipped list above is only the no-catalog fallback.
+ */
+let activitySource: (() => PlanActivity[]) | undefined;
+export function setPlanActivitySource(fn: (() => PlanActivity[]) | undefined): void {
+  activitySource = fn;
+}
+export function planActivities(): PlanActivity[] {
+  return activitySource?.() ?? PLAN_ACTIVITIES;
+}
+/** Old ids that pointed at nothing; kept resolvable so existing plans don't break. */
+export const ACTIVITY_ALIASES: Record<string, string> = {
+  "behavioral-activation": "ss-daily-rhythm",
+  "reentry-journey": "first-days-out",
+};
+export const activityById = (id?: string) => {
+  if (!id) return undefined;
+  const real = ACTIVITY_ALIASES[id] ?? id;
+  return planActivities().find((a) => a.id === real) ?? PLAN_ACTIVITIES.find((a) => a.id === real);
+};
+
+/** §C5 Tag-driven suggestions, registered by `contentTags.ts`. */
+export type TaggedSuggestionSource = (patientId: string, now: Date) => PlanSuggestion[];
+let suggestionSource: TaggedSuggestionSource | undefined;
+export function setTaggedSuggestionSource(fn: TaggedSuggestionSource | undefined): void {
+  suggestionSource = fn;
+}
 
 // Draft Z-codes for common social needs.
 const NEED_CODES: Array<{ re: RegExp; code: string }> = [
@@ -416,14 +448,15 @@ export function assignmentWeek(a: PlanAssignment, now = new Date()) {
   const today = a.completions.some((c) => new Date(c).toDateString() === now.toDateString());
   return { done: Math.min(done, target), target, today };
 }
-export function completeAssignment(patientId: string, assignmentId: string, by: Actor, at = new Date()) {
+export function completeAssignment(patientId: string, assignmentId: string, by: Actor, at = new Date(), source = "manual") {
   const plan = getStructuredPlan(patientId);
   const a = plan.assignments.find((x) => x.id === assignmentId && x.active);
   if (!a) throw new Error("Activity not found.");
   if (assignmentWeek(a, at).today && a.frequency !== "once") return;
   if (a.frequency === "once" && a.completions.length) return;
   a.completions.push(at.toISOString());
-  audit("plan_assignment_completed", patientId, by, { assignmentId, goalId: a.goalId });
+  (a.completionSources ??= []).push({ at: at.toISOString(), source });
+  audit("plan_assignment_completed", patientId, by, { assignmentId, goalId: a.goalId, source });
 }
 
 /** Goal progress 0–100 from its assignments (referrals by ladder step). */
@@ -470,14 +503,19 @@ export function planSuggestions(patientId: string, now = new Date()): PlanSugges
   const plan = getStructuredPlan(patientId);
   const has = (activityId: string) => plan.assignments.some((a) => a.active && a.activityId === activityId);
   const out: PlanSuggestion[] = [];
-  const gad = latestScore(p, "gad-7");
-  if (gad !== undefined && gad >= SUGGESTION_THRESHOLDS.gad7 && !has("box-breathing"))
-    out.push({ id: "gad7-box-breathing", rule: `GAD-7 ≥ ${SUGGESTION_THRESHOLDS.gad7}`, why: `Latest GAD-7 is ${gad}.`, kind: "activity", activityId: "box-breathing", frequency: "daily", label: "Anxiety skills: box breathing (daily)" });
-  const phq = latestScore(p, "phq-9");
-  if (phq !== undefined && phq >= SUGGESTION_THRESHOLDS.phq9 && !has("behavioral-activation"))
-    out.push({ id: "phq9-activation", rule: `PHQ-9 ≥ ${SUGGESTION_THRESHOLDS.phq9}`, why: `Latest PHQ-9 is ${phq}.`, kind: "activity", activityId: "behavioral-activation", frequency: "weekly", label: "Behavioral activation module (weekly)" });
-  if (inReentryWindow(p, now, SUGGESTION_THRESHOLDS.reentryDays) && !has("reentry-journey"))
-    out.push({ id: "reentry-journey", rule: `Within ${SUGGESTION_THRESHOLDS.reentryDays} days of release`, why: "Released recently.", kind: "activity", activityId: "reentry-journey", frequency: "weekly", label: "Re-entry Journey (weekly)" });
+  if (suggestionSource) {
+    // §C5 tag-driven: content tagged for the patient's bands, needs and stage.
+    for (const t of suggestionSource(patientId, now)) if (!t.activityId || !has(t.activityId)) out.push(t);
+  } else {
+    const gad = latestScore(p, "gad-7");
+    if (gad !== undefined && gad >= SUGGESTION_THRESHOLDS.gad7 && !has("box-breathing"))
+      out.push({ id: "gad7-box-breathing", rule: `GAD-7 ≥ ${SUGGESTION_THRESHOLDS.gad7}`, why: `Latest GAD-7 is ${gad}.`, kind: "activity", activityId: "box-breathing", frequency: "daily", label: "Anxiety skills: box breathing (daily)" });
+    const phq = latestScore(p, "phq-9");
+    if (phq !== undefined && phq >= SUGGESTION_THRESHOLDS.phq9 && !has("ss-daily-rhythm"))
+      out.push({ id: "phq9-activation", rule: `PHQ-9 ≥ ${SUGGESTION_THRESHOLDS.phq9}`, why: `Latest PHQ-9 is ${phq}.`, kind: "activity", activityId: "ss-daily-rhythm", frequency: "weekly", label: "Creating My Daily Rhythm (weekly)" });
+    if (inReentryWindow(p, now, SUGGESTION_THRESHOLDS.reentryDays) && !has("first-days-out"))
+      out.push({ id: "reentry-journey", rule: `Within ${SUGGESTION_THRESHOLDS.reentryDays} days of release`, why: "Released recently.", kind: "activity", activityId: "first-days-out", frequency: "weekly", label: "My First Days Out (weekly)" });
+  }
   for (const it of p.sdohPlan?.items ?? []) {
     if (!/hous|shelter|homeless/i.test(it.need) || it.status === "completed") continue;
     if (plan.assignments.some((a) => a.active && a.needId === it.id)) continue;
@@ -485,14 +523,14 @@ export function planSuggestions(patientId: string, now = new Date()): PlanSugges
   }
   return out.filter((s) => !plan.decisions[s.id]);
 }
-export function acceptSuggestion(patientId: string, suggestionId: string, goalId: string, actor: Actor, at?: string): PlanAssignment {
+export function acceptSuggestion(patientId: string, suggestionId: string, goalId: string, actor: Actor, at?: string, reason?: string): PlanAssignment {
   assertEdit(actor);
   const s = planSuggestions(patientId).find((x) => x.id === suggestionId);
   if (!s) throw new Error("That suggestion is no longer open.");
   const a = assignToGoal({ patientId, goalId, kind: s.kind, activityId: s.activityId, needId: s.needId, frequency: s.frequency, reason: "rule", suggestionId, actor, at });
   const plan = getStructuredPlan(patientId);
-  plan.decisions[suggestionId] = { decision: "accepted", at: new Date().toISOString(), by: actor.name };
-  audit("plan_suggestion_accepted", patientId, actor, { suggestionId, rule: s.rule, assignmentId: a.id });
+  plan.decisions[suggestionId] = { decision: "accepted", at: new Date().toISOString(), by: actor.name, ...(reason?.trim() ? { reason: reason.trim().slice(0, 300) } : {}) };
+  audit("plan_suggestion_accepted", patientId, actor, { suggestionId, rule: s.rule, assignmentId: a.id, ...(reason?.trim() ? { reason: reason.trim().slice(0, 300) } : {}) });
   return a;
 }
 export function dismissSuggestion(patientId: string, suggestionId: string, reason: string, actor: Actor) {

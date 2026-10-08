@@ -37,7 +37,26 @@ import { ClientDate } from "@/components/ClientDate";
 import { ContentForm } from "./ContentForm";
 import { ContentPreview } from "./ContentPreview";
 import { ResourceVerificationQueue } from "./ResourceVerificationQueue";
-import { CONTENT_TYPES, contentType } from "@/lib/contentTypes";
+import { CONTENT_TYPES, contentType, type ContentTypeDescriptor } from "@/lib/contentTypes";
+// §C0 Seed load order: the authored lesson seeds and the tag registrations
+// load through the catalog, so a fresh /admin-content load sees them.
+import "@/lib/contentCatalog";
+import "@/lib/contentTags";
+import { contentCoverage } from "@/lib/contentTags";
+import {
+  GOVERNANCE_DRAFT_LABEL,
+  READING_LEVEL_TARGET,
+  SCREENER_BANDS,
+  SPANISH_REQUIRED_TYPES,
+  bodyReadingGrade,
+  isPart2Content,
+  metaOf,
+  needsClinicalSignOff,
+  part2Suggested,
+  spanishStatusOf,
+  type ContentMeta,
+} from "@/lib/contentGovernance";
+import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 import {
   canAuthorContent,
   canPublishContent,
@@ -62,6 +81,168 @@ import {
 
 function useContentStore(): number {
   return useSyncExternalStore(subscribeContent, contentStoreVersion, () => 0);
+}
+
+/** §C0 Titles everywhere, never raw ids. */
+function displayTitle(d: ContentTypeDescriptor, id: string, body?: ContentBody): string {
+  const t = body ? d.titleOf(body) : "";
+  if (t && !t.startsWith("(")) return t;
+  const base = d.baselineBody(id);
+  const bt = base ? d.titleOf(base) : "";
+  if (bt && !bt.startsWith("(")) return bt;
+  return t || "Untitled";
+}
+
+function GovernanceChips({ typeId, body }: { typeId: ContentTypeId; body: ContentBody }) {
+  const m = metaOf(body);
+  const es = spanishStatusOf(body);
+  return (
+    <span className="flex flex-wrap gap-1">
+      {isPart2Content(typeId, body) && (
+        <Badge variant="outline" className="text-[10px]">Part 2</Badge>
+      )}
+      {m.clinical && <Badge variant="outline" className="text-[10px]">Clinical</Badge>}
+      {SPANISH_REQUIRED_TYPES.has(typeId) && (
+        <Badge variant="outline" className="text-[10px]" data-testid="es-chip">
+          ES {es}
+        </Badge>
+      )}
+    </span>
+  );
+}
+
+const STAGE_LABELS: Record<string, string> = {
+  pre_release: "Pre-release",
+  first_30: "First 30 days",
+  days_30_90: "30–90 days",
+  after_90: "After 90 days",
+};
+
+/** §C3 "What this addresses" — Draft field set, stored on the body as `meta`. */
+function MetaPanel({
+  typeId,
+  body,
+  onChange,
+}: {
+  typeId: ContentTypeId;
+  body: ContentBody;
+  onChange: (b: ContentBody) => void;
+}) {
+  const m = metaOf(body);
+  const set = (patch: Partial<ContentMeta>) => onChange({ ...body, meta: { ...m, ...patch, backfilled: false } });
+  const toggle = <T,>(list: T[] | undefined, v: T): T[] =>
+    (list ?? []).includes(v) ? (list ?? []).filter((x) => x !== v) : [...(list ?? []), v];
+  const chip = (on: boolean, label: string, onClick: () => void, testId?: string) => (
+    <button
+      type="button"
+      key={label}
+      onClick={onClick}
+      data-testid={testId}
+      aria-pressed={on}
+      className={`rounded-full border px-2 py-0.5 text-[11px] ${on ? "border-teal bg-teal/15 text-teal" : "border-border text-muted-foreground"}`}
+    >
+      {label}
+    </button>
+  );
+  const grade = bodyReadingGrade(body);
+  const suggested = part2Suggested(typeId, body);
+  const es = (body["es"] as { title?: string; body?: string } | undefined) ?? {};
+  return (
+    <div className="space-y-3 rounded-lg border border-border p-3" data-testid="meta-panel">
+      <p className="text-xs font-medium uppercase tracking-wider text-teal">What this addresses</p>
+      <p className="text-[11px] text-muted-foreground">{GOVERNANCE_DRAFT_LABEL}</p>
+      <div className="space-y-1">
+        <Label className="text-xs">Needs</Label>
+        <div className="flex flex-wrap gap-1">
+          {RESOURCE_CATEGORIES.map((c) =>
+            chip((m.sdoh ?? []).includes(c.id), c.name, () => set({ sdoh: toggle(m.sdoh, c.id) }), `tag-sdoh-${c.id}`),
+          )}
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Screener bands</Label>
+        <div className="flex flex-wrap gap-1">
+          {SCREENER_BANDS.map((b) => chip((m.bands ?? []).includes(b), b.replace(">=", " ≥ ").toUpperCase(), () => set({ bands: toggle(m.bands, b) })))}
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">ASAM dimensions</Label>
+        <div className="flex flex-wrap gap-1">
+          {[1, 2, 3, 4, 5, 6].map((d) => chip((m.asam ?? []).includes(d), `D${d}`, () => set({ asam: toggle(m.asam, d) })))}
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Reentry stage</Label>
+        <div className="flex flex-wrap gap-1">
+          {(["pre_release", "first_30", "days_30_90", "after_90"] as const).map((st) =>
+            chip((m.stages ?? []).includes(st), STAGE_LABELS[st]!, () => set({ stages: toggle(m.stages, st) }), `tag-stage-${st}`),
+          )}
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Population</Label>
+        <div className="flex flex-wrap gap-1">
+          {(["justice_involved", "general", "advocate"] as const).map((pp) =>
+            chip((m.populations ?? []).includes(pp), pp.replace("_", "-"), () => set({ populations: toggle(m.populations, pp) })),
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {chip(isPart2Content(typeId, body), suggested ? "Part 2-sensitive (suggested)" : "Part 2-sensitive", () => set({ part2: !m.part2 }), "tag-part2")}
+        {chip(m.clinical === true, "Clinical content", () => set({ clinical: !m.clinical }), "tag-clinical")}
+      </div>
+      {needsClinicalSignOff(typeId, body) && (
+        <p className="text-[11px] text-gold-foreground" data-testid="needs-clinical-review">
+          Needs approval from a clinical reviewer who isn&apos;t the author (PMHNP, physician or clinical coordinator).
+        </p>
+      )}
+      {SPANISH_REQUIRED_TYPES.has(typeId) && (
+        <div className="space-y-1">
+          <Label className="text-xs">Spanish title</Label>
+          <Input
+            value={es.title ?? ""}
+            data-testid="es-title"
+            onChange={(e) => onChange({ ...body, es: { ...es, title: e.target.value }, meta: { ...m, esStatus: e.target.value ? (m.esStatus === "reviewed" ? "reviewed" : "draft") : "missing" } })}
+          />
+          <Label className="text-xs">Spanish text</Label>
+          <Textarea
+            rows={2}
+            value={es.body ?? ""}
+            data-testid="es-body"
+            onChange={(e) => onChange({ ...body, es: { ...es, body: e.target.value } })}
+          />
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+            Spanish status: <strong>{spanishStatusOf(body)}</strong>
+            {spanishStatusOf(body) === "draft" && (
+              <Button type="button" size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => set({ esStatus: "reviewed" })}>
+                Mark Spanish reviewed
+              </Button>
+            )}
+          </div>
+          {spanishStatusOf(body) === "missing" && (
+            <Input
+              placeholder="Reason to publish without Spanish (Spanish users see “Spanish coming soon”)"
+              value={m.spanishOverrideReason ?? ""}
+              onChange={(e) => set({ spanishOverrideReason: e.target.value })}
+            />
+          )}
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label className="text-xs">Owner</Label>
+          <Input value={m.owner ?? ""} onChange={(e) => set({ owner: e.target.value })} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Next review</Label>
+          <Input type="date" value={m.nextReview ?? ""} onChange={(e) => set({ nextReview: e.target.value })} />
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground" data-testid="reading-level">
+        Reading level ≈ grade {grade} (Draft target: grade {READING_LEVEL_TARGET} for patient text)
+      </p>
+    </div>
+  );
 }
 
 function StatusBadge({ entry }: { entry: ContentEntry }) {
@@ -146,6 +327,12 @@ function RemoveControl({
 // ---------------------------------------------------------------------------
 // Manage / author
 // ---------------------------------------------------------------------------
+
+const CONTENT_GROUPS: { label: string; types: ContentTypeId[] }[] = [
+  { label: "Education", types: ["library_lesson", "library_category"] },
+  { label: "Recovery", types: ["recovery_lesson", "recovery_module"] },
+  { label: "Directory", types: ["community_resource", "naloxone_access_point"] },
+];
 
 function ManageTab({ version }: { version: number }) {
   const { role, staffId, staffName } = useActingStaff();
@@ -241,6 +428,14 @@ function ManageTab({ version }: { version: number }) {
       overridesBaseline: descriptor.baselineIds().includes(openId),
     });
     if (!saved.ok) return toast.error(saved.reason);
+    if (needsClinicalSignOff(typeId, body)) {
+      const sub = submitContentForReview({ typeId, id: openId, actor, validate: descriptor.validate, note: submitNote.trim() || undefined });
+      if (!sub.ok) return toast.error(sub.reason);
+      toast.success("Sent to clinical review — a clinical reviewer who isn't the author approves it.");
+      setOpenId(null);
+      setBody(null);
+      return;
+    }
     const res = publishContent({ typeId, id: openId, actor, validate: descriptor.validate });
     if (!res.ok) return toast.error(res.reason);
     toast.success("Published — patients can see this now.");
@@ -253,6 +448,23 @@ function ManageTab({ version }: { version: number }) {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-2" data-testid="content-groups">
+        {CONTENT_GROUPS.map((g) => (
+          <Button
+            key={g.label}
+            type="button"
+            size="sm"
+            variant={g.types.includes(typeId) ? "default" : "outline"}
+            onClick={() => {
+              setTypeId(g.types[0]!);
+              setOpenId(null);
+              setBody(null);
+            }}
+          >
+            {g.label}
+          </Button>
+        ))}
+      </div>
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
           <Label className="text-xs">Content type</Label>
@@ -293,11 +505,10 @@ function ManageTab({ version }: { version: number }) {
         </div>
       </div>
       <p className="text-xs text-muted-foreground">{descriptor.publishEffect}</p>
-      {mayPublish && (
-        <p className="text-xs text-muted-foreground">
-          Your role may publish directly — no second approver is required for this content.
-        </p>
-      )}
+      <p className="text-xs text-muted-foreground">
+        Editorial content publishes immediately. Clinical or Part 2 content goes to a clinical
+        reviewer who isn&apos;t the author. Lessons need Spanish, or a recorded reason.
+      </p>
       {!mayAuthor && (
         <p className="text-xs text-destructive">
           Your role can read this workspace but cannot author or submit content.
@@ -312,7 +523,7 @@ function ManageTab({ version }: { version: number }) {
                 <p className="text-xs font-medium uppercase tracking-wider text-teal">
                   Editing {descriptor.label}
                 </p>
-                <p className="font-mono text-xs text-muted-foreground">{openId}</p>
+                <p className="text-xs text-muted-foreground">{displayTitle(descriptor, openId, body)}</p>
               </div>
               {entry && <StatusBadge entry={entry} />}
             </div>
@@ -322,6 +533,9 @@ function ManageTab({ version }: { version: number }) {
               </p>
             )}
             <ContentForm descriptor={descriptor} body={body} onChange={setBody} />
+            {typeId !== "community_resource" && typeId !== "naloxone_access_point" && (
+              <MetaPanel typeId={typeId} body={body} onChange={setBody} />
+            )}
             {errors.length > 0 && (
               <ul className="space-y-1 text-xs text-destructive">
                 {errors.map((e) => (
@@ -347,7 +561,7 @@ function ManageTab({ version }: { version: number }) {
                 disabled={!mayPublish || errors.length > 0}
                 data-testid="publish-now"
               >
-                Publish now
+                {needsClinicalSignOff(typeId, body) ? "Send to clinical review" : "Publish now"}
               </Button>
               <Button
                 type="button"
@@ -391,10 +605,10 @@ function ManageTab({ version }: { version: number }) {
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {descriptor.titleOf(e.body)}
+                    <p className="text-sm font-medium text-foreground" data-testid="managed-title">
+                      {displayTitle(descriptor, e.id, e.body)}
                     </p>
-                    <p className="font-mono text-[11px] text-muted-foreground">{e.id}</p>
+                    <GovernanceChips typeId={e.typeId} body={e.body} />
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge entry={e} />
@@ -434,7 +648,7 @@ function ManageTab({ version }: { version: number }) {
             <ul className="mt-3 space-y-1.5">
               {baselineOnly.map((id) => (
                 <li key={id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="font-mono text-xs text-muted-foreground">{id}</span>
+                  <span className="text-sm text-foreground">{displayTitle(descriptor, id)}</span>
                   <Button
                     type="button"
                     size="sm"
@@ -487,11 +701,11 @@ function ReviewTab({ version }: { version: number }) {
           return (
             <li key={noteKey} className="space-y-3 rounded-lg border border-border p-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{d.titleOf(e.body)}</span>
+                <span className="text-sm font-medium text-foreground">{displayTitle(d, e.id, e.body)}</span>
                 <Badge variant="outline" className="text-[10px]">
                   {d.label}
                 </Badge>
-                <span className="font-mono text-[11px] text-muted-foreground">{e.id}</span>
+                <GovernanceChips typeId={e.typeId} body={e.body} />
               </div>
               {submitted && (
                 <p className="text-xs text-muted-foreground">
@@ -522,7 +736,7 @@ function ReviewTab({ version }: { version: number }) {
                       validate: d.validate,
                     });
                     if (!res.ok) toast.error(res.reason);
-                    else toast.success(`Published — patients can see "${d.titleOf(e.body)}" now.`);
+                    else toast.success(`Published — patients can see "${displayTitle(d, e.id, e.body)}" now.`);
                   }}
                 >
                   Publish
@@ -578,7 +792,7 @@ function HistoryTab({ version }: { version: number }) {
           return (
             <li key={`${e.typeId}::${e.id}`} className="rounded-lg border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{d.titleOf(e.body)}</span>
+                <span className="text-sm font-medium text-foreground">{displayTitle(d, e.id, e.body)}</span>
                 <StatusBadge entry={e} />
               </div>
               <ol className="mt-2 space-y-1 text-xs text-muted-foreground">
@@ -604,6 +818,86 @@ function HistoryTab({ version }: { version: number }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// §C2 Home digest — the 10-second view
+// ---------------------------------------------------------------------------
+function HomeDigest({ version }: { version: number }) {
+  const { role, staffId, staffName } = useActingStaff();
+  const today = new Date().toISOString().slice(0, 10);
+  const data = useMemo(() => {
+    const all = listContent();
+    const me = staffId ?? staffName;
+    const awaiting = contentReviewQueue().filter((e) => {
+      const author = [...e.revisions].reverse().find((r) => r.action === "created" || r.action === "edited");
+      const authorKey = author ? (author.byStaffId ?? author.by) : undefined;
+      return canPublishContent(role) && authorKey !== me;
+    });
+    const pastReview = all.filter((e) => {
+      const n = metaOf(e.body).nextReview;
+      return !!n && n < today;
+    });
+    const missingEs = all.filter(
+      (e) => SPANISH_REQUIRED_TYPES.has(e.typeId) && isContentLive(e) && spanishStatusOf(e.publishedBody ?? e.body) === "missing",
+    );
+    const recent = all
+      .filter((e) => e.publishedAt)
+      .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))
+      .slice(0, 5);
+    return { awaiting, pastReview, missingEs, recent, coverage: contentCoverage() };
+  }, [version, role, staffId, staffName, today]);
+  const tile = (label: string, n: number, testId: string) => (
+    <Card className="p-4" data-testid={testId}>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-display text-2xl text-navy">{n}</p>
+    </Card>
+  );
+  const c = data.coverage;
+  return (
+    <div className="space-y-4" data-testid="content-home">
+      <div className="grid gap-3 sm:grid-cols-5">
+        {tile("Awaiting my review", data.awaiting.length, "digest-awaiting")}
+        {tile("Past review date", data.pastReview.length, "digest-past-review")}
+        {tile("Live lessons missing Spanish", data.missingEs.length, "digest-missing-es")}
+        {tile("Recently published", data.recent.length, "digest-recent")}
+        {tile("Coverage gaps", c.gapCount, "digest-coverage")}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-5">
+          <p className="text-xs font-medium uppercase tracking-wider text-teal">Recently published</p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {data.recent.map((e) => (
+              <li key={`${e.typeId}::${e.id}`}>
+                {displayTitle(contentType(e.typeId), e.id, e.publishedBody ?? e.body)} ·{" "}
+                <span className="text-xs text-muted-foreground">
+                  {e.publishedBy} · <ClientDate value={e.publishedAt!} />
+                </span>
+              </li>
+            ))}
+            {data.recent.length === 0 && <li className="text-muted-foreground">Nothing yet.</li>}
+          </ul>
+        </Card>
+        <Card className="p-5" data-testid="coverage-view">
+          <p className="text-xs font-medium uppercase tracking-wider text-teal">Coverage gaps</p>
+          <p className="text-[11px] text-muted-foreground">{GOVERNANCE_DRAFT_LABEL}</p>
+          <ul className="mt-2 space-y-1 text-sm">
+            <li>Needs with no lesson: {c.needsWithoutLesson.join(", ") || "none"}</li>
+            <li>Needs with no verified resource: {c.needsWithoutResource.join(", ") || "none"}</li>
+            <li>Screener bands with no lesson: {c.bandsWithoutLesson.join(", ") || "none"}</li>
+            <li>Reentry stages with no lesson: {c.stagesWithoutLesson.map((x) => STAGE_LABELS[x] ?? x).join(", ") || "none"}</li>
+            <li>Care plans pointing at retired or missing content: {c.plansPointingAtMissing.length}</li>
+          </ul>
+        </Card>
+      </div>
+      <Card className="p-5" data-testid="messages-placeholder">
+        <p className="text-xs font-medium uppercase tracking-wider text-teal">Messages (read-only)</p>
+        <p className="text-xs text-muted-foreground">
+          Notification and text-message templates are still kept in code. Editing them here comes later.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
 export function ContentAdminWorkspace() {
   const version = useContentStore();
   const queueCount = contentReviewQueue().length;
@@ -617,12 +911,16 @@ export function ContentAdminWorkspace() {
           Manage what patients see: education, recovery content, community resources and naloxone sites. Verify resources with the provider before they go live.
         </p>
       </div>
-      <Tabs defaultValue="manage">
+      <Tabs defaultValue="home">
         <TabsList>
+          <TabsTrigger value="home">Home</TabsTrigger>
           <TabsTrigger value="manage">Manage</TabsTrigger>
           <TabsTrigger value="review">Review queue{queueCount ? ` (${queueCount})` : ""}</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
+        <TabsContent value="home" className="mt-4">
+          <HomeDigest version={version} />
+        </TabsContent>
         <TabsContent value="manage" className="mt-4">
           <ManageTab version={version} />
         </TabsContent>

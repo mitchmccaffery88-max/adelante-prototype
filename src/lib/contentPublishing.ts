@@ -30,6 +30,7 @@
 // approved one, and every transition is appended to `revisions` with a real
 // actor and timestamp. "Which version did the patient see" is answerable.
 import { CONTENT_PUBLISHER_ROLES, canAccess, getStaffMember, type StaffRole } from "@/lib/roles";
+import { CLINICAL_REVIEWER_ROLES, publishBlocker } from "@/lib/contentGovernance";
 
 /** draft → pending_review → published. There is no fourth state. */
 export type ContentStatus = "draft" | "pending_review" | "published";
@@ -168,6 +169,18 @@ export function getContentEntry(typeId: ContentTypeId, id: string): ContentEntry
   return e ? clone(e) : undefined;
 }
 
+/**
+ * §C1 Keep a directory listing's managed working body in step with a fact
+ * edit made through `updateResourceDetails`, so Verify stamps what was edited.
+ * Only facts change; status and revisions are untouched.
+ */
+export function syncWorkingFacts(typeId: ContentTypeId, id: string, patch: Record<string, unknown>): void {
+  const e = entries.get(key(typeId, id));
+  if (!e) return;
+  e.body = { ...e.body, ...patch };
+  notify();
+}
+
 /** The generalized review queue — the direct analogue of `resourceVerificationQueue`. */
 export function contentReviewQueue(typeId?: ContentTypeId): ContentEntry[] {
   return listContent(typeId).filter((e) => e.status === "pending_review");
@@ -234,7 +247,7 @@ export function canAuthorContent(role: StaffRole): boolean {
  * two-person clinical control still lives.
  */
 export function canPublishContent(role: StaffRole): boolean {
-  return CONTENT_PUBLISHER_ROLES.includes(role);
+  return CONTENT_PUBLISHER_ROLES.includes(role) || CLINICAL_REVIEWER_ROLES.includes(role);
 }
 
 // ---------------------------------------------------------------------------
@@ -372,6 +385,20 @@ export function publishContent(input: ReviewInput): ContentResult {
 
   const errors = input.validate?.(e.body) ?? [];
   if (errors.length > 0) return { ok: false, reason: errors[0]! };
+
+  // §C4 sign-off rule: clinical / Part 2 content needs a clinical reviewer who
+  // is not the author; patient content without Spanish needs a recorded reason.
+  const lastWrite = [...e.revisions]
+    .reverse()
+    .find((r) => r.action === "created" || r.action === "edited");
+  const blocked = publishBlocker({
+    typeId: e.typeId,
+    body: e.body,
+    actorRole: input.actor.role,
+    actorKey: input.actor.staffId ?? input.actor.name,
+    authorKey: lastWrite ? (lastWrite.byStaffId ?? lastWrite.by) : undefined,
+  });
+  if (blocked) return { ok: false, reason: blocked };
 
   e.status = "published";
   const rev = appendRevision(e, "published", input.actor, "published", input.note);

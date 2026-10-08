@@ -1,12 +1,14 @@
 // Staff structured care plan editor. Same access as the chart's care plan
 // section; SUD-linked goals/assignments/problems filtered by staffPlanView.
 import { act, actFor } from "@/lib/actions/act";
+import "@/lib/contentTags";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import {
-  PLAN_ACTIVITIES,
+  activityById,
+  planActivities,
   PLAN_DRAFT_LABEL,
   NEED_LADDER,
   acceptSuggestion,
@@ -65,7 +67,8 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
   const [cadence, setCadence] = useState(String(r.cadenceDays));
 
   // Current rules are all non-SUD, so every role that can edit may see them.
-  const visibleSuggestions = suggestions;
+  // Part 2: tag-driven suggestions for SUD content are hidden, not stubbed.
+  const visibleSuggestions = suggestions.filter((s) => view.seesSud || !activityById(s.activityId)?.sud);
 
   return (
     <Card className="space-y-5 p-4" data-testid="care-plan-editor">
@@ -129,7 +132,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
       {edit && visibleSuggestions.length > 0 && (
         <section className="rounded-lg border border-teal/40 bg-secondary/40 p-3" data-testid="plan-suggestions">
           <h5 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-navy">
-            <Sparkles className="h-3.5 w-3.5" /> Adel suggestions
+            <Sparkles className="h-3.5 w-3.5" /> Adel suggests
           </h5>
           <p className="text-[11px] text-muted-foreground">Rule-based. You decide. Thresholds: {PLAN_DRAFT_LABEL}.</p>
           <ul className="mt-2 space-y-2">
@@ -173,7 +176,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
         {view.goals.map((g) => {
           const pct = goalProgress(patientId, g.id);
           const as = view.assignments.filter((a) => a.goalId === g.id && a.active);
-          const pick = assign[g.id] ?? { activity: PLAN_ACTIVITIES[0].id, freq: "daily" as Frequency };
+          const pick = assign[g.id] ?? { activity: planActivities()[0]?.id ?? "", freq: "daily" as Frequency };
           return (
             <div key={g.id} className="rounded-lg border p-3 text-sm" data-testid={`plan-goal-${g.id}`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -211,7 +214,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
               {edit && g.status === "active" && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <select aria-label="Activity" className={selectCls} value={pick.activity} onChange={(e) => setAssign({ ...assign, [g.id]: { ...pick, activity: e.target.value } })}>
-                    {PLAN_ACTIVITIES.filter((a) => !a.sud || view.seesSud).map((a) => (
+                    {planActivities().filter((a) => !a.sud || view.seesSud).map((a) => (
                       <option key={a.id} value={a.id}>{a.label.en}</option>
                     ))}
                   </select>

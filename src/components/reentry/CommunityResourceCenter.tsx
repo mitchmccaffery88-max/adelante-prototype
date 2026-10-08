@@ -201,9 +201,7 @@ export function CommunityResourceCenter({
       )}
 
       <p className="text-xs text-muted-foreground" data-testid="resources-disclaimer">
-        Listings marked &ldquo;Pending verification&rdquo; are real organisations we have sourced but
-        nobody on our team has called yet, so the address, phone or hours may be out of date — call
-        ahead. Everything else has been confirmed by our team, though details can still change; if
+        Our team has confirmed these listings, though details can still change; if
         something is wrong when you get there, tell your care team and we&apos;ll re-check it.
       </p>
     </PatientPage>

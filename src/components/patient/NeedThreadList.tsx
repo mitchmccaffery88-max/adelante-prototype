@@ -18,6 +18,63 @@ import {
   unlinkedPatientReferrals,
   type NeedReferralLine,
 } from "@/lib/patientNeedThread";
+import { lessonsForCategories, verifiedResourcesFor } from "@/lib/contentTags";
+import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
+import { getStructuredPlan } from "@/lib/structuredCarePlan";
+
+/**
+ * §C5.4 Each open need: matching VERIFIED resources first, then one related
+ * lesson ("Learn more"). Tags only. Category-only needs (Part 2 caution,
+ * safety) never name an organisation here either.
+ */
+function NeedContent({ need, patientId }: { need: SdohPlanItem; patientId: string }) {
+  const { lang } = useI18n();
+  const match = matchResourcesForNeed(need);
+  if (!match) return null;
+  const resources = match.showOrgs ? verifiedResourcesFor(match.categoryIds).slice(0, 2) : [];
+  // The patient's own plan first, then human-set tags, then Draft backfill.
+  const assigned = new Set(
+    getStructuredPlan(patientId).assignments.filter((a) => a.active).map((a) => a.activityId),
+  );
+  const lesson = [...lessonsForCategories(match.categoryIds, { seesPart2: true })].sort(
+    (a, b) =>
+      Number(assigned.has(b.id)) - Number(assigned.has(a.id)) ||
+      Number(!b.meta.backfilled) - Number(!a.meta.backfilled),
+  )[0];
+  if (resources.length === 0 && !lesson) return null;
+  const es = lang === "es";
+  return (
+    <div className="mt-3 space-y-2" data-testid={`need-content-${need.id}`}>
+      {resources.length > 0 && (
+        <ul className="space-y-1 text-sm">
+          {resources.map((r) => (
+            <li key={r.id}>
+              <Link
+                to="/resources/$categoryId/$orgId"
+                params={{ categoryId: r.categoryId, orgId: r.id }}
+                className="text-navy underline"
+                data-testid="need-verified-resource"
+              >
+                {r.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {lesson && (
+        <Button asChild size="sm" variant="outline">
+          <Link
+            to={lesson.to}
+            search={lesson.search}
+            data-testid={`need-learn-more-${lesson.id}`}
+          >
+            {es ? "Aprender más" : "Learn more"}: {es && lesson.titleEs ? lesson.titleEs : lesson.title}
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
+}
 
 type NeedThreadItem = SdohPlanItem;
 
@@ -93,6 +150,7 @@ export function NeedThreadList({
               ))}
             </ul>
           )}
+          <NeedContent need={thread.need} patientId={patientId} />
           {renderMatch?.(thread.need)}
         </Card>
       ))}

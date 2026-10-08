@@ -16,6 +16,17 @@ export function installDevInspect(navigate?: (to: string) => void) {
     setInFacilityEnabled,
     go: (to: string) => navigate?.(to),
     j: null as unknown,
+    /** §C5 Same module instances the app uses (a bare "/src/..." import can duplicate them). */
+    content: async () => {
+      const [cp, ct, tags, sc, eng] = await Promise.all([
+        import("@/lib/contentPublishing"),
+        import("@/lib/contentTypes"),
+        import("@/lib/contentTags"),
+        import("@/lib/structuredCarePlan"),
+        import("@/lib/engagement"),
+      ]);
+      return { cp, ct, tags, sc, eng };
+    },
     /** V1 — Brief consistency check over every patient × staff role. */
     checkBrief: async () => {
       const [{ checkAllBriefs }, { STAFF_ROLES }] = await Promise.all([import("@/lib/adelBriefCheck"), import("@/lib/roles")]);

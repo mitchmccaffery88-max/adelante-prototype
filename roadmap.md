@@ -1,6 +1,16 @@
 # Roadmap
 
-## In progress
+## In progress — Content center + care/Adel/SDOH wiring (C0–C6)
+- [x] C0 seeds load on any entry path; titles not ids
+- [x] C1 baseline verification (59/60 — SMART Recovery has no phone), no patient badge, one resource store, verify stamps managed revision
+- [~] C2 home digest, groups (Education/Recovery/Directory/Messages placeholder); full tables + side-drawer editor still to do
+- [x] C3 tags/flags/ES status/reading level/owner/review date; Draft backfill; recovery lessons Part 2; check-in shows category only
+- [x] C4 clinical/Part 2 need a different clinical reviewer; Spanish block + override reason
+- [x] C5 live picker, deep links, auto-complete, tag suggestions in care plan, Adel chat (Simulated), needs; lessonRecommends + Adel lesson list on live content; coverage view
+- [ ] Content edits through runAction registry (currently direct store calls + store audit)
+- [ ] ASAM interventions read tags (still fixed ids)
+- [x] C6 MAT seed at 2 days; screener drafts survive reload
+
 
 ## Done
 - [x] Moved resource verification to Patient Content & Resources Center; retained verifier gates and published revision attribution, added filters/counts and verification provenance, restored coordination-first ordering with Reassign needed. All 2,406 unit tests pass and harness typecheck/build is clean; selected sequential browsers: 37 pass including the coordinator content walkthrough, calendar and continuity checks fail (stability/seed work remains deferred).

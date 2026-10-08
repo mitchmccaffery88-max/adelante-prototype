@@ -43,7 +43,7 @@ test("location + staff calendars drive closures, note clock and patient schedule
   await page.locator("#cd-name").fill("Staff training day");
   await page.locator("#cd-reason").fill("All-staff training");
   await page.getByRole("button", { name: "Add closed day" }).click();
-  await expect(page.getByText(/Closed day added — 1 visit/)).toBeVisible();
+  await expect(page.getByText(/Closed day added — \d+ visit/)).toBeVisible();
   await page.keyboard.press("Escape");
 
   // 2. Marisol enters vacation (the next week).

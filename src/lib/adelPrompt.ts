@@ -5,7 +5,14 @@
 // destinations: real Phase 5 library lesson titles / exercise ids, real
 // Phase 6 resource categories, and our real /crisis, /naloxone and /slip
 // pages. No reference is carried over unless it resolves in this build.
-import { EXERCISES, LIBRARY_ITEMS } from "@/lib/library";
+import { EXERCISES, LIBRARY_ITEMS, type LibraryItem } from "@/lib/library";
+
+/** §C5.5 The catalog registers published lessons here (no import cycle). */
+let lessonSource: (() => LibraryItem[]) | undefined;
+export function setAdelLessonSource(fn: (() => LibraryItem[]) | undefined): void {
+  lessonSource = fn;
+}
+const liveLessons = (): LibraryItem[] => lessonSource?.() ?? LIBRARY_ITEMS;
 import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 
 /** Action tokens Adel may emit — each one maps to a REAL destination. */
@@ -34,7 +41,7 @@ export function resolveAdelAction(raw: string): AdelAction | undefined {
   const kind = (kindRaw ?? "").trim();
   const id = rest.join(":").trim();
   if (kind === "lesson") {
-    const item = LIBRARY_ITEMS.find((i) => i.id === id);
+    const item = liveLessons().find((i) => i.id === id);
     if (!item) return undefined;
     return { kind: "lesson", id, label: item.title, to: "/library", search: { item: id } };
   }
@@ -75,7 +82,7 @@ export function splitAdelActions(text: string): { body: string; actions: AdelAct
 }
 
 export function buildAdelSystemPrompt(): string {
-  const lessons = LIBRARY_ITEMS.map((i) => `- lesson:${i.id} — "${i.title}"`).join("\n");
+  const lessons = liveLessons().map((i) => `- lesson:${i.id} — "${i.title}"`).join("\n");
   const exercises = EXERCISES.map((e) => `- exercise:${e.id} — "${e.title}" (${e.subtitle})`).join(
     "\n",
   );

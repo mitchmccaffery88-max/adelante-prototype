@@ -56,6 +56,11 @@ interface KeywordRule {
  * staff or an advocate. Deliberately conservative — no match is a real answer.
  */
 export const NEED_KEYWORD_RULES: KeywordRule[] = [
+  // §C5.4 Free-text versions of the four intake domains ("Housing", "Food").
+  { match: ["housing", "shelter", "homeless", "rent", "place to stay"], categoryIds: INTAKE_KEY_CATEGORIES.housing },
+  { match: ["food", "groceries", "hungry", "meals"], categoryIds: INTAKE_KEY_CATEGORIES.food },
+  { match: ["employment", " job", "work ", "resume"], categoryIds: INTAKE_KEY_CATEGORIES.employment },
+  { match: ["transport", "ride", "bus pass"], categoryIds: INTAKE_KEY_CATEGORIES.transport },
   { match: ["utilit", "shut-off", "shut off", "electric", "power bill"], categoryIds: ["financial"] },
   {
     match: ["safety", "violence", "abuse", "hits"],
@@ -116,7 +121,12 @@ function finalize(ids: string[], categoryOnly: boolean, reason?: string): NeedRe
  */
 export function matchResourcesForNeed(item: SdohPlanItem): NeedResourceMatch | null {
   // §Needs step 1 — a structured category wins; safety stays category-only.
-  if (item.categoryId && !item.safetySensitive) return finalize([item.categoryId], false);
+  if (item.categoryId && !item.safetySensitive) {
+    const structured = finalize([item.categoryId], false);
+    // A structured id that is not a directory category falls through to the
+    // intake/keyword rules instead of matching nothing.
+    if (structured.categoryIds.length) return structured;
+  }
   for (const key of INTAKE_NEED_KEYS) {
     if (itemMatchesIntakeKey(item, key)) return finalize(INTAKE_KEY_CATEGORIES[key], false);
   }

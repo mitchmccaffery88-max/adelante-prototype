@@ -25,6 +25,7 @@ function draftBody(id: string) {
     ...LIBRARY_LESSON_TYPE.emptyBody(),
     id,
     title: "Sleep reset",
+    meta: { esStatus: "reviewed" },
     minutes: 6,
     order: 99,
     problem: "I lie awake and then everything feels worse the next day.",

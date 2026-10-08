@@ -10,6 +10,7 @@
 // is rules-based and pure (`checkInSummaryPlan`); the lesson and the resource
 // are resolved from the REAL live catalogues, and anything that resolves to
 // nothing is simply not shown rather than faked.
+import { PART2_CAUTION_CATEGORY_IDS } from "@/lib/sdohResourceMatch";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, BookOpen, Check, HeartPulse, MapPin } from "lucide-react";
@@ -107,7 +108,10 @@ function CheckInSummary({
             <MapPin className="h-5 w-5" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold">{resource.name}</span>
+            <span className="block text-sm font-semibold">
+              {/* §C3 Part 2: recovery categories show the category only, never a named organisation. */}
+              {PART2_CAUTION_CATEGORY_IDS.includes(resource.categoryId) ? (resourceCategoryName ?? "Support") : resource.name}
+            </span>
             <span className="block text-xs text-muted-foreground">
               {resourceCategoryName ?? "Nearby"} · {plan?.resourceReason}
             </span>

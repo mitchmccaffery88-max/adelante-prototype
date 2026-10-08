@@ -164,7 +164,7 @@ export function syncAsamPlan(patientId: string): void {
     const signed = new Date(a.cosignedAt ?? a.signedAt ?? Date.now());
     const reentry = inReentryWindow(p) && (dim.key === "d5" || dim.key === "d6");
     const interventions = [...t.interventions];
-    if (reentry && interventions.length < 2) interventions.push({ text: "Re-entry Journey", moduleId: "reentry-journey" });
+    if (reentry && interventions.length < 2) interventions.push({ text: "Re-entry Journey", moduleId: "first-days-out" });
     list.push({
       id: uid(),
       patientId,

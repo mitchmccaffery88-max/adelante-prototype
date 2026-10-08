@@ -1,6 +1,7 @@
 // Patient "My plan" — plain language, no codes. EN/ES (Spanish pending
 // bilingual review). Reads the same structured plan the staff editor writes.
 import { Link } from "@tanstack/react-router";
+import "@/lib/contentTags";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
@@ -170,9 +171,9 @@ export function MyPlan({ patientId }: { patientId: string }) {
                 {act && (
                   <Button asChild size="sm" variant="outline">
                     {act.to === "/library" ? (
-                      <Link to="/library" search={act.exercise ? { exercise: act.exercise } : {}}>{c.open}</Link>
+                      <Link to="/library" search={act.search ?? (act.exercise ? { exercise: act.exercise } : {})} data-testid={`my-plan-open-${a.activityId}`}>{c.open}</Link>
                     ) : (
-                      <Link to="/recovery-journey">{c.open}</Link>
+                      <Link to="/recovery-journey" search={act.search?.lesson ? { lesson: act.search.lesson } : {}} data-testid={`my-plan-open-${a.activityId}`}>{c.open}</Link>
                     )}
                   </Button>
                 )}
