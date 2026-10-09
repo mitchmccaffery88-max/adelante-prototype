@@ -79,8 +79,8 @@ for (const lang of ["en", "es"] as const) {
       e.setCurrentPatientId(id);
       return id;
     }, lang)) as string;
-    if (lang === "es") await page.evaluate(() => localStorage.setItem("adelante.lang", "es"));
     await go(page, "/intake");
+    if (lang === "es") await page.getByRole("button", { name: "Cambiar idioma a español" }).click();
     const contacts = page.getByText(lang === "es" ? /Emergency contacts|Contactos de emergencia/ : "Emergency contacts").first();
     for (let i = 0; i < 12 && !(await contacts.isVisible()); i++) {
       await page.getByRole("button", { name: /^(Next|Continue|Save & continue|Siguiente|Continuar|Guardar)/ }).last().click();
@@ -123,6 +123,7 @@ for (const lang of ["en", "es"] as const) {
     }
     await expect.poll(() => page.evaluate((id) => ((window as unknown as W).__adelante.AdelanteEHR as never as { listAdvocateLinks: (p: string) => { advocateName: string; expectedAuthorizationType?: string }[] }).listAdvocateLinks(id).find((l) => l.advocateName === "Diego Camacho")?.expectedAuthorizationType, luisId)).toBe("family_participation");
     await go(page, "/profile");
+    if (lang === "es") await expect(page.getByRole("heading", { name: "Compartir con mi ayudante (defensor)" })).toBeVisible();
     await expect(page.getByTestId("advocate-status").first()).toHaveText(lang === "es" ? "Esperando su registro" : "Waiting for their sign-up");
   });
 }
