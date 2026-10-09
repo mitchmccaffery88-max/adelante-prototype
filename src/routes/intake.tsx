@@ -1107,8 +1107,6 @@ function IntakePage() {
                 errors={advocateErrors}
               />
             )}
-            <div className="hidden">
-            </div>
           </div>
           );
 
