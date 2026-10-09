@@ -8121,10 +8121,12 @@ function _defForResult(key: string) {
 // §C3/F2 — severity flags in date order, idempotent per result (key@completedAt).
 // Within SEVERITY_RULES.actionWindowDays → task (Needs my action) + staff
 // notifications; older → history only (historical: true), no task/notification.
-// True while module-load demo seeds run; cleared on the next tick.
+// True while module-load demo seeds run; cleared explicitly when the demo
+// seed finishes (a module-level timer is not allowed in the server runtime).
 let _severitySeedQuiet = true;
-if (typeof setTimeout !== "undefined") setTimeout(() => { _severitySeedQuiet = false; }, 0);
-else _severitySeedQuiet = false;
+export function endSeveritySeedQuiet(): void {
+  _severitySeedQuiet = false;
+}
 function _prevScreener(p: Patient, result: ScreenerResult): ScreenerResult | undefined {
   return (p.screenerHistory ?? [])
     .filter((h) => h.key === result.key && h.completedAt < result.completedAt)
