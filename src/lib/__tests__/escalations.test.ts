@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { AdelanteEHR, demoScenarioPatientId, type ScreenerResult } from "@/lib/ehr";
+import { AdelanteEHR, demoScenarioPatientId, endSeveritySeedQuiet, type ScreenerResult } from "@/lib/ehr";
+
+// Demo seeds are done by test time; flags created in test bodies are live.
+endSeveritySeedQuiet();
 import { setInFacilityEnabled, inFacilityEnabled } from "@/lib/inFacility";
 import {
   _resetEscalationOverlays,
