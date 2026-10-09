@@ -83,7 +83,7 @@ for (const lang of ["en", "es"] as const) {
     await go(page, "/intake");
     const contacts = page.getByText(lang === "es" ? /Emergency contacts|Contactos de emergencia/ : "Emergency contacts").first();
     for (let i = 0; i < 12 && !(await contacts.isVisible()); i++) {
-      await page.getByRole("button", { name: /^(Next|Continue|Siguiente|Continuar)/ }).last().click();
+      await page.getByRole("button", { name: /^(Next|Continue|Save & continue|Siguiente|Continuar|Guardar)/ }).last().click();
     }
     await expect(contacts).toBeVisible();
     const rows = page.getByTestId("emergency-contact-row");
@@ -109,7 +109,7 @@ for (const lang of ["en", "es"] as const) {
     for (let i = 0; i < 15; i++) {
       const submit = page.getByRole("button", { name: /^(Submit|Finish|Enviar|Terminar)/ });
       if (await submit.count()) { await submit.last().click(); break; }
-      await page.getByRole("button", { name: /^(Next|Continue|Siguiente|Continuar)/ }).last().click();
+      await page.getByRole("button", { name: /^(Next|Continue|Save & continue|Siguiente|Continuar|Guardar)/ }).last().click();
     }
     await expect.poll(() => page.evaluate((id) => ((window as unknown as W).__adelante.AdelanteEHR as never as { listAdvocateLinks: (p: string) => { advocateName: string; expectedAuthorizationType?: string }[] }).listAdvocateLinks(id).find((l) => l.advocateName === "Diego Camacho")?.expectedAuthorizationType, luisId)).toBe("family_participation");
     await go(page, "/profile");
