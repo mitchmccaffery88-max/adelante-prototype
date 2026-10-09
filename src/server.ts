@@ -18,9 +18,45 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
+// Structured production error log: one JSON line per failure so the live
+// worker logs show WHAT broke, WHERE (request) and WHY (stack), whether the
+// throw reached our catch or h3 swallowed it into a generic 500 first.
+function logProductionError(
+  source: "thrown" | "h3-swallowed" | "module-load",
+  error: unknown,
+  request?: Request,
+): void {
+  const err = error instanceof Error ? error : new Error(String(error));
+  let url: string | undefined;
+  let method: string | undefined;
+  try {
+    if (request) {
+      url = request.url;
+      method = request.method;
+    }
+  } catch {
+    // Request fields must never break logging.
+  }
+  console.error(
+    JSON.stringify({
+      tag: "production-error",
+      source,
+      method,
+      url,
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      at: new Date().toISOString(),
+    }),
+  );
+}
+
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
-async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
+async function normalizeCatastrophicSsrResponse(
+  response: Response,
+  request: Request,
+): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
@@ -31,7 +67,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   }
 
   const captured = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
-  console.error(captured);
+  logProductionError("h3-swallowed", captured, request);
   return new Response(renderErrorPage(captured), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
@@ -43,9 +79,9 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return await normalizeCatastrophicSsrResponse(response, request);
     } catch (error) {
-      console.error(error);
+      logProductionError(serverEntryPromise ? "thrown" : "module-load", error, request);
       return new Response(renderErrorPage(error), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
