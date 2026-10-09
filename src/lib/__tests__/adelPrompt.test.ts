@@ -4,11 +4,12 @@ import { EXERCISES, LIBRARY_ITEMS } from "@/lib/library";
 
 describe("Adel ACTION mechanism", () => {
   it("resolves real lesson, exercise, resource and page tokens", () => {
-    expect(resolveAdelAction("exercise:urge-surfing-timer")).toMatchObject({
+    expect(resolveAdelAction("exercise:urge-surfing-timer")).toBeUndefined(); // §Group 2 S2 — Part 2, no SUD pathway
+    expect(resolveAdelAction("exercise:urge-surfing-timer", { sud: true, reentry: false })).toMatchObject({
       to: "/library",
       search: { exercise: "urge-surfing-timer" },
     });
-    expect(resolveAdelAction("lesson:ss-restoring-sleep")).toMatchObject({
+    expect(resolveAdelAction("lesson:ss-restoring-sleep", { sud: false, reentry: true })).toMatchObject({
       to: "/library",
       search: { item: "ss-restoring-sleep" },
     });
