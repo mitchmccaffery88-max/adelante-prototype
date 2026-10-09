@@ -17,7 +17,7 @@ import {
   RELATIONSHIPS, ADVOCATE_TYPES, authorizationForAdvocateType, validateAdvocateDraft, emptyAdvocateDraft,
   advocateDraftFromContact, contactDrifted, advocateStatus, relationshipText, relationshipFromText,
 } from "@/lib/contactAdvocate";
-import { signAdvocateConsent } from "@/lib/advocateConsentSign";
+import { setChecked, signChecked } from "@/lib/consentForms";
 import { advocateInvitationConsentActive } from "@/lib/advocateInviteDelivery";
 
 const SUD_EX = ["urge-surfing-timer", "trigger-map", "if-i-slip-plan", "warning-signs"];
@@ -72,10 +72,9 @@ describe("S3 consent ledger toggles", () => {
 });
 
 describe("S4 advocate consent card in the patient portal and onboarding", () => {
-  it("is mounted on Privacy & consent, My care and onboarding", () => {
-    expect(readFileSync("src/components/patient/ProfilePanels.tsx", "utf8")).toContain("<AdvocateConsentCard");
-    expect(readFileSync("src/components/PatientHome.tsx", "utf8")).toContain("<AdvocateConsentCard");
-    expect(readFileSync("src/routes/intake.tsx", "utf8")).toContain("signAdvocateConsent");
+  it("§F1 status card (not a signing card) is mounted on Privacy & consent and My care", () => {
+    expect(readFileSync("src/components/patient/ProfilePanels.tsx", "utf8")).toContain("<AdvocateConsentStatus");
+    expect(readFileSync("src/components/PatientHome.tsx", "utf8")).toContain("<AdvocateConsentStatus");
   });
 });
 
@@ -196,13 +195,12 @@ describe("O1–O3 contacts and advocate", () => {
     expect(validateAdvocateDraft({ ...d, email: "nope", sendBy: "email" })).toContain("email_invalid");
     expect(validateAdvocateDraft({ ...d, email: "ana@example.org", sendBy: "sms" })).toContain("send_by");
     expect(validateAdvocateDraft({ ...d, phone: "559-555-0142", email: "ana@example.org" })).toEqual([]);
-    expect(validateAdvocateDraft({ ...d, phone: "5595550142", consent: "now" })).toContain("sign");
   });
   it("advocate type sets the authorization type", () => {
     expect(ADVOCATE_TYPES.map((t) => t.auth)).toEqual(["family_participation", "dhcs_authorized_representative", "ahcd", "conservatorship"]);
     expect(authorizationForAdvocateType("conservator")).toBe("conservatorship");
   });
-  it("make-advocate link, change prompt, sign later then sign now, status chips", () => {
+  it("make-advocate link, change prompt, advocate form signed in Forms to sign, status chips", () => {
     const p = referral({});
     const contact = { id: "ec_t1", name: "Maria Ruiz", relationship: "Sibling", phone: "5595550199", email: "maria@example.org" };
     AdelanteEHR.updateProfile(p.id, { emergencyContacts: [contact] } as never);
@@ -215,8 +213,9 @@ describe("O1–O3 contacts and advocate", () => {
     AdelanteEHR.updateAdvocateFromContact(link.id, { name: "Maria Ruiz", phone: "5595550100" });
     expect(contactDrifted(AdelanteEHR.getAdvocateLink(link.id)!, { name: "Maria Ruiz", phone: "5595550100" })).toBe(false);
     expect(AdelanteEHR.getAdvocateLink(link.id)!.invitationSentTo).toBe("5595550100");
-    expect(() => signAdvocateConsent(p.id, "", true)).toThrow();
-    signAdvocateConsent(p.id, "Path Way", true);
+    setChecked(p.id, "advocate_patient", true);
+    expect(() => signChecked({ patientId: p.id, signerName: "Path Way" })).toThrow();
+    signChecked({ patientId: p.id, signerName: "Path Way", typedName: "Path Way" });
     expect(advocateStatus(AdelanteEHR.getAdvocateLink(link.id)!, advocateInvitationConsentActive(p.id))).toBe("waiting_signup");
   });
   it("invitation errors are shown, never swallowed", () => {

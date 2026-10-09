@@ -59,17 +59,25 @@ test("Group 1 — profile, availability and coordinator group booking", async ({
     const to = new Date(Date.now() + (k + 1) * 86_400_000).toISOString().slice(0, 10);
     ext.addAvailabilityException({ clinicianId: "c1", date: from, endDate: to, kind: "off", timeOffType: "vacation" });
     const afterOff = av.availableSlots("c1", { serviceType: "therapy_group", days: 14 }).filter((s) => s.slice(0, 10) >= from && s.slice(0, 10) <= to);
-    sp.setBookingsFrozen(actor, { clinicianId: "c1", frozen: true, reason: "Walkthrough freeze" });
-    const frozen = av.availableSlots("c1", { serviceType: "therapy_group", days: 14 }).length;
-    sp.setBookingsFrozen(actor, { clinicianId: "c1", frozen: false, reason: "Walkthrough unfreeze" });
-    const unfrozen = av.availableSlots("c1", { serviceType: "therapy_group", days: 14 }).length;
-    return { group: group.length, groupOutsideBlocks: groupOutsideBlocks.length, groupInIndividualOnly: groupInIndividualOnly.length, afterOff: afterOff.length, frozen, unfrozen };
+    // Freeze on a TEST-ONLY clinician (§F2) — never a demo persona.
+    const T = "c-test-freeze";
+    ext.upsertClinicianProfile({ clinicianId: T, specialty: "Test fixture", credentialType: "LCSW", careTypes: ["therapy_individual"], languages: ["English"], active: true });
+    for (const wd of [1, 2, 3, 4, 5]) ext.upsertAvailabilityBlock({ clinicianId: T, weekday: wd, start: "09:00", end: "12:00", modality: "hybrid" });
+    const beforeFreeze = av.availableSlots(T, { days: 14 }).length;
+    sp.setBookingsFrozen(actor, { clinicianId: T, frozen: true, reason: "Walkthrough freeze" });
+    const frozen = av.availableSlots(T, { days: 14 }).length;
+    sp.setBookingsFrozen(actor, { clinicianId: T, frozen: false, reason: "Walkthrough unfreeze" });
+    const unfrozen = beforeFreeze > 0 ? av.availableSlots(T, { days: 14 }).length : 0;
+    // §F2 — the demo prescriber is bookable again.
+    const prescriberSlots = av.availableSlots("c2", { days: 14 }).length;
+    return { group: group.length, groupOutsideBlocks: groupOutsideBlocks.length, groupInIndividualOnly: groupInIndividualOnly.length, afterOff: afterOff.length, frozen, unfrozen, prescriberSlots };
   });
   expect(r.group).toBeGreaterThan(0);
   expect(r.groupOutsideBlocks).toBe(0);
   expect(r.groupInIndividualOnly).toBe(0);
   expect(r.afterOff).toBe(0);
   expect(r.frozen, JSON.stringify(r)).toBe(0);
+  expect(r.prescriberSlots, JSON.stringify(r)).toBeGreaterThan(0);
   expect(r.unfrozen, JSON.stringify(r)).toBeGreaterThan(0);
 
   // Coordinator's booking precheck sees the same calendar.

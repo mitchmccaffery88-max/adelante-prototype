@@ -10,6 +10,7 @@
 // the advocate shell: session/claim handling, the advocate identity header,
 // and `<Outlet />`. Each sidebar destination is a real child route, so the
 // sidebar switches views instead of scrolling one long page.
+import { signAdvocateAttestation } from "@/lib/consentForms";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -194,6 +195,13 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
           ? { actingPatientId: AdelanteEHR.getCurrentPatientId() }
           : {}),
       });
+      // §F1/W8 — the typed attestation also signs the advocate attestation form
+      // sent with the invitation (same consent workflow). Seeded links have none.
+      try {
+        signAdvocateAttestation({ patientId: link.patientId, advocateId: link.id, signerName: attested });
+      } catch {
+        /* no attestation request waiting for this link */
+      }
       toast.success("Connected.");
       onClaimed(link.id);
     } catch (e) {

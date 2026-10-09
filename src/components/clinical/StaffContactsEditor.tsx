@@ -29,7 +29,7 @@ export function StaffContactsEditor({ patient, readOnly }: { patient: Patient; r
   };
   const invite = () => {
     if (!adv) return;
-    const e = validateAdvocateDraft({ ...adv, consent: "later" });
+    const e = validateAdvocateDraft(adv);
     if (e.length) { toast.error("Check the advocate details."); return; }
     const linked = rows.find((c) => c.id === adv.contactId);
     const r = runAction("patient_contacts_update", actor, patient, { via: "createAdvocateInvitation", args: [{
@@ -54,7 +54,7 @@ export function StaffContactsEditor({ patient, readOnly }: { patient: Patient; r
             {errs[i]!.includes("phone") && <p className="text-xs text-destructive">Enter a 10-digit phone number.</p>}
             <Input aria-label={`Email — contact ${i + 1}`} placeholder="Email" value={c.email ?? ""} disabled={readOnly} onChange={(e) => set(i, { email: e.target.value })} />
             {errs[i]!.includes("email") && <p className="text-xs text-destructive">Enter a valid email.</p>}
-            {!readOnly && c.id && <button type="button" className="min-h-11 text-xs font-medium text-teal underline" onClick={() => setAdv({ ...advocateDraftFromContact(c, emptyAdvocateDraft()), consent: "later" })}>Make this person the advocate</button>}
+            {!readOnly && c.id && <button type="button" className="min-h-11 text-xs font-medium text-teal underline" onClick={() => setAdv(advocateDraftFromContact(c, emptyAdvocateDraft()))}>Make this person the advocate</button>}
           </div>
         );
       })}
@@ -69,7 +69,7 @@ export function StaffContactsEditor({ patient, readOnly }: { patient: Patient; r
         <SheetContent className="overflow-y-auto">
           <SheetHeader><SheetTitle>Make advocate</SheetTitle></SheetHeader>
           <p className="mt-1 text-xs text-muted-foreground">The patient signs the advocate consent themselves (Forms to sign). Nothing is shared until both sign.</p>
-          {adv && <AdvocateSection draft={adv} onChange={(d) => setAdv({ ...d, consent: "later" })} on onToggle={() => setAdv(null)} errors={[]} lang="en" />}
+          {adv && <AdvocateSection draft={adv} onChange={(d) => setAdv(d)} on onToggle={() => setAdv(null)} errors={[]} lang="en" />}
           <Button className="mt-3 w-full" onClick={invite}>Invite advocate</Button>
         </SheetContent>
       </Sheet>

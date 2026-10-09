@@ -100,9 +100,7 @@ for (const lang of ["en", "es"] as const) {
     await expect(page.getByTestId("advocate-name")).toHaveValue("Diego Camacho");
     await page.getByTestId("advocate-type").selectOption("family");
     await page.getByTestId("advocate-email").fill("diego@example.org");
-    await page.getByTestId("advocate-sign-now").click();
-    await page.getByTestId("advocate-sign-name").fill("Luis Camacho");
-    await page.getByTestId("advocate-sign-agree").click();
+    await expect(page.getByTestId("advocate-sign-in-forms")).toBeVisible();
     await expect(page.getByTestId("advocate-errors")).toHaveCount(0);
 
     // Submit through the same store path the final step uses, then check status on My care.
@@ -123,7 +121,17 @@ for (const lang of ["en", "es"] as const) {
     }
     await expect.poll(() => page.evaluate((id) => ((window as unknown as W).__adelante.AdelanteEHR as never as { listAdvocateLinks: (p: string) => { advocateName: string; expectedAuthorizationType?: string }[] }).listAdvocateLinks(id).find((l) => l.advocateName === "Diego Camacho")?.expectedAuthorizationType, luisId)).toBe("family_participation");
     await go(page, "/profile");
-    if (lang === "es") await expect(page.getByTestId("advocate-consent-card").getByRole("heading", { name: "Compartir con mi ayudante (defensor)" })).toBeVisible();
+    // §F1 — the one advocate consent path: status card → Review and sign → Forms to sign.
+    const st = page.getByTestId("advocate-consent-status");
+    if (lang === "es") await expect(st.getByRole("heading", { name: "Compartir con mi ayudante (defensor)" })).toBeVisible();
+    await expect(st.getByTestId("advocate-form-status")).toHaveAttribute("data-status", "waiting");
+    await st.getByTestId("advocate-review-sign").click();
+    const forms = page.getByTestId("forms-to-sign").first();
+    await forms.getByTestId("form-card-advocate_patient").getByRole("checkbox").click();
+    await forms.getByTestId("forms-signature").getByRole("textbox").first().fill("Luis Camacho");
+    await forms.getByTestId("forms-signature").getByRole("textbox").nth(1).fill("Luis Camacho");
+    await forms.getByTestId("forms-sign").click();
+    await expect(st.getByTestId("advocate-form-status")).toHaveAttribute("data-status", "signed");
     await expect(page.getByTestId("advocate-status").first()).toHaveText(lang === "es" ? "Esperando su registro" : "Waiting for their sign-up");
   });
 }

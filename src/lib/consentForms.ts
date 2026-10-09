@@ -314,6 +314,8 @@ function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, 
   });
   if (v.key === "sms") AdelanteEHR.setConsent(p.id, "sms", true, "form signed");
   if (v.key === "part2") AdelanteEHR.setConsent(p.id, "part2Sud", true, "form signed");
+  // §F1 — the signed advocate form is what releases held advocate invitations.
+  if (v.key === "advocate_patient") void import("./advocateInviteDelivery").then((m) => m.deliverConsentedAdvocateInvitations(p.id)).catch(() => undefined);
   // A newer signature of the same form supersedes the older copy.
   for (const c of copies) if (c.patientId === p.id && c.formKey === v.key && !ends.has(c.id)) ends.set(c.id, { endedAt: input.at, reason: "superseded" });
   const text = `${v.title[lang]}\n\n${v.body[lang]}`;
@@ -337,6 +339,16 @@ export function signAdvocateAttestation(input: { patientId: string; advocateId: 
   if (!r) throw new Error("No attestation waiting for this advocate.");
   if (input.signerName.trim().length < 2) throw new Error("Type your full name to sign.");
   return signOne(p, r, { patientId: p.id, signerName: input.signerName, typedName: input.signerName, at: input.at ?? new Date().toISOString() }, "advocate");
+}
+/** §F1 — the patient's advocate consent form status (the one advocate consent path). */
+export type AdvocateFormStatus = "signed" | "waiting" | "declined" | "none";
+export function advocateConsentFormStatus(patientId: string): AdvocateFormStatus {
+  if (hasSignedForm(patientId, "advocate_patient")) return "signed";
+  const mine = requests.filter((r) => r.patientId === patientId && !r.advocateId && r.formKey === "advocate_patient");
+  const last = mine[mine.length - 1];
+  if (!last) return "none";
+  if (last.status === "sent" || last.status === "viewed") return "waiting";
+  return last.status === "declined" ? "declined" : "none";
 }
 export const advocateFormsToSign = (advocateId: string) => requests.filter((r) => r.advocateId === advocateId && (r.status === "sent" || r.status === "viewed")).map((r) => ({ request: { ...r }, form: getFormVersion(r.versionId)! }));
 

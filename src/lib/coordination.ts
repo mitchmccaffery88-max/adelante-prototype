@@ -293,4 +293,7 @@ export function seedCoordinationDemo() {
   safe(() => setClinicianFrozen("c2", true, priya, "Unexpected leave — out through next week"));
   if (booked[0])
     safe(() => reassignCoverage({ apptId: booked[0]!, toClinicianId: "c1", reason: "provider_frozen", note: "Covering during James Okafor's leave.", actor: priya }));
+  // §F2 — James is back: demos must be able to book a prescriber. The freeze →
+  // coverage history stays in the audit; his calendar is open again.
+  safe(() => setClinicianFrozen("c2", false, priya, "Back from leave — bookings reopened"));
 }

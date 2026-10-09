@@ -13,7 +13,9 @@ import {
   listUnassignedPatients,
   reassignCoverage,
   seedCoordinationDemo,
+  setClinicianFrozen,
 } from "../coordination";
+import { availableSlots } from "../clinicianAvailability";
 import { stripTaskPrefix } from "../inboxActions";
 
 describe("clinical coordination (item 6)", () => {
@@ -34,14 +36,20 @@ describe("clinical coordination (item 6)", () => {
     }
   });
 
-  it("seeds Kayla, a frozen provider, one reassigned + one pending patient", () => {
+  it("seeds Kayla and a leave-coverage history; no demo persona is left frozen (§F2)", () => {
     seedCoordinationDemo();
     expect(AdelanteEHRExt.getClinicianProfile("c4")?.active).toBe(true);
-    expect(AdelanteEHRExt.getClinicianProfile("c2")?.active).toBe(false);
+    expect(AdelanteEHRExt.getClinicianProfile("c2")?.active).toBe(true);
+    expect(availableSlots("c2").length).toBeGreaterThan(0);
+    for (const c of AdelanteEHR.listClinicians()) expect(AdelanteEHRExt.getClinicianProfile(c.id)?.active, c.id).not.toBe(false);
     const audit = listCoordinationAudit();
+    expect(audit.some((e) => e.action === "coordination_provider_frozen")).toBe(true);
+    expect(audit.some((e) => e.action === "coordination_provider_unfrozen")).toBe(true);
     const re = audit.find((e) => e.action === "coordination_reassign");
     expect(re?.detail?.reason).toBe("provider_frozen");
     expect(re?.actorRole).toBe("clinical_coordinator");
+    // Test fixture (not the demo seed): freeze c2 so the frozen-provider paths below have data.
+    setClinicianFrozen("c2", true, { name: "Priya Raman", role: "clinical_coordinator" }, "Test fixture freeze");
     expect(listUnassignedPatients().some((u) => u.why === "Primary clinician frozen")).toBe(true);
   });
 

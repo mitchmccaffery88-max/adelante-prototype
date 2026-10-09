@@ -46,7 +46,6 @@ import { INTAKE_NEED_LABEL, type IntakeNeedKey } from "@/lib/sdohMapping";
 import { emptyEmergencyContact } from "@/lib/emergencyContacts";
 import { AdvocateSection, RelationshipSelect } from "@/components/advocate/AdvocateSection";
 import { advocateDraftFromContact, authorizationForAdvocateType, emptyAdvocateDraft, newContactId, relationshipFromText, relationshipText, validateAdvocateDraft, type AdvocateDraft, type AdvocateDraftError } from "@/lib/contactAdvocate";
-import { signAdvocateConsent } from "@/lib/advocateConsentSign";
 import {
   mergeSavedIntakeProfile,
   profilePatch,
@@ -412,7 +411,7 @@ function IntakePage() {
       if (saved.topics) setTopics(saved.topics);
       if (saved.coreChoice !== undefined) setCoreChoice(saved.coreChoice);
       if (saved.advocateOn !== undefined) setAdvocateOn(saved.advocateOn);
-      if (saved.advocateDraft) setAdvocateDraft({ ...emptyAdvocateDraft(), ...saved.advocateDraft, signAgree: false });
+      if (saved.advocateDraft) setAdvocateDraft({ ...emptyAdvocateDraft(), ...saved.advocateDraft });
       // Merge, never overwrite: a blank field in an old draft must not erase
       // something the record actually knows.
       if (saved.profile) {
@@ -444,7 +443,7 @@ function IntakePage() {
           topics,
           coreChoice,
           advocateOn,
-          advocateDraft: { ...advocateDraft, signAgree: false },
+          advocateDraft,
           savedAt: at,
         }),
       );
@@ -751,7 +750,7 @@ function IntakePage() {
           designatedBy: { actor: "patient", name: patientName },
           ...(linked?.id ? { contactId: linked.id, contactSnapshot: { name: linked.name, phone: linked.phone, ...(linked.email ? { email: linked.email } : {}) } } : {}),
         });
-        if (d.consent === "now") signAdvocateConsent(currentId, d.signName, d.signAgree);
+        // §F1 — advocate consent is the versioned form, sent with the invitation and signed in Forms to sign.
       } catch (e) {
         // §Group 2 O2 — invitation errors are shown, never silently ignored.
         toast.error(e instanceof Error ? e.message : "The advocate invitation could not be created.");
