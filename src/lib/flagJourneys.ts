@@ -15,6 +15,7 @@ import { isJusticeInvolved } from "./justiceInvolvement";
 import { liveCurricula, type Curriculum } from "./curriculumTypes";
 import { autoAddJourneyAssignment, getStructuredPlan, markFlagRemovedForReview, markPathwayChangedForReview, type SpecialtyFlag } from "./structuredCarePlan";
 import { listEpisodes } from "./outpatientCare";
+import { listContent } from "./contentPublishing";
 
 export const FLAG_JOURNEY_DRAFT_LABEL = "Draft — pending clinical sign-off";
 export const NEW_CONTENT_NOTICE = { en: "New content was added to your plan", es: "Se agregó contenido nuevo a tu plan" } as const;
@@ -98,7 +99,16 @@ const gaps: ContentGapItem[] = [];
 export const listContentGaps = () => gaps.filter((g) => !g.closedAt).map((g) => ({ ...g }));
 /** §Group 2 G1 — the content owner: the owner of the matching category, else the owner pool. */
 export const CONTENT_OWNER_POOL_ROLE = "content_owner_pool";
-let gapOwnerResolver: ((flag: SpecialtyFlag) => string | undefined) | undefined;
+/** Default: owner of any journey (draft or retired) tagged for this flag/pathway; content_authoring owns journeys. */
+function defaultGapOwner(flag: SpecialtyFlag): string | undefined {
+  const pw = flag === "sud" ? ["sud", "reentry_sud"] : ["reentry", "reentry_sud"];
+  for (const e of listContent("journey")) {
+    const m = (e.body as { meta?: { owner?: string; flags?: string[]; pathways?: string[] } }).meta;
+    if (m?.owner && ((m.flags ?? []).includes(flag) || (m.pathways ?? []).some((x) => pw.includes(x)))) return m.owner;
+  }
+  return undefined;
+}
+let gapOwnerResolver: ((flag: SpecialtyFlag) => string | undefined) | undefined = defaultGapOwner;
 export function setContentGapOwnerResolver(fn: typeof gapOwnerResolver) { gapOwnerResolver = fn; }
 function raiseGap(flag: SpecialtyFlag, at: string) {
   const open = gaps.find((g) => g.flag === flag && !g.closedAt);
