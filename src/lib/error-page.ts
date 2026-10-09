@@ -1,5 +1,15 @@
-export function renderErrorPage(): string {
-  return `<!doctype html>
+export function renderErrorPage(detail?: unknown): string {
+  let comment = "";
+  if (detail !== undefined) {
+    const text =
+      detail instanceof Error
+        ? (detail.stack ?? detail.message)
+        : typeof detail === "string"
+          ? detail
+          : JSON.stringify(detail);
+    comment = `\n<!-- error: ${String(text).replace(/--/g, "-\\-").slice(0, 2000)} -->`;
+  }
+  return `<!doctype html>${comment}
 <html lang="en">
   <head>
     <meta charset="utf-8" />
