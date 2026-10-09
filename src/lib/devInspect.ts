@@ -37,6 +37,11 @@ export function installDevInspect(navigate?: (to: string) => void) {
       ]);
       return { ca, st, ra, nr };
     },
+    /** §Group 1 / consent walkthroughs — same module instances the app uses. */
+    avail: async () => {
+      const [ext, av, sp, bf, cf] = await Promise.all([import("@/lib/ehr-ext"), import("@/lib/clinicianAvailability"), import("@/lib/staffProfile"), import("@/lib/bookingFlow"), import("@/lib/consentForms")]);
+      return { ext: ext.AdelanteEHRExt, av, sp, bf, cf };
+    },
     /** V1 — Brief consistency check over every patient × staff role. */
     checkBrief: async () => {
       const [{ checkAllBriefs }, { STAFF_ROLES }] = await Promise.all([import("@/lib/adelBriefCheck"), import("@/lib/roles")]);

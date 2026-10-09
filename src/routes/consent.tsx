@@ -4,7 +4,7 @@ import { runAction } from "@/lib/actions/runAction";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, type ExtendedConsentPurpose, type ConsentPurpose } from "@/lib/ehr";
 import {
@@ -158,20 +158,9 @@ function ConsentPage() {
                   <p className="mt-3 text-[11px] text-muted-foreground" data-testid="ledger-read-only">Read only for your role.</p>
                 )}
                 {isCore && canWriteLedger && (
-                  <button
-                    onClick={() => {
-                      const r = runAction("consent_purpose_set", { role: acting.role, staffId: acting.staffId, staffName: acting.staffName }, patient, {
-                        args: [patient.id, p.key as ConsentPurpose, !granted, { role: acting.role, staffId: acting.staffId, staffName: acting.staffName }, "consent page"],
-                      });
-                      if (!r.ok) toast.error(r.reason);
-                      else toast.success(granted ? "Consent revoked" : "Consent granted");
-                    }}
-                    aria-label={granted ? `Revoke ${p.label} consent` : `Grant ${p.label} consent`}
-                    className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-md border border-navy/20 px-3 text-sm font-medium text-navy hover:bg-navy/5"
-                  >
-                    <Undo2 className="h-3.5 w-3.5" />
-                    {granted ? "Revoke" : "Grant"}
-                  </button>
+                  <Link to="/record/$patientId" params={{ patientId: patient.id }} search={{ section: "consents" } as never} data-testid={`ledger-manage-${p.key}`} aria-label={`Manage ${p.label} consent`} className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-md border border-navy/20 px-3 text-sm font-medium text-navy hover:bg-navy/5">
+                    Manage
+                  </Link>
                 )}
                 {!isCore && (
                   <p className="mt-3 text-[11px] text-muted-foreground">

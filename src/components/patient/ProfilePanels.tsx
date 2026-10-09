@@ -1,3 +1,5 @@
+import { PatientSignedForms } from "@/components/consent/PatientSignedForms";
+import { FormsToSign } from "@/components/consent/FormsToSign";
 import { AdvocateConsentCard } from "@/components/consent/AdvocateConsentCard";
 // §P1 My Care de-clutter — the Profile surface's real panels.
 //
@@ -191,6 +193,8 @@ export function PrivacyConsentCard({ patientId }: { patientId: string }) {
         ))}
       </ul>
       {/* §Group 2 S4 — the patient signs advocate sharing consent here. */}
+      <PatientSignedForms patientId={patientId} lang={lang === "es" ? "es" : "en"} />
+      <div className="mt-4"><FormsToSign patientId={patientId} lang={lang === "es" ? "es" : "en"} /></div>
       <div className="mt-4"><AdvocateConsentCard patientId={patientId} /></div>
       <ConsentWithdrawSheet
         purpose={pending}

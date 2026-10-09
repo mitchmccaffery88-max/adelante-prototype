@@ -3,7 +3,7 @@
 // (whose calendar). No writes here: booking goes through runAction →
 // bookAppointment, which re-checks every rule below (the drawer only shows
 // the reason early, inline).
-import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, type Appointment, type Clinician, type Patient, type ServiceType } from "./ehr";
+import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, GROUP_SERVICE_TYPES, groupConsentBlock, type Appointment, type Clinician, type Patient, type ServiceType } from "./ehr";
 import type { StaffRole } from "./roles";
 import { bookingRightFor, checkBookingRights, isPrescriberServiceType, isSudServiceType } from "./bookingRights";
 import { myCaseload, type ActingIdentity } from "./myWork";
@@ -81,6 +81,10 @@ export function precheckBooking(input: { actor: BookingActor; patient?: Patient;
   if (!input.clinicianId) return { ok: false, reason: "Choose whose calendar to book on.", next: "Pick a clinician from the suggestions." };
   if (input.modality !== "in_person" && !AdelanteEHR.isConsentCategoryAuthorized(input.patient.id, TELEHEALTH_CONSENT_CATEGORY))
     return { ok: false, reason: "No telehealth consent on file.", next: "Capture telehealth consent in the chart's Consents section, or book in person." };
+  if (GROUP_SERVICE_TYPES.includes(input.serviceType)) {
+    const g = groupConsentBlock(input.patient.id);
+    if (g) return { ok: false, reason: g, next: "Send the Group participation form from the chart's Consents section." };
+  }
   return { ok: true };
 }
 
