@@ -8,12 +8,14 @@ type ServerEntry = {
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
+let serverEntryReady = false;
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
-    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => (m.default ?? m) as ServerEntry,
-    );
+    serverEntryPromise = import("@tanstack/react-start/server-entry").then((m) => {
+      serverEntryReady = true;
+      return (m.default ?? m) as ServerEntry;
+    });
   }
   return serverEntryPromise;
 }
@@ -81,7 +83,7 @@ export default {
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response, request);
     } catch (error) {
-      logProductionError(serverEntryPromise ? "thrown" : "module-load", error, request);
+      logProductionError(serverEntryReady ? "thrown" : "module-load", error, request);
       return new Response(renderErrorPage(error), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
