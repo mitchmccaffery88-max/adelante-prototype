@@ -1,3 +1,4 @@
+import { PathwayChip } from "@/components/clinical/PathwayChip";
 import { ContentAssignmentPreview } from "@/components/admin/ContentAssignmentPreview";
 // Staff structured care plan editor. Same access as the chart's care plan
 // section; SUD-linked goals/assignments/problems filtered by staffPlanView.
@@ -78,7 +79,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h4 className="flex items-center gap-2 font-display text-base text-navy">
-            <Target className="h-4 w-4 text-teal" /> Structured care plan
+            <Target className="h-4 w-4 text-teal" /> Structured care plan <PathwayChip patientId={patientId} />
           </h4>
           <p className="text-[11px] text-muted-foreground">
             {r.signedAt ? (
