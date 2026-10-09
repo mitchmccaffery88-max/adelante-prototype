@@ -1,12 +1,16 @@
 # Roadmap
 
+## Consent workflow (9 Oct, Draft — pending counsel)
+- [x] W1 form library  - [x] W2 send  - [x] W3 Forms to sign  - [x] W4 track  - [x] W5 store/retention/migration
+- [x] W6 renew + revoke  - [x] W7 packet + group gate  - [x] W8 advocate forms  - [x] handoff doc
+
 ## Group 2 (9 Oct) — pathways, Part 2 fixes, contacts + advocate
 - [x] G1 content gaps → content owner (journey owner, else owner pool)
 - [x] G2 SUD journeys hidden from non-Part 2 staff + advocate tiers (fixed restricted plan view leak)
-- [ ] G3 group 1 browser walkthrough script — not yet written
+- [x] G3 group 1 browser walkthrough (e2e/group1Availability.spec.ts)
 - [x] S1–S5
 - [x] P1–P5
-- [x] O1/O2/O4 onboarding contacts + advocate; [ ] O3 staff demographics editor still uses old fields
+- [x] O1/O2/O4 onboarding contacts + advocate; [x] O3 staff contacts editor uses onboarding model
 
 ## In progress — Player and engagement (K1–K3, P1–P10)
 - [ ] K1 registry content mutations + additive permissions snapshot
