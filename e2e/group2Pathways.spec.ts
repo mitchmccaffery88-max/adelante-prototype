@@ -64,3 +64,52 @@ test("read-only role on the consent ledger has no toggles", async ({ page }) => 
   await expect(page.getByTestId("ledger-read-only").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /^(Grant|Revoke) / })).toHaveCount(0);
 });
+
+for (const lang of ["en", "es"] as const) {
+  test(`onboarding as Luis (${lang}): two contacts, second made advocate, consent signed`, async ({ page }) => {
+    await page.goto("/clinician");
+    await page.waitForFunction(() => !!(window as unknown as W).__adelante?.AdelanteEHR, null, { timeout: 60_000 });
+    const luisId = (await page.evaluate((l) => {
+      const e = (window as unknown as W).__adelante.AdelanteEHR as never as { listPatients: () => { id: string; firstName: string; lastName: string; preferredLanguage?: string }[]; setCurrentPatientId: (i: string) => void };
+      const luis = e.listPatients().find((p) => p.firstName === "Luis" && p.lastName === "Camacho")!;
+      luis.preferredLanguage = l;
+      e.setCurrentPatientId(luis.id);
+      return luis.id;
+    }, lang)) as string;
+    if (lang === "es") await page.evaluate(() => localStorage.setItem("adelante.lang", "es"));
+    await go(page, "/intake");
+    const contacts = page.getByText(lang === "es" ? /Emergency contacts|Contactos de emergencia/ : "Emergency contacts").first();
+    for (let i = 0; i < 12 && !(await contacts.isVisible()); i++) {
+      await page.getByRole("button", { name: /^(Next|Continue|Siguiente|Continuar)/ }).last().click();
+    }
+    await expect(contacts).toBeVisible();
+    const rows = page.getByTestId("emergency-contact-row");
+    if ((await rows.count()) < 2) await page.getByRole("button", { name: /Add another contact/ }).click();
+    const fill = async (i: number, name: string, phone: string, rel: string) => {
+      await page.getByLabel(`Name — contact ${i}`).fill(name);
+      await page.getByLabel(`Phone — contact ${i}`).fill(phone);
+      await page.getByLabel(`Relationship — contact ${i}`).selectOption(rel);
+    };
+    await fill(1, "Rosa Camacho", "5595550181", "parent");
+    await fill(2, "Diego Camacho", "5595550182", "sibling");
+    await page.getByTestId("advocate-from-contact-1").click();
+    await expect(page.getByTestId("advocate-linked")).toBeVisible();
+    await expect(page.getByTestId("advocate-name")).toHaveValue("Diego Camacho");
+    await page.getByTestId("advocate-type").selectOption("family");
+    await page.getByTestId("advocate-email").fill("diego@example.org");
+    await page.getByTestId("advocate-sign-now").click();
+    await page.getByTestId("advocate-sign-name").fill("Luis Camacho");
+    await page.getByTestId("advocate-sign-agree").click();
+    await expect(page.getByTestId("advocate-errors")).toHaveCount(0);
+
+    // Submit through the same store path the final step uses, then check status on My care.
+    for (let i = 0; i < 15; i++) {
+      const submit = page.getByRole("button", { name: /^(Submit|Finish|Enviar|Terminar)/ });
+      if (await submit.count()) { await submit.last().click(); break; }
+      await page.getByRole("button", { name: /^(Next|Continue|Siguiente|Continuar)/ }).last().click();
+    }
+    await expect.poll(() => page.evaluate((id) => ((window as unknown as W).__adelante.AdelanteEHR as never as { listAdvocateLinks: (p: string) => { advocateName: string; expectedAuthorizationType?: string }[] }).listAdvocateLinks(id).find((l) => l.advocateName === "Diego Camacho")?.expectedAuthorizationType, luisId)).toBe("family_participation");
+    await go(page, "/profile");
+    await expect(page.getByTestId("advocate-status").first()).toHaveText(lang === "es" ? "Esperando su registro" : "Waiting for their sign-up");
+  });
+}
