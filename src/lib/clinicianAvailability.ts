@@ -7,7 +7,7 @@ import { AdelanteEHRExt, type AvailabilityBlock } from "./ehr-ext";
 import { DEFAULT_FACILITY_TZ, fromFacilityWallClock, startOfFacilityDay, toFacilityParts } from "./facilityTime";
 import { isWorkingDay, siteForBlock } from "./workingCalendar";
 import { isActiveStaff } from "./staffLifecycle";
-import { blockOffersService, isBookableClinician } from "./staffProfile";
+import { blockOffersService, bookingsFrozen, isBookableClinician } from "./staffProfile";
 
 /**
  * Weekly hours are FACILITY wall-clock (America/Los_Angeles), never the
@@ -53,7 +53,7 @@ export interface SlotQuery {
 
 /** Open slot starts (ISO) inside the clinician's real availability; conflicts and past times skipped. */
 export function availableSlots(clinicianId: string, q: SlotQuery = {}): string[] {
-  if (!isActiveStaff(clinicianId) || !isBookableClinician(clinicianId)) return [];
+  if (!isActiveStaff(clinicianId) || !isBookableClinician(clinicianId) || bookingsFrozen(clinicianId)) return [];
   const now = q.now ?? new Date();
   const days = q.days ?? 14;
   const step = q.stepMin ?? 60;

@@ -1,3 +1,4 @@
+import { ConsentFormLibrary } from "./ConsentFormLibrary";
 import { ContentInventoryTable } from "./ContentInventoryTable";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { contentVisibleToStaff, staffContentInventory, defaultContentMode } from "@/lib/contentStaff";
@@ -886,7 +887,11 @@ export function ContentAdminWorkspace({ browseOnly = false }: { browseOnly?: boo
           {!browseOnly && <TabsTrigger value="manage">Manage</TabsTrigger>}
           {!browseOnly && <TabsTrigger value="review">Review{queueCount ? ` (${queueCount})` : ""}</TabsTrigger>}
           {!browseOnly && <TabsTrigger value="audit">Audit</TabsTrigger>}
+          {!browseOnly && (role === "sys_admin" || role === "clinical_coordinator") && <TabsTrigger value="legal">Legal &amp; consent</TabsTrigger>}
         </TabsList>
+        <TabsContent value="legal" className="mt-4">
+          <ConsentFormLibrary />
+        </TabsContent>
         <TabsContent value="browse" className="mt-4">
           <ContentBrowse version={version} />
         </TabsContent>

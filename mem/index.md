@@ -7,6 +7,7 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 
 ## Memories
 - [Pathway journeys](mem://features/pathway-journeys) — interim pathway→journey rule (Draft, pending Cathy)
+- [Consent workflow](mem://features/consent-workflow) — form library, packet by pathway, retention, gates (Draft, counsel pending)
 - [Player engagement](mem://features/player-engagement) — no badges/milestones, private responses, patient styling, bilingual Simulated voice, SMART Recovery verification hold
 - [Working calendars](mem://features/working-calendars) — holiday list, working-day note clock, author-out, reschedule-needed, time-off privacy
 - [Advocate access](mem://features/advocate-access)

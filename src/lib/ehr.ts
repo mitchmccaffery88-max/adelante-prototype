@@ -3537,7 +3537,13 @@ export type ConsentCategory =
   // §Scribe Phase 1 — AI-assisted session documentation (recording). The
   // Part 2 line is a separate section so the ledger records it explicitly.
   | "ai_session_recording"
-  | "ai_session_recording_part2";
+  | "ai_session_recording_part2"
+  // §Consent workflow W1 — form-library categories (placeholder, Draft — pending counsel review).
+  | "hipaa_authorization"
+  | "patient_portal"
+  | "sms_reminders"
+  | "group_participation"
+  | "advocate_attestation";
 
 // §Adelante Journey Phase 3 — the category the PO two-tier split
 // needs. It covers ONLY voluntary, patient-controlled care-coordination
@@ -3588,7 +3594,22 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
     key: "ai_session_recording_part2",
     label: "AI-assisted session documentation — covers substance use (42 CFR Part 2) sessions (placeholder wording)",
   },
+  { key: "hipaa_authorization", label: "HIPAA authorization (placeholder wording)" },
+  { key: "patient_portal", label: "Patient portal use (placeholder wording)" },
+  { key: "sms_reminders", label: "SMS reminders (placeholder wording)" },
+  { key: "group_participation", label: "Group participation (placeholder wording)" },
+  { key: "advocate_attestation", label: "Advocate attestation (placeholder wording)" },
 ];
+
+/** §Consent W7 — group consent gate, registered by consentForms.ts (no import cycle). Returns a reason when blocked. */
+let groupConsentGate: ((patientId: string) => string | undefined) | undefined;
+export function setGroupConsentGate(fn: typeof groupConsentGate): void {
+  groupConsentGate = fn;
+}
+export const GROUP_SERVICE_TYPES: readonly string[] = ["therapy_group", "sud_group_odf", "sud_group_iot"];
+export function groupConsentBlock(patientId: string): string | undefined {
+  return groupConsentGate?.(patientId);
+}
 
 /** The ONLY consent category a probation/parole disclosure may ever turn on. */
 export const PO_VOLUNTARY_CONSENT_CATEGORY: ConsentCategory = "po_voluntary_coordination";
@@ -9189,6 +9210,10 @@ export const AdelanteEHR = {
       _assertClinicianFit(input.clinicianId, input.serviceType);
       if (input.modality && input.modality !== "in_person" && +new Date(input.start) > Date.now() && !AdelanteEHR.isConsentCategoryAuthorized(input.patientId, TELEHEALTH_CONSENT_CATEGORY))
         throw new Error("No telehealth consent on file. Capture telehealth consent first, or book in person.");
+      if (GROUP_SERVICE_TYPES.includes(input.serviceType ?? "")) {
+        const g = groupConsentBlock(input.patientId);
+        if (g) throw new Error(g);
+      }
     }
     if (input.modality === "in_person" && !input.locationId) {
       throw new Error("Pick a location for the in-person visit.");
@@ -11738,6 +11763,21 @@ export const AdelanteEHR = {
   },
 
   // ----- §Demographics & identifiers ---------------------------------------
+  /** §K2 — staff edit of the emergency-contact list (same model as onboarding). Audited; first contact stays primary. */
+  updateEmergencyContactsByStaff(patientId: string, list: EmergencyContact[], actor: { staffId?: string; name: string; role: StaffRole }) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found.");
+    const clean = list.filter((c) => c.name.trim()).map((c) => ({ ...c, name: c.name.trim(), relationship: c.relationship.trim(), phone: c.phone.trim(), ...(c.email?.trim() ? { email: c.email.trim() } : {}) }));
+    for (const c of clean) {
+      if (c.phone && c.phone.replace(/\D/g, "").length < 10) throw new Error(`Check the phone number for ${c.name}.`);
+      if (c.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email)) throw new Error(`Check the email for ${c.name}.`);
+    }
+    p.emergencyContacts = clean;
+    p.emergencyContact = clean[0];
+    appendAudit({ category: "clinical", action: "emergency_contacts_updated", patientId, actorId: actor.staffId ?? actor.name, actorRole: actor.role, detail: { count: clean.length } });
+    emit();
+    return clean;
+  },
   updatePatientDemographics(
     patientId: string,
     patch: Partial<Record<DemographicField, string>>,
@@ -24662,6 +24702,7 @@ export const AdelanteEHR = {
     const r = groupJoinRequests.find((x) => x.id === requestId);
     if (!r || r.status !== "pending") throw new Error("No pending request to approve.");
     _assertGroupJoinReviewer(r, actor);
+    { const g = groupConsentBlock(r.patientId); if (g) throw new Error(g); }
     const g = groupSessions.find((x) => x.id === r.sessionId);
     if (!g) throw new Error("Group not found.");
     const detailBase = {

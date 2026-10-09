@@ -1,3 +1,5 @@
+import { buildIntakePacket, hasIntakePacket } from "@/lib/consentForms";
+import { FormsToSign } from "@/components/consent/FormsToSign";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -219,6 +221,10 @@ function IntakePage() {
   const { lang: lang9a } = useI18n();
   const c9a = PHASE9A_COPY[lang9a === "es" ? "es" : "en"];
   const alreadyComplete = Boolean(patient?.intakeCompletedAt);
+  // §Consent W7 — the pathway packet is built when intake starts.
+  useEffect(() => {
+    if (currentId && !alreadyComplete && !hasIntakePacket(currentId)) buildIntakePacket(currentId);
+  }, [currentId, alreadyComplete]);
   // §Onboarding rework — re-assess entry for people who already finished
   // intake: one "anything changed?" question, then what's due.
   const [reassess, setReassess] = useState<"ask" | "about" | "due" | "full">("ask");
@@ -1438,6 +1444,7 @@ function IntakePage() {
 
         {current.key === "consent" && (
           <div className="space-y-5">
+            {currentId && <FormsToSign patientId={currentId} lang={lang9a === "es" ? "es" : "en"} />}
             <div className="rounded-lg border bg-secondary/40 p-4">
               <div className="flex items-center gap-2 font-medium text-navy">
                 <ShieldCheck className="h-4 w-4 text-teal" /> HIPAA — Notice of Privacy Practices
