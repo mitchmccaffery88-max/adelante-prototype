@@ -98,6 +98,9 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
   const hc = ADEL_HISTORY_COPY[hl];
   const currentPatientId = AdelanteEHR.getCurrentPatientId();
   const owner: AdelOwner | undefined = currentPatientId ? { kind: "patient", patientId: currentPatientId } : undefined;
+  // §Group 2 S2 — Adel only knows content that fits this person's pathway.
+  const pathway = useEhr(() => (currentPatientId ? patientPathway(currentPatientId) : "general"));
+  const audience: AdelAudience = { sud: pathwayHasSud(pathway), reentry: pathwayHasReentry(pathway) };
   const resumed = owner && resumeId ? getAdelThread(owner, resumeId) : undefined;
   const threadRef = useRef<string | undefined>(resumed?.id);
   const persist = (turn: { role: "user" | "assistant"; content: string; crisis?: boolean }) => {
