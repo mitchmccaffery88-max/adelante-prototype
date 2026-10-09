@@ -4,11 +4,12 @@ import { EXERCISES, LIBRARY_ITEMS } from "@/lib/library";
 
 describe("Adel ACTION mechanism", () => {
   it("resolves real lesson, exercise, resource and page tokens", () => {
-    expect(resolveAdelAction("exercise:urge-surfing-timer")).toMatchObject({
+    expect(resolveAdelAction("exercise:urge-surfing-timer")).toBeUndefined(); // §Group 2 S2 — Part 2, no SUD pathway
+    expect(resolveAdelAction("exercise:urge-surfing-timer", { sud: true, reentry: false })).toMatchObject({
       to: "/library",
       search: { exercise: "urge-surfing-timer" },
     });
-    expect(resolveAdelAction("lesson:ss-restoring-sleep")).toMatchObject({
+    expect(resolveAdelAction("lesson:ss-restoring-sleep", { sud: false, reentry: true })).toMatchObject({
       to: "/library",
       search: { item: "ss-restoring-sleep" },
     });
@@ -34,11 +35,12 @@ describe("Adel ACTION mechanism", () => {
   });
 
   it("only advertises tokens this build can actually open", () => {
-    const prompt = buildAdelSystemPrompt();
+    const all = { sud: true, reentry: true };
+    const prompt = buildAdelSystemPrompt(all);
     for (const i of LIBRARY_ITEMS) expect(prompt).toContain(`lesson:${i.id}`);
     for (const e of EXERCISES) expect(prompt).toContain(`exercise:${e.id}`);
     for (const m of prompt.matchAll(/^- (\S+?) —/gm)) {
-      expect(resolveAdelAction(m[1]!), m[1]).toBeTruthy();
+      expect(resolveAdelAction(m[1]!, all), m[1]).toBeTruthy();
     }
   });
 

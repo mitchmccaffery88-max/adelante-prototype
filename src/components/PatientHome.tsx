@@ -1,3 +1,4 @@
+import { AdvocateConsentCard } from "@/components/consent/AdvocateConsentCard";
 import { openScreenerRequestsForPatient } from "@/lib/chartOrders";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { inFacilityEnabled } from "@/lib/inFacility";
@@ -214,6 +215,8 @@ export function PatientHome() {
       </section>
 
       <YourGroupsSection patientId={patient.id} />
+      {/* §Group 2 O2 — "Sign later": the waiting advocate consent shows here. */}
+      <AdvocateConsentCard patientId={patient.id} />
       <TasksCard patientId={patient.id} />
       <MessagesCard patientId={patient.id} prefill={messagePrefill} />
       <AdvocateDesignationPanel

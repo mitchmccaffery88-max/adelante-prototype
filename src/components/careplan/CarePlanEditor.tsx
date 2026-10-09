@@ -1,10 +1,11 @@
+import { PathwayChip } from "@/components/clinical/PathwayChip";
 import { ContentAssignmentPreview } from "@/components/admin/ContentAssignmentPreview";
 // Staff structured care plan editor. Same access as the chart's care plan
 // section; SUD-linked goals/assignments/problems filtered by staffPlanView.
 import { act, actFor } from "@/lib/actions/act";
 import "@/lib/contentTags";
 import "@/lib/flagJourneys";
-import { FLAG_REVIEW_LABEL } from "@/lib/structuredCarePlan";
+import { flagReviewLabel } from "@/lib/structuredCarePlan";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useEhr } from "@/lib/ehr";
@@ -78,7 +79,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h4 className="flex items-center gap-2 font-display text-base text-navy">
-            <Target className="h-4 w-4 text-teal" /> Structured care plan
+            <Target className="h-4 w-4 text-teal" /> Structured care plan <PathwayChip patientId={patientId} />
           </h4>
           <p className="text-[11px] text-muted-foreground">
             {r.signedAt ? (
@@ -221,7 +222,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                       )}
                       {edit && a.flagReview && !a.flagReview.resolved && (
                         <span className="ml-1 inline-flex items-center gap-1" data-testid="flag-review">
-                          <Badge variant="outline" className="text-[10px]">{FLAG_REVIEW_LABEL}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{flagReviewLabel(a.flagReview)}</Badge>
                           <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "kept", "Kept after flag review", me); toast.success("Kept on the plan"); } catch (e) { toast.error((e as Error).message); } }}>Keep</Button>
                           <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "retired", "Retired after flag review", me); toast.success("Retired — progress kept"); } catch (e) { toast.error((e as Error).message); } }}>Retire</Button>
                         </span>

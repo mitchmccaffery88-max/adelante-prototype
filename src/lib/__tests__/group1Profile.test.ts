@@ -139,7 +139,7 @@ describe("C2 flag-driven journeys", () => {
     const auto = getStructuredPlan(p.id).assignments.filter((a) => a.active && a.autoAdded?.flag === "sud");
     const ids = auto.map((a) => a.activityId);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(auto.length).toBe(journeysForFlag("sud").length);
+    expect(ids).toContain("reentry-curriculum");
     expect(auto[0].autoAdded?.trigger).toMatch(/^Added automatically: /);
     expect(AdelanteEHR.listAuditEvents().some((e) => e.patientId === p.id && /auto/i.test(e.action))).toBe(true);
     expect(NEW_CONTENT_NOTICE.en).not.toMatch(BANNED);

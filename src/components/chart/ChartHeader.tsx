@@ -1,3 +1,4 @@
+import { PathwayChip } from "@/components/clinical/PathwayChip";
 // §Chart redesign turn 3 — compact, pinned chart header. Three columns
 // (identity / care status / actions) plus Allergies and Alerts strips. It
 // condenses on scroll. Everything is derived in src/lib/chartBrief.ts with
@@ -91,6 +92,7 @@ export function ChartHeader({
           {/* Care status */}
           <div className="flex min-w-0 flex-wrap items-center gap-1.5" data-testid="chart-header-status">
             {episode && <Badge variant="outline">Episode: {episode}</Badge>}
+            <PathwayChip patientId={patient.id} />
             {patient.possibleDuplicate && <Badge variant="outline" className="border-destructive/40 text-destructive" data-testid="possible-duplicate-chip">Possible duplicate — in review</Badge>}
             {rd && (
               <Badge variant="secondary" data-testid="reentry-day">Reentry day {rd}</Badge>

@@ -1,4 +1,4 @@
-import { EXERCISES } from "./library";
+import { EXERCISES, LIBRARY_ITEMS, LIBRARY_CATEGORIES } from "./library";
 import { RECOVERY_MODULES, RECOVERY_LESSONS } from "./recovery";
 import { AUTHORED_FIRST_DAYS_OUT_LESSONS } from "./recovery.firstDaysOut.authored";
 import { getContentEntry, seedPublishedContent, publishedContentOfType, type ContentBody } from "./contentPublishing";
@@ -52,11 +52,23 @@ export function initializePracticeContent() {
   const actor = { name: "Shipped content migration", role: "sys_admin" as const };
   for (const exercise of EXERCISES) if (!getContentEntry("exercise", exercise.id)) seedPublishedContent({ typeId: "exercise", id: exercise.id, body: { ...structuredClone(exercise), meta: { part2: exercise.part2Sensitive === true, clinical: true, esStatus: "missing", backfilled: true } } as unknown as ContentBody, actor, atISO: "2026-10-08T00:00:00.000Z", note: "Draft — migrated shipped practice, pending clinical and Spanish review" });
   const journeys: Curriculum[] = [
-    { id: "reentry-curriculum", title: "Re-entry Journey", description: "Nine short modules, one step at a time. You start with your first days out and work toward a life that feels steady. Go at your own pace. Each step saves your place.", unlock: "open", part2Sensitive: true, steps: RECOVERY_MODULES.map((m) => ({ type: "recovery_module", id: m.id, required: true })), es: { title: "Camino de reintegración", description: "Borrador — Nueve módulos cortos, un paso a la vez. Empieza con tus primeros días afuera y avanza hacia una vida más estable. Ve a tu ritmo. Cada paso guarda tu lugar." } },
+    { id: "reentry-curriculum", title: "Recovery Journey", description: "Nine short modules, one step at a time. You start with your first days out and work toward a life that feels steady. Go at your own pace. Each step saves your place.", unlock: "open", part2Sensitive: true, steps: RECOVERY_MODULES.map((m) => ({ type: "recovery_module", id: m.id, required: true })), es: { title: "Camino de recuperación", description: "Borrador — Nueve módulos cortos, un paso a la vez. Empieza con tus primeros días afuera y avanza hacia una vida más estable. Ve a tu ritmo. Cada paso guarda tu lugar." } },
     { id: "first-days-curriculum", title: "My First Days Out", description: "Ten short lessons for your first days back. Find a safe place to sleep, get your papers, handle urges and make a plan for each day. Do them in order. Each one opens the next.", unlock: "sequential", reentryStage: "first_30", part2Sensitive: true, steps: firstDaysSteps(), es: { title: "Mis primeros días afuera", description: "Borrador — Diez lecciones cortas para tus primeros días de regreso. Encuentra un lugar seguro, consigue tus papeles, maneja los antojos y haz un plan para cada día. Hazlas en orden. Cada una abre la siguiente." } },
   ];
-  // §Group 1 C2 Draft flag tags: "My First Days Out" ↔ justice-involved; the nine-module Re-entry Journey (recovery modules) ↔ SUD recovery.
-  const FLAG_TAGS: Record<string, ("justice_involved" | "sud")[]> = { "first-days-curriculum": ["justice_involved"], "reentry-curriculum": ["sud"] };
-  for (const journey of journeys) if (!getContentEntry("journey", journey.id)) seedPublishedContent({ typeId: "journey", id: journey.id, body: { ...journey, meta: { part2: true, clinical: true, esStatus: "draft", backfilled: true, flags: FLAG_TAGS[journey.id] ?? [] } } as unknown as ContentBody, actor, atISO: "2026-10-08T00:00:00.000Z", note: "Draft — curriculum migration, pending clinical sign-off" });
+  // §Group 2 P5 interim journey rule (Draft, pending Cathy's review). Re-entry only gets the two
+  // non-SUD library categories; My First Days Out (SUD content) only on reentry_sud, before Recovery.
+  const libSteps = (cat: string): CurriculumStep[] => LIBRARY_ITEMS.filter((i) => i.categoryId === cat).map((i) => ({ type: "library_lesson" as const, id: i.id, required: true }));
+  const cat = (id: string) => LIBRARY_CATEGORIES.find((c) => c.id === id);
+  journeys.push(
+    { id: "starting-strong-curriculum", title: cat("starting-strong")?.name ?? "Starting Strong", description: cat("starting-strong")?.desc ?? "", unlock: "open", justiceInvolved: true, part2Sensitive: false, steps: libSteps("starting-strong"), es: { title: "Empezar con fuerza", description: "Borrador — Los primeros pasos: estabilizar el día, el cuerpo y la mente." } },
+    { id: "back-on-feet-curriculum", title: cat("back-on-feet")?.name ?? "Back on My Feet", description: cat("back-on-feet")?.desc ?? "", unlock: "open", justiceInvolved: true, part2Sensitive: false, steps: libSteps("back-on-feet"), es: { title: "De nuevo en pie", description: "Borrador — Vivienda, trabajo, dinero y comida después de salir." } },
+  );
+  const TAGS: Record<string, { flags: ("justice_involved" | "sud")[]; pathways: string[]; pathwayOrder: number; part2: boolean }> = {
+    "starting-strong-curriculum": { flags: ["justice_involved"], pathways: ["reentry"], pathwayOrder: 1, part2: false },
+    "back-on-feet-curriculum": { flags: ["justice_involved"], pathways: ["reentry"], pathwayOrder: 2, part2: false },
+    "first-days-curriculum": { flags: [], pathways: ["reentry_sud"], pathwayOrder: 1, part2: true },
+    "reentry-curriculum": { flags: ["sud"], pathways: ["sud", "reentry_sud"], pathwayOrder: 2, part2: true },
+  };
+  for (const journey of journeys) if (!getContentEntry("journey", journey.id)) { const t = TAGS[journey.id]!; seedPublishedContent({ typeId: "journey", id: journey.id, body: { ...journey, meta: { part2: t.part2, clinical: true, esStatus: "draft", backfilled: true, flags: t.flags, pathways: t.pathways, pathwayOrder: t.pathwayOrder } } as unknown as ContentBody, actor, atISO: "2026-10-08T00:00:00.000Z", note: "Draft — curriculum migration, pending clinical sign-off (interim pathway rule pending Cathy's review)" }); }
 }
 export function liveCurricula(): Curriculum[] { initializePracticeContent(); return publishedContentOfType("journey") as unknown as Curriculum[]; }

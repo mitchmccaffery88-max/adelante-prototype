@@ -79,7 +79,9 @@ describe("F5 live exercise catalog everywhere", () => {
     expect(liveExercise("urge-surfing-timer")?.title).toBe("Ride the Wave (edited)");
     const titles = liveRecoveryLessons().map((l) => matchExerciseForLesson(l).exercise.title);
     expect(titles.some((t) => t.includes("(edited)"))).toBe(true);
-    expect(buildAdelSystemPrompt()).toContain("Ride the Wave (edited)");
+    expect(buildAdelSystemPrompt({ sud: true, reentry: true })).toContain("Ride the Wave (edited)");
+    // §Group 2 S2 — SUD practice never reaches a patient without the SUD pathway.
+    expect(buildAdelSystemPrompt({ sud: false, reentry: false })).not.toContain("Ride the Wave (edited)");
   });
 });
 

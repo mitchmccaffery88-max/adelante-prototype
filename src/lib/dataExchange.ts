@@ -114,6 +114,15 @@ export function seedDataExchangeDemo(now = new Date()) {
     shareToHie({ patientId: luis.id, at: new Date(now.getTime() - 10 * DAY).toISOString(), recipient: "Tulare County Housing Navigation (placeholder)", what: "Referral summary (no SUD content)", purpose: "Housing referral", consentUsed: "Luis's release of information on file", actor: sys });
 }
 
+/** Simulated feed: one incoming outside record waiting for a staff match decision. Nothing changes until confirmMatch. */
+export function queueHieMatch(input: { id: string; patientId: string; record: MatchCandidate["record"] }) {
+  const p = AdelanteEHR.getPatient(input.patientId);
+  if (!p) throw new Error("Unknown patient.");
+  const incoming = { name: `${p.firstName} ${p.lastName}`, dob: p.dob, cin: p.cin ?? "—", address: p.address ?? "—" };
+  queue.push({ id: input.id, incoming, suggestedPatientId: p.id, ...scoreHieIncoming(incoming, p.id), record: input.record, status: "pending" });
+  AdelanteEHR._emit();
+}
+
 export function listMatchQueue() {
   return queue.filter((q) => q.status === "pending");
 }
@@ -125,7 +134,17 @@ export function confirmMatch(id: string, actor: Actor) {
   q.status = "matched";
   q.decidedBy = actor.name;
   hieAudit("hie_match_confirmed", q.suggestedPatientId, actor, { candidateId: id, confidence: q.confidence, band: q.band });
-  return _ingestHieEncounter({ id: `hie-${id}`, patientId: q.suggestedPatientId, ...q.record, sud: false }, actor);
+  // §Group 2 P3 — only a staff-confirmed sud_program record sets the SUD indicator;
+  // the record itself still goes through the Part 2 hold (sud: true).
+  const isSud = q.record.kind === "sud_program";
+  if (isSud) {
+    const p = AdelanteEHR.getPatient(q.suggestedPatientId);
+    if (p) {
+      p.needs = { ...p.needs, substanceUse: true };
+      p.flagSources = { ...(p.flagSources ?? {}), sud: "outside SUD program record confirmed by staff" };
+    }
+  }
+  return _ingestHieEncounter({ id: `hie-${id}`, patientId: q.suggestedPatientId, ...q.record, sud: isSud }, actor);
 }
 
 export function rejectMatch(id: string, reason: string, actor: Actor) {

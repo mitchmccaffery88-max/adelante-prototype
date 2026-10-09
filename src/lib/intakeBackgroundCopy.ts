@@ -14,7 +14,7 @@ export const BACKGROUND_COPY = {
     },
     seekingNote:
       "This helps us suggest the right content and resources. It doesn't change the questions everyone is asked. Substance use is only kept if you agree to share it on the Consent step.",
-    alsoAdvocate: "Also invite this person to be my advocate",
+    alsoAdvocate: "Make this person my advocate",
     nameAdvocate: "Name an advocate (someone who can help with your care)",
     advName: "Advocate's name",
     advRel: "Relationship",
@@ -36,7 +36,7 @@ export const BACKGROUND_COPY = {
     },
     seekingNote:
       "Esto nos ayuda a sugerir contenido y recursos adecuados. No cambia las preguntas que se hacen a todos. El uso de sustancias solo se guarda si acepta compartirlo en el paso de Consentimiento.",
-    alsoAdvocate: "Invitar también a esta persona como mi defensor",
+    alsoAdvocate: "Hacer a esta persona mi defensor (Borrador)",
     nameAdvocate: "Nombrar a un defensor (alguien que pueda ayudar con su cuidado)",
     advName: "Nombre del defensor",
     advRel: "Relación",

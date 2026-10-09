@@ -13,7 +13,8 @@ import { BookOpen, Compass, LifeBuoy, Loader2, MapPin, MessageCircle, MessageSqu
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { patientVisibleResource } from "@/lib/communityResources";
 import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
-import { buildAdelSystemPrompt, resolveAdelAction, splitAdelActions, type AdelAction } from "@/lib/adelPrompt";
+import { buildAdelSystemPrompt, resolveAdelAction, splitAdelActions, type AdelAction, type AdelAudience } from "@/lib/adelPrompt";
+import { patientPathway, pathwayHasReentry, pathwayHasSud } from "@/lib/flagJourneys";
 import { distressChipCopy, distressChipDecision, isMeetingRequest } from "@/lib/adelDistress";
 import { crisisMatchLanguage } from "@/lib/crisisTextDetection";
 import { crisisCopy } from "@/lib/crisisCopy";
@@ -97,6 +98,9 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
   const hc = ADEL_HISTORY_COPY[hl];
   const currentPatientId = AdelanteEHR.getCurrentPatientId();
   const owner: AdelOwner | undefined = currentPatientId ? { kind: "patient", patientId: currentPatientId } : undefined;
+  // §Group 2 S2 — Adel only knows content that fits this person's pathway.
+  const pathway = useEhr(() => (currentPatientId ? patientPathway(currentPatientId) : "general"));
+  const audience: AdelAudience = { sud: pathwayHasSud(pathway), reentry: pathwayHasReentry(pathway) };
   const resumed = owner && resumeId ? getAdelThread(owner, resumeId) : undefined;
   const threadRef = useRef<string | undefined>(resumed?.id);
   const persist = (turn: { role: "user" | "assistant"; content: string; crisis?: boolean }) => {
@@ -232,8 +236,8 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
           system: (() => {
             const ctx = owner ? adelHistoryContext(owner, threadRef.current) : [];
             return ctx.length
-              ? `${buildAdelSystemPrompt()}\n\nEarlier topics this same person raised with you (their own history only): ${ctx.join(", ")}. You may gently follow up on one.`
-              : buildAdelSystemPrompt();
+              ? `${buildAdelSystemPrompt(audience)}\n\nEarlier topics this same person raised with you (their own history only): ${ctx.join(", ")}. You may gently follow up on one.`
+              : buildAdelSystemPrompt(audience);
           })(),
           messages: history
             .filter((t, i) => !(i === 0 && t.role === "assistant"))
@@ -269,7 +273,7 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
             const piece = json.choices?.[0]?.delta?.content;
             if (!piece) continue;
             full += piece;
-            const { body } = splitAdelActions(full);
+            const { body } = splitAdelActions(full, audience);
             setTurns((t) => {
               const next = [...t];
               next[next.length - 1] = { role: "assistant", content: body };
@@ -281,10 +285,10 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
         }
       }
 
-      const { body, actions } = splitAdelActions(full);
+      const { body, actions } = splitAdelActions(full, audience);
       // §Pre-demo B3 — "find me a meeting" always offers the FILTERED directory.
       if (showRecovery && isMeetingRequest(text) && !actions.some((a) => a.kind === "resources" && a.id === "recovery_meetings")) {
-        const a = resolveAdelAction("resources:recovery_meetings");
+        const a = resolveAdelAction("resources:recovery_meetings", audience);
         if (a) actions.push(a);
       }
       if (!showRecovery) {

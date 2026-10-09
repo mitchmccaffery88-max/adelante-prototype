@@ -915,6 +915,8 @@ export interface ContactPrefs {
   bestTime: BestTime;
 }
 export interface EmergencyContact {
+  /** §Group 2 O1 — stable id so an advocate invitation can link to it. */
+  id?: string;
   name: string;
   relationship: string;
   phone: string;
@@ -1661,6 +1663,8 @@ export interface Patient {
     benefits?: boolean;
     family?: boolean;
   };
+  /** §Group 2 P1 — which identification path set each pathway flag (audit reason). */
+  flagSources?: { justice_involved?: string; sud?: string };
   carePlanSummary: string;
   intakeCompletedAt?: string;
   /** §E5A — patient's optional "anything else" note from intake (confirmed text). */
@@ -3469,6 +3473,8 @@ export interface ConsentEvent {
   action: "granted" | "revoked";
   at: string;
   actor: "patient" | "staff";
+  /** §Group 2 S3 — the staff member who changed it (ledger toggles). */
+  actorName?: string;
   note?: string;
 }
 
@@ -5851,6 +5857,9 @@ export interface AdvocateLink {
     actor: "patient" | "cf_care_manager" | "ecm_provider" | "administrator";
     name: string;
   };
+  /** §Group 2 O1 — the emergency contact this advocate was made from, and its details then. */
+  contactId?: string;
+  contactSnapshot?: { name: string; phone: string; email?: string };
   designatedAt: string;
   status: AdvocateLinkStatus;
   /** Set ONLY at claim time, by the advocate. An invite alone grants nothing. */
@@ -9032,6 +9041,20 @@ export const AdelanteEHR = {
       ...(opts?.createAnyway ? { createAnyway: opts.createAnyway } : {}),
     });
     if (r.releaseDate) p.releaseDate = r.releaseDate;
+    // §Group 2 P1 — the referral's pathway flags travel with the enrollment.
+    const JUSTICE_SOURCES: ReferralSource[] = ["probation", "parole", "drug_court", "correctional"];
+    const jiBySource = JUSTICE_SOURCES.includes(r.referralSource);
+    if (r.justiceInvolved === "yes" || jiBySource) {
+      p.coverage = {
+        ...(p.coverage ?? { status: "none_unsure" as CoverageStatus, verified: "pending" as const }),
+        justiceInvolvement: "yes",
+      };
+      p.flagSources = { ...(p.flagSources ?? {}), justice_involved: r.justiceInvolved === "yes" ? "justice-involved answer at referral" : `correctional referral source (${r.referralSource})` };
+    }
+    if (r.substanceUseNeed) {
+      p.needs = { ...p.needs, substanceUse: true };
+      p.flagSources = { ...(p.flagSources ?? {}), sud: "SUD indicator at referral" };
+    }
     if (r.countyOfRelease) {
       p.coverage = {
         ...(p.coverage ?? { status: "none_unsure" as CoverageStatus, verified: "pending" as const }),
@@ -12725,7 +12748,12 @@ export const AdelanteEHR = {
     }
     AdelanteEHR.notify({ ...note, recipientRole: "ecm_provider" });
   },
-  setConsent(patientId: string, purpose: ConsentPurpose, granted: boolean, note?: string) {
+  /** §Group 2 S3 — staff ledger toggle: consent_ledger write roles only, real actor in the audit. */
+  staffSetConsent(patientId: string, purpose: "part2Sud" | "ecmShare" | "sms", granted: boolean, actor: { role: StaffRole; staffId?: string; staffName?: string }, note?: string) {
+    if (canAccess(actor.role, "consent_ledger").level !== "write") throw new Error("Your role can read the consent ledger but can't change it.");
+    AdelanteEHR.setConsent(patientId, purpose, granted, note ?? "consent ledger", { role: actor.role, ...(actor.staffId ? { id: actor.staffId } : {}), ...(actor.staffName ? { name: actor.staffName } : {}) });
+  },
+  setConsent(patientId: string, purpose: ConsentPurpose, granted: boolean, note?: string, actor?: { role: string; id?: string; name?: string }) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     const prev = p.consentState ?? {
@@ -12780,7 +12808,8 @@ export const AdelanteEHR = {
         purpose,
         action: granted ? "granted" : "revoked",
         at: new Date().toISOString(),
-        actor: "patient",
+        actor: actor ? "staff" : "patient",
+        ...(actor ? { actorName: actor.name ?? actor.role } : {}),
         note,
       },
     ];
@@ -12788,7 +12817,8 @@ export const AdelanteEHR = {
       category: "consent",
       action: granted ? "granted" : "revoked",
       patientId: p.id,
-      detail: { purpose, note },
+      ...(actor ? { actorRole: actor.role as AuditEvent["actorRole"], ...(actor.id ? { actorId: actor.id } : {}) } : {}),
+      detail: { purpose, note, ...(actor?.name ? { actorName: actor.name } : {}) },
     });
     emit();
   },
@@ -17479,6 +17509,20 @@ export const AdelanteEHR = {
    * the patient surface: relaying it through the patient is the tampering /
    * impersonation vector this whole mechanism exists to close.
    */
+  /** §Group 2 O1 — patient confirms "update advocate?" after a linked contact changed. */
+  updateAdvocateFromContact(linkId: string, contact: { name: string; phone: string; email?: string }) {
+    const l = advocateLinks.find((x) => x.id === linkId);
+    if (!l) throw new Error("Advocate not found.");
+    l.contactSnapshot = { name: contact.name.trim(), phone: contact.phone.trim(), ...(contact.email?.trim() ? { email: contact.email.trim() } : {}) };
+    if (l.status === "invited" && !l.notificationSentAt) {
+      l.advocateName = contact.name.trim() || l.advocateName;
+      const to = l.invitationChannel === "email" ? contact.email?.trim() : contact.phone.trim();
+      if (to) l.invitationSentTo = to;
+    }
+    appendAudit({ category: "advocate", action: "advocate_contact_synced", patientId: l.patientId, actorRole: "patient", detail: { advocateLinkId: l.id } });
+    emit();
+    return l;
+  },
   createAdvocateInvitation(input: {
     patientId: string;
     advocateName: string;
@@ -17493,6 +17537,8 @@ export const AdelanteEHR = {
      * requirements the claimant is shown; grants nothing on its own.
      */
     expectedAuthorizationType?: AdvocateAuthorizationType;
+    contactId?: string;
+    contactSnapshot?: { name: string; phone: string; email?: string };
   }): AdvocateLink {
     const name = input.advocateName.trim();
     const contact = input.invitationSentTo.trim();
@@ -17521,6 +17567,8 @@ export const AdelanteEHR = {
       designatedBy: input.designatedBy,
       designatedAt: new Date().toISOString(),
       status: "invited",
+      ...(input.contactId ? { contactId: input.contactId } : {}),
+      ...(input.contactSnapshot ? { contactSnapshot: { ...input.contactSnapshot } } : {}),
     };
     link.claimLink = _advocateClaimLink(link);
     advocateLinks.unshift(link);
