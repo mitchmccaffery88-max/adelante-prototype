@@ -123,7 +123,7 @@ for (const lang of ["en", "es"] as const) {
     }
     await expect.poll(() => page.evaluate((id) => ((window as unknown as W).__adelante.AdelanteEHR as never as { listAdvocateLinks: (p: string) => { advocateName: string; expectedAuthorizationType?: string }[] }).listAdvocateLinks(id).find((l) => l.advocateName === "Diego Camacho")?.expectedAuthorizationType, luisId)).toBe("family_participation");
     await go(page, "/profile");
-    if (lang === "es") await expect(page.getByRole("heading", { name: "Compartir con mi ayudante (defensor)" })).toBeVisible();
+    if (lang === "es") await expect(page.getByTestId("advocate-consent-card").getByRole("heading", { name: "Compartir con mi ayudante (defensor)" })).toBeVisible();
     await expect(page.getByTestId("advocate-status").first()).toHaveText(lang === "es" ? "Esperando su registro" : "Waiting for their sign-up");
   });
 }
