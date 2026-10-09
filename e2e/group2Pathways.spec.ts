@@ -69,12 +69,15 @@ for (const lang of ["en", "es"] as const) {
   test(`onboarding as Luis (${lang}): two contacts, second made advocate, consent signed`, async ({ page }) => {
     await page.goto("/clinician");
     await page.waitForFunction(() => !!(window as unknown as W).__adelante?.AdelanteEHR, null, { timeout: 60_000 });
+    // Seeded Luis Camacho already finished intake (re-runs show "Let's catch up", which never names
+    // an advocate), so a fresh, not-yet-onboarded Luis comes in through the real referral path.
     const luisId = (await page.evaluate((l) => {
-      const e = (window as unknown as W).__adelante.AdelanteEHR as never as { listPatients: () => { id: string; firstName: string; lastName: string; preferredLanguage?: string }[]; setCurrentPatientId: (i: string) => void };
-      const luis = e.listPatients().find((p) => p.firstName === "Luis" && p.lastName === "Camacho")!;
-      luis.preferredLanguage = l;
-      e.setCurrentPatientId(luis.id);
-      return luis.id;
+      const e = (window as unknown as W).__adelante.AdelanteEHR as never as { createReferral: (i: unknown) => { id: string }; enrollReferral: (id: string) => string; getPatient: (i: string) => { preferredLanguage?: string }; setCurrentPatientId: (i: string) => void };
+      const r = e.createReferral({ firstName: "Luis", lastName: `Onboard${l.toUpperCase()}`, dob: l === "es" ? "1993-05-06" : "1992-03-04", phone: l === "es" ? "5595550172" : "5595550171", referringAgency: "Clinic", referrerName: "Ref", referrerPhone: "5595550100", referralSource: "community_based_organization", consentToContact: true, channel: "staff" });
+      const id = e.enrollReferral(r.id);
+      e.getPatient(id).preferredLanguage = l;
+      e.setCurrentPatientId(id);
+      return id;
     }, lang)) as string;
     if (lang === "es") await page.evaluate(() => localStorage.setItem("adelante.lang", "es"));
     await go(page, "/intake");
