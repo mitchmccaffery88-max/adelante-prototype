@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { AdelanteEHR, type Patient, type ScreenerResult } from "@/lib/ehr";
+import { AdelanteEHR, endSeveritySeedQuiet, type Patient, type ScreenerResult } from "@/lib/ehr";
+
+// Module-load demo seeds are done by the time tests run; severity flags
+// created inside test bodies must be live, not historical.
+endSeveritySeedQuiet();
 import { STAFF_ROSTER } from "@/lib/roles";
 import { workspaceActionRows } from "@/lib/clinicianWorkspace";
 import { SEVERITY_FYI_SUBJECT, SEVERITY_NOTIFY_SUBJECT } from "@/lib/severityRules";
