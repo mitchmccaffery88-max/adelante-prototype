@@ -1,3 +1,4 @@
+import { AdvocateConsentCard } from "@/components/consent/AdvocateConsentCard";
 // §P1 My Care de-clutter — the Profile surface's real panels.
 //
 // These two cards used to live inline in `PatientHome` (My Care). Nothing about
@@ -189,6 +190,8 @@ export function PrivacyConsentCard({ patientId }: { patientId: string }) {
           </li>
         ))}
       </ul>
+      {/* §Group 2 S4 — the patient signs advocate sharing consent here. */}
+      <div className="mt-4"><AdvocateConsentCard patientId={patientId} /></div>
       <ConsentWithdrawSheet
         purpose={pending}
         lang={lang === "es" ? "es" : "en"}

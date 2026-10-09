@@ -24,6 +24,28 @@ import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 /** Action tokens Adel may emit — each one maps to a REAL destination. */
 export type AdelActionKind = "lesson" | "exercise" | "resources" | "page";
 
+/** §Group 2 S2 — who Adel is talking to: pathway decides SUD content. */
+export interface AdelAudience {
+  /** The patient has the SUD pathway (sud or reentry_sud). */
+  sud: boolean;
+  /** The patient has the re-entry pathway (reentry or reentry_sud). */
+  reentry: boolean;
+}
+const OPEN_AUDIENCE: AdelAudience = { sud: false, reentry: false };
+function lessonFits(i: LibraryItem, a: AdelAudience): boolean {
+  if (i.part2Sensitive && !a.sud) return false;
+  const pops = (i as { populations?: string[] }).populations;
+  if (pops?.length && !a.reentry && pops.every((x) => x !== "general_population")) return false;
+  return true;
+}
+function exerciseFits(e: Exercise, a: AdelAudience): boolean {
+  if (e.part2Sensitive && !a.sud) return false;
+  if (e.populations?.length && !a.reentry && !e.populations.includes("general_population")) return false;
+  return true;
+}
+export const adelLessons = (a: AdelAudience = OPEN_AUDIENCE) => liveLessons().filter((i) => lessonFits(i, a));
+export const adelExercises = (a: AdelAudience = OPEN_AUDIENCE) => liveExercises().filter((e) => exerciseFits(e, a));
+
 export interface AdelAction {
   kind: AdelActionKind;
   id: string;
@@ -42,17 +64,17 @@ const PAGE_ACTIONS: Record<string, { label: string; to: string }> = {
 };
 
 /** Resolve an `ACTION: kind:id` token to a real destination, or undefined. */
-export function resolveAdelAction(raw: string): AdelAction | undefined {
+export function resolveAdelAction(raw: string, audience: AdelAudience = OPEN_AUDIENCE): AdelAction | undefined {
   const [kindRaw, ...rest] = raw.trim().split(":");
   const kind = (kindRaw ?? "").trim();
   const id = rest.join(":").trim();
   if (kind === "lesson") {
-    const item = liveLessons().find((i) => i.id === id);
+    const item = adelLessons(audience).find((i) => i.id === id);
     if (!item) return undefined;
     return { kind: "lesson", id, label: item.title, to: "/library", search: { item: id } };
   }
   if (kind === "exercise") {
-    const ex = liveExercises().find((e) => e.id === id);
+    const ex = adelExercises(audience).find((e) => e.id === id);
     if (!ex) return undefined;
     return { kind: "exercise", id, label: ex.title, to: "/library", search: { exercise: id } };
   }
@@ -70,14 +92,14 @@ export function resolveAdelAction(raw: string): AdelAction | undefined {
 }
 
 /** Strip ACTION lines from a reply body and return them separately. */
-export function splitAdelActions(text: string): { body: string; actions: AdelAction[] } {
+export function splitAdelActions(text: string, audience: AdelAudience = OPEN_AUDIENCE): { body: string; actions: AdelAction[] } {
   const actions: AdelAction[] = [];
   const lines = text.split("\n");
   const kept: string[] = [];
   for (const line of lines) {
     const m = /^\s*ACTION:\s*(.+?)\s*$/i.exec(line);
     if (m) {
-      const a = resolveAdelAction(m[1]!);
+      const a = resolveAdelAction(m[1]!, audience);
       // A token with no real destination is DROPPED, never shown as a dead link.
       if (a && !actions.some((x) => x.kind === a.kind && x.id === a.id)) actions.push(a);
       continue;
@@ -87,9 +109,9 @@ export function splitAdelActions(text: string): { body: string; actions: AdelAct
   return { body: kept.join("\n").trim(), actions };
 }
 
-export function buildAdelSystemPrompt(): string {
-  const lessons = liveLessons().map((i) => `- lesson:${i.id} — "${i.title}"`).join("\n");
-  const exercises = liveExercises().map((e) => `- exercise:${e.id} — "${e.title}" (${e.subtitle})`).join(
+export function buildAdelSystemPrompt(audience: AdelAudience = OPEN_AUDIENCE): string {
+  const lessons = adelLessons(audience).map((i) => `- lesson:${i.id} — "${i.title}"`).join("\n");
+  const exercises = adelExercises(audience).map((e) => `- exercise:${e.id} — "${e.title}" (${e.subtitle})`).join(
     "\n",
   );
   const cats = RESOURCE_CATEGORIES.map((c) => `- resources:${c.id} — ${c.name}`).join("\n");

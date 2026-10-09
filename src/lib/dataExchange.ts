@@ -125,7 +125,17 @@ export function confirmMatch(id: string, actor: Actor) {
   q.status = "matched";
   q.decidedBy = actor.name;
   hieAudit("hie_match_confirmed", q.suggestedPatientId, actor, { candidateId: id, confidence: q.confidence, band: q.band });
-  return _ingestHieEncounter({ id: `hie-${id}`, patientId: q.suggestedPatientId, ...q.record, sud: false }, actor);
+  // §Group 2 P3 — only a staff-confirmed sud_program record sets the SUD indicator;
+  // the record itself still goes through the Part 2 hold (sud: true).
+  const isSud = q.record.kind === "sud_program";
+  if (isSud) {
+    const p = AdelanteEHR.getPatient(q.suggestedPatientId);
+    if (p) {
+      p.needs = { ...p.needs, substanceUse: true };
+      p.flagSources = { ...(p.flagSources ?? {}), sud: "outside SUD program record confirmed by staff" };
+    }
+  }
+  return _ingestHieEncounter({ id: `hie-${id}`, patientId: q.suggestedPatientId, ...q.record, sud: isSud }, actor);
 }
 
 export function rejectMatch(id: string, reason: string, actor: Actor) {

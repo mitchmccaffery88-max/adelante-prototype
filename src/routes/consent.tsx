@@ -1,5 +1,6 @@
 import { listLegalDisclosures, revokeLegalDisclosure } from "@/lib/outpatientCare";
-import { useActingStaff } from "@/lib/roles";
+import { useActingStaff, canAccess } from "@/lib/roles";
+import { runAction } from "@/lib/actions/runAction";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
@@ -70,6 +71,8 @@ const PURPOSES: { key: ExtendedConsentPurpose; label: string; note: string }[] =
 ];
 
 function ConsentPage() {
+  const acting = useActingStaff();
+  const canWriteLedger = canAccess(acting.role, "consent_ledger").level === "write";
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const events = useEhr(() => AdelanteEHR.listAllConsentEvents());
   const search = Route.useSearch();
@@ -151,16 +154,17 @@ function ConsentPage() {
                     {granted ? "Granted" : "Not granted"}
                   </span>
                 </div>
-                {isCore && (
+                {isCore && !canWriteLedger && (
+                  <p className="mt-3 text-[11px] text-muted-foreground" data-testid="ledger-read-only">Read only for your role.</p>
+                )}
+                {isCore && canWriteLedger && (
                   <button
                     onClick={() => {
-                      AdelanteEHR.setConsent(
-                        patient.id,
-                        p.key as ConsentPurpose,
-                        !granted,
-                        "consent page",
-                      );
-                      toast.success(granted ? "Consent revoked" : "Consent granted");
+                      const r = runAction("consent_purpose_set", { role: acting.role, staffId: acting.staffId, staffName: acting.staffName }, patient, {
+                        args: [patient.id, p.key as ConsentPurpose, !granted, { role: acting.role, staffId: acting.staffId, staffName: acting.staffName }, "consent page"],
+                      });
+                      if (!r.ok) toast.error(r.reason);
+                      else toast.success(granted ? "Consent revoked" : "Consent granted");
                     }}
                     aria-label={granted ? `Revoke ${p.label} consent` : `Grant ${p.label} consent`}
                     className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-md border border-navy/20 px-3 text-sm font-medium text-navy hover:bg-navy/5"

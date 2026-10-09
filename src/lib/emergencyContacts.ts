@@ -26,6 +26,7 @@ export function isMeaningfulContact(c: EmergencyContact): boolean {
 /** Drop blank rows and trim. Order is preserved — the first is the primary. */
 export function cleanEmergencyContacts(list: EmergencyContact[]): EmergencyContact[] {
   return list.filter(isMeaningfulContact).map((c) => ({
+    ...(c.id ? { id: c.id } : {}),
     name: c.name.trim(),
     relationship: c.relationship.trim(),
     phone: c.phone.trim(),

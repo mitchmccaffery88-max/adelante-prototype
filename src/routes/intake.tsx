@@ -42,6 +42,9 @@ import {
 } from "@/lib/whatWouldHelp";
 import { INTAKE_NEED_LABEL, type IntakeNeedKey } from "@/lib/sdohMapping";
 import { emptyEmergencyContact } from "@/lib/emergencyContacts";
+import { AdvocateSection, RelationshipSelect } from "@/components/advocate/AdvocateSection";
+import { advocateDraftFromContact, authorizationForAdvocateType, emptyAdvocateDraft, newContactId, relationshipFromText, relationshipText, validateAdvocateDraft, type AdvocateDraft, type AdvocateDraftError } from "@/lib/contactAdvocate";
+import { signAdvocateConsent } from "@/lib/advocateConsentSign";
 import {
   mergeSavedIntakeProfile,
   profilePatch,
@@ -337,15 +340,10 @@ function IntakePage() {
   // Core AHC-HRSN questions are skipped (confirm instead) when the record
   // already knows — recent result or outside-sourced needs.
   const [coreChoice, setCoreChoice] = useState<"confirm" | "update" | null>(null);
-  /** Index of the emergency contact also invited as advocate, or null. */
-  const [advocateFromContact, setAdvocateFromContact] = useState<number | null>(null);
-  const [advocateOther, setAdvocateOther] = useState({
-    on: false,
-    name: "",
-    relationship: "",
-    contact: "",
-    channel: "sms" as "sms" | "email",
-  });
+  /** §Group 2 O2 — the advocate is its own record; a contact can pre-fill and link it. */
+  const [advocateOn, setAdvocateOn] = useState(false);
+  const [advocateDraft, setAdvocateDraft] = useState<AdvocateDraft>(emptyAdvocateDraft());
+  const [advocateErrors, setAdvocateErrors] = useState<AdvocateDraftError[]>([]);
   const B = BACKGROUND_COPY[lang9a === "es" ? "es" : "en"];
   // Release questions only for people who are (or are known to be) justice-involved.
   const showRelease = justiceKnown || coverage.justiceInvolvement === "yes";
@@ -407,8 +405,8 @@ function IntakePage() {
       if (saved.seeking) setSeeking(saved.seeking);
       if (saved.topics) setTopics(saved.topics);
       if (saved.coreChoice !== undefined) setCoreChoice(saved.coreChoice);
-      if (saved.advocateFromContact !== undefined) setAdvocateFromContact(saved.advocateFromContact);
-      if (saved.advocateOther) setAdvocateOther(saved.advocateOther);
+      if (saved.advocateOn !== undefined) setAdvocateOn(saved.advocateOn);
+      if (saved.advocateDraft) setAdvocateDraft({ ...emptyAdvocateDraft(), ...saved.advocateDraft, signAgree: false });
       // Merge, never overwrite: a blank field in an old draft must not erase
       // something the record actually knows.
       if (saved.profile) {
@@ -439,8 +437,8 @@ function IntakePage() {
           seeking,
           topics,
           coreChoice,
-          advocateFromContact,
-          advocateOther,
+          advocateOn,
+          advocateDraft: { ...advocateDraft, signAgree: false },
           savedAt: at,
         }),
       );
@@ -449,7 +447,7 @@ function IntakePage() {
       /* no-op */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile, seeking, topics, coreChoice, advocateFromContact, advocateOther]);
+  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile, seeking, topics, coreChoice, advocateOn, advocateDraft]);
 
   // Crisis signal — PHQ-9 item 9 (self-harm thoughts) > 0
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
@@ -544,6 +542,14 @@ function IntakePage() {
     if (benefitsCinProblem(benefits)) {
       toast.error("The Medi-Cal ID needs 9 letters or numbers — fix it on the Coverage step.");
       return;
+    }
+    if (advocateOn && !inReassess) {
+      const errs = validateAdvocateDraft(advocateDraft);
+      setAdvocateErrors(errs);
+      if (errs.length) {
+        toast.error(lang9a === "es" ? "Revisa la sección de tu defensor." : "Check the advocate section.");
+        return;
+      }
     }
     // P1 — persist the About-you patch first.
     AdelanteEHR.updateProfile(currentId, profileToSave());
@@ -725,34 +731,24 @@ function IntakePage() {
     // the one existing mechanism. No access until the advocate claims and the
     // patient signs advocate consent; tier rules unchanged.
     const patientName = patient ? `${patient.firstName} ${patient.lastName}` : "Patient";
-    const invites: { name: string; relationship: string; contact: string; channel: "sms" | "email" }[] = [];
-    if (advocateFromContact !== null) {
-      const c = profile.emergencyContacts[advocateFromContact];
-      if (c?.name.trim() && (c.phone.trim() || c.email?.trim())) {
-        invites.push({
-          name: c.name,
-          relationship: c.relationship,
-          contact: c.phone.trim() || c.email!.trim(),
-          channel: c.phone.trim() ? "sms" : "email",
-        });
-      }
-    }
-    if (advocateOther.on && advocateOther.name.trim() && advocateOther.contact.trim()) {
-      invites.push(advocateOther);
-    }
-    for (const inv of invites) {
+    if (advocateOn && !inReassess) {
+      const d = advocateDraft;
+      const linked = d.contactId ? profile.emergencyContacts.find((c) => c.id === d.contactId) : undefined;
       try {
         AdelanteEHR.createAdvocateInvitation({
           patientId: currentId,
-          advocateName: inv.name,
-          relationship: inv.relationship,
-          invitationSentTo: inv.contact,
-          invitationChannel: inv.channel,
-          expectedAuthorizationType: "family_participation",
+          advocateName: d.name,
+          relationship: relationshipText(d.relationshipId, d.relationshipOther),
+          invitationSentTo: d.sendBy === "sms" ? d.phone.trim() : d.email.trim(),
+          invitationChannel: d.sendBy,
+          expectedAuthorizationType: authorizationForAdvocateType(d.typeId) ?? "family_participation",
           designatedBy: { actor: "patient", name: patientName },
+          ...(linked?.id ? { contactId: linked.id, contactSnapshot: { name: linked.name, phone: linked.phone, ...(linked.email ? { email: linked.email } : {}) } } : {}),
         });
-      } catch {
-        /* no-op — the invite form on My Care remains available */
+        if (d.consent === "now") signAdvocateConsent(currentId, d.signName, d.signAgree);
+      } catch (e) {
+        // §Group 2 O2 — invitation errors are shown, never silently ignored.
+        toast.error(e instanceof Error ? e.message : "The advocate invitation could not be created.");
       }
     }
     if (crisisFlagged) {
@@ -1004,7 +1000,6 @@ function IntakePage() {
                     {(
                       [
                         { key: "name", placeholder: "Name", type: "text" },
-                        { key: "relationship", placeholder: "Relationship", type: "text" },
                         { key: "phone", placeholder: "Phone", type: "tel" },
                         { key: "email", placeholder: "Email", type: "email" },
                       ] as const
@@ -1025,6 +1020,20 @@ function IntakePage() {
                         }
                       />
                     ))}
+                    <RelationshipSelect
+                      lang={lang9a === "es" ? "es" : "en"}
+                      label={`Relationship — contact ${i + 1}`}
+                      value={relationshipFromText(c.relationship).id}
+                      other={relationshipFromText(c.relationship).other}
+                      onChange={(id, other) =>
+                        setProfile({
+                          ...profile,
+                          emergencyContacts: profile.emergencyContacts.map((row, idx) =>
+                            idx === i ? { ...row, relationship: relationshipText(id, other) } : row,
+                          ),
+                        })
+                      }
+                    />
                     <Input
                       className="sm:col-span-2"
                       placeholder="Address"
@@ -1055,14 +1064,22 @@ function IntakePage() {
                     />
                   </div>
                   {!inReassess && (
-                    <label className="flex cursor-pointer items-start gap-2 text-sm">
-                      <Checkbox
-                        checked={advocateFromContact === i}
-                        data-testid={`advocate-from-contact-${i}`}
-                        onCheckedChange={(v) => setAdvocateFromContact(v ? i : null)}
-                      />
-                      <span>{B.alsoAdvocate}</span>
-                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11"
+                      data-testid={`advocate-from-contact-${i}`}
+                      onClick={() => {
+                        const id = c.id ?? newContactId();
+                        const withId = { ...c, id };
+                        setProfile({ ...profile, emergencyContacts: profile.emergencyContacts.map((row, idx) => (idx === i ? withId : row)) });
+                        setAdvocateDraft(advocateDraftFromContact(withId, advocateDraft));
+                        setAdvocateOn(true);
+                        document.getElementById("advocate-section-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                    >
+                      {B.alsoAdvocate}
+                    </Button>
                   )}
                 </div>
               ))}
@@ -1079,26 +1096,18 @@ function IntakePage() {
               >
                 <Plus className="mr-1.5 h-4 w-4" /> Add another contact
               </Button>
-              {!inReassess && (
-                <div className="space-y-2 rounded-md border bg-card p-3" data-testid="name-advocate">
-                  <label className="flex cursor-pointer items-start gap-2 text-sm">
-                    <Checkbox
-                      checked={advocateOther.on}
-                      data-testid="name-advocate-toggle"
-                      onCheckedChange={(v) => setAdvocateOther({ ...advocateOther, on: Boolean(v) })}
-                    />
-                    <span>{B.nameAdvocate}</span>
-                  </label>
-                  {advocateOther.on && (
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      <Input aria-label={B.advName} placeholder={B.advName} value={advocateOther.name} data-testid="name-advocate-name" onChange={(e) => setAdvocateOther({ ...advocateOther, name: e.target.value })} />
-                      <Input aria-label={B.advRel} placeholder={B.advRel} value={advocateOther.relationship} onChange={(e) => setAdvocateOther({ ...advocateOther, relationship: e.target.value })} />
-                      <Input aria-label={B.advContact} placeholder={B.advContact} value={advocateOther.contact} data-testid="name-advocate-contact" onChange={(e) => setAdvocateOther({ ...advocateOther, contact: e.target.value, channel: e.target.value.includes("@") ? "email" : "sms" })} />
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">{B.advocateNote}</p>
-                </div>
-              )}
+            </div>
+            {!inReassess && (
+              <AdvocateSection
+                lang={lang9a === "es" ? "es" : "en"}
+                on={advocateOn}
+                onToggle={(v) => { setAdvocateOn(v); if (!v) { setAdvocateDraft(emptyAdvocateDraft()); setAdvocateErrors([]); } }}
+                draft={advocateDraft}
+                onChange={(d) => { setAdvocateDraft(d); if (advocateErrors.length) setAdvocateErrors(validateAdvocateDraft(d)); }}
+                errors={advocateErrors}
+              />
+            )}
+            <div className="hidden">
             </div>
           </div>
           );

@@ -976,6 +976,12 @@ export const CHART_ACTIONS: ChartAction[] = [
     allowed: ({ role }) => (canEditTagList(role) ? ok() : hide("Only a system administrator or clinical coordinator can edit this list.")),
   })),
   {
+    id: "consent_purpose_set", label: { en: "Change a consent purpose", es: "Cambiar un consentimiento" }, group: "admin", menu: false, needsPatient: true,
+    check: "consent_ledger write (store re-checks)",
+    store: refs(["staffSetConsent", ((...a: Parameters<typeof AdelanteEHR.staffSetConsent>) => AdelanteEHR.staffSetConsent(...a)) as StoreFn]),
+    allowed: ({ role }) => (canAccess(role, "consent_ledger").level === "write" ? ok() : hide("Your role can read the consent ledger but can't change it.")),
+  },
+  {
     id: "plan_flag_review", label: { en: "Keep or retire after flag removed", es: "Mantener o retirar tras quitar la marca" }, group: "care", menu: false, needsPatient: true,
     check: "canEditPlan + Part 2 (store)",
     store: refs(["resolveFlagReview", resolveFlagReview as StoreFn]),

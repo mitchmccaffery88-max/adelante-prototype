@@ -80,7 +80,7 @@ export interface PlanAssignment {
   /** §Group 1 C2 — added automatically by a specialty flag (no staff accept step). */
   autoAdded?: { flag: SpecialtyFlag; trigger: string; at: string };
   /** §C2 — the flag was later removed: assigned clinician keeps or retires it. */
-  flagReview?: { flag: SpecialtyFlag; at: string; resolved?: "kept" | "retired"; by?: string; reason?: string };
+  flagReview?: { flag: SpecialtyFlag; at: string; kind?: "flag_removed" | "pathway_changed"; resolved?: "kept" | "retired"; by?: string; reason?: string };
 }
 export type SpecialtyFlag = "justice_involved" | "sud";
 export interface PlanVersion {
@@ -124,7 +124,7 @@ export interface PlanActivity {
 export const PLAN_ACTIVITIES: PlanActivity[] = [
   { id: "box-breathing", label: { en: "Box breathing", es: "Respiración en caja" }, to: "/library", exercise: "box-breathing", sud: false },
   { id: "ss-daily-rhythm", label: { en: "Creating My Daily Rhythm", es: "Crear mi rutina diaria" }, to: "/library", search: { item: "ss-daily-rhythm" }, sud: false },
-  { id: "first-days-out", label: { en: "My First Days Out", es: "Mis primeros días afuera" }, to: "/recovery-journey", sud: false },
+  { id: "first-days-out", label: { en: "My First Days Out", es: "Mis primeros días afuera" }, to: "/recovery-journey", sud: true },
   // §C1 — recovery modules offered as interventions on ASAM-derived goals (Part 2).
   { id: "understanding-my-addiction", label: { en: "Recovery lesson: Understanding My Addiction", es: "Lección: Entender mi adicción" }, to: "/recovery-journey", sud: true },
   { id: "when-recovery-gets-hard", label: { en: "Recovery lesson: When Recovery Gets Hard", es: "Lección: Cuando la recuperación se pone difícil" }, to: "/recovery-journey", sud: true },
@@ -693,11 +693,21 @@ export function autoAddJourneyAssignment(input: { patientId: string; journeyId: 
 export function markFlagRemovedForReview(patientId: string, flag: SpecialtyFlag, at = new Date().toISOString()): PlanAssignment[] {
   const plan = getStructuredPlan(patientId);
   const hit = plan.assignments.filter((a) => a.active && a.autoAdded?.flag === flag && (!a.flagReview || a.flagReview.resolved));
-  for (const a of hit) a.flagReview = { flag, at };
+  for (const a of hit) a.flagReview = { flag, at, kind: "flag_removed" };
   if (hit.length) audit("plan_journey_flag_removed", patientId, { name: "Adelante (automatic)", role: "system" }, { assignmentIds: hit.map((a) => a.id), reason: "Flag removed — review" });
   return hit;
 }
 export const FLAG_REVIEW_LABEL = "Flag removed — review";
+export const PATHWAY_REVIEW_LABEL = "Pathway changed — review";
+export const flagReviewLabel = (r: { kind?: string }) => (r.kind === "pathway_changed" ? PATHWAY_REVIEW_LABEL : FLAG_REVIEW_LABEL);
+/** §Group 2 P5 — auto-added items the current pathway rule no longer matches are marked, never removed. */
+export function markPathwayChangedForReview(patientId: string, keepJourneyIds: string[], skipFlags: SpecialtyFlag[] = [], at = new Date().toISOString()): PlanAssignment[] {
+  const plan = getStructuredPlan(patientId);
+  const hit = plan.assignments.filter((a) => a.active && a.autoAdded && !skipFlags.includes(a.autoAdded.flag) && !keepJourneyIds.includes(a.activityId ?? "") && !a.flagReview);
+  for (const a of hit) a.flagReview = { flag: a.autoAdded!.flag, at, kind: "pathway_changed" };
+  if (hit.length) audit("plan_journey_pathway_changed", patientId, { name: "Adelante (automatic)", role: "system" }, { assignmentIds: hit.map((a) => a.id), reason: PATHWAY_REVIEW_LABEL });
+  return hit;
+}
 /** Keep or retire an auto-added item after its flag was removed (reason required). */
 export function resolveFlagReview(patientId: string, assignmentId: string, decision: "kept" | "retired", reason: string, actor: Actor): PlanAssignment {
   assertEdit(actor);

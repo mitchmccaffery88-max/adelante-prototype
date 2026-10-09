@@ -611,6 +611,8 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
 export const EXERCISES: Exercise[] = [
   {
     id: "urge-surfing-timer",
+    // §Group 2 S1 — SUD practice: Part 2.
+    part2Sensitive: true,
     title: "Urge Surfing Timer",
     subtitle: "Ride the wave without acting on it",
     minutes: 3,
@@ -643,6 +645,8 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: "trigger-map",
+    // §Group 2 S1 — SUD practice: Part 2.
+    part2Sensitive: true,
     title: "Trigger Map",
     subtitle: "People, places, feelings, times",
     minutes: 5,
@@ -896,6 +900,8 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: "if-i-slip-plan",
+    // §Group 2 S1 — SUD practice: Part 2.
+    part2Sensitive: true,
     title: '"If I Slip" Plan',
     subtitle: "Decided ahead of time, not in the moment",
     minutes: 5,
@@ -939,6 +945,8 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: "warning-signs",
+    // §Group 2 S1 — SUD practice: Part 2.
+    part2Sensitive: true,
     title: "Relapse Warning Signs Checklist",
     subtitle: "The stuff that shows up before the using does",
     minutes: 4,

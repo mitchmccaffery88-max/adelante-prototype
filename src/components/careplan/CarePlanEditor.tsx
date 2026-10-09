@@ -4,7 +4,7 @@ import { ContentAssignmentPreview } from "@/components/admin/ContentAssignmentPr
 import { act, actFor } from "@/lib/actions/act";
 import "@/lib/contentTags";
 import "@/lib/flagJourneys";
-import { FLAG_REVIEW_LABEL } from "@/lib/structuredCarePlan";
+import { flagReviewLabel } from "@/lib/structuredCarePlan";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useEhr } from "@/lib/ehr";
@@ -221,7 +221,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                       )}
                       {edit && a.flagReview && !a.flagReview.resolved && (
                         <span className="ml-1 inline-flex items-center gap-1" data-testid="flag-review">
-                          <Badge variant="outline" className="text-[10px]">{FLAG_REVIEW_LABEL}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{flagReviewLabel(a.flagReview)}</Badge>
                           <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "kept", "Kept after flag review", me); toast.success("Kept on the plan"); } catch (e) { toast.error((e as Error).message); } }}>Keep</Button>
                           <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "retired", "Retired after flag review", me); toast.success("Retired — progress kept"); } catch (e) { toast.error((e as Error).message); } }}>Retire</Button>
                         </span>
