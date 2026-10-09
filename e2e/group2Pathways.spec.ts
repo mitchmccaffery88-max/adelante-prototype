@@ -106,10 +106,20 @@ for (const lang of ["en", "es"] as const) {
     await expect(page.getByTestId("advocate-errors")).toHaveCount(0);
 
     // Submit through the same store path the final step uses, then check status on My care.
-    for (let i = 0; i < 15; i++) {
-      const submit = page.getByRole("button", { name: /^(Submit|Finish|Enviar|Terminar)/ });
+    const nextBtn = page.getByRole("button", { name: /^(Save & continue|Guardar y continuar|Next|Siguiente)/ }).last();
+    for (let i = 0; i < 60; i++) {
+      const submit = page.getByRole("button", { name: /^(Submit|Finish|Enviar|Terminar|Complete intake|Completar)/ });
       if (await submit.count()) { await submit.last().click(); break; }
-      await page.getByRole("button", { name: /^(Next|Continue|Save & continue|Siguiente|Continuar|Guardar)/ }).last().click();
+      if (await nextBtn.isEnabled()) { await nextBtn.click(); continue; }
+      // Answer whatever this step needs with the first option (screeners, acknowledgements).
+      const box = page.getByRole("checkbox", { checked: false }).first();
+      const groups = page.getByRole("radiogroup");
+      let acted = false;
+      for (let g = 0; g < (await groups.count()); g++) {
+        const grp = groups.nth(g);
+        if ((await grp.getByRole("radio", { checked: true }).count()) === 0) { await grp.getByRole("radio").first().click(); acted = true; }
+      }
+      if (!acted && (await box.count())) await box.click();
     }
     await expect.poll(() => page.evaluate((id) => ((window as unknown as W).__adelante.AdelanteEHR as never as { listAdvocateLinks: (p: string) => { advocateName: string; expectedAuthorizationType?: string }[] }).listAdvocateLinks(id).find((l) => l.advocateName === "Diego Camacho")?.expectedAuthorizationType, luisId)).toBe("family_participation");
     await go(page, "/profile");
