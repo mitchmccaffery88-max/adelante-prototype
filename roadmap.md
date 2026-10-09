@@ -1,5 +1,13 @@
 # Roadmap
 
+## Group 2 (9 Oct) — pathways, Part 2 fixes, contacts + advocate
+- [x] G1 content gaps → content owner (journey owner, else owner pool)
+- [x] G2 SUD journeys hidden from non-Part 2 staff + advocate tiers (fixed restricted plan view leak)
+- [ ] G3 group 1 browser walkthrough script — not yet written
+- [x] S1–S5
+- [x] P1–P5
+- [x] O1/O2/O4 onboarding contacts + advocate; [ ] O3 staff demographics editor still uses old fields
+
 ## In progress — Player and engagement (K1–K3, P1–P10)
 - [ ] K1 registry content mutations + additive permissions snapshot
 - [ ] K2 ASAM dimension tag interventions
