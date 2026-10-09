@@ -1,6 +1,6 @@
 import { FormsToSign } from "@/components/consent/FormsToSign";
 import { GroupConsentPrompt } from "@/components/consent/PatientSignedForms";
-import { AdvocateConsentCard } from "@/components/consent/AdvocateConsentCard";
+import { AdvocateConsentStatus } from "@/components/consent/AdvocateConsentStatus";
 import { openScreenerRequestsForPatient } from "@/lib/chartOrders";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { inFacilityEnabled } from "@/lib/inFacility";
@@ -220,7 +220,7 @@ export function PatientHome() {
       {/* §Group 2 O2 — "Sign later": the waiting advocate consent shows here. */}
       <FormsToSign patientId={patient.id} lang={patient.preferredLanguage === "es" ? "es" : "en"} />
       <GroupConsentPrompt patientId={patient.id} lang={patient.preferredLanguage === "es" ? "es" : "en"} />
-      <AdvocateConsentCard patientId={patient.id} />
+      <AdvocateConsentStatus patientId={patient.id} />
       <TasksCard patientId={patient.id} />
       <MessagesCard patientId={patient.id} prefill={messagePrefill} />
       <AdvocateDesignationPanel

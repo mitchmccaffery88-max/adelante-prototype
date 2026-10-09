@@ -3,7 +3,6 @@
 import type { AdvocateDraft, AdvocateDraftError } from "@/lib/contactAdvocate";
 import { ADVOCATE_TYPES, RELATIONSHIPS } from "@/lib/contactAdvocate";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
 export const ADVOCATE_SECTION_COPY = {
@@ -21,11 +20,7 @@ export const ADVOCATE_SECTION_COPY = {
     sendBy: "Send invite by",
     text: "Text",
     emailOpt: "Email",
-    signNow: "Sign consent now",
-    signLater: "Sign later",
-    signName: "Type your full name",
-    agree: "I agree to share with my advocate. This does not share substance-use records.",
-    later: "The invitation waits until you sign. You'll see a reminder in My care.",
+    later: "After you finish, sign the advocate consent form in Forms to sign. The invitation waits until you sign. (Draft — pending counsel review)",
     choose: "Choose…",
     linked: "Made from your emergency contact",
     errors: {
@@ -35,7 +30,6 @@ export const ADVOCATE_SECTION_COPY = {
       phone_invalid: "That phone number doesn't look right.",
       email_invalid: "That email doesn't look right.",
       send_by: "We need that phone or email to send the invite that way.",
-      sign: "Type your name and tick the box to sign now, or choose Sign later.",
     } satisfies Record<AdvocateDraftError, string>,
   },
   es: {
@@ -52,11 +46,7 @@ export const ADVOCATE_SECTION_COPY = {
     sendBy: "Enviar invitación por",
     text: "Texto",
     emailOpt: "Correo",
-    signNow: "Firmar consentimiento ahora",
-    signLater: "Firmar después",
-    signName: "Escribe tu nombre completo",
-    agree: "Acepto compartir con mi defensor. Esto no comparte registros de uso de sustancias.",
-    later: "La invitación espera hasta que firmes. Verás un recordatorio en Mi cuidado.",
+    later: "Al terminar, firma el formulario de consentimiento del defensor en Formularios para firmar. La invitación espera hasta que firmes. (Borrador — pendiente de revisión legal)",
     choose: "Elige…",
     linked: "Creado desde tu contacto de emergencia",
     errors: {
@@ -66,7 +56,6 @@ export const ADVOCATE_SECTION_COPY = {
       phone_invalid: "Ese teléfono no parece correcto.",
       email_invalid: "Ese correo no parece correcto.",
       send_by: "Necesitamos ese teléfono o correo para enviar la invitación así.",
-      sign: "Escribe tu nombre y marca la casilla para firmar ahora, o elige Firmar después.",
     } satisfies Record<AdvocateDraftError, string>,
   },
 } as const;
@@ -130,20 +119,7 @@ export function AdvocateSection({ draft, onChange, on, onToggle, errors, lang }:
             </fieldset>
           </div>
           <div className="rounded-md border bg-card p-3 space-y-2">
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" className="min-h-11" variant={draft.consent === "now" ? "default" : "outline"} data-testid="advocate-sign-now" onClick={() => set({ consent: "now" })}>{t.signNow}</Button>
-              <Button type="button" className="min-h-11" variant={draft.consent === "later" ? "default" : "outline"} data-testid="advocate-sign-later" onClick={() => set({ consent: "later" })}>{t.signLater}</Button>
-            </div>
-            {draft.consent === "now" ? (
-              <>
-                <Input aria-label={t.signName} placeholder={t.signName} maxLength={100} value={draft.signName} data-testid="advocate-sign-name" onChange={(e) => set({ signName: e.target.value })} />
-                <label className="flex min-h-11 items-center gap-2 text-sm">
-                  <Checkbox checked={draft.signAgree} data-testid="advocate-sign-agree" onCheckedChange={(v) => set({ signAgree: v === true })} /> {t.agree}
-                </label>
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground">{t.later}</p>
-            )}
+            <p className="text-xs text-muted-foreground" data-testid="advocate-sign-in-forms">{t.later}</p>
           </div>
           {errors.length > 0 && (
             <ul role="alert" className="space-y-1 text-xs text-destructive" data-testid="advocate-errors">

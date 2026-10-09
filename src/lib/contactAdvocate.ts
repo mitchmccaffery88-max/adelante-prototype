@@ -55,13 +55,10 @@ export interface AdvocateDraft {
   email: string;
   sendBy: "sms" | "email";
   contactId?: string;
-  consent: "now" | "later";
-  signName: string;
-  signAgree: boolean;
 }
-export const emptyAdvocateDraft = (): AdvocateDraft => ({ name: "", relationshipId: "", relationshipOther: "", typeId: "", phone: "", email: "", sendBy: "sms", consent: "later", signName: "", signAgree: false });
+export const emptyAdvocateDraft = (): AdvocateDraft => ({ name: "", relationshipId: "", relationshipOther: "", typeId: "", phone: "", email: "", sendBy: "sms" });
 
-export type AdvocateDraftError = "name" | "type" | "contact_missing" | "phone_invalid" | "email_invalid" | "send_by" | "sign";
+export type AdvocateDraftError = "name" | "type" | "contact_missing" | "phone_invalid" | "email_invalid" | "send_by";
 export function validateAdvocateDraft(d: AdvocateDraft): AdvocateDraftError[] {
   const e: AdvocateDraftError[] = [];
   if (d.name.trim().length < 2) e.push("name");
@@ -71,7 +68,6 @@ export function validateAdvocateDraft(d: AdvocateDraft): AdvocateDraftError[] {
   if (ph && !validPhone(ph)) e.push("phone_invalid");
   if (em && !validEmail(em)) e.push("email_invalid");
   if ((d.sendBy === "sms" && !ph) || (d.sendBy === "email" && !em)) e.push("send_by");
-  if (d.consent === "now" && (!d.signAgree || d.signName.trim().length < 2)) e.push("sign");
   return e;
 }
 

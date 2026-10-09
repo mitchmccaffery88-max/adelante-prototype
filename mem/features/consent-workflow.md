@@ -10,3 +10,4 @@ type: feature
 - Declines: HIPAA → care can't start; Telehealth → in person; Portal → staff-assisted; SMS → no texts; Part 2 → SUD locked; Group → no group booking. Group decline never blocks individual visits or MAT.
 - Unsigned task after 3 days; renewal task 30 days before end; retain signed copies 10 years after consent ends (WIC 14124.1). All Draft.
 - Patient SMS/notice text neutral: "You have a form to review" / "Tiene un formulario para revisar".
+- Advocate consent: only the versioned advocate form (old typed-name card retired, Mitch 9 Oct). Status card + "Review and sign" link where the old card was.

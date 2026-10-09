@@ -1,5 +1,8 @@
 # Roadmap
 
+## Follow-up 9 Oct
+- [x] F1 one advocate consent path  - [x] F2 c2 unfrozen  - [x] F3 screener-resume race  - [x] F4 onboarding→active advocate spec
+
 ## Consent workflow (9 Oct, Draft — pending counsel)
 - [x] W1 form library  - [x] W2 send  - [x] W3 Forms to sign  - [x] W4 track  - [x] W5 store/retention/migration
 - [x] W6 renew + revoke  - [x] W7 packet + group gate  - [x] W8 advocate forms  - [x] handoff doc

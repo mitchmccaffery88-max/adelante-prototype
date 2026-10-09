@@ -70,7 +70,13 @@ test("MAT continuity, coverage at release, deactivation, intake median, screener
   // Leave, then come back: the two answers must still be there (checked via the UI;
   // importing the module from the test can hit a different HMR instance).
   await go(page, "/home");
-  // Under parallel load /home can hydrate late; make sure the switch really took.
+  // §F3 root cause: under load the URL changes before the router commits the
+  // /home match (its chunk is still loading). Navigating back then lands on the
+  // SAME mounted questionnaire — answers still in memory from this visit, so no
+  // "earlier visit" banner. Wait until the questionnaire has really unmounted
+  // and /home has rendered before coming back.
+  await expect(page.getByTestId("rescreen-q-0")).toHaveCount(0);
+  await expect(page.locator("#your-care-plan-heading")).toBeVisible();
   const es = page.getByRole("button", { name: "Cambiar idioma a español" });
   await expect(async () => { await es.click(); await expect(es).toHaveAttribute("aria-pressed", "true", { timeout: 1000 }); }).toPass({ timeout: 20_000 });
   await go(page, "/rescreen/phq-9");

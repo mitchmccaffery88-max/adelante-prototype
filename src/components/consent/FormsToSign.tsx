@@ -40,7 +40,7 @@ export function FormsToSign({ patientId, lang = "en", channel = "portal", only, 
     }
   };
   return (
-    <section className="patient-theme space-y-3 rounded-3xl bg-card p-4 sm:p-5" data-testid="forms-to-sign">
+    <section id="forms-to-sign" className="patient-theme space-y-3 rounded-3xl bg-card p-4 sm:p-5" data-testid="forms-to-sign">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-xl font-semibold text-foreground">{t.title}</h2>
         <span className="text-sm font-medium text-muted-foreground" data-testid="forms-progress">{t.done(done, items.length)}</span>
