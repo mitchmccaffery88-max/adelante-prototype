@@ -11,7 +11,7 @@ import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { runAction } from "@/lib/actions/runAction";
 import { queueHieMatch, confirmMatch } from "@/lib/dataExchange";
 import { liveCurricula } from "@/lib/curriculumTypes";
-import { engagementRecords, recordExerciseCompleted } from "@/lib/engagement";
+import { engagementRecords, completeExercise } from "@/lib/engagement";
 import { advocatePart2Masked, type AdvocateAuthorizationType } from "@/lib/advocate";
 import {
   RELATIONSHIPS, ADVOCATE_TYPES, authorizationForAdvocateType, validateAdvocateDraft, emptyAdvocateDraft,
@@ -40,7 +40,7 @@ describe("S1 SUD exercises are Part 2", () => {
   it("the four SUD exercises carry part2Sensitive and are protected in cohort reads", () => {
     for (const id of SUD_EX) expect(EXERCISES.find((e) => e.id === id)?.part2Sensitive, id).toBe(true);
     const p = AdelanteEHR.listPatients()[0]!;
-    recordExerciseCompleted(p.id, "urge-surfing-timer");
+    completeExercise(p.id, "urge-surfing-timer");
     const row = engagementRecords([p.id]).find((r) => r.patientId === p.id);
     expect(row?.completedExercises ?? []).not.toContain("urge-surfing-timer");
   });

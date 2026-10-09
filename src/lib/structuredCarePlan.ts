@@ -585,10 +585,12 @@ export function staffPlanView(patientId: string, role: StaffRole) {
   const seesSud = roleSeesAsamSection(role, p);
   const goals = plan.goals.filter((g) => seesSud || !g.sud);
   const ids = new Set(goals.map((g) => g.id));
+  const assignments = plan.assignments.filter((a) => ids.has(a.goalId) && (seesSud || !a.sud));
   return {
-    plan,
+    // §Group 2 G2 — the plan handed to a restricted role carries only what it may see.
+    plan: seesSud ? plan : { ...plan, goals, assignments },
     goals,
-    assignments: plan.assignments.filter((a) => ids.has(a.goalId) && (seesSud || !a.sud)),
+    assignments,
     problems: buildPlanProblems(p).filter((x) => seesSud || !x.sud),
     hiddenCount: plan.goals.length - goals.length,
     seesSud,
