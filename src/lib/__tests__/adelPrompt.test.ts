@@ -34,11 +34,12 @@ describe("Adel ACTION mechanism", () => {
   });
 
   it("only advertises tokens this build can actually open", () => {
-    const prompt = buildAdelSystemPrompt();
+    const all = { sud: true, reentry: true };
+    const prompt = buildAdelSystemPrompt(all);
     for (const i of LIBRARY_ITEMS) expect(prompt).toContain(`lesson:${i.id}`);
     for (const e of EXERCISES) expect(prompt).toContain(`exercise:${e.id}`);
     for (const m of prompt.matchAll(/^- (\S+?) —/gm)) {
-      expect(resolveAdelAction(m[1]!), m[1]).toBeTruthy();
+      expect(resolveAdelAction(m[1]!, all), m[1]).toBeTruthy();
     }
   });
 
