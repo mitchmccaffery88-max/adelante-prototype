@@ -20,6 +20,8 @@ test("correctional referral → re-entry journeys; SUD diagnosis → SUD journey
     const e = (window as unknown as W).__adelante.AdelanteEHR as never as { createReferral: (i: unknown) => { id: string }; enrollReferral: (id: string) => string };
     const r = e.createReferral({ firstName: "Reyes", lastName: "Walkthrough", dob: "1988-04-12", phone: "5595550161", referringAgency: "County Probation", referrerName: "Officer Diaz", referrerPhone: "5595550100", referralSource: "probation", justiceInvolved: "yes", consentToContact: true, channel: "staff" });
     const id = e.enrollReferral(r.id);
+    // The walkthrough looks at the portal after onboarding; intake itself is covered below.
+    (e as never as { getPatient: (i: string) => { intakeCompletedAt?: string } }).getPatient(id).intakeCompletedAt = new Date().toISOString();
     const fj = await import("/src/lib/flagJourneys.ts");
     fj.applyFlagJourneys(id);
     return id;
