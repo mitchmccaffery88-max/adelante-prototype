@@ -10,7 +10,7 @@ import { seedOrderSafetyDemo, seedOutpatientCareDemo } from "./outpatientCare";
 // scanner, notify, message send) so every row carries the same audit trail and
 // attribution a real one would. Lives outside ehr.ts because the crisis-text
 // scanner imports the store. Idempotent: runs once per store instance.
-import { AdelanteEHR, demoScenarioPatientId, type Patient } from "@/lib/ehr";
+import { AdelanteEHR, demoScenarioPatientId, endSeveritySeedQuiet, type Patient } from "@/lib/ehr";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { GATE_GENERIC_MESSAGE } from "@/lib/dmcOdsReadiness";
 import { seedInboxActionsDemo } from "@/lib/inboxActions";
@@ -351,6 +351,8 @@ export function seedDemoInbox(): void {
   readOne("Dr. M. Bagga", "physician");
   // §A3 — realistic bell: at most 5 seeded role broadcasts per role.
   safe(() => { AdelanteEHR.trimRoleBroadcasts(5); });
+  // Demo seeding is done: severity flags from here on are live, not history.
+  endSeveritySeedQuiet();
 }
 
 seedDemoInbox();

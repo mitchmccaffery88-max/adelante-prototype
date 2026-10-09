@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { AdelanteEHR } from "@/lib/ehr";
+import { AdelanteEHR, endSeveritySeedQuiet } from "@/lib/ehr";
+
+// Demo seeds are done by test time; flags created in test bodies are live.
+endSeveritySeedQuiet();
 import { SEVERITY_RULES, evaluateSeverity } from "@/lib/severityRules";
 import { listSeverityFlags, openSeverityFlags, severityAssignee } from "@/lib/severityFlags";
 import { workspaceActionRows } from "@/lib/clinicianWorkspace";
