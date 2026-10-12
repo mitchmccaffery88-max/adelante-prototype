@@ -105,7 +105,7 @@ test("public website mobile menu", async ({ page }) => {
    await expect(nav.locator("nav").getByRole("link")).toHaveCount(6);
   await nav.getByRole("link", { name: "Our team", exact: true }).click();
   await expect(page).toHaveURL(/\/team$/);
-   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Meet our team");
+   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Meet Our Team");
   await expect(nav).toHaveCount(0);
   await page.getByRole("button", { name: "Open website menu" }).click();
   await expect(nav.locator('[aria-current="page"]')).toHaveText("Our team");

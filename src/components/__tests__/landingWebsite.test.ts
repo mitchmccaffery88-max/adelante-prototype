@@ -9,6 +9,28 @@ const layout = readFileSync("src/components/WebsiteLayout.tsx", "utf8");
 const index = readFileSync("src/routes/index.tsx", "utf8");
 
 describe("public website contract", () => {
+  it("pins English Title Case headings without changing Spanish or navigation labels", () => {
+    const headings = {
+      websiteHow: ["How It Works", "Cómo funciona"],
+      websiteFit: ["Find Where You Fit", "Encuentra tu lugar"],
+      websiteWhat: ["What You Get", "Qué recibes"],
+      websiteFaq: ["Frequently Asked Questions", "Preguntas frecuentes"],
+      websiteAbout: ["About Us", "Sobre nosotros"],
+      websitePartnersHeading: ["For Referral Partners", "Para organizaciones que refieren"],
+      websiteTeam: ["Meet Our Team", "Conoce a nuestro equipo"],
+      websiteCareTeam: ["Your Care Team", "Tu equipo de atención"],
+      websiteNavigationTeam: ["Your Navigation and Reentry Team", "Tu equipo de orientación y reintegración"],
+      websiteResourceTeam: ["Your Resource Team", "Tu equipo de recursos"],
+      websiteAdvocateTeam: ["Your Advocate Support Team", "Tu equipo de apoyo para acompañantes"],
+      websiteReady: ["Ready When You Are", "Listos cuando tú lo estés"],
+    } as const;
+    for (const key of Object.keys(headings) as Array<keyof typeof headings>) {
+      expect(websiteEn[key]).toBe(headings[key][0]);
+      expect(websiteEs[key]).toBe(headings[key][1]);
+    }
+    expect(WEBSITE_NAV.map(n => websiteEn[n.key])).toEqual(["How it works", "About us", "Our team", "Find where you fit", "What you get", "FAQ"]);
+    expect([websiteEn.websiteAboutNav, websiteEn.websiteTeamNav, websiteEn.websitePartners, websiteEn.websiteFaqNav, websiteEn.websiteReferral]).toEqual(["About us", "Our team", "For partners", "FAQ", "Make a referral"]);
+  });
   it("has a Spanish draft translation for every public string", () => {
     expect(Object.keys(websiteEs).sort()).toEqual(Object.keys(websiteEn).sort());
     for (const text of Object.values(websiteEs)) expect(text.length).toBeGreaterThan(0);
