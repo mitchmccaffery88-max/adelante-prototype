@@ -120,12 +120,12 @@ function raiseGap(flag: SpecialtyFlag, at: string) {
   }
   gapSeq += 1;
   const g: ContentGapItem = { id: `gap-${flag}-${gapSeq}`, flag, at, patients: 1 };
-  gaps.push(g);
-  AdelanteEHR.recordActionEvent({ action: "content.gap_raised", actorRole: "system", detail: { gapId: g.id, reason: "No live journey matches a care-plan flag" } });
-  // Content owner pool (Draft): the clinical coordinator. Neutral text.
+  // Content owner (Draft): named journey owner, else the owner pool. Set before anything emits.
   const owner = gapOwnerResolver?.(flag);
   g.owner = owner ?? "Content owner pool";
   if (owner) g.ownerStaffId = owner;
+  gaps.push(g);
+  AdelanteEHR.recordActionEvent({ action: "content.gap_raised", actorRole: "system", detail: { gapId: g.id, reason: "No live journey matches a care-plan flag" } });
   ensureGapPointers(g);
 }
 /** B4 — one id for a gap everywhere: notification taskKey, workspace row id and dedupeKey. */
