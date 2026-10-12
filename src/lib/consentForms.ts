@@ -232,6 +232,7 @@ export function sendForms(input: { patientId: string; formKeys: FormKey[]; actor
     audit("consent_form.sent", actor, { requestId: r.id, formKey: key, version: v.version, dueAt: r.dueAt }, p.id);
   }
   deliverNotice(p, now);
+  closeResolvedConsentPointers();
   return out.map((r) => ({ ...r }));
 }
 function deliverNotice(p: Patient, at: string) {
@@ -275,6 +276,7 @@ export function declineForm(patientId: string, key: FormKey, opts: { channel?: "
   r.checked = false;
   r.decidedAt = opts.at ?? new Date().toISOString();
   audit("consent_form.declined", { role: "patient", name: "patient" }, { requestId: r.id, formKey: key, channel: opts.channel ?? "portal" }, patientId);
+  closeResolvedConsentPointers();
 }
 
 export interface SignInput { patientId: string; signerName: string; relationship?: "patient" | "guardian" | "proxy"; channel?: "portal" | "in_person"; language?: "en" | "es"; typedName?: string; drawn?: string; at?: string }
@@ -292,7 +294,9 @@ export function signChecked(input: SignInput): SignedCopy[] {
   }
   migrateLegacyConsents(p.id);
   const at = input.at ?? new Date().toISOString();
-  return checked.map((r) => signOne(p, r, { ...input, at }));
+  const out = checked.map((r) => signOne(p, r, { ...input, at }));
+  closeResolvedConsentPointers();
+  return out;
 }
 function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, relationshipOverride?: SignedCopy["relationship"]): SignedCopy {
   const v = getFormVersion(r.versionId)!;
@@ -421,33 +425,50 @@ export function revokeForm(input: { patientId: string; formKey: FormKey; by: "pa
     else AdelanteEHR.setConsent(p.id, purpose, false, "patient stopped sharing");
   }
   ends.set(c.id, { endedAt: at, reason: "revoked", ...(input.reason ? { note: input.reason.trim() } : {}) });
+  closeResolvedConsentPointers();
   audit("consent_form.revoked", input.actor ?? { role: "patient", name: "patient" }, { formKey: v.key, version: v.version, by: input.by, reason: input.reason?.trim() || "(none given)", retainUntil: retainUntil(at) }, p.id);
 }
 
 // ------------------------------------------------------------------ track: tasks, expiry, renewal
+const unsignedKey = (r: FormRequest) => `consent-unsigned:${r.id}`;
+const renewKey = (c: SignedCopy) => `consent-renew:${c.id}`;
+const isOpenReq = (r: FormRequest) => r.status === "sent" || r.status === "viewed";
+/** consent-renew resolves when the copy ended (superseded by a new signature, revoked, expired) or the current version was resent. */
+const renewResolved = (c: SignedCopy) => ends.has(c.id) || requests.some((r) => r.patientId === c.patientId && r.formKey === c.formKey && isOpenReq(r));
+function targetFor(sender?: FormRequest["sentBy"]) {
+  return sender?.staffId ? { recipientStaffId: sender.staffId } : { recipientRole: "clinical_coordinator" as StaffRole };
+}
+/** Bell bug fix B2 — the consent source closes its own pointers once their state resolves. */
+export function closeResolvedConsentPointers(): number {
+  let n = 0;
+  for (const r of requests) if (r.taskRaisedAt && !isOpenReq(r)) n += AdelanteEHR.closeTaskPointer(unsignedKey(r), "consent");
+  for (const c of copies) if (renewResolved(c)) n += AdelanteEHR.closeTaskPointer(renewKey(c), "consent");
+  return n;
+}
 export function sweepConsentForms(now = new Date()): void {
   const t = +now;
   for (const r of requests) {
-    if ((r.status === "sent" || r.status === "viewed") && t > +new Date(r.dueAt) + 14 * DAY) {
+    if (isOpenReq(r) && t > +new Date(r.dueAt) + 14 * DAY) {
       r.status = "expired";
       audit("consent_form.expired", { role: "system", name: "system" }, { requestId: r.id, formKey: r.formKey }, r.patientId);
       continue;
     }
-    if ((r.status === "sent" || r.status === "viewed") && !r.taskRaisedAt && t - +new Date(r.sentAt) >= UNSIGNED_TASK_DAYS * DAY) {
-      r.taskRaisedAt = now.toISOString();
-      const target = r.sentBy.staffId ? { recipientStaffId: r.sentBy.staffId } : { recipientRole: "clinical_coordinator" as StaffRole };
-      AdelanteEHR.notify({ ...target, category: "patient_update", subject: "New task: Form not signed yet", body: "A form you sent is still waiting after 3 days. Open the client's Consents section.", linkRoute: "/record/$patientId", linkParams: { patientId: r.patientId }, patientId: r.patientId, kind: "task", taskKey: `consent-unsigned:${r.id}` });
+    if (!isOpenReq(r)) continue;
+    // B3 — raise once at 3 days; while still open, keep the pointer open (re-raise once if wrongly closed).
+    if (r.taskRaisedAt || t - +new Date(r.sentAt) >= UNSIGNED_TASK_DAYS * DAY) {
+      r.taskRaisedAt ??= now.toISOString();
+      AdelanteEHR.ensureTaskPointer({ ...targetFor(r.sentBy), category: "patient_update", subject: "New task: Form not signed yet", body: "A form you sent is still waiting after 3 days. Open the client's Consents section.", linkRoute: "/record/$patientId", linkParams: { patientId: r.patientId }, patientId: r.patientId, kind: "task", taskKey: unsignedKey(r), pointerSource: "consent" });
     }
   }
   for (const c of copies) {
-    if (!c.endsOn || ends.has(c.id)) continue;
+    if (!c.endsOn || renewResolved(c)) continue;
     const daysLeft = (+new Date(`${c.endsOn}T00:00:00Z`) - t) / DAY;
     if (daysLeft <= RENEWAL_LEAD_DAYS && daysLeft > 0) {
       const sender = requests.find((r) => r.id === c.requestId)?.sentBy;
-      const target = sender?.staffId ? { recipientStaffId: sender.staffId } : { recipientRole: "clinical_coordinator" as StaffRole };
-      AdelanteEHR.notify({ ...target, category: "patient_update", subject: "New task: Form renewal due", body: "A signed form ends within 30 days. Resend the current version from the client's Consents section.", linkRoute: "/record/$patientId", linkParams: { patientId: c.patientId }, patientId: c.patientId, kind: "task", taskKey: `consent-renew:${c.id}` });
+      AdelanteEHR.ensureTaskPointer({ ...targetFor(sender), category: "patient_update", subject: "New task: Form renewal due", body: "A signed form ends within 30 days. Resend the current version from the client's Consents section.", linkRoute: "/record/$patientId", linkParams: { patientId: c.patientId }, patientId: c.patientId, kind: "task", taskKey: renewKey(c), pointerSource: "consent" });
     }
   }
+  closeResolvedConsentPointers();
 }
 export function renewalsDue(patientId: string, now = new Date()) {
   return listSignedCopies(patientId).filter((x) => !x.ended && x.copy.endsOn && (+new Date(`${x.copy.endsOn}T00:00:00Z`) - +now) / DAY <= RENEWAL_LEAD_DAYS).map((x) => x.copy);
