@@ -136,7 +136,8 @@ function ensureGapPointers(g: ContentGapItem) {
 }
 /** Closes a gap once a matching journey is live — and closes its bell pointer (content-gap source). */
 const gapMatched = (f: SpecialtyFlag) => journeysForFlag(f).length > 0 || journeysForPathway(f === "sud" ? "sud" : "reentry").length > 0;
-function closeGapsIfMatched(at: string, matched: (f: SpecialtyFlag) => boolean = gapMatched) {
+let gapMatcher = gapMatched;
+function closeGapsIfMatched(at: string, matched: (f: SpecialtyFlag) => boolean = gapMatcher) {
   for (const g of gaps) {
     if (g.closedAt) continue;
     if (matched(g.flag)) {
@@ -216,7 +217,7 @@ export function autoAddedJourneyIds(patientId: string): string[] {
 
 /** Test hook. */
 /** Test-only hooks for the content-gap source (raise / resolve without editing journeys). */
-export const _gapTestHooks = { raise: (flag: SpecialtyFlag, at = new Date().toISOString()) => raiseGap(flag, at), closeIfMatched: (matched: (f: SpecialtyFlag) => boolean) => closeGapsIfMatched(new Date().toISOString(), matched) };
+export const _gapTestHooks = { setMatcher: (fn?: (f: SpecialtyFlag) => boolean) => { gapMatcher = fn ?? gapMatched; }, raise: (flag: SpecialtyFlag, at = new Date().toISOString()) => raiseGap(flag, at), closeIfMatched: (matched: (f: SpecialtyFlag) => boolean) => closeGapsIfMatched(new Date().toISOString(), matched) };
 export function _resetFlagJourneys(): void {
   lastFlags.clear();
   gaps.length = 0;

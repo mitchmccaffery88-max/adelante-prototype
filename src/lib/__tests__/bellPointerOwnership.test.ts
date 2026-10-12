@@ -102,7 +102,7 @@ describe("consent-renew", () => {
   it("closes when revoked", () => {
     const { pid, key } = setup();
     bellSync();
-    revokeForm({ patientId: pid, formKey: "part2", by: "staff", reason: "Patient asked", actor: coord });
+    revokeForm({ patientId: pid, formKey: "part2", by: "patient" });
     expect(byKey(key)[0]!.closedAt).toBeTruthy();
   });
   it("re-raised once after an old-bug close", () => {
@@ -117,6 +117,7 @@ describe("content-gap", () => {
   it("one key everywhere; survives syncs; in the owner's My work; closes with the gap; re-raised once", () => {
     _resetFlagJourneys();
     setContentGapOwnerResolver(() => coordStaff.id);
+    _gapTestHooks.setMatcher(() => false);
     _gapTestHooks.raise("justice_involved");
     const g = listContentGaps()[0]!;
     const key = contentGapKey(g.id);
@@ -130,7 +131,9 @@ describe("content-gap", () => {
     AdelanteEHR.closeTaskPointer(key);
     _gapTestHooks.closeIfMatched(() => false);
     expect(unread(key)).toBe(true);
+    _gapTestHooks.setMatcher(() => true);
     _gapTestHooks.closeIfMatched(() => true);
+    _gapTestHooks.setMatcher();
     expect(byKey(key)[0]!.closedBy).toBe("content_gap");
     expect(listContentGaps()).toHaveLength(0);
     setContentGapOwnerResolver(undefined);
