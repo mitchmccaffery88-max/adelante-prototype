@@ -110,13 +110,16 @@ function defaultGapOwner(flag: SpecialtyFlag): string | undefined {
 }
 let gapOwnerResolver: ((flag: SpecialtyFlag) => string | undefined) | undefined = defaultGapOwner;
 export function setContentGapOwnerResolver(fn: typeof gapOwnerResolver) { gapOwnerResolver = fn; }
+/** Never reset, so a gap id (and its bell key) is never reused. */
+let gapSeq = 0;
 function raiseGap(flag: SpecialtyFlag, at: string) {
   const open = gaps.find((g) => g.flag === flag && !g.closedAt);
   if (open) {
     open.patients += 1;
     return;
   }
-  const g: ContentGapItem = { id: `gap-${flag}-${gaps.length + 1}`, flag, at, patients: 1 };
+  gapSeq += 1;
+  const g: ContentGapItem = { id: `gap-${flag}-${gapSeq}`, flag, at, patients: 1 };
   gaps.push(g);
   AdelanteEHR.recordActionEvent({ action: "content.gap_raised", actorRole: "system", detail: { gapId: g.id, reason: "No live journey matches a care-plan flag" } });
   // Content owner pool (Draft): the clinical coordinator. Neutral text.
