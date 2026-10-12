@@ -1,3 +1,5 @@
+import { WebsiteBrand } from "@/components/WebsiteBrand";
+import { WebsiteNavigation } from "@/components/WebsiteNavigation";
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
@@ -12,7 +14,6 @@ import {
   useStaffNavGroups,
   STAFF_ROUTES,
   PATIENT_ROUTES,
-  PUBLIC_NAV,
   isPublicRoute,
   isAdvocateRoute,
 } from "@/lib/navSections";
@@ -135,7 +136,7 @@ export function AppShell() {
   const showStaffShell = isStaffSurface && staffNav.length > 0;
 
   return (
-    <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface) && "patient-theme")}>
+    <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface || isPublicSurface) && "patient-theme")}>
       {(!isPublicSurface || STAFF_ROUTES.includes(pathname)) && <RouteAccessGuard />}
       {isPatientSurface && <OnboardingGuard />}
       {/* Demo scenario control — sticky at the viewport top so it is reachable at
@@ -159,35 +160,15 @@ export function AppShell() {
             to="/"
             className={cn("flex items-center gap-2 group", isPatientSurface && "hidden")}
           >
+            {isPublicSurface ? <WebsiteBrand /> : <>
             <span className="h-8 w-8 rounded-lg bg-navy text-navy-foreground grid place-items-center font-display text-lg leading-none">
               A
             </span>
-            <span className="font-display text-xl text-navy max-[420px]:sr-only">{t("appName")}</span>
+            <span className="font-display text-xl text-navy max-[420px]:sr-only">{t("appName")}</span></>}
           </Link>
 
-          {/* Public pages keep their informational links. Patient, advocate,
-              and staff navigation live in their own sidebars/drawers. */}
-          <nav
-            className={cn(
-              "items-center gap-1 ml-4",
-              isPatientSurface || isStaffSurface || isAdvocateSurface ? "hidden" : "hidden md:flex",
-            )}
-          >
-            {isPublicSurface
-                ? PUBLIC_NAV.map((n) => (
-                    <Link
-                      key={n.id}
-                      to={n.to}
-                      hash={n.hash}
-                      className="px-3 py-2 rounded-md text-sm font-medium text-foreground/70 transition-colors hover:text-foreground hover:bg-secondary"
-                    >
-                      {n.label}
-                    </Link>
-                  ))
-                : null}
-          </nav>
-
           <div className="ml-auto flex items-center gap-2 min-w-0">
+            {isPublicSurface && <WebsiteNavigation mobile />}
             {/* B10 — who the staff user is acting as, always visible. */}
             {isStaffSurface && (
               <div
@@ -205,7 +186,7 @@ export function AppShell() {
                 to="/start/signup"
                 className="hidden sm:inline-flex items-center rounded-md bg-navy px-3 py-2 text-sm font-medium text-navy-foreground transition-colors hover:bg-navy/90"
               >
-                Get started
+                {t("websiteStart")}
               </Link>
             )}
             <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
@@ -334,6 +315,7 @@ export function AppShell() {
           </div>
         </div>
 
+        {isPublicSurface && <WebsiteNavigation />}
         {isStaffSurface && (
           <div className="md:hidden border-t overflow-x-auto">
             <div className="flex gap-1 px-3 py-2 min-w-max">
@@ -432,12 +414,12 @@ export function AppShell() {
 
       <footer className="border-t bg-secondary/40">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
-          <span>© {new Date().getFullYear()} Adelante&nbsp; · Built with care</span>
+          <span>© {new Date().getFullYear()} {isPublicSurface ? t("websiteBrand") : "Adelante"}&nbsp; · {isPublicSurface ? t("websiteBuilt") : "Built with care"}</span>
           <div className="flex items-center gap-3">
             {isPatientSurface && <InstallAppButton />}
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-teal" />
-              Demo data · no real PHI
+              {isPublicSurface ? t("websiteDemo") : "Demo data · no real PHI"}
             </span>
             {!isPublicSurface && (
               <span className="text-[10px] text-muted-foreground">
