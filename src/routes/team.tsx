@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { WebsiteTeam } from "@/components/WebsiteContent";
 import { websiteEn } from "@/lib/i18n.website";
+import { websiteShareMeta } from "@/lib/websiteMetadata";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
     meta: [
+      ...websiteShareMeta,
       { title: "Our Team — Adelante Health" },
       { name: "description", content: websiteEn.websiteTeamIntro },
       { property: "og:title", content: "Our Team — Adelante Health" },

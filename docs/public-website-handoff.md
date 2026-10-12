@@ -1,5 +1,17 @@
 # Public website update — Mitch, 12 Oct
 
+## Latest: twelve-item website polish
+- Restored/pinned ten exact English role/fit descriptions and updated EN/ES availability and general care-plan/recovery wording. Spanish translations retain Draft marking. Sentence-case public section headings share the patient font, 32px size and teal role (closing uses light text for contrast).
+- Removed hero brand repetition; strengthened photo overlay. About mission renders beside three approved mission-derived highlights on desktop and stacks on mobile. Team group headings now h2, not a skipped h3.
+- Public navigation owns aria-current through a createLink anchor, avoiding the router's forced current-page attribute on every home hash link. Scroll-spy selects one section; no selection at the top; mobile matches.
+- Fixed crisis bar has ResizeObserver-measured shell bottom padding. Focused controls scroll clear of the bar. Home/Team Back to top appears beyond one viewport, respects reduced motion and returns keyboard focus to the header.
+- Under 640px header shows brand, Get started and menu only. Radix Popover menu supplies EN/ES pressed-state controls, Sign in and HIPAA/Part 2 badge, with Escape and focus-return behavior.
+- One public share card at `public/website-share.jpg`, normalized to 1200×630, with absolute OG/Twitter URL supplied through `src/lib/websiteMetadata.ts` to home/about/team. The real logo can replace this file. Publish is required for its URL and new metadata to reach the live site.
+- Accessibility review: zero critical issues; initial serious issue was crisis text at 4.48:1. Fixed using a public-only darker safety token. Added visible 3px keyboard outlines (light on hero/closing), decorative icon attributes, proper team heading order, one h1 per page, announced selected language, and keyboard clearance above the crisis bar. Automated axe checks pass English desktop and Spanish mobile on all three pages with no serious/critical issues. App styles and business logic unchanged.
+- Final full units: 306 files, 2,559 passed (45.15s). Final ALL browser specs: 79/79 passed (7.0 minutes), after units with no concurrency between suites. Existing performance threshold, assertions and retries unchanged. Notification lint and permissions contracts remain green.
+- Automatic preview logs: build OK. The prior page batch's typecheck was confirmed by Mitch (zero errors). No new explicit typecheck was run: platform rules reserve builds/typechecks to the harness; this new explicit result remains unverified.
+- Files: `src/lib/i18n.website.ts`, `websiteMetadata.ts`; `src/components/Landing.tsx`, `WebsiteContent.tsx`, `WebsiteLayout.tsx`, `WebsiteNavigation.tsx`, `website.css`; public routes index/about/team; `public/website-share.jpg`; `src/components/__tests__/landingWebsite.test.ts`, `e2e/publicWebsite.spec.ts`, `e2e/websitePolish.spec.ts`; package/lockfile (axe dev dependency), `AGENTS.md`, roadmap, this handoff. No new claims, names or contact details.
+
 ## Built
 - Adelante Health public header/footer and homepage title, description, OG and Twitter metadata. Application brand strings and routes remain unchanged. WebsiteBrand is the single public A-mark placeholder for the forthcoming logo.
 - `/about`: unchanged mission, referral partners at `#partners`, privacy line and closing CTA. Mission uses 18px readable text capped at 70ch. Mitch's removed pull quote stays removed.

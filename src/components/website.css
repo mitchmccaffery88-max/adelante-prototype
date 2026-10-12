@@ -13,3 +13,34 @@ html:has([data-testid="website-layout"]) {
 [data-testid="website-layout"] .font-display {
   letter-spacing: 0;
 }
+
+.website-shell {
+  --destructive: oklch(0.481 0.150 17.1);
+  --website-crisis-height: 64px;
+  padding-bottom: var(--website-crisis-height);
+}
+.website-back-top { bottom: calc(var(--website-crisis-height) + 16px); }
+.website-hero-overlay {
+  background: linear-gradient(100deg, color-mix(in oklab, var(--foreground) 92%, transparent), color-mix(in oklab, var(--foreground) 78%, transparent) 65%, color-mix(in oklab, var(--foreground) 50%, transparent));
+}
+[data-testid="website-layout"] .website-heading {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 2rem;
+  line-height: 1.25;
+  color: var(--primary);
+  letter-spacing: 0;
+}
+[data-testid="website-layout"] .website-closing .website-heading { color: var(--primary-foreground); }
+[data-testid="website-layout"] :is(a, button, [tabindex]):focus-visible,
+.website-mobile-menu :is(a, button):focus-visible {
+  outline: 3px solid var(--foreground);
+  outline-offset: 3px;
+}
+[data-testid="website-layout"] :is(.website-hero, .website-closing) :is(a, button):focus-visible {
+  outline-color: var(--primary-foreground);
+}
+.website-mobile-menu { letter-spacing: 0; }
+[data-testid="website-layout"] :is(a, button) {
+  scroll-margin-bottom: calc(var(--website-crisis-height) + 16px);
+}

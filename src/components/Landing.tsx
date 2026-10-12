@@ -23,7 +23,7 @@ import heroImg from "@/assets/hero-sunrise.jpg";
 import "./website.css";
 
 export function Landing() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const navigate = useNavigate();
   useEffect(() => {
     const redirectLegacy = () => {
@@ -44,7 +44,7 @@ export function Landing() {
   return (
     <div className="bg-background" data-testid="public-landing">
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section className="website-hero relative overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={heroImg}
@@ -53,35 +53,18 @@ export function Landing() {
             height={1080}
             className="h-full w-full object-cover"
           />
-          {/* Illustrated brand-gradient fallback layer (visible if image fails to load) */}
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--navy) 0%, var(--teal) 55%, var(--gold) 100%)",
-            }}
-          />
-          <div
-            aria-hidden
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(100deg, color-mix(in oklab, var(--navy) 78%, transparent) 0%, color-mix(in oklab, var(--navy) 35%, transparent) 55%, transparent 100%)",
-            }}
-          />
+          <div aria-hidden="true" className="website-hero-overlay absolute inset-0" />
         </div>
 
         <div className="relative mx-auto max-w-7xl px-5 sm:px-8 py-20 sm:py-28 lg:py-36">
           <div className="max-w-2xl text-navy-foreground">
             <span className="inline-flex items-center gap-2 rounded-full bg-navy-foreground/15 backdrop-blur px-3 py-1 text-xs font-medium">
-              <Sunrise className="h-3.5 w-3.5 text-gold" />{t("websiteHeroEyebrow")}
+              <Sunrise aria-hidden="true" className="h-3.5 w-3.5 text-gold" />{t("websiteHeroEyebrow")}
             </span>
-            <p className="mt-5 font-display text-2xl">{t("websiteBrand")}</p>
             <h1 className="mt-3 font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-normal">
               {t("websiteHeroHeading")}
             </h1>
-            <p className="mt-5 text-lg sm:text-xl text-navy-foreground/90 max-w-xl">
+            <p className="mt-5 text-lg sm:text-xl text-navy-foreground max-w-xl">
               {t("websiteHeroBody")}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -92,7 +75,7 @@ export function Landing() {
               >
                 <Link to="/start/signup">
                   {t("websiteStart")}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
                 </Link>
               </Button>
               <Button
@@ -104,7 +87,7 @@ export function Landing() {
                 <Link to="/advocate">{t("websiteHelp")}</Link>
               </Button>
             </div>
-            <p className="mt-5 text-sm text-navy-foreground/80">
+            <p className="mt-5 text-sm text-navy-foreground">
               {t("websiteHeroNote")}
             </p>
           </div>
@@ -114,7 +97,7 @@ export function Landing() {
       {/* How it works */}
       <section id="how-it-works" className="mx-auto max-w-7xl px-5 sm:px-8 py-20 scroll-mt-40">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="font-display text-4xl sm:text-5xl text-navy">{t("websiteHow")}</h2>
+          <h2 className="website-heading">{t("websiteHow")}</h2>
           <p className="mt-3 text-lg text-muted-foreground">
             {t("websiteHowIntro")}
           </p>
@@ -147,12 +130,12 @@ export function Landing() {
             >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-teal/15 text-teal grid place-items-center">
-                  <s.icon className="h-5 w-5" />
+                  <s.icon aria-hidden="true" className="h-5 w-5" />
                 </div>
-                <span className="font-display text-2xl text-navy/40">{s.n}</span>
+                <span className="font-display text-2xl text-muted-foreground">{s.n}</span>
               </div>
               <h3 className="mt-4 font-display text-2xl text-navy">{s.title}</h3>
-              <p className="mt-2 text-base text-foreground/75 leading-relaxed">{s.body}</p>
+              <p className="mt-2 text-base text-muted-foreground leading-relaxed">{s.body}</p>
             </Card>
           ))}
         </div>
@@ -160,7 +143,7 @@ export function Landing() {
 
       <section id="find-your-fit" className="border-y bg-secondary/40 scroll-mt-40">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 py-16 sm:py-20">
-          <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websiteFit")}</h2>
+          <h2 className="website-heading">{t("websiteFit")}</h2>
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
             {([
               [Brain, "websiteAnyone", "websiteAnyoneBody", "/start/signup", "websiteStart"],
@@ -169,8 +152,8 @@ export function Landing() {
             ] as const).map(([Icon, title, body, to, label]) => <Card key={title} className="flex flex-col p-6 sm:p-8 border-border/60">
               <Icon aria-hidden="true" className="h-7 w-7 text-primary" />
               <h3 className="mt-5 font-display text-xl text-primary">{t(title)}</h3>
-              <p className="mt-3 flex-1 text-lg leading-relaxed text-foreground/85">{t(body)}</p>
-              <Button asChild className="mt-6 min-h-12 h-auto whitespace-normal py-3"><Link to={to}>{t(label)}<ArrowRight className="h-4 w-4 shrink-0" /></Link></Button>
+              <p className="mt-3 flex-1 text-lg leading-relaxed text-foreground">{t(body)}</p>
+              <Button asChild className="mt-6 min-h-12 h-auto whitespace-normal py-3"><Link to={to}>{t(label)}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" /></Link></Button>
             </Card>)}
           </div>
         </div>
@@ -180,7 +163,7 @@ export function Landing() {
       <section id="what-you-get" className="bg-secondary/50 border-y scroll-mt-40">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 py-20">
           <div className="max-w-2xl">
-            <h2 className="font-display text-4xl sm:text-5xl text-navy">{t("websiteWhat")}</h2>
+            <h2 className="website-heading">{t("websiteWhat")}</h2>
             <p className="mt-3 text-lg text-muted-foreground">
               {t("websiteWhatIntro")}
             </p>
@@ -220,10 +203,10 @@ export function Landing() {
             ].map((c) => (
               <Card key={c.title} className="p-6 bg-card border-border/60 shadow-none">
                 <div className="h-11 w-11 rounded-xl bg-gold/25 text-navy grid place-items-center">
-                  <c.icon className="h-5 w-5" />
+                  <c.icon aria-hidden="true" className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 font-display text-xl text-navy">{c.title}</h3>
-                <p className="mt-2 text-[15px] text-foreground/75 leading-relaxed">{c.body}</p>
+                <p className="mt-2 text-[15px] text-muted-foreground leading-relaxed">{c.body}</p>
               </Card>
             ))}
           </div>
@@ -241,20 +224,20 @@ export function Landing() {
           ].map((b) => (
             <div key={b.text} className="flex items-start gap-3">
               <span className="h-9 w-9 rounded-full bg-teal/15 text-teal grid place-items-center shrink-0">
-                <b.icon className="h-4 w-4" />
+                <b.icon aria-hidden="true" className="h-4 w-4" />
               </span>
-              <p className="text-foreground/80 pt-1.5 leading-snug">{b.text}</p>
+              <p className="text-foreground pt-1.5 leading-snug">{b.text}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section id="faq" className="mx-auto max-w-3xl px-5 sm:px-8 py-16 sm:py-20 scroll-mt-40">
-        <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websiteFaq")}</h2>
+        <h2 className="website-heading">{t("websiteFaq")}</h2>
         <Accordion type="single" collapsible className="mt-8">
           {(["Cost", "Lang", "Video", "Start", "Help", "Crisis"] as const).map((k) => <AccordionItem key={k} value={k}>
             <AccordionTrigger className="min-h-12 text-left text-lg">{t(`websiteFaq${k}Q`)}</AccordionTrigger>
-            <AccordionContent className="text-base leading-relaxed text-foreground/85">
+            <AccordionContent className="text-base leading-relaxed text-foreground">
               {k === "Cost" ? <>{t("websiteFaqCostA")} <Link to="/start/signup" className="underline text-primary">{t("websiteFaqCostContact")}</Link> {t("websiteFaqCostTail")}</> : t(`websiteFaq${k}A`)}
             </AccordionContent>
           </AccordionItem>)}

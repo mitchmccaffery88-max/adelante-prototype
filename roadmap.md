@@ -1,5 +1,13 @@
 # Roadmap
 
+## Public website polish (12 Oct)
+- [x] W1–W2/W6 exact copy and bilingual updates with pinned tests
+- [x] W3–W5/W7–W10 navigation, headings, About layout, mobile header, crisis clearance and back-to-top
+- [x] W11 shared branded 1200×630 share image on all three public pages
+- [x] W12 public accessibility audit/fixes; full units 2,559/2,559 then all browsers 79/79 separately
+- [ ] New explicit typecheck result unavailable; automatic preview build is OK (manual checks reserved to harness)
+- [x] Previous pages typecheck confirmed by Mitch: zero errors
+
 ## Public pages and optional agency (12 Oct)
 - [x] Optional referral agency, required referrer name, missing-agency display and regression checks
 - [x] Separate About/Team pages, shared public layout, navigation and legacy redirects
