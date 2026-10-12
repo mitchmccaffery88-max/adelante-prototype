@@ -20,13 +20,15 @@ Screenshots inspected/captured under /tmp/browser/website: desktop/mobile about,
 src/components/Landing.tsx; AppShell.tsx (public branches only); WebsiteBrand.tsx; WebsiteNavigation.tsx; website.css; src/lib/i18n.website.ts; src/lib/i18n.tsx (dictionary additions); src/routes/index.tsx; src/components/__tests__/landingWebsite.test.ts; e2e/publicWebsite.spec.ts; AGENTS.md; roadmap.md; this handoff.
 Root fallback metadata uses Adelante Health, preserving the apple app title “Adelante”. About and Team each provide title, description, Open Graph, Twitter and canonical metadata. Route metadata remains English in EN/ES; visible copy uses the chosen language. Removed the homepage's manual metadata mutation because its unmount could overwrite the incoming page's metadata.
 
-## Validation — not fully green
-- Full unit suite: 306 files, 2,555 tests passed, including existing notification and access/permission tests. No permission snapshot edits.
-- New website browser tests: 3/3 passed together (EN, ES, mobile). Cover headings, exact reachable anchor positions, legacy redirect, metadata, existing-flow links and navigation, seven roles/no individual names, crisis support and no mobile overflow.
-- Full browser run alongside units: 67/68 passed. Existing e2e/adelBrief.spec.ts “Brief: instant render, Part 2 masking per role, New after PHQ-9” exceeded its unchanged 1,500ms threshold (1,587ms).
-- Two additional full-suite attempts were terminated by the execution environment at approximately 293/300 seconds, despite the requested 600-second command timeout. They did not complete; neither is reported as green. One showed CF proxy timeouts; the other again exceeded the Brief performance threshold.
-- Automatic harness build checks report build OK. A separate typecheck result is not exposed in the available harness log, so typecheck is unverified; no manual project typecheck/build was run per platform instructions.
-- No assertions, retries, performance limits, application logic, or patient/staff screens were changed to force a green browser run.
+## Validation — latest page-split batch
+- Full units: 306 files, 2,558 tests passed (final run, 54.06s). Notification lint and permissions contracts passed; no snapshot edits.
+- Full browsers: 76/76 passed (6.7 minutes), run after units, never alongside them. Includes 11 public website/referral cases and 22 existing staff navigation/access cases. No assertions, sleeps, retries or performance limits relaxed.
+- Earlier full unit run captured an intermittent existing failure: `outpatientMeds.test.ts > outpatient medication demo seed > Paloma has the richest list with a pending refill and a mix of states` (prescriber assertion). Two subsequent full runs passed; medication logic was not changed.
+- Earlier full browser run: 67/76 passed. Shared-shell extraction had omitted the existing access guard on public routes also present in STAFF_ROUTES; restored that exact condition. Focused staff navigation then passed 22/22 and final full browsers passed 76/76. Earlier sidebar expansion timeouts did not recur.
+- Typecheck remains unverified: platform instructions reserve builds/typechecks for automatic checks; no separately retrievable result was available. Do not report an explicit typecheck as passed.
 
-## Decisions / remaining verification
-Spanish copy remains Draft pending translation review. Existing signup is used without reentry preselection. Complete all-green browser verification and explicit typecheck confirmation remain outstanding; the website is built, not represented as fully validated.
+## Files — page split and optional agency
+`src/routes/about.tsx`, `src/routes/team.tsx`, generated `src/routeTree.gen.ts`, `src/components/WebsiteLayout.tsx`, `WebsiteContent.tsx`, `WebsiteNavigation.tsx`, `Landing.tsx`, `AppShell.tsx`, `website.css`, `src/lib/i18n.website.ts` (navigation destinations only; copy unchanged), `src/lib/navSections.ts`, `src/components/referral/ReferralSubmissionForm.tsx`, `src/lib/ehr.ts`, `src/lib/referralWelcome.functions.ts`, `src/components/admin/ReferralTrackerCard.tsx`, `ReferralTimelineDrawer.tsx`, `ReferralStatusTimeline.tsx`, referral tests, `src/components/__tests__/landingWebsite.test.ts`, `e2e/publicWebsite.spec.ts`, `AGENTS.md`, `roadmap.md`, this handoff.
+
+## Decisions / deferrals
+Spanish visible copy remains “ES Draft — pending translation review”. Page metadata follows the existing English server-rendered convention; visible copy is bilingual. No patient/staff workflow or permissions changes beyond preserving the pre-existing route guard. Missing agency is stored as an empty string for backwards-compatible consumers, with an optional create input and “Not provided” display. Publish is needed to update the live public pages. Explicit typecheck confirmation remains outstanding.
