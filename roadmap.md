@@ -3,7 +3,7 @@
 ## Public heading correction (12 Oct)
 - [x] Exact English Title Case section headings; Spanish and navigation/footer labels unchanged
 - [x] Copy and heading-style regression tests updated
-- [ ] Full unit suite, then all browser specs separately
+- [x] Full units 2,560/2,560, then all browsers 79/79 separately; preview build OK
 
 ## Public website polish (12 Oct)
 - [x] W1–W2/W6 exact copy and bilingual updates with pinned tests
