@@ -45,6 +45,7 @@ for (const path of ["/", "/about", "/team"]) {
         return !!crisis && parseFloat(getComputedStyle(el).paddingBottom) >= crisis.getBoundingClientRect().height;
       });
       await expect.poll(clear).toBe(true);
+      await page.getByTestId("website-header").getByRole("link", { name: "Get started", exact: true }).focus();
       await page.getByTestId("website-footer").getByRole("link", { name: "Make a referral", exact: true }).focus();
       await expect.poll(() => page.evaluate(() => {
         const active = document.activeElement?.getBoundingClientRect();
