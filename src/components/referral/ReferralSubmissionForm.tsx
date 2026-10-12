@@ -306,20 +306,20 @@ export function ReferralSubmissionForm({
               onChange={(e) => setForm({ ...form, referrerName: e.target.value })}
             />
           </Field>
-          <Field label="Agency / organization *">
+          <Field label="Agency / organization">
             <Input
               value={form.referringAgency}
               onChange={(e) => setForm({ ...form, referringAgency: e.target.value })}
             />
           </Field>
-          <Field label="Work email">
+          <Field label="Email">
             <Input
               type="email"
               value={form.referrerEmail}
               onChange={(e) => setForm({ ...form, referrerEmail: e.target.value })}
             />
           </Field>
-          <Field label="Work phone">
+          <Field label="Phone">
             <Input
               type="tel"
               value={form.referrerPhone}
