@@ -371,6 +371,11 @@ export interface AppNotification {
   reraisedAt?: string;
 }
 /** Bell bug fix B1 — lifecycle owners of task pointers. */
+export interface NotifyInput {
+  recipientStaffId?: string; recipientRole?: StaffRole; category: NotificationCategory; subject: string; body: string;
+  linkRoute?: string; linkParams?: Record<string, string>; patientId?: string; dedupeKey?: string;
+  kind?: AppNotification["kind"]; taskKey?: string; pointerSource?: PointerSource;
+}
 export type PointerSource = "workspace" | "consent" | "content_gap" | "case_task" | "reply";
 
 /** §Access A3 — per-person read check. Role broadcasts never share read state. */
@@ -16019,7 +16024,7 @@ export const AdelanteEHR = {
    * open. A pointer closed by someone other than its source (the old prefix bug)
    * is reopened once, unread; after that it is never reopened again.
    */
-  ensureTaskPointer(input: Parameters<typeof AdelanteEHR.notify>[0] & { taskKey: string; pointerSource: PointerSource }): AppNotification | undefined {
+  ensureTaskPointer(input: NotifyInput & { taskKey: string; pointerSource: PointerSource }): AppNotification | undefined {
     const mine = (n: AppNotification) => n.taskKey === input.taskKey && (input.recipientStaffId ? n.recipientStaffId === input.recipientStaffId : n.recipientRole === input.recipientRole);
     const rows = notifications.filter(mine);
     const open = rows.find((n) => !n.closedAt);
@@ -16032,7 +16037,7 @@ export const AdelanteEHR = {
       return wrong;
     }
     if (rows.length) return undefined; // closed by its own source or already re-raised once
-    return AdelanteEHR.notify(input);
+    return AdelanteEHR.notify(input) as AppNotification | undefined;
   },
   /** Case-task source — close pointers of case tasks finished by any path. */
   sweepCaseTaskPointers(): number {
