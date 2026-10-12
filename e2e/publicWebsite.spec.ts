@@ -99,13 +99,13 @@ test("public website mobile menu", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole("button", { name: "Switch language to English", exact: true }).click();
   await page.getByRole("button", { name: "Open website menu" }).click();
   const nav = page.locator("#website-mobile-nav");
-  await expect(nav.getByRole("link")).toHaveCount(6);
+   await nav.getByRole("button", { name: "Switch language to English", exact: true }).click();
+   await expect(nav.locator("nav").getByRole("link")).toHaveCount(6);
   await nav.getByRole("link", { name: "Our team", exact: true }).click();
   await expect(page).toHaveURL(/\/team$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Meet Our Team");
+   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Meet our team");
   await expect(nav).toHaveCount(0);
   await page.getByRole("button", { name: "Open website menu" }).click();
   await expect(nav.locator('[aria-current="page"]')).toHaveText("Our team");

@@ -1,6 +1,6 @@
-import { type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
-import { Phone, ShieldCheck, User } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { ArrowUp, Phone, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WebsiteBrand } from "@/components/WebsiteBrand";
 import { WebsiteNavigation } from "@/components/WebsiteNavigation";
@@ -11,30 +11,62 @@ import "./website.css";
 /** One public shell; application branding and navigation remain separate. */
 export function WebsiteLayout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useI18n();
-  return <div className="patient-theme min-h-dvh flex flex-col bg-background" data-testid="website-layout">
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const shellRef = useRef<HTMLDivElement>(null);
+  const crisisRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const [showTop, setShowTop] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>();
+  useEffect(() => {
+    const measure = () => {
+      shellRef.current?.style.setProperty("--website-crisis-height", `${crisisRef.current?.getBoundingClientRect().height ?? 64}px`);
+    };
+    const observer = new ResizeObserver(measure);
+    if (crisisRef.current) observer.observe(crisisRef.current);
+    measure();
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    const update = () => {
+      setShowTop((pathname === "/" || pathname === "/team") && window.scrollY > window.innerHeight);
+      if (pathname !== "/") { setActiveSection(undefined); return; }
+      const offset = (headerRef.current?.getBoundingClientRect().bottom ?? 160) + 24;
+      let current: string | undefined;
+      for (const id of ["how-it-works", "find-your-fit", "what-you-get", "faq"]) {
+        const rect = document.getElementById(id)?.getBoundingClientRect();
+        if (rect && rect.top <= offset) current = id;
+      }
+      setActiveSection(current);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => { window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
+  }, [pathname]);
+  return <div ref={shellRef} className="patient-theme website-shell min-h-dvh flex flex-col bg-background" data-testid="website-layout">
     <DemoControlsBar />
-    <header data-testid="website-header" className="sticky top-10 z-30 border-b bg-background/85 backdrop-blur">
+    <header ref={headerRef} data-testid="website-header" className="sticky top-10 z-30 border-b bg-background/85 backdrop-blur" tabIndex={-1}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-2 sm:gap-4">
         <Link to="/" className="flex min-w-0 items-center gap-2"><WebsiteBrand /></Link>
         <div className="ml-auto flex items-center gap-2">
-          <WebsiteNavigation mobile />
-          <Button asChild className="hidden sm:inline-flex min-h-12"><Link to="/start/signup">{t("websiteStart")}</Link></Button>
-          <div className="hidden xl:flex items-center gap-1 text-sm text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" />HIPAA · 42 CFR Part 2</div>
-          <div className="flex rounded-full bg-secondary p-0.5">
+          <Button asChild className="min-h-12 px-3 sm:px-4"><Link to="/start/signup">{t("websiteStart")}</Link></Button>
+          <WebsiteNavigation mobile activeSection={activeSection} />
+          <div className="hidden xl:flex items-center gap-1 text-sm text-muted-foreground"><ShieldCheck aria-hidden="true" className="h-4 w-4 text-primary" />HIPAA · 42 CFR Part 2</div>
+          <div className="hidden sm:flex rounded-full bg-secondary p-0.5">
             <Button variant={lang === "en" ? "default" : "ghost"} onClick={() => setLang("en")} aria-label="Switch language to English" aria-pressed={lang === "en"} className="min-h-12 min-w-12 rounded-full px-2">EN</Button>
             <Button variant={lang === "es" ? "default" : "ghost"} onClick={() => setLang("es")} aria-label="Cambiar idioma a español" aria-pressed={lang === "es"} className="min-h-12 min-w-12 rounded-full px-2">ES</Button>
           </div>
-          <Button asChild variant="ghost" size="icon" className="min-h-12 min-w-12"><Link to="/auth" aria-label={t("navSignIn")}><User className="h-5 w-5" /></Link></Button>
+          <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex min-h-12 min-w-12"><Link to="/auth" aria-label={t("navSignIn")}><User aria-hidden="true" className="h-5 w-5" /></Link></Button>
           <Link to="/auth" className="hidden md:inline-flex text-sm text-primary">{t("navSignIn")}</Link>
         </div>
       </div>
-      <WebsiteNavigation />
+      <WebsiteNavigation activeSection={activeSection} />
     </header>
     {lang === "es" && <p className="border-b px-5 py-2 text-sm text-muted-foreground text-center">{t("websiteDraft")}</p>}
     <main className="flex-1">{children}</main>
-    <div role="region" aria-label="Crisis support" className="sticky bottom-0 z-50 border-t border-destructive/30 bg-background">
+    <div ref={crisisRef} role="region" aria-label="Crisis support" className="fixed inset-x-0 bottom-0 z-50 border-t border-destructive/30 bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-sm">
-        <Phone className="h-4 w-4 text-destructive shrink-0" /><span><span className="font-semibold text-destructive">{t("crisisInCrisis")}</span> {t("crisisCallText")} <a href="tel:988" className="underline font-semibold">988</a> {t("crisisAnytime")}</span>
+        <Phone aria-hidden="true" className="h-4 w-4 text-destructive shrink-0" /><span><span className="font-semibold text-destructive">{t("crisisInCrisis")}</span> {t("crisisCallText")} <a href="tel:988" className="underline font-semibold">988</a> {t("crisisAnytime")}</span>
       </div>
     </div>
     <footer data-testid="website-footer" className="border-t bg-secondary/40">
@@ -49,5 +81,9 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
         <div className="flex flex-wrap justify-between gap-3"><span>© {new Date().getFullYear()} {t("websiteBrand")} · {t("websiteBuilt")}</span><span>{t("websiteDemo")}</span></div>
       </div>
     </footer>
+    {showTop && <Button variant="outline" className="website-back-top fixed right-4 z-40 min-h-12 bg-background" onClick={() => {
+      headerRef.current?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    }}><ArrowUp aria-hidden="true" />{t("websiteBackTop")}</Button>}
   </div>;
 }
