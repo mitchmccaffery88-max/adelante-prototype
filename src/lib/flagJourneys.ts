@@ -92,7 +92,7 @@ export function journeysForPathway(x: Pathway): Curriculum[] {
 }
 
 // ------------------------------------------------------------ content gaps
-export interface ContentGapItem { id: string; flag: SpecialtyFlag; at: string; patients: number; closedAt?: string; owner?: string }
+export interface ContentGapItem { id: string; flag: SpecialtyFlag; at: string; patients: number; closedAt?: string; owner?: string; ownerStaffId?: string }
 /** Content owner pool (Draft): content_authoring write roles that own content — sys_admin only stands in when no author owns it. */
 export const CONTENT_POOL_ROLES = ["sys_admin"] as const;
 const gaps: ContentGapItem[] = [];
@@ -110,25 +110,49 @@ function defaultGapOwner(flag: SpecialtyFlag): string | undefined {
 }
 let gapOwnerResolver: ((flag: SpecialtyFlag) => string | undefined) | undefined = defaultGapOwner;
 export function setContentGapOwnerResolver(fn: typeof gapOwnerResolver) { gapOwnerResolver = fn; }
+/** Never reset, so a gap id (and its bell key) is never reused. */
+let gapSeq = 0;
 function raiseGap(flag: SpecialtyFlag, at: string) {
   const open = gaps.find((g) => g.flag === flag && !g.closedAt);
   if (open) {
     open.patients += 1;
     return;
   }
-  const g: ContentGapItem = { id: `gap-${flag}-${gaps.length + 1}`, flag, at, patients: 1 };
+  gapSeq += 1;
+  const g: ContentGapItem = { id: `gap-${flag}-${gapSeq}`, flag, at, patients: 1 };
+  // Content owner (Draft): named journey owner, else the owner pool. Set before anything emits.
+  const owner = gapOwnerResolver?.(flag);
+  g.owner = owner ?? "Content owner pool";
+  if (owner) g.ownerStaffId = owner;
   gaps.push(g);
   AdelanteEHR.recordActionEvent({ action: "content.gap_raised", actorRole: "system", detail: { gapId: g.id, reason: "No live journey matches a care-plan flag" } });
-  // Content owner pool (Draft): the clinical coordinator. Neutral text.
-  const owner = gapOwnerResolver?.(flag);
-  const note = { category: "patient_update" as const, subject: "New task: Content gap", body: "A care-plan flag has no live journey yet. Open Needs my action.", linkRoute: "/admin-content", dedupeKey: `content-gap:${g.id}`, kind: "task" as const, taskKey: `content-gap:${g.id}` };
-  g.owner = owner ?? "Content owner pool";
-  if (owner) AdelanteEHR.notify({ ...note, recipientStaffId: owner });
-  else for (const role of CONTENT_POOL_ROLES) AdelanteEHR.notify({ ...note, recipientRole: role });
+  ensureGapPointers(g);
 }
-/** Closes a gap once a matching journey is live. */
-function closeGapsIfMatched(at: string) {
-  for (const g of gaps) if (!g.closedAt && (journeysForFlag(g.flag).length || journeysForPathway(g.flag === "sud" ? "sud" : "reentry").length)) g.closedAt = at;
+/** B4 — one id for a gap everywhere: notification taskKey, workspace row id and dedupeKey. */
+export const contentGapKey = (gapId: string) => `content-gap:${gapId}`;
+/** Content-gap source (B2/B3) — keep the owner's pointer open while the gap is open. */
+function ensureGapPointers(g: ContentGapItem) {
+  const key = contentGapKey(g.id);
+  const note = { category: "patient_update" as const, subject: "New task: Content gap", body: "A care-plan flag has no live journey yet. Open Needs my action.", linkRoute: "/admin-content", dedupeKey: key, kind: "task" as const, taskKey: key, pointerSource: "content_gap" as const };
+  if (g.ownerStaffId) AdelanteEHR.ensureTaskPointer({ ...note, recipientStaffId: g.ownerStaffId });
+  else for (const role of CONTENT_POOL_ROLES) AdelanteEHR.ensureTaskPointer({ ...note, recipientRole: role });
+}
+/** Closes a gap once a matching journey is live — and closes its bell pointer (content-gap source). */
+const gapMatched = (f: SpecialtyFlag) => journeysForFlag(f).length > 0 || journeysForPathway(f === "sud" ? "sud" : "reentry").length > 0;
+let gapMatcher = gapMatched;
+function closeGapsIfMatched(at: string, matched: (f: SpecialtyFlag) => boolean = gapMatcher) {
+  for (const g of gaps) {
+    if (g.closedAt) continue;
+    if (matched(g.flag)) {
+      g.closedAt = at;
+      AdelanteEHR.closeTaskPointer(contentGapKey(g.id), "content_gap");
+    } else ensureGapPointers(g);
+  }
+}
+/** Is this staff member an owner of the gap (named owner, else the owner pool)? */
+export function isContentGapOwner(g: Pick<ContentGapItem, "ownerStaffId">, actor: { staffId?: string; staffName?: string; role: string }): boolean {
+  if (g.ownerStaffId) return g.ownerStaffId === actor.staffId || g.ownerStaffId === actor.staffName;
+  return (CONTENT_POOL_ROLES as readonly string[]).includes(actor.role);
 }
 
 // ------------------------------------------------------------ the event handler
@@ -195,6 +219,8 @@ export function autoAddedJourneyIds(patientId: string): string[] {
 }
 
 /** Test hook. */
+/** Test-only hooks for the content-gap source (raise / resolve without editing journeys). */
+export const _gapTestHooks = { setMatcher: (fn?: (f: SpecialtyFlag) => boolean) => { gapMatcher = fn ?? gapMatched; }, raise: (flag: SpecialtyFlag, at = new Date().toISOString()) => raiseGap(flag, at), closeIfMatched: (matched: (f: SpecialtyFlag) => boolean) => closeGapsIfMatched(new Date().toISOString(), matched) };
 export function _resetFlagJourneys(): void {
   lastFlags.clear();
   gaps.length = 0;

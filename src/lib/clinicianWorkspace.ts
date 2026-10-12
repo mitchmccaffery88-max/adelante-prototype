@@ -1,5 +1,5 @@
 import { listRestrictedOpenItems } from "@/lib/chartAccess";
-import { listContentGaps, CONTENT_GAP_LABEL } from "./flagJourneys";
+import { listContentGaps, CONTENT_GAP_LABEL, contentGapKey, isContentGapOwner } from "./flagJourneys";
 import { countyReminders } from "@/lib/countyReporting";
 import { contentReviewQueue } from "@/lib/contentPublishing";
 import { contentVisibleToStaff } from "@/lib/contentStaff";
@@ -225,9 +225,9 @@ export function workspaceActionRows(input: {
   // §A3 — county report reminders (Draft owner: billing coordinator).
   for (const r of countyReminders(actor.role, now))
     rows.push({ id: `county:${r.id}`, kind: "county_reminder", patientId: "", patientName: "County reporting", label: r.label, dueAt: r.due, due: r.kind === "1_day" ? "1 day" : "5 days", group: "week", action: "Open county reporting", sourceId: r.id });
-  // §Group 1 C2 — a care-plan flag with no live journey → content owner pool (coordinator). Neutral, counts only.
-  if (isCoordinatorRole(actor.role)) for (const g of listContentGaps())
-    rows.push({ id: `content_gap:${g.id}`, kind: "content_gap", patientId: "", patientName: "Patient content", label: `${CONTENT_GAP_LABEL} (${g.patients < 11 ? "fewer than 11" : g.patients} patients)`, dueAt: g.at, due: "Draft", group: "week", action: "Open content center", sourceId: g.id });
+  // §Group 1 C2 / B4 — a care-plan flag with no live journey → its content owner (named content_authoring owner, else owner pool). Neutral, counts only.
+  for (const g of listContentGaps()) if (isContentGapOwner(g, actor))
+    rows.push({ id: contentGapKey(g.id), kind: "content_gap", patientId: "", patientName: "Patient content", label: `${CONTENT_GAP_LABEL} (${g.patients < 11 ? "fewer than 11" : g.patients} patients)`, dueAt: g.at, due: "Draft", group: "week", action: "Open content center", sourceId: g.id });
   // §A3 — content waiting for a clinical reviewer.
   if (CONTENT_REVIEWER_ROLES.includes(actor.role)) for (const e of contentReviewQueue().filter((x) => contentVisibleToStaff(actor.role, x.typeId, x.body)))
     rows.push({ id: `content-waiting:${e.typeId}:${e.id}`, kind: "content_waiting", patientId: "", patientName: "Patient content", label: `Content review waiting — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Review", group: "week", action: "Review content", sourceId: e.id });

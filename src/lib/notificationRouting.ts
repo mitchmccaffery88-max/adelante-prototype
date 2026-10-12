@@ -33,16 +33,17 @@ export function syncBellPointers(actor: PointerActor, now = new Date()): { creat
   for (const r of rows) {
     const t = POINTER_TEXT[r.kind]!;
     const before = AdelanteEHR.listNotifications().length;
-    AdelanteEHR.notify({ recipientStaffId: actor.staffId, category: "task_assigned", kind: "task", taskKey: r.id, subject: t.subject, body: POINTER_BODY, linkRoute: t.link });
+    AdelanteEHR.notify({ recipientStaffId: actor.staffId, category: "task_assigned", kind: "task", taskKey: r.id, pointerSource: "workspace", subject: t.subject, body: POINTER_BODY, linkRoute: t.link });
     if (AdelanteEHR.listNotifications().length > before) created++;
   }
   let closed = 0;
+  // B1 — only pointers this sync owns ("workspace"); every other source closes its own.
   for (const n of AdelanteEHR.listNotifications()) {
-    if (n.closedAt || !n.taskKey || n.recipientStaffId !== actor.staffId) continue;
-    const managed = !n.taskKey.startsWith("task:") && !n.taskKey.startsWith("reply:");
-    const caseTaskDone = n.taskKey.startsWith("task:") && AdelanteEHR.listCaseTasks().find((t) => `task:${t.id}` === n.taskKey)?.status === "done";
-    if ((managed && !live.has(n.taskKey)) || caseTaskDone) closed += AdelanteEHR.closeTaskPointer(n.taskKey);
+    if (n.closedAt || !n.taskKey || n.pointerSource !== "workspace" || n.recipientStaffId !== actor.staffId) continue;
+    if (!live.has(n.taskKey)) closed += AdelanteEHR.closeTaskPointer(n.taskKey, "workspace");
   }
+  // Case tasks finished outside completeCaseTask: the case-task source closes its own pointers.
+  closed += AdelanteEHR.sweepCaseTaskPointers();
   return { created, closed };
 }
 
