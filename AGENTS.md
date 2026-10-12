@@ -10,6 +10,7 @@ Standing rules — apply to ALL work, every change, any folder:
 - Demo seeds only through real store functions.
 
 Full per-module rules: `src/lib/AGENTS.md` — read before changing app logic.
+- Public website text is isolated in `i18n.website.ts`; public header branding uses `WebsiteBrand` and navigation uses `WebsiteNavigation`, while application branding stays unchanged. Why: the public brand and future logo must never rename patient or staff experiences.
 - Resource verification and existing listing edits share the community-resource view in `/admin-content`; verification uses `runAction("resource_verify")` and the existing verifier/store gates. Why: one listing workflow, unchanged role access and published revision provenance.
 
 <!-- LOVABLE:BEGIN -->

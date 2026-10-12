@@ -18,11 +18,13 @@ import { benefitsEn, benefitsEs } from "./i18n.benefits";
 
 import { Button } from "@/components/ui/button";
 import { playerEn, playerEs } from "./i18n.player";
+import { websiteEn, websiteEs } from "./i18n.website";
 
 type Lang = "en" | "es";
 
 const dict = {
   en: {
+    ...websiteEn,
     ...playerEn,
     // §Phase 5b — Recovery modules. Merged into THE dictionary; same `t()`.
     ...recoveryUiEn,
@@ -428,6 +430,7 @@ const dict = {
   },
 
   es: {
+    ...websiteEs,
     ...playerEs,
     ...recoveryUiEs,
     ...recoveryModuleEs,

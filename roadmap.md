@@ -1,5 +1,11 @@
 # Roadmap
 
+## Public website (12 Oct)
+- [x] W1 public-only branding and metadata; single placeholder logo
+- [x] W2–W6 exact mission/team/fit/closing copy, bilingual navigation and legacy anchor
+- [x] Landing EN/ES desktop/mobile checks (3/3 new browser tests); full units (2,555 passed)
+- [ ] All-browser green and explicit harness typecheck confirmation: 67/68 in completed full run; existing Brief performance failure; later runs environment-terminated. See docs/public-website-handoff.md.
+
 ## Follow-up 9 Oct
 - [x] F1 one advocate consent path  - [x] F2 c2 unfrozen  - [x] F3 screener-resume race  - [x] F4 onboarding→active advocate spec
 
