@@ -1,5 +1,11 @@
 # Roadmap
 
+## Public pages and optional agency (12 Oct)
+- [x] Optional referral agency, required referrer name, missing-agency display and regression checks
+- [x] Separate About/Team pages, shared public layout, navigation and legacy redirects
+- [x] Full units 2,558/2,558 then browsers 76/76, no simultaneous unit/browser runs
+- [ ] Explicit automatic typecheck/build result unavailable; see public website handoff
+
 ## Public website (12 Oct)
 - [x] W1 public-only branding and metadata; single placeholder logo
 - [x] W2–W6 exact mission/team/fit/closing copy, bilingual navigation and legacy anchor

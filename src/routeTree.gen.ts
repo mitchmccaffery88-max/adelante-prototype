@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdelRouteImport } from './routes/adel'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAuditRouteImport } from './routes/admin-audit'
@@ -93,6 +94,7 @@ import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as SlipRouteImport } from './routes/slip'
 import { Route as StartRouteImport } from './routes/start'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as TeamCalendarRouteImport } from './routes/team-calendar'
 import { Route as TeamMessagesRouteImport } from './routes/team-messages'
 import { Route as ToolkitRouteImport } from './routes/toolkit'
@@ -133,6 +135,11 @@ import { Route as AdvocateResourcesCategoryIdOrgIdRouteImport } from './routes/a
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdelRoute = AdelRouteImport.update({
@@ -550,6 +557,11 @@ const StartRoute = StartRouteImport.update({
   path: '/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeamCalendarRoute = TeamCalendarRouteImport.update({
   id: '/team-calendar',
   path: '/team-calendar',
@@ -739,6 +751,7 @@ const AdvocateResourcesCategoryIdOrgIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
@@ -822,6 +835,7 @@ export interface FileRoutesByFullPath {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/team': typeof TeamRoute
   '/team-calendar': typeof TeamCalendarRoute
   '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
@@ -861,6 +875,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
@@ -941,6 +956,7 @@ export interface FileRoutesByTo {
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
+  '/team': typeof TeamRoute
   '/team-calendar': typeof TeamCalendarRoute
   '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
@@ -980,6 +996,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
@@ -1063,6 +1080,7 @@ export interface FileRoutesById {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/team': typeof TeamRoute
   '/team-calendar': typeof TeamCalendarRoute
   '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
@@ -1104,6 +1122,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/adel'
     | '/admin'
     | '/admin-audit'
@@ -1187,6 +1206,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/team'
     | '/team-calendar'
     | '/team-messages'
     | '/toolkit'
@@ -1226,6 +1246,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/adel'
     | '/admin'
     | '/admin-audit'
@@ -1306,6 +1327,7 @@ export interface FileRouteTypes {
     | '/schedule'
     | '/shift-count'
     | '/slip'
+    | '/team'
     | '/team-calendar'
     | '/team-messages'
     | '/toolkit'
@@ -1344,6 +1366,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/adel'
     | '/admin'
     | '/admin-audit'
@@ -1427,6 +1450,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/team'
     | '/team-calendar'
     | '/team-messages'
     | '/toolkit'
@@ -1467,6 +1491,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AdelRoute: typeof AdelRoute
   AdminRoute: typeof AdminRoute
   AdminAuditRoute: typeof AdminAuditRoute
@@ -1550,6 +1575,7 @@ export interface RootRouteChildren {
   ShiftCountRoute: typeof ShiftCountRoute
   SlipRoute: typeof SlipRoute
   StartRoute: typeof StartRouteWithChildren
+  TeamRoute: typeof TeamRoute
   TeamCalendarRoute: typeof TeamCalendarRoute
   TeamMessagesRoute: typeof TeamMessagesRoute
   ToolkitRoute: typeof ToolkitRoute
@@ -1573,6 +1599,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/adel': {
@@ -2156,6 +2189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/team-calendar': {
       id: '/team-calendar'
       path: '/team-calendar'
@@ -2494,6 +2534,7 @@ const StartRouteWithChildren = StartRoute._addFileChildren(StartRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AdelRoute: AdelRoute,
   AdminRoute: AdminRoute,
   AdminAuditRoute: AdminAuditRoute,
@@ -2577,6 +2618,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShiftCountRoute: ShiftCountRoute,
   SlipRoute: SlipRoute,
   StartRoute: StartRouteWithChildren,
+  TeamRoute: TeamRoute,
   TeamCalendarRoute: TeamCalendarRoute,
   TeamMessagesRoute: TeamMessagesRoute,
   ToolkitRoute: ToolkitRoute,

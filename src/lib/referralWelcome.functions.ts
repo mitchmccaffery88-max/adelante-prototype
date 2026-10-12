@@ -9,7 +9,7 @@
 //
 // COPY CONSTRAINTS (deliberate, do not relax):
 //   • The recipient did NOT initiate contact — a third party named them. The
-//     message must therefore say who referred them and from where.
+//     message must therefore say who referred them, and the agency when provided.
 //   • Nothing clinical, no diagnosis, no program-of-care implication beyond
 //     "community health program".
 //   • A real way out, in the first message.
@@ -20,7 +20,7 @@ const WelcomeSchema = z.object({
   to: z.string().min(3).max(40),
   firstName: z.string().min(1).max(80),
   referrerName: z.string().min(1).max(120),
-  referringAgency: z.string().min(1).max(160),
+  referringAgency: z.string().max(160),
 });
 
 export function composeReferralWelcome(input: {
@@ -29,7 +29,7 @@ export function composeReferralWelcome(input: {
   referringAgency: string;
 }): string {
   return (
-    `Hi ${input.firstName} — ${input.referrerName} at ${input.referringAgency} ` +
+    `Hi ${input.firstName} — ${input.referrerName}${input.referringAgency.trim() ? ` at ${input.referringAgency.trim()}` : ""} ` +
     `asked Adelante to reach out to you. We're a community health program and ` +
     `someone will call you soon. Reply STOP to stop these texts.`
   ).slice(0, 320);

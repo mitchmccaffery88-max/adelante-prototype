@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Link } from "@tanstack/react-router";
+import { WebsiteClosing } from "@/components/WebsiteContent";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,7 +17,6 @@ import {
   HeartHandshake,
   Sparkles,
   Sunrise,
-  Users,
   MessageCircle,
 } from "lucide-react";
 import heroImg from "@/assets/hero-sunrise.jpg";
@@ -24,27 +24,25 @@ import "./website.css";
 
 export function Landing() {
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
   useEffect(() => {
     const redirectLegacy = () => {
-      if (window.location.hash !== "#who-its-for") return;
-      window.history.replaceState(window.history.state, "", "#find-your-fit");
+      const hash = window.location.hash;
+      if (hash === "#about" || hash === "#partners") {
+        void navigate({ to: "/about", hash: hash === "#partners" ? "partners" : undefined, replace: true, hashScrollIntoView: { behavior: "smooth", block: "start" } });
+        return;
+      }
+      if (hash === "#team") { void navigate({ to: "/team", replace: true }); return; }
+      if (hash !== "#who-its-for") return;
+      void navigate({ to: "/", hash: "find-your-fit", replace: true, hashScrollIntoView: { behavior: "smooth", block: "start" } });
       document.getElementById("find-your-fit")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     };
     redirectLegacy();
     window.addEventListener("hashchange", redirectLegacy);
     return () => window.removeEventListener("hashchange", redirectLegacy);
-  }, []);
-  useEffect(() => {
-    document.title = t("websiteTitle");
-    for (const attr of ["name", "property"]) {
-      for (const key of ["description", "og:title", "og:description", "twitter:title", "twitter:description"]) {
-        document.querySelector(`meta[${attr}="${key}"]`)?.setAttribute("content", t(key.endsWith("title") ? "websiteTitle" : "websiteDescription"));
-      }
-    }
-  }, [lang, t]);
+  }, [navigate]);
   return (
     <div className="bg-background" data-testid="public-landing">
-      {lang === "es" && <p className="border-b px-5 py-2 text-sm text-muted-foreground text-center">{t("websiteDraft")}</p>}
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
@@ -160,34 +158,6 @@ export function Landing() {
         </div>
       </section>
 
-      <section id="about" className="border-y bg-secondary/40 scroll-mt-40">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-16 sm:py-20">
-          <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websiteAbout")}</h2>
-          <p className="mt-6 max-w-[70ch] text-lg leading-relaxed text-foreground/85">{t("websiteMission")}</p>
-        </div>
-      </section>
-
-      <section id="team" className="mx-auto max-w-7xl px-5 sm:px-8 py-16 sm:py-20 scroll-mt-40">
-        <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websiteTeam")}</h2>
-        <p className="mt-4 max-w-[70ch] text-lg leading-relaxed text-muted-foreground">{t("websiteTeamIntro")}</p>
-        <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          {([
-            { title: "websiteCareTeam", roles: [[Brain, "websiteClinicians", "websiteCliniciansBody"], [Video, "websitePsychiatry", "websitePsychiatryBody"], [HandHeart, "websiteRecovery", "websiteRecoveryBody"]] },
-            { title: "websiteNavigationTeam", roles: [[ClipboardList, "websiteCoordinators", "websiteCoordinatorsBody"], [Sunrise, "websiteReentry", "websiteReentryBody"]] },
-            { title: "websiteResourceTeam", roles: [[Users, "websiteResources", "websiteResourcesBody"]] },
-            { title: "websiteAdvocateTeam", roles: [[HeartHandshake, "websiteAdvocates", "websiteAdvocatesBody"]] },
-          ] as const).map((team) => <Card key={team.title} className="p-6 sm:p-8 border-border/60">
-            <h3 className="font-display text-xl text-primary">{t(team.title)}</h3>
-            <ul className="mt-6 space-y-6">
-              {team.roles.map(([Icon, title, body]) => <li key={title} className="flex gap-3">
-                <Icon aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-primary" />
-                <p className="leading-relaxed"><strong className="font-semibold">{t(title)}:</strong> {t(body)}</p>
-              </li>)}
-            </ul>
-          </Card>)}
-        </div>
-      </section>
-
       <section id="find-your-fit" className="border-y bg-secondary/40 scroll-mt-40">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 py-16 sm:py-20">
           <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websiteFit")}</h2>
@@ -203,16 +173,7 @@ export function Landing() {
               <Button asChild className="mt-6 min-h-12 h-auto whitespace-normal py-3"><Link to={to}>{t(label)}<ArrowRight className="h-4 w-4 shrink-0" /></Link></Button>
             </Card>)}
           </div>
-          <p data-testid="website-privacy" className="mt-8 flex max-w-[70ch] gap-3 text-base leading-relaxed text-foreground/85">
-            <ShieldCheck aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-teal" />{t("websitePrivacyLine")}
-          </p>
         </div>
-      </section>
-
-      <section id="partners" className="mx-auto max-w-7xl px-5 sm:px-8 py-16 sm:py-20 scroll-mt-40">
-        <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websitePartnersHeading")}</h2>
-        <p className="mt-4 max-w-[70ch] text-lg leading-relaxed text-foreground/85">{t("websitePartnersBody")}</p>
-        <Button asChild className="mt-6 min-h-12 h-auto whitespace-normal py-3"><Link to="/referral">{t("websiteReferral")}<ArrowRight className="h-4 w-4 shrink-0" /></Link></Button>
       </section>
 
       {/* What you get */}
@@ -300,56 +261,7 @@ export function Landing() {
         </Accordion>
       </section>
 
-      {/* Closing CTA */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--navy) 0%, color-mix(in oklab, var(--teal) 70%, var(--navy)) 100%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-3xl px-5 sm:px-8 py-20 text-center text-navy-foreground">
-          <Sunrise className="h-9 w-9 text-gold mx-auto" />
-          <h2 className="mt-5 font-display text-3xl sm:text-4xl leading-snug">{t("websiteReady")}</h2>
-          <p className="mt-4 text-lg leading-relaxed">{t("websiteReadyBody")}</p>
-          <Button
-            asChild
-            size="lg"
-            className="mt-8 h-12 px-7 text-base bg-gold text-gold-foreground hover:bg-gold/90"
-          >
-            <Link to="/start/signup">
-              {t("websiteStart")}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="outline" className="mt-4 sm:mt-8 sm:ml-3 min-h-12 h-auto whitespace-normal py-3 border-navy-foreground/40 bg-transparent text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground"><Link to="/advocate">{t("websiteHelp")}</Link></Button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-background">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-10">
-          <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
-            <nav className="flex flex-wrap gap-x-5 gap-y-2">
-              <a href="#how-it-works" className="hover:text-foreground">
-                {t("websiteHow")}
-              </a>
-              <a href="#partners" className="hover:text-foreground">
-                {t("websitePartners")}
-              </a>
-              <a href="#privacy" className="hover:text-foreground">
-                {t("websitePrivacy")}
-              </a>
-              <a href="#contact" className="hover:text-foreground">
-                {t("websiteContact")}
-              </a>
-            </nav>
-            <span>© {new Date().getFullYear()} {t("websiteBrand")}</span>
-          </div>
-        </div>
-      </footer>
+      <WebsiteClosing />
     </div>
   );
 }

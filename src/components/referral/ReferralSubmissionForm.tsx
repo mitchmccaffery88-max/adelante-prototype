@@ -139,7 +139,7 @@ export function ReferralSubmissionForm({
       toast.error(critical);
       return;
     }
-    if (!form.referrerName || !form.referringAgency) {
+    if (!form.referrerName.trim()) {
       toast.error("Please complete the required fields");
       return;
     }
@@ -180,8 +180,8 @@ export function ReferralSubmissionForm({
       dob: form.dob || undefined,
       releaseDate: ji ? form.releaseDate || undefined : undefined,
       justiceInvolved: form.justiceInvolved || undefined,
-      referringAgency: form.referringAgency,
-      referrerName: form.referrerName,
+      referringAgency: form.referringAgency.trim(),
+      referrerName: form.referrerName.trim(),
       referrerEmail: form.referrerEmail || undefined,
       referrerPhone: form.referrerPhone || undefined,
       referralSource: form.referralSource,

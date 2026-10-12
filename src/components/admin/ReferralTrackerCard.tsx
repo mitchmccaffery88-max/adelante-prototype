@@ -218,7 +218,7 @@ export function ReferralTrackerCard({
                     <ClientDate value={r.createdAt} />
                   </div>
                   <div className="text-xs text-muted-foreground" data-testid="queue-referred-by">
-                    Referred by {r.referringAgency || "agency not given"}
+                    Referred by {r.referringAgency || "Not provided"}
                     {r.referrerName ? ` · ${r.referrerName}` : ""}
                     {!referrerHasContact(r) && (
                       <Badge variant="outline" className="ml-2 text-[10px] py-0">

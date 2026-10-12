@@ -8802,8 +8802,9 @@ export const AdelanteEHR = {
   createReferral(
     input: Omit<
       Referral,
-      "id" | "status" | "createdAt" | "smsSentAt" | "outreachTask" | "submittedBy"
+      "id" | "status" | "createdAt" | "smsSentAt" | "outreachTask" | "submittedBy" | "referringAgency"
     > & {
+      referringAgency?: string;
       requestManualOutreach?: boolean;
       /** Which form was used. Staff → the acting staff member is resolved here. */
       channel: "staff" | "public";
@@ -8833,6 +8834,7 @@ export const AdelanteEHR = {
     const due = new Date(now.getTime() + 24 * 3600 * 1000).toISOString().slice(0, 10);
     const r: Referral = {
       ...rest,
+      referringAgency: rest.referringAgency?.trim() || "",
       id: uid(),
       status: "submitted",
       createdAt: now.toISOString(),
@@ -9112,7 +9114,7 @@ export const AdelanteEHR = {
     if (r.substanceUseNeed) {
       AdelanteEHR.requestAsamAssessment(
         p.id,
-        `Referral from ${r.referringAgency} names a substance use need`,
+        `Referral from ${r.referringAgency || "Not provided"} names a substance use need`,
       );
     }
     appendAudit({

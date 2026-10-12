@@ -123,7 +123,7 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                 <dt className="text-muted-foreground">Name</dt>
                 <dd>{referral.referrerName || "Not given"}</dd>
                 <dt className="text-muted-foreground">Agency</dt>
-                <dd>{referral.referringAgency || "Not given"}</dd>
+                <dd>{referral.referringAgency || "Not provided"}</dd>
                 <dt className="text-muted-foreground">Phone</dt>
                 <dd>
                   {referral.referrerPhone ? (
