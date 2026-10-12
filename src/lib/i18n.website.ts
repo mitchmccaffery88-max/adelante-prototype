@@ -201,10 +201,10 @@ export const websiteEs: Record<keyof typeof websiteEn, string> = {
 };
 
 export const WEBSITE_NAV = [
-  { hash: "how-it-works", key: "websiteHow" },
-  { hash: "about", key: "websiteAboutNav" },
-  { hash: "team", key: "websiteTeamNav" },
-  { hash: "find-your-fit", key: "websiteFitNav" },
-  { hash: "what-you-get", key: "websiteWhat" },
-  { hash: "faq", key: "websiteFaqNav" },
+  { to: "/", hash: "how-it-works", key: "websiteHow" },
+  { to: "/about", hash: undefined, key: "websiteAboutNav" },
+  { to: "/team", hash: undefined, key: "websiteTeamNav" },
+  { to: "/", hash: "find-your-fit", key: "websiteFitNav" },
+  { to: "/", hash: "what-you-get", key: "websiteWhat" },
+  { to: "/", hash: "faq", key: "websiteFaqNav" },
 ] as const;

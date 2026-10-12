@@ -145,4 +145,10 @@ describe("honest welcome text", () => {
     expect(body.length).toBeLessThanOrEqual(320);
     expect(body).not.toMatch(/diagnos|treatment|substance|mental health|therapy/i);
   });
+  it("welcome copy omits the agency phrase when not provided", () => {
+    const body = composeReferralWelcome({ firstName: "Ana", referrerName: "Rosa M.", referringAgency: "" });
+    expect(body).toContain("Rosa M. asked Adelante");
+    expect(body).not.toContain(" at ");
+    expect(body).toContain("STOP");
+  });
 });

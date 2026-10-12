@@ -4,6 +4,8 @@ import { websiteEn, websiteEs, WEBSITE_NAV } from "@/lib/i18n.website";
 
 const landing = readFileSync("src/components/Landing.tsx", "utf8");
 const shell = readFileSync("src/components/AppShell.tsx", "utf8");
+const content = readFileSync("src/components/WebsiteContent.tsx", "utf8");
+const layout = readFileSync("src/components/WebsiteLayout.tsx", "utf8");
 const index = readFileSync("src/routes/index.tsx", "utf8");
 
 describe("public website contract", () => {
@@ -17,19 +19,18 @@ describe("public website contract", () => {
     expect(websiteEn.websiteReadyBody).toBe("Wherever you're starting from, we'll meet you there. Connect with our team to take your next step forward.");
   });
   it("orders sections and navigation and preserves the old anchor", () => {
-    expect(WEBSITE_NAV.map((n) => n.hash)).toEqual(["how-it-works", "about", "team", "find-your-fit", "what-you-get", "faq"]);
-    let last = -1;
-    for (const n of WEBSITE_NAV) {
-      const position = landing.indexOf(`id="${n.hash}"`);
-      expect(position).toBeGreaterThan(last);
-      last = position;
-    }
-    expect(landing).toContain('window.location.hash !== "#who-its-for"');
-    expect(landing).toContain('"", "#find-your-fit"');
+    expect(WEBSITE_NAV.map((n) => [n.to, n.hash])).toEqual([["/", "how-it-works"], ["/about", undefined], ["/team", undefined], ["/", "find-your-fit"], ["/", "what-you-get"], ["/", "faq"]]);
+    for (const id of ["about", "team", "partners"]) expect(landing).not.toContain(`id="${id}"`);
+    for (const id of ["about", "team", "partners"]) expect(content).toContain(`id="${id}"`);
+    expect(landing).toContain('hash !== "#who-its-for"');
+    expect(landing).toContain('to: "/about"');
+    expect(landing).toContain('to: "/team"');
+    expect(landing).toContain('hash: "find-your-fit"');
   });
   it("isolates public branding and preserves crisis support and existing flows", () => {
-    expect(shell).toContain("isPublicSurface ? <WebsiteBrand />");
-    expect(shell).toContain('isPublicSurface ? t("websiteBrand") : "Adelante"');
+    expect(shell).toContain("if (isPublicSurface) return <WebsiteLayout>{STAFF_ROUTES.includes(pathname) && <RouteAccessGuard />}<Outlet /></WebsiteLayout>");
+    expect(layout).toContain("<WebsiteBrand />");
+    expect(layout).toContain('t("websiteBrand")');
     expect(shell).toContain('href="tel:988"');
     expect(landing).toContain('to="/start/signup"');
     expect(landing).toContain('to="/advocate"');
@@ -42,10 +43,11 @@ describe("public website contract", () => {
     const root = readFileSync("src/routes/__root.tsx", "utf8");
     expect(root).not.toContain("Adelante Pathways");
     expect(root).toContain('content: "Adelante" }');
-    expect(landing).toContain('id="partners"');
-    expect(landing).toContain('to="/referral"');
-    expect(landing.indexOf('id="partners"')).toBeGreaterThan(landing.indexOf('id="find-your-fit"'));
-    expect(landing.indexOf('id="faq"')).toBeLessThan(landing.indexOf("websiteReady"));
+    expect(content).toContain('id="partners"');
+    expect(content).toContain('to="/referral"');
+    expect(content).toContain('data-testid="website-privacy"');
+    expect(landing).not.toContain("websitePrivacyLine");
+    expect(landing.indexOf('id="faq"')).toBeLessThan(landing.lastIndexOf("<WebsiteClosing"));
     expect(websiteEn.websiteHeroHeading).toBe("Forward starts here.");
     expect(websiteEn.websiteHeroEyebrow).toBe("Care for anyone, wherever you are");
     for (const dict of [websiteEn, websiteEs]) for (const text of Object.values(dict)) {

@@ -37,6 +37,14 @@ describe("referrer phone-or-email rule", () => {
 });
 
 describe("person's email flows to the patient at enrollment", () => {
+  it("accepts and enrolls a referral without an agency", () => {
+    const r = AdelanteEHR.createReferral({ ...base, firstName: "AgencyOptional", lastName: "Regression", referringAgency: undefined, referrerEmail: "referrer@example.org", dob: "1985-04-07", consentToContact: false });
+    expect(r.referringAgency).toBe("");
+    const patientId = AdelanteEHR.enrollReferral(r.id);
+    expect(patientId).toBeTruthy();
+    if (!patientId) return;
+    expect(AdelanteEHR.getPatient(patientId)?.referralId).toBe(r.id);
+  });
   it("copies Referral.email onto Patient.email", () => {
     const r = AdelanteEHR.createReferral({
       ...base,

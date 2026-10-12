@@ -1,5 +1,10 @@
 # Roadmap
 
+## Public pages and optional agency (12 Oct)
+- [x] Optional referral agency, required referrer name, missing-agency display and regression checks
+- [x] Separate About/Team pages, shared public layout, navigation and legacy redirects
+- [ ] Full unit suite then all browser specs; automatic typecheck/build verification
+
 ## Public website (12 Oct)
 - [x] W1 public-only branding and metadata; single placeholder logo
 - [x] W2–W6 exact mission/team/fit/closing copy, bilingual navigation and legacy anchor

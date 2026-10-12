@@ -1,15 +1,15 @@
 /* Public-only anchor motion; application scrolling is unchanged. */
-html:has([data-testid="public-landing"]) {
+html:has([data-testid="website-layout"]) {
   scroll-behavior: smooth;
 }
 @media (prefers-reduced-motion: reduce) {
-  html:has([data-testid="public-landing"]) {
+  html:has([data-testid="website-layout"]) {
     scroll-behavior: auto;
   }
 }
-[data-testid="public-landing"] h1,
-[data-testid="public-landing"] h2,
-[data-testid="public-landing"] h3,
-[data-testid="public-landing"] .font-display {
+[data-testid="website-layout"] h1,
+[data-testid="website-layout"] h2,
+[data-testid="website-layout"] h3,
+[data-testid="website-layout"] .font-display {
   letter-spacing: 0;
 }

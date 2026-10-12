@@ -66,7 +66,7 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
       key: "submitted",
       label: "Referral submitted",
       reachedAt: referral?.createdAt,
-      note: referral?.referringAgency,
+      note: referral ? referral.referringAgency || "Not provided" : undefined,
     },
     {
       key: "outreach",

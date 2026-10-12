@@ -2,11 +2,13 @@
 
 ## Built
 - Adelante Health public header/footer and homepage title, description, OG and Twitter metadata. Application brand strings and routes remain unchanged. WebsiteBrand is the single public A-mark placeholder for the forthcoming logo.
-- About Us follows How it works: exact mission, 18px readable text capped at 70ch, and a “hospital without walls” pull quote.
-- Meet Our Team: four team cards containing seven icon-led roles; no individual names or new photos.
+- `/about`: unchanged mission, referral partners at `#partners`, privacy line and closing CTA. Mission uses 18px readable text capped at 70ch. Mitch's removed pull quote stays removed.
+- `/team`: unchanged intro and four team cards containing seven icon-led roles; no individual names or new photos. Links to `/#find-your-fit` and includes the closing CTA.
 - Find Where You Fit: three cards; both patient buttons use /start/signup and the help button uses the existing /advocate flow. Signup has no pathway-preselection parameter; no signup logic was changed.
 - Ready When You Are: exact closing copy and both existing-flow buttons.
-- Five ordered navigation links on desktop and in the mobile menu, smooth scrolling and sticky-header offsets. #who-its-for redirects to #find-your-fit, including direct arrivals.
+- Shared `WebsiteLayout` header/footer and crisis bar. Six ordered desktop/mobile navigation links; About/Team route to pages, all other links reach homepage anchors with sticky offsets. Footer links About, Team, partners, FAQ and referral.
+- Home contains hero, How it works, Find Where You Fit, What You Get, FAQ and closing CTA only. `/#about`, `/#team`, `/#partners` redirect to the new pages; `/#who-its-for` continues to redirect to `/#find-your-fit`.
+- Agency is optional in the shared referral form and store input. Referrer name remains required. Missing agency displays as “Not provided” in queue/chart summaries; welcome text omits “at [agency]” when absent. Enrollment accepts an omitted agency.
 - All landing copy goes through the existing i18n dictionary. Spanish website translations are visibly marked “ES Draft — pending translation review”. EN/ES toggle and crisis bar remain.
 
 ## Visual review
@@ -16,7 +18,7 @@ Screenshots inspected/captured under /tmp/browser/website: desktop/mobile about,
 
 ## Files
 src/components/Landing.tsx; AppShell.tsx (public branches only); WebsiteBrand.tsx; WebsiteNavigation.tsx; website.css; src/lib/i18n.website.ts; src/lib/i18n.tsx (dictionary additions); src/routes/index.tsx; src/components/__tests__/landingWebsite.test.ts; e2e/publicWebsite.spec.ts; AGENTS.md; roadmap.md; this handoff.
-Root fallback metadata is unchanged so patient/staff metadata is not renamed; the homepage leaf overrides it.
+Root fallback metadata uses Adelante Health, preserving the apple app title “Adelante”. About and Team each provide title, description, Open Graph, Twitter and canonical metadata. Route metadata remains English in EN/ES; visible copy uses the chosen language. Removed the homepage's manual metadata mutation because its unmount could overwrite the incoming page's metadata.
 
 ## Validation — not fully green
 - Full unit suite: 306 files, 2,555 tests passed, including existing notification and access/permission tests. No permission snapshot edits.
