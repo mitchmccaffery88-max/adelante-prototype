@@ -1,16 +1,23 @@
-import { useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { forwardRef, useState, type ComponentPropsWithoutRef } from "react";
+import { createLink, Link, useRouterState } from "@tanstack/react-router";
 import { Menu, X, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useI18n } from "@/lib/i18n";
 import { WEBSITE_NAV } from "@/lib/i18n.website";
 
+// Router Links force aria-current=page for all matching '/' anchors. Public
+// navigation owns its scroll-spy state, so the rendered anchor overrides it.
+const NavigationAnchor = forwardRef<HTMLAnchorElement, ComponentPropsWithoutRef<"a"> & { current?: "page" | "location" }>(
+  ({ current, ...props }, ref) => <a {...props} ref={ref} aria-current={current} />,
+);
+const NavigationLink = createLink(NavigationAnchor);
+
 export function WebsiteNavigation({ mobile = false, activeSection }: { mobile?: boolean; activeSection?: string }) {
   const { t, lang, setLang } = useI18n();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const links = WEBSITE_NAV.map((n) => <Link key={n.key} to={n.to} hash={n.hash} activeOptions={{ exact: true }} activeProps={{ className: "" }} aria-current={n.to !== "/" && pathname === n.to ? "page" : pathname === "/" && n.hash && n.hash === activeSection ? "location" : undefined} hashScrollIntoView={{ behavior: "smooth", block: "start" }} onClick={() => setOpen(false)} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-secondary hover:text-foreground aria-[current]:bg-accent aria-[current]:text-primary">{t(n.key)}</Link>);
+  const links = WEBSITE_NAV.map((n) => <NavigationLink key={n.key} to={n.to} hash={n.hash} activeOptions={{ exact: true }} activeProps={{ className: "" }} current={n.to !== "/" && pathname === n.to ? "page" : pathname === "/" && n.hash && n.hash === activeSection ? "location" : undefined} hashScrollIntoView={{ behavior: "smooth", block: "start" }} onClick={() => setOpen(false)} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-secondary hover:text-foreground aria-[current]:bg-accent aria-[current]:text-primary">{t(n.key)}</NavigationLink>);
   if (!mobile) return <nav aria-label={t("websiteNavigation")} className="hidden lg:flex items-center justify-center border-t">{links}</nav>;
   return <div className="lg:hidden">
     <Popover open={open} onOpenChange={setOpen}>
