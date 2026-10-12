@@ -363,7 +363,15 @@ export interface AppNotification {
   taskKey?: string;
   /** §A3 — set when the linked task was completed: read for everyone. */
   closedAt?: string;
+  /** Bell bug fix B1 — who owns this pointer's lifecycle. Only that source creates/closes it. */
+  pointerSource?: PointerSource;
+  /** Which source closed the pointer (undefined on rows closed by the old prefix bug). */
+  closedBy?: PointerSource;
+  /** B3 — set once when a wrongly closed pointer was reopened; never reopened twice. */
+  reraisedAt?: string;
 }
+/** Bell bug fix B1 — lifecycle owners of task pointers. */
+export type PointerSource = "workspace" | "consent" | "content_gap" | "case_task" | "reply";
 
 /** §Access A3 — per-person read check. Role broadcasts never share read state. */
 export function isNotificationReadBy(n: AppNotification, staffName: string, staffId?: string): boolean {
@@ -15959,6 +15967,7 @@ export const AdelanteEHR = {
     dedupeKey?: string;
     kind?: AppNotification["kind"];
     taskKey?: string;
+    pointerSource?: PointerSource;
   }): AppNotification | undefined {
     if (!input.recipientStaffId && !input.recipientRole) return undefined;
     // §A3 — at most one bell pointer per task per recipient.
@@ -15991,17 +16000,47 @@ export const AdelanteEHR = {
       createdAt: new Date().toISOString(),
       kind: input.kind ?? (input.taskKey ? "task" : "update"),
       taskKey: input.taskKey,
+      ...(input.taskKey && input.pointerSource ? { pointerSource: input.pointerSource } : {}),
     };
     notifications.unshift(row);
     emit();
     return row;
   },
   /** §A3 — the linked task is done: its bell pointer(s) read for everyone. */
-  closeTaskPointer(taskKey: string): number {
+  closeTaskPointer(taskKey: string, by?: PointerSource): number {
     const now = new Date().toISOString();
     let n = 0;
-    for (const r of notifications) if (r.taskKey === taskKey && !r.closedAt) { r.closedAt = now; n++; }
+    for (const r of notifications) if (r.taskKey === taskKey && !r.closedAt) { r.closedAt = now; if (by) r.closedBy = by; n++; }
     if (n) emit();
+    return n;
+  },
+  /**
+   * Bell bug fix B3 — the source's task is still open: make sure its pointer is
+   * open. A pointer closed by someone other than its source (the old prefix bug)
+   * is reopened once, unread; after that it is never reopened again.
+   */
+  ensureTaskPointer(input: Parameters<typeof AdelanteEHR.notify>[0] & { taskKey: string; pointerSource: PointerSource }): AppNotification | undefined {
+    const mine = (n: AppNotification) => n.taskKey === input.taskKey && (input.recipientStaffId ? n.recipientStaffId === input.recipientStaffId : n.recipientRole === input.recipientRole);
+    const rows = notifications.filter(mine);
+    const open = rows.find((n) => !n.closedAt);
+    if (open) { if (!open.pointerSource) open.pointerSource = input.pointerSource; return open; }
+    const wrong = rows.find((n) => n.closedBy !== input.pointerSource && !n.reraisedAt);
+    if (wrong) {
+      wrong.closedAt = undefined; wrong.closedBy = undefined; wrong.readAt = undefined; wrong.readBy = undefined;
+      wrong.pointerSource = input.pointerSource; wrong.reraisedAt = new Date().toISOString();
+      emit();
+      return wrong;
+    }
+    if (rows.length) return undefined; // closed by its own source or already re-raised once
+    return AdelanteEHR.notify(input);
+  },
+  /** Case-task source — close pointers of case tasks finished by any path. */
+  sweepCaseTaskPointers(): number {
+    let n = 0;
+    for (const r of notifications) {
+      if (r.closedAt || r.pointerSource !== "case_task" || !r.taskKey) continue;
+      if (caseTasks.find((t) => `task:${t.id}` === r.taskKey)?.status === "done") n += AdelanteEHR.closeTaskPointer(r.taskKey, "case_task");
+    }
     return n;
   },
   /**
@@ -16461,6 +16500,7 @@ export const AdelanteEHR = {
       category: "task_assigned",
       kind: "task",
       taskKey: `task:${task.id}`,
+      pointerSource: "case_task",
       subject: protectedTask ? "New task" : `New task: ${task.title}`,
       body: protectedTask
         ? `New task for ${patientLabel(task.patientId)} (due ${task.dueDate}). Open the chart for details.`
@@ -16478,7 +16518,7 @@ export const AdelanteEHR = {
     t.status = "done";
     t.completedAt = new Date().toISOString();
     t.worklistStatus = "completed";
-    AdelanteEHR.closeTaskPointer(`task:${t.id}`);
+    AdelanteEHR.closeTaskPointer(`task:${t.id}`, "case_task");
     emit();
   },
   reopenCaseTask(id: string) {
