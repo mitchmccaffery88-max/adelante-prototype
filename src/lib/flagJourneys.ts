@@ -135,10 +135,11 @@ function ensureGapPointers(g: ContentGapItem) {
   else for (const role of CONTENT_POOL_ROLES) AdelanteEHR.ensureTaskPointer({ ...note, recipientRole: role });
 }
 /** Closes a gap once a matching journey is live — and closes its bell pointer (content-gap source). */
-function closeGapsIfMatched(at: string) {
+const gapMatched = (f: SpecialtyFlag) => journeysForFlag(f).length > 0 || journeysForPathway(f === "sud" ? "sud" : "reentry").length > 0;
+function closeGapsIfMatched(at: string, matched: (f: SpecialtyFlag) => boolean = gapMatched) {
   for (const g of gaps) {
     if (g.closedAt) continue;
-    if (journeysForFlag(g.flag).length || journeysForPathway(g.flag === "sud" ? "sud" : "reentry").length) {
+    if (matched(g.flag)) {
       g.closedAt = at;
       AdelanteEHR.closeTaskPointer(contentGapKey(g.id), "content_gap");
     } else ensureGapPointers(g);
@@ -214,6 +215,8 @@ export function autoAddedJourneyIds(patientId: string): string[] {
 }
 
 /** Test hook. */
+/** Test-only hooks for the content-gap source (raise / resolve without editing journeys). */
+export const _gapTestHooks = { raise: (flag: SpecialtyFlag, at = new Date().toISOString()) => raiseGap(flag, at), closeIfMatched: (matched: (f: SpecialtyFlag) => boolean) => closeGapsIfMatched(new Date().toISOString(), matched) };
 export function _resetFlagJourneys(): void {
   lastFlags.clear();
   gaps.length = 0;
