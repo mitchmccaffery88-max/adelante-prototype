@@ -1,3 +1,4 @@
+import { websiteEn } from "@/lib/i18n.website";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { BookVisitDrawerHost } from "@/components/scheduling/BookVisitDrawer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -152,13 +153,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#0F2A44" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Adelante" },
-      { title: "Adelante Pathways — Reentry Behavioral Health Care" },
+      { title: websiteEn.websiteTitle },
       {
         name: "description",
         content:
-          "Adelante Pathways supports the first 90 days back in the community with bilingual teletherapy, case management, and reentry navigation.",
+          websiteEn.websiteDescription,
       },
-      { property: "og:title", content: "Adelante Pathways — Reentry Behavioral Health Care" },
+      { property: "og:title", content: websiteEn.websiteTitle },
       {
         property: "og:description",
         content:
@@ -166,7 +167,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Adelante Pathways — Reentry Behavioral Health Care" },
+      { name: "twitter:title", content: websiteEn.websiteTitle },
       {
         name: "twitter:description",
         content:
