@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   ArrowRight,
   Phone,
@@ -163,7 +164,6 @@ export function Landing() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8 py-16 sm:py-20">
           <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websiteAbout")}</h2>
           <p className="mt-6 max-w-[70ch] text-lg leading-relaxed text-foreground/85">{t("websiteMission")}</p>
-          <blockquote className="mt-8 border-l-4 border-primary pl-5 font-display text-2xl sm:text-3xl text-primary">“{t("websiteQuote")}”</blockquote>
         </div>
       </section>
 
@@ -203,7 +203,16 @@ export function Landing() {
               <Button asChild className="mt-6 min-h-12 h-auto whitespace-normal py-3"><Link to={to}>{t(label)}<ArrowRight className="h-4 w-4 shrink-0" /></Link></Button>
             </Card>)}
           </div>
+          <p data-testid="website-privacy" className="mt-8 flex max-w-[70ch] gap-3 text-base leading-relaxed text-foreground/85">
+            <ShieldCheck aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-teal" />{t("websitePrivacyLine")}
+          </p>
         </div>
+      </section>
+
+      <section id="partners" className="mx-auto max-w-7xl px-5 sm:px-8 py-16 sm:py-20 scroll-mt-40">
+        <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websitePartnersHeading")}</h2>
+        <p className="mt-4 max-w-[70ch] text-lg leading-relaxed text-foreground/85">{t("websitePartnersBody")}</p>
+        <Button asChild className="mt-6 min-h-12 h-auto whitespace-normal py-3"><Link to="/referral">{t("websiteReferral")}<ArrowRight className="h-4 w-4 shrink-0" /></Link></Button>
       </section>
 
       {/* What you get */}
@@ -279,6 +288,18 @@ export function Landing() {
         </div>
       </section>
 
+      <section id="faq" className="mx-auto max-w-3xl px-5 sm:px-8 py-16 sm:py-20 scroll-mt-40">
+        <h2 className="font-display text-3xl sm:text-4xl text-primary">{t("websiteFaq")}</h2>
+        <Accordion type="single" collapsible className="mt-8">
+          {(["Cost", "Lang", "Video", "Start", "Help", "Crisis"] as const).map((k) => <AccordionItem key={k} value={k}>
+            <AccordionTrigger className="min-h-12 text-left text-lg">{t(`websiteFaq${k}Q`)}</AccordionTrigger>
+            <AccordionContent className="text-base leading-relaxed text-foreground/85">
+              {k === "Cost" ? <>{t("websiteFaqCostA")} <Link to="/start/signup" className="underline text-primary">{t("websiteFaqCostContact")}</Link> {t("websiteFaqCostTail")}</> : t(`websiteFaq${k}A`)}
+            </AccordionContent>
+          </AccordionItem>)}
+        </Accordion>
+      </section>
+
       {/* Closing CTA */}
       <section className="relative overflow-hidden">
         <div
@@ -315,9 +336,9 @@ export function Landing() {
               <a href="#how-it-works" className="hover:text-foreground">
                 {t("websiteHow")}
               </a>
-              <Link to="/referral" className="hover:text-foreground">
+              <a href="#partners" className="hover:text-foreground">
                 {t("websitePartners")}
-              </Link>
+              </a>
               <a href="#privacy" className="hover:text-foreground">
                 {t("websitePrivacy")}
               </a>
