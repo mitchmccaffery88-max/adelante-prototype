@@ -5,6 +5,7 @@ for (const path of ["/", "/about", "/team"]) {
   test(`public polish and accessibility ${path}`, async ({ page }) => {
     await page.goto(path);
     await expect(page.getByTestId("website-layout")).toBeVisible();
+    await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://adelmvp1.lovable.app/website-share.jpg");
     await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", "https://adelmvp1.lovable.app/website-share.jpg");
@@ -29,6 +30,7 @@ for (const path of ["/", "/about", "/team"]) {
       expect(await page.getByTestId("website-mission-grid").evaluate(el => getComputedStyle(el).gridTemplateColumns.split(" ").length)).toBe(2);
     }
     if (path !== "/about") {
+      await page.setViewportSize({ width: 1280, height: 900 });
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       const top = page.getByRole("button", { name: "Back to top", exact: true });
       await expect(top).toBeVisible();

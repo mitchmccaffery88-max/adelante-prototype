@@ -30,7 +30,7 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
     const update = () => {
       setShowTop((pathname === "/" || pathname === "/team") && window.scrollY > window.innerHeight);
       if (pathname !== "/") { setActiveSection(undefined); return; }
-      const offset = (headerRef.current?.getBoundingClientRect().bottom ?? 160) + 24;
+      const offset = Math.max((headerRef.current?.getBoundingClientRect().bottom ?? 160) + 24, window.innerHeight * 0.35);
       let current: string | undefined;
       for (const id of ["how-it-works", "find-your-fit", "what-you-get", "faq"]) {
         const rect = document.getElementById(id)?.getBoundingClientRect();
@@ -43,7 +43,12 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
     window.addEventListener("resize", update);
     return () => { window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
   }, [pathname]);
-  return <div ref={shellRef} className="patient-theme website-shell min-h-dvh flex flex-col bg-background" data-testid="website-layout">
+  return <div ref={shellRef} className="patient-theme website-shell min-h-dvh flex flex-col bg-background" data-testid="website-layout" onFocusCapture={(event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target)) return;
+    const barTop = crisisRef.current?.getBoundingClientRect().top;
+    if (barTop !== undefined && target.getBoundingClientRect().bottom > barTop) target.scrollIntoView({ block: "center", behavior: "instant" });
+  }}>
     <DemoControlsBar />
     <header ref={headerRef} data-testid="website-header" className="sticky top-10 z-30 border-b bg-background/85 backdrop-blur" tabIndex={-1}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-2 sm:gap-4">
