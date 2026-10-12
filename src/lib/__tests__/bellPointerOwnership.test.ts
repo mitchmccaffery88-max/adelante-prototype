@@ -144,7 +144,7 @@ describe("workspace + case-task pointers unchanged; no prefix inference", () => 
   it("case-task pointer closes when the task is done", () => {
     const pid = newPatient();
     const cm = AdelanteEHR.listCaseManagers()[0];
-    const t = AdelanteEHR.createCaseTask({ patientId: pid, title: "Call back", assignedTo: cm?.id ?? coordStaff.name, dueDate: "2026-12-01" } as never);
+    const t = AdelanteEHR.createCaseTask({ patientId: pid, title: "Call back", assignedTo: cm?.id ?? coordStaff.name, dueDate: "2026-12-01" } as never)!;
     const key = `task:${t.id}`;
     expect(byKey(key)[0]!.pointerSource).toBe("case_task");
     bellSync();
