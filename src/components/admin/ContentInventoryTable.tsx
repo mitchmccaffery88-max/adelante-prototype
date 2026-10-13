@@ -54,7 +54,7 @@ export function ContentInventoryTable({ entries, edit, review, canReview, canEdi
                   <td className="p-2"><Checkbox aria-label={`Select ${title}`} disabled={shipped} checked={selected.includes(e.id)} onCheckedChange={(v) => setSelected((ids) => (v ? [...ids, e.id] : ids.filter((id) => id !== e.id)))} /></td>
                   <td className="p-2" data-testid="managed-title">{title}</td>
                   <td className="p-2">{contentType(e.typeId).label}</td>
-                  <td className="p-2" data-testid="inventory-status"><StatusChip lang="en" state={label === "Retired" ? "closed" : shipped || e.status === "published" ? "done" : e.status === "pending_review" ? "team" : "upnext"} label={label} /></td>
+                  <td className="p-2" data-testid="inventory-status"><StatusChip lang="en" state={label === "Retired" ? "closed" : shipped || e.status === "published" ? "done" : e.status === "pending_review" ? "team" : "upnext"} label={e.status === "pending_review" && !shipped && label !== "Retired" ? "In clinical review" : label} /></td>
                   <td className="p-2">{isPart2Content(e.typeId, e.body) && <Badge variant="outline">Part 2</Badge>}{m.clinical && <Badge variant="secondary">Clinical</Badge>}</td>
                   <td className="p-2">{spanishStatusOf(e.body)}</td>
                   <td className="p-2" data-testid="reading-grade">≈ grade {rl.grade}{rl.aboveTarget && <Badge variant="outline" className="ml-1">Above {READING_LEVEL_TARGET}</Badge>}</td>
