@@ -1,16 +1,12 @@
 # Roadmap
 
 ## Patient color pass — phases 2a + 4 (13 Oct)
-- [ ] Final fix: member-only wrapping and shrinkable Home tiles; EN/ES 390px verification, units then separate staff/website/player browser checks
-- [x] Staff navigation isolated warm reruns before changes: 22/22 twice; classify prior two failures as timing flakes under load, no staff changes
-- [x] Approved fix pass applied: one headline assertion; two ES strings; type errors; real chip labels/mappings; one shell Draft notice; advocate tel:988 help; wrapping 48px step targets
-- [x] Settled contrast measured after browser-only transition/animation suppression + 600ms: EN/ES × light/dark × 1280/390; all pairings ≥4.5:1, minimum 5.43:1; website hero/closing dark both 8.86:1 (prior transition capture superseded)
-- [x] Full units completed: 2,561 passed / 0 failed (306 files); all browsers separately completed: 77 passed / 2 failed; axe and Back to top passed Home/About/Team
-- [x] 390px EN/ES checks completed: 11-step lesson targets 48×48px; advocate header, long chips, medications, actual appointments pass
-- [ ] Spanish Home scrollWidth 431px at 390px: nowrap support-connect button expands grid/gold tile; no fix applied
-- [ ] Browser failures: PMHNP denied /nurse stays /nurse instead of /clinician; billing denied /referral-queue redirects to /inbox only after timeout (staffNav.rbac.spec.ts:116)
-- [x] Automatic harness build OK; no manual build/typecheck, app/style/copy/test/permission changes in validation-only turn
-- [x] Updated docs/patient-color-pass-report.md with complete matrix, phone evidence, counts and every failure; phase completion pending Mitch's decisions, not all green
+- [x] Approved fixes and final member-system wrapping applied; Home grid/tiles shrink; ConnectMeButton copy unchanged; staff/public/icon-only styling preserved
+- [x] Previous settled contrast EN/ES × light/dark × 1280/390 passed; final wrapped text spot-check 13.84:1 light / 14.80:1 dark; help 7.06:1 and lesson Continue 5.52:1 light
+- [x] Final EN/ES 390px: Home/gold, My care, Schedule, longest lesson, advocate Home and medications all scrollWidth 390; reviewed screenshots; 11 lesson targets 48×48px
+- [x] Staff navigation warm diagnostics 22/22 twice before edits: previous PMHNP/billing failures are timing flakes under load per Mitch rule; no guard/permissions/test changes
+- [x] Final full units 2,561/2,561 (306 files), then separate browser suites staffNav 22/22, websitePolish 3/3 (axe/Back to top), patientPlayer 2/2; automatic harness build OK
+- [x] docs/patient-color-pass-report.md updated with final files, evidence, contrast and counts; final focused checks complete
 
 ## Design system phase 1 (13 Oct)
 - [x] Verify all six supplied SVG hashes before implementation
