@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { STAFF_ROLES } from "@/lib/roles";
 // §Batch D — County reporting hub (prototype; nothing is submitted anywhere).
 import { useState } from "react";
@@ -132,7 +133,7 @@ function CountyReportingPage() {
             <div className="text-sm font-medium text-navy">{c.label}</div>
             <div className="text-xs text-muted-foreground">Next due: {c.due ?? "On request"}</div>
             {c.dueOnClosedDay && <div className="text-xs text-destructive" data-testid="due-closed-day-warning">Due date falls on a clinic closed day ({c.dueOnClosedDay})</div>}
-            <Badge variant={c.status === "errors_returned" || c.status === "blockers" ? "destructive" : "outline"} data-testid="card-status">{CARD_STATUS_LABEL[c.status]}</Badge>
+            <StatusChip lang="en" state={c.status === "submitted" ? "done" : c.status === "not_started" || c.status === "draft_ready" ? "upnext" : me.role === COUNTY_PREPARER_ROLE ? "yourturn" : "team"} label={c.status === "errors_returned" ? "Errors to fix" : CARD_STATUS_LABEL[c.status]} data-testid="card-status" />
             <div className="text-xs">Blockers: {c.blockers}</div>
             <div className="text-xs font-medium" data-testid="card-next">{c.nextAction}</div>
             {cardAction(c.report)}

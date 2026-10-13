@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Turn 6 — "+ New" for billing, claims coordinator and sys_admin. Built only
 // from CHART_ACTIONS entries marked `opsMenu`; every action runs through
 // runAction (act / actResult). Roadmap items show disabled with their label.
@@ -12,7 +13,7 @@ import { BLOCKED_DOCS } from "@/lib/billingWorkspace";
 import { CHART_ACTIONS, type ChartAction } from "@/lib/chartActions";
 import { act, actFor, actResult, currentRunActor } from "@/lib/actions/act";
 import { runAction } from "@/lib/actions/runAction";
-import { useActingStaff } from "@/lib/roles";
+import { canAccess, useActingStaff } from "@/lib/roles";
 import { billingWorkspace, adminToday, claimBlockLabel } from "@/lib/billingWorkspace";
 import { featureSnapshot, REQUIRES_LIVE_VENDOR, type FeatureId } from "@/lib/features";
 import { listMerges } from "@/lib/patientMerge";
@@ -230,13 +231,15 @@ function CorrectForm({ claim, done }: { claim: Claim; done: () => void }) {
 }
 
 function StatusForm({ claim, done }: { claim: Claim; done: () => void }) {
+  const { role } = useActingStaff();
+  const canWrite = canAccess(role, "billing").level === "write";
   const next = CLAIM_TRANSITIONS[claim.state];
   const [to, setTo] = useState<ClaimState>(next[0]!);
   const [reason, setReason] = useState("");
   const needs = claimMoveNeedsReason(claim.state, to);
   return (
     <div className="space-y-3" data-testid="ops-status-form">
-      <p className="text-sm">Now: <Badge variant="outline">{claim.state}</Badge></p>
+      <p className="text-sm">Now: {claim.state === "denied" ? <Badge variant="outline">{claim.state}</Badge> : <StatusChip lang="en" state={claim.state === "documented" ? "upnext" : claim.state === "submitted" ? "team" : claim.state === "paid" ? "done" : claim.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={claim.state === "documented" ? "Documented" : claim.state === "signed" || claim.state === "coded" || claim.state === "generated" ? "Ready to submit" : claim.state === "submitted" ? "With payer" : claim.state === "partial" ? "Partly paid — review" : claim.state} />}</p>
       <Label>Move to</Label>
       <Select value={to} onValueChange={(v) => setTo(v as ClaimState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{next.map((s) => <SelectItem key={s} value={s}>{s === "generated" && claim.state === "denied" ? "resubmit (ready)" : s}</SelectItem>)}</SelectContent></Select>
       {needs && <><Label htmlFor="ops-move-reason">Reason (required)</Label><Input id="ops-move-reason" value={reason} onChange={(e) => setReason(e.target.value)} /></>}

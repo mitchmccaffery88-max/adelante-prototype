@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -103,7 +104,7 @@ function Held() {
       {held.map((h) => (
         <div key={h.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-xs">
           <span>{h.sourceType}</span><span>{fmt(h.at)}</span>
-          <Badge variant="outline">Part 2 consent required</Badge>
+          <StatusChip lang="en" state="restricted" label="Part 2 consent required" />
           {canOpenConsent ? (
             <Button asChild size="sm" variant="outline"><Link to="/consent" search={{ patientId: h.patientId }}>Open consent screen</Link></Button>
           ) : (
@@ -149,7 +150,7 @@ function Events() {
           <li key={e.id} className="flex flex-wrap items-center gap-2 border-t pt-1">
             <Link to="/record/$patientId" params={{ patientId: e.patientId }} search={{ section: "outside-records" }} className="text-navy underline">{nameOf(e.patientId)}</Link>
             <span>{KIND_LABEL[e.kind]}</span><span>{fmt(e.at)}</span>
-            <Badge variant="outline">{FU_LABEL[followUp]}</Badge>
+            {followUp === "n/a" ? <Badge variant="outline">{FU_LABEL[followUp]}</Badge> : followUp === "followed" ? <StatusChip lang="en" state="done" label={FU_LABEL[followUp]} /> : <Badge variant="outline">{FU_LABEL[followUp]}</Badge>}
           </li>
         ))}
         {shown.length === 0 && <li className="text-muted-foreground">No events match.</li>}

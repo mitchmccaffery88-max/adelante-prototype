@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { VoiceGuardrailNotice } from "@/components/voice/VoiceGuardrailNotice";
 import { HieStatusCard } from "@/components/hie/OutsideRecords";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -201,11 +202,7 @@ function VendorPanel({
       <div className="mt-2 flex items-center gap-2">
         <Badge className="bg-gold/30 text-navy border-0 text-[10px]">{mode}</Badge>
         {last && (
-          <Badge
-            className={`${last.ok ? "bg-success/20 text-success" : "bg-destructive/15 text-destructive"} border-0 text-[10px]`}
-          >
-            {last.ok ? "healthy" : "degraded"}
-          </Badge>
+          last.ok ? <StatusChip lang="en" state="done" label="healthy" /> : <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">degraded</Badge>
         )}
       </div>
       <div className="mt-3 text-xs text-muted-foreground">
@@ -224,6 +221,7 @@ function VendorPanel({
 }
 
 function StateBadge({ state }: { state: string }) {
+  if (state === "in_progress" || state === "ended") return <StatusChip lang="en" state={state === "ended" ? "closed" : "done"} label={state.replace("_", " ")} />;
   const map: Record<string, string> = {
     scheduled: "bg-muted text-muted-foreground",
     clinician_joined: "bg-gold/30 text-navy",

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Quality pass Group A — supervision administration.
 //
 // The single write path for `StaffMember.supervisedBy`. All validation lives in
@@ -189,12 +190,10 @@ function SupervisionAdminPage() {
                     </TableCell>
                     <TableCell>
                       {status.satisfied ? (
-                        <Badge className="gap-1">
-                          <UserCheck className="h-3 w-3" /> Billable
-                        </Badge>
+                        <StatusChip lang="en" state="done" label="Billable" />
                       ) : (
                         <div className="space-y-1">
-                          <Badge variant="destructive">Not billable</Badge>
+                          <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label="Not billable" />
                           <p className="max-w-xs text-xs text-muted-foreground">{status.reason}</p>
                         </div>
                       )}

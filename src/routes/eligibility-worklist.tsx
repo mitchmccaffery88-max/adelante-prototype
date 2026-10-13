@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { CoverageAtReleasePanel } from "@/components/coverage/CoverageAtReleasePanel";
 // §Phase 3c — program-level Medi-Cal verification worklist.
 //
@@ -226,9 +227,7 @@ function EligibilityWorklistPage() {
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    <Badge className={STATE_TONE[r.state]}>
-                      {COVERAGE_CHECK_STATE_LABEL[r.state]}
-                    </Badge>
+                    {r.state === "not_medi_cal_reported" ? <span className="text-sm text-ink-muted">{COVERAGE_CHECK_STATE_LABEL[r.state]}</span> : <StatusChip lang="en" state={r.state === "current" ? "done" : access.level === "write" ? "yourturn" : "team"} label={r.state === "current" ? "Verified" : "Check eligibility"} />}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
                     {r.pendingReport && (
