@@ -6,7 +6,9 @@
 - [x] Render supplied artwork and verify image dimensions
 - [x] Authorized mobile-only overlay fix; measured all hero labels above 4.5:1 at 390px, desktop unchanged; 140×40px logo fits
 - [x] Full unit suite: 2,561/2,561 passed (306 files)
-- [ ] All browser specs green: 78/79 passed after units; stopped on /team Back to top visibility failure (websitePolish.spec.ts:45), no assertions/retries/thresholds changed. Axe passed EN on all three pages and ES on home/About; Team ES was not reached. Preview build OK.
+- [x] Approved Back to top visibility rule: past the lesser of one viewport or half the available scroll distance, never at scrollY 0; focus return, reduced motion and crisis clearance unchanged
+- [x] Final full units: 2,561/2,561 (306 files), then all browsers separately: 79/79; axe EN desktop and ES mobile passed home/About/Team without serious or critical issues; no test assertions/retries/thresholds changed
+- [x] Phase 1 complete: artwork, fonts/tokens/brands, mobile contrast, logo fit and full regression validation
 
 ## Public top-bar order (13 Oct)
 - [x] About us and Our team moved to the end of the top bar and mobile menu: How it works · Find where you fit · What you get · FAQ · About us · Our team
