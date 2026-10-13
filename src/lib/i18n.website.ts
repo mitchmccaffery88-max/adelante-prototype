@@ -74,7 +74,7 @@ export const websiteEn = {
   websitePhone: "On your phone",
   websitePhoneBody: "Use it anywhere. No smartphone? We can help with that too.",
   websiteCorner: "A team in your corner",
-  websiteCornerBody: "Counselors and navigators who actually show up — not a chatbot.",
+  websiteCornerBody: "Counselors, navigators who actually show up, and truly helpful tools along the way.",
   websiteTrustCoverage: "Covered by Medi-Cal — no cost to you.",
   websiteTrustPrivacy: "Your information is private and protected.",
   websiteTrustJudgment: "Judgment-free, always.",
