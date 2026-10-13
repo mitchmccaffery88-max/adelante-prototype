@@ -6,8 +6,8 @@
 - [ ] Patient header help modal and approved 988-first order; verify existing advocate-safe help page
 - [ ] Teal website Get started buttons and bilingual Draft UI copy
 - [ ] Measure all requested text contrast in light/dark, desktop/390px; stop below 4.5:1
-- [ ] Full units, then all browsers including axe separately; stop on failure, tests unchanged
-- [ ] Report every changed file, advocate outcome, modal order, contrast and validation
+- [ ] Full units stopped: 2,560 passed / 1 failed; landingWebsite.test.ts:94 still expects the old hero heading. Browsers/axe not run; tests unchanged. Latest harness also reports two HomeDashboard type errors; no further fixes after the stop.
+- [x] Initial contrast pairings and changed-file/failure report recorded in docs/patient-color-pass-report.md; rendered desktop/mobile contrast remains unverified
 
 ## Design system phase 1 (13 Oct)
 - [x] Verify all six supplied SVG hashes before implementation
