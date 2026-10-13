@@ -10,7 +10,7 @@ Paths below are exact; `C/` means `src/components/`, `R/` means `src/routes/`.
 
 **Ownership:** yourturn for existing assignee/eligible role; team for others. Preserve record word; name actual owner beside it. No invented names or routing changes.
 
-| Exact files | Status sites and proposed state mapping |
+| Exact files | Status → state |
 |---|---|
 | `C/clinical/RecordTabs.tsx` | Notes: Draft/Declined → yourturn; Awaiting cosign → yourturn for actual cosigner, team otherwise; Signed/Cosigned → done. Handoffs: pending_review →  yourturn/team; acknowledged → done. SDOH: identified/not_completed → yourturn for owner, team otherwise; sent/accepted/scheduled → team; completed → done. Refill variants unconfirmed. |
 | `R/cosign-inbox.tsx` | Awaiting cosign/Awaiting LPHA cosign →  yourturn/team ; Needs a supervisor/not billable → yourturn. AI-draft stays a modifier. |
@@ -44,7 +44,7 @@ Paths below are exact; `C/` means `src/components/`, `R/` means `src/routes/`.
 
 ## 2. Batch 2b-2 — Operations File List and Counts
 
-Counts are render positions, not records/enum values; conditional variants count once. Ordinary prose excluded.
+Counts: render positions; conditional variants count once; prose excluded.
 
 | Area | Files | Sites |
 |---|---|---:|
@@ -57,7 +57,7 @@ Counts are render positions, not records/enum values; conditional variants count
 | Admin/vendor/supervision/staff | `R/admin-vendors.tsx`; `R/admin-supervision.tsx`; `R/admin-staff.tsx` | 4 |
 | Compliance | `R/quality-compliance.tsx` | 1 |
 
-**Total: 27 sites.** Excludes taxonomy, provenance, KPIs, numeric counts, Simulated/Prototype/Not built yet and Draft-policy labels. Risk-text Draft untouched; Approved included.
+**27 sites.** Excludes taxonomy, provenance, KPIs, numeric counts, Simulated/Prototype/Not built yet and Draft-policy labels. Risk-text Draft untouched; Approved included.
 
 ## 3. Test Contracts
 
