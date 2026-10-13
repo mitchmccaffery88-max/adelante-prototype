@@ -22,6 +22,11 @@ html:has([data-testid="website-layout"]) {
 .website-hero-overlay {
   background: linear-gradient(100deg, color-mix(in oklab, var(--foreground) 70%, transparent), color-mix(in oklab, var(--foreground) 58%, transparent) 65%, color-mix(in oklab, var(--foreground) 12%, transparent));
 }
+@media (max-width: 767px) {
+  .website-hero-overlay {
+    background: linear-gradient(100deg, color-mix(in oklab, var(--foreground) 82%, transparent), color-mix(in oklab, var(--foreground) 76%, transparent) 65%, color-mix(in oklab, var(--foreground) 45%, transparent));
+  }
+}
 [data-testid="website-layout"] .website-heading {
   font-family: var(--font-sans);
   font-weight: 600;
