@@ -66,7 +66,7 @@ export function PatientConsentStatusCard({ patientId }: { patientId: string }) {
         <div className="mt-3 rounded-md border p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="text-sm font-medium text-foreground">{FORM_LABEL[active.formType]}</div>
-            <StatusChip state="done" label={STATUS_LABEL[active.status]} />
+            <StatusChip state={active.status === "active" ? "done" : "closed"} label={STATUS_LABEL[active.status]} />
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
             Starts {prettyDate(active.effectiveDate)} · Ends {prettyDate(active.expirationDate)}
@@ -92,7 +92,7 @@ export function PatientConsentStatusCard({ patientId }: { patientId: string }) {
               <li key={r.id} className="rounded-md border p-3 text-xs">
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-medium text-foreground">{FORM_LABEL[r.formType]}</span>
-                  <StatusChip state="closed" label={STATUS_LABEL[r.status]} />
+                  <StatusChip state={r.status === "active" ? "done" : "closed"} label={STATUS_LABEL[r.status]} />
                 </div>
                 <div className="mt-1 text-muted-foreground">
                   Signed {prettyDate(r.signedAt.slice(0, 10))}

@@ -9,7 +9,7 @@ Standing rules — apply to ALL work, every change, any folder:
 - Outpatient only: in-facility behind `inFacilityEnabled()`, off by default.
 - Demo seeds only through real store functions.
 
-- Member status chips are presentation-only; shared clinical components opt in through their existing audience/actor boundaries, and patient help opens the existing sheet in CrisisHeader. Why: the member color pass cannot change staff rendering, permissions, or lifecycle rules.
+- Member status chips are presentation-only and display existing record labels; shared clinical components opt in through existing audience/actor boundaries. Patient help opens the existing sheet in CrisisHeader; advocate header help is a direct 988 phone link. Spanish translation-review notice is owned once by the member shell. Why: member presentation cannot change staff rendering, permissions, lifecycle rules or expose patient help to advocates.
 
 Full per-module rules: `src/lib/AGENTS.md` — read before changing app logic.
 - Public website text is isolated in `i18n.website.ts`; public header/footer/crisis support live in `WebsiteLayout`, branding uses `WebsiteBrand` and navigation uses `WebsiteNavigation`; `WebsiteContent` shares the closing CTA and owns About/Team content, while application branding stays unchanged. Why: the public brand and future logo must never rename patient or staff experiences.
