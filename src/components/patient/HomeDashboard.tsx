@@ -125,11 +125,11 @@ function TileShell({
   id?: string;
 }) {
   return (
-    <Card className="flex flex-col p-5" id={id}>
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary">
+    <Card className="flex min-w-0 flex-col p-5" id={id}>
+      <div className="flex min-w-0 items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary">
         <Icon className="h-4 w-4" aria-hidden="true" /> {title}
       </div>
-      <div className="mt-2 flex-1">{children}</div>
+      <div className="mt-2 min-w-0 flex-1">{children}</div>
     </Card>
   );
 }
@@ -790,7 +790,7 @@ export function HomeDashboard({
       </Card>
 
       {/* 8 — main grid — ordered by live priority (see tiles above) --------- */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 [&>*]:min-w-0">
         {tiles.map((t) => (
           <div key={t.key} data-tile={t.key} className="contents">
             {t.node}

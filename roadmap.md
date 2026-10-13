@@ -1,6 +1,8 @@
 # Roadmap
 
 ## Patient color pass — phases 2a + 4 (13 Oct)
+- [ ] Final fix: member-only wrapping and shrinkable Home tiles; EN/ES 390px verification, units then separate staff/website/player browser checks
+- [x] Staff navigation isolated warm reruns before changes: 22/22 twice; classify prior two failures as timing flakes under load, no staff changes
 - [x] Approved fix pass applied: one headline assertion; two ES strings; type errors; real chip labels/mappings; one shell Draft notice; advocate tel:988 help; wrapping 48px step targets
 - [x] Settled contrast measured after browser-only transition/animation suppression + 600ms: EN/ES × light/dark × 1280/390; all pairings ≥4.5:1, minimum 5.43:1; website hero/closing dark both 8.86:1 (prior transition capture superseded)
 - [x] Full units completed: 2,561 passed / 0 failed (306 files); all browsers separately completed: 77 passed / 2 failed; axe and Back to top passed Home/About/Team

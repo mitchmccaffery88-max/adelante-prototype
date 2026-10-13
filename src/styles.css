@@ -378,6 +378,15 @@
 .member-comfortable :is(button, a[role="button"], [data-slot="button"], [role="button"], input, select, [role="combobox"]),
 .member-overlay :is(button, [data-slot="button"], [role="button"], input, select, [role="combobox"]) { min-height: 48px; }
 .member-comfortable :is(button, [role="button"]), .member-overlay :is(button, [role="button"]) { min-width: 48px; }
+/* Labelled controls may grow vertically; square icon controls retain their sizing.
+   Leave alignment utilities intact so start-aligned controls stay start-aligned. */
+:is(.member-comfortable, .member-overlay) :is(button, a[role="button"], .inline-flex.whitespace-nowrap):not(:where(.w-8, .w-9, .w-10, .w-11, .w-12, .size-8, .size-9, .size-10, .size-11, .size-12, [data-icon-only])) {
+  white-space: normal;
+  height: auto;
+  min-height: 48px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
 .member-comfortable :is([role="checkbox"], [role="radio"]), .member-overlay :is([role="checkbox"], [role="radio"]) { min-height: 24px; min-width: 24px; }
 .member-comfortable label:has(:is([role="checkbox"], [role="radio"])), .member-overlay label:has(:is([role="checkbox"], [role="radio"])) { min-height: 48px; }
 .member-comfortable .patient-player .member-completion { background: var(--sunrise-soft); }
