@@ -22,7 +22,7 @@ export function AdvocateIdentityBanner({ linkId }: { linkId: string }) {
       >
         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-attention" />
         <div>
-          <p className="font-medium text-navy">Access pending verification</p><StatusChip state="restricted" />
+          <StatusChip state="restricted" label="Access pending verification" />
           <p className="mt-1 text-muted-foreground">{identity.reason}</p>
           <p className="mt-2 text-xs text-muted-foreground">
             Until this is resolved we can't show you who you're connected to, or anything about
@@ -44,7 +44,7 @@ export function AdvocateIdentityBanner({ linkId }: { linkId: string }) {
           You're viewing {identity.firstName}'s information
         </span>
       </span>
-      <StatusChip state="done" title="Access verified" />
+      <StatusChip state="done" label="Access verified" />
     </Card>
   );
 }

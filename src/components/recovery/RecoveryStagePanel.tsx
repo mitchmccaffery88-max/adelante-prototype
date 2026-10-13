@@ -48,7 +48,7 @@ export function RecoveryStageReviewNotice({ className }: { className?: string })
 }
 
 function Timeline({ current, member = false }: { current?: RecoveryStageId; member?: boolean }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const currentOrder = current ? recoveryStage(current).order : 0;
   return (
     <ol className="flex items-stretch gap-1" data-testid="recovery-stage-timeline">
@@ -72,7 +72,7 @@ function Timeline({ current, member = false }: { current?: RecoveryStageId; memb
             >
               {s.label}
             </span>
-            {isCurrent && member && <span className="mt-2 block text-sm text-sunrise-text">{t("youAreHere")}{lang === "es" && <span className="block text-sm text-ink-muted">Borrador</span>}</span>}
+            {isCurrent && member && <span className="mt-2 block text-sm text-sunrise-text">{t("youAreHere")}</span>}
           </li>
         );
       })}

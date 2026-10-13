@@ -111,7 +111,7 @@ export function AdvocateDocumentStatusPanel({
             <li key={row.key} className="space-y-1 rounded-md border p-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium text-navy">{def.label}</span>
-                <StatusChip state={row.status === "verified" ? "done" : row.status === "attested" || def.staffOnly ? "team" : "yourturn"} title={STATUS_LABEL[row.status]} />
+                <StatusChip state={row.status === "verified" ? "done" : row.status === "attested" || def.staffOnly ? "team" : "yourturn"} label={STATUS_LABEL[row.status]} />
               </div>
               <p className="text-xs text-muted-foreground">{def.plainLanguage}</p>
               {row.requestedAt && row.status !== "verified" && (

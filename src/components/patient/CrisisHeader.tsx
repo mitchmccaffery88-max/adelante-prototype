@@ -11,7 +11,7 @@ import { GetHelpNowModal } from "./GetHelpNowModal";
  * that is separate from the sidebar's crisis block.
  */
 export function CrisisHeader() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [helpOpen, setHelpOpen] = useState(false);
   return (
     <div
@@ -39,7 +39,7 @@ export function CrisisHeader() {
           className="ml-auto min-h-12 h-auto whitespace-normal border border-urgent bg-urgent px-4 py-2 text-sm font-semibold text-on-urgent hover:bg-urgent"
         >
           <LifeBuoy className="h-4 w-4" aria-hidden="true" />
-          <span>{t("helpNow")}{lang === "es" && <span className="block text-sm">Borrador</span>}</span>
+          <span>{t("helpNow")}</span>
         </Button>
       </div>
       <GetHelpNowModal open={helpOpen} onOpenChange={setHelpOpen} />

@@ -16,18 +16,17 @@ const states = {
 } as const;
 
 /** Presentation only: state and waiting time always come from the caller's real record. */
-export function StatusChip({ state, aiDraft = false, waitingDays, lang: providedLang, className, ...props }: HTMLAttributes<HTMLSpanElement> & { state: StatusChipState; aiDraft?: boolean; waitingDays?: number; lang?: "en" | "es" }) {
+export function StatusChip({ state, label, aiDraft = false, waitingDays, lang: providedLang, className, ...props }: HTMLAttributes<HTMLSpanElement> & { state: StatusChipState; label?: string; aiDraft?: boolean; waitingDays?: number; lang?: "en" | "es" }) {
   const { lang } = useI18n();
   const es = (providedLang ?? lang) === "es";
   const item = states[state];
   const Icon = item.icon;
-  const word = es ? item.es : item.en;
+  const word = label ?? (es ? item.es : item.en);
   return <span className="inline-flex max-w-full flex-wrap items-center gap-1.5 align-middle">
-    <span {...props} data-status={state} aria-label={word} className={cn("inline-flex items-center gap-1.5 rounded-sm border px-2 py-1 text-sm font-medium leading-5", item.color, className)}>
+    <span {...props} data-status={state} aria-label={word} className={cn("inline-flex max-w-full items-center gap-1.5 rounded-sm border px-2 py-1 text-sm font-medium leading-5", item.color, className)}>
       <Icon className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" /><span>{word}</span>
     </span>
     {aiDraft && <span className="inline-flex items-center gap-1 text-sm text-ink-muted"><Sparkles className="size-4" aria-hidden="true" />{es ? "Borrador de IA" : "AI draft"}</span>}
     {waitingDays !== undefined && Number.isFinite(waitingDays) && waitingDays >= 0 && <span className="text-sm text-ink-muted">{es ? `En espera ${Math.floor(waitingDays)} días` : `Waiting ${Math.floor(waitingDays)} days`}</span>}
-    {es && <span className="text-sm text-ink-muted">Borrador — pendiente de revisión de traducción</span>}
   </span>;
 }

@@ -38,7 +38,7 @@ export function AdvocateMessagesPanel({ linkId }: { linkId: string }) {
         <p className="flex items-center gap-2 text-sm font-medium text-navy">
           <MessageSquare className="h-4 w-4 text-teal" /> Messages with the care team
         </p>
-        <StatusChip state={reviewPending ? "team" : view.allowed ? "upnext" : "restricted"} title={reviewPending ? "Pending clinical review" : view.allowed ? "Open" : "Not available"} />
+        <StatusChip state={reviewPending ? "team" : view.allowed ? "done" : "restricted"} label={reviewPending ? "Pending clinical review" : view.allowed ? "Open" : "Not available"} />
       </div>
 
       {reviewPending && (

@@ -43,7 +43,7 @@ export function SafetyPlanSummaryTile({ patientId }: { patientId: string }) {
                 {summary.sectionsFilled} of {summary.totalSections} sections filled
               </Badge>
             ) : (
-              <StatusChip state="yourturn" title="Not started" />
+              <StatusChip state="yourturn" label="Not started" />
             )}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">

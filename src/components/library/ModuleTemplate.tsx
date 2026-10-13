@@ -334,7 +334,7 @@ function StepProgress({
   labels: string[];
   onJump: (i: number) => void;
 }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const total = labels.length;
   return (
     <div className="space-y-1.5">
@@ -358,7 +358,7 @@ function StepProgress({
               aria-current={current ? "step" : undefined}
               disabled={!visited}
               onClick={() => visited && onJump(i)}
-              className={`h-12 min-w-12 flex-1 rounded-full transition-colors ${
+              className={`h-12 w-12 min-w-12 shrink-0 rounded-full transition-colors ${
                 current
                   ? "bg-surface ring-2 ring-sunrise-mark ring-offset-1 ring-offset-background"
                   : visited
@@ -369,7 +369,7 @@ function StepProgress({
           );
         })}
       </div>
-      <p className="text-base text-foreground">{index + 1}. {labels[index]}</p><p className="text-sm text-sunrise-text">{t("youAreHere")}{lang === "es" && <span className="ml-2 text-sm text-ink-muted">Borrador</span>}</p>
+      <p className="text-base text-foreground">{index + 1}. {labels[index]}</p><p className="text-sm text-sunrise-text">{t("youAreHere")}</p>
       <p className="text-xs text-foreground">
         {index + 1}/{total} {t("modStepsWord")} · {maxVisited + 1} {t("modStepOf")} {total}{" "}
         {t("modVisitedCount")}
@@ -978,7 +978,7 @@ export function ModuleTemplate({
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-semibold text-2xl text-foreground">{title}</h1>
           {completed && (
-            <StatusChip state="done" />
+            <StatusChip state="done" label={t("modCompleted")} />
           )}
           {placeholder && (
             <Badge variant="outline" className="border-border text-foreground">

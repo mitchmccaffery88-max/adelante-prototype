@@ -56,7 +56,7 @@ export function AdvocateCoordinationPanel({ linkId }: { linkId: string }) {
             <li key={i.id} className="rounded-lg border p-3 text-sm">
               <span className="flex items-center justify-between gap-2">
                 <span className="font-medium text-navy">{i.need}</span>
-                <StatusChip state={i.status === "completed" ? "done" : i.status === "not_completed" ? "yourturn" : i.status === "scheduled" ? "upnext" : "team"} title={i.status.replace(/_/g, " ")} />
+                <StatusChip state={i.status === "completed" ? "done" : i.status === "not_completed" ? "yourturn" : i.status === "scheduled" ? "upnext" : "team"} label={i.status.replace(/_/g, " ")} />
               </span>
               {i.note && <span className="mt-1 block text-xs text-muted-foreground">{i.note}</span>}
               {/* §5d-4 — the referrals made for this need, within this
@@ -452,9 +452,9 @@ export function AdvocateDocumentsPanel({ linkId }: { linkId: string }) {
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
                   {d.restricted && (
-                    <StatusChip state="restricted" />
+                    <StatusChip state="restricted" label={t("docRestricted")} />
                   )}
-                  <StatusChip state={d.verification === "verified" ? "done" : d.verification === "rejected" ? "yourturn" : "team"} />
+                  <StatusChip state={d.verification === "verified" ? "done" : d.verification === "rejected" ? "yourturn" : "team"} label={d.verification === "verified" ? t("docStatusVerified") : d.verification === "rejected" ? t("docStatusRejected") : t("docStatusPending")} />
                   {/* The button is offered even for a restricted row: refusing
                       at the SHARED gate (and saying why) is the honest
                       behaviour, and hiding it would be a second, silent rule. */}

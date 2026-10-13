@@ -160,7 +160,7 @@ export function MedCheckInCard({ patientId }: { patientId: string }) {
                   {row.isMat && " · part of your treatment for substance use"}
                 </div>
               </div>
-              <StatusChip state={row.selfReport?.status === "taken" ? "done" : "yourturn"} title={row.selfReport?.status === "taken" ? ADHERENCE_TONE.takenDay : "Still to mark"} />
+              <StatusChip state={row.selfReport?.status === "taken" ? "done" : "yourturn"} label={row.selfReport?.status === "taken" ? ADHERENCE_TONE.takenDay : "Still to mark"} />
             </div>
             <div className="flex flex-wrap gap-2">
               <Button

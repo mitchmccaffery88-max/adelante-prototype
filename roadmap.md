@@ -1,13 +1,14 @@
 # Roadmap
 
 ## Patient color pass — phases 2a + 4 (13 Oct)
+- [x] Approved fix pass applied: one headline assertion; two ES strings; type errors; real chip labels/mappings; one shell Draft notice; advocate tel:988 help; wrapping 48px step targets
 - [ ] StatusChip and scoped patient/advocate status replacements; staff unchanged
 - [ ] Gold next-step tile, neutral suggestions, one sunrise celebration band, 48px member targets
 - [ ] Patient header help modal and approved 988-first order; verify existing advocate-safe help page
 - [ ] Teal website Get started buttons and bilingual Draft UI copy
 - [ ] Measure all requested text contrast in light/dark, desktop/390px; stop below 4.5:1
-- [ ] Full units stopped: 2,560 passed / 1 failed; landingWebsite.test.ts:94 still expects the old hero heading. Browsers/axe not run; tests unchanged. Latest harness also reports two HomeDashboard type errors; no further fixes after the stop.
-- [x] Initial contrast pairings and changed-file/failure report recorded in docs/patient-color-pass-report.md; rendered desktop/mobile contrast remains unverified
+- [ ] Fix pass stopped at captured desktop dark website hero contrast 1.02:1 (likely theme-transition sample; settled result unverified). Latest harness build OK. Units/browsers/axe not run; 390px full checks incomplete. Resume authorization required.
+- [x] Updated docs/patient-color-pass-report.md with fixes, files, captured desktop values, transition caveat and incomplete validation
 
 ## Design system phase 1 (13 Oct)
 - [x] Verify all six supplied SVG hashes before implementation

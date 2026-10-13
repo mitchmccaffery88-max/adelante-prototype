@@ -280,7 +280,7 @@ export function CarePlanCard({
                           {g.text}
                         </span>
                       </span>
-                      <StatusChip state={g.status === "done" ? "done" : "yourturn"} />
+                      <StatusChip state={g.status === "done" ? "done" : g.status === "in_progress" ? "upnext" : "yourturn"} label={t(g.status === "done" ? "goalDone" : g.status === "in_progress" ? "goalInProgress" : "goalNotStarted")} />
                     </li>
                   ))}
                   {patientGoals.length === 0 && (

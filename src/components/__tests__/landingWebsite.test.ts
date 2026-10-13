@@ -91,7 +91,7 @@ describe("public website contract", () => {
     expect(content).toContain('data-testid="website-privacy"');
     expect(landing).not.toContain("websitePrivacyLine");
     expect(landing.indexOf('id="faq"')).toBeLessThan(landing.lastIndexOf("<WebsiteClosing"));
-    expect(websiteEn.websiteHeroHeading).toBe("Forward starts here.");
+    expect(websiteEn.websiteHeroHeading).toBe("Your Path Forward Starts Here.");
     expect(websiteEn.websiteHeroEyebrow).toBe("Care for anyone, wherever you are");
     for (const dict of [websiteEn, websiteEs]) for (const text of Object.values(dict)) {
       const nums = (text.match(/\d+/g) ?? []).filter((n) => !["988", "911", "90", "2", "42"].includes(n));

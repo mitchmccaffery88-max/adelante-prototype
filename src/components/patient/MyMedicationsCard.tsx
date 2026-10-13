@@ -72,7 +72,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {statusBadge ? (
-            <span className="flex flex-wrap items-center gap-2"><StatusChip state={latest?.status === "pending" ? "team" : latest?.status === "approved" || latest?.status === "sent_to_pharmacy" ? "done" : "yourturn"} title={latest?.denyReason} /><span className="text-sm text-ink-muted">{statusBadge.label}</span></span>
+            <StatusChip state={latest?.status === "pending" ? "team" : latest?.status === "approved" || latest?.status === "sent_to_pharmacy" ? "done" : "yourturn"} label={statusBadge.label} />
           ) : (
             <Badge variant="outline" className="text-[10px]">
               active
