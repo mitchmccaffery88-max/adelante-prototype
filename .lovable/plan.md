@@ -1,61 +1,95 @@
-# Patient color pass review — phases 2a + 4
+# Phase 2b — Staff/Admin StatusChip Review
 
-**Review only. No application or test changes.**
+Read-only review: no application, style, data, route, permission or test changes. All proposed chips use the existing record/display label and `lang="en"`. Counts, primitives, member views and explicit exceptions remain unchanged.
 
-## Exact proposed files
+**Knowledge limitation:** the knowledge lookup returned architecture rules, not the referenced design-system status tables. Mappings below follow Mitch’s explicit rules; ambiguous domain statuses are identified rather than claimed to match an unavailable table.
 
-New: `src/components/ui/status-chip.tsx` — eight states, AI modifier, optional real waiting-days caption, inline markup, decorative icons, 14px minimum.
+## 1. Batch 2b-1 — Care Work
 
-Status replacements (paths relative to `src/components/`):
-- `patient/HomeDashboard.tsx`, `PatientHome.tsx` (SupportPlanCard), `patient/MyMedicationsCard.tsx`, `patient/RefillRunwayCard.tsx`, `clinical/MedCheckInCard.tsx`, `clinical/QuickCheckCard.tsx`.
-- `patient/AppointmentsSummary.tsx`, `patient/MyCareTiles.tsx`, `scheduling/VisitActions.tsx` (patient/advocate portions only), `CarePlanCard.tsx` (patient goal status only; severe allergy unchanged).
-- `consent/PatientConsentStatusCard.tsx`, `consent/FormsToSign.tsx`, `patient/SafetyPlanSummaryTile.tsx`, `patient/NeedThreadList.tsx`, `reentry/ObligationsCard.tsx`, `reentry/ReentryDayZeroModule.tsx`.
-- `advocate/AdvocateNextStepsPanel.tsx`, `advocate/AdvocateDocumentChecklist.tsx`, `advocate/AdvocateMessagesPanel.tsx`, `advocate/AdvocateWorkspace.tsx`, `advocate/AdvocateIdentityBanner.tsx`, `advocate/AdvocateStatusList.tsx`, `advocate/AdvocateDesignationPanel.tsx`, `advocate/AdvocatePoAwarenessPanel.tsx`.
-- `src/routes/advocate.tsx` — JSX styling/statuses only; route configuration and access unchanged.
+Paths below are exact; `C/` means `src/components/`, `R/` means `src/routes/`.
 
-Shell, celebrations and public buttons:
-- `src/components/AppShell.tsx`, `src/components/patient/CrisisHeader.tsx` — help trigger/modal ownership and member-only styling; staff branches unchanged.
-- `src/components/recovery/RecoveryStagePanel.tsx`, `src/components/library/ModuleTemplate.tsx` — patient current-step and completion treatments.
-- `src/components/Landing.tsx`, `src/components/WebsiteContent.tsx` — only the two gold Get started overrides become default primary; sizes/destinations unchanged.
-- `src/lib/i18n.tsx`, `src/lib/scheduleCopy.ts` — new UI words and Draft Spanish; the actual “Join video call” source is `scheduleCopy.ts:46`, not the main dictionary.
-- `src/styles.css` — add the missing semantic `shadow-card`; narrowly scoped member touch-target rules and completion background override. Preserve phase-1 colors, fonts and text floors.
-- `src/routes/advocate.library.tsx` — its pending-content block still has raw amber classes, including `border-amber-500` (line 83); presentation only.
+**Ownership rule throughout:** actionable waiting = `yourturn` for the existing assignee/eligible role, `team` for other viewers. Use existing ownership/claim/supervisor fields only; retain the record word and show the existing owner beside it. Never substitute invented names or change routing.
 
-Keep `ui/badge.tsx`, `ui/button.tsx`, stores, permissions and tests unchanged. Roadmap/architecture bookkeeping only after build approval.
+| Exact files | Status sites and proposed state mapping |
+|---|---|
+| `C/clinical/RecordTabs.tsx` | Notes: Draft/Declined → yourturn; Awaiting cosign → yourturn for actual cosigner, team otherwise; Signed/Cosigned → done. Preserve these current words, not “Draft — sign” or “Changes requested.” Handoffs: pending_review → viewer-relative yourturn/team; acknowledged → done. SDOH: identified/not_completed → yourturn for responsible role, team otherwise; sent/accepted/scheduled → team; completed → done. Refill/order-related review statuses in this large file need the table check below. |
+| `R/cosign-inbox.tsx` | Awaiting cosign/Awaiting LPHA cosign → viewer-relative yourturn/team using existing cosign ownership; Needs a supervisor/not billable → yourturn. AI-draft marker remains a modifier, not completed work. |
+| `C/clinical/AsamPanel.tsx` | Draft/Co-signature declined — back to draft → author’s yourturn, others team; Awaiting LPHA co-signature → cosigner’s yourturn, others team; Signed → done. Preserve current labels and Part 2 gates. |
+| `C/clinical/NoteRevisionPanel.tsx` | Voided → closed; Corrected → done; Void pending approval → approver’s yourturn, others team. Late entry is provenance, not lifecycle: unchanged. |
+| `C/clinical/OrdersTab.tsx`, `C/CarePlanCard.tsx` (staff medication branch) | Draft → signing clinician’s yourturn, others team; signed/Active → done; Held → upnext; Discontinued → closed; Completed → done. Keep actual words “Held” and “Discontinued.” Clinical attribute badges (STAT, PRN, controlled, strength, manual dose) are not lifecycle states. |
+| `C/clinical/MedReconTab.tsx` | Completed reconciliation → done; unfinished reconciliation → responsible reviewer’s yourturn, otherwise team. Continue/Modify/Stop are clinical decisions: leave unchanged pending table confirmation. |
+| `C/nursing/NursingSection.tsx` | Awaiting nurse review → nurse’s yourturn, others team; Verified by/Given by → done; Returned by → ordering/reviewing owner’s yourturn, otherwise team; dose cosign pending → cosigner’s yourturn, others team. Preserve Given in clinic and Ordered by metadata. Outpatient review is not assumed to be facility-gated. |
+| `C/chart/LabsAndMeasures.tsx` | Result pending → team; Resulted/Completed → done; Waiting on patient → team; Missed questionnaire → responsible staff yourturn, otherwise team. Placeholder labels unchanged. |
+| `C/chart/ChartDocumentsList.tsx`, `C/documents/DocumentVerifyQueue.tsx` | Verified → done; Rejected → yourturn for correction owner; Pending review → reviewer’s yourturn, others team. File type/uploader metadata unchanged. |
+| `C/scheduling/VisitActions.tsx` | Staff-only: Checked in → treating clinician’s yourturn, others team; Attended → done; No-show → yourturn; Cancelled/Late cancel/Rescheduled → closed. Preserve current No-show word. Existing member LateCancelBadge branch untouched. |
+| `R/group-sessions.tsx`, `C/groups/GroupJoinRequestsQueue.tsx` | Cancelled/Moved → closed; Attendance taken/Notes complete → done; Attendance not taken/notes owed → responsible staff yourturn, otherwise team (numeric notes count unchanged). Join pending → approver’s yourturn, others team; approved → done; declined → closed. Delivery sent → done; failed/missing configuration → yourturn. Group billing classifications stay unchanged. |
+| `C/consent/ConsentFormsPanel.tsx` | Sent/Viewed → team (patient signature outstanding); Signed → done; Declined → closed; Expired → sending staff yourturn, otherwise team. Preserve `form-status-*` and exact STATUS_LABEL words. |
+| `C/ReferralTimelineDrawer.tsx`, `C/admin/ReferralTrackerCard.tsx` | Submitted → intake owner’s yourturn, others team; Contacted → team; Enrolled → done; Declined → closed. Call needed/stale → responsible staff yourturn, others team. Open task → existing task owner’s yourturn, others team; Task closed → done. Preserve count badges. |
+| `C/chart/BriefTab.tsx`, `C/clinical/CareEpisodesPanel.tsx`, `R/clinical-referrals.tsx` | HLOC drafted → author’s yourturn, others team; sent/accepted → team with existing destination/owner; admitted → done; declined/closed → closed. Active episode → done; Discharged → closed. Readmission remains a modifier. Urgent/emergent referral priority requires safety-table confirmation; do not make every operational urgency red. |
+| `C/inbox/InboxActionQueue.tsx`, `C/inbox/AdvocateReviewQueue.tsx`, `C/inbox/CommunityInquiryQueue.tsx` | Unclaimed/Pending review/New → eligible viewer’s yourturn, otherwise team; claimed/Owner → viewer-relative yourturn/team; Contacted → team; Done/Resolved/Task made → done. Assigned by/owner-role metadata not blindly converted into status. Existing crisis-marked inquiry remains urgent. |
+| `C/tasks/TaskWorkRow.tsx`, `R/worklist.tsx` | Pending/In progress → actual owner or role yourturn, others team; Completed → done; Cancelled → closed; Missed → yourturn; Upcoming/snoozed → upnext. Priority STAT/urgent is not automatically a safety state. Summary count badges in TaskQueueCard unchanged. |
+| `R/admin-coordination.tsx`, `R/case-manager.tsx` | Active → done; Frozen/Unassigned → responsible coordinator’s yourturn, others team. Coverage Active → done; Suspended/Assistance → yourturn; Other needs table confirmation. Attended → done; Missed/contact overdue → responsible staff yourturn. ECM and caseload counts unchanged. |
+| `C/careplan/CarePlanEditor.tsx` | Goal met → done; closed → closed; active → owner-relative yourturn/team. Plan review due/pathway changed/flag review → reviewer’s yourturn, others team; future review → upnext. Auto-added remains provenance. |
+| `C/clinical/CrisisPanel.tsx`, `C/escalations/CrisisQueueDetails.tsx`, `R/escalations.tsx` | Active crisis/Open and crisis critical/urgent severity → urgent; Resolved → done. Noncrisis new/acknowledged → owner-relative yourturn/team; handed_off → team; overdue → yourturn, not red unless still safety-urgent. Claimed by uses existing claimant. Preserve retrigger counts and Draft policy/classification notices. |
+| `C/chart/ChartHeader.tsx`, `C/chart/CoverageExtras.tsx`, `C/chart/SeverityFlagsPanel.tsx`, `C/clinical/ClinicalRecordTabs.tsx` | Medi-Cal active/eligible → done; needs check/missing custody time → yourturn; possible duplicate — in review → reviewer’s yourturn, others team. Worsening/Severity change → yourturn; Improving → done. Problem Active → done; Resolved → closed. Severe allergies and critical patient alerts unchanged. |
+| `C/hie/OutsideRecords.tsx` | Accepted follow-up/medication → done; dismissed/ignored → closed; awaiting review → reviewer’s yourturn, otherwise team; withheld for consent/role → restricted. Keep existing Simulated/HIE/Draft banners and counts intact. |
+| `C/clinical/refusal/RefusalRiskTextRecord.tsx` | Reviewed → done; clinical-role restriction → restricted. Draft translation, signed wording/version and language metadata unchanged. |
 
-## Conflicts and recommended interpretation
+### Items not safely table-certified
 
-1. **Shared staff views:** CarePlanCard has an `audience` prop; RecoveryStagePanel has `actor`; LateCancelBadge also renders in StaffVisitActions. Use those existing boundaries and opt-in patient styling for LateCancelBadge, not a global replacement. `AhcdValidationChecklist.tsx:29` has raw amber but is explicitly staff-only in AdvocateDesignationPanel (`:98–110`): leave it for 2b. Do not globally restyle Badge/Button or every `.patient-theme` instance: staff previews and in-person signing also use that class.
-2. **Missing shadow / competing CSS:** all requested color tokens already exist in `styles.css:98–125`; `shadow-card` does not. Existing CSS gives *every* patient Card a shadow (`:356–360`) and `.completion-panel` a gradient (`:374`). Add a semantic shadow and override the completion gradient only for the intended patient treatment; avoid an unrelated global shadow cleanup.
-3. **Sunrise limit:** Home renders up to three milestone cards (`HomeDashboard:297–306,679–690`). Coloring each sunrise-soft conflicts with “max one sunrise fill per screen.” Recommend one shared celebration band containing all existing milestones, with neutral individual items; retain all real milestones. Current-step accents use a ring/text, not another fill.
-4. **Visit behavior:** Home’s tile currently only manages appointments (`HomeDashboard:447–490`); the real join window/URL lives in AppointmentsSummary and `apptPrep.ts` (15 minutes early, through visit end). Reuse those helpers, preserve Simulated labeling, and offer meeting launch only for video—phone/in-person retain their existing guidance. Home currently selects only future scheduled visits (`:309–315`); keeping a visit visible after its start would change selection logic and is not included. With no visit, reuse `suggestions[0]`; if also empty, preserve the library fallback. “After this:” must not promise an unmodeled follow-up: use an existing suggestion, not invented clinical instructions.
-5. **Advocate help conflict:** the unchanged modal reads the *current patient* for recovery visibility and links to patient `/home`, `/adel`, `/library`, `/naloxone`, `/crisis`. Mounting it for advocates is not an advocate-safe help flow; do not substitute the supported patient or alter Part 2 checks. This needs an explicit decision: accept the unchanged destinations as self-help navigation, or authorize a separately scoped advocate-safe presentation. No permission/store changes proposed.
-6. **Touch targets:** existing `Button size="patient"` is 48px, but most affected controls use 44px/small/icon sizes; ModuleTemplate step dots are only 20px minimum width (`:360`). Apply scoped member target sizing, including portal overlays, while retaining visited-only navigation. Do not enlarge staff controls or public header buttons. FormsToSign has no Badge today—its signed/declined text becomes chips without changing the signing flow. Tier, modality and MAT labels are classifications, not task statuses: retain neutral badges rather than assigning misleading status meanings.
-7. **Spanish / safety:** keep chip words exact and add a separate Draft annotation (not appended inside the word). Refill denial/out-of-supply remain Your turn as requested; keep clinical-review labels. Preserve the modal title “In crisis now” and all modal copy/order. Do not change other crisis-copy constants. No new clinical rules or mock waiting counts.
+- Refill review variants and “Other” coverage; HLOC urgent/emergent priority; C-SSRS risk bands (`C/screeners/CssrsStaffControl.tsx`); historical severity flags; pre-release continuity/MAT statuses in shared `CarePlanCard`.
+- Facility-only `C/clinical/ProtocolsTab.tsx`: active/completed/stopped and round Pending/Upcoming/Done/Cancelled are real statuses, but exclude dormant in-facility UI from an outpatient build unless explicitly requested.
+- Episode summary strings (`C/clinical/EpisodeHeaderBadge.tsx`), pathway chips, verification provenance, Readmission, clinical decisions and request types are classifications/modifiers, not necessarily workflow statuses. Do not guess.
+- `ConsentRecordsPanel.tsx` has status in a combined text heading, not a badge; `R/consent-audit.tsx` badges are event categories, not consent status. Leave prose alone rather than turning every status mention into a chip.
 
-## Tests likely to break
+## 2. Batch 2b-2 — Operations File List and Counts
 
-**No existing test directly asserts “Join video call”, Home’s “In crisis now”, `get-help-now-button`, `patient-header-crisis-pill`, `forward-step-card`, or the affected badge color classes. No definite label/class failure found.**
+Counts are **render sites**, not number of records or enum values; conditional variants at one position count once. Includes the existing content lifecycle table cell; excludes ordinary status prose. Names use the prefixes above.
 
-- `src/lib/__tests__/inCrisisNow.test.ts:7–8` pins **OUTSIDE_CRISIS_COPY**, not Home’s hardcoded button. It stays valid if that constant remains unchanged.
-- `src/lib/__tests__/badgeInline.test.tsx:7–8` requires the existing Badge to remain a span. Leave Badge alone; make StatusChip inline too.
-- `src/components/documents/__tests__/documentsI18n.test.tsx:100` requires exact **Restringido** in AdvocateDocumentsPanel. Keep that word in its own element and Draft annotation separate.
-- `src/components/__tests__/goalStatusAudit.test.tsx:40–77` requires the same goal button accessible label and three audited transitions. Chips must not replace the interactive goal button.
-- `patientNavShellParity.test.tsx` and `userNavigationShell.test.ts` in `src/components/__tests__/` pin shell/sidebar structure and staff conditionals; preserve them. `landingWebsite.test.ts:74–79` pins public isolation, destinations and the remaining shell 988 link.
-- `e2e/websitePolish.spec.ts:28–29,80–81` runs axe: teal public buttons and changed sizing can expose real contrast/layout failures. Its Back to top check (`:41–48`) is height-sensitive. `e2e/cfProxyMode.spec.ts:81–99` pins proxy badges: these staff badges stay untouched.
+| Area | Files | Sites |
+|---|---|---:|
+| Claims | `R/admin-claims.tsx`; `C/ops/OpsActionLauncher.tsx` | 4 (denied branches unchanged) |
+| Coverage | `R/eligibility-worklist.tsx`; `C/coverage/CoverageAtReleasePanel.tsx`; `C/coverage/CoveragePlansCard.tsx` | 4 |
+| Credentialing | `R/admin-credentialing.tsx` | 4 |
+| Content/forms | `C/admin/ContentBrowse.tsx`; `C/admin/ContentInventoryTable.tsx`; `C/admin/ResourceVerificationQueue.tsx`; `C/admin/ClinicalContentReviewCard.tsx`; `C/admin/RiskTextReviewPanel.tsx`; `C/admin/ConsentFormLibrary.tsx` | 7 |
+| County reporting | `R/county-reporting.tsx` | 1 |
+| Data exchange | `R/data-exchange.tsx` | 2 |
+| Admin/vendor/supervision/staff | `R/admin-vendors.tsx`; `R/admin-supervision.tsx`; `R/admin-staff.tsx` | 4 |
+| Compliance | `R/quality-compliance.tsx` | 1 |
 
-## GetHelpNowModal order today
+**Total: 27 sites.** Clinical/reading-grade tags, verification-source provenance, KPI Met/Close/Below target, numeric billing/count badges, Simulated/Prototype/Not built yet and Draft policy/configuration labels are excluded. Risk-text Draft remains untouched; Approved is included. Public/member LibraryBrowser is not silently swept into admin scope.
 
-1. Talk to a peer specialist
-2. Talk to Adel
-3. Call 988
-4. Text 988
-5. Naloxone & overdose prevention
-6. I used — help me come back **only when the existing recovery visibility check passes**
-7. Crisis support
+## 3. Tests and Contract Risks
 
-Peer-specialist and come-back entries retain their existing “Not built yet” explanations. No reorder or content changes.
+Confirmed badge-text/markup contracts:
 
-## Validation after approval
+- `e2e/consentWorkflow.spec.ts:41,60,61,125,135`: staff Sent/Signed/Declined. Safe only with exact labels and `form-status-*` retained.
+- `e2e/adminContent.spec.ts:39–41`: Verified and “Verified by Cathy ·”. Preserve exact badge label and separate provenance. The Not verified assertion at line 29 is a filter control, not a badge.
+- `e2e/cfProxyMode.spec.ts:81–83,98–99`: proxy-blocked/proxy-mode text, visibility and count. Keep proxy context badges unchanged; these are not lifecycle statuses.
+- `src/components/__tests__/groupBillingStatus.test.tsx:14–22,42–46`: H0005/H2014/Non-billable and data-billable. Leave billing classification panel unchanged.
+- `src/components/clinical/refusal/__tests__/RefusalRiskTextRecord.test.tsx:46–47,64,89`: Risk text version, Draft translation, Reviewed, clinical-role restriction. Preserve words and disclaimer.
+- `src/lib/__tests__/badgeInline.test.tsx:8`: exact single-span Badge markup; safe because Badge primitive stays unchanged.
 
-Measure gold-tile button, every chip pairing and sunrise text in light/dark at desktop and 390px, including disabled opening-time presentation. Stop/report any requested text contrast below 4.5:1. Run full units, then all browser specs separately, including existing axe; stop on any failure without changing assertions, retries or thresholds. Report changed files and measured/test results. Existing tests do not cover all new patient visual states; supplement with browser inspection without modifying their assertions.
+Shared-boundary regression contracts:
+
+- `e2e/group2Pathways.spec.ts:127,134–135`; `e2e/advocateOnboardingActive.spec.ts:76,88,126`: raw advocate-form `data-status=waiting/signed` and advocate status words. **Would break if its shared paragraph were replaced directly**: StatusChip writes semantic `data-status`. Leave it and member rendering untouched.
+- `src/components/orders/__tests__/MedicationDoseSection.test.tsx:55` pins amber input border, not a status badge. `SupervisionBanner.test.tsx` pins billability text; neither is part of the chip conversion.
+
+No direct staff badge class/color assertions were found beyond the primitive markup contract. Domain-status unit assertions are store tests, not display contracts. The later full suite/browser run remains required; no assertions will be changed to accommodate migration.
+
+## 4. Shared Components — Member Isolation
+
+- `CarePlanCard`: change only `audience !== "patient"`; pre-release helper must branch on audience too. Patient goals/allergies remain unchanged.
+- `RecoveryStagePanel`: preserve actor/member branch and existing member sunrise treatment; no blanket shared-selector edits.
+- `LateCancelBadge`: change only default staff branch; member opt-in unchanged.
+- `AdvocateConsentStatus`: preserve shared status paragraph and its domain-valued attributes; no migration of member status list.
+- Staff content previews use the actual member player/library components: do not restyle them just because mounted in admin.
+- `FormsToSign`, `PatientConsentStatusCard`, patient quick checks/medication chips and all advocate workspace chips remain untouched. Do not change `.patient-theme`, Badge, Button or StatusChip globally.
+
+## 5. Recommended Differences and Build Checks
+
+1. Obtain the referenced mapping tables before table-certifying ambiguous statuses; no invented clinical meanings.
+2. Preserve current labels exactly, including Draft, Declined, Held, Discontinued and No-show. Only state changes; existing owners appear beside words.
+3. Convert badge-like status positions, not all prose, taxonomy or event categories. Restricted chips must never introduce hidden Part 2 teaser rows.
+4. Real waiting captions only from an existing task/status timestamp; omit if no reliable start date. No fake waits or policy changes.
+5. Later build: full units, then every browser spec including axe to completion; collect all failures. Settled light-mode contrast with transitions disabled, dense-table/long-label checks, and exact changed-file report. No test, permission or workflow changes.
