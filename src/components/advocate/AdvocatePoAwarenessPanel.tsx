@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §P1 My Care de-clutter, item 5 — probation/parole sharing shown to an
 // identified advocate on a KNOWLEDGE basis only.
 //
@@ -34,7 +35,7 @@ function Body({ linkId }: { linkId: string }) {
       </p>
       <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
         <span className="font-medium text-navy">Voluntary sharing</span>
-        <Badge variant="outline">{view.voluntaryActive ? "Turned on" : "Not shared"}</Badge>
+        <StatusChip state={view.voluntaryActive ? "done" : "closed"} title={view.voluntaryActive ? "Turned on" : "Not shared"} />
       </div>
       <div className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
         <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />

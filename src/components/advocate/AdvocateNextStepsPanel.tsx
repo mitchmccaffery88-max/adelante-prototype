@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Advocate build 3 Part A — "what you need next".
 //
 // Reads the REAL Build 1 requirement rows (`advocateDocumentRequirements`) and
@@ -66,13 +67,11 @@ export function AdvocateNextStepsPanel({
               <li key={item.key} className="space-y-1.5 rounded-md border p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-navy">{def.label}</span>
-                  <Badge variant={item.staffAction ? "outline" : "secondary"}>
-                    {item.staffAction ? "Waiting on the care team" : "Your turn"}
-                  </Badge>
+                  <StatusChip state={item.staffAction ? "team" : "yourturn"} />
                 </div>
                 <p className="text-xs text-muted-foreground">{def.plainLanguage}</p>
                 {item.requestedAt && (
-                  <p className="text-xs text-amber-700">
+                  <p className="text-xs text-attention">
                     Asked for on <ClientDate value={item.requestedAt} />.
                   </p>
                 )}

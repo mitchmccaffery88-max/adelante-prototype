@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §v3.0 Phase 4 — the advocate's own surface.
 //
 // This route is NOT part of the staff shell and carries no `StaffRole`: an
@@ -151,9 +152,7 @@ function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () =>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={view.allowed ? "default" : "secondary"}>
-            {view.allowed ? "Active" : "No access"}
-          </Badge>
+          <StatusChip state={view.allowed ? "done" : "restricted"} title={view.allowed ? "Active" : "No access"} />
           <Button size="sm" variant="ghost" onClick={onSignOut}>
             Sign out
           </Button>

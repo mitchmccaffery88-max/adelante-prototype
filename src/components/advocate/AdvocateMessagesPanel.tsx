@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Advocate build 3 Part B — advocate ↔ care-team messaging, GATED.
 //
 // The feature is complete: it reads the real patient thread through
@@ -38,17 +39,15 @@ export function AdvocateMessagesPanel({ linkId }: { linkId: string }) {
         <p className="flex items-center gap-2 text-sm font-medium text-navy">
           <MessageSquare className="h-4 w-4 text-teal" /> Messages with the care team
         </p>
-        <Badge variant={reviewPending ? "secondary" : view.allowed ? "default" : "outline"}>
-          {reviewPending ? "Pending clinical review" : view.allowed ? "Open" : "Not available"}
-        </Badge>
+        <StatusChip state={reviewPending ? "team" : view.allowed ? "upnext" : "restricted"} title={reviewPending ? "Pending clinical review" : view.allowed ? "Open" : "Not available"} />
       </div>
 
       {reviewPending && (
         <div
           data-testid="advocate-messaging-review-gate"
-          className="flex gap-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs"
+          className="flex gap-3 rounded-md border border-attention bg-attention-soft p-3 text-xs"
         >
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-attention" />
           <p className="text-muted-foreground">
             {ADVOCATE_MESSAGING_REVIEW.notice}{" "}
             <span className="opacity-80">{ADVOCATE_MESSAGING_REVIEW.scope}</span>

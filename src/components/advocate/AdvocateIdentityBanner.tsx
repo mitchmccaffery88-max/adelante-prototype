@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Advocate Build 2 item 1 — persistent identity banner.
 //
 // The patient's name is released by `advocatePatientIdentity`, which resolves
@@ -18,11 +19,11 @@ export function AdvocateIdentityBanner({ linkId }: { linkId: string }) {
     return (
       <Card
         data-testid="advocate-identity-pending"
-        className="flex gap-3 border-amber-500/40 bg-amber-500/5 p-4 text-sm"
+        className="flex gap-3 border-attention bg-attention-soft p-4 text-sm"
       >
-        <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-attention" />
         <div>
-          <p className="font-medium text-navy">Access pending verification</p>
+          <p className="font-medium text-navy">Access pending verification</p><StatusChip state="restricted" />
           <p className="mt-1 text-muted-foreground">{identity.reason}</p>
           <p className="mt-2 text-xs text-muted-foreground">
             Until this is resolved we can't show you who you're connected to, or anything about
@@ -44,9 +45,7 @@ export function AdvocateIdentityBanner({ linkId }: { linkId: string }) {
           You're viewing {identity.firstName}'s information
         </span>
       </span>
-      <Badge variant="outline" className="text-[10px]">
-        Access verified
-      </Badge>
+      <StatusChip state="done" title="Access verified" />
     </Card>
   );
 }
