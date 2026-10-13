@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §ASCMI consent — PATIENT-FACING, read-only status view.
 //
 // Lives as a section inside /home (patient shell owns three routes only; every
@@ -66,9 +67,7 @@ export function PatientConsentStatusCard({ patientId }: { patientId: string }) {
         <div className="mt-3 rounded-md border p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="text-sm font-medium text-foreground">{FORM_LABEL[active.formType]}</div>
-            <Badge variant="outline" className="text-[10px]">
-              {STATUS_LABEL[active.status]}
-            </Badge>
+            <StatusChip state="done" title={STATUS_LABEL[active.status]} />
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
             Starts {prettyDate(active.effectiveDate)} · Ends {prettyDate(active.expirationDate)}
@@ -94,9 +93,7 @@ export function PatientConsentStatusCard({ patientId }: { patientId: string }) {
               <li key={r.id} className="rounded-md border p-3 text-xs">
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-medium text-foreground">{FORM_LABEL[r.formType]}</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    {STATUS_LABEL[r.status]}
-                  </Badge>
+                  <StatusChip state="closed" title={STATUS_LABEL[r.status]} />
                 </div>
                 <div className="mt-1 text-muted-foreground">
                   Signed {prettyDate(r.signedAt.slice(0, 10))}

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Adelante Journey Phase 7 part 2 — weekly PHQ-2 / GAD-2 quick check.
 // A lightweight gateway INTO the full PHQ-9 / GAD-7 already in this EHR:
 // results are stored through the same screener path, and a positive result
@@ -21,7 +22,6 @@ export function QuickCheckCard({ patientId }: { patientId: string }) {
   const daysSince = lastAt
     ? Math.floor((Date.now() - new Date(lastAt).getTime()) / 86_400_000)
     : undefined;
-  const overdue = daysSince !== undefined && daysSince >= 10;
 
   const set = (key: string, idx: number, value: number) =>
     setAnswers((prev) => {
@@ -57,13 +57,9 @@ export function QuickCheckCard({ patientId }: { patientId: string }) {
           <HeartPulse className="h-4 w-4 text-teal" /> Weekly check-in
         </h3>
         {due ? (
-          <Badge className="bg-teal/15 text-teal border-0 text-[10px]" data-testid="weekly-check-in-due">
-            {overdue ? "Overdue" : "Due this week"}
-          </Badge>
+          <span className="flex flex-wrap items-center gap-2"><StatusChip state="yourturn" data-testid="weekly-check-in-due" /><span className="text-sm text-ink-muted">Ready when you are</span></span>
         ) : (
-          <Badge variant="outline" className="text-[10px]">
-            Done this week
-          </Badge>
+          <StatusChip state="done" title="Done this week" />
         )}
       </div>
       <p className="text-xs text-muted-foreground">

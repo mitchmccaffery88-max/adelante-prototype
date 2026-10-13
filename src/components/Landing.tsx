@@ -71,7 +71,7 @@ export function Landing() {
               <Button
                 asChild
                 size="lg"
-                className="h-12 px-6 text-base bg-gold text-gold-foreground hover:bg-gold/90"
+                className="h-12 px-6 text-base"
               >
                 <Link to="/start/signup">
                   {t("websiteStart")}

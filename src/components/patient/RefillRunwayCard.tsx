@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Small UI gaps batch — refill runway + MAT chip.
 //
 // WHAT IS REAL HERE: every row is a real signed/held `MedOrder` off the
@@ -71,11 +72,11 @@ export function RefillRunwayCard({ patientId }: { patientId: string }) {
               </div>
             </div>
             {runway && (
-              <Badge className={`${TONE[runway.tone]} shrink-0 border-0 text-[10px]`}>
+              <span className="flex flex-wrap items-center gap-2"><StatusChip state={runway.tone === "ok" ? "upnext" : "yourturn"} /><span className="text-sm text-ink-muted">
                 {runway.daysLeft <= 0
                   ? "Out of supply"
                   : `${runway.daysLeft} day${runway.daysLeft === 1 ? "" : "s"} left`}
-              </Badge>
+              </span></span>
             )}
           </li>
         ))}

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { inFacilityEnabled } from "@/lib/inFacility";
 import { AdelanteEHR, useEhr, type CarePlanSnapshot } from "@/lib/ehr";
@@ -285,11 +286,7 @@ export function CarePlanCard({
                           {g.text}
                         </span>
                       </span>
-                      <Badge variant="outline" className="capitalize text-xs">
-                        {goalStatusMap[g.status]
-                          ? t(goalStatusMap[g.status])
-                          : String(g.status).replace("_", " ")}
-                      </Badge>
+                      <StatusChip state={g.status === "done" ? "done" : "yourturn"} />
                     </li>
                   ))}
                   {patientGoals.length === 0 && (

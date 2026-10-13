@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Part B2 — My Care tiles after intake: first appointment, your needs (with
 // matched-resource counts, B3a), recommended for you, and a pending advocate
 // invitation. No "Requested" appointment state exists yet (B3b not built).
@@ -35,7 +36,7 @@ export function FirstAppointmentTile({ patientId }: { patientId: string }) {
       </div>
       {nextIso ? (
         <div className="mt-2 text-sm" data-testid="first-appointment-scheduled">
-          <Badge className="mr-2 border-0 bg-teal/15 text-teal">{c.scheduled}</Badge>
+          <StatusChip state="upnext" title={c.scheduled} className="mr-2" />
           {new Date(nextIso).toLocaleString(L === "es" ? "es-US" : "en-US", {
             weekday: "short",
             month: "short",
@@ -46,7 +47,7 @@ export function FirstAppointmentTile({ patientId }: { patientId: string }) {
         </div>
       ) : (
         <div className="mt-2 text-sm" data-testid="first-appointment-none">
-          <Badge variant="outline" className="mr-2">{c.notScheduled}</Badge>
+          <StatusChip state="team" title={c.notScheduled} className="mr-2" />
           {c.notScheduledBody}
         </div>
       )}
@@ -143,14 +144,14 @@ export function AdvocatePendingTile({ patientId }: { patientId: string }) {
   const links = JSON.parse(namesJson) as { id: string; name: string }[];
   if (links.length === 0) return null;
   return (
-    <Card className="p-5 border-amber-warm/60" data-testid="advocate-pending-tile">
+    <Card className="p-5 border-attention" data-testid="advocate-pending-tile">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
         <UserPlus className="h-4 w-4" /> {c.advTitle}
       </div>
       <ul className="mt-2 space-y-1 text-sm">
         {links.map((l) => (
           <li key={l.id}>
-            <span className="font-medium">{l.name}</span> — {c.advPending}
+            <span className="font-medium">{l.name}</span> <StatusChip state="team" /> — {c.advPending}
           </li>
         ))}
       </ul>

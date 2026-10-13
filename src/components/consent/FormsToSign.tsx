@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Consent W3 — patient "Forms to sign". One card per form, one checkbox,
 // ONE signature step at the end. Part 2 has its own card naming who receives
 // what and why. State lives in the store (save & resume). Draft — pending counsel review.
@@ -40,7 +41,7 @@ export function FormsToSign({ patientId, lang = "en", channel = "portal", only, 
     }
   };
   return (
-    <section id="forms-to-sign" className="patient-theme space-y-3 rounded-3xl bg-card p-4 sm:p-5" data-testid="forms-to-sign">
+    <section id="forms-to-sign" className={`${channel === "portal" ? "member-overlay " : ""}patient-theme space-y-3 rounded-3xl bg-card p-4 sm:p-5`} data-testid="forms-to-sign">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-xl font-semibold text-foreground">{t.title}</h2>
         <span className="text-sm font-medium text-muted-foreground" data-testid="forms-progress">{t.done(done, items.length)}</span>
@@ -66,9 +67,9 @@ export function FormsToSign({ patientId, lang = "en", channel = "portal", only, 
             <div className="mt-2"><LessonReadAloud text={`${f.title[lang]}. ${f.summary[lang]}`} stepKey={`consent-${f.key}`} /></div>
             <p className="text-[11px] text-muted-foreground">{t.voice}</p>
             {r.status === "signed" ? (
-              <p className="mt-2 font-medium text-teal">{t.signed}</p>
+              <span className="mt-2 inline-flex items-center gap-2"><StatusChip state="done" lang={lang} /><span>{t.signed}</span></span>
             ) : r.status === "declined" ? (
-              <p className="mt-2 text-muted-foreground">{t.declined}</p>
+              <span className="mt-2 inline-flex items-center gap-2"><StatusChip state="closed" lang={lang} /><span>{t.declined}</span></span>
             ) : (
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <label className="flex min-h-11 items-center gap-2 text-[17px]">

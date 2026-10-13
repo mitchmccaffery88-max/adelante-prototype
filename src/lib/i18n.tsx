@@ -30,6 +30,12 @@ const dict = {
     ...recoveryUiEn,
     ...recoveryModuleEn,
     ...benefitsEn,
+    helpNow: "Get help now",
+    nextStep: "Your next step",
+    afterThis: "After this:",
+    changeTime: "Change time",
+    opensAt: "Opens at",
+    youAreHere: "You are here",
     appName: "Adelante",
     tagline: "Care that meets you where you are.",
     subtagline:
@@ -437,6 +443,12 @@ const dict = {
     ...benefitsEs,
     // ES-only first-pass overrides for Module 1 lesson bodies (pending review).
     ...recoveryContentEs,
+    helpNow: "Recibe ayuda ahora",
+    nextStep: "Tu próximo paso",
+    afterThis: "Después de esto:",
+    changeTime: "Cambiar hora",
+    opensAt: "Se abre a las",
+    youAreHere: "Estás aquí",
     appName: "Adelante",
     tagline: "Atención que te encuentra donde estás.",
     subtagline:
