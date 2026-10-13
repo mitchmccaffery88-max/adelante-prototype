@@ -52,7 +52,7 @@ export const websiteEn = {
   websiteReady: "Ready When You Are",
   websiteReadyBody: "Wherever you're starting from, we'll meet you there. Connect with our team to take your next step forward.",
   websiteHeroEyebrow: "Care for anyone, wherever you are",
-  websiteHeroHeading: "Forward starts here.",
+  websiteHeroHeading: "Your Path Forward Starts Here.",
   websiteHeroBody: "Whole-person care for your mind, your recovery, and your everyday life — by video or in person, with real people in your corner.",
   websiteHeroAlt: "A person standing on a quiet road at sunrise, looking toward an open path",
   websiteHeroNote: "Free with Medi-Cal · Private · No judgment.",
