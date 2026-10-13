@@ -6,7 +6,7 @@
 - [x] Full units completed: 2,561 passed / 0 failed (306 files); all browsers separately completed: 77 passed / 2 failed; axe and Back to top passed Home/About/Team
 - [x] 390px EN/ES checks completed: 11-step lesson targets 48×48px; advocate header, long chips, medications, actual appointments pass
 - [ ] Spanish Home scrollWidth 431px at 390px: nowrap support-connect button expands grid/gold tile; no fix applied
-- [ ] Browser failures: PMHNP denied /nurse stays /nurse instead of /clinician; billing denied /referral-queue stays there instead of /inbox (staffNav.rbac.spec.ts:116)
+- [ ] Browser failures: PMHNP denied /nurse stays /nurse instead of /clinician; billing denied /referral-queue redirects to /inbox only after timeout (staffNav.rbac.spec.ts:116)
 - [x] Automatic harness build OK; no manual build/typecheck, app/style/copy/test/permission changes in validation-only turn
 - [x] Updated docs/patient-color-pass-report.md with complete matrix, phone evidence, counts and every failure; phase completion pending Mitch's decisions, not all green
 
