@@ -2,10 +2,11 @@
 
 ## Design system phase 1 (13 Oct)
 - [x] Verify all six supplied SVG hashes before implementation
-- [ ] Apply approved fonts, global tokens, aliases and brand-link changes only
-- [ ] Render supplied artwork and verify image dimensions
-- [ ] Measure hero contrast and 390px logo fit; stop on failure
-- [ ] Full unit suite, then all browser specs separately; report unchanged-assertion failures
+- [x] Apply approved fonts, global tokens, aliases and brand-link changes only
+- [x] Render supplied artwork and verify image dimensions
+- [x] Authorized mobile-only overlay fix; measured all hero labels above 4.5:1 at 390px, desktop unchanged; 140×40px logo fits
+- [x] Full unit suite: 2,561/2,561 passed (306 files)
+- [ ] All browser specs green: 78/79 passed after units; stopped on /team Back to top visibility failure (websitePolish.spec.ts:45), no assertions/retries/thresholds changed. Axe passed EN on all three pages and ES on home/About; Team ES was not reached. Preview build OK.
 
 ## Public top-bar order (13 Oct)
 - [x] About us and Our team moved to the end of the top bar and mobile menu: How it works · Find where you fit · What you get · FAQ · About us · Our team
