@@ -82,3 +82,74 @@ CarePlanCard: staff audience/helpers only. LateCancelBadge: staff default only. 
 Get missing tables; preserve words and actual owners. Avoid prose/taxonomy conversions and Part 2 teasers. Wait captions need real dates.
 
 Later: units then all browsers/axe to completion; all failures reported. Settled light contrast, transitions off; long-label checks; every file reported. No assertions/permissions/workflow edits.
+
+## 3. Phase 3 — Safety-Only Red + MOUD Continuity (Review Only)
+
+No application/test changes made. Detailed, counted file:line inventory: [Phase 3 red inventory](./phase3-red-inventory.md). Earlier phase-2 mappings remain unchanged.
+
+### Part A — Batches and treatments
+
+Inventory: **305 unique source lines / 138 files**. Overlapping pattern counts: destructive variants **55**, destructive text **201**, fills **110**, borders/rings **62**, raw red/rose **1**, crisis tokens **13**, richColors **1**. Each location in the inventory is marked KEEP safety, CHANGE non-safety, conditional MIXED, or an explicit exception/definition. Indirect variants, urgent tokens and CSS aliases are listed separately. Counts are source locations, not rendered instances.
+
+1. **Shared presentation:** neutral Sonner toasts; richColors off at the root; attention CircleAlert for errors/problems. Validation uses attention text + CircleAlert and a thicker neutral field border, never a red border; preserve ARIA, focus and existing error wording. Do not globally recolor destructive/urgent tokens or Badge/Button primitives: safety and denied claims still need them. Update Form presentation only where shared error styling owns the red.
+2. **Operations and actions:** overdue/Unassigned → owner-relative yourturn/team with existing words; Waiting N days only from an existing authoritative date, never from an aggregate or invented timestamp. Neutral count styling; values unchanged. Delete/revoke/write-off/deactivate/dismiss/deny → outline secondary treatment with explicit verbs; existing dialogs and reason gates untouched.
+3. **Restrictions, AI and simulation:** Part 2/access labels → restricted chips, without changing visibility; AI draft → existing modifier. Simulated/Prototype/Not built yet → simulated treatment; Coming later only where nothing is built. Calm simulated banner for whole screens; retain guardrail detail and literal Simulated for external sync and tested phrases.
+4. **Safety boundaries:** raspberry stays for Get help now/988, crisis escalations and safety banners, severe allergy, C-SSRS high, and the specified MOUD urgency. Generic stat priority, broad score/BP/BMI/lab bands, missing allergies, signing blocks, historical alerts and a metadata value “critical” alone do not establish safety. Mixed shared mappings must use existing safety predicates without altering data. Denied claims keep their current look; Draft-policy and KPI Met/Close/Below remain unchanged. Dormant facility ProtocolsTab is inventoried but excluded from implementation; outpatient-only remains enforced.
+
+**No separate confirmation today:** direct frequency deletion, obligation/toolkit removal and AI-sentence deletion; refill denial and ASAM dismissal have inline reason controls but no separate dialog. Allergy override is a safety action with a reason gate, no separate dialog. Exact references are in the inventory. Do not add confirmations in this presentation-only batch.
+
+**Test impacts:** no direct red/destructive/richColors assertions found. MedicationDoseSection asserts an amber border, which stays. Preserve “Read aloud (Simulated voice)” and “Shared from Adel (summary, Simulated)”, simulation audits/confirmation words, Verified, form-status-* hooks, cfProxyMode, groupBillingStatus and RefusalRiskTextRecord contracts. Changing all simulation words to Coming later would break tests and standing rules. No test assertion/retry/threshold changes.
+
+### Part B — Existing data and proposed staff controls
+
+- `src/lib/ehr.ts`: Patient (`:1634`, assignment IDs and releaseDate; releaseDateMeta holds provenance); MedOrder (`:1055`, startDate/daysSupply/prescriberStaffId/preReleaseEpisodeId); PreReleaseEpisode (`:4001`, anticipatedReleaseDate, actualReleaseDate, cfCareManagerStaffId, receivingEcmStaffId); ReentryCarePlan (`:4119`). Store arrays and getters already own episode/care-plan data. `markPreReleaseEpisodeReleased` persists actual release and the confirmed patient projection; `saveReentryCarePlan` audits section saves.
+- `src/lib/medAdherence.ts:116`: isMatOrder uses medication-name/ingredient regex plus isSuboxoneOrder. `:142`: refillRunway derives daysLeft from startDate + daysSupply; missing/invalid supply yields undefined. It estimates supply from the order, not pharmacy dispensing. `src/lib/medContinuity.ts` derives continuity alerts, assigns prescriberFor and currently uses a separate runway-critical draft threshold; those workflows/thresholds are not silently changed.
+- Add one **per-patient MOUD continuity record**, tied to the relevant release episode/date so a later release cannot inherit an old confirmation. Save through new AdelanteEHR store functions and registered runAction actions, with appendAudit in the existing stream. Require an audit reason; record actor, timestamp and before/after event metadata using existing Part 2-safe conventions.
+- Writers: existing assigned reentry guide (`cfCareManagerStaffId`) or assigned care coordinator via assignmentIdentityFor/isAssignedTo, plus isPrescriberRole (physician/pmhnp). Narrow with existing role, chart/site/restricted-record and Part 2 gates; assignment is not an access grant. No permission-matrix widening, proxy shortcut or role-name guessing. Other authorized staff read-only; staff lacking Part 2 access see no MOUD-specific record/title. AB133 coordination exemption does not authorize SUD access.
+- Put a compact status/control with a reasoned side drawer in the existing **pre-release episode detail** and **chart ReentryHandoffTab**, reading one shared record. No new route; no patient/advocate continuity UI. Demo examples only when needed, visibly Demo, seeded via real store functions.
+
+#### Technical shape and display defaults
+
+```ts
+interface MoudContinuityRecord {
+  patientId: string;
+  episodeId?: string; // release-cycle linkage, not a new route
+  releaseDate?: string; // confirmed release basis, when available
+  planInPlace?: {
+    type: "bridge_prescription" | "moud_appointment";
+    at: string;
+    byStaffId: string;
+  };
+  confirmed?: {
+    type: "first_community_dose" | "moud_visit_kept";
+    at: string;
+    byStaffId: string;
+  };
+}
+```
+
+Staff-only, with MOUD on record and existing disclosure access; use lang="en" and the requested visible/accessibility labels. Add **“Default per published guidance; pending clinical review (Dr. Bagga)”** at each clinical branch; existing Draft-policy wording stays.
+
+| Condition (confirmed takes precedence) | State / label |
+|---|---|
+| Confirmed for this release cycle | done · Confirmed |
+| Released 0–14 calendar days ago, not confirmed | urgent · Reach out today |
+| Released >14 days ago, not confirmed | yourturn · Confirm MOUD continuity |
+| Before release, no recorded plan | yourturn · Set MOUD plan |
+| Before release, plan recorded | upnext · Plan in place |
+| Existing runway daysLeft <=0, MOUD medication | urgent · Out of MAT — reach out |
+| Existing runway daysLeft <=0, other medication | yourturn · Ask for a refill |
+
+Use facility-timezone calendar dates for release-window comparison; do not infer actual release from an anticipated date. No runnable date/supply → no invented urgency or numbers. Continuity confirmation does not suppress a separate out-of-supply medication warning. Patient medication/runway rendering stays unchanged; staff slices must carry real order IDs/supply, not infer it from a plan summary.
+
+### Recommendations / differences
+
+- Link continuity to a release cycle; otherwise a second release would falsely appear Confirmed.
+- Keep simulated wording when a capability exists but its integration is simulated; Coming later must not imply the working demo is absent.
+- Keep existing isMatOrder for this batch, but flag that its naltrexone/MAT classification is broader than strictly OUD-specific MOUD; do not invent indication data or change identification without clinical review.
+- Identify uncertain release dates and order-estimated supply explicitly. Missing data must not become “no plan”, “released” or “out of supply” by inference.
+- Do not merge existing four-day continuity-alert workflow thresholds into this new 14-day display rule; any routing/alert-policy change needs separate authorization.
+
+### Later build validation / reporting
+
+No permission widening, routes, workflow changes (outside the authorized new continuity recording), or test assertion/retry/threshold changes. Full unit suite first; then **every browser spec to completion**, including axe and Back to top. Collect all failures together; no stop-at-first-failure or opportunistic fixes. Measure light-mode contrast after colors settle, review mixed safety branches and report every changed file. No validation claims are made for this review-only turn.
