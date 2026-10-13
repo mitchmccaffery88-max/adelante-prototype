@@ -85,3 +85,66 @@ Counts below are literal `<StatusChip` render positions in the resulting files, 
 | `src/routes/escalations.tsx` | 2 |
 | `src/routes/group-sessions.tsx` | 8 |
 | `src/routes/worklist.tsx` | 1 |
+
+# Batch 2b-2 operations — final report (13 Oct)
+
+## Scope and exact files
+
+Presentation only; no tests, assertions, retries, thresholds, permissions, workflows, data stores, routes or primitives changed. Denied claims, KPI/count badges, clinical/policy Draft labels, Simulated/Prototype labels and advocate consent paragraph remain unchanged. ContentBrowse was reviewed but not edited: its badges describe Draft taxonomy and Part 2 classification, not workflow status.
+
+**17 operations application files, 26 StatusChip render positions** (conditional variants counted once, not rendered records):
+
+| File | Chip positions |
+|---|---:|
+| src/routes/admin-claims.tsx | 3 |
+| src/components/ops/OpsActionLauncher.tsx | 1 |
+| src/routes/eligibility-worklist.tsx | 1 |
+| src/components/coverage/CoverageAtReleasePanel.tsx | 2 |
+| src/components/coverage/CoveragePlansCard.tsx | 1 |
+| src/routes/admin-credentialing.tsx | 4 |
+| src/components/admin/ContentInventoryTable.tsx | 1 |
+| src/components/admin/ResourceVerificationQueue.tsx | 1 |
+| src/components/admin/ClinicalContentReviewCard.tsx | 1 |
+| src/components/admin/RiskTextReviewPanel.tsx | 1 |
+| src/components/admin/ConsentFormLibrary.tsx | 1 |
+| src/routes/county-reporting.tsx | 1 |
+| src/routes/data-exchange.tsx | 2 |
+| src/routes/admin-vendors.tsx | 2 |
+| src/routes/admin-supervision.tsx | 2 |
+| src/routes/admin-staff.tsx | 1 |
+| src/routes/quality-compliance.tsx | 1 |
+
+Two additional application files contain the approved 2b-1 corrections: `src/components/clinical/CrisisPanel.tsx` routine → yourturn, critical/urgent unchanged; `src/components/chart/SeverityFlagsPanel.tsx` historical flags plain neutral existing words, current worsening and item-9 chips unchanged. **19 application files total**; supporting documentation: AGENTS.md, this report and roadmap.md.
+
+English labels use existing record words except Mitch's specified replacements. Viewer-relative action states use billing/eligibility/staff-supervision write access, resource verifier gate, coverage-release ownerStaffId/coordinator pool and COUNTY_PREPARER_ROLE. This changes presentation, never those gates. County `draft_ready` is derived from an actual ready submission, therefore Ready → yourturn/team; not_started → upnext. Coverage types stay plain neutral text. Expiring credentials use actual expiresAt dates; no date is invented.
+
+## Final validation and all failures
+
+- Automatic harness build/typecheck: **build OK**, latest observed 22:38:08 UTC; no manual project build/typecheck run.
+- Final units: **306/306 files, 2,561/2,561 tests passed**, 79.90s, `/tmp/ops-units-final.log`; earlier full units also 2,561/2,561.
+- Final complete all-browser run: **79/79 passed**, 6.5m, exit 0, `/tmp/ops-browsers-complete.log`; includes axe and Back-to-top tests. **No test failures** and no authorized warm staff-nav rerun needed.
+- Earlier complete all-browser run: **79/79 passed**, 7.6m, `/tmp/ops-browsers.log`.
+- An intermediate final browser attempt was environment-terminated after **57 passed**, no assertion failures recorded (`/tmp/ops-browsers-final.log`). Relaunched with completion tracking; the final full run above reached completion. A polling execution connection also interrupted, but the tracked browser process continued and completed successfully.
+- No browser page errors in the four diagnostic operations screens. Switching actors while still on the prior route briefly showed existing access-restricted toasts; navigation subsequently reached each authorized target normally. No routing changes made.
+
+## Settled light contrast and 1280px screenshots
+
+Real populated claims (billing coordinator), eligibility (billing coordinator, plus coordinator read-only), credentialing (credentialing coordinator) and content Manage (clinical coordinator) views. Browser-only `*{transition:none !important; animation:none !important}`, light root class, wait 600ms before sampling. Computed chip foreground/background colors resolved to sRGB with browser canvas; WCAG relative luminance calculation.
+
+| Screen | Visible chips sampled | Minimum text/background contrast |
+|---|---:|---:|
+| Claims | 17 | 5.43:1 (With payer/team) |
+| Eligibility worklist + coverage at release | 24 | 5.43:1 (coverage-release overdue/team) |
+| Credentialing | 17 | 5.43:1 (In review/team) |
+| Content Manage | 90 | 6.03:1 (Live/done) |
+
+**Overall minimum 5.43:1**, above 4.5:1. Diagnostic evidence: `/tmp/browser/operations/{claims,eligibility,credentialing,content}.png` and `results.json`. Screenshots at **1280×1800**, viewport-only, reviewed: table columns remain aligned, long labels wrap within cells, no broken rows. Content Manage renders 90 real inventory rows; claims 15, eligibility 23 including release coverage, credentialing 15. These are observed diagnostic counts, not new app statistics.
+
+## Unmapped / deliberately unchanged
+
+- ContentBrowse: only Draft taxonomy/Part 2 classification, no actual status badge eligible for conversion. This explains the difference from the original 27-site estimate; implemented total is 26.
+- Data-exchange follow-up open/overdue: no per-event owner or role assignment available in the rendered event; retain existing outline word rather than guessing yourturn/team. Followed up → done; n/a remains applicability, not closed. Part 2 consent required → restricted.
+- Vendor degraded health and session scheduled/clinician_joined/patient_joined/expired/failed: no definite action owner in these display records; retain current badges. Healthy → done; in progress → done; ended → closed. Simulation labels and active counts unchanged.
+- Eligibility not_medi_cal_reported describes reported coverage applicability, not verified eligibility: plain existing “Not Medi-Cal (reported)” wording, no false verification chip. Coverage-release reactivation_submitted retains “Reactivation submitted”; pending retains “Pending”; both team. Unknown/not_enrolled use approved coverage-help wording.
+- Credential missing expiration date retains existing expiring word; no fake date. No standalone time-off “Out” badge exists in the scoped credentialing route.
+- Denied claims deliberately retain current look pending billing input. Draft-policy, KPI, numeric-count and severe clinical-risk exceptions remain as authorized.
