@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Admin — real, visible status of clinical content still awaiting sign-off.
 // Reads the same flags the patient/clinician UI reads, so this panel can never
 // claim "reviewed" while the product still renders draft text.
@@ -24,15 +25,7 @@ export function ClinicalContentReviewCard() {
     <Card className="p-3 space-y-2" data-testid="clinical-content-review">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-medium text-navy">Clinical content review status</h2>
-        <Badge
-          className={
-            pending
-              ? "bg-amber-500/15 text-amber-700 border-0 text-[10px]"
-              : "bg-emerald-500/15 text-emerald-700 border-0 text-[10px]"
-          }
-        >
-          {pending ? "Review pending" : "Signed off"}
-        </Badge>
+        <StatusChip lang="en" state={pending ? "team" : "done"} label={pending ? "Review pending" : "Signed off"} />
       </div>
       <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
         {pending ? (

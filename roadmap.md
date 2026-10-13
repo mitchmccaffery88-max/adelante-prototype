@@ -1,5 +1,12 @@
 # Roadmap
 
+## Staff StatusChip — batch 2b-2 (13 Oct)
+- [x] Operations-only status chips and two authorized care-work corrections; preserve exceptions, member views and test contracts
+- [x] Harness build; full units then every browser/axe to completion; record all failures and conditional warm navigation rerun
+- [x] Settled light contrast and 1280px claims/eligibility/credentialing/content screenshots; report files, chip counts and unmapped statuses
+
+Validation: build OK; 2,561 units and 79/79 browsers (axe/Back to top) passed; 26 operations chip positions in 17 files plus two care-work corrections; settled light minimum 5.43:1. Exceptions and interrupted intermediate run recorded in docs/staff-statuschip-2b-report.md.
+
 ## Staff StatusChip — batch 2b-1 (13 Oct)
 - [x] Care-work status-chip presentation applied in 40 application files (96 resulting chip render positions, including existing member positions); member boundaries, counts, selectors and 2b-2 files preserved
 - [ ] Remaining defaults: authoritative pre-release MOUD confirmation/out-of-supply fields unavailable in shared display slice; exact escalation total-wait date unavailable (current dueAt caption is overdue age); see report

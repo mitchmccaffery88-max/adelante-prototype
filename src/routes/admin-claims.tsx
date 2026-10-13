@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { OpsActionLauncher } from "@/components/ops/OpsActionLauncher";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
@@ -372,9 +373,7 @@ function ClaimsPage() {
                       <td className="py-2 font-mono text-xs">{pt?.programId ?? "—"}</td>
                       <td className="text-xs">{String(e.detail?.["service"] ?? "")}</td>
                       <td>
-                        <Badge className="bg-destructive/15 text-destructive font-mono text-[10px]">
-                          {String(e.detail?.["reasonCode"] ?? "blocked")}
-                        </Badge>
+                        <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label={`Blocked: ${String(e.detail?.["reasonCode"] ?? "blocked")}`} />
                       </td>
                       <td className="text-xs text-muted-foreground">
                         {String(e.detail?.["reason"] ?? "")}
@@ -419,7 +418,7 @@ function ClaimsPage() {
                       <TableCell className="px-2 py-2" data-cell="patient">
                         {pt?.firstName} {pt?.lastName}
                         {(c as { duplicateReview?: unknown }).duplicateReview ? (
-                          <Badge variant="destructive" className="ml-1" data-testid="claim-duplicate-review">Possible duplicate after merge — held for billing review</Badge>
+                          <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label="Possible duplicate" className="ml-1" data-testid="claim-duplicate-review" />
                         ) : null}
                       </TableCell>
                       <TableCell className="px-2 py-2">
@@ -469,7 +468,7 @@ function ClaimsPage() {
                         {c.serviceCode ? `${c.serviceCode}${c.units ? ` ×${c.units}` : ""}` : "—"}
                       </TableCell>
                       <TableCell className="px-2 py-2" data-cell="clinician">{cl?.name}</TableCell>
-                      <TableCell className="px-2 py-2" data-cell="state"><Badge className={stateStyle[c.state]}>{c.state}</Badge><ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = gateMessageFor(role, c); return m ? <p className="mt-1 text-[11px] text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</TableCell>
+                      <TableCell className="px-2 py-2" data-cell="state">{c.state === "denied" ? <Badge className={stateStyle[c.state]}>{c.state}</Badge> : <StatusChip lang="en" state={c.state === "documented" ? "upnext" : c.state === "submitted" ? "team" : c.state === "paid" ? "done" : c.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={c.state === "documented" ? "Documented" : c.state === "signed" || c.state === "coded" || c.state === "generated" ? "Ready to submit" : c.state === "submitted" ? "With payer" : c.state === "partial" ? "Partly paid — review" : c.state} />}<ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = gateMessageFor(role, c); return m ? <p className="mt-1 text-[11px] text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</TableCell>
                       <TableCell className="px-2 py-2 font-mono text-xs" data-cell="charge"><ClaimAmount claim={c} /></TableCell>
                       <TableCell className="px-2 py-2">{c.reviewFlag ? <span data-testid="claim-review-flag" className="font-medium text-destructive">{c.reviewFlag.label}</span> : (c.denialReason ?? "—")}</TableCell>
                       <TableCell className="px-2 py-2 text-right space-x-2">

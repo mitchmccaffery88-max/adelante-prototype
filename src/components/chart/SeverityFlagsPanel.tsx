@@ -20,7 +20,7 @@ export function SeverityFlagsPanel({ patientId }: { patientId: string }) {
       {flags.map((f) => (
         <div key={f.id} className="flex flex-wrap items-center gap-2" data-testid={`severity-flag-${f.kind}`}>
           {/* Default per published guidance; pending clinical review (Dr. Bagga) */}
-          {f.kind === "flag" ? <StatusChip lang="en" state="yourturn" label={f.reasons.includes("item9") ? "Needs suicide screen" : "Worsening — review"} /> : <span className="text-sm text-ink-muted">Improving</span>}
+          {f.historical ? <span className="text-sm text-ink-muted">{f.kind === "flag" ? "Severity change" : "Improving"}</span> : f.kind === "flag" ? <StatusChip lang="en" state="yourturn" label={f.reasons.includes("item9") ? "Needs suicide screen" : "Worsening — review"} /> : <span className="text-sm text-ink-muted">Improving</span>}
           <span className="min-w-0 flex-1">{f.text}{f.historical && <span className="ml-1 text-xs text-muted-foreground" data-testid="severity-historical">· {SEVERITY_HISTORICAL_LABEL}</span>}</span>
           {f.kind === "flag" && !f.historical && can && (
             <Button size="sm" variant="outline" onClick={() => { try { actFor("severity_flag_review", "reviewSeverityFlag", patientId, patientId, f.id, { name: a.staffName, role: a.role, staffId: a.staffId }); toast.success("Marked reviewed"); } catch (e) { toast.error((e as Error).message); } }}>

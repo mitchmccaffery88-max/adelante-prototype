@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { formatClinicianName } from "@/lib/coordination";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
@@ -33,7 +34,7 @@ import {
   readCredentialFile,
   type CredentialFilePayload,
 } from "@/lib/credentialFile";
-import { useActingStaff } from "@/lib/roles";
+import { canAccess, useActingStaff } from "@/lib/roles";
 import {
   CREDENTIAL_IMPORT_COLUMNS,
   CREDENTIAL_IMPORT_NOTE,
@@ -449,7 +450,8 @@ function ImportDialog({
 }
 
 function CredentialingAdminPage() {
-  const { staffName } = useActingStaff();
+  const { staffName, role } = useActingStaff();
+  const canManageCredentials = canAccess(role, "staff_supervision").level === "write";
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const creds = useEhrExt(() => AdelanteEHRExt.listAllCredentials());
   const enrollments = useEhrExt(() => AdelanteEHRExt.listAllEnrollments());
@@ -537,7 +539,7 @@ function CredentialingAdminPage() {
                     <b>{cl?.name}</b> — {c.kind}{" "}
                     {c.expiresAt ? `· expires ${c.expiresAt}` : "· missing expiry"}
                   </span>
-                  <Badge className={statusStyle[c.status]}>{c.status}</Badge>
+                  <StatusChip lang="en" state={c.status === "current" ? "done" : c.status === "under_review" ? "team" : canManageCredentials ? "yourturn" : "team"} label={c.status === "expiring" ? (c.expiresAt ? `Expires ${c.expiresAt}` : "expiring") : c.status === "expired" ? "Expired" : c.status === "missing" ? "Missing — upload" : c.status === "under_review" ? "In review" : c.status} />
                 </li>
               );
             })}
@@ -575,11 +577,9 @@ function CredentialingAdminPage() {
                     <td>{c.expiresAt ?? "—"}</td>
                     <td>
                       <div className="flex flex-wrap items-center gap-1">
-                        <Badge className={statusStyle[c.status]}>{c.status}</Badge>
+                        <StatusChip lang="en" state={c.status === "current" ? "done" : c.status === "under_review" ? "team" : canManageCredentials ? "yourturn" : "team"} label={c.status === "expiring" ? (c.expiresAt ? `Expires ${c.expiresAt}` : "expiring") : c.status === "expired" ? "Expired" : c.status === "missing" ? "Missing — upload" : c.status === "under_review" ? "In review" : c.status} />
                         {pending && (
-                          <Badge variant="outline" data-testid={`followup-badge-${c.id}`}>
-                            follow-up sent
-                          </Badge>
+                          <StatusChip lang="en" state="team" label="follow-up sent" data-testid={`followup-badge-${c.id}`} />
                         )}
                       </div>
                     </td>
@@ -671,7 +671,7 @@ function CredentialingAdminPage() {
                     <td>{e.payer}</td>
                     <td>{e.billingTin}</td>
                     <td>
-                      <Badge variant="outline">{e.status}</Badge>
+                      <StatusChip lang="en" state={e.status === "enrolled" ? "done" : e.status === "pending" ? "team" : e.status === "terminated" ? "closed" : canManageCredentials ? "yourturn" : "team"} label={e.status === "terminated" ? "Ended" : e.status} />
                     </td>
                     <td>{e.effectiveFrom ?? "—"}</td>
                   </tr>

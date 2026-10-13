@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Phase 3b — the one coverage model, visible.
 //
 // Payer spans used to live in a second, disconnected store that no screen
@@ -92,9 +93,7 @@ export function CoveragePlansSection({
                     {c.payer}
                     {c.plan ? ` — ${c.plan}` : ""}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {current ? "Current" : "Ended"}
-                  </span>
+                  <StatusChip lang="en" state={current ? "done" : "closed"} label={current ? "Current" : "Ended"} />
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   <ClientDate value={c.from} /> –{" "}

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -74,7 +75,7 @@ function QualityCompliancePage() {
         <Card className="p-4" data-testid="unusual-volume">
           <h2 className="font-semibold">Unusual volume — today</h2>
           <p className="text-xs text-muted-foreground">Flag when one person opens more than {UNUSUAL_VOLUME_DRAFT} distinct charts in a day (Draft threshold).</p>
-          {vol.length ? <ul className="mt-2 text-sm">{vol.map((v) => <li key={v.actorId}><Badge variant="destructive">Unusual volume</Badge> {v.actorName} · {v.charts} charts</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">No one over the threshold today.</p>}
+          {vol.length ? <ul className="mt-2 text-sm">{vol.map((v) => <li key={v.actorId}><StatusChip lang="en" state={RESTRICT_ROLES.includes(role) ? "yourturn" : "team"} label="Unusual volume" /> {v.actorName} · {v.charts} charts</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">No one over the threshold today.</p>}
         </Card>
 
         {RESTRICT_ROLES.includes(role) && (

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §B6 — same-day staff add / change / deactivate. sys_admin only, reason
 // required on every write, all via runAction → staffLifecycle.ts.
 import { createFileRoute } from "@tanstack/react-router";
@@ -70,9 +71,7 @@ function AdminStaffPage() {
                 <td className="py-1.5 pr-2">{m.fullName ?? m.name}</td>
                 <td className="py-1.5 pr-2">{STAFF_ROLES.find((r) => r.key === m.role)?.label ?? m.role}</td>
                 <td className="py-1.5 pr-2">
-                  <Badge className={`${m.active === false ? "bg-destructive/15 text-destructive" : "bg-success/20 text-success"} border-0 text-[10px]`}>
-                    {m.active === false ? "Deactivated" : "Active"}
-                  </Badge>
+                  <StatusChip lang="en" state={m.active === false ? "closed" : "done"} label={m.active === false ? "Deactivated" : "Active"} />
                 </td>
                 <td className="py-1.5 pr-2 space-x-2">
                   <Button size="sm" variant="outline" onClick={() => setDrawer({ kind: "edit", id: m.id })}>Change roles/sites</Button>

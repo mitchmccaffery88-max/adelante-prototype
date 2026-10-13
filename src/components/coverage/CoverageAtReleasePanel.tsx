@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §B2 — "Coverage at release" tracker. Shown on the pre-release roster, the
 // coverage worklist and /coverage-release. Eligibility check stays Simulated.
 import { useState } from "react";
@@ -59,9 +60,9 @@ export function CoverageAtReleasePanel({ compact = false }: { compact?: boolean 
                 <tr key={r.episodeId} className="border-t" data-testid="coverage-release-row">
                   <td className="py-1.5">{r.patientName}</td>
                   <td>{r.releaseDate}{r.released ? "" : " (expected)"}</td>
-                  <td><span>{r.statusLabel}</span><div className="text-xs text-muted-foreground">{r.source} · {r.statusAt}</div></td>
+                  <td><StatusChip lang="en" state={r.status === "active" ? "done" : r.status === "pending" || r.status === "reactivation_submitted" ? "team" : mayEdit && (r.ownerStaffId ? r.ownerStaffId === me.staffId : me.role === "clinical_coordinator" || me.role === "sys_admin") ? "yourturn" : "team"} label={r.status === "suspended" ? "Suspended — renew" : r.status === "unknown" || r.status === "not_enrolled" ? "Needs coverage help" : r.statusLabel} /><div className="text-xs text-muted-foreground">{r.source} · {r.statusAt}</div></td>
                   <td>{dayOffsetLabel(r.dayOffset)}</td>
-                  <td>{r.escalation ? <Badge variant="destructive">Overdue — {NEXT_ACTION_LABEL[r.nextAction]}</Badge> : NEXT_ACTION_LABEL[r.nextAction]}{r.flagged && <Badge variant="outline" className="ml-1">10+ days</Badge>}</td>
+                  <td>{r.escalation ? <StatusChip lang="en" state={mayEdit && (r.ownerStaffId ? r.ownerStaffId === me.staffId : me.role === "clinical_coordinator" || me.role === "sys_admin") ? "yourturn" : "team"} label={`Overdue — ${NEXT_ACTION_LABEL[r.nextAction]}`} /> : NEXT_ACTION_LABEL[r.nextAction]}{r.flagged && <Badge variant="outline" className="ml-1">10+ days</Badge>}</td>
                   <td>{r.ownerName}</td>
                   <td className="whitespace-nowrap">{mayEdit && <><Button size="sm" variant="outline" onClick={() => { setEdit(r); setStatus(r.status); }}>Update</Button> <Button size="sm" variant="ghost" onClick={() => check(r)}>Check (Simulated)</Button></>}</td>
                 </tr>
