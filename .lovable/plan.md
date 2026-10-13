@@ -59,37 +59,26 @@ Counts are **render sites**, not number of records or enum values; conditional v
 
 **Total: 27 sites.** Clinical/reading-grade tags, verification-source provenance, KPI Met/Close/Below target, numeric billing/count badges, Simulated/Prototype/Not built yet and Draft policy/configuration labels are excluded. Risk-text Draft remains untouched; Approved is included. Public/member LibraryBrowser is not silently swept into admin scope.
 
-## 3. Tests and Contract Risks
+## 3. Test Contracts
 
-Confirmed badge-text/markup contracts:
+Safe with exact words/selectors retained:
+- `e2e/consentWorkflow.spec.ts:41,60,61,125,135`: Sent/Signed/Declined, `form-status-*`.
+- `e2e/adminContent.spec.ts:39–41`: Verified and verifier provenance. Line 29 is a filter, not a badge.
+- `e2e/cfProxyMode.spec.ts:81–83,98–99`: proxy text/visibility/count; context badges unchanged.
+- `src/components/__tests__/groupBillingStatus.test.tsx:14–22,42–46`: billing words/data-billable; unchanged.
+- `src/components/clinical/refusal/__tests__/RefusalRiskTextRecord.test.tsx:46–47,64,89`: version/Draft/Reviewed/restriction words.
+- `src/lib/__tests__/badgeInline.test.tsx:8`: single-span Badge markup; primitive unchanged.
 
-- `e2e/consentWorkflow.spec.ts:41,60,61,125,135`: staff Sent/Signed/Declined. Safe only with exact labels and `form-status-*` retained.
-- `e2e/adminContent.spec.ts:39–41`: Verified and “Verified by Cathy ·”. Preserve exact badge label and separate provenance. The Not verified assertion at line 29 is a filter control, not a badge.
-- `e2e/cfProxyMode.spec.ts:81–83,98–99`: proxy-blocked/proxy-mode text, visibility and count. Keep proxy context badges unchanged; these are not lifecycle statuses.
-- `src/components/__tests__/groupBillingStatus.test.tsx:14–22,42–46`: H0005/H2014/Non-billable and data-billable. Leave billing classification panel unchanged.
-- `src/components/clinical/refusal/__tests__/RefusalRiskTextRecord.test.tsx:46–47,64,89`: Risk text version, Draft translation, Reviewed, clinical-role restriction. Preserve words and disclaimer.
-- `src/lib/__tests__/badgeInline.test.tsx:8`: exact single-span Badge markup; safe because Badge primitive stays unchanged.
+Shared hazard: `e2e/group2Pathways.spec.ts:127,134–135` and `e2e/advocateOnboardingActive.spec.ts:76,88,126` pin advocate words and domain `data-status=waiting/signed`. Direct conversion breaks attributes: StatusChip writes its semantic state. Keep paragraph unchanged.
 
-Shared-boundary regression contracts:
+`MedicationDoseSection.test.tsx:55` pins amber input border, not badge; `SupervisionBanner.test.tsx` pins billability text. Both unchanged. No direct staff badge color/class assertions located. Store-status assertions are not display contracts; suites were not run in this review.
 
-- `e2e/group2Pathways.spec.ts:127,134–135`; `e2e/advocateOnboardingActive.spec.ts:76,88,126`: raw advocate-form `data-status=waiting/signed` and advocate status words. **Would break if its shared paragraph were replaced directly**: StatusChip writes semantic `data-status`. Leave it and member rendering untouched.
-- `src/components/orders/__tests__/MedicationDoseSection.test.tsx:55` pins amber input border, not a status badge. `SupervisionBanner.test.tsx` pins billability text; neither is part of the chip conversion.
+## 4. Shared Boundaries
 
-No direct staff badge class/color assertions were found beyond the primitive markup contract. Domain-status unit assertions are store tests, not display contracts. The later full suite/browser run remains required; no assertions will be changed to accommodate migration.
+CarePlanCard: staff audience only, including helper branches. LateCancelBadge: default staff only. RecoveryStagePanel: preserve actor/member rendering. AdvocateConsentStatus: retain domain-valued paragraph. Staff content previews retain member player styling. FormsToSign, PatientConsentStatusCard and patient/advocate chips unchanged; no global primitive/theme edits.
 
-## 4. Shared Components — Member Isolation
+## 5. Recommendations / Validation
 
-- `CarePlanCard`: change only `audience !== "patient"`; pre-release helper must branch on audience too. Patient goals/allergies remain unchanged.
-- `RecoveryStagePanel`: preserve actor/member branch and existing member sunrise treatment; no blanket shared-selector edits.
-- `LateCancelBadge`: change only default staff branch; member opt-in unchanged.
-- `AdvocateConsentStatus`: preserve shared status paragraph and its domain-valued attributes; no migration of member status list.
-- Staff content previews use the actual member player/library components: do not restyle them just because mounted in admin.
-- `FormsToSign`, `PatientConsentStatusCard`, patient quick checks/medication chips and all advocate workspace chips remain untouched. Do not change `.patient-theme`, Badge, Button or StatusChip globally.
+Obtain missing tables before certifying ambiguous mappings. Preserve current words and show actual owners separately. Convert badge positions, not prose/taxonomy. Restricted chips must not expose hidden Part 2 rows. Waiting captions require real start dates; otherwise omit.
 
-## 5. Recommended Differences and Build Checks
-
-1. Obtain the referenced mapping tables before table-certifying ambiguous statuses; no invented clinical meanings.
-2. Preserve current labels exactly, including Draft, Declined, Held, Discontinued and No-show. Only state changes; existing owners appear beside words.
-3. Convert badge-like status positions, not all prose, taxonomy or event categories. Restricted chips must never introduce hidden Part 2 teaser rows.
-4. Real waiting captions only from an existing task/status timestamp; omit if no reliable start date. No fake waits or policy changes.
-5. Later build: full units, then every browser spec including axe to completion; collect all failures. Settled light-mode contrast with transitions disabled, dense-table/long-label checks, and exact changed-file report. No test, permission or workflow changes.
+Later: full units, then all browsers including axe to completion; report failures together. Settled light contrast, transitions off; dense-table/long-label checks; exact changed-file report. No assertions, permissions or workflows changed.
