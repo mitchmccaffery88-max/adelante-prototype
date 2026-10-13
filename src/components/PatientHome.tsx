@@ -573,7 +573,7 @@ function SupportPlanCard({ patientId }: { patientId: string }) {
           <li key={i.id} className="rounded-md border p-2.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-navy">{i.need}</span>
-              <StatusChip state={i.status === "completed" ? "done" : i.status === "not_completed" ? "yourturn" : i.status === "scheduled" ? "upnext" : "team"} title={statusLabel[i.status] ?? i.status} />
+              <StatusChip state={i.status === "completed" ? "done" : i.status === "not_completed" ? "yourturn" : i.status === "scheduled" ? "upnext" : "team"} label={statusLabel[i.status] ?? i.status} />
             </div>
             {i.note && <div className="text-xs text-muted-foreground mt-1">{i.note}</div>}
           </li>

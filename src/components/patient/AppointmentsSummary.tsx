@@ -79,12 +79,12 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
             </div>
           )}
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 max-w-full flex-col items-end gap-2">
+          <div className="flex max-w-full flex-wrap items-center gap-1.5">
             <Badge variant="outline" className="gap-1 text-[10px]">
               <ModIcon className="h-3 w-3" /> {modLabel(sc, appt.modality ?? "video")}
             </Badge>
-            <StatusChip state={appt.status === "attended" ? "done" : appt.status === "no_show" ? "yourturn" : isVisitCancelled(appt.status) || appt.status === "rescheduled" ? "closed" : "upnext"} title={sc.status[appt.status] ?? appt.status.replace(/_/g, " ")} />
+            <StatusChip state={appt.status === "attended" ? "done" : appt.status === "no_show" ? "yourturn" : isVisitCancelled(appt.status) || appt.status === "rescheduled" ? "closed" : "upnext"} label={sc.status[appt.status] ?? appt.status.replace(/_/g, " ")} />
           </div>
           {/* §Build A item 4 — real join action for video visits. */}
           {!past && !isVisitCancelled(appt.status) && (appt.modality ?? "video") === "video" && (
@@ -136,16 +136,15 @@ export function JoinCallButton({ appt, nextStep = false }: { appt: Appointment; 
         <Button size="sm" variant="outline" className={nextStep ? "min-h-12 border-line-strong bg-surface text-ink-muted disabled:opacity-100" : "min-h-12 disabled:opacity-100"} disabled data-testid="join-call-early">
           <Video className="mr-1.5 h-4 w-4" /> {t("opensAt")} {new Date(+new Date(appt.start) - 15 * 60_000).toLocaleTimeString(lang === "es" ? "es-US" : "en-US", { hour: "numeric", minute: "2-digit" })}
         </Button>
-        {lang === "es" && <span className="text-sm text-ink-muted">Borrador</span>}
       </span>
     );
   }
   return (
-    <span className="inline-flex flex-wrap items-center gap-2"><Button asChild size="sm" className="min-h-12" data-testid="join-call-button">
+    <span className="inline-flex flex-wrap items-center gap-2"><Button asChild size="sm" className="min-h-12 h-auto max-w-full whitespace-normal" data-testid="join-call-button">
       <a href={url} target="_blank" rel="noreferrer">
         <Video className="mr-1.5 h-4 w-4" /> {real ? sc.join : `${sc.join} (${simulatedSurfaceLabel("telehealth_simulated")})`}
       </a>
-    </Button>{lang === "es" && <span className="text-sm text-ink-muted">Borrador</span>}</span>
+    </Button></span>
   );
 }
 
@@ -158,7 +157,7 @@ function ModalityGroup({ appts, modality }: { appts: Appointment[]; modality: Ap
   const Icon = mod.icon;
   return (
     <section className="space-y-2">
-      <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <h3 className="flex max-w-full flex-wrap items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         <Icon className="h-3.5 w-3.5" /> {modLabel(sc, modality)}
         <span className="font-normal normal-case tracking-normal">({rows.length})</span>
       </h3>

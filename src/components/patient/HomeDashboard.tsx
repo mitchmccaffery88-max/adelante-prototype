@@ -98,8 +98,12 @@ const SDOH_STATUS_LABEL: Record<string, string> = {
 
 const REFERRAL_STATUS_LABEL: Record<string, string> = {
   pending: "In progress",
-  accepted: "Partner accepted",
-  completed: "Done",
+  connected: "Done",
+  waitlisted: "Waitlisted",
+  not_eligible: "Not eligible",
+  declined_by_client: "Declined by client",
+  unreachable: "Unreachable",
+  closed: "Closed",
 };
 
 function greeting(now: Date): string {
@@ -450,9 +454,8 @@ export function HomeDashboard({
     node: (
           <Card data-next-step className="rounded-lg bg-gold p-5 text-on-gold shadow-card">
             <div className="flex items-center gap-2 text-sm font-medium"><Sun className="size-5" aria-hidden="true" />{playerText("nextStep")}</div>
-            {lang === "es" && <span className="text-sm">Borrador — pendiente de revisión de traducción</span>}
             {nextAppt ? <>
-              <h2 className="mt-2 text-xl font-bold">{AdelanteEHR.getServiceType(nextAppt.serviceType ?? "")?.label ?? (lang === "es" ? "Cita" : "Visit")}</h2>
+              <h2 className="mt-2 text-xl font-bold">{(nextAppt.serviceType ? AdelanteEHR.getServiceType(nextAppt.serviceType)?.label : undefined) ?? (lang === "es" ? "Cita" : "Visit")}</h2>
               <p className="mt-1"><ClientDate value={nextAppt.start} options={{ weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} /></p>
               <p className="mt-1 text-sm">{AdelanteEHR.getClinician(nextAppt.clinicianId)?.name}</p>
               <p className="mt-2 text-sm">{apptPrepTip(nextAppt.modality)}</p>
@@ -572,7 +575,7 @@ export function HomeDashboard({
               <li key={i.id} className="rounded-2xl border p-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 truncate text-sm">{i.need}</span>
-                  <StatusChip state={i.status === "completed" ? "done" : i.status === "not_completed" ? "yourturn" : i.status === "scheduled" ? "upnext" : "team"} title={SDOH_STATUS_LABEL[i.status] ?? i.status} />
+                  <StatusChip state={i.status === "completed" ? "done" : i.status === "not_completed" ? "yourturn" : i.status === "scheduled" ? "upnext" : "team"} label={SDOH_STATUS_LABEL[i.status] ?? i.status} />
                 </div>
                 <p className="mt-1 text-[11px] text-muted-foreground" data-testid="sdoh-need-meta">
                   {[categoryName(i.categoryId ?? match?.categoryIds[0]), `From ${provenanceFor(i.source)}`, i.urgency ? `Help needed: ${URGENCY_LABEL.en[i.urgency].toLowerCase()}` : null].filter(Boolean).join(" · ")}
@@ -591,7 +594,7 @@ export function HomeDashboard({
                 <span className="min-w-0 truncate text-sm capitalize">
                   {r.category} — {r.provider}
                 </span>
-                <StatusChip state={r.status === "completed" ? "done" : "team"} title={REFERRAL_STATUS_LABEL[r.status] ?? r.status} />
+                <StatusChip state={r.status === "connected" ? "done" : r.status === "closed" || r.status === "declined_by_client" ? "closed" : r.status === "not_eligible" || r.status === "unreachable" ? "yourturn" : "team"} label={REFERRAL_STATUS_LABEL[r.status] ?? r.status} />
               </li>
             ))}
           </ul>

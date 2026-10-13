@@ -66,11 +66,7 @@ export function RefillRunwayCard({ patientId }: { patientId: string }) {
               </div>
             </div>
             {runway && (
-              <span className="flex flex-wrap items-center gap-2"><StatusChip state={runway.tone === "ok" ? "upnext" : "yourturn"} /><span className="text-sm text-ink-muted">
-                {runway.daysLeft <= 0
-                  ? "Out of supply"
-                  : `${runway.daysLeft} day${runway.daysLeft === 1 ? "" : "s"} left`}
-              </span></span>
+              <StatusChip state={runway.tone === "ok" ? "upnext" : "yourturn"} label={runway.daysLeft <= 0 ? "Out of supply" : `${runway.daysLeft} day${runway.daysLeft === 1 ? "" : "s"} left`} />
             )}
           </li>
         ))}

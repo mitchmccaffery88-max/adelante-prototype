@@ -35,7 +35,7 @@ export function FirstAppointmentTile({ patientId }: { patientId: string }) {
       </div>
       {nextIso ? (
         <div className="mt-2 text-sm" data-testid="first-appointment-scheduled">
-          <StatusChip state="upnext" title={c.scheduled} className="mr-2" />
+          <StatusChip state="upnext" label={c.scheduled} className="mr-2" />
           {new Date(nextIso).toLocaleString(L === "es" ? "es-US" : "en-US", {
             weekday: "short",
             month: "short",
@@ -46,7 +46,7 @@ export function FirstAppointmentTile({ patientId }: { patientId: string }) {
         </div>
       ) : (
         <div className="mt-2 text-sm" data-testid="first-appointment-none">
-          <StatusChip state="team" title={c.notScheduled} className="mr-2" />
+          <StatusChip state="team" label={c.notScheduled} className="mr-2" />
           {c.notScheduledBody}
         </div>
       )}
@@ -150,7 +150,7 @@ export function AdvocatePendingTile({ patientId }: { patientId: string }) {
       <ul className="mt-2 space-y-1 text-sm">
         {links.map((l) => (
           <li key={l.id}>
-            <span className="font-medium">{l.name}</span> <StatusChip state="team" /> — {c.advPending}
+            <span className="font-medium">{l.name}</span> <StatusChip state="team" label={c.advPending} />
           </li>
         ))}
       </ul>

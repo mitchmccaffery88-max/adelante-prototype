@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { WebsiteLayout } from "@/components/WebsiteLayout";
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -5,7 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { PatientHelpLink } from "@/components/PatientHelpLink";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { NotificationBell } from "@/components/NotificationBell";
-import { ShieldCheck, UserCog, ChevronDown, User as UserIcon, Phone, LogOut } from "lucide-react";
+import { ShieldCheck, UserCog, ChevronDown, User as UserIcon, Phone, LogOut, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
@@ -155,7 +156,7 @@ export function AppShell() {
           !isPatientSurface && "sticky top-10",
         )}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-2 sm:gap-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex flex-wrap items-center gap-2 sm:gap-4">
           {isAdvocateSurface && <UserNavigationDrawer mode="advocate" />}
           <Link
             to="/"
@@ -165,7 +166,8 @@ export function AppShell() {
             <img src="/brand/adelante-compact-dark.svg" alt="Adelante" width="476" height="136" className={cn("hidden w-auto dark:block", isAdvocateSurface ? "h-10" : "h-8")} />
           </Link>
 
-          <div className="ml-auto flex items-center gap-2 min-w-0">
+          {isAdvocateSurface && <Button asChild className="ml-auto min-h-12 h-auto max-w-full whitespace-normal border border-urgent bg-urgent px-4 py-2 text-sm font-semibold text-on-urgent hover:bg-urgent"><a href="tel:988" aria-label={lang === "es" ? "Recibe ayuda ahora: llama al 988" : "Get help now: call 988"}><LifeBuoy className="size-4" aria-hidden="true" />{t("helpNow")}</a></Button>}
+          <div className="ml-auto flex flex-wrap items-center gap-2 min-w-0">
             {/* B10 — who the staff user is acting as, always visible. */}
             {isStaffSurface && (
               <div
@@ -341,6 +343,7 @@ export function AppShell() {
         )}
       </header>
 
+      {(isPatientSurface || isAdvocateSurface) && lang === "es" && <p data-testid="member-translation-draft" className="mx-auto w-full max-w-7xl px-4 py-2 text-sm text-ink-muted sm:px-6">Borrador — pendiente de revisión de traducción</p>}
       <main className="flex-1">
         {isPatientSurface ? (
           <div className="flex min-h-full">

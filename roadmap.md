@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Patient color pass — phases 2a + 4 (13 Oct)
+- [ ] Approved fix pass: one headline assertion; two ES strings; type errors; real chip labels/mappings; one shell Draft notice; advocate tel:988 help; 390px step targets
 - [ ] StatusChip and scoped patient/advocate status replacements; staff unchanged
 - [ ] Gold next-step tile, neutral suggestions, one sunrise celebration band, 48px member targets
 - [ ] Patient header help modal and approved 988-first order; verify existing advocate-safe help page

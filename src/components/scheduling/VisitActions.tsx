@@ -24,7 +24,7 @@ import { StatusChip } from "@/components/ui/status-chip";
 
 export function LateCancelBadge({ appt, member = false }: { appt: Appointment; member?: boolean }) {
   if (!appt.cancellation?.lateCancel) return null;
-  if (member) return <span className="inline-flex flex-wrap items-center gap-2"><StatusChip state="closed" data-testid="late-cancel-label" title="Draft label — no fee logic" /><span className="text-sm text-ink-muted">{LATE_CANCEL_LABEL} · draft</span></span>;
+  if (member) return <StatusChip state="closed" label={`${LATE_CANCEL_LABEL} · draft`} data-testid="late-cancel-label" />;
   return (
     <Badge variant="outline" className="text-[10px]" data-testid="late-cancel-label" title="Draft label — no fee logic">
       {LATE_CANCEL_LABEL} · draft
@@ -253,8 +253,8 @@ export function CancelRequestControl({
   if (appt.cancelRequest?.status === "pending")
     return (
       <p className="text-xs font-medium text-navy" data-testid="cancel-requested-notice">
-        <StatusChip state="team" />{" "}
-        Cancel requested — your care team will confirm.
+        <StatusChip state="team" label="Cancel requested" />{" "}
+        — your care team will confirm.
       </p>
     );
   if (appt.status !== "scheduled" || +new Date(appt.start) <= Date.now()) return null;

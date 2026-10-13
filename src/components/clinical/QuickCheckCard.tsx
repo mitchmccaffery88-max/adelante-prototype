@@ -56,9 +56,9 @@ export function QuickCheckCard({ patientId }: { patientId: string }) {
           <HeartPulse className="h-4 w-4 text-teal" /> Weekly check-in
         </h3>
         {due ? (
-          <span className="flex flex-wrap items-center gap-2"><StatusChip state="yourturn" data-testid="weekly-check-in-due" /><span className="text-sm text-ink-muted">Ready when you are</span></span>
+          <StatusChip state="yourturn" label="Ready when you are" data-testid="weekly-check-in-due" />
         ) : (
-          <StatusChip state="done" title="Done this week" />
+          <StatusChip state="done" label="Done this week" />
         )}
       </div>
       <p className="text-xs text-muted-foreground">

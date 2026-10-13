@@ -65,7 +65,7 @@ export function AdvocateDesignationPanel({
                   {l.advocateName}
                   {l.relationship ? ` · ${l.relationship}` : ""}
                 </span>
-                {designatedBy.actor === "patient" ? <StatusChip state={l.status === "active" ? "done" : l.status === "invited" ? "team" : "closed"} /> : <Badge variant={l.status === "active" ? "default" : "secondary"}>{l.status}</Badge>}
+                {designatedBy.actor === "patient" ? <StatusChip state={l.status === "active" ? "done" : l.status === "invited" ? "team" : "closed"} label={l.status} /> : <Badge variant={l.status === "active" ? "default" : "secondary"}>{l.status}</Badge>}
               </div>
               <p className="text-xs text-muted-foreground">
                 {l.authorizationType

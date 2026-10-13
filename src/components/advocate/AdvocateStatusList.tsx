@@ -26,7 +26,7 @@ export function AdvocateStatusList({ patientId }: { patientId: string }) {
           <li key={l.id} className="rounded-md border p-3 text-sm space-y-1">
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium">{l.advocateName}</span>
-              <span className="inline-flex flex-wrap items-center gap-2"><StatusChip state={st === "active" ? "done" : st === "waiting_consent" ? "yourturn" : "team"} /><span data-testid="advocate-status">{ADVOCATE_STATUS_LABEL[st][es ? "es" : "en"]}</span></span>
+              <StatusChip state={st === "active" ? "done" : st === "waiting_consent" ? "yourturn" : "team"} label={ADVOCATE_STATUS_LABEL[st][es ? "es" : "en"]} data-testid="advocate-status" />
             </div>
             {l.notificationDelivery?.status === "failed" && (
               <p role="alert" className="text-xs text-destructive">

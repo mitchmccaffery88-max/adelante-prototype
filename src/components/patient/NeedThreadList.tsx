@@ -83,9 +83,9 @@ function ReferralLine({ line }: { line: NeedReferralLine }) {
   const { t } = useI18n();
   const org = line.orgName ?? t("needRefOrgWithheld");
   return (
-    <li className="rounded-md border bg-card/60 p-2.5 text-sm"><StatusChip state={line.outcome === "connected" ? "done" : line.outcome === "closed" || line.outcome === "declined_by_client" ? "closed" : line.outcome === "not_eligible" || line.outcome === "unreachable" ? "yourturn" : "team"} />
+    <li className="rounded-md border bg-card/60 p-2.5 text-sm"><StatusChip state={line.outcome === "connected" ? "done" : line.outcome === "closed" || line.outcome === "declined_by_client" ? "closed" : line.outcome === "not_eligible" || line.outcome === "unreachable" ? "yourturn" : "team"} label={t(line.statusKey as never)} />
       <span className="text-navy">
-        {t(line.statusKey as never)} {org}.
+        {org}.
       </span>
       {line.orgWithheld && (
         <span className="mt-1 block text-xs text-muted-foreground">
@@ -123,8 +123,8 @@ export function NeedThreadList({
           </div>
           <ul className="mt-2 space-y-1.5 text-sm">
             {resolved.map((r) => (
-              <li key={r.needId} className="text-navy"><StatusChip state="done" />
-                {t("needClosureResolved")} {r.need}.{" "}
+              <li key={r.needId} className="text-navy"><StatusChip state="done" label={t("needClosureResolved")} />
+                {r.need}.{" "}
                 <span className="text-muted-foreground">{t("needClosureTail")}</span>
               </li>
             ))}

@@ -151,7 +151,7 @@ function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () =>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <StatusChip state={view.allowed ? "done" : "restricted"} title={view.allowed ? "Active" : "No access"} />
+          <StatusChip state={view.allowed ? "done" : "restricted"} label={view.allowed ? "Active" : "No access"} />
           <Button size="sm" variant="ghost" onClick={onSignOut}>
             Sign out
           </Button>

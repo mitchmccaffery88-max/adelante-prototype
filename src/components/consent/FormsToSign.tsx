@@ -67,9 +67,9 @@ export function FormsToSign({ patientId, lang = "en", channel = "portal", only, 
             <div className="mt-2"><LessonReadAloud text={`${f.title[lang]}. ${f.summary[lang]}`} stepKey={`consent-${f.key}`} /></div>
             <p className="text-[11px] text-muted-foreground">{t.voice}</p>
             {r.status === "signed" ? (
-              <span className="mt-2 inline-flex items-center gap-2"><StatusChip state="done" lang={lang} /><span>{t.signed}</span></span>
+              <span className="mt-2 inline-flex items-center gap-2"><StatusChip state="done" lang={lang} label={t.signed} /></span>
             ) : r.status === "declined" ? (
-              <span className="mt-2 inline-flex items-center gap-2"><StatusChip state="closed" lang={lang} /><span>{t.declined}</span></span>
+              <span className="mt-2 inline-flex items-center gap-2"><StatusChip state="closed" lang={lang} label={t.declined} /></span>
             ) : (
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <label className="flex min-h-11 items-center gap-2 text-[17px]">
