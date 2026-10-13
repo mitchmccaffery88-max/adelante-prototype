@@ -47,6 +47,15 @@ describe("outpatient medication demo seed", () => {
     const p = AdelanteEHR.createPatient?.({ firstName: "Nova", lastName: "Test" } as never);
     if (p) expect(AdelanteEHR.listMedications((p as { id: string }).id)).toHaveLength(0);
   });
+  it("the mock seed is an explicit allowlist, never an id-suffix rule", () => {
+    // Real ids come from uid() (random base36). The mock used to seed anyone
+    // whose id ended in "1" or "a", so ~1 in 18 patients — demo personas
+    // included — inherited a Sertraline order nobody prescribed.
+    for (const id of ["zz1", "aa1", "q7a", "0001", "pat_a", "reentry_1"]) {
+      expect(AdelanteEHR.listMedications(id)).toHaveLength(0);
+    }
+    expect(AdelanteEHR.listMedications("p1").some((m) => /sertraline/i.test(m.name))).toBe(true);
+  });
 });
 
 describe("ECM case manager and protected medications (draft pending compliance review)", () => {

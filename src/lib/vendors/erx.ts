@@ -50,10 +50,21 @@ const seedByPatient: Record<string, Medication[]> = {};
 let seq = 0;
 const mid = () => `med_${++seq}`;
 
+/**
+ * Legacy prototype ids the mock owns a standing prescription for. The rule used
+ * to be `patientId.endsWith("1") || patientId.endsWith("a")`, but real ids come
+ * from `uid()` (random base36), so that suffix test handed a Sertraline order to
+ * roughly 1 in 18 patients at random — demo personas whose charts must show only
+ * the seeded `demo: true` prescriptions, and brand-new sign-ups whose list must
+ * be empty. An explicit allowlist keeps the p1 demo intact and makes the seed
+ * deterministic instead of a coin flip.
+ */
+const MOCK_OWNED_SEED_IDS = new Set(["p1"]);
+
 function seedFor(patientId: string): Medication[] {
   if (seedByPatient[patientId]) return seedByPatient[patientId];
   // Deterministic tiny seed for the first mock patient so demos aren't empty.
-  if (patientId.endsWith("1") || patientId.endsWith("a")) {
+  if (MOCK_OWNED_SEED_IDS.has(patientId)) {
     seedByPatient[patientId] = [
       {
         id: mid(),
