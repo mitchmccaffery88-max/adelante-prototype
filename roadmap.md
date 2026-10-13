@@ -1,10 +1,10 @@
 # Roadmap
 
 ## Staff StatusChip — batch 2b-1 (13 Oct)
-- [ ] Apply approved care-work-only status chips and owner-relative mappings; preserve member views, counts, selectors and all 2b-2 files
-- [ ] Apply approved clinical-risk/refill/coverage defaults from existing fields only; report unavailable fields
-- [ ] Full units, then all browsers/axe to completion; warm staff-navigation rerun only if redirect timeout
-- [ ] Settled light contrast and 1280px cosign/worklist/escalations/chart screenshots; document files, counts and every failure
+- [x] Care-work status-chip presentation applied in 40 application files (96 resulting chip render positions, including existing member positions); member boundaries, counts, selectors and 2b-2 files preserved
+- [ ] Remaining defaults: authoritative pre-release MOUD confirmation/out-of-supply fields unavailable in shared display slice; exact escalation total-wait date unavailable (current dueAt caption is overdue age); see report
+- [x] Harness build OK; final units 2,561/2,561, then all browsers 79/79 including axe/Back to top; authorized warm staff-nav rerun 22/22; initial eight browser failures recorded without test changes
+- [x] Settled real-screen light chip contrast minimum 5.43:1; 1280px staff screenshots reviewed (cosign real empty state); exact files/results/default limitations in `docs/staff-statuschip-2b-report.md`
 
 ## Patient color pass — phases 2a + 4 (13 Oct)
 - [x] Approved fixes and final member-system wrapping applied; Home grid/tiles shrink; ConnectMeButton copy unchanged; staff/public/icon-only styling preserved
