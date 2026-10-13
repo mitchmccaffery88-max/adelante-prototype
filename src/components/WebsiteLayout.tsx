@@ -28,7 +28,7 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     const update = () => {
-      setShowTop((pathname === "/" || pathname === "/team") && window.scrollY > window.innerHeight);
+      setShowTop((pathname === "/" || pathname === "/team") && window.scrollY > 0 && window.scrollY > Math.min(window.innerHeight, Math.max(0, document.documentElement.scrollHeight - window.innerHeight) / 2));
       if (pathname !== "/") { setActiveSection(undefined); return; }
       const offset = Math.max((headerRef.current?.getBoundingClientRect().bottom ?? 160) + 24, window.innerHeight * 0.35);
       let current: string | undefined;
