@@ -2,13 +2,13 @@
 
 ## Patient color pass — phases 2a + 4 (13 Oct)
 - [x] Approved fix pass applied: one headline assertion; two ES strings; type errors; real chip labels/mappings; one shell Draft notice; advocate tel:988 help; wrapping 48px step targets
-- [ ] StatusChip and scoped patient/advocate status replacements; staff unchanged
-- [ ] Gold next-step tile, neutral suggestions, one sunrise celebration band, 48px member targets
-- [ ] Patient header help modal and approved 988-first order; verify existing advocate-safe help page
-- [ ] Teal website Get started buttons and bilingual Draft UI copy
-- [ ] Measure all requested text contrast in light/dark, desktop/390px; stop below 4.5:1
-- [ ] Fix pass stopped at captured desktop dark website hero contrast 1.02:1 (likely theme-transition sample; settled result unverified). Latest harness build OK. Units/browsers/axe not run; 390px full checks incomplete. Resume authorization required.
-- [x] Updated docs/patient-color-pass-report.md with fixes, files, captured desktop values, transition caveat and incomplete validation
+- [x] Settled contrast measured after browser-only transition/animation suppression + 600ms: EN/ES × light/dark × 1280/390; all pairings ≥4.5:1, minimum 5.43:1; website hero/closing dark both 8.86:1 (prior transition capture superseded)
+- [x] Full units completed: 2,561 passed / 0 failed (306 files); all browsers separately completed: 77 passed / 2 failed; axe and Back to top passed Home/About/Team
+- [x] 390px EN/ES checks completed: 11-step lesson targets 48×48px; advocate header, long chips, medications, actual appointments pass
+- [ ] Spanish Home scrollWidth 431px at 390px: nowrap support-connect button expands grid/gold tile; no fix applied
+- [ ] Browser failures: PMHNP denied /nurse stays /nurse instead of /clinician; billing denied /referral-queue redirects to /inbox only after timeout (staffNav.rbac.spec.ts:116)
+- [x] Automatic harness build OK; no manual build/typecheck, app/style/copy/test/permission changes in validation-only turn
+- [x] Updated docs/patient-color-pass-report.md with complete matrix, phone evidence, counts and every failure; phase completion pending Mitch's decisions, not all green
 
 ## Design system phase 1 (13 Oct)
 - [x] Verify all six supplied SVG hashes before implementation
