@@ -1,5 +1,12 @@
 # Roadmap
 
+## Design system phase 1 (13 Oct)
+- [x] Verify all six supplied SVG hashes before implementation
+- [ ] Apply approved fonts, global tokens, aliases and brand-link changes only
+- [ ] Render supplied artwork and verify image dimensions
+- [ ] Measure hero contrast and 390px logo fit; stop on failure
+- [ ] Full unit suite, then all browser specs separately; report unchanged-assertion failures
+
 ## Public top-bar order (13 Oct)
 - [x] About us and Our team moved to the end of the top bar and mobile menu: How it works · Find where you fit · What you get · FAQ · About us · Our team
 - [x] Nav order tests updated (landingWebsite.test.ts)
