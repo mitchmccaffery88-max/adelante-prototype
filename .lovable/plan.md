@@ -1,25 +1,28 @@
-# Clinician workspace tiles and dashboard actions
+# Make the hero image clearly visible
 
-## Scope
-- Hide the custody patient-search link unless the in-facility segment is enabled.
-- Replace the workspace queue chips and duplicate cards with a compact Today strip and four role-ordered, collapsible tiles.
-- Keep acting-person and audited “View as” scoping across every count, row, and action.
-- Add dashboard “+ New”, patient selection, patient-free actions, and keyboard shortcuts using the shared action registry.
-- Preserve Part 2 filtering, outpatient-only defaults, existing store actions, and existing chart drawers.
+## Problem
+The landing hero photo (`src/assets/hero-sunrise.jpg`) sits behind a dark overlay in `src/components/website.css` (`.website-hero-overlay`): a gradient of the near-black foreground color at 92% → 78% → 50% opacity. That overlay is so heavy the photo reads as a dark color block.
 
-## Build
-1. Add workspace selectors for schedule groups, unified action items, attention-sorted caseload, role ordering, and Part 2-safe escalation notifications.
-2. Build reusable dashboard tiles with per-person local open/closed preferences and Today-strip filtering.
-3. Wire compact visit rows to check-in, join, attended, note drafting, and secondary visit controls.
-4. Consolidate existing follow-up, re-screen, refill, provider-alert, and task sources into “Needs my action”; remove their duplicate dashboard renderings.
-5. Extend the action registry with `needsPatient`, then adapt the launcher for dashboard patient selection and patient-free Task, Book, Contact, and Resource referral actions.
-6. Add focused tests for counts/order/filtering/access, closed-loop notifications, and registry behavior; update architecture notes.
+## Change (one file)
+`src/components/website.css` — weaken `.website-hero-overlay` so the sunrise shows through, keeping the text side darker than the open right side:
+
+```css
+.website-hero-overlay {
+  background: linear-gradient(100deg,
+    color-mix(in oklab, var(--foreground) 70%, transparent),
+    color-mix(in oklab, var(--foreground) 52%, transparent) 65%,
+    color-mix(in oklab, var(--foreground) 12%, transparent));
+}
+```
+
+If the screenshot check shows any hero text sitting on a bright patch of sky, nudge the 65% stop up (e.g. 58%) rather than adding a second layer.
+
+## Constraint kept
+W12 accessibility: hero text (near-white `--navy-foreground`) must stay ≥ 4.5:1 over the photo. Measured against the image's darkest text-side region, even the 70% stop leaves roughly 10:1 contrast, so the requirement holds with margin. The axe check in `e2e/websitePolish.spec.ts` must still report no serious/critical issues.
 
 ## Verification
-- Run the TypeScript check, full test suite, and inspect the automatic build result.
-- In one browser tab, verify Anita, Marisol, Luz, and Priya at desktop and 390px, including dashboard actions and no duplicate widgets.
-- Confirm Luz sees no restricted substance-use content and all counts match their filtered tiles.
+1. Playwright screenshot of the hero at 1280px and 390px to confirm the image is clearly visible and text is readable.
+2. Sample the effective contrast behind the hero heading/body programmatically; confirm ≥ 4.5:1.
+3. Run `e2e/websitePolish.spec.ts` and `e2e/publicWebsite.spec.ts` (axe + hero assertions pass).
 
-## Assumptions
-- Existing draft cadence and action stores remain authoritative; this turn changes presentation and orchestration, not clinical policy.
-- “Remember per person” uses browser local storage keyed by workspace staff identity.
+No copy, layout, tests or other pages change — overlay opacity only.
