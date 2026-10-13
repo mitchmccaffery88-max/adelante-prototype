@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Adelante Journey Phase 6 — the STAFF side of the resource directory.
 //
 // This is the workflow that makes `verified` real: an entry stays out of the
@@ -124,9 +125,7 @@ function VerifyRow({
             {category.name}
           </Badge>
         )}
-        <Badge className={isResourceVerified(resource) ? "border-0 bg-teal/15 text-[10px] text-teal" : "border-0 bg-gold/20 text-[10px] text-gold-foreground"}>
-          {isResourceVerified(resource) ? "Verified" : "Not verified"}
-        </Badge>
+        <StatusChip lang="en" state={isResourceVerified(resource) ? "done" : canVerify ? "yourturn" : "team"} label={isResourceVerified(resource) ? "Verified" : "Not verified"} />
         {resource.placeholder && (
           <Badge variant="outline" className="text-[10px]">
             Placeholder — needs sourcing

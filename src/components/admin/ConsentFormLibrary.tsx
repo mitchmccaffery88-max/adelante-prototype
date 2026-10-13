@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Consent W1 — Legal & consent: versioned form templates.
 // Draft → Legal review → Approved (Counsel: pending) → Published. Editing a
 // published form creates a new version. Every change via runAction.
@@ -43,7 +44,7 @@ export function ConsentFormLibrary() {
             <li key={k} className="flex flex-wrap items-center justify-between gap-2 py-2" data-testid={`consent-form-${k}`}>
               <span>{latest.title.en} <span className="text-[11px] text-muted-foreground">published v{pub?.version ?? "—"} · latest v{latest.version} · {latest.counsel}</span></span>
               <span className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">{STATUS[latest.status]}</Badge>
+                <StatusChip lang="en" state={latest.status === "draft" ? "upnext" : latest.status === "legal_review" ? "team" : latest.status === "retired" ? "closed" : "done"} label={STATUS[latest.status]} />
                 {latest.status === "published" && <Button size="sm" variant="outline" onClick={() => { setEdit(k); setSummary(latest.summary.en); setBody(latest.body.en); }}>New version</Button>}
                 {latest.status === "draft" && <Button size="sm" variant="outline" onClick={() => run("consent_form_author", "submitForLegalReview", [latest.id, storeActor], "Sent to legal review")}>Send to legal review</Button>}
                 {latest.status === "legal_review" && <Button size="sm" variant="outline" onClick={() => run("consent_form_publish", "approveForm", [latest.id, storeActor], "Approved (Counsel: pending)")}>Approve (Counsel: pending)</Button>}

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Admin — clinical review + promotion of draft risk-text translations.
 //
 // Draft Spanish disclosures (es-v1-draft) only become the reviewed wording
@@ -115,9 +116,7 @@ function ReviewRow({
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium text-sm text-navy">{review.languageLabel} risk text</span>
         {approved ? (
-          <Badge className="text-[10px] gap-1">
-            <BadgeCheck className="h-3 w-3" /> Approved · {review.effectiveVersion}
-          </Badge>
+          <StatusChip lang="en" state="done" label={`Approved · ${review.effectiveVersion}`} />
         ) : (
           <Badge variant="outline" className="text-[10px] gap-1 border-amber-500 text-amber-700">
             <ShieldAlert className="h-3 w-3" /> Draft · {review.draftVersion}

@@ -64,7 +64,7 @@ export function timeOpenLabel(iso: string, now: number = Date.now()): string {
 export function CrisisClassification({ escalation }: { escalation: CrisisEscalation }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
-      <StatusChip lang="en" state={escalation.severity === "critical" || escalation.severity === "urgent" ? "urgent" : "upnext"} label={escalation.severity} />
+      <StatusChip lang="en" state={escalation.severity === "critical" || escalation.severity === "urgent" ? "urgent" : "yourturn"} label={escalation.severity} />
       <Badge variant="outline" className="border-dashed text-[10px] capitalize">
         {escalation.category}
       </Badge>
