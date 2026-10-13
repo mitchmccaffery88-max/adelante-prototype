@@ -1,4 +1,5 @@
 import { websiteEn } from "@/lib/i18n.website";
+import { WEBSITE_SHARE_IMAGE } from "@/lib/websiteMetadata";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { BookVisitDrawerHost } from "@/components/scheduling/BookVisitDrawer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -150,7 +151,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "theme-color", content: "#0F2A44" },
+      { name: "theme-color", content: "#FBF8F3" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Adelante" },
       { title: websiteEn.websiteTitle },
@@ -175,13 +176,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0460f7cb-8083-4725-84da-14871403dbfd/id-preview-6d25338c--e75ac755-e89b-4ae1-9959-b7981b3fab64.lovable.app-1780588024412.png",
+        content: WEBSITE_SHARE_IMAGE,
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0460f7cb-8083-4725-84da-14871403dbfd/id-preview-6d25338c--e75ac755-e89b-4ae1-9959-b7981b3fab64.lovable.app-1780588024412.png",
+        content: WEBSITE_SHARE_IMAGE,
       },
     ],
     links: [
@@ -190,9 +189,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
-      { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
