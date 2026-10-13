@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { LifeBuoy } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { GetHelpNowModal } from "./GetHelpNowModal";
 
 /**
  * §Patient portal correction — the real sticky patient header: wordmark, the
@@ -8,7 +11,8 @@ import { useI18n } from "@/lib/i18n";
  * that is separate from the sidebar's crisis block.
  */
 export function CrisisHeader() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const [helpOpen, setHelpOpen] = useState(false);
   return (
     <div
       data-testid="patient-crisis-header"
@@ -29,15 +33,16 @@ export function CrisisHeader() {
         </p>
         {/* §Tier 1 Build A — the pill now opens the real crisis landing page
             (988 call + text, breathing, safety plan) instead of dialling. */}
-        <Link
-          to="/crisis"
+        <Button
+          onClick={() => setHelpOpen(true)}
           data-testid="patient-header-crisis-pill"
-          className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-crisis/30 bg-crisis-soft px-4 py-2 text-sm font-semibold text-crisis hover:bg-crisis/10"
+          className="ml-auto min-h-12 h-auto whitespace-normal border border-urgent bg-urgent px-4 py-2 text-sm font-semibold text-on-urgent hover:bg-urgent"
         >
           <LifeBuoy className="h-4 w-4" aria-hidden="true" />
-          {t("navCrisisSupport")} · 988
-        </Link>
+          <span>{t("helpNow")}{lang === "es" && <span className="block text-sm">Borrador</span>}</span>
+        </Button>
       </div>
+      <GetHelpNowModal open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }

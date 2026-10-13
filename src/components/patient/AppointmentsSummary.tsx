@@ -20,6 +20,7 @@ import { AdelanteEHR, isVisitCancelled, useEhr, type Appointment } from "@/lib/e
 import { mapsSearchUrl } from "@/lib/communityResources";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusChip } from "@/components/ui/status-chip";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
@@ -83,9 +84,7 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
             <Badge variant="outline" className="gap-1 text-[10px]">
               <ModIcon className="h-3 w-3" /> {modLabel(sc, appt.modality ?? "video")}
             </Badge>
-            <Badge variant="outline" className="text-[10px] capitalize">
-              {sc.status[appt.status] ?? appt.status.replace(/_/g, " ")}
-            </Badge>
+            <StatusChip state={appt.status === "attended" ? "done" : appt.status === "no_show" ? "yourturn" : isVisitCancelled(appt.status) || appt.status === "rescheduled" ? "closed" : "upnext"} title={sc.status[appt.status] ?? appt.status.replace(/_/g, " ")} />
           </div>
           {/* §Build A item 4 — real join action for video visits. */}
           {!past && !isVisitCancelled(appt.status) && (appt.modality ?? "video") === "video" && (
@@ -101,7 +100,7 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
               </a>
             </Button>
           )}
-          {past && <LateCancelBadge appt={appt} />}
+          {past && <LateCancelBadge appt={appt} member />}
           {!past && appt.status === "scheduled" && (
             <CancelRequestControl appt={appt} onRequest={(r) => AdelanteEHR.patientRequestCancel(appt.patientId, appt.id, r)} />
           )}
@@ -125,24 +124,28 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
   );
 }
 
-function JoinCallButton({ appt }: { appt: Appointment }) {
-  const sc = scheduleCopy(useI18n().lang);
+export function JoinCallButton({ appt, nextStep = false }: { appt: Appointment; nextStep?: boolean }) {
+  const { lang, t } = useI18n();
+  const sc = scheduleCopy(lang);
   const state = joinWindowState(appt.start, appt.durationMin);
   const { url, real } = apptJoinUrl(appt);
   if (state === "over") return null;
   if (state === "early") {
     return (
-      <Button size="sm" variant="outline" className="min-h-11" disabled data-testid="join-call-early">
-        <Video className="mr-1.5 h-4 w-4" /> {sc.joinEarly}
-      </Button>
+      <span className="inline-flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="outline" className={nextStep ? "min-h-12 border-line-strong bg-surface text-ink-muted disabled:opacity-100" : "min-h-12 disabled:opacity-100"} disabled data-testid="join-call-early">
+          <Video className="mr-1.5 h-4 w-4" /> {t("opensAt")} {new Date(+new Date(appt.start) - 15 * 60_000).toLocaleTimeString(lang === "es" ? "es-US" : "en-US", { hour: "numeric", minute: "2-digit" })}
+        </Button>
+        {lang === "es" && <span className="text-sm text-ink-muted">Borrador</span>}
+      </span>
     );
   }
   return (
-    <Button asChild size="sm" className="min-h-11" data-testid="join-call-button">
+    <span className="inline-flex flex-wrap items-center gap-2"><Button asChild size="sm" className="min-h-12" data-testid="join-call-button">
       <a href={url} target="_blank" rel="noreferrer">
         <Video className="mr-1.5 h-4 w-4" /> {real ? sc.join : `${sc.join} (${simulatedSurfaceLabel("telehealth_simulated")})`}
       </a>
-    </Button>
+    </Button>{lang === "es" && <span className="text-sm text-ink-muted">Borrador</span>}</span>
   );
 }
 
