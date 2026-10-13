@@ -16,12 +16,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const TONE: Record<string, string> = {
-  ok: "bg-success/20 text-success",
-  soon: "bg-gold/30 text-navy",
-  out: "bg-destructive/15 text-destructive",
-};
-
 export function RefillRunwayCard({ patientId }: { patientId: string }) {
   const orders = useEhr(() =>
     AdelanteEHR.listOrders(patientId).filter(

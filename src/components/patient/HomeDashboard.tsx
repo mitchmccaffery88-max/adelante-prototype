@@ -31,7 +31,6 @@ import {
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ClientDate } from "@/components/ClientDate";
 import { StatusChip } from "@/components/ui/status-chip";

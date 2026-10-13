@@ -9,6 +9,8 @@ Standing rules — apply to ALL work, every change, any folder:
 - Outpatient only: in-facility behind `inFacilityEnabled()`, off by default.
 - Demo seeds only through real store functions.
 
+- Member status chips are presentation-only; shared clinical components opt in through their existing audience/actor boundaries, and patient help opens the existing sheet in CrisisHeader. Why: the member color pass cannot change staff rendering, permissions, or lifecycle rules.
+
 Full per-module rules: `src/lib/AGENTS.md` — read before changing app logic.
 - Public website text is isolated in `i18n.website.ts`; public header/footer/crisis support live in `WebsiteLayout`, branding uses `WebsiteBrand` and navigation uses `WebsiteNavigation`; `WebsiteContent` shares the closing CTA and owns About/Team content, while application branding stays unchanged. Why: the public brand and future logo must never rename patient or staff experiences.
 - Public scroll state and measured crisis clearance belong to WebsiteLayout; WebsiteNavigation uses explicit current-state styling and a Radix popover; public leaf metadata shares one absolute share-image constant and one public image file. Why: navigation, safe viewport clearance and future logo replacement stay consistent without changing app shells.

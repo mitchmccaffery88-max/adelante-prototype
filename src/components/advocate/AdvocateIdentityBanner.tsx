@@ -9,7 +9,6 @@ import { StatusChip } from "@/components/ui/status-chip";
 // name. Nothing here can compute or override that decision.
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
 
 export function AdvocateIdentityBanner({ linkId }: { linkId: string }) {

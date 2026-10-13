@@ -16,7 +16,6 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { PO_DISCLOSURE_ITEMS } from "@/lib/poDisclosure";
 import { PopulationGate } from "@/components/PopulationGate";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Gavel, Lock } from "lucide-react";
 
 function Body({ linkId }: { linkId: string }) {

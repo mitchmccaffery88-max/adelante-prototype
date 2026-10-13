@@ -8,7 +8,6 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { SHORT_FORM_SCREENERS } from "@/lib/screeners";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { HeartPulse, CheckCircle2, ClipboardList } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";

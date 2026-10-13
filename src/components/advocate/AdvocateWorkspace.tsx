@@ -452,17 +452,9 @@ export function AdvocateDocumentsPanel({ linkId }: { linkId: string }) {
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
                   {d.restricted && (
-                    <Badge variant="outline" className="gap-1">
-                      <Lock className="h-3 w-3" /> {t("docRestricted")}
-                    </Badge>
+                    <StatusChip state="restricted" />
                   )}
-                  <Badge variant={d.verification === "verified" ? "default" : "secondary"}>
-                    {d.verification === "verified"
-                      ? t("docStatusVerified")
-                      : d.verification === "rejected"
-                        ? t("docStatusRejected")
-                        : t("docStatusPending")}
-                  </Badge>
+                  <StatusChip state={d.verification === "verified" ? "done" : d.verification === "rejected" ? "yourturn" : "team"} />
                   {/* The button is offered even for a restricted row: refusing
                       at the SHARED gate (and saying why) is the honest
                       behaviour, and hiding it would be a second, silent rule. */}

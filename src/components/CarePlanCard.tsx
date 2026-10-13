@@ -3,7 +3,7 @@ import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { inFacilityEnabled } from "@/lib/inFacility";
 import { AdelanteEHR, useEhr, type CarePlanSnapshot } from "@/lib/ehr";
 import { useActingRole, canAccess, type StaffRole } from "@/lib/roles";
-import { useI18n, type Key } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { roleSeesSudMedication } from "@/lib/asamReporting";
 import { Card } from "@/components/ui/card";
@@ -24,12 +24,6 @@ import { cn } from "@/lib/utils";
 import { MyPlan } from "@/components/careplan/MyPlan";
 
 type Audience = "patient" | "clinician" | "ecm_provider";
-
-const goalStatusMap: Record<string, Key> = {
-  not_started: "goalNotStarted",
-  in_progress: "goalInProgress",
-  done: "goalDone",
-};
 
 /**
  * Unified care-plan renderer. Reads the auto-derived `CarePlanSnapshot`

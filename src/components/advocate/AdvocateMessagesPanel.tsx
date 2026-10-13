@@ -13,7 +13,6 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { ADVOCATE_MESSAGING_REVIEW } from "@/lib/advocateMessaging";
 import { CareMessageThread } from "@/components/messages/CareMessageThread";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, ShieldAlert, Lock } from "lucide-react";

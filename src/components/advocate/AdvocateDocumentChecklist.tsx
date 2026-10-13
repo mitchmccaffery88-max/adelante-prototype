@@ -17,7 +17,6 @@ import {
   requirementsForType,
   type AdvocateDocRequirementKey,
 } from "@/lib/advocateDocs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ClientDate } from "@/components/ClientDate";

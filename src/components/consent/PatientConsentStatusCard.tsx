@@ -14,7 +14,6 @@ import { StatusChip } from "@/components/ui/status-chip";
 import { AdelanteEHR, CONSENT_CATEGORIES, useEhr, type ConsentRecord } from "@/lib/ehr";
 import { patientConsentLabel } from "@/lib/consentLabels";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { FileCheck2 } from "lucide-react";
 
 const CATEGORY_LABEL = new Map(

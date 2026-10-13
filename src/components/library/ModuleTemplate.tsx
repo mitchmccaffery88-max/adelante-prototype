@@ -15,6 +15,7 @@ import { AdelConversation } from "./AdelConversation";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusChip } from "@/components/ui/status-chip";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -333,7 +334,7 @@ function StepProgress({
   labels: string[];
   onJump: (i: number) => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const total = labels.length;
   return (
     <div className="space-y-1.5">
@@ -357,9 +358,9 @@ function StepProgress({
               aria-current={current ? "step" : undefined}
               disabled={!visited}
               onClick={() => visited && onJump(i)}
-              className={`h-11 min-w-[1.25rem] flex-1 rounded-full transition-colors ${
+              className={`h-12 min-w-12 flex-1 rounded-full transition-colors ${
                 current
-                  ? "bg-primary ring-2 ring-primary/40 ring-offset-1 ring-offset-background"
+                  ? "bg-surface ring-2 ring-sunrise-mark ring-offset-1 ring-offset-background"
                   : visited
                     ? "bg-primary/60 hover:bg-primary"
                     : "cursor-default bg-secondary"
@@ -368,7 +369,7 @@ function StepProgress({
           );
         })}
       </div>
-      <p className="text-base text-foreground">{index + 1}. {labels[index]}</p>
+      <p className="text-base text-foreground">{index + 1}. {labels[index]}</p><p className="text-sm text-sunrise-text">{t("youAreHere")}{lang === "es" && <span className="ml-2 text-sm text-ink-muted">Borrador</span>}</p>
       <p className="text-xs text-foreground">
         {index + 1}/{total} {t("modStepsWord")} · {maxVisited + 1} {t("modStepOf")} {total}{" "}
         {t("modVisitedCount")}
@@ -968,7 +969,7 @@ export function ModuleTemplate({
   useEffect(() => { if (response?.stepTotal !== total && onResponseChange) onResponseChange({ stepIndex: index, stepTotal: total }); }, [total, response?.stepTotal]);
   if (!step) return null;
   const spoken = step.kind === "text" || step.kind === "learn" ? [step.heading, step.body].filter(Boolean).join(". ") : step.kind === "adel" || step.kind === "reflect" ? `${step.reflection}. ${step.question}` : step.kind === "activity" ? ["title" in step.activity ? step.activity.title : "", "prompt" in step.activity ? step.activity.prompt : ""].filter(Boolean).join(". ") : step.kind === "select" ? step.prompt : step.label;
-  if (celebrate) return <Card className="patient-theme patient-player completion-panel space-y-6 rounded-3xl p-8 text-center shadow-sm"><CheckCircle2 className="mx-auto size-12 text-primary" /><h1 className="text-3xl font-semibold">{t("playerComplete")}</h1><p>{t("playerCompleteBody")}</p><Button asChild className="rounded-full"><Link to="/home">{t("playerContinue")}</Link></Button><Button variant="outline" className="ml-2 rounded-full" onClick={() => { setCelebrate(false); restart(); }}>{t("modRestart")}</Button></Card>;
+  if (celebrate) return <Card className="patient-theme patient-player completion-panel member-completion space-y-6 rounded-3xl p-8 text-center shadow-sm"><CheckCircle2 className="mx-auto size-12 text-sunrise-text" /><h1 className="text-3xl font-semibold">{t("playerComplete")}</h1><p>{t("playerCompleteBody")}</p><Button asChild className="rounded-full"><Link to="/home">{t("playerContinue")}</Link></Button><Button variant="outline" className="ml-2 rounded-full" onClick={() => { setCelebrate(false); restart(); }}>{t("modRestart")}</Button></Card>;
 
 
   return (
@@ -977,9 +978,7 @@ export function ModuleTemplate({
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-semibold text-2xl text-foreground">{title}</h1>
           {completed && (
-            <Badge className="border-0 bg-primary/15 text-primary">
-              <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> {t("modCompleted")}
-            </Badge>
+            <StatusChip state="done" />
           )}
           {placeholder && (
             <Badge variant="outline" className="border-border text-foreground">

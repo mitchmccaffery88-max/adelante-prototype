@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { ADVOCATE_DOC_REQUIREMENTS } from "@/lib/advocateDocs";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { ClipboardList, Hourglass, BellRing } from "lucide-react";
