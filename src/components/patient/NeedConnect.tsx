@@ -54,7 +54,7 @@ export function ConnectMeButton({ patientId, itemId }: { patientId: string; item
       type="button"
       size="sm"
       variant="outline"
-      className="mt-2 min-h-11"
+      className="mt-2 h-auto min-h-12 max-w-full whitespace-normal"
       data-testid={`connect-me-${itemId}`}
       onClick={() => AdelanteEHR.requestNeedConnect(patientId, itemId, { id: patientId, role: "patient" })}
     >

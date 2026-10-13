@@ -1,12 +1,57 @@
-# Patient color pass — validation completed; fixes pending Mitch decision
+# Patient color pass — final focused fix verified
 
-## Current result — validation only, 13 Oct 2026
-Validated unchanged application commit `6da8b4da`. **Not all green:** Spanish Home overflows horizontally at 390px, and two staff deep-link browser checks fail. All requested settled contrast pairings pass 4.5:1. No app, styles, copy, tests, assertions, retries, thresholds, permissions or business logic changed in this validation turn; only this report and roadmap updated.
+## Current result — final fix, 13 Oct 2026
+**All final requested checks passed.** Spanish Home overflow fixed at member-system level; staff failures classified as timing flakes under load after two isolated warm runs passed before edits. No staff app code, permissions, access rules, tests, assertions, retries, timeouts, copy or colors changed.
 
-- Units: **2,561 passed / 0 failed**, **306 files passed / 0 failed**; full `bunx vitest run`, 64.61s.
-- Browsers, separately after units: **77 passed / 2 failed / 0 skipped**, 79 total; full `E2E_BASE_URL=http://localhost:8080 bunx playwright test`, 7.6 minutes. Ran through both failures to completion.
-- Axe and Back to top: existing `websitePolish.spec.ts` checks passed for `/`, `/about`, `/team`, including EN desktop and ES mobile. No serious/critical axe violations under those existing assertions (not a claim of zero minor issues everywhere).
-- Automatic harness build: **build OK**, latest observed 19:50:18 UTC. No manual build/typecheck invoked; a separate standalone typecheck is not certified by this validation run.
+### Files changed in this final fix
+- `src/styles.css`: member-only text controls wrap and grow vertically with a 48px minimum and maximum available width; existing alignment retained; square/icon-only controls excluded. Both `.member-comfortable` and `.member-overlay` covered; website and staff untouched.
+- `src/components/patient/HomeDashboard.tsx`: explicit shrinkable one-column grid, grid items and TileShell/content `min-w-0`.
+- `src/components/patient/NeedConnect.tsx`: auto-height, 48px-minimum, wrapping/max-available-width ConnectMeButton; existing usted copy unchanged, no fixed width.
+- `AGENTS.md`: scope rule for member label wrapping, preserving staff/public/icon-only styling.
+- `docs/patient-color-pass-report.md` and `roadmap.md`: final evidence/status.
+
+### Final test results (no test changes)
+| Run | Passed | Failed |
+|---|---:|---:|
+| Isolated warm staff navigation before edits, run 1 | 22 | 0 |
+| Isolated warm staff navigation before edits, run 2 | 22 | 0 |
+| Full unit suite (306 files), after edits | 2,561 | 0 |
+| Separate staff navigation after units | 22 | 0 |
+| Separate websitePolish (axe + Back to top) | 3 | 0 |
+| Separate patientPlayer (Home pickup/resume + EN/ES player + protected advocate) | 2 | 0 |
+
+Final requested browser validation: **27/27**, separately after units. Initial diagnostic staff reruns: **44/44**. Full 79-spec suite was not requested/rerun in this final fix; the previous 77/79 full-suite result is historical below, not this final result. Automatic harness **build OK at 20:16:28 UTC**; no manual build/typecheck invoked.
+
+### Final phone width and screenshot checks — 390 × 844
+| Page | EN scrollWidth | ES scrollWidth |
+|---|---:|---:|
+| Home (gold tile included) | 390 | 390 |
+| My care (`/patient`) | 390 | 390 |
+| Schedule (Your appointments tab) | 390 | 390 |
+| Longest existing lesson, Calming My Mind, 11 steps | 390 | 390 |
+| Advocate Home | 390 | 390 |
+| Medications | 390 | 390 |
+
+All 12 page/language combinations equal viewport width. Gold tile screenshot is 358px wide in ES, no grid expansion. All 11 lesson targets remain **48×48px** and wrap to two rows. Home support text button is **48px** tall in EN/ES; Spanish text wraps to two readable lines without fixed width. Patient urgent header button: **48px EN / 58px ES**, advocate urgent button: **48px EN/ES**, lesson Continue/Continuar: **48px**. Reviewed EN/ES Home, lesson, advocate header, gold tile and close-up wrapped-button screenshots; existing icon controls remain square.
+
+### Wrapped text contrast spot-check
+Computed browser Lab colors converted through a browser canvas to sRGB; WCAG luminance calculated after browser-only transitions/animations disabled and 600ms settling. An initial probe mistakenly parsed Lab as RGB; those values were discarded, not app contrast failures.
+
+| Pairing, 390px | EN light | ES light | EN dark | ES dark |
+|---|---:|---:|---:|---:|
+| Wrapped support button text | 13.84:1 | 13.84:1 | 14.80:1 | 14.80:1 |
+| Patient/advocate help button text | 7.06:1 | 7.06:1 | prior 9.24:1 | prior 9.24:1 |
+| Lesson Continue/Continuar | 5.52:1 | 5.52:1 | not resampled | not resampled |
+
+All current sampled text is ≥4.5:1. No color changes, and prior full contrast matrix below retained as historical evidence, not freshly rerun desktop/dark certification.
+
+### Staff findings disposition
+Per Mitch’s decision rule: **timing flakes under load; no staff fix**. `staffNav.rbac.spec.ts` passed 22/22 twice on the warm server before app edits (3.7min, 2.2min), then 22/22 after the member fix (1.9min). PMHNP `/nurse` and billing `/referral-queue` denied deep links both passed with existing assertions/timeouts. Previous billing trace proved a correct redirect only after its deadline; exact earlier PMHNP delay remains unproven but did not recur in any authorized isolated run. No permission widening or guard alteration.
+
+Evidence: `/tmp/browser/final-member/units.log`, `staff-first.log`, `staff-second.log`, `staff-final.log`, `website.log`, `player.log`, `phone.json`, `phone.log`; screenshots `Home-en.png`, `Home-es.png`, `Home-gold-es.png`, `Home-wrapped-es.png`, `Longest-lesson-en.png`, `Longest-lesson-es.png`, `Advocate-Home-en.png`, `Advocate-Home-es.png`. Scripts/temporary browser styles stay outside checkout.
+
+## Previous validation evidence (superseded findings; contrast retained)
+The sections below document the preceding validation-only run. The old overflow and staff blockers are resolved/classified by the final evidence above.
 
 ## Settled rendered contrast
 Before each sample, injected temporary browser-only `*{transition:none !important; animation:none !important}`, toggled document `.dark`, waited **600ms**, then measured computed foreground and composited background using WCAG sRGB relative luminance. The app has no dark switch: **light is the actual user-facing default**; dark values below are explicitly forced audit conditions.
@@ -160,5 +205,5 @@ No stores, permissions, route definitions, generic Button/Badge primitives or st
 
 
 
-## Decision required
-Mitch to decide whether to authorize fixes for **Spanish Home 390px overflow**, **PMHNP `/nurse` redirect failure**, and **billing `/referral-queue` redirect failure**. Settled contrast is green; phase completion remains blocked by these three findings. This turn changed only this report and `roadmap.md`.
+## Final disposition
+Final focused fix and requested checks complete: member wrapping/width fixed, staff flakes classified per authorization, tests and automatic build green. No remaining blocker from these two findings.
