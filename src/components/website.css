@@ -15,7 +15,6 @@ html:has([data-testid="website-layout"]) {
 }
 
 .website-shell {
-  --destructive: oklch(0.481 0.150 17.1);
   --website-crisis-height: 64px;
   padding-bottom: var(--website-crisis-height);
 }

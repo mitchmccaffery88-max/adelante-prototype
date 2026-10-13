@@ -1,6 +1,13 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "@fontsource/atkinson-hyperlegible-next/400.css";
+@import "@fontsource/atkinson-hyperlegible-next/500.css";
+@import "@fontsource/atkinson-hyperlegible-next/700.css";
+@import "@fontsource/atkinson-hyperlegible-next/800.css";
+@import "@fontsource/atkinson-hyperlegible-next/400-italic.css";
+@import "@fontsource/atkinson-hyperlegible-mono/400.css";
+@import "@fontsource/atkinson-hyperlegible-mono/700.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -73,10 +80,10 @@
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-sage: var(--sage);
-  --color-sage-soft: var(--accent);
+  --color-sage-soft: var(--sage-soft);
   --color-sage-foreground: var(--sage-foreground);
   --color-amber: var(--amber);
-  --color-amber-soft: var(--secondary);
+  --color-amber-soft: var(--amber-soft);
   --color-amber-foreground: var(--amber-foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
@@ -85,108 +92,217 @@
   --color-crisis: var(--crisis);
   --color-crisis-soft: var(--crisis-soft);
   --color-crisis-foreground: var(--crisis-foreground);
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-sans:
-    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", Calibri, system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --color-canvas: var(--canvas);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-path: var(--path);
+  --color-path-action: var(--path-action);
+  --color-on-path: var(--on-path);
+  --color-path-soft: var(--path-soft);
+  --color-path-faint: var(--path-faint);
+  --color-sunrise: var(--sunrise);
+  --color-sunrise-mark: var(--sunrise-mark);
+  --color-sunrise-text: var(--sunrise-text);
+  --color-on-sunrise: var(--on-sunrise);
+  --color-sunrise-soft: var(--sunrise-soft);
+  --color-on-gold: var(--on-gold);
+  --color-attention: var(--attention);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-urgent: var(--urgent);
+  --color-urgent-soft: var(--urgent-soft);
+  --color-on-urgent: var(--on-urgent);
+  --color-attention-soft: var(--attention-soft);
+  --color-on-attention-soft: var(--on-attention-soft);
+  --color-done: var(--done);
+  --color-restricted: var(--restricted);
+  --color-restricted-soft: var(--restricted-soft);
+  --color-focus: var(--focus);
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
 }
 
 :root {
   --radius: 0.75rem;
-  /* Adelante palette: Deep Navy #1B2A4A, Teal #2A9D8F, Gold #E9C46A, warm white */
-  --background: oklch(0.985 0.008 85);
-  --foreground: oklch(0.22 0.05 265);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.05 265);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.05 265);
-  --primary: oklch(0.27 0.07 265);
-  --primary-foreground: oklch(0.985 0.008 85);
-  --secondary: oklch(0.95 0.02 85);
-  --secondary-foreground: oklch(0.27 0.07 265);
-  --muted: oklch(0.95 0.015 85);
-  --muted-foreground: oklch(0.48 0.03 265);
-  --accent: oklch(0.62 0.11 185);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.55 0.22 27);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.9 0.02 85);
-  --input: oklch(0.9 0.02 85);
-  --ring: oklch(0.62 0.11 185);
-  --gold: oklch(0.82 0.12 85);
-  --gold-foreground: oklch(0.27 0.07 265);
-  --teal: oklch(0.62 0.11 185);
-  --teal-foreground: oklch(1 0 0);
-  --navy: oklch(0.27 0.07 265);
-  --navy-foreground: oklch(0.985 0.008 85);
-  --success: oklch(0.6 0.13 155);
-  --warning: oklch(0.78 0.14 75);
-  /* Patient portal palette — warm sand base, deep teal, sage, amber, calm red.
-     Values chosen for WCAG AA body contrast against --sand (L 0.968):
-       ink on sand        ≈ 12.6:1
-       ink-soft on sand   ≈  5.4:1
-       primary teal fg    ≈  4.9:1 (white text on teal ≈ 5.3:1)
-       crisis on sand     ≈  5.6:1  */
-  --sand: oklch(0.968 0.014 84);
-  --sand-deep: oklch(0.935 0.021 82);
-  --ink: oklch(0.26 0.024 250);
-  --ink-soft: oklch(0.48 0.02 250);
-  --sage: oklch(0.58 0.075 152);
-  --sage-soft: oklch(0.93 0.035 152);
-  --sage-foreground: oklch(1 0 0);
-  --amber: oklch(0.79 0.115 78);
-  --amber-soft: oklch(0.955 0.045 82);
-  --amber-foreground: oklch(0.3 0.05 78);
-  --crisis: oklch(0.52 0.13 25);
-  --crisis-soft: oklch(0.955 0.025 25);
-  --crisis-foreground: oklch(1 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --canvas: oklch(0.980 0.007 80.7);
+  --surface: oklch(1 0 0);
+  --surface-sunk: oklch(0.948 0.014 78.3);
+  --line: oklch(0.869 0.014 78.3);
+  --line-strong: oklch(0.614 0.019 76.0);
+  --ink: oklch(0.277 0.019 232.2);
+  --ink-muted: oklch(0.433 0.022 233.0);
+  --ink-subtle: oklch(0.523 0.020 234.8);
+  --path: oklch(0.448 0.066 205.1);
+  --path-action: oklch(0.512 0.076 204.7);
+  --on-path: oklch(1 0 0);
+  --path-soft: oklch(0.932 0.023 190.2);
+  --path-faint: oklch(0.969 0.010 189.1);
+  --sunrise: oklch(0.685 0.148 50.8);
+  --sunrise-mark: oklch(0.619 0.144 48.9);
+  --sunrise-text: oklch(0.502 0.124 49.6);
+  --on-sunrise: oklch(0.277 0.019 232.2);
+  --sunrise-soft: oklch(0.940 0.032 61.4);
+  --gold: oklch(0.841 0.110 78.2);
+  --on-gold: oklch(0.277 0.019 232.2);
+  --attention: oklch(0.508 0.104 85.8);
+  --info: oklch(0.476 0.108 264.1);
+  --info-soft: oklch(0.928 0.020 267.3);
+  --urgent: oklch(0.481 0.150 17.1);
+  --urgent-soft: oklch(0.920 0.030 10.1);
+  --on-urgent: oklch(1 0 0);
+  --attention-soft: var(--gold);
+  --on-attention-soft: var(--on-gold);
+  --done: var(--path);
+  --restricted: var(--ink-muted);
+  --restricted-soft: var(--surface-sunk);
+  --focus: var(--ink);
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--path-action);
+  --primary-foreground: var(--on-path);
+  --secondary: var(--surface-sunk);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-sunk);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--path-soft);
+  --accent-foreground: var(--path);
+  --destructive: var(--urgent);
+  --destructive-foreground: var(--on-urgent);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--ink);
+  --chart-1: var(--path);
+  --chart-2: var(--info);
+  --chart-3: var(--sunrise-mark);
+  --chart-4: var(--ink-subtle);
+  --chart-5: var(--ink-subtle);
+  --sidebar: var(--secondary);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --navy: var(--path);
+  --navy-foreground: var(--on-path);
+  --teal: var(--path-action);
+  --teal-foreground: var(--on-path);
+  --gold-foreground: var(--on-gold);
+  --amber: var(--gold);
+  --amber-warm: var(--gold);
+  --amber-foreground: var(--on-gold);
+  --amber-warm-foreground: var(--on-gold);
+  --amber-soft: var(--sunrise-soft);
+  --sage: var(--path-soft);
+  --sage-soft: var(--path-faint);
+  --sage-foreground: var(--path);
+  --crisis: var(--urgent);
+  --crisis-soft: var(--urgent-soft);
+  --crisis-foreground: var(--on-urgent);
+  --success: var(--done);
+  --warning: var(--attention);
+  --sand: var(--canvas);
+  --sand-deep: var(--surface-sunk);
+  --ink-soft: var(--ink-muted);
+  --surface-elevated: var(--surface);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --canvas: oklch(0.232 0.017 189.6);
+  --surface: oklch(0.275 0.020 190.9);
+  --surface-sunk: oklch(0.305 0.023 187.0);
+  --line: oklch(0.366 0.024 179.7);
+  --line-strong: oklch(0.635 0.026 180.2);
+  --ink: oklch(0.958 0.005 165.0);
+  --ink-muted: oklch(0.861 0.013 178.0);
+  --ink-subtle: oklch(0.753 0.019 179.1);
+  --path: oklch(0.786 0.076 195.7);
+  --path-action: oklch(0.786 0.076 195.7);
+  --on-path: oklch(0.229 0.022 190.7);
+  --path-soft: oklch(0.327 0.033 195.7);
+  --path-faint: oklch(0.262 0.022 191.0);
+  --sunrise: oklch(0.813 0.099 55.3);
+  --sunrise-mark: oklch(0.813 0.099 55.3);
+  --sunrise-text: oklch(0.813 0.099 55.3);
+  --on-sunrise: oklch(0.222 0.011 60.9);
+  --sunrise-soft: oklch(0.300 0.031 58.1);
+  --gold: oklch(0.357 0.058 86.0);
+  --on-gold: oklch(0.841 0.110 78.2);
+  --attention: oklch(0.841 0.110 78.2);
+  --info: oklch(0.805 0.074 265.9);
+  --info-soft: oklch(0.296 0.046 266.4);
+  --urgent: oklch(0.803 0.089 11.4);
+  --urgent-soft: oklch(0.286 0.047 7.6);
+  --on-urgent: oklch(0.214 0.043 11.8);
+  --attention-soft: var(--gold);
+  --on-attention-soft: var(--on-gold);
+  --done: var(--path);
+  --restricted: var(--ink-muted);
+  --restricted-soft: var(--surface-sunk);
+  --focus: var(--ink);
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--path-action);
+  --primary-foreground: var(--on-path);
+  --secondary: var(--surface-sunk);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-sunk);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--path-soft);
+  --accent-foreground: var(--path);
+  --destructive: var(--urgent);
+  --destructive-foreground: var(--on-urgent);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--ink);
+  --chart-1: var(--path);
+  --chart-2: var(--info);
+  --chart-3: var(--sunrise-mark);
+  --chart-4: var(--ink-subtle);
+  --chart-5: var(--ink-subtle);
+  --sidebar: var(--secondary);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --navy: var(--path);
+  --navy-foreground: var(--on-path);
+  --teal: var(--path-action);
+  --teal-foreground: var(--on-path);
+  --gold-foreground: var(--on-gold);
+  --amber: var(--gold);
+  --amber-warm: var(--gold);
+  --amber-foreground: var(--on-gold);
+  --amber-warm-foreground: var(--on-gold);
+  --amber-soft: var(--sunrise-soft);
+  --sage: var(--path-soft);
+  --sage-soft: var(--path-faint);
+  --sage-foreground: var(--path);
+  --crisis: var(--urgent);
+  --crisis-soft: var(--urgent-soft);
+  --crisis-foreground: var(--on-urgent);
+  --success: var(--done);
+  --warning: var(--attention);
+  --sand: var(--canvas);
+  --sand-deep: var(--surface-sunk);
+  --ink-soft: var(--ink-muted);
+  --surface-elevated: var(--surface);
 }
 
 @layer base {
@@ -201,130 +317,13 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /*
-   * §Patient portal (Build 1) — scoped theme.
-   * Applied ONLY on the patient shell wrapper, so staff / clinical / admin
-   * surfaces keep the existing tokens untouched.
-   */
+  /* Patient density and player selectors remain; colors inherit the single theme. */
   .patient-theme {
-    /* Reference palette, converted hex -> oklch (sRGB -> linear -> Oklab):
-         primary teal  #005F5F -> oklch(0.440 0.075 194.8)
-         sage          #97C4A5 -> oklch(0.780 0.065 154.6)
-         amber-warm    #F2C275 -> oklch(0.841 0.110 78.2)
-         crisis        #C74B47 -> oklch(0.580 0.159 25.2)
-       Warm cream background kept on the same hue axis (85 -> 84.6).
-       Contrast against the cream background (L 0.982):
-         foreground on bg      ~ 12.4:1
-         muted-foreground      ~  5.3:1
-         white on primary teal ~  7.4:1
-         white on crisis       ~  4.7:1  */
     --radius: 1rem;
-    --background: oklch(0.989 0.006 84.6);
-    --surface: oklch(0.974 0.010 81.8);
-    --surface-elevated: oklch(0.998 0.003 84.6);
-    --foreground: oklch(0.24 0.028 55);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.24 0.028 55);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.24 0.028 55);
-    --primary: oklch(0.44 0.075 194.8);
-    --primary-foreground: oklch(0.985 0.01 85);
-    --secondary: oklch(0.93 0.022 80);
-    --secondary-foreground: oklch(0.28 0.03 55);
-    --muted: oklch(0.945 0.016 82);
-    --muted-foreground: oklch(0.48 0.025 60);
-    --accent: oklch(0.92 0.03 194.8);
-    --accent-foreground: oklch(0.28 0.045 194.8);
-    --sage: oklch(0.78 0.065 154.6);
-    --sage-foreground: oklch(0.28 0.05 154.6);
-    --amber-warm: oklch(0.841 0.11 78.2);
-    --amber-warm-foreground: oklch(0.34 0.07 55);
-    --crisis: oklch(0.58 0.159 25.2);
-    --crisis-foreground: oklch(0.985 0.01 85);
-    --destructive: oklch(0.58 0.159 25.2);
-    --destructive-foreground: oklch(0.985 0.01 85);
-    --border: oklch(0.9 0.018 80);
-    --input: oklch(0.9 0.018 80);
-    --ring: oklch(0.5 0.075 194.8);
-    --sidebar: oklch(0.955 0.018 82);
-    --sidebar-foreground: oklch(0.28 0.03 55);
-    --sidebar-primary: oklch(0.44 0.075 194.8);
-    --sidebar-primary-foreground: oklch(0.985 0.01 85);
-    --sidebar-accent: oklch(0.92 0.025 80);
-    --sidebar-accent-foreground: oklch(0.28 0.045 194.8);
-    --sidebar-border: oklch(0.9 0.018 80);
-    --sidebar-ring: oklch(0.5 0.075 194.8);
-    /* Patient-scoped chart tokens track the patient palette, not staff charts. */
-    --chart-1: oklch(0.44 0.075 194.8);
-    --chart-2: oklch(0.78 0.065 154.6);
-    --chart-3: oklch(0.841 0.11 78.2);
-    --chart-4: oklch(0.58 0.159 25.2);
-    --chart-5: oklch(0.6 0.05 55);
-    /* Local aliases kept so existing patient markup keeps resolving. */
-    --sand: var(--background);
-    --sand-deep: var(--secondary);
-    --ink: var(--foreground);
-    --ink-soft: var(--muted-foreground);
-    --sage-soft: oklch(0.94 0.03 154.6);
-    --amber: var(--amber-warm);
-    --amber-soft: oklch(0.96 0.04 78.2);
-    --amber-foreground: var(--amber-warm-foreground);
-    --crisis-soft: oklch(0.958 0.028 25.2);
-    --teal: var(--primary);
-    --navy: var(--foreground);
-    --navy-foreground: var(--primary-foreground);
-    /* §Typography: patient surfaces are Inter-only — hierarchy is carried by
-       weight and size, not a serif display face. */
-    --font-display: var(--font-sans);
     background-color: var(--background);
     color: var(--foreground);
     font-size: 1rem;
     line-height: 1.6;
-  }
-
-  /* Dark parity — same hue axis, inverted lightness. Unused today. */
-  .dark .patient-theme,
-  .patient-theme.dark {
-    --background: oklch(0.19 0.016 55);
-    --surface: oklch(0.23 0.018 55);
-    --surface-elevated: oklch(0.27 0.02 55);
-    --foreground: oklch(0.955 0.012 85);
-    --card: oklch(0.24 0.018 55);
-    --card-foreground: oklch(0.955 0.012 85);
-    --popover: oklch(0.24 0.018 55);
-    --popover-foreground: oklch(0.955 0.012 85);
-    --primary: oklch(0.72 0.075 195);
-    --primary-foreground: oklch(0.2 0.03 195);
-    --secondary: oklch(0.29 0.02 60);
-    --secondary-foreground: oklch(0.955 0.012 85);
-    --muted: oklch(0.29 0.018 60);
-    --muted-foreground: oklch(0.75 0.02 70);
-    --accent: oklch(0.34 0.035 185);
-    --accent-foreground: oklch(0.93 0.03 180);
-    --sage: oklch(0.62 0.07 155);
-    --sage-soft: oklch(0.3 0.035 155);
-    --sage-foreground: oklch(0.95 0.02 155);
-    --amber-warm: oklch(0.76 0.1 78);
-    --amber-warm-foreground: oklch(0.2 0.04 60);
-    --amber: var(--amber-warm);
-    --amber-soft: oklch(0.32 0.05 78);
-    --amber-foreground: var(--amber-warm-foreground);
-    --crisis: oklch(0.68 0.15 25);
-    --crisis-soft: oklch(0.3 0.06 25);
-    --crisis-foreground: oklch(0.18 0.03 25);
-    --destructive: oklch(0.68 0.15 25);
-    --destructive-foreground: oklch(0.18 0.03 25);
-    --border: oklch(0.34 0.02 60);
-    --input: oklch(0.34 0.02 60);
-    --ring: oklch(0.72 0.075 195);
-    --sidebar: oklch(0.22 0.018 55);
-    --sidebar-foreground: oklch(0.93 0.014 85);
-    --sidebar-primary: oklch(0.72 0.075 195);
-    --sidebar-primary-foreground: oklch(0.2 0.03 195);
-    --sidebar-accent: oklch(0.3 0.022 60);
-    --sidebar-accent-foreground: oklch(0.93 0.03 180);
-    --sidebar-border: oklch(0.34 0.02 60);
-    --sidebar-ring: oklch(0.72 0.075 195);
   }
 
   /* 16px+ body minimum on patient surfaces: never render below 0.9375rem. */
@@ -341,41 +340,24 @@
 
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
-  }
-
-  /* §Typography (patient) — Inter only. Overrides both the base rule above and
-     the generated .font-display utility, whose value is inlined at build time. */
-  .patient-theme h1,
-  .patient-theme h2,
-  .patient-theme h3,
-  .patient-theme .font-display {
-    font-family: var(--font-sans) !important;
-    letter-spacing: -0.015em;
-  }
-  .patient-theme h1,
-  .patient-theme .font-display {
     font-weight: 700;
-  }
-  .patient-theme h2,
-  .patient-theme h3 {
-    font-weight: 600;
+    letter-spacing: 0;
   }
 }
 
 /* Ported verbatim from the real patient-portal stylesheet. */
 @utility soft-shadow {
   box-shadow:
-    0 1px 2px oklch(0.24 0.028 55 / 0.04),
-    0 8px 24px -12px oklch(0.24 0.028 55 / 0.08);
+    0 1px 2px oklch(0.277 0.019 232.2 / 0.04),
+    0 8px 24px -12px oklch(0.277 0.019 232.2 / 0.08);
 }
 
 /* Patient-facing cards use the real soft shadow, not a generic Tailwind one. */
 .patient-theme [data-slot="card"],
 .patient-theme .soft-shadow {
   box-shadow:
-    0 1px 2px oklch(0.24 0.028 55 / 0.04),
-    0 8px 24px -12px oklch(0.24 0.028 55 / 0.08);
+    0 1px 2px oklch(0.277 0.019 232.2 / 0.04),
+    0 8px 24px -12px oklch(0.277 0.019 232.2 / 0.08);
 }
 
 /* Patient player patterns; all visual roles resolve from patient semantic tokens. */

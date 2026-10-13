@@ -161,11 +161,8 @@ export function AppShell() {
             to="/"
             className={cn("flex items-center gap-2 group", isPatientSurface && "hidden")}
           >
-            <>
-            <span className="h-8 w-8 rounded-lg bg-navy text-navy-foreground grid place-items-center font-display text-lg leading-none">
-              A
-            </span>
-            <span className="font-display text-xl text-navy max-[420px]:sr-only">{t("appName")}</span></>
+            <img src="/brand/adelante-compact.svg" alt="Adelante" width="476" height="136" className={cn("w-auto dark:hidden", isAdvocateSurface ? "h-10" : "h-8")} />
+            <img src="/brand/adelante-compact-dark.svg" alt="Adelante" width="476" height="136" className={cn("hidden w-auto dark:block", isAdvocateSurface ? "h-10" : "h-8")} />
           </Link>
 
           <div className="ml-auto flex items-center gap-2 min-w-0">
