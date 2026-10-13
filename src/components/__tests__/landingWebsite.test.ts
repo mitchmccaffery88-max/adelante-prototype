@@ -28,7 +28,7 @@ describe("public website contract", () => {
       expect(websiteEn[key]).toBe(headings[key][0]);
       expect(websiteEs[key]).toBe(headings[key][1]);
     }
-    expect(WEBSITE_NAV.map(n => websiteEn[n.key])).toEqual(["How it works", "About us", "Our team", "Find where you fit", "What you get", "FAQ"]);
+    expect(WEBSITE_NAV.map(n => websiteEn[n.key])).toEqual(["How it works", "Find where you fit", "What you get", "FAQ", "About us", "Our team"]);
     expect([websiteEn.websiteAboutNav, websiteEn.websiteTeamNav, websiteEn.websitePartners, websiteEn.websiteFaqNav, websiteEn.websiteReferral]).toEqual(["About us", "Our team", "For partners", "FAQ", "Make a referral"]);
   });
   it("has a Spanish draft translation for every public string", () => {
@@ -62,7 +62,7 @@ describe("public website contract", () => {
     for (const route of ["index", "about", "team"]) expect(readFileSync(`src/routes/${route}.tsx`, "utf8")).toContain("...websiteShareMeta");
   });
   it("orders sections and navigation and preserves the old anchor", () => {
-    expect(WEBSITE_NAV.map((n) => [n.to, n.hash])).toEqual([["/", "how-it-works"], ["/about", undefined], ["/team", undefined], ["/", "find-your-fit"], ["/", "what-you-get"], ["/", "faq"]]);
+    expect(WEBSITE_NAV.map((n) => [n.to, n.hash])).toEqual([["/", "how-it-works"], ["/", "find-your-fit"], ["/", "what-you-get"], ["/", "faq"], ["/about", undefined], ["/team", undefined]]);
     for (const id of ["about", "team", "partners"]) expect(landing).not.toContain(`id="${id}"`);
     for (const id of ["about", "team", "partners"]) expect(content).toContain(`id="${id}"`);
     expect(landing).toContain('hash !== "#who-its-for"');
