@@ -1,13 +1,69 @@
-# Patient color pass — approved fix pass, stopped at contrast
+# Patient color pass — validation completed; fixes pending Mitch decision
 
-## Current result
-The seven approved fixes were applied. Validation stopped on the first below-threshold rendered contrast measurement; implementation is **not accepted as done**.
+## Current result — validation only, 13 Oct 2026
+Validated unchanged application commit `6da8b4da`. **Not all green:** Spanish Home overflows horizontally at 390px, and two staff deep-link browser checks fail. All requested settled contrast pairings pass 4.5:1. No app, styles, copy, tests, assertions, retries, thresholds, permissions or business logic changed in this validation turn; only this report and roadmap updated.
 
-Latest automatic harness entries at 19:15:56, 19:16:57 and 19:17:28 report **build OK**, with the two HomeDashboard type errors cleared. No manual build or typecheck was run.
+- Units: **2,561 passed / 0 failed**, **306 files passed / 0 failed**; full `bunx vitest run`, 64.61s.
+- Browsers, separately after units: **77 passed / 2 failed / 0 skipped**, 79 total; full `E2E_BASE_URL=http://localhost:8080 bunx playwright test`, 7.6 minutes. Ran through both failures to completion.
+- Axe and Back to top: existing `websitePolish.spec.ts` checks passed for `/`, `/about`, `/team`, including EN desktop and ES mobile. No serious/critical axe violations under those existing assertions (not a claim of zero minor issues everywhere).
+- Automatic harness build: **build OK**, latest observed 19:50:18 UTC. No manual build/typecheck invoked; a separate standalone typecheck is not certified by this validation run.
 
-**Failure:** desktop dark website hero Get started captured at **1.02:1**, below 4.5:1. Measured foreground RGB (136,145,144), background (77,153,158). The audit changed the document to dark immediately before sampling. These intermediate colors do not match the settled dark tokens, and the existing Button uses `transition-colors`; a theme-transition sample is the likely cause, not an established static-token failure. No rerun or code correction followed the required stop. Settled dark website contrast remains unverified.
+## Settled rendered contrast
+Before each sample, injected temporary browser-only `*{transition:none !important; animation:none !important}`, toggled document `.dark`, waited **600ms**, then measured computed foreground and composited background using WCAG sRGB relative luminance. The app has no dark switch: **light is the actual user-facing default**; dark values below are explicitly forced audit conditions.
 
-Full units and all browser specs (including axe and Back to top) **not run in this fix pass** because contrast failed first. Previous pass had 2,560 passed / 1 failed from the stale hero assertion. This pass changes only that single authorized assertion to Mitch's existing headline; no other assertions, retries or thresholds changed.
+All eight EN/ES × light/dark × 1280/390 combinations measured. **208 primary pairing observations**, plus all gold-tile text lines. The table is ratios, not simulated product statistics. Minimum is **5.43:1** (team chip, light). The prior website dark **1.02:1** capture is superseded: settled hero and closing buttons both measure **8.86:1**, establishing that capture was not a settled failure.
+
+Real patient Home, lesson, advocate header and website supplied mounted UI. Actual exported StatusChip and JoinCallButton were temporarily rendered in browser-only fixtures for all states/labels and meeting windows, using existing appointment data with only local render props; no stored record was changed. Recovery timeline needed a browser-only render of its actual Timeline component because demo records had no current recovery stage. Actual gold-tile eyebrow, title, date, clinician, prep text, links, suggestions and remaining copy were additionally sampled and all use the reported gold text pairing. Long chip labels used “Draft — pending clinical sign-off” / “Borrador — pendiente de revisión de traducción”; each state was sampled with its generic word and the long label, with identical results. Labels/icons/borders were present; Restringido stayed in its own element. Spanish shell notices measured **14px** and are absent in EN.
+
+The closing CTA locator was **`.website-closing a[href="/start/signup"]`**, never positional. No production CSS was injected or changed; temporary style affects only disposable browser contexts.
+
+| Rendered pairing | EN light 1280 | EN light 390 | EN dark 1280 | EN dark 390 | ES light 1280 | ES light 390 | ES dark 1280 | ES dark 390 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Gold tile — all text | 8.90:1 | 8.90:1 | 6.69:1 | 6.69:1 | 8.90:1 | 8.90:1 | 6.69:1 | 6.69:1 |
+| Gold tile — Start meeting | 5.52:1 | 5.52:1 | 8.86:1 | 8.86:1 | 5.52:1 | 5.52:1 | 8.86:1 | 8.86:1 |
+| Gold tile — Opens at | 7.95:1 | 7.95:1 | 9.68:1 | 9.68:1 | 7.95:1 | 7.95:1 | 9.68:1 | 9.68:1 |
+| StatusChip done — generic + long label | 6.03:1 | 6.03:1 | 6.41:1 | 6.41:1 | 6.03:1 | 6.03:1 | 6.41:1 | 6.41:1 |
+| StatusChip yourturn — generic + long label | 8.90:1 | 8.90:1 | 6.69:1 | 6.69:1 | 8.90:1 | 8.90:1 | 6.69:1 | 6.69:1 |
+| StatusChip team — generic + long label | 5.43:1 | 5.43:1 | 7.54:1 | 7.54:1 | 5.43:1 | 5.43:1 | 7.54:1 | 7.54:1 |
+| StatusChip upnext — generic + long label | 7.95:1 | 7.95:1 | 9.68:1 | 9.68:1 | 7.95:1 | 7.95:1 | 9.68:1 | 9.68:1 |
+| StatusChip urgent — generic + long label | 5.51:1 | 5.51:1 | 7.59:1 | 7.59:1 | 5.51:1 | 5.51:1 | 7.59:1 | 7.59:1 |
+| StatusChip closed — generic + long label | 6.83:1 | 6.83:1 | 8.72:1 | 8.72:1 | 6.83:1 | 6.83:1 | 8.72:1 | 8.72:1 |
+| StatusChip restricted — generic + long label | 6.83:1 | 6.83:1 | 8.72:1 | 8.72:1 | 6.83:1 | 6.83:1 | 8.72:1 | 8.72:1 |
+| StatusChip simulated — generic + long label | 6.70:1 | 6.70:1 | 8.06:1 | 8.06:1 | 6.70:1 | 6.70:1 | 8.06:1 | 8.06:1 |
+| Lesson — You are here | 6.24:1 | 6.24:1 | 8.03:1 | 8.03:1 | 6.24:1 | 6.24:1 | 8.03:1 | 8.03:1 |
+| Recovery timeline — You are here | 6.24:1 | 6.24:1 | 8.03:1 | 8.03:1 | 6.24:1 | 6.24:1 | 8.03:1 | 8.03:1 |
+| Patient — Get help now | 7.06:1 | 7.06:1 | 9.24:1 | 9.24:1 | 7.06:1 | 7.06:1 | 9.24:1 | 9.24:1 |
+| Advocate — Get help now | 7.06:1 | 7.06:1 | 9.24:1 | 9.24:1 | 7.06:1 | 7.06:1 | 9.24:1 | 9.24:1 |
+| Website hero — Get started | 5.52:1 | 5.52:1 | 8.86:1 | 8.86:1 | 5.52:1 | 5.52:1 | 8.86:1 | 8.86:1 |
+| Website closing — Get started | 5.52:1 | 5.52:1 | 8.86:1 | 8.86:1 | 5.52:1 | 5.52:1 | 8.86:1 | 8.86:1 |
+| Patient Spanish Draft notice | N/A — EN | N/A — EN | N/A — EN | N/A — EN | 7.50:1 | 7.50:1 | 11.00:1 | 11.00:1 |
+| Advocate Spanish Draft notice | N/A — EN | N/A — EN | N/A — EN | N/A — EN | 7.50:1 | 7.50:1 | 11.00:1 | 11.00:1 |
+
+## Phone-width checks — 390 × 844, light (user-facing), EN and ES
+Measured document `scrollWidth` against 390px and reviewed screenshots. No app fix was attempted.
+
+| Surface | EN scrollWidth | ES scrollWidth | Result |
+|---|---:|---:|---|
+| Home, including gold tile | 390 | **431** | **ES fails: 41px horizontal overflow** |
+| Longest existing lesson: Calming My Mind (`ss-calming-my-mind`), 11 steps | 390 | 390 | Pass; all 11 targets 48×48px and wrap |
+| Advocate Home, including urgent header | 390 | 390 | Pass |
+| Medications/cards | 390 | 390 | Pass |
+| Schedule, Your appointments tab with actual appointment cards | 390 | 390 | Pass |
+
+Catalog inspection of existing library and recovery lessons found a maximum of 11 rendered steps; selected existing 11-step lesson, not new test content. Long-label chips separately fit at 248px EN and 348px ES across all eight states. Patient/advocate urgent header buttons fit and Spanish labels wrap. Gold tile EN is 358px wide; Spanish tile expands to 415px because the Home grid expands, so ES gold-tile/page fit is **not certified** despite text wrapping inside the card.
+
+**Confirmed overflow cause:** Home’s support-needs tile, not lesson dots or the standalone StatusChip. The Spanish ConnectMeButton text “¿Quiere que su equipo de atención le ayude a conectarse?” renders at **351px**, with computed `white-space: nowrap` inherited from the shared Button. Its LI/UL are 373px and TileShell 415px; the grid has an intrinsic minimum width and cannot shrink to the available 358px. `HomeDashboard.tsx` mounts it under `data-testid="sdoh-status-list"`; `NeedConnect.tsx` supplies `className="mt-2 min-h-11"` without a wrap/min-width override. In the initial unscrolled capture the support tile reaches x=431px. Scrolling to an expanded gold tile can shift horizontal scroll, which explains later x=415px without any width fix. A separate investigator suggested the medication tile, but direct measured ancestor geometry establishes the support button as the observed source; medication was not proven causal. No layout fix authorized or applied.
+
+## Every browser failure and cause
+1. **PMHNP deep links**, `e2e/staffNav.rbac.spec.ts:96`, failing assertion **line 116**: denied `/nurse` stayed at `http://localhost:8080/nurse`; expected `/clinician`. URL assertion exhausted unchanged **10,000ms** timeout (12 unexpected samples). Trace confirms earlier allowed paths and denied `/assisted-signup` were processed before `/nurse`. This is a route guard/registry disagreement or a guard not taking effect, **not a contrast failure**; exact underlying diagnosis follows below where supported.
+2. **Billing deep links**, same spec/assertion: denied `/referral-queue` stayed at `http://localhost:8080/referral-queue`; expected `/inbox`. URL assertion exhausted unchanged **10,000ms** timeout (11 unexpected samples). Earlier denied `/content-library` completed. Same route guard/registry or hydration disagreement; no permission/test fix attempted.
+
+Both are actual completed suite failures, not execution termination or test retries. Full evidence: `/tmp/browser/color-validation/browsers.log`; corresponding traces/error-context files under `test-results/staffNav.rbac-deep-links-h-ca8fc--denied-deep-links-redirect-chromium/` and `test-results/staffNav.rbac-deep-links-h-16685--denied-deep-links-redirect-chromium/`. Do not interpret the patient styling pass as authorization to modify staff guards.
+
+## Measurement tooling gaps resolved within validation
+An initial temporary probe incorrectly treated a Python Locator property as callable and imported ReactDOM without its default export; those invalid samples were discarded. The corrected probe collected all patient/chip/advocate samples but could not find a seeded recovery current marker or the website language selector. Dedicated read-only probes collected all eight actual Timeline fixtures and all sixteen section-specific website CTA samples. Thus those tooling errors leave **no requested contrast pairing missing** and are not app/test failures. No existing spec was edited or rerun to conceal the two failures.
+
+Evidence stays in `/tmp/browser/color-validation/`: `results.json`, `supplement.json`, `website.json`, `gold_text.json`, `phone_details.json`, `overflow_cause.log`, `units.log`, `browsers.log`; reviewed screenshots include `home-es.png`, `gold-es.png`, `long-chips.png`, `lesson-es.png`, `advocate-es.png`, `medications-es.png`, `appointments-cards-es.png`, and `website-en-390-dark.png`. Temporary fixtures/scripts are outside the checkout.
 
 ## Approved changes
 - Public English headline preserved. Its one test expectation now matches it. Both supplied Spanish headline/corner strings applied under the existing public ES Draft note.
@@ -21,32 +77,6 @@ Full units and all browser specs (including axe and Back to top) **not run in th
 ## Modal order (unchanged by fix pass)
 Call 988 → Text 988 → Talk to a peer specialist → Talk to Adel → Naloxone & overdose prevention → I used — help me come back (existing recovery condition only) → Crisis support.
 Title remains In crisis now; OUTSIDE_CRISIS_COPY, conditions, destinations and Not built yet notes unchanged.
-
-## Rendered contrast captured before stopping
-Desktop 1280px, light/dark. Chip states and the open-window meeting button rendered from the actual exported components in a temporary browser-only fixture, not new app content or stored records. Real Home supplied gold text/opening-time/help; real lesson supplied You are here; real advocate supplied help. Fixture used an existing appointment with a temporary render prop within its open window; no store mutation. Values are captured samples, not full completion certification.
-
-| Rendered text pairing | Desktop light | Desktop dark |
-|---|---:|---:|
-| gold text | 8.90:1 | 6.69:1 |
-| gold button | 5.52:1 | 8.86:1 |
-| opens at | 7.95:1 | 9.68:1 |
-| done | 6.03:1 | 6.41:1 |
-| yourturn | 8.90:1 | 6.69:1 |
-| team | 5.43:1 | 7.54:1 |
-| upnext | 7.95:1 | 9.68:1 |
-| urgent | 5.51:1 | 7.59:1 |
-| closed | 6.83:1 | 8.72:1 |
-| restricted | 6.83:1 | 8.72:1 |
-| simulated | 6.70:1 | 8.06:1 |
-| you are here | 6.24:1 | 8.03:1 |
-| patient help | 7.06:1 | 9.24:1 |
-| advocate help | 7.06:1 | 9.24:1 |
-| website hero | 5.52:1 | 1.02:1 |
-
-**Closing website CTA not verified:** the positional locator selected another Get started link rather than establishing the closing-section button. Its sampled values were 5.52:1 light / 4.93:1 during dark transition; excluded from certification. Full 390px light/dark contrast not reached.
-
-## Phone/layout observations
-Initial real Home at 390×844: document scrollWidth **390px**, gold card fits (screenshot `/tmp/browser/fix-pass/gold-mobile.png`). Desktop lesson had 11 step controls, each **48×48px**, document width 1280px with no horizontal overflow in both themes. Desktop advocate also 1280px without overflow. The longest existing lesson, long chips and advocate header at 390px **remain unverified** after the contrast stop.
 
 ## Files changed in this fix pass
 - `src/components/__tests__/landingWebsite.test.ts` — only authorized line 94
@@ -129,5 +159,6 @@ No stores, permissions, route definitions, generic Button/Badge primitives or st
 - `src/routes/advocate.library.tsx`
 
 
-## Blocker / next authorization
-Resume permission is needed after the contrast stop: verify settled theme contrast and target the closing CTA directly, complete 390px/longest-lesson/Spanish checks, then run full units and all browsers separately. No settled-state result is claimed and no test failure was concealed.
+
+## Decision required
+Mitch to decide whether to authorize fixes for **Spanish Home 390px overflow**, **PMHNP `/nurse` redirect failure**, and **billing `/referral-queue` redirect failure**. Settled contrast is green; phase completion remains blocked by these three findings. This turn changed only this report and `roadmap.md`.
