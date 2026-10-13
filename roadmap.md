@@ -1,5 +1,14 @@
 # Roadmap
 
+## Patient color pass — phases 2a + 4 (13 Oct)
+- [ ] StatusChip and scoped patient/advocate status replacements; staff unchanged
+- [ ] Gold next-step tile, neutral suggestions, one sunrise celebration band, 48px member targets
+- [ ] Patient header help modal and approved 988-first order; verify existing advocate-safe help page
+- [ ] Teal website Get started buttons and bilingual Draft UI copy
+- [ ] Measure all requested text contrast in light/dark, desktop/390px; stop below 4.5:1
+- [ ] Full units, then all browsers including axe separately; stop on failure, tests unchanged
+- [ ] Report every changed file, advocate outcome, modal order, contrast and validation
+
 ## Design system phase 1 (13 Oct)
 - [x] Verify all six supplied SVG hashes before implementation
 - [x] Apply approved fonts, global tokens, aliases and brand-link changes only
