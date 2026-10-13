@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Chart redesign turn 3 — "Brief" landing tab. Cards in a role-default
 // order (chartBrief.roleCardOrder); empty cards collapse to one line; every
 // card has "See all" to its full section. Same Part 2 filters as the chart.
@@ -13,6 +14,7 @@ import { CSSRS_KEY } from "@/lib/cssrs";
 import { listLabOrders, listMetabolic, labTest, metabolicFlags } from "@/lib/chartOrders";
 import { staffPlanView, goalProgress, planNeeds, NEED_LADDER } from "@/lib/structuredCarePlan";
 import { hieChartView, HIE_LABEL } from "@/lib/hie";
+import { visibleHlocReferrals } from "@/lib/outpatientCare";
 import { openChartAction } from "@/lib/chartActionBus";
 import { Card } from "@/components/ui/card";
 import { AdelBriefSections } from "@/components/chart/AdelBriefSections";
@@ -72,7 +74,7 @@ function Spark({ values }: { values: number[] }) {
 }
 
 export function BriefTab({ patientId, visibleSections, onSelectSection }: { patientId: string; visibleSections: string[]; onSelectSection: (id: string) => void }) {
-  const { role, staffId } = useActingStaff();
+  const { role, staffId, staffName } = useActingStaff();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [tabSince] = useState(() => briefLastSeen(staffId, patientId));
   const [mineOnly, setMineOnly] = useState(false);
@@ -274,7 +276,7 @@ export function BriefTab({ patientId, visibleSections, onSelectSection }: { pati
         <BriefCardShell id="referrals" title="Open referrals" empty={!refs.length} emptyText="No open referrals." sectionId="episodes" {...common}>
           <ul className="space-y-0.5 text-sm">
             {refs.map((r) => (
-              <li key={r.id} className="flex gap-2"><span className="flex-1 capitalize">{r.label}</span><Badge variant="outline" className="text-[10px]">{r.status}</Badge></li>
+              <li key={r.id} className="flex gap-2"><span className="flex-1 capitalize">{r.label}</span><StatusChip lang="en" state={r.status === "admitted" ? "done" : r.status === "closed" || r.status === "declined" ? "closed" : r.status === "drafted" && visibleHlocReferrals(role, patientId).find((x) => x.id === r.id)?.createdBy === staffName ? "yourturn" : "team"} label={r.status} /></li>
             ))}
           </ul>
         </BriefCardShell>

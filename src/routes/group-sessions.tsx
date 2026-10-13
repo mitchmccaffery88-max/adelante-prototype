@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Group sessions — staff-facing group care delivery.
 //
 // Billing codes and the 2–12 roster range are real DHCS content. Curriculum /
@@ -136,7 +137,7 @@ function GroupSessionsPage() {
                   {g.recurrence.kind === "weekly" ? "Weekly" : "One-off"} · cap {g.capacity}
                 </div>
                 {g.status === "cancelled" && (
-                  <Badge className="mt-1 bg-destructive/15 text-destructive">Cancelled</Badge>
+                  <StatusChip lang="en" state="closed" label="Cancelled" className="mt-1" />
                 )}
               </button>
             ))}
@@ -1124,18 +1125,18 @@ function OccurrenceStatusCard({ group, canWrite, actor }: { group: GroupSession;
                   <span className="font-medium text-navy">
                     <ClientDate value={r.occurrenceStart} />
                   </span>
-                  {r.cancelled && <Badge variant="outline">Cancelled</Badge>}
-                  {r.movedFromStart && <Badge variant="outline">Moved</Badge>}
+                  {r.cancelled && <StatusChip lang="en" state="closed" label="Cancelled" />}
+                  {r.movedFromStart && <StatusChip lang="en" state="closed" label="Moved" />}
                   {r.attendanceRecorded ? (
-                    <Badge className="bg-teal/15 text-teal">Attendance taken</Badge>
+                    <StatusChip lang="en" state="done" label="Attendance taken" />
                   ) : (
-                    <Badge variant="outline">Attendance not taken</Badge>
+                    <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label="Attendance not taken" />
                   )}
                   {r.attendanceRecorded &&
                     (r.notesOwed === 0 ? (
-                      <Badge className="bg-success/20 text-success">Notes complete</Badge>
+                      <StatusChip lang="en" state="done" label="Notes complete" />
                     ) : (
-                      <Badge className="bg-gold/30 text-navy">{r.notesOwed} note(s) owed</Badge>
+                      <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label={`${r.notesOwed} note(s) owed`} />
                     ))}
                 </div>
                 <div className="text-muted-foreground">
@@ -1280,9 +1281,7 @@ function GroupNotificationLog({ group }: { group: GroupSession }) {
                     {p ? `${p.firstName} ${p.lastName}` : r.patientId}
                   </span>
                   <Badge variant="outline">{NOTIFY_EVENT_LABEL[r.event]}</Badge>
-                  <Badge variant={r.delivery === "sent" ? "secondary" : "outline"}>
-                    {NOTIFY_OUTCOME_LABEL[r.delivery]}
-                  </Badge>
+                  <StatusChip lang="en" state={r.delivery === "sent" ? "done" : "yourturn"} label={NOTIFY_OUTCOME_LABEL[r.delivery]} />
                 </div>
                 <p className="text-muted-foreground">
                   {r.skipReason === "no_sms_consent"

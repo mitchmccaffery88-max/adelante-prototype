@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Crisis escalation queue details — moved from /crisis-queue (U1), which now
 // redirects to /escalations with a crisis filter. Claim/resolve/front-door
 // rows and "Crises you flagged" are unchanged.
@@ -174,9 +175,7 @@ export function CrisisQueueDetails({ lane }: { lane?: "sdoh" | "clinical" }) {
                   <CrisisRetriggerBadge escalation={escalation} />
                   <CrisisOverdueBadge escalation={escalation} />
                   {!canWorkRow(escalation) && <CssrsRiskBadge risk={escalation.cssrsRisk} />}
-                  <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                    {timeOpenLabel(escalation.triggeredAt)}
-                  </Badge>
+                  <StatusChip lang="en" state="urgent" label={timeOpenLabel(escalation.triggeredAt)} />
                 </div>
               </div>
               <CrisisClassification escalation={escalation} />
@@ -249,16 +248,7 @@ function MyFlaggedEscalations() {
                 <span className="font-display text-base text-navy">
                   {patient.firstName} {patient.lastName}
                 </span>
-                <Badge
-                  className={
-                    escalation.status === "open"
-                      ? "bg-destructive/15 text-destructive border-0 text-[10px]"
-                      : "text-[10px]"
-                  }
-                  variant={escalation.status === "open" ? undefined : "secondary"}
-                >
-                  {escalation.status === "open" ? "Open" : "Resolved"}
-                </Badge>
+                <StatusChip lang="en" state={escalation.status === "open" ? "urgent" : "done"} label={escalation.status === "open" ? "Open" : "Resolved"} />
               </div>
               <p className="text-muted-foreground">
                 Flagged <ClientDate value={escalation.triggeredAt} />

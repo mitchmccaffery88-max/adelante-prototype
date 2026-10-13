@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §v3.0 Phase 5 — the staff verify queue + the staff-assisted upload path.
 //
 // Ownership is DERIVED (`AdelanteEHR.documentOwnerRole`) from the patient's
@@ -131,7 +132,7 @@ export function DocumentVerifyQueue() {
                       <ShieldAlert className="h-3 w-3" /> Part 2
                     </Badge>
                   )}
-                  <Badge variant="secondary">Pending review</Badge>
+                  <StatusChip lang="en" state={row.ownerRole === role ? "yourturn" : "team"} label="Pending review" />
                   <Badge variant="outline">
                     {row.ownerRole === "cf_care_manager" ? "CF Care Manager" : "ECM Provider"}
                   </Badge>

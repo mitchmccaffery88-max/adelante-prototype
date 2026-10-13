@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -161,9 +162,7 @@ function CoordinationPage() {
                     </div>
                   )}
                 </div>
-                <Badge className={p.active ? "bg-success/20 text-success" : "bg-destructive/15 text-destructive"}>
-                  {p.active ? "Active" : "Frozen"}
-                </Badge>
+                <StatusChip lang="en" state={p.active ? "done" : canAct ? "yourturn" : "team"} label={p.active ? "Active" : "Frozen"} />
               </li>
             );
           })}
@@ -321,7 +320,7 @@ function UnassignedRows({
             <b>{patient.firstName} {patient.lastName}</b>
             {patient.primaryClinicianId ? ` · was ${nameOf(patient.primaryClinicianId)}` : ""}
           </span>
-          <Badge variant="outline">Unassigned · {why}</Badge>
+          <StatusChip lang="en" state="yourturn" label={`Unassigned · ${why}`} />
         </li>
       ))}
     </ul>

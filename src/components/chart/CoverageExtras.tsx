@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Batch A2 + A4 — staff-only extras in the chart's Eligibility section:
 // the FSP presumptive-eligibility badge (justice-involved only, custody read
 // roles only) and every service's funding source + care continuum category.
@@ -59,11 +60,9 @@ function FspCard({ patientId }: { patientId: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium text-sm">FSP presumptive eligibility</span>
         {known ? (
-          <Badge variant={status.fspPresumptiveEligible ? "default" : "outline"} data-testid="fsp-badge">
-            {status.fspPresumptiveEligible ? "Presumptively eligible" : "Not presumptively eligible"}
-          </Badge>
+          <StatusChip lang="en" state={status.fspPresumptiveEligible ? "done" : canEdit ? "yourturn" : "team"} label={status.fspPresumptiveEligible ? "Presumptively eligible" : "Not presumptively eligible"} data-testid="fsp-badge" />
         ) : (
-          <Badge variant="outline">Custody time not recorded</Badge>
+          <StatusChip lang="en" state={canEdit ? "yourturn" : "team"} label="Custody time not recorded" />
         )}
         <Badge variant="outline" className="text-[10px]">Staff only</Badge>
       </div>

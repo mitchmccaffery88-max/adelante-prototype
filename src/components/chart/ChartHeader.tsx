@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { PathwayChip } from "@/components/clinical/PathwayChip";
 // §Chart redesign turn 3 — compact, pinned chart header. Three columns
 // (identity / care status / actions) plus Allergies and Alerts strips. It
@@ -93,14 +94,12 @@ export function ChartHeader({
           <div className="flex min-w-0 flex-wrap items-center gap-1.5" data-testid="chart-header-status">
             {episode && <Badge variant="outline">Episode: {episode}</Badge>}
             <PathwayChip patientId={patient.id} />
-            {patient.possibleDuplicate && <Badge variant="outline" className="border-destructive/40 text-destructive" data-testid="possible-duplicate-chip">Possible duplicate — in review</Badge>}
+            {patient.possibleDuplicate && <StatusChip lang="en" state={canAccess(role, "demographics", patient).level === "write" ? "yourturn" : "team"} label="Possible duplicate — in review" data-testid="possible-duplicate-chip" />}
             {rd && (
               <Badge variant="secondary" data-testid="reentry-day">Reentry day {rd}</Badge>
             )}
             {medi && (
-              <Badge variant={medi === "active" ? "secondary" : "outline"} data-testid="medi-cal-chip">
-                Medi-Cal: {medi === "active" ? "active" : "needs check"}
-              </Badge>
+              <StatusChip lang="en" state={patient.coverage?.verified === "verified" ? "done" : patient.coverage?.verified === "pending" ? "team" : "yourturn"} label={patient.coverage?.verified === "verified" ? "Verified" : patient.coverage?.verified === "pending" ? "Checking" : patient.coverage?.verified === "not_found" ? "Not found" : "Check eligibility"} data-testid="medi-cal-chip" />
             )}
             {!condensed &&
               team.map((t) => (

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Cosign inbox — cross-patient queue of signed notes awaiting a cosignature.
 //
 // Same shape as Released Patient Search / Shift Count: a population-level view
@@ -200,7 +201,7 @@ function AsamCosignSection() {
                 {asam.signedAt ? <ClientDate value={asam.signedAt} /> : "—"}
               </div>
             </div>
-            <Badge className="bg-gold/30 text-navy border-0 text-[10px]">Awaiting LPHA cosign</Badge>
+            <StatusChip lang="en" state={canSignNotes(role) ? "yourturn" : "team"} label="Awaiting LPHA cosign" />
           </button>
           {openId === asam.id && (
             <div className="mt-2 space-y-2 border-t border-border pt-2">
@@ -314,7 +315,7 @@ function Section({
                   Machine draft
                 </Badge>
               )}
-              <Badge className="bg-gold/30 text-navy border-0 text-[10px]">Awaiting cosign</Badge>
+              <StatusChip lang="en" state={actionable ? "yourturn" : "team"} label="Awaiting cosign" />
             </div>
           </button>
           {openId === note.id && (
@@ -556,7 +557,7 @@ function RoutingRow({
           </div>
         </div>
         {needs ? (
-          <Badge variant="destructive" className="text-[10px]">Needs a supervisor · not billable</Badge>
+          <StatusChip lang="en" state="yourturn" label="Needs a supervisor · not billable" />
         ) : null}
       </div>
       {needs && row.own.kind === "needs_supervisor" && (

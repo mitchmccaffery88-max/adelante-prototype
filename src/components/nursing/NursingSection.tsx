@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Batch E1 — nursing UI: chain badges on orders, the chart "Nursing"
 // section, the nurse "Needs my action" list and the "+ New" drawer forms.
 // Every write goes through the registry + runAction (act). Draft labels shown.
@@ -43,20 +44,18 @@ const fail = (e: unknown) => toast.error((e as Error).message);
 
 export function ClinicChainBadges({ orderId, orderedBy }: { orderId: string; orderedBy?: string }) {
   useEhr(() => 0);
+  const actor = useActor();
   const rv = nurseReviewFor(orderId);
   const given = dosesFor(orderId)[0];
   return (
     <>
       <Badge variant="outline">Given in clinic</Badge>
       {orderedBy && <Badge variant="outline" data-testid="ordered-by-badge">Ordered by {orderedBy}</Badge>}
-      {!rv && <Badge variant="secondary">Awaiting nurse review</Badge>}
-      {rv?.decision === "verified" && <Badge variant="outline">Verified by {rv.by}</Badge>}
-      {rv?.decision === "returned" && <Badge variant="destructive">Returned by {rv.by}</Badge>}
+      {!rv && <StatusChip lang="en" state={actor.role === "nurse_rn" ? "yourturn" : "team"} label="Awaiting nurse review" />}
+      {rv?.decision === "verified" && <StatusChip lang="en" state="done" label={`Verified by ${rv.by}`} />}
+      {rv?.decision === "returned" && <StatusChip lang="en" state={orderedBy === actor.name || actor.role === "nurse_rn" ? "yourturn" : "team"} label={`Returned by ${rv.by}`} />}
       {given && (
-        <Badge variant="outline" data-testid="dose-given-badge">
-          Given by {given.by}
-          {given.cosign ? ` · cosign ${given.cosign.status === "signed" ? `by ${given.cosign.by}` : "pending"}` : ""}
-        </Badge>
+        <StatusChip lang="en" state={given.cosign?.status === "pending" ? (actor.role === "nurse_rn" ? "yourturn" : "team") : "done"} label={`Given by ${given.by}${given.cosign ? ` · cosign ${given.cosign.status === "signed" ? `by ${given.cosign.by}` : "pending"}` : ""}`} data-testid="dose-given-badge" />
       )}
     </>
   );

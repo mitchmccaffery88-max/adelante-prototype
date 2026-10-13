@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Group join requests — staff queue (therapist, PMHNP, ECM provider).
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -46,10 +47,8 @@ export function GroupJoinRequestsQueue() {
           <ul className="space-y-1 text-xs">
             {done.map((r) => (
               <li key={r.id} className="flex flex-wrap gap-2">
-                <span className="text-navy">{label(r)}</span>
-                <Badge variant={r.status === "approved" ? "secondary" : "outline"} className="text-[10px]">
-                  {r.status === "approved" ? "Approved" : "Declined"}
-                </Badge>
+                <span className="text-navy">{label(r)}</span> <StatusChip lang="en" state={isGroupJoinReviewer(acting.role) ? "yourturn" : "team"} label="Pending" />
+                <StatusChip lang="en" state={r.status === "approved" ? "done" : "closed"} label={r.status === "approved" ? "Approved" : "Declined"} />
                 <span className="text-muted-foreground">
                   {r.resolvedBy}
                   {r.declineReason ? ` · ${r.declineReason}` : ""}
@@ -79,7 +78,7 @@ function RequestRow({ r }: { r: GroupJoinRequest }) {
   return (
     <li className="rounded-lg border p-3 space-y-2" data-testid="group-join-row">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-navy">{label(r)}</span>
+        <span className="font-medium text-navy">{label(r)}</span> <StatusChip lang="en" state={isGroupJoinReviewer(acting.role) ? "yourturn" : "team"} label="Pending" />
         <span className="text-xs text-muted-foreground">
           Asked <ClientDate value={r.createdAt} options={{ month: "short", day: "numeric" }} />
           {!eligible && " · not yet group-eligible"}

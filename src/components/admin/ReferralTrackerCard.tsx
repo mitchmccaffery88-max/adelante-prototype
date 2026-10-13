@@ -1,3 +1,6 @@
+import { useActingRole } from "@/lib/roles";
+import { canPerformReferralAction } from "@/lib/referralActions";
+import { StatusChip } from "@/components/ui/status-chip";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
@@ -60,6 +63,7 @@ export function ReferralTrackerCard({
   /** §Phase 4d — dashboards keep the card and link through to the real queue. */
   showViewAll?: boolean;
 }) {
+  const [role] = useActingRole();
   const sourceLabels: Record<string, string> = REFERRAL_SOURCE_LABELS;
   // Live subscribe so timestamps update as intake/assignments advance.
   useEhr(() => AdelanteEHR.listPatients().length);
@@ -237,9 +241,7 @@ export function ReferralTrackerCard({
                     <Badge className="bg-warning/20 text-navy border-0">Call needed</Badge>
                   )}
                   <ReferralStalenessBadge referral={r} />
-                  <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>
-                    {r.status}
-                  </Badge>
+                  <StatusChip lang="en" state={r.status === "enrolled" ? "done" : r.status === "declined" ? "closed" : r.status === "submitted" && canPerformReferralAction(role, "enroll") ? "yourturn" : "team"} label={r.status} />
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-teal" />
                 </div>
               </div>
@@ -299,18 +301,9 @@ function ReferralStalenessBadge({
   referral: ReturnType<typeof AdelanteEHR.listReferrals>[number];
 }) {
   const { state, days } = referralAging(referral);
+  const [role] = useActingRole();
   if (state === "closed" || state === "fresh") return null;
   return (
-    <Badge
-      variant="outline"
-      className={
-        state === "overdue"
-          ? "border-destructive/40 bg-destructive/10 text-destructive text-[10px]"
-          : "border-gold/50 bg-gold/10 text-gold-foreground text-[10px]"
-      }
-      title={REFERRAL_AGING_DRAFT.label}
-    >
-      {referralAgingLabel(days)}
-    </Badge>
+    <StatusChip lang="en" state={canPerformReferralAction(role, "enroll") ? "yourturn" : "team"} label={referralAgingLabel(days)} title={REFERRAL_AGING_DRAFT.label} />
   );
 }

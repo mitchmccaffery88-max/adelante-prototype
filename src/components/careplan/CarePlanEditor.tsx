@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { PathwayChip } from "@/components/clinical/PathwayChip";
 import { ContentAssignmentPreview } from "@/components/admin/ContentAssignmentPreview";
 // Staff structured care plan editor. Same access as the chart's care plan
@@ -99,9 +100,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {r.reviewDueAt && (
-            <Badge variant={due ? "destructive" : "outline"} data-testid="plan-review-due">
-              {due ? "Plan review due" : "Review due"} · <ClientDate value={r.reviewDueAt} options={{ dateStyle: "medium" }} />
-            </Badge>
+            <span className="inline-flex flex-wrap items-center gap-1.5"><StatusChip lang="en" state={due ? (edit && canSignPlan(role) ? "yourturn" : "team") : "upnext"} label={due ? "Plan review due" : "Review due"} data-testid="plan-review-due" /> · <ClientDate value={r.reviewDueAt} options={{ dateStyle: "medium" }} /></span>
           )}
           {edit && canSignPlan(role) && (
             <>
@@ -200,7 +199,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                     {g.problemIds.length > 0 && ` · Linked: ${g.problemIds.map((id) => view.problems.find((p) => p.id === id)?.code ?? view.problems.find((p) => p.id === id)?.label ?? "").filter(Boolean).join(", ")}`}
                   </p>
                 </div>
-                <Badge variant="outline" className="capitalize">{g.status}</Badge>
+                <StatusChip lang="en" state={g.status === "met" ? "done" : g.status === "closed" ? "closed" : g.owner === "patient" ? "team" : g.owner === "case_manager" ? (role === "ecm_provider" || role === "cf_care_manager" ? "yourturn" : "team") : edit ? "yourturn" : "team"} label={g.status} />
               </div>
               <Progress value={pct} className="mt-2 h-1.5" />
               <p className="mt-1 text-[11px] text-muted-foreground">{pct}% progress</p>
@@ -222,7 +221,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                       )}
                       {edit && a.flagReview && !a.flagReview.resolved && (
                         <span className="ml-1 inline-flex items-center gap-1" data-testid="flag-review">
-                          <Badge variant="outline" className="text-[10px]">{flagReviewLabel(a.flagReview)}</Badge>
+                          <StatusChip lang="en" state={edit ? "yourturn" : "team"} label={flagReviewLabel(a.flagReview)} />
                           <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "kept", "Kept after flag review", me); toast.success("Kept on the plan"); } catch (e) { toast.error((e as Error).message); } }}>Keep</Button>
                           <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => { try { actFor("plan_flag_review", "resolveFlagReview", patientId, patientId, a.id, "retired", "Retired after flag review", me); toast.success("Retired — progress kept"); } catch (e) { toast.error((e as Error).message); } }}>Retire</Button>
                         </span>

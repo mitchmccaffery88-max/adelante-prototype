@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §HIE — every surface here shows HIE_LABEL. Staff-only.
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -49,7 +50,7 @@ function DraftBox({ encounter }: { encounter: HieEncounter }) {
   if (draft.status !== "draft")
     return (
       <p className="text-[11px] text-muted-foreground">
-        Follow-up {draft.status} by {draft.decidedBy}{draft.reason ? ` — ${draft.reason}` : ""}.
+        Follow-up <StatusChip lang="en" state={draft.status === "accepted" ? "done" : "closed"} label={draft.status} /> by {draft.decidedBy}{draft.reason ? ` — ${draft.reason}` : ""}.
       </p>
     );
   return (
@@ -155,7 +156,7 @@ export function HieMedsPanel({ patientId, readOnly }: { patientId: string; readO
       {rows.map((m) => (
         <div key={m.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2">
           <div>
-            <div className="text-navy">{m.name} <Badge variant="outline" className="ml-1 text-[10px]">From HIE — review</Badge></div>
+            <div className="text-navy">{m.name} <StatusChip lang="en" state={readOnly ? "team" : "yourturn"} label="From HIE — review" /></div>
             <p className="text-muted-foreground">{m.sig} · {m.prescriber}</p>
           </div>
           {m.status === "review" ? (
@@ -166,7 +167,7 @@ export function HieMedsPanel({ patientId, readOnly }: { patientId: string; readO
               </div>
             )
           ) : (
-            <span className="text-muted-foreground">{m.status === "accepted" ? "Accepted" : "Ignored"} by {m.decidedBy}</span>
+            <span className="inline-flex flex-wrap items-center gap-1.5"><StatusChip lang="en" state={m.status === "accepted" ? "done" : "closed"} label={m.status === "accepted" ? "Accepted" : "Ignored"} /> by {m.decidedBy}</span>
           )}
         </div>
       ))}

@@ -1,3 +1,5 @@
+import { StatusChip } from "@/components/ui/status-chip";
+import { isPrescriberRole } from "@/lib/roles";
 // §Orders — cart core (validation gate + attribution + attestation).
 //
 // DEV HANDOFF: port of BaggaEMR's OrderCart / MedicationAttributionSection /
@@ -627,7 +629,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
             <Card key={o.id} className="p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{o.drugName}</span>
-                <Badge variant={statusBadgeVariant(o.status)}>{ORDER_STATUS_LABEL[o.status]}</Badge>
+                <StatusChip lang="en" state={o.status === "signed" || o.status === "completed" ? "done" : o.status === "held" ? "upnext" : o.status === "discontinued" ? "closed" : isPrescriberRole(role) ? "yourturn" : "team"} label={ORDER_STATUS_LABEL[o.status]} />
                 {o.dose && <span className="text-muted-foreground">{o.dose}</span>}
                 {o.frequency && <span className="text-muted-foreground">{o.frequency}</span>}
                 {o.isStat && <Badge variant="secondary">STAT</Badge>}

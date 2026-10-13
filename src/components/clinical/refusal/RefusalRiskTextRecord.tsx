@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Refusal record — bilingual risk-text provenance panel.
 //
 // A finalized refusal is a legal document: the wording the patient was
@@ -38,7 +39,7 @@ export function RefusalRiskTextRecord({ form }: { form: RefusalForm }) {
             Draft translation — not clinically reviewed
           </Badge>
         ) : (
-          <Badge variant="outline">Reviewed</Badge>
+          <StatusChip lang="en" state="done" label="Reviewed" />
         )}
         {translated && form.riskTextSnapshotEnLocked && (
           <Badge variant="outline">

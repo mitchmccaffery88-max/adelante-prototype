@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Worklist Phase A — cross-facility operational task table.
 //
 // Built on the EXISTING `CaseTask` (extended additively), not a parallel task
@@ -409,9 +410,7 @@ function WorklistPage() {
                       )}
                     </td>
                     <td className="p-2">
-                      <Badge variant="outline" className="text-[10px]">
-                        {STATUS_LABEL[s]}
-                      </Badge>
+                      <StatusChip lang="en" state={s === "completed" ? "done" : s === "cancelled" ? "closed" : t.status === "snoozed" ? "upnext" : t.claimedBy ? (t.claimedBy === staffName ? "yourturn" : "team") : t.assignedTo === staffName || t.assignedTo === role || Boolean(t.allowedRoles?.includes(role)) ? "yourturn" : "team"} label={STATUS_LABEL[s]} />
                     </td>
                     <td className="p-2">
                       {!canWrite ? (

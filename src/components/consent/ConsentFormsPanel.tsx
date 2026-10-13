@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Consent W2/W4/W5/W6 — staff side in the chart's Consents section: send,
 // track, signed copies (read-only), renew, revoke, sign in person.
 // Every write goes through runAction. Draft — pending counsel review.
@@ -62,7 +63,7 @@ export function ConsentFormsPanel({ patient }: { patient: Patient }) {
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
               <span>{snap.forms.find((f) => f.key === r.formKey)?.title.en ?? r.formKey} <span className="text-[11px] text-muted-foreground">v{r.version} · sent by {r.sentBy.name}{r.required ? "" : " · offered only"}</span></span>
               <span className="flex items-center gap-2">
-                <Badge variant="outline" data-testid={`form-status-${r.formKey}`}>{STATUS_LABEL[r.status]}</Badge>
+                <StatusChip lang="en" state={r.status === "signed" ? "done" : r.status === "declined" ? "closed" : r.status === "expired" ? (r.sentBy.staffId === acting.staffId ? "yourturn" : "team") : "team"} label={STATUS_LABEL[r.status]} data-testid={`form-status-${r.formKey}`} />
                 {r.status === "declined" && DECLINE_OUTCOME[r.formKey] && <span className="text-[11px] text-muted-foreground">{DECLINE_OUTCOME[r.formKey]}</span>}
                 {snap.renew.includes(r.formKey) && <Button size="sm" variant="ghost" onClick={() => run("consent_form_send", "resendCurrent", [patient.id, r.formKey, storeActor], "Current version resent")}>Resend</Button>}
               </span>

@@ -1,3 +1,6 @@
+import { StatusChip } from "@/components/ui/status-chip";
+import { asamCosignOwnership, isCosignOwner } from "@/lib/ehr";
+import { canSignNotes } from "@/lib/notes";
 import { canDoChartAction } from "@/lib/chartActions";
 import { asamTaskDueLabel } from "@/lib/asam";
 // §Phase 10c — the chart's ASAM section. Part 2 protected: the section itself
@@ -31,6 +34,9 @@ const inputCls =
   "w-full rounded border border-input bg-background px-2 py-1 text-xs text-foreground";
 
 function StatusBadge({ a }: { a: AsamAssessment }) {
+  const actor = useActingStaff();
+  const own = asamCosignOwnership(a);
+  const mine = a.status === "cosign_pending" ? (own.kind === "owner" ? isCosignOwner(own, [actor.staffId, actor.clinicianId]) : own.kind === "pool" && canSignNotes(actor.role)) : a.authoredBy.staffId === actor.staffId;
   const label =
     a.status === "signed"
       ? "Signed"
@@ -40,9 +46,7 @@ function StatusBadge({ a }: { a: AsamAssessment }) {
           ? "Co-signature declined — back to draft"
           : "Draft";
   return (
-    <Badge variant={a.status === "signed" ? "default" : "outline"} data-testid={`asam-status-${a.status}`}>
-      {label}
-    </Badge>
+    <StatusChip lang="en" state={a.status === "signed" ? "done" : mine ? "yourturn" : "team"} label={label} data-testid={`asam-status-${a.status}`} />
   );
 }
 

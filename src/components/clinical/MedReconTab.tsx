@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Medication reconciliation — patient-scoped intake/transfer/release review.
 //
 // Port of BaggaEMR's MedReconciliationDialog + MedReconciliationHistory onto
@@ -237,7 +238,7 @@ function ActiveSession({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-semibold">
-            {MED_RECON_TYPE_LABEL[recon.type]} reconciliation in progress
+            {MED_RECON_TYPE_LABEL[recon.type]} reconciliation <StatusChip lang="en" state={recon.performedBy === staffName ? "yourturn" : "team"} label="in progress" />
           </h3>
           <p className="text-xs text-muted-foreground">
             Started by {recon.performedBy} · <ClientDate value={recon.performedAt} />
@@ -509,9 +510,7 @@ function HistoryRow({
         <span className="flex flex-wrap items-center gap-2 text-sm">
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           <span className="font-medium">{MED_RECON_TYPE_LABEL[recon.type]}</span>
-          <Badge variant={recon.status === "completed" ? "default" : "outline"}>
-            {recon.status === "completed" ? "Completed" : "Canceled"}
-          </Badge>
+          <StatusChip lang="en" state={recon.status === "completed" ? "done" : "closed"} label={recon.status === "completed" ? "Completed" : "Canceled"} />
           <span className="text-xs text-muted-foreground">
             <ClientDate value={recon.completedAt ?? recon.performedAt} /> · {recon.performedBy}
           </span>

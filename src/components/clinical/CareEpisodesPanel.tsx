@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { canDoChartAction } from "@/lib/chartActions";
 import { act, actFor } from "@/lib/actions/act";
 import { ReferralPacketDraft } from "@/components/chart/AdelDrafts";
@@ -77,7 +78,7 @@ export function CareEpisodesPanel({ patientId }: { patientId: string }) {
             <li key={e.id} className="rounded-md border p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium text-navy">{EPISODE_PROGRAM_LABEL[e.program]}</span>
-                {e.closedAt ? <Badge variant="outline">Discharged</Badge> : <Badge>Active</Badge>}
+                <StatusChip lang="en" state={e.closedAt ? "closed" : "done"} label={e.closedAt ? "Discharged" : "Active"} />
                 {e.readmitOf && <Badge variant="secondary">Readmission</Badge>}
               </div>
               <div className="text-xs text-muted-foreground">
@@ -173,8 +174,9 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
         <div key={r.id} className="rounded-md border p-3 space-y-2 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-navy">{HLOC_TARGET_LABEL[r.target]}</span>
-            <Badge variant="outline" className="capitalize">{r.status}</Badge>
-            <Badge variant={r.urgency === "routine" ? "secondary" : "destructive"} className="capitalize">{r.urgency}</Badge>
+            <StatusChip lang="en" state={r.status === "admitted" ? "done" : r.status === "closed" || r.status === "declined" ? "closed" : r.status === "drafted" && r.createdBy === actor.name ? "yourturn" : "team"} label={r.status} />
+            {/* Default per published guidance; pending clinical review (Dr. Bagga) */}
+            <StatusChip lang="en" state={r.urgency === "emergent" ? "urgent" : r.urgency === "urgent" ? "yourturn" : "upnext"} label={r.urgency} waitingDays={r.urgency === "urgent" && r.createdAt ? Math.floor((Date.now() - Date.parse(r.createdAt)) / 86400000) : undefined} />
           </div>
           <div className="text-xs text-muted-foreground">
             To {r.destination} · {r.reason} · by {r.createdBy}

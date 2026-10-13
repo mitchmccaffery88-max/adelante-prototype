@@ -1,3 +1,5 @@
+import { StatusChip } from "@/components/ui/status-chip";
+import { isPrescriberRole } from "@/lib/roles";
 // §Chart redesign turn 5 — "Draft with Adel" surfaces. Adel drafts; a person
 // reviews, edits, and signs / sends / decides. Every draft shows
 // ADEL_REVIEW_LABEL and which engine produced it (rule-based template).
@@ -156,6 +158,7 @@ function RefillCard({ refill }: { refill: RefillRequest }) {
   return (
     <div className="space-y-2 rounded-lg border p-3 text-sm" data-testid="adel-refill-card">
       <p className="font-medium text-navy">{refill.medicationName}</p>
+      <StatusChip lang="en" state={refill.status === "approved" || refill.status === "sent_to_pharmacy" ? "done" : refill.status === "denied" ? "closed" : refill.status === "needs_appointment" || isPrescriberRole(role) ? "yourturn" : "team"} label={refill.status === "approved" || refill.status === "sent_to_pharmacy" ? "Sent to pharmacy" : refill.status === "denied" ? `Not refilled${refill.denyReason ? ` — ${refill.denyReason}` : ""}` : refill.status === "needs_appointment" ? "Book a visit first" : "Pending"} />
       <AdelDraftLabel />
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
         {sum.lines.map((l) => (
