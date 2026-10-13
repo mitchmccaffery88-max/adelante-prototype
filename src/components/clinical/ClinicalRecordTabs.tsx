@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { useState } from "react";
 import {
   AdelanteEHR,
@@ -245,15 +246,7 @@ function ProblemRow({
               </>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <Badge
-                className={
-                  active
-                    ? "bg-teal/20 text-teal border-0 text-[10px]"
-                    : "bg-muted text-muted-foreground border-0 text-[10px]"
-                }
-              >
-                {active ? "Active" : "Resolved"}
-              </Badge>
+              <StatusChip lang="en" state={active ? "done" : "closed"} label={active ? "Active" : "Resolved"} />
               {problem.category === "sud" && (
                 <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
                   42 CFR 2
@@ -439,12 +432,8 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
 }
 
 function SeverityBadge({ severity }: { severity: Allergy["severity"] }) {
-  const map = {
-    mild: "bg-muted text-muted-foreground",
-    moderate: "bg-gold/30 text-navy",
-    severe: "bg-destructive/15 text-destructive",
-  } as const;
-  return <Badge className={`${map[severity]} border-0 text-[10px] capitalize`}>{severity}</Badge>;
+  // Default per published guidance; pending clinical review (Dr. Bagga)
+  return severity === "severe" ? <StatusChip lang="en" state="urgent" label="Severe allergy" /> : <span className="text-sm text-ink-muted capitalize">{severity}</span>;
 }
 
 // ============================================================================

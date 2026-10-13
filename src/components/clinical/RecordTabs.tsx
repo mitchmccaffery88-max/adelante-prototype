@@ -1,3 +1,5 @@
+import { StatusChip } from "@/components/ui/status-chip";
+import { isMyCosign } from "@/lib/notes";
 import { StaffContactsEditor } from "@/components/clinical/StaffContactsEditor";
 import { LabsAndMeasuresTracking } from "@/components/chart/LabsAndMeasures";
 import { recordView } from "@/lib/accessLog";
@@ -199,10 +201,10 @@ import { SignBlockerList } from "@/components/signature/SignBlockerList";
 
 export function LockedNote({ reason }: { reason?: string }) {
   return (
-    <Card className="p-4 flex items-start gap-2 border-destructive/30 bg-destructive/5">
-      <Lock className="h-4 w-4 text-destructive mt-0.5" />
+    <Card className="p-4 flex items-start gap-2 border-line-strong bg-restricted-soft">
+      <Lock className="h-4 w-4 text-restricted mt-0.5" />
       <div className="text-sm">
-        <div className="font-medium text-destructive">Access restricted</div>
+        <StatusChip lang="en" state="restricted" label="Access restricted" />
         <div className="text-xs text-muted-foreground mt-0.5">
           {reason ?? "Your role does not have access to this section."}
         </div>
@@ -524,18 +526,7 @@ export function ProviderHistoryTab({ patientId }: { patientId: string }) {
               <div className="font-medium text-navy">
                 {nameFor(s.fromClinicianId)} → {nameFor(s.toClinicianId)}
               </div>
-              <Badge
-                variant="outline"
-                className={
-                  s.status === "pending_review"
-                    ? "text-warning-foreground bg-warning/15 border-0"
-                    : s.status === "acknowledged"
-                      ? "text-success bg-success/15 border-0"
-                      : "text-muted-foreground bg-muted border-0"
-                }
-              >
-                {s.status.replace("_", " ")}
-              </Badge>
+              <StatusChip lang="en" state={s.status === "acknowledged" ? "done" : s.status === "pending_review" ? (isAddressee ? "yourturn" : "team") : "closed"} label={s.status.replace("_", " ")} />
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
               {reasonLabel[s.reason] ?? s.reason}
@@ -809,9 +800,7 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
                   </Badge>
                 )}
               </div>
-              <Badge variant="outline" className="capitalize text-[10px]">
-                {i.status.replace("_", " ")}
-              </Badge>
+              <StatusChip lang="en" state={i.status === "completed" ? "done" : i.status === "identified" || i.status === "not_completed" ? (i.createdBy === staffName || i.createdByRole === role ? "yourturn" : "team") : "team"} label={i.status.replace("_", " ")} />
             </div>
             <div className="flex flex-wrap gap-1.5 text-[10px]" data-testid="staff-need-meta">
               <Badge variant="outline" className="text-[10px]">
@@ -2789,13 +2778,10 @@ function NoteExportButton({
 
 export function NoteStatusBadge({ note }: { note: ProgressNote }) {
   const s = noteStatus(note);
-  const tone =
-    s === "cosigned" || s === "signed"
-      ? "bg-teal/20 text-teal"
-      : s === "cosign_pending"
-        ? "bg-gold/30 text-navy"
-        : "bg-muted text-muted-foreground";
-  return <Badge className={`${tone} border-0 text-[10px]`}>{NOTE_STATUS_LABEL[s]}</Badge>;
+  const actor = useActingStaff();
+  const author = [note.signedById, note.clinicianId].some((id) => Boolean(id) && (id === actor.staffId || id === actor.clinicianId)) || note.signedBy === actor.staffName;
+  const mine = s === "cosign_pending" ? isMyCosign(note, actor) : author;
+  return <StatusChip lang="en" state={s === "cosigned" || s === "signed" ? "done" : mine ? "yourturn" : "team"} label={NOTE_STATUS_LABEL[s]} />;
 }
 
 // §EHR audit Phase 1d — the wording now lives in the versioned statement
@@ -3363,13 +3349,7 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
                   <td className="py-1 pr-2 tabular-nums">{r.score ?? "—"}</td>
                   <td className="py-1 pr-2">{r.level ? `Level ${r.level}` : (r.severity ?? "—")}</td>
                   <td className="py-1">
-                    {r.status === "completed" ? (
-                      <span className="text-muted-foreground">Completed</span>
-                    ) : (
-                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 font-medium text-destructive">
-                        {r.status === "missed" ? "Missed" : "Overdue"}
-                      </span>
-                    )}
+                    <StatusChip lang="en" state={r.status === "completed" ? "done" : "yourturn"} label={r.status === "completed" ? "Completed" : r.status === "missed" ? "Missed" : "Overdue"} />
                   </td>
                 </tr>
               ))}

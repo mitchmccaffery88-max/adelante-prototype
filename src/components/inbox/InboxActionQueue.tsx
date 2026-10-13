@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Inbox actions — claim / assign / done / reopen / make-a-task on staff
 // inbox items. All rules live in `inboxActions.ts`; this is display only.
 import { useState } from "react";
@@ -93,13 +94,13 @@ function ItemRow({ row, actor }: { row: InboxRow; actor: InboxActor }) {
       {label.body && <p className="text-xs text-muted-foreground">{label.body}</p>}
       <div className="flex flex-wrap gap-1.5 text-xs">
         {s.ownerName ? (
-          <Badge variant="secondary" data-testid="inbox-owner">Owner: {s.ownerName}</Badge>
+          <StatusChip lang="en" state={s.ownerName === actor.name ? "yourturn" : "team"} label={`Owner: ${s.ownerName}`} data-testid="inbox-owner" />
         ) : (
-          <Badge variant="outline">Unclaimed</Badge>
+          <StatusChip lang="en" state="yourturn" label="Unclaimed" />
         )}
         {s.assignedBy && <Badge variant="outline">Assigned by {s.assignedBy}</Badge>}
-        {s.taskId && <Badge variant="outline">Task made</Badge>}
-        {s.status === "done" && <Badge variant="outline">Done · {s.doneBy}</Badge>}
+        {s.taskId && <StatusChip lang="en" state="done" label="Task made" />}
+        {s.status === "done" && <StatusChip lang="en" state="done" label={`Done · ${s.doneBy}`} />}
       </div>
       {s.assignNote && <p className="text-xs text-navy">Note: “{s.assignNote}”</p>}
       {s.doneNote && <p className="text-xs text-navy">Closing note: “{s.doneNote}”</p>}

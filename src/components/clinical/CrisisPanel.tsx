@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { canDoChartAction } from "@/lib/chartActions";
 // §Crisis escalation — shared UI: flag dialog, resolve dialog, and the
 // patient-scoped panel rendered at the top of the Alerts tab.
@@ -63,9 +64,7 @@ export function timeOpenLabel(iso: string, now: number = Date.now()): string {
 export function CrisisClassification({ escalation }: { escalation: CrisisEscalation }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
-      <Badge variant="outline" className="border-dashed text-[10px] capitalize">
-        {escalation.severity}
-      </Badge>
+      <StatusChip lang="en" state={escalation.severity === "critical" || escalation.severity === "urgent" ? "urgent" : "upnext"} label={escalation.severity} />
       <Badge variant="outline" className="border-dashed text-[10px] capitalize">
         {escalation.category}
       </Badge>
@@ -148,9 +147,7 @@ export function CrisisClaimControl({
 
   return (
     <span className="inline-flex items-center gap-2">
-      <Badge variant="secondary" className="text-[10px]">
-        Claimed by {mine ? "you" : escalation.claimedBy}
-      </Badge>
+      <StatusChip lang="en" state={mine ? "yourturn" : "team"} label={`Claimed by ${mine ? "you" : escalation.claimedBy}`} />
       <Button
         size="sm"
         variant="ghost"
@@ -378,9 +375,7 @@ export function PatientCrisisPanel({ patientId }: { patientId: string }) {
               className="rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px]"
             >
               <div className="flex flex-wrap items-center gap-1.5">
-                <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                  Open
-                </Badge>
+                <StatusChip lang="en" state="urgent" label="Open" />
                 <CrisisRetriggerBadge escalation={e} />
                 <CrisisOverdueBadge escalation={e} />
                 <span className="capitalize text-muted-foreground">
@@ -424,9 +419,7 @@ export function PatientCrisisPanel({ patientId }: { patientId: string }) {
             {resolved.map((e) => (
               <li key={e.id} className="rounded border bg-muted/30 p-2 text-[11px]">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary" className="text-[10px]">
-                    Resolved
-                  </Badge>
+                  <StatusChip lang="en" state="done" label="Resolved" />
                   <CrisisRetriggerBadge escalation={e} />
                   <span className="capitalize text-muted-foreground">
                     {e.triggerSource.replace("_", " ")}

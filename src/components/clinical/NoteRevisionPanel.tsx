@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Signed-note revisions — addendum, correction (new version), void with
 // approval, late-entry label and version history. The signed body above this
 // panel is never edited in place.
@@ -63,16 +64,12 @@ export function NoteRevisionPanel({
     <div className="mt-3 space-y-2 border-t border-border pt-3 text-xs" data-testid="note-revisions">
       <div className="flex flex-wrap gap-1.5">
         {voided && (
-          <Badge variant="destructive" data-testid="note-voided">
-            Voided — entered in error
-          </Badge>
+          <StatusChip lang="en" state="closed" label="Voided — entered in error" data-testid="note-voided" />
         )}
         {note.correctedAt && !voided && (
-          <Badge className="border-0 bg-gold/30 text-navy" data-testid="note-corrected">
-            Corrected · v{note.version}
-          </Badge>
+          <StatusChip lang="en" state="done" label={`Corrected · v${note.version}`} data-testid="note-corrected" />
         )}
-        {note.voidRequest && <Badge variant="outline">Void pending approval</Badge>}
+        {note.voidRequest && <StatusChip lang="en" state={canApprove ? "yourturn" : "team"} label="Void pending approval" />}
         {note.lateEntry && (
           <Badge variant="outline" data-testid="note-late-entry" title={LATE_ENTRY_DRAFT_NOTE}>
             Late entry
@@ -80,7 +77,7 @@ export function NoteRevisionPanel({
         )}
       </div>
       {voided && (
-        <p className="rounded border border-destructive/40 bg-destructive/5 p-2 text-destructive">
+        <p className="rounded border border-line-strong bg-surface-sunk p-2 text-ink-muted">
           Voided by {note.voidedBy} (requested by {note.voidRequestedBy}) · <ClientDate value={note.voidedAt!} /> —{" "}
           {note.voidReason}
         </p>

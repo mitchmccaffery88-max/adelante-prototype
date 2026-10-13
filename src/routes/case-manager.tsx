@@ -1,3 +1,5 @@
+import { StatusChip } from "@/components/ui/status-chip";
+import { coverageTypeLabel } from "@/lib/coverageStatus";
 import { VerificationSourceBadge } from "@/components/coverage/VerificationSourceBadge";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
@@ -408,7 +410,7 @@ function CaseManagerPage() {
                     </TableCell>
                     <TableCell className="text-xs">{p.episodeDay}/90</TableCell>
                     <TableCell>
-                      <CoverageBadge status={p.coverage?.status} />
+                      <CoverageBadge coverage={p.coverage} />
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {(() => {
@@ -497,7 +499,7 @@ function CaseManagerPage() {
                         CIN: {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
                       </div>
                     </div>
-                    <CoverageBadge status={p.coverage?.status} />
+                    <CoverageBadge coverage={p.coverage} />
                   </div>
                   <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                     <div>
@@ -627,7 +629,8 @@ function CaseManagerPage() {
   );
 }
 
-function CoverageBadge({ status }: { status?: string }) {
+function CoverageBadge({ coverage }: { coverage?: NonNullable<ReturnType<typeof AdelanteEHR.getPatient>>["coverage"] }) {
+  const status = coverage?.status;
   if (!status) return <span className="text-xs text-muted-foreground">—</span>;
   const styles: Record<string, string> = {
     active: "bg-success/20 text-success",
@@ -642,7 +645,7 @@ function CoverageBadge({ status }: { status?: string }) {
     other: "Other",
   };
   return (
-    <Badge className={`${styles[status] ?? ""} border-0 text-xs`}>{labels[status] ?? status}</Badge>
+    <span className="inline-flex flex-wrap gap-1.5"><span className="text-sm text-ink-muted">{coverageTypeLabel(coverage?.coverageType)}</span><StatusChip lang="en" state={coverage?.verified === "verified" ? "done" : coverage?.verified === "pending" ? "team" : "yourturn"} label={coverage?.verified === "verified" ? "Verified" : coverage?.verified === "pending" ? "Checking" : coverage?.verified === "not_found" ? "Not found" : "Check eligibility"} />{status === "active" || status === "suspended" || status === "none_unsure" || status === "uninsured" ? <StatusChip lang="en" state={status === "active" ? "done" : "yourturn"} label={status === "active" ? "Active" : status === "suspended" ? "Suspended — renew" : "Needs coverage help"} /> : null}</span>
   );
 }
 

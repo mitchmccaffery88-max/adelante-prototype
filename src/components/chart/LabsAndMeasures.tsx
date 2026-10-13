@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Chart redesign turn 2 — lab orders, screener requests and metabolic
 // measures: the three drawer forms and their Tracking panel. Every write goes
 // through src/lib/chartOrders.ts (role-checked, audited, Part 2-filtered).
@@ -200,6 +201,7 @@ function ResultEntry({ orderId, unit }: { orderId: string; unit: string }) {
 }
 
 export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string; role: StaffRole }) {
+  const acting = useActingStaff();
   const labsJson = useEhr(() => JSON.stringify(listLabOrders(patientId, role)));
   const reqJson = useEhr(() =>
     JSON.stringify(listScreenerRequests(patientId, role).map((r) => ({ ...r, status: screenerRequestStatus(r) }))),
@@ -224,9 +226,7 @@ export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string
               <li key={o.id} className="rounded border bg-card p-2 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{labTest(o.testId)?.label}</span>
-                  <Badge variant={o.status === "pending" ? "secondary" : "outline"} className="text-[10px]">
-                    {o.status === "pending" ? "Result pending" : "Resulted"}
-                  </Badge>
+                  <StatusChip lang="en" state={o.status === "pending" ? "team" : "done"} label={o.status === "pending" ? "Result pending" : "Resulted"} />
                   <span className="text-xs text-muted-foreground">
                     {o.priority} · due {new Date(o.dueAt).toLocaleDateString()} · {o.orderedBy}
                   </span>
@@ -254,9 +254,7 @@ export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string
             {reqs.map((r) => (
               <li key={r.id} className="flex flex-wrap gap-2">
                 <span className="font-medium">{REQUESTABLE_SCREENERS.find((s) => s.key === r.key)?.label ?? r.key}</span>
-                <Badge variant={r.status === "overdue" ? "destructive" : "secondary"} className="text-[10px]">
-                  {r.status === "completed" ? "Completed" : r.status === "overdue" ? "Missed" : "Waiting on patient"}
-                </Badge>
+                <StatusChip lang="en" state={r.status === "completed" ? "done" : r.status === "overdue" && r.requestedBy === acting.staffName ? "yourturn" : "team"} label={r.status === "completed" ? "Completed" : r.status === "overdue" ? "Missed" : "Waiting on patient"} />
                 <span className="text-muted-foreground">
                   asked by {r.requestedBy} · due {new Date(r.dueAt).toLocaleDateString()}
                 </span>

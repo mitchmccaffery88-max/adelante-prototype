@@ -26,9 +26,7 @@ export function LateCancelBadge({ appt, member = false }: { appt: Appointment; m
   if (!appt.cancellation?.lateCancel) return null;
   if (member) return <StatusChip state="closed" label={`${LATE_CANCEL_LABEL} · draft`} data-testid="late-cancel-label" />;
   return (
-    <Badge variant="outline" className="text-[10px]" data-testid="late-cancel-label" title="Draft label — no fee logic">
-      {LATE_CANCEL_LABEL} · draft
-    </Badge>
+    <StatusChip lang="en" state="closed" label={`${LATE_CANCEL_LABEL} · draft`} data-testid="late-cancel-label" title="Draft label — no fee logic" />
   );
 }
 
@@ -55,7 +53,7 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
   if (appt.status === "rescheduled")
     return (
       <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground" data-testid="visit-rescheduled">
-        <Badge variant="secondary" className="text-[10px]">Rescheduled</Badge>
+        <StatusChip lang="en" state="closed" label="Rescheduled" />
         {appt.rescheduledToId && (() => {
           const n = AdelanteEHR.listAppointments().find((x) => x.id === appt.rescheduledToId);
           return n ? <span>moved to <ClientDate value={n.start} options={{ weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} /></span> : null;
@@ -65,7 +63,7 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
   if (appt.status === "cancelled" || appt.status === "late_cancel")
     return (
       <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground" data-testid="visit-cancelled">
-        <Badge variant="secondary" className="text-[10px]">{appt.status === "late_cancel" ? "Late cancel" : "Cancelled"}</Badge>
+        <StatusChip lang="en" state="closed" label={appt.status === "late_cancel" ? "Late cancel" : "Cancelled"} />
         {appt.status !== "late_cancel" && <LateCancelBadge appt={appt} />}
         {appt.cancellation && (
           <span>
@@ -77,14 +75,14 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
   if (appt.status === "no_show")
     return (
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="visit-no-show">
-        <Badge variant="secondary" className="text-[10px]">No-show</Badge>
+        <StatusChip lang="en" state={appt.clinicianId === actor.clinicianId || appt.clinicianId === actor.staffId ? "yourturn" : "team"} label="No-show" />
         {appt.noShow && <span>marked by {appt.noShow.byName}</span>}
       </div>
     );
   if (appt.status === "attended")
     return (
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="visit-attended">
-        <Badge variant="secondary" className="text-[10px]">Attended</Badge>
+        <StatusChip lang="en" state="done" label="Attended" />
         {appt.attendedBy && <span>marked by {appt.attendedBy.byName}</span>}
       </div>
     );
@@ -92,7 +90,7 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
   if (appt.status === "checked_in")
     return (
       <div className="flex flex-wrap items-center gap-2" data-testid="visit-checked-in">
-        <Badge variant="secondary" className="text-[10px]">Checked in</Badge>
+        <StatusChip lang="en" state={appt.clinicianId === actor.clinicianId || appt.clinicianId === actor.staffId ? "yourturn" : "team"} label="Checked in" />
         <Button size="sm" variant="outline" className="min-h-9" onClick={() => run(() => AdelanteEHR.markAppointmentAttended(appt.id, who), "Marked attended.")}>
           <CheckCircle2 className="mr-1.5 h-4 w-4" /> Attended
         </Button>

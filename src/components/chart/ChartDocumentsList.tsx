@@ -1,3 +1,5 @@
+import { getActingStaff } from "@/lib/roles";
+import { StatusChip } from "@/components/ui/status-chip";
 // §Chart redesign turn 5 (a) — Documents card under Notes & Documents.
 // Lists uploads with type, date, uploader and verified status. Part 2
 // documents are hidden (not locked) for roles failing roleSeesAsamSection.
@@ -29,9 +31,7 @@ export function ChartDocumentsList({ patientId }: { patientId: string }) {
               <span className="text-xs text-muted-foreground">{(d.docType ?? "Other").replace(/_/g, " ")}</span>
               <span className="text-xs text-muted-foreground">{new Date(d.uploadedAt).toLocaleDateString()}</span>
               <span className="text-xs text-muted-foreground">by {d.uploader.name}</span>
-              <Badge variant={d.verification === "verified" ? "default" : d.verification === "rejected" ? "destructive" : "secondary"} className="text-[10px]">
-                {d.verification === "verified" ? "Verified" : d.verification === "rejected" ? "Rejected" : "Pending review"}
-              </Badge>
+              <StatusChip lang="en" state={d.verification === "verified" ? "done" : d.verification === "rejected" ? (d.uploader.name === getActingStaff().name ? "yourturn" : "team") : AdelanteEHR.documentVerifyQueue(role).some((x) => x.document.id === d.id) ? "yourturn" : "team"} label={d.verification === "verified" ? "Verified" : d.verification === "rejected" ? "Rejected" : "Pending review"} />
             </li>
           ))}
         </ul>

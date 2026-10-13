@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/clinical-referrals")({
 });
 
 function ReferralList() {
-  const { role } = useActingStaff();
+  const { role, staffName } = useActingStaff();
   const rows = useEhr(() => visibleHlocReferrals(role));
   const hidden = hiddenHlocCount(role);
   if (!CLINICAL_REFERRAL_ROLES.has(role))
@@ -41,8 +42,9 @@ function ReferralList() {
                 {p ? `${p.firstName} ${p.lastName}` : "Patient"}
               </Link>
               <span>{HLOC_TARGET_LABEL[r.target]}</span>
-              <Badge variant="outline" className="capitalize">{r.status}</Badge>
-              <Badge variant="secondary" className="capitalize">{r.urgency}</Badge>
+              <StatusChip lang="en" state={r.status === "admitted" ? "done" : r.status === "closed" || r.status === "declined" ? "closed" : r.status === "drafted" && r.createdBy === staffName ? "yourturn" : "team"} label={r.status} />
+              {/* Default per published guidance; pending clinical review (Dr. Bagga) */}
+              <StatusChip lang="en" state={r.urgency === "emergent" ? "urgent" : r.urgency === "urgent" ? "yourturn" : "upnext"} label={r.urgency} waitingDays={r.urgency === "urgent" && r.createdAt ? Math.floor((Date.now() - Date.parse(r.createdAt)) / 86400000) : undefined} />
             </div>
             <div className="text-xs text-muted-foreground">
               To {r.destination} · drafted <ClientDate value={r.createdAt} /> by {r.createdBy}

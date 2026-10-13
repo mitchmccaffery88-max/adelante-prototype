@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Clinical record — safety badge row (problems / masked SUD / allergies / alerts).
 // Shared by the quick-peek drawer header and the full-page chart header.
 import { Badge } from "@/components/ui/badge";
@@ -26,13 +27,7 @@ export function RecordSafetyBadges({ patient }: { patient: Patient }) {
         {missed && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge
-                data-testid="missed-prerelease-badge"
-                className="bg-destructive/15 text-destructive border-0 text-[10px] gap-1"
-              >
-                <CalendarX className="h-3 w-3" />
-                Missed pre-release coordination
-              </Badge>
+              <StatusChip lang="en" state="yourturn" label="Missed pre-release coordination" data-testid="missed-prerelease-badge" />
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs text-xs">
               No pre-release plan was found at intake, so the pre-release task list was generated on
@@ -60,10 +55,7 @@ export function RecordSafetyBadges({ patient }: { patient: Patient }) {
         {s.hiddenSud > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge className="bg-destructive/10 text-destructive border-0 text-[10px] gap-1">
-                <Lock className="h-3 w-3" />
-                {s.hiddenSud} 42 CFR 2 masked
-              </Badge>
+              <StatusChip lang="en" state="restricted" label={`${s.hiddenSud} 42 CFR 2 masked`} />
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs text-xs">
               SUD problems present but hidden without Part 2 consent for your role.
@@ -76,12 +68,13 @@ export function RecordSafetyBadges({ patient }: { patient: Patient }) {
               <Badge
                 className={
                   s.severeAllergy
-                    ? "bg-destructive/15 text-destructive border-0 text-[10px] gap-1"
-                    : "bg-gold/25 text-navy border-0 text-[10px] gap-1"
+                    ? "bg-urgent-soft text-urgent border-urgent text-sm gap-1"
+                    : "bg-muted text-ink-muted border-0 text-sm gap-1"
                 }
               >
                 <AlertTriangle className="h-3 w-3" />
-                {s.allergyEntries.length} allerg{s.allergyEntries.length === 1 ? "y" : "ies"}
+                {/* Default per published guidance; pending clinical review (Dr. Bagga) */}
+                {s.allergyEntries.length} allerg{s.allergyEntries.length === 1 ? "y" : "ies"}{s.severeAllergy ? " · Severe allergy" : ""}
               </Badge>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs text-xs">

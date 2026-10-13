@@ -1,3 +1,4 @@
+import { isPrescriberRole } from "@/lib/roles";
 import { StatusChip } from "@/components/ui/status-chip";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { inFacilityEnabled } from "@/lib/inFacility";
@@ -163,7 +164,7 @@ export function CarePlanCard({
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {plan.allergySummary!.map((a, i) => (
-              <Badge
+              audience !== "patient" ? <span key={`${a.substance}-${i}`} className="inline-flex flex-wrap items-center gap-1.5 text-sm text-ink-muted">{a.substance}{a.reaction ? ` — ${a.reaction}` : ""}{/* Default per published guidance; pending clinical review (Dr. Bagga) */}{a.severity === "severe" ? <StatusChip lang="en" state="urgent" label="Severe allergy" /> : <span> · {a.severity}</span>}</span> : <Badge
                 key={`${a.substance}-${i}`}
                 variant="outline"
                 className={
@@ -349,9 +350,7 @@ export function CarePlanCard({
                 {filteredMeds.map((m, i) => (
                   <li key={i} className="text-xs text-foreground inline-flex items-center gap-2">
                     {m.name}
-                    <Badge variant="outline" className="text-[10px]">
-                      {m.state.replace("_", " ")}
-                    </Badge>
+                    <StatusChip lang="en" state={m.state === "active" ? "done" : staffRole && isPrescriberRole(staffRole) ? "yourturn" : "team"} label={m.state.replace("_", " ")} />
                     {m.sensitive && (
                       <span className="text-[10px] text-muted-foreground">Part 2</span>
                     )}

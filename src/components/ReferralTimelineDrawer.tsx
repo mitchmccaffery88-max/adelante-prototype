@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -58,6 +59,7 @@ interface Props {
  * assignments and intake steps advance.
  */
 export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props) {
+  const viewer = getActingStaff();
   const referral = useEhr(() =>
     referralId ? AdelanteEHR.listReferrals().find((r) => r.id === referralId) : undefined,
   );
@@ -90,11 +92,7 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                   </span>
                   {referral.referringAgency ? ` · ${referral.referringAgency}` : ""}
                 </div>
-                <Badge
-                  className={`${REFERRAL_STATUS_STYLES[referral.status]} border-0 capitalize`}
-                >
-                  {referral.status}
-                </Badge>
+                <StatusChip lang="en" state={referral.status === "enrolled" ? "done" : referral.status === "declined" ? "closed" : referral.status === "submitted" && canPerformReferralAction(viewer.role, "enroll") ? "yourturn" : "team"} label={referral.status} />
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
                 Submitted <ClientDate value={referral.createdAt} />{" "}
@@ -536,15 +534,7 @@ function ReferralOutreachCard({ referral }: { referral: Referral }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-sm text-navy">Manual outreach</h3>
         {task && (
-          <Badge
-            className={
-              task.status === "open"
-                ? "bg-warning/20 text-navy border-0"
-                : "bg-muted text-muted-foreground border-0"
-            }
-          >
-            {task.status === "open" ? "Open task" : "Task closed"}
-          </Badge>
+          <StatusChip lang="en" state={task.status !== "open" ? "done" : (task.claimedBy ? task.claimedBy.name === getActingStaff().name : task.allowedRoles.includes(role)) ? "yourturn" : "team"} label={task.status === "open" ? "Open task" : "Task closed"} />
         )}
       </div>
 

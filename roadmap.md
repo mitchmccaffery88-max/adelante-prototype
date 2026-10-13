@@ -1,5 +1,11 @@
 # Roadmap
 
+## Staff StatusChip — batch 2b-1 (13 Oct)
+- [ ] Apply approved care-work-only status chips and owner-relative mappings; preserve member views, counts, selectors and all 2b-2 files
+- [ ] Apply approved clinical-risk/refill/coverage defaults from existing fields only; report unavailable fields
+- [ ] Full units, then all browsers/axe to completion; warm staff-navigation rerun only if redirect timeout
+- [ ] Settled light contrast and 1280px cosign/worklist/escalations/chart screenshots; document files, counts and every failure
+
 ## Patient color pass — phases 2a + 4 (13 Oct)
 - [x] Approved fixes and final member-system wrapping applied; Home grid/tiles shrink; ConnectMeButton copy unchanged; staff/public/icon-only styling preserved
 - [x] Previous settled contrast EN/ES × light/dark × 1280/390 passed; final wrapped text spot-check 13.84:1 light / 14.80:1 dark; help 7.06:1 and lesson Continue 5.52:1 light

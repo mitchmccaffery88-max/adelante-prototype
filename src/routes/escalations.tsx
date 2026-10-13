@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §U1 — unified Escalations queue. One view model (src/lib/escalations.ts)
 // over the existing pathways; their stores and rules are unchanged.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -119,11 +120,11 @@ function EscalationsPage() {
             <Card key={r.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 text-sm" data-testid={`escalation-row-${r.type}`}>
               <div className="min-w-0 space-y-0.5">
                 <p className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant={r.type === "crisis" ? "destructive" : "secondary"}>{r.typeLabel}</Badge>
+                  {r.type === "crisis" ? <StatusChip lang="en" state="urgent" label={r.typeLabel} /> : <Badge variant="secondary">{r.typeLabel}</Badge>}
                   <Link to="/record/$patientId" params={{ patientId: r.patientId }} search={{}} className="font-medium underline-offset-2 hover:underline">{r.patientName}</Link>
-                  <Badge variant={r.overdue ? "destructive" : "outline"}>{STATUS_LABEL[r.status]}</Badge>
+                  <StatusChip lang="en" state={r.status === "resolved" ? "done" : r.type === "crisis" || r.type === "crisis_note" ? "urgent" : r.overdue ? "yourturn" : r.status === "handed_off" ? "team" : r.ownerStaffId === s.staffId || r.pool && isCoordinator(s.role) ? "yourturn" : "team"} label={STATUS_LABEL[r.status]} waitingDays={r.overdue && r.type !== "crisis" && r.dueAt ? Math.floor((Date.now() - Date.parse(r.dueAt)) / 86400000) : undefined} />
                 </p>
-                <p className="text-xs text-muted-foreground">Owner: <span data-testid="escalation-owner">{r.ownerName}</span> · <span className={r.overdue ? "text-destructive" : ""}>{r.countdown}</span></p>
+                <p className="text-xs text-muted-foreground">Owner: <span data-testid="escalation-owner">{r.ownerName}</span> · <span className={r.overdue ? "text-attention" : ""}>{r.countdown}</span></p>
                 {r.detail && <p className="truncate text-xs text-muted-foreground">{r.detail}</p>}
               </div>
               <div className="flex items-center gap-1">

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Group D items 1 + 2 — the plan owner's advocate review queue.
 //
 // TWO streams, one surface, because both are "an advocate did something that
@@ -182,7 +183,7 @@ export function AdvocateReviewQueue() {
                 {a.note && <p className="mt-2">{a.note}</p>}
                 {a.review.status === "pending" ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">Pending review</Badge>
+                    <StatusChip lang="en" state={a.ownerRole === role ? "yourturn" : "team"} label="Pending review" />
                     <Input
                       aria-label="Review note"
                       placeholder="Optional note"

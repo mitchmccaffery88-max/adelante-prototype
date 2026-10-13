@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Dashboard Standardization Phase 5c — the one expandable task row.
 //
 // Built on the SAME `CaseTask` rows and the SAME mutations `/worklist` uses
@@ -117,9 +118,7 @@ export function TaskWorkRow({
               <Badge className={cn("text-[10px] capitalize", PRIORITY_TONE[taskPriority(task)])}>
                 {taskPriority(task)}
               </Badge>
-              <Badge variant="outline" className="text-[10px]">
-                {STATUS_LABEL[status]}
-              </Badge>
+              <StatusChip lang="en" state={status === "completed" ? "done" : status === "cancelled" ? "closed" : task.status === "snoozed" ? "upnext" : task.claimedBy ? (task.claimedBy === staffName ? "yourturn" : "team") : task.assignedTo === staffName || task.assignedTo === role ? "yourturn" : "team"} label={STATUS_LABEL[status]} />
             </span>
             {task.detail && (
               <span className="mt-0.5 block text-xs text-muted-foreground">{task.detail}</span>

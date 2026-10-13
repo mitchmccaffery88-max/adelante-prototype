@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Front door — staff queue for NON-clinical community inquiries.
 //
 // These are not patients and this is not a chart. The queue exists so the
@@ -54,11 +55,9 @@ export function CommunityInquiryQueue() {
           <Card key={r.id} className="space-y-3 p-4" data-testid="community-inquiry-row">
             <div className="flex flex-wrap items-center gap-2">
               {r.crisisFlagged ? (
-                <Badge variant="destructive" className="gap-1">
-                  <Siren className="h-3 w-3" /> Crisis language
-                </Badge>
+                <StatusChip lang="en" state="urgent" label="Crisis language" />
               ) : null}
-              <Badge variant={r.status === "new" ? "default" : "outline"}>{r.status}</Badge>
+              <StatusChip lang="en" state={r.status === "resolved" ? "done" : r.status === "new" && canWrite ? "yourturn" : "team"} label={r.status} />
               <span className="text-xs text-muted-foreground">
                 <ClientDate value={r.createdAt} options={{ dateStyle: "medium", timeStyle: "short" }} />
               </span>
