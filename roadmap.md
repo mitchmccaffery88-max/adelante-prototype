@@ -1,5 +1,11 @@
 # Roadmap
 
+## Public top-bar order (13 Oct)
+- [x] About us and Our team moved to the end of the top bar and mobile menu: How it works · Find where you fit · What you get · FAQ · About us · Our team
+- [x] Nav order tests updated (landingWebsite.test.ts)
+- [x] Named the recurring unit flake: the mock e-prescribing adapter seeded a Sertraline order for any patient id ending in "1" or "a"; real ids are random, so demo personas and new sign-ups randomly inherited a prescription nobody ordered. Now an explicit allowlist (p1) with a regression test
+- [x] Full units 2,561/2,561, then all browsers 79/79 separately; preview build OK
+
 ## Public heading correction (12 Oct)
 - [x] Exact English Title Case section headings; Spanish and navigation/footer labels unchanged
 - [x] Copy and heading-style regression tests updated
