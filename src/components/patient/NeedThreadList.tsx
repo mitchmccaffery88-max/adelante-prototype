@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §5d-4 — the ONE patient-facing list of needs and what happened with each.
 //
 // Renders `patientNeedThread.ts` output. Every sentence comes from the i18n
@@ -82,7 +83,7 @@ function ReferralLine({ line }: { line: NeedReferralLine }) {
   const { t } = useI18n();
   const org = line.orgName ?? t("needRefOrgWithheld");
   return (
-    <li className="rounded-md border bg-card/60 p-2.5 text-sm">
+    <li className="rounded-md border bg-card/60 p-2.5 text-sm"><StatusChip state={line.outcome === "connected" ? "done" : line.outcome === "closed" || line.outcome === "declined_by_client" ? "closed" : line.outcome === "not_eligible" || line.outcome === "unreachable" ? "yourturn" : "team"} />
       <span className="text-navy">
         {t(line.statusKey as never)} {org}.
       </span>
@@ -122,7 +123,7 @@ export function NeedThreadList({
           </div>
           <ul className="mt-2 space-y-1.5 text-sm">
             {resolved.map((r) => (
-              <li key={r.needId} className="text-navy">
+              <li key={r.needId} className="text-navy"><StatusChip state="done" />
                 {t("needClosureResolved")} {r.need}.{" "}
                 <span className="text-muted-foreground">{t("needClosureTail")}</span>
               </li>

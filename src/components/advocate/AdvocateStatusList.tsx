@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Group 2 O2 — advocate status for the patient: Invited, Waiting for your
 // consent, Waiting for their sign-up, Active. Delivery errors are shown.
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -5,7 +6,6 @@ import { advocateInvitationConsentActive } from "@/lib/advocateInviteDelivery";
 import { advocateStatus, ADVOCATE_STATUS_LABEL, contactDrifted } from "@/lib/contactAdvocate";
 import { readEmergencyContacts } from "@/lib/emergencyContacts";
 import { useI18n } from "@/lib/i18n";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -26,7 +26,7 @@ export function AdvocateStatusList({ patientId }: { patientId: string }) {
           <li key={l.id} className="rounded-md border p-3 text-sm space-y-1">
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium">{l.advocateName}</span>
-              <Badge variant="outline" data-testid="advocate-status">{ADVOCATE_STATUS_LABEL[st][es ? "es" : "en"]}</Badge>
+              <span className="inline-flex flex-wrap items-center gap-2"><StatusChip state={st === "active" ? "done" : st === "waiting_consent" ? "yourturn" : "team"} /><span data-testid="advocate-status">{ADVOCATE_STATUS_LABEL[st][es ? "es" : "en"]}</span></span>
             </div>
             {l.notificationDelivery?.status === "failed" && (
               <p role="alert" className="text-xs text-destructive">

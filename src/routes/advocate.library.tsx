@@ -78,12 +78,12 @@ function PendingCard({ compact }: { compact?: boolean }) {
   return (
     <Card
       data-testid="advocate-library-pending"
-      className={`space-y-2 border-amber-300/60 bg-amber-50/60 ${compact ? "p-4" : "p-5"}`}
+      className={`space-y-2 border-attention bg-attention-soft ${compact ? "p-4" : "p-5"}`}
     >
-      <Badge variant="outline" className="border-amber-500 text-amber-800">
+      <Badge variant="outline" className="border-attention text-on-attention-soft">
         Content pending authoring
       </Badge>
-      <p className="text-sm text-amber-900">
+      <p className="text-sm text-on-attention-soft">
         Nothing has been published here yet. The advocate library is being written by the clinical
         team, and this page will fill in as those pieces are approved — we'd rather show you nothing
         than placeholder text.

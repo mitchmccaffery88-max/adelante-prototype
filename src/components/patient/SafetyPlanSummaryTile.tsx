@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §P2 — compact, safety-critical summary of the real Stanley-Brown safety plan.
 //
 // Counts only: `safetyPlanSummary` never returns patient text, so this tile is
@@ -42,9 +43,7 @@ export function SafetyPlanSummaryTile({ patientId }: { patientId: string }) {
                 {summary.sectionsFilled} of {summary.totalSections} sections filled
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-[10px]">
-                Not started
-              </Badge>
+              <StatusChip state="yourturn" title="Not started" />
             )}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">

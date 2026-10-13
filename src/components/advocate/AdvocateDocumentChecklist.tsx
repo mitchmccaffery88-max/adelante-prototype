@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Advocate build 1 — the consent-documentation step, shown to the ADVOCATE.
 //
 // Two modes, one component so the wording can never diverge:
@@ -16,7 +17,6 @@ import {
   requirementsForType,
   type AdvocateDocRequirementKey,
 } from "@/lib/advocateDocs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ClientDate } from "@/components/ClientDate";
@@ -111,13 +111,11 @@ export function AdvocateDocumentStatusPanel({
             <li key={row.key} className="space-y-1 rounded-md border p-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium text-navy">{def.label}</span>
-                <Badge variant={row.status === "verified" ? "default" : "secondary"}>
-                  {STATUS_LABEL[row.status]}
-                </Badge>
+                <StatusChip state={row.status === "verified" ? "done" : row.status === "attested" || def.staffOnly ? "team" : "yourturn"} title={STATUS_LABEL[row.status]} />
               </div>
               <p className="text-xs text-muted-foreground">{def.plainLanguage}</p>
               {row.requestedAt && row.status !== "verified" && (
-                <p className="text-xs text-amber-700">
+                <p className="text-xs text-attention">
                   The care team asked for this on <ClientDate value={row.requestedAt} />.
                 </p>
               )}

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Adelante Journey Phase 7 part 2 — patient medication check-in.
 // Rows are REAL derived MAR slots on REAL MedOrders. Marking a dose writes a
 // patient self-report (reconciled against the MAR), never a charted dose —
@@ -8,7 +9,6 @@ import { ADHERENCE_TONE, type SideEffectSeverity } from "@/lib/medAdherence";
 import { marRowLabel } from "@/lib/mar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Pill, Check, HeartHandshake } from "lucide-react";
 import { toast } from "sonner";
@@ -87,18 +87,18 @@ export function MedCheckInCard({ patientId }: { patientId: string }) {
             const cell = {
               none: { cls: "bg-muted/40 text-muted-foreground", label: "—", title: "Nothing scheduled" },
               taken: {
-                cls: "bg-success/20 border-success/40 text-success",
+                cls: "bg-path-soft border-path text-path",
                 label: "Taken",
                 title: ADHERENCE_TONE.takenDay,
               },
               upcoming: {
                 cls: "bg-secondary border-border text-foreground",
-                label: "Due",
+                label: "Your turn",
                 title: "Still to mark today",
               },
               missed: {
-                cls: "bg-gold/15 border-gold/50 text-navy",
-                label: "Missed",
+                cls: "bg-attention-soft border-attention text-on-attention-soft",
+                label: "Your turn",
                 title: ADHERENCE_TONE.missedDay,
               },
             }[state];
@@ -123,10 +123,10 @@ export function MedCheckInCard({ patientId }: { patientId: string }) {
         </div>
         <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
           <li className="flex items-center gap-1">
-            <span className="h-2.5 w-2.5 rounded-sm border border-success/40 bg-success/20" /> Taken
+            <span className="h-2.5 w-2.5 rounded-sm border border-path bg-path-soft" /> Taken
           </li>
           <li className="flex items-center gap-1">
-            <span className="h-2.5 w-2.5 rounded-sm border border-gold/50 bg-gold/15" /> Missed
+            <span className="h-2.5 w-2.5 rounded-sm border border-attention bg-attention-soft" /> Your turn
           </li>
           <li className="flex items-center gap-1">
             <span className="h-2.5 w-2.5 rounded-sm border bg-secondary" /> Still to mark
@@ -160,23 +160,7 @@ export function MedCheckInCard({ patientId }: { patientId: string }) {
                   {row.isMat && " · part of your treatment for substance use"}
                 </div>
               </div>
-              {row.selfReport ? (
-                <Badge
-                  className={`border-0 text-[10px] ${
-                    row.selfReport.status === "taken"
-                      ? "bg-success/20 text-success"
-                      : "bg-gold/25 text-navy"
-                  }`}
-                >
-                  {row.selfReport.status === "taken"
-                    ? ADHERENCE_TONE.takenDay
-                    : ADHERENCE_TONE.missedDay}
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-[10px]">
-                  {ADHERENCE_TONE.notYet}
-                </Badge>
-              )}
+              <StatusChip state={row.selfReport?.status === "taken" ? "done" : "yourturn"} title={row.selfReport?.status === "taken" ? ADHERENCE_TONE.takenDay : "Still to mark"} />
             </div>
             <div className="flex flex-wrap gap-2">
               <Button

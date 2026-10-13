@@ -7,6 +7,7 @@
 // audited entry says, and the signals are reference content the person reads
 // for themselves — see the header comment in `src/lib/recoveryStages.ts`.
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { Check, Circle, PencilLine, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -46,7 +47,8 @@ export function RecoveryStageReviewNotice({ className }: { className?: string })
   );
 }
 
-function Timeline({ current }: { current?: RecoveryStageId }) {
+function Timeline({ current, member = false }: { current?: RecoveryStageId; member?: boolean }) {
+  const { t, lang } = useI18n();
   const currentOrder = current ? recoveryStage(current).order : 0;
   return (
     <ol className="flex items-stretch gap-1" data-testid="recovery-stage-timeline">
@@ -58,7 +60,7 @@ function Timeline({ current }: { current?: RecoveryStageId }) {
             <div
               className={cn(
                 "h-1.5 rounded-full",
-                isCurrent ? "bg-primary" : isPast ? "bg-primary/40" : "bg-muted",
+                isCurrent ? member ? "bg-surface ring-2 ring-sunrise-mark" : "bg-primary" : isPast ? "bg-primary/40" : "bg-muted",
               )}
             />
             <span
@@ -70,6 +72,7 @@ function Timeline({ current }: { current?: RecoveryStageId }) {
             >
               {s.label}
             </span>
+            {isCurrent && member && <span className="mt-2 block text-sm text-sunrise-text">{t("youAreHere")}{lang === "es" && <span className="block text-sm text-ink-muted">Borrador</span>}</span>}
           </li>
         );
       })}
@@ -123,7 +126,7 @@ export function RecoveryStagePanel({
 
   return (
     <div className="space-y-3" data-testid="recovery-stage-panel">
-      <Timeline {...(current ? { current } : {})} />
+      <Timeline {...(current ? { current } : {})} member={actor === "patient"} />
 
       {stage ? (
         <div>
@@ -185,7 +188,7 @@ export function RecoveryStagePanel({
               {current ? "Update where you are" : "Pick where you are"}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogContent className={`${actor === "patient" ? "member-overlay " : ""}max-h-[85vh] overflow-y-auto sm:max-w-lg`}>
             <DialogHeader>
               <DialogTitle>Where are you right now?</DialogTitle>
               <DialogDescription>

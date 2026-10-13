@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Adelante Journey Phase 6 — "I Just Got Out" Day-0 module (patient-facing).
 //
 // This card renders ONLY when the real front-door Phase 2 safety-net path put
@@ -10,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Clock, LifeBuoy } from "lucide-react";
+import { LifeBuoy } from "lucide-react";
 import { PopulationGate } from "@/components/PopulationGate";
 import {
   DAY_ZERO_PLAN_STEPS,
@@ -84,13 +85,7 @@ function DayZeroBody({ patientId }: { patientId: string }) {
                 onClick={() => setOpen(s.id)}
                 className="flex w-full items-start gap-3 rounded-lg border border-border p-3 text-left hover:bg-secondary/50"
               >
-                <span className="mt-0.5">
-                  {completed.includes(s.id) ? (
-                    <CheckCircle2 className="h-4 w-4 text-teal" />
-                  ) : (
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </span>
+                <StatusChip state={completed.includes(s.id) ? "done" : "yourturn"} />
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-foreground">{s.title}</span>
                   <span className="block text-xs text-muted-foreground">{s.subtitle}</span>

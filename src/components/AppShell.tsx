@@ -137,7 +137,7 @@ export function AppShell() {
   if (isPublicSurface) return <WebsiteLayout>{STAFF_ROUTES.includes(pathname) && <RouteAccessGuard />}<Outlet /></WebsiteLayout>;
 
   return (
-    <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface || isPublicSurface) && "patient-theme")}>
+    <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface || isPublicSurface) && "patient-theme member-comfortable")}>
       {(!isPublicSurface || STAFF_ROUTES.includes(pathname)) && <RouteAccessGuard />}
       {isPatientSurface && <OnboardingGuard />}
       {/* Demo scenario control — sticky at the viewport top so it is reachable at

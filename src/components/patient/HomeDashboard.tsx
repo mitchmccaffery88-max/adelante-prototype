@@ -18,7 +18,8 @@ import {
   ChevronRight,
   HandHeart,
   HeartPulse,
-  LifeBuoy,
+  Sun,
+  Star,
   MapPin,
   MessageSquare,
   Pill,
@@ -30,10 +31,10 @@ import {
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ClientDate } from "@/components/ClientDate";
-import { GetHelpNowModal } from "@/components/patient/GetHelpNowModal";
+import { StatusChip } from "@/components/ui/status-chip";
+import { JoinCallButton } from "@/components/patient/AppointmentsSummary";
 import { usePopulation } from "@/components/PopulationGate";
 import { checkInStreakFrom } from "@/lib/checkInStreak";
 import { DaysSoberLine } from "@/components/patient/RecoveryDateCard";
@@ -144,7 +145,6 @@ export function HomeDashboard({
   afterHeader?: React.ReactNode;
 }) {
   const { t: playerText, lang } = useI18n();
-  const [helpOpen, setHelpOpen] = useState(false);
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const population = usePopulation(patientId);
 
@@ -326,7 +326,6 @@ export function HomeDashboard({
   if (!patient) return null;
   const firstName = patient.preferredName || patient.firstName;
   const showRecoveryJourney = recoveryJourneyVisible(patient);
-  const hasPastAttendedVisit = appts.some((a) => a.status === "attended");
   const suggestions = [
     ...(nextLesson
       ? [{ id: `lesson-${nextLesson.id}`, title: nextLesson.title, body: `${nextLesson.problem} · about ${nextLesson.minutes} min`, to: "/library" as const, search: { item: nextLesson.id } }]
@@ -449,48 +448,26 @@ export function HomeDashboard({
     key: "next-appointment",
     priority: 50,
     node: (
-          <TileShell icon={Calendar} title={hasPastAttendedVisit ? "Next appointment" : "Your first appointment"}>
-            {nextAppt ? (
-              <>
-                <p className="text-base">
-                  <ClientDate
-                    value={nextAppt.start}
-                    options={{
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    }}
-                  />
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {AdelanteEHR.getClinician(nextAppt.clinicianId)?.name}
-                  {nextAppt.modality === "phone"
-                    ? " · by phone"
-                    : nextAppt.modality === "in_person"
-                      ? " · in person"
-                      : " · video"}
-                </p>
-                <p className="mt-2 rounded-2xl bg-secondary p-3 text-sm">
-                  {apptPrepTip(nextAppt.modality)}
-                </p>
-                <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                  <Link to="/schedule">Manage appointments</Link>
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Not yet scheduled — we&apos;ll reach out to set it up.
-                </p>
-                <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                  <Link to="/schedule">See appointments</Link>
-                </Button>
-              </>
-            )}
+          <Card data-next-step className="rounded-lg bg-gold p-5 text-on-gold shadow-card">
+            <div className="flex items-center gap-2 text-sm font-medium"><Sun className="size-5" aria-hidden="true" />{playerText("nextStep")}</div>
+            {lang === "es" && <span className="text-sm">Borrador — pendiente de revisión de traducción</span>}
+            {nextAppt ? <>
+              <h2 className="mt-2 text-xl font-bold">{AdelanteEHR.getServiceType(nextAppt.serviceType ?? "")?.label ?? (lang === "es" ? "Cita" : "Visit")}</h2>
+              <p className="mt-1"><ClientDate value={nextAppt.start} options={{ weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} /></p>
+              <p className="mt-1 text-sm">{AdelanteEHR.getClinician(nextAppt.clinicianId)?.name}</p>
+              <p className="mt-2 text-sm">{apptPrepTip(nextAppt.modality)}</p>
+              <div className="mt-3">{(nextAppt.modality ?? "video") === "video" && <JoinCallButton appt={nextAppt} nextStep />}</div>
+              <Button asChild variant="link" className="mt-2 min-h-12 px-0 text-on-gold"><Link to="/schedule">{playerText("changeTime")}</Link></Button>
+            </> : suggestions[0] ? <>
+              <h2 className="mt-2 text-xl font-bold">{suggestions[0].title}</h2><p className="mt-1 text-sm">{suggestions[0].body}</p>
+              <Button asChild className="mt-3 min-h-12"><Link to={suggestions[0].to} {...("search" in suggestions[0] ? { search: suggestions[0].search } : {})} {...("hash" in suggestions[0] && suggestions[0].hash ? { hash: suggestions[0].hash } : {})}>{lang === "es" ? "Empezar" : "Start it"}</Link></Button>
+            </> : <>
+              <h2 className="mt-2 text-xl font-bold">{lang === "es" ? "Tu biblioteca" : "Your library"}</h2>
+              <Button asChild className="mt-3 min-h-12"><Link to="/library">{lang === "es" ? "Abrir la biblioteca" : "Open the library"}</Link></Button>
+            </>}
+            {suggestions[nextAppt ? 0 : 1] && <p className="mt-3 text-sm">{playerText("afterThis")} {suggestions[nextAppt ? 0 : 1]?.title}</p>}
             <ApptRequestStates patientId={patientId} />
-          </TileShell>
+          </Card>
     ),
   });
   // Today's medication — real Phase 7 self-report, not a new mechanism
@@ -595,9 +572,7 @@ export function HomeDashboard({
               <li key={i.id} className="rounded-2xl border p-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 truncate text-sm">{i.need}</span>
-                  <Badge variant="outline" className="shrink-0 text-[10px]">
-                    {SDOH_STATUS_LABEL[i.status] ?? i.status}
-                  </Badge>
+                  <StatusChip state={i.status === "completed" ? "done" : i.status === "not_completed" ? "yourturn" : i.status === "scheduled" ? "upnext" : "team"} title={SDOH_STATUS_LABEL[i.status] ?? i.status} />
                 </div>
                 <p className="mt-1 text-[11px] text-muted-foreground" data-testid="sdoh-need-meta">
                   {[categoryName(i.categoryId ?? match?.categoryIds[0]), `From ${provenanceFor(i.source)}`, i.urgency ? `Help needed: ${URGENCY_LABEL.en[i.urgency].toLowerCase()}` : null].filter(Boolean).join(" · ")}
@@ -616,9 +591,7 @@ export function HomeDashboard({
                 <span className="min-w-0 truncate text-sm capitalize">
                   {r.category} — {r.provider}
                 </span>
-                <Badge variant="outline" className="shrink-0 text-[10px]">
-                  {REFERRAL_STATUS_LABEL[r.status] ?? r.status}
-                </Badge>
+                <StatusChip state={r.status === "completed" ? "done" : "team"} title={REFERRAL_STATUS_LABEL[r.status] ?? r.status} />
               </li>
             ))}
           </ul>
@@ -676,19 +649,10 @@ export function HomeDashboard({
 
       {/* 2b — milestone celebrations, from real engagement data ------------- */}
       {milestones.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-3" data-testid="recovery-milestones">
-          {milestones.map((m) => (
-            <Card key={m.id} className="border-primary/30 bg-primary/5 p-4 soft-shadow">
-              <div className="flex items-start gap-2">
-                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{m.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{m.body}</p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <section className="rounded-lg bg-sunrise-soft p-4 shadow-card" data-testid="recovery-milestones">
+          <span className="mb-3 inline-flex rounded-full border border-sunrise-mark p-2 text-sunrise-text"><Star className="size-5" aria-hidden="true" /></span>
+          <div className="grid gap-3 sm:grid-cols-3">{milestones.map((m) => <div key={m.id} className="rounded-md bg-surface p-3"><p className="text-sm font-semibold text-foreground">{m.title}</p><p className="mt-1 text-sm text-ink-muted">{m.body}</p></div>)}</div>
+        </section>
       )}
 
       {/* 3 — onboarding / reentry progress (justice-involved only) ---------- */}
@@ -714,14 +678,7 @@ export function HomeDashboard({
 
       {/* 5 — quick actions --------------------------------------------------- */}
       <div className="grid gap-3 sm:grid-cols-3">
-        <Button
-          type="button"
-          data-testid="get-help-now-button"
-          onClick={() => setHelpOpen(true)}
-          className="min-h-[64px] justify-start rounded-2xl bg-primary px-4 text-base text-primary-foreground hover:bg-primary/90"
-        >
-          <LifeBuoy className="mr-2 h-5 w-5" aria-hidden="true" /> In crisis now
-        </Button>
+
 
         <Link
           to="/home"
@@ -790,7 +747,7 @@ export function HomeDashboard({
       {/* 7 — next unfinished lesson plus distinct seeking/justice suggestions. */}
       <Card
         data-testid="forward-step-card"
-        className="border-0 bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground soft-shadow"
+        className="border-border bg-surface p-6 text-foreground"
       >
         <div className="text-xs font-medium uppercase tracking-wider opacity-90">
           Suggested for you
@@ -798,10 +755,10 @@ export function HomeDashboard({
         {suggestions.length > 0 ? (
           <ul className="mt-3 space-y-2">
             {suggestions.map((suggestion, index) => (
-              <li key={suggestion.id} className="rounded-2xl bg-primary-foreground/10 p-3">
+              <li key={suggestion.id} className="rounded-md border border-line p-3">
                 <p className="font-medium">{suggestion.title}</p>
                 <p className="mt-0.5 text-sm opacity-90">{suggestion.body}</p>
-                <Button asChild className="mt-2 min-h-11 rounded-2xl bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+                <Button asChild variant="outline" className="mt-2 min-h-12 rounded-md">
                   <Link
                     to={suggestion.to}
                     {...("search" in suggestion ? { search: suggestion.search } : {})}
@@ -821,7 +778,7 @@ export function HomeDashboard({
             </p>
             <Button
               asChild
-              className="mt-4 min-h-11 rounded-2xl bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+              variant="outline" className="mt-4 min-h-12 rounded-md"
             >
               <Link to="/library">Open the library</Link>
             </Button>
@@ -838,7 +795,6 @@ export function HomeDashboard({
         ))}
       </div>
 
-      <GetHelpNowModal open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }

@@ -51,6 +51,20 @@ interface HelpEntry {
  */
 export const HELP_ENTRIES: HelpEntry[] = [
   {
+    id: "call-988",
+    icon: Phone,
+    title: `Call ${CRISIS_LIFELINE_NUMBER}`,
+    body: `${CRISIS_LIFELINE_NAME}. Free, 24/7, Spanish-capable.`,
+    destination: { kind: "tel", number: CRISIS_LIFELINE_NUMBER },
+  },
+  {
+    id: "text-988",
+    icon: MessageSquare,
+    title: `Text ${CRISIS_LIFELINE_NUMBER}`,
+    body: "If talking out loud is too much right now, text instead.",
+    destination: { kind: "sms", number: CRISIS_LIFELINE_NUMBER },
+  },
+  {
     id: "peer-specialist",
     icon: HandHeart,
     title: "Talk to a peer specialist",
@@ -67,20 +81,6 @@ export const HELP_ENTRIES: HelpEntry[] = [
     title: "Talk to Adel",
     body: "Adel can listen and point you to the right tool. Not a clinician.",
     destination: { kind: "route", to: "/adel" },
-  },
-  {
-    id: "call-988",
-    icon: Phone,
-    title: `Call ${CRISIS_LIFELINE_NUMBER}`,
-    body: `${CRISIS_LIFELINE_NAME}. Free, 24/7, Spanish-capable.`,
-    destination: { kind: "tel", number: CRISIS_LIFELINE_NUMBER },
-  },
-  {
-    id: "text-988",
-    icon: MessageSquare,
-    title: `Text ${CRISIS_LIFELINE_NUMBER}`,
-    body: "If talking out loud is too much right now, text instead.",
-    destination: { kind: "sms", number: CRISIS_LIFELINE_NUMBER },
   },
   {
     id: "naloxone",
@@ -234,7 +234,7 @@ export function GetHelpNowModal({
       <SheetContent
         side="bottom"
         data-testid="get-help-sheet"
-        className="patient-theme mx-auto max-h-[88vh] rounded-t-3xl border-t bg-card px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-3 sm:max-w-xl [&>button:first-of-type]:hidden"
+        className="patient-theme member-overlay mx-auto max-h-[88vh] rounded-t-3xl border-t bg-card px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-3 sm:max-w-xl [&>button:first-of-type]:hidden"
       >
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-border" aria-hidden="true" />
         <div className="flex items-center justify-between">

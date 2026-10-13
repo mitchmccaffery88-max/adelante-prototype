@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §v3.0 Phase 4 expansion — the advocate's expanded surface.
 //
 // Every panel here is rendered ONLY when the live store gate says the
@@ -55,7 +56,7 @@ export function AdvocateCoordinationPanel({ linkId }: { linkId: string }) {
             <li key={i.id} className="rounded-lg border p-3 text-sm">
               <span className="flex items-center justify-between gap-2">
                 <span className="font-medium text-navy">{i.need}</span>
-                <Badge variant="outline">{i.status.replace(/_/g, " ")}</Badge>
+                <StatusChip state={i.status === "completed" ? "done" : i.status === "not_completed" ? "yourturn" : i.status === "scheduled" ? "upnext" : "team"} title={i.status.replace(/_/g, " ")} />
               </span>
               {i.note && <span className="mt-1 block text-xs text-muted-foreground">{i.note}</span>}
               {/* §5d-4 — the referrals made for this need, within this
@@ -451,17 +452,9 @@ export function AdvocateDocumentsPanel({ linkId }: { linkId: string }) {
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
                   {d.restricted && (
-                    <Badge variant="outline" className="gap-1">
-                      <Lock className="h-3 w-3" /> {t("docRestricted")}
-                    </Badge>
+                    <StatusChip state="restricted" />
                   )}
-                  <Badge variant={d.verification === "verified" ? "default" : "secondary"}>
-                    {d.verification === "verified"
-                      ? t("docStatusVerified")
-                      : d.verification === "rejected"
-                        ? t("docStatusRejected")
-                        : t("docStatusPending")}
-                  </Badge>
+                  <StatusChip state={d.verification === "verified" ? "done" : d.verification === "rejected" ? "yourturn" : "team"} />
                   {/* The button is offered even for a restricted row: refusing
                       at the SHARED gate (and saying why) is the honest
                       behaviour, and hiding it would be a second, silent rule. */}

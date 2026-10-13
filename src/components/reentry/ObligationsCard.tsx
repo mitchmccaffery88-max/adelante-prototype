@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Adelante Journey Phase 6 — Obligations, patient-facing and informational.
 //
 // Strictly population-gated with Phase 2's `PopulationGate` — a General
@@ -88,6 +89,7 @@ function ObligationsBody({ patientId }: { patientId: string }) {
                 <Badge variant="outline" className="text-[10px]">
                   {OBLIGATION_LABEL[o.kind]}
                 </Badge>
+                <StatusChip state={o.completed ? "done" : +new Date(o.when) <= Date.now() ? "yourturn" : "upnext"} />
                 <span className={o.completed ? "line-through text-muted-foreground" : "font-medium"}>
                   {o.title}
                 </span>

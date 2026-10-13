@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §v3.0 Phase 4 — the advocate's own surface.
 //
 // This route is NOT part of the staff shell and carries no `StaffRole`: an
@@ -21,7 +22,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AdvocateTierBadge } from "@/components/advocate/AdvocateWorkspace";
 import { SelfCareContextSwitch } from "@/components/ContextSwitcher";
@@ -151,9 +151,7 @@ function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () =>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={view.allowed ? "default" : "secondary"}>
-            {view.allowed ? "Active" : "No access"}
-          </Badge>
+          <StatusChip state={view.allowed ? "done" : "restricted"} title={view.allowed ? "Active" : "No access"} />
           <Button size="sm" variant="ghost" onClick={onSignOut}>
             Sign out
           </Button>

@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §P1 My Care de-clutter — the real "My medications" list, moved off My Care.
 //
 // Lifted verbatim from `PatientHome`: same `AdelanteEHR.requestRefill` call,
@@ -71,12 +72,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {statusBadge ? (
-            <Badge
-              className={`${statusBadge.cls} border-0 text-[10px]`}
-              title={latest?.denyReason ?? undefined}
-            >
-              {statusBadge.label}
-            </Badge>
+            <span className="flex flex-wrap items-center gap-2"><StatusChip state={latest?.status === "pending" ? "team" : latest?.status === "approved" || latest?.status === "sent_to_pharmacy" ? "done" : "yourturn"} title={latest?.denyReason} /><span className="text-sm text-ink-muted">{statusBadge.label}</span></span>
           ) : (
             <Badge variant="outline" className="text-[10px]">
               active
@@ -122,7 +118,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
         </div>
       )}
       {latest?.denyReason && (latest.status === "denied" || latest.status === "needs_appointment") && (
-        <div className="mt-1 text-[10px] text-destructive">
+        <div className="mt-1 text-sm text-ink-muted">
           Prescriber note: {latest.denyReason}
         </div>
       )}

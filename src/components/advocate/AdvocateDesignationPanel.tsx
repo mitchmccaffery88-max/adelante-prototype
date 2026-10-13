@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §v3.0 Phase 4 — designation surface for advocates / family members.
 //
 // Used by the patient on /home, and by the CF Care Manager / ECM Provider on
@@ -64,7 +65,7 @@ export function AdvocateDesignationPanel({
                   {l.advocateName}
                   {l.relationship ? ` · ${l.relationship}` : ""}
                 </span>
-                <Badge variant={l.status === "active" ? "default" : "secondary"}>{l.status}</Badge>
+                {designatedBy.actor === "patient" ? <StatusChip state={l.status === "active" ? "done" : l.status === "invited" ? "team" : "closed"} /> : <Badge variant={l.status === "active" ? "default" : "secondary"}>{l.status}</Badge>}
               </div>
               <p className="text-xs text-muted-foreground">
                 {l.authorizationType
