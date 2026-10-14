@@ -1,4 +1,5 @@
 - [x] Content Download / Load my changes (/admin-content). Open: runAction permissions snapshot needs Mitch's decision on the 2 new action lines per role.
+- [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
 ## Phase 5b — Draft member and public screen Spanish (14 Oct)
