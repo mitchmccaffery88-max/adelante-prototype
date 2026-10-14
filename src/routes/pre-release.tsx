@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { CoverageAtReleasePanel } from "@/components/coverage/CoverageAtReleasePanel";
 // §v3.0 Phase 2 — CF Care Manager pre-release surface.
 //
@@ -181,7 +182,7 @@ function PreReleasePage() {
                   data-testid={`episode-phase-${e.id}`}
                   className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] ${
                     t.inWarmHandoffWindow
-                      ? "bg-destructive/15 text-destructive"
+                      ? "bg-surface-sunk text-attention"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
@@ -597,7 +598,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
             </Badge>
           )}
           {!ok && (
-            <Badge variant="destructive" data-testid="proxy-blocked-badge">
+            <Badge variant="outline" data-testid="proxy-blocked-badge">
               Entry blocked — {reason}
             </Badge>
           )}
@@ -605,8 +606,8 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
         {!ok && (
           <p
             data-testid="proxy-blocked-reason"
-            className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
-          >
+            className="mt-2 rounded-md border border-input bg-surface-sunk p-2 text-xs text-attention"
+          ><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
             {reason} You can read this episode, but only {episode.cfCareManagerName} can record
             their own task-list and Reentry Care Plan activity.
           </p>
@@ -646,7 +647,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                     {r.blocked && (
                       <span
                         data-testid={`blocked-${r.def.key}`}
-                        className="mt-1 block text-xs text-destructive"
+                        className="mt-1 block text-xs text-attention"
                       >
                         {r.blocked}
                       </span>
@@ -677,7 +678,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    {r.blocked && <Badge variant="destructive">Blocked</Badge>}
+                    {r.blocked && <Badge variant="outline">Blocked</Badge>}
                     <Badge className={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
                     {r.def.consentCategory ? (
                       r.blocked ? (

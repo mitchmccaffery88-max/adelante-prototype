@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Group sessions — staff-facing group care delivery.
 //
@@ -852,7 +853,7 @@ function OccurrenceModalityPicker({
       </p>
       {isVirtualGroupModality(modality) &&
         (gate.blocked.length > 0 ? (
-          <p className="text-[11px] text-destructive" role="alert">
+          <p className="text-[11px] text-attention" role="alert"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
             Telehealth consent missing for: {gate.blocked.map((b) => b.name).join(", ")}. They
             cannot be documented as attending this virtual meeting until consent is captured.
           </p>
@@ -862,7 +863,7 @@ function OccurrenceModalityPicker({
           </p>
         ))}
       {gate.confidentialityRequired && gate.confidentialityMissing.length > 0 && (
-        <p className="text-[11px] text-destructive" role="alert">
+        <p className="text-[11px] text-attention" role="alert"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
           Group confidentiality acknowledgment missing for:{" "}
           {gate.confidentialityMissing.map((b) => b.name).join(", ")}.
         </p>

@@ -162,7 +162,7 @@ export function DocumentVerifyQueue() {
                     />
                     <Button
                       size="sm"
-                      variant="destructive"
+                      variant="outline"
                       onClick={() => {
                         const res = AdelanteEHR.rejectPatientDocument(row.document.id, {
                           staffId,

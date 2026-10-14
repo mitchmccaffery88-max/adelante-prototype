@@ -71,7 +71,7 @@ export function CareMessageThread({
                   a clinician without consent access should know something was
                   flagged here, not find a silently missing message. */}
               {m.sudFlagged && (
-                <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-destructive">
+                <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-attention">
                   <ShieldAlert className="h-3 w-3" />
                   {showFlagProvenance
                     ? m.sudFlaggedByPatient

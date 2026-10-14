@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Pre-release build 3 — real appointment booking for the reentry first visits.
 //
 // Before this build the "mental health appointment" step only recorded typed
@@ -98,8 +99,8 @@ export function PreReleaseAppointmentCard({
       {blockedReason && (
         <p
           data-testid="appointment-blocked"
-          className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
-        >
+          className="mb-3 rounded-md border-2 border-input bg-surface-sunk p-2 text-xs text-attention"
+        ><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
           {blockedReason}
         </p>
       )}

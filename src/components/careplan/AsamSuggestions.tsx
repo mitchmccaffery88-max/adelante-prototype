@@ -96,7 +96,7 @@ function SuggestionCard({ patientId, s }: { patientId: string; s: AsamPlanSugges
       {mode === "dismiss" && (
         <div className="flex flex-wrap gap-2">
           <Input aria-label="Reason for dismissing" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} className="min-w-0 flex-1" />
-          <Button size="sm" variant="destructive" onClick={() => run(() => actFor("asam_plan_suggestion", "dismissAsamSuggestion", patientId, patientId, s.id, reason, me), "Suggestion dismissed")}>Dismiss</Button>
+          <Button size="sm" variant="outline" onClick={() => run(() => actFor("asam_plan_suggestion", "dismissAsamSuggestion", patientId, patientId, s.id, reason, me), "Suggestion dismissed")}>Dismiss</Button>
         </div>
       )}
       {mode === "view" && (
@@ -121,7 +121,7 @@ export function AsamGoalChips({ patientId, goal, canEdit }: { patientId: string;
       <Badge variant="outline" className="text-[10px]" title={goal.source?.dimensionName} data-testid="asam-provenance-chip">{prov}</Badge>
       {goal.reviewFlag && (
         <>
-          <Badge variant="destructive" className="text-[10px]" data-testid="asam-review-flag">
+          <Badge variant="outline" className="text-[10px]" data-testid="asam-review-flag">
             {goal.reviewFlag.label} (rating {goal.reviewFlag.fromRating} → {goal.reviewFlag.toRating})
           </Badge>
           {canEdit && (

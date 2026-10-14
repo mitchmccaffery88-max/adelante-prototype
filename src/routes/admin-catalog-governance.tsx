@@ -272,7 +272,7 @@ function CatalogGovernancePage() {
                           </Button>
                         )}
                         <Button size="sm" variant="ghost" onClick={() => remove(f)}>
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          <Trash2 className="h-3.5 w-3.5 text-attention" />
                         </Button>
                       </>
                     )}

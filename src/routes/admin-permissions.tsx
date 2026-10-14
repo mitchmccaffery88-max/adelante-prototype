@@ -212,7 +212,7 @@ function PermissionsPage() {
                   return (
                     <tr key={e.id} className="border-t">
                       <td className="p-2 whitespace-nowrap">{new Date(e.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</td>
-                      <td className="p-2"><Badge variant={e.action === "action.blocked" ? "destructive" : "secondary"}>{e.action}</Badge></td>
+                      <td className="p-2"><Badge variant={e.action === "action.blocked" ? "outline" : "secondary"}>{e.action}</Badge></td>
                       <td className="p-2 font-mono text-[10px]">{String(d["actionId"] ?? "")}</td>
                       <td className="p-2">{roleLabel(String(d["actingRole"] ?? e.actorRole ?? ""))} · {String(d["actorId"] ?? "")}{d["viewingStaffId"] ? ` (viewing ${String(d["viewingStaffId"])})` : ""}</td>
                       <td className="p-2 font-mono text-[10px]">{red.subjectLabel}</td>

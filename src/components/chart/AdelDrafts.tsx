@@ -177,7 +177,7 @@ function RefillCard({ refill }: { refill: RefillRequest }) {
         <Button size="sm" onClick={() => decide("approved")}>Approve</Button>
         <Button size="sm" variant="outline" onClick={() => decide("needs_appointment")}>Approve with visit</Button>
         <Input className="h-8 w-48" placeholder="Reason (required to deny)" aria-label="Deny reason" value={reason} onChange={(e) => setReason(e.target.value)} />
-        <Button size="sm" variant="destructive" onClick={() => decide("denied")}>Deny</Button>
+        <Button size="sm" variant="outline" onClick={() => decide("denied")}>Deny</Button>
       </div>
     </div>
   );

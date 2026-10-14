@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -43,7 +44,7 @@ export function TimePicker({ value, onChange, error, id, ariaLabel }: TimePicker
   const emit = (next: { h12?: string; m?: string; ap?: "AM" | "PM" }) => {
     onChange(to24(next.h12 ?? h12, next.m ?? m, next.ap ?? ap));
   };
-  const triggerCls = cn(invalid && "ring-2 ring-destructive border-destructive");
+  const triggerCls = cn(invalid && "border-2 border-input");
   const describedBy = id && error ? `${id}-error` : undefined;
   return (
     <div aria-label={ariaLabel} aria-invalid={invalid} aria-describedby={describedBy}>
@@ -83,7 +84,7 @@ export function TimePicker({ value, onChange, error, id, ariaLabel }: TimePicker
         </Select>
       </div>
       {error && (
-        <p id={describedBy} className="mt-1 text-xs text-destructive">
+        <p id={describedBy} className="mt-1 text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
           {error}
         </p>
       )}

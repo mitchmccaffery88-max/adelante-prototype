@@ -88,7 +88,7 @@ export function RecordSafetyBadges({ patient }: { patient: Patient }) {
               <Badge
                 className={
                   s.criticalAlert
-                    ? "bg-destructive/15 text-destructive border-0 text-[10px] gap-1"
+                    ? "bg-surface-sunk text-attention border-0 text-[10px] gap-1"
                     : "bg-muted text-navy border-0 text-[10px] gap-1"
                 }
               >

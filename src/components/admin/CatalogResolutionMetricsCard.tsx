@@ -100,7 +100,7 @@ function Metric({
       <div className="flex items-baseline justify-between">
         <span className="text-xs text-muted-foreground">{label}</span>
         <span
-          className={`font-display text-xl ${destructive && value > 0 ? "text-destructive" : "text-navy"}`}
+          className={`font-display text-xl ${destructive && value > 0 ? "text-ink-muted" : "text-navy"}`}
         >
           {value}
         </span>

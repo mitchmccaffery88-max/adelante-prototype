@@ -47,7 +47,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
         ? { label: "Refill approved", cls: "bg-success/20 text-success" }
         : latest.status === "needs_appointment"
           ? { label: "Appointment needed first", cls: "bg-gold/30 text-navy" }
-          : { label: "Refill denied", cls: "bg-destructive/15 text-destructive" }
+          : { label: "Refill denied", cls: "bg-surface-sunk text-attention" }
     : null;
 
   return (

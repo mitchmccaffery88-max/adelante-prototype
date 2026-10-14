@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Clinical documentation Phase 3b — orders_section renderer.
 //
 // Deliberately thin: every piece of order behaviour is REUSED from the Orders
@@ -195,7 +196,7 @@ export function NoteOrdersSection({
             />
           ))}
           {safetyBlockers.length > 0 && (
-            <ul role="alert" aria-label="Signing blocked" className="space-y-1 rounded-md border border-destructive/60 bg-destructive/5 p-2 text-xs text-destructive">
+            <ul role="alert" aria-label="Signing blocked" className="space-y-1 rounded-md border-2 border-input bg-surface-sunk p-2 text-xs text-attention"><li aria-hidden="true"><CircleAlert className="size-4 shrink-0" /></li>
               {safetyBlockers.map((b) => <li key={b}>Can&apos;t sign yet: {b}</li>)}
             </ul>
           )}

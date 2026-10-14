@@ -198,11 +198,11 @@ export function MedicationDoseSection({
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {order.strengthText && <Badge variant="outline">{order.strengthText}</Badge>}
         {order.doseForm && <Badge variant="outline">{order.doseForm}</Badge>}
-        {order.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
+        {order.offCatalog && <Badge variant="outline">Off-catalog</Badge>}
         {order.strengthSource === "dailymed" && (
           <Badge variant="outline">Strength from DailyMed label</Badge>
         )}
-        {order.manualDose && <Badge variant="destructive">Manual dose</Badge>}
+        {order.manualDose && <Badge variant="outline">Manual dose</Badge>}
         {mode === "topical" && <Badge variant="secondary">Topical — dosed by application</Badge>}
         {mode === "units" && <Badge variant="secondary">Unit-dosed product</Badge>}
       </div>
@@ -410,7 +410,7 @@ export function MedicationDoseSection({
       </div>
 
       {dose?.error && (
-        <p className="flex items-start gap-1.5 text-xs text-destructive">
+        <p className="flex items-start gap-1.5 text-xs text-attention">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {dose.error.message}
         </p>

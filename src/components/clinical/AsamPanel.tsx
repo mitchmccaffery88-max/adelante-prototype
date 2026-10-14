@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 import { asamCosignOwnership, isCosignOwner } from "@/lib/ehr";
 import { canSignNotes } from "@/lib/notes";
@@ -125,7 +126,7 @@ export function AsamPanel({ patient }: { patient: Patient }) {
           {readiness.map(({ c, msg }) => (
             <p key={c.id} data-testid={msg ? "chart-claim-blocked" : "chart-claim-ok"}>
               {c.serviceCode} on {c.serviceDate} ({claimBillingBucket(c.state)}):{" "}
-              {msg ? <span className="text-destructive">{msg}</span> : <span className="text-teal">Medical necessity documented</span>}
+              {msg ? <span className="text-attention">{msg}</span> : <span className="text-teal">Medical necessity documented</span>}
             </p>
           ))}
           {caloms.inScope && (
@@ -172,7 +173,7 @@ export function AsamPanel({ patient }: { patient: Patient }) {
       )}
 
       {err && (
-        <p className="text-xs text-destructive" role="alert">
+        <p className="text-xs text-attention" role="alert"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
           {err}
         </p>
       )}

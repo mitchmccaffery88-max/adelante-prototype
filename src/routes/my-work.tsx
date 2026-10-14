@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §Reporting Redesign Tier 3 — "My work": the reflexive-need reports.
 //
 // Everything on this page is scoped to the ACTING staff member. It is a view,
@@ -139,7 +140,7 @@ function Row({
 
 function levelBadge(row: DisengagementRow) {
   if (row.level === "at_risk")
-    return <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">At risk (draft)</Badge>;
+    return <Badge className="bg-surface-sunk text-attention border-0 text-[10px]">At risk (draft)</Badge>;
   if (row.level === "watch")
     return <Badge className="bg-warning/20 text-navy border-0 text-[10px]">Watch (draft)</Badge>;
   return (
@@ -456,7 +457,7 @@ function MyWorkPage() {
                   primary={c.escalation.category === "sdoh" ? "Open urgent social need" : "Open crisis item"}
                   secondary={<Link to="/crisis-queue" search={{ scope: undefined, lane: undefined }} className="underline">{c.escalation.claimedBy ? `Claimed by ${c.escalation.claimedBy}` : "Unclaimed"} · open the crisis queue</Link>}
                   badge={
-                    <Badge className={`border-0 text-[10px] ${c.sla.overdue ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                    <Badge className={`border-0 text-[10px] ${c.sla.overdue ? "bg-surface-sunk text-attention" : "bg-muted text-muted-foreground"}`}>
                       {c.escalation.severity}
                     </Badge>
                   }
@@ -508,9 +509,7 @@ function MyWorkPage() {
                   badge={
                     <span className="flex items-center gap-2">
                       <OutreachDraftDialog patientId={r.patient.id} reason="contact_due" />
-                      <Badge className={`border-0 text-[10px] ${r.status === "overdue" ? "bg-destructive/15 text-destructive" : "bg-warning/20 text-navy"}`}>
-                        {r.status === "overdue" ? "Overdue" : "Due"}
-                      </Badge>
+                      <StatusChip lang="en" state="yourturn" label={r.status === "overdue" ? "Overdue" : "Due"} />
                     </span>
                   }
                 />
@@ -530,7 +529,7 @@ function MyWorkPage() {
           count={open.total}
         />
         {open.overdueCrises > 0 && (
-          <Card className="border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+          <Card className="border-input bg-surface-sunk p-3 text-xs text-attention">
             {open.overdueCrises} claimed escalation{open.overdueCrises === 1 ? " is" : "s are"} past
             the draft response target.
           </Card>
@@ -564,9 +563,7 @@ function MyWorkPage() {
                     }
                     badge={
                       c.sla.overdue ? (
-                        <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                          {overdueByLabel(c.sla.overdueByMs)}
-                        </Badge>
+                        <StatusChip lang="en" state="yourturn" label={overdueByLabel(c.sla.overdueByMs)} />
                       ) : (
                         <Badge className="bg-muted text-muted-foreground border-0 text-[10px]">
                           {c.escalation.severity}
@@ -593,9 +590,7 @@ function MyWorkPage() {
                     secondary={<>Draft {c.sla.thresholdLabel} target</>}
                     badge={
                       c.sla.overdue ? (
-                        <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                          {overdueByLabel(c.sla.overdueByMs)}
-                        </Badge>
+                        <StatusChip lang="en" state="yourturn" label={overdueByLabel(c.sla.overdueByMs)} />
                       ) : undefined
                     }
                   />
@@ -639,9 +634,7 @@ function MyWorkPage() {
                     primary={t.task.title}
                     secondary={<>Due {t.task.dueDate.slice(0, 10)} · {t.task.origin}</>}
                     badge={
-                      <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                        {dueLabel(t.task.dueDate)}
-                      </Badge>
+                      <StatusChip lang="en" state="yourturn" label={dueLabel(t.task.dueDate)} />
                     }
                   />
                 ))}
@@ -677,12 +670,7 @@ function MyWorkPage() {
                   primary={`${t.title} — due ${t.dueDate}`}
                   secondary={t.reason}
                   badge={
-                    <Badge
-                      data-testid={`asam-state-${t.state}`}
-                      className={`border-0 text-[10px] ${t.state === "overdue" ? "bg-destructive/15 text-destructive" : t.state === "due" ? "bg-warning/20 text-navy" : "bg-muted text-muted-foreground"}`}
-                    >
-                      {t.state === "overdue" ? "Overdue" : t.state === "due" ? "Needed now" : `Due ${new Date(`${t.dueDate}T12:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}`}
-                    </Badge>
+                    <StatusChip lang="en" data-testid={`asam-state-${t.state}`} state={t.state === "overdue" || t.state === "due" ? "yourturn" : "upnext"} label={t.state === "overdue" ? "Overdue" : t.state === "due" ? "Needed now" : `Due ${new Date(`${t.dueDate}T12:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}`} />
                   }
                 />
               ))}

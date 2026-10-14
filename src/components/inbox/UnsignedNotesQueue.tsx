@@ -20,7 +20,7 @@ export function queueAgeTone(iso: string, now: number = Date.now()): string {
   const hrs = (now - +new Date(iso)) / 3_600_000;
   if (hrs < 24) return "bg-muted text-muted-foreground border-0 text-[10px]";
   if (hrs < 72) return "bg-warning/20 text-navy border-0 text-[10px]";
-  return "bg-destructive/15 text-destructive border-0 text-[10px]";
+  return "bg-surface-sunk text-attention border-0 text-[10px]";
 }
 
 export function UnsignedNotesQueue() {

@@ -62,10 +62,10 @@ export const Route = createFileRoute("/eligibility-worklist")({
 });
 
 const STATE_TONE: Record<CoverageCheckState, string> = {
-  never_checked: "bg-destructive/15 text-destructive border-0",
+  never_checked: "bg-surface-sunk text-ink-muted border-0",
   needs_verification: "bg-warning/25 text-navy border-0",
   not_medi_cal_reported: "bg-secondary text-muted-foreground border-0",
-  overdue: "bg-destructive/10 text-destructive border-0",
+  overdue: "bg-surface-sunk text-ink-muted border-0",
   due: "bg-warning/20 text-navy border-0",
   current: "bg-muted text-muted-foreground border-0",
 };
@@ -323,7 +323,7 @@ function Stat({
     <Card className="p-3">
       <div className="text-xs text-muted-foreground">{label}</div>
       <div
-        className={`font-display text-2xl ${tone === "destructive" ? "text-destructive" : "text-navy"}`}
+        className={`font-display text-2xl ${tone === "destructive" ? "text-ink-muted" : "text-navy"}`}
       >
         {value}
       </div>

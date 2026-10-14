@@ -86,7 +86,7 @@ function RequestRow({ r }: { r: GroupJoinRequest }) {
       </div>
       {r.note && <p className="text-sm text-muted-foreground">“{r.note}”</p>}
       {blocked && (
-        <div role="alert" className="rounded border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive" data-testid="group-join-blocked">
+        <div role="alert" className="rounded border-2 border-input bg-surface-sunk p-2 text-xs text-attention" data-testid="group-join-blocked">
           {blocked}
           {/telehealth/i.test(blocked) && (
             <Button asChild size="sm" variant="outline" className="mt-2 min-h-11 flex w-fit">
@@ -108,7 +108,7 @@ function RequestRow({ r }: { r: GroupJoinRequest }) {
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              variant="destructive"
+              variant="outline"
               className="min-h-11"
               onClick={() => {
                 try {

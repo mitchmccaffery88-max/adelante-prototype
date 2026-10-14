@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §U2 — staff-to-staff team threads (staff shell only).
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -125,7 +126,7 @@ export function ThreadView({ threadId }: { threadId: string }) {
         <h2 className="font-display text-lg text-navy">{t.subject}</h2>
         <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           {patient ? <Link className="underline" to="/record/$patientId" params={{ patientId: patient.id }} search={{}}>{patient.firstName} {patient.lastName}</Link> : "Direct thread"}
-          {t.containsSud && <Badge variant="destructive" className="gap-1"><ShieldAlert className="h-3 w-3" /> {SUD_THREAD_LABEL}</Badge>}
+          {t.containsSud && <StatusChip lang="en" state="restricted" label={SUD_THREAD_LABEL} />}
           {t.escalationKey && <Link className="underline" to="/escalations" search={{ view: "all", type: undefined, overdue: undefined, owner: undefined }}>Linked escalation</Link>}
           <Badge variant="secondary">{t.status === "resolved" ? "Resolved" : "Open"}</Badge>
         </p>

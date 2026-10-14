@@ -85,7 +85,7 @@ export function AdelHistoryPanel({ patientId }: { patientId: string }) {
               <Button size="sm" variant="ghost" className="h-10" onClick={() => setPending({ kind: "share", id: t.id })} aria-label={`${c.share}: ${t.title[l]}`} data-testid="adel-share">
                 <Share2 className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.share}</span>
               </Button>
-              <Button size="sm" variant="ghost" className="h-10 text-destructive" onClick={() => setPending({ kind: "delete", id: t.id })} aria-label={`${c.delete}: ${t.title[l]}`} data-testid="adel-delete">
+              <Button size="sm" variant="ghost" className="h-10 text-attention" onClick={() => setPending({ kind: "delete", id: t.id })} aria-label={`${c.delete}: ${t.title[l]}`} data-testid="adel-delete">
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </li>
@@ -94,7 +94,7 @@ export function AdelHistoryPanel({ patientId }: { patientId: string }) {
       )}
 
       {threads.length > 0 && (
-        <Button variant="outline" className="min-h-11 rounded-2xl text-destructive" onClick={() => setPending({ kind: "clear" })} data-testid="adel-clear-all">
+        <Button variant="outline" className="min-h-11 rounded-2xl text-attention" onClick={() => setPending({ kind: "clear" })} data-testid="adel-clear-all">
           {c.clearAll}
         </Button>
       )}

@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Population health — generic drill-down dialog.
 //
 // Faithful port of the reference's DrillDownDialog: a title, a column set, an
@@ -91,7 +92,7 @@ export function DrillDownDialog<T>({
         </DialogHeader>
 
         {error ? (
-          <p className="py-6 text-center text-sm text-destructive">{error}</p>
+          <p className="py-6 text-center text-sm text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{error}</p>
         ) : rows === null ? (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading records…

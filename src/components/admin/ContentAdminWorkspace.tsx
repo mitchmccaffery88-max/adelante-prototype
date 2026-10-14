@@ -1,3 +1,5 @@
+import { StatusChip } from "@/components/ui/status-chip";
+import { CircleAlert } from "lucide-react";
 import { ConsentFormLibrary } from "./ConsentFormLibrary";
 import { ContentInventoryTable } from "./ContentInventoryTable";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -332,8 +334,8 @@ function RemoveControl({
     <Button
       type="button"
       size="sm"
-      variant="ghost"
-      className="text-destructive"
+      variant="outline"
+      className="text-foreground"
       title={blocked ?? undefined}
       disabled={!allowed || !!blocked || entry.status === "pending_review"}
       onClick={run}
@@ -535,9 +537,7 @@ function ManageTab({ version }: { version: number }) {
         reviewer who isn&apos;t the author. Lessons need Spanish, or a recorded reason.
       </p>
       {!mayAuthor && (
-        <p className="text-xs text-destructive">
-          Your role can read this workspace but cannot author or submit content.
-        </p>
+        <StatusChip lang="en" state="restricted" label="Your role can read this workspace but cannot author or submit content." />
       )}
 
       <Input aria-label="Search managed content" placeholder="Search this type" value={manageQuery} onChange={(e) => setManageQuery(e.target.value)} />
@@ -564,7 +564,7 @@ function ManageTab({ version }: { version: number }) {
               <MetaPanel typeId={typeId} body={body} onChange={setBody} />
             )}
             {errors.length > 0 && (
-              <ul className="space-y-1 text-xs text-destructive">
+              <ul className="space-y-1 text-xs text-attention">
                 {errors.map((e) => (
                   <li key={e}>{e}</li>
                 ))}

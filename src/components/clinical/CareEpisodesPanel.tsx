@@ -191,7 +191,7 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
           </ol>
           {canCreate && r.status !== "closed" && <ReferralPacketDraft referral={r} />}
           {blockFor === r.id && (
-            <div role="alert" className="rounded-md border border-destructive/60 bg-destructive/5 p-2 text-xs text-destructive space-y-2">
+            <div role="alert" className="rounded-md border-2 border-input bg-surface-sunk p-2 text-xs text-attention space-y-2">
               <p>{hlocSendBlocker(r) ?? "Consent now on file — try sending again."}</p>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" asChild>

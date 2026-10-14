@@ -19,7 +19,7 @@ export function PreReleaseTimelineCard({ episode }: { episode: PreReleaseEpisode
         <div className="font-medium">Reentry timeline</div>
         <Badge
           data-testid="pre-release-phase"
-          variant={t.inWarmHandoffWindow ? "destructive" : "outline"}
+          variant={t.inWarmHandoffWindow ? "outline" : "outline"}
         >
           {t.label}
         </Badge>
@@ -57,7 +57,7 @@ export function PreReleaseTimelineCard({ episode }: { episode: PreReleaseEpisode
       {t.inWarmHandoffWindow && (
         <div
           data-testid="warm-handoff-notice"
-          className="mt-3 flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
+          className="mt-3 flex gap-2 rounded-md border-2 border-input bg-surface-sunk p-2 text-xs text-attention"
         >
           <Clock className="mt-0.5 h-4 w-4 shrink-0" />
           <span>

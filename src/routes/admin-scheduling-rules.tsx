@@ -476,7 +476,7 @@ function SchedulingRulesPage() {
             <Button variant="ghost" onClick={() => setDeactivating(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDeactivate}>
+            <Button variant="outline" onClick={confirmDeactivate}>
               Deactivate
             </Button>
           </DialogFooter>

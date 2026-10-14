@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Phase 10b — shared C-SSRS Screener form (staff-administered or patient
 // self-report). Item wording is PLACEHOLDER until Columbia's official text is
 // supplied and confirmed by clinical staff. Crisis help (988, "I need help
@@ -93,7 +94,7 @@ export function CssrsForm({
           </fieldset>
         ) : null,
       )}
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{error}</p>}
       <Button
         disabled={!cssrsComplete(answers)}
         data-testid="cssrs-submit"

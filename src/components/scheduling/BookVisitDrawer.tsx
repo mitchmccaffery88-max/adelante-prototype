@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Scheduling S1 — one "Book a visit" side drawer for every surface (+ New,
 // Scheduling tile, requests queue, chart). Mounted once; opened through
 // `openBookVisit()`. Booking runs through the registry (runAction) and
@@ -189,8 +190,8 @@ export function BookVisitDrawerHost() {
               </div>
             )}
             {shown && (
-              <div role="alert" className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm" data-testid="book-blocked">
-                <p className="font-medium text-destructive">{shown.reason}</p>
+              <div role="alert" className="rounded border-2 border-input bg-surface-sunk p-3 text-sm" data-testid="book-blocked">
+                <p className="font-medium text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{shown.reason}</p>
                 <p className="mt-1 text-muted-foreground">What to do: {shown.next}</p>
               </div>
             )}

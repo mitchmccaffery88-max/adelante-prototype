@@ -72,7 +72,7 @@ export const Route = createFileRoute("/worklist")({
 });
 
 const PRIORITY_TONE: Record<TaskPriority, string> = {
-  stat: "bg-destructive/15 text-destructive border-0",
+  stat: "bg-surface-sunk text-attention border-0",
   urgent: "bg-warning/20 text-navy border-0",
   routine: "bg-muted text-muted-foreground border-0",
 };
@@ -393,7 +393,7 @@ function WorklistPage() {
                       {facilityName(t.facilityId) ?? "—"}
                       {t.housingUnit ? ` · ${t.housingUnit}` : ""}
                     </td>
-                    <td className={`p-2 ${overdue ? "font-semibold text-destructive" : "text-navy"}`}>
+                    <td className={`p-2 ${overdue ? "font-semibold text-attention" : "text-navy"}`}>
                       {t.dueDate.slice(0, 10)}
                     </td>
                     <td className="p-2">

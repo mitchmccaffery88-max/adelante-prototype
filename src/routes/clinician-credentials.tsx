@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §EHR audit Phase 2a — "My credentials".
 //
 // Previously: an open page with an "Acting as" dropdown listing every
@@ -52,8 +53,8 @@ const KINDS: { key: CredentialKind; label: string }[] = (Object.keys(CREDENTIAL_
 const statusStyle: Record<string, string> = {
   current: "bg-success/20 text-success",
   expiring: "bg-gold/20 text-navy",
-  expired: "bg-destructive/15 text-destructive",
-  missing: "bg-destructive/15 text-destructive",
+  expired: "bg-surface-sunk text-attention",
+  missing: "bg-surface-sunk text-attention",
   under_review: "bg-muted text-muted-foreground",
 };
 
@@ -240,7 +241,7 @@ function CredentialsPage() {
                   </p>
                 )}
                 {fileError && (
-                  <p className="mt-1 text-xs text-destructive" data-testid="credential-file-error">
+                  <p className="mt-1 text-xs text-attention" data-testid="credential-file-error"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
                     {fileError}
                   </p>
                 )}

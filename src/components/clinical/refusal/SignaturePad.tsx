@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // Drawn signature capture with anti-tap-fraud validation (§MAR Phase 3).
 //
 // Deliberately higher-rigor than KOP's typed acknowledgment: the Refusal
@@ -112,7 +113,7 @@ export function SignaturePad({
         className={cn(
           "relative mt-1 rounded-md border bg-background",
           error
-            ? "border-destructive"
+            ? "border-2 border-input"
             : value
               ? "border-emerald-500"
               : required
@@ -158,7 +159,7 @@ export function SignaturePad({
           {value ? (
             <span className="text-emerald-700 dark:text-emerald-400">Signature captured</span>
           ) : error ? (
-            <span className="text-destructive">Signature not accepted yet</span>
+            <span className="inline-flex items-center gap-1 text-attention"><CircleAlert className="size-4" aria-hidden="true" />Signature not accepted yet</span>
           ) : (
             <span className="text-muted-foreground">Sign in the box above</span>
           )}
@@ -171,7 +172,7 @@ export function SignaturePad({
         )}
       </div>
       {error && (
-        <p role="alert" className="mt-1 text-xs text-destructive">
+        <p role="alert" className="mt-1 text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
           {error} You can keep signing over the box, or clear it and start fresh.
         </p>
       )}

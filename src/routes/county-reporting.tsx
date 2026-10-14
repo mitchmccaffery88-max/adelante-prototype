@@ -111,7 +111,7 @@ function CountyReportingPage() {
         <h1 className="font-display text-2xl text-navy">County reporting</h1>
         <p className="text-sm text-muted-foreground">Tulare DMC-ODS · Premier Visalia</p>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="destructive">{COUNTY_PROTOTYPE_LABEL}</Badge>
+          <StatusChip lang="en" state="simulated" label={COUNTY_PROTOTYPE_LABEL} />
           <Badge variant="outline">{COUNTY_SIMULATED_LABEL}</Badge>
           <Badge variant="outline">Layouts and rules: {COUNTY_DRAFT_LABEL}</Badge>
           <Badge variant="outline" data-testid="county-preparer">
@@ -132,7 +132,7 @@ function CountyReportingPage() {
           <Card key={c.report} className="space-y-2 p-3" data-testid={`county-card-${c.report}`}>
             <div className="text-sm font-medium text-navy">{c.label}</div>
             <div className="text-xs text-muted-foreground">Next due: {c.due ?? "On request"}</div>
-            {c.dueOnClosedDay && <div className="text-xs text-destructive" data-testid="due-closed-day-warning">Due date falls on a clinic closed day ({c.dueOnClosedDay})</div>}
+            {c.dueOnClosedDay && <div className="text-xs text-attention" data-testid="due-closed-day-warning">Due date falls on a clinic closed day ({c.dueOnClosedDay})</div>}
             <StatusChip lang="en" state={c.status === "submitted" ? "done" : c.status === "not_started" ? "upnext" : me.role === COUNTY_PREPARER_ROLE ? "yourturn" : "team"} label={c.status === "errors_returned" ? "Errors to fix" : c.status === "draft_ready" ? "Ready" : CARD_STATUS_LABEL[c.status]} data-testid="card-status" />
             <div className="text-xs">Blockers: {c.blockers}</div>
             <div className="text-xs font-medium" data-testid="card-next">{c.nextAction}</div>

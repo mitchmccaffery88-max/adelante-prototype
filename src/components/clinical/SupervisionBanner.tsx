@@ -21,7 +21,7 @@ export function SupervisionBanner({ className = "" }: { className?: string }) {
         "mb-6 flex items-start gap-2 rounded-md border p-3 text-sm " +
         (ok
           ? "border-teal/40 bg-teal/10 text-navy"
-          : "border-destructive/40 bg-destructive/10 text-destructive ") +
+          : "border-input bg-surface-sunk text-attention ") +
         className
       }
     >

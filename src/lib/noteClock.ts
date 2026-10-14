@@ -114,7 +114,7 @@ export function noteClock(note: ClockNote, now: Date = new Date()): NoteClock {
 /** Badge tone for a clock (semantic classes only). */
 export function noteClockTone(c: NoteClock): string {
   if (c.kind === "crisis") return c.state === "overdue" ? "bg-destructive text-destructive-foreground" : "bg-destructive/15 text-destructive";
-  if (c.state === "overdue") return "bg-destructive/15 text-destructive";
+  if (c.state === "overdue") return "bg-surface-sunk text-attention";
   if (c.state === "due_today") return "bg-gold/20 text-navy";
   return "bg-muted text-muted-foreground";
 }

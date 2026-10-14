@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -105,9 +106,9 @@ function OtherHelpPlaceholder() {
         <div
           role="alert"
           data-testid="frontdoor-crisis-resources"
-          className="space-y-2 rounded-lg border-2 border-destructive/50 bg-destructive/5 p-4 text-sm"
+          className="space-y-2 rounded-lg border-2 border-input bg-surface-sunk p-4 text-sm"
         >
-          <div className="flex items-center gap-2 font-semibold text-destructive">
+          <div className="flex items-center gap-2 font-semibold text-attention">
             <Siren className="h-4 w-4" /> {cc.frontDoorHeading}
           </div>
           <p className="text-muted-foreground">{cc.frontDoorBody}</p>
@@ -147,7 +148,7 @@ function OtherHelpPlaceholder() {
           />
           <div className="space-y-1 pt-2">
             <Label htmlFor="other-help-contact">
-              Email or phone <span className="text-destructive">*</span>
+              Email or phone <span className="text-attention">*</span>
             </Label>
             <Input
               id="other-help-contact"
@@ -161,7 +162,7 @@ function OtherHelpPlaceholder() {
               Required — we can&apos;t point you anywhere if we can&apos;t reach you.
             </p>
             {touched && contactCheck.error ? (
-              <p className="text-xs font-medium text-destructive">{contactCheck.error}</p>
+              <p className="text-xs font-medium text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{contactCheck.error}</p>
             ) : null}
           </div>
           <Button onClick={submit} disabled={!note.trim() || !contactCheck.valid}>

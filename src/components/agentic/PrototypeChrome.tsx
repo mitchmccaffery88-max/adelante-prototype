@@ -131,14 +131,14 @@ export function PrototypePanel({
     <section
       className={
         "rounded-xl border p-4 " +
-        (tone === "alert" ? "border-destructive/40 bg-destructive/5" : "border-border bg-card")
+        (tone === "alert" ? "border-input bg-surface-sunk" : "border-border bg-card")
       }
       aria-label={title}
     >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-display text-sm text-navy">
           <Icon
-            className={"h-4 w-4 " + (tone === "alert" ? "text-destructive" : "text-teal")}
+            className={"h-4 w-4 " + (tone === "alert" ? "text-attention" : "text-teal")}
           />
           {title}
         </h3>

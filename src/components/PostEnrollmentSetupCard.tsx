@@ -120,7 +120,7 @@ export function PostEnrollmentSetupCard({ limit }: { limit?: number }) {
                 {stale && stale.state !== "fresh" && (
                   <div
                     className={`mt-1 text-[11px] ${
-                      stale.state === "overdue" ? "text-destructive" : "text-navy"
+                      stale.state === "overdue" ? "text-attention" : "text-navy"
                     }`}
                     title={POST_ENROLLMENT_STALENESS_NOTE}
                   >

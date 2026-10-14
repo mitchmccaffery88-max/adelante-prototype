@@ -105,7 +105,7 @@ export function BenefitsStep({
               onChange={(e) => set({ cin: normalizeCinValue(e.target.value) })}
               aria-invalid={cinBad}
             />
-            <p className={`text-xs ${cinBad ? "text-destructive" : "text-muted-foreground"}`}>
+            <p className={`text-xs ${cinBad ? "text-attention" : "text-muted-foreground"}`}>
               {cinBad ? t("benCinInvalid") : t("benCinHelp")}
             </p>
             {dup && <p className="text-xs text-gold-foreground" data-testid="benefits-cin-dup">{dup}</p>}

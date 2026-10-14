@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { PossibleExistingPatientError, SignupNeedsVerificationError } from "@/lib/patientMatching";
 import { SignupVerificationHelp } from "@/components/identity/SignupVerificationHelp";
 import { ExistingPersonStep } from "@/components/identity/ExistingPersonStep";
@@ -271,7 +272,7 @@ export function RedeemCodePanel({
 
   const err = (k: keyof SignupErrors) =>
     errors[k] ? (
-      <p className="text-xs text-destructive" role="alert">
+      <p className="text-xs text-attention" role="alert"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
         {errors[k]}
       </p>
     ) : null;
@@ -311,7 +312,7 @@ export function RedeemCodePanel({
 
         {failure && (
           <div
-            className="space-y-3 rounded-lg border-2 border-destructive/40 bg-destructive/5 p-4 text-sm"
+            className="space-y-3 rounded-lg border-2 border-input bg-surface-sunk p-4 text-sm"
             role="alert"
           >
             <div>
@@ -463,7 +464,7 @@ function NewPatientForm({
 
   const err = (k: keyof SignupInput) =>
     errors[k] ? (
-      <p className="text-xs text-destructive" role="alert">
+      <p className="text-xs text-attention" role="alert"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
         {errors[k]}
       </p>
     ) : null;
@@ -498,6 +499,7 @@ function NewPatientForm({
             <Label htmlFor="su-first">First name</Label>
             <Input
               id="su-first"
+              className={errors.firstName ? "border-2 border-input" : undefined}
               autoComplete="given-name"
               value={draft.firstName}
               onChange={(e) => set("firstName", e.target.value)}
@@ -508,6 +510,7 @@ function NewPatientForm({
             <Label htmlFor="su-last">Last name</Label>
             <Input
               id="su-last"
+              className={errors.lastName ? "border-2 border-input" : undefined}
               autoComplete="family-name"
               value={draft.lastName}
               onChange={(e) => set("lastName", e.target.value)}
@@ -520,7 +523,8 @@ function NewPatientForm({
           <Label htmlFor="su-dob">Date of birth</Label>
           <Input
             id="su-dob"
-            type="date"
+            className={errors.dob ? "border-2 border-input" : undefined}
+              type="date"
             autoComplete="bday"
             value={draft.dob}
             onChange={(e) => set("dob", e.target.value)}
@@ -533,6 +537,7 @@ function NewPatientForm({
             <Label htmlFor="su-phone">Phone</Label>
             <Input
               id="su-phone"
+              className={errors.phone ? "border-2 border-input" : undefined}
               type="tel"
               autoComplete="tel"
               placeholder="+1 555 555 0123"
@@ -545,6 +550,7 @@ function NewPatientForm({
             <Label htmlFor="su-email">Email</Label>
             <Input
               id="su-email"
+              className={errors.email ? "border-2 border-input" : undefined}
               type="email"
               autoComplete="email"
               placeholder="you@example.com"

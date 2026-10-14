@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Adel Build 1 — the real Adel chat surface.
 //
 // CRISIS: the pre-send check calls the REAL Phase 1 mechanism
@@ -413,7 +414,7 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
         </Button>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{error}</p>}
 
       <div className="flex items-end gap-2">
         <Textarea

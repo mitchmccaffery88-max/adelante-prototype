@@ -250,7 +250,7 @@ function PreReleaseImportPage() {
       )}
 
       {preview?.fatal && (
-        <Card className="border-destructive/40 p-4 text-sm text-destructive" data-testid="roster-fatal">
+        <Card className="border-input p-4 text-sm text-attention" data-testid="roster-fatal">
           {preview.fatal}
         </Card>
       )}
@@ -261,7 +261,7 @@ function PreReleaseImportPage() {
             <Badge variant="secondary">{counts.created} new</Badge>
             <Badge variant="secondary">{counts.matched} existing</Badge>
             <Badge variant="secondary">{counts.skipped} unchanged</Badge>
-            <Badge variant={counts.rejected ? "destructive" : "secondary"}>
+            <Badge variant={counts.rejected ? "outline" : "secondary"}>
               {counts.rejected} rejected
             </Badge>
           </div>
@@ -302,7 +302,7 @@ function PreReleaseImportPage() {
                   </tr>
                 ))}
                 {preview.rejections.map((r) => (
-                  <tr key={`r-${r.line}`} className="border-t text-destructive">
+                  <tr key={`r-${r.line}`} className="border-t text-attention">
                     <td className="py-1 pr-3">{r.line}</td>
                     <td className="py-1 pr-3">{r.name}</td>
                     <td className="py-1 pr-3">—</td>

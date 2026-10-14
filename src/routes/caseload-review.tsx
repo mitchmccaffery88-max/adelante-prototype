@@ -47,10 +47,10 @@ export const Route = createFileRoute("/caseload-review")({
   component: CaseloadReviewPage,
 });
 
-const STATUS_VARIANT: Record<CaseloadStatus, "default" | "secondary" | "destructive"> = {
+const STATUS_VARIANT: Record<CaseloadStatus, "default" | "secondary" | "outline"> = {
   on_track: "secondary",
   due: "default",
-  overdue: "destructive",
+  overdue: "outline",
 };
 
 function CaseloadReviewPage() {
@@ -137,7 +137,7 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
             Mood check-ins this week: {s.moodDaysThisWeek} of 7 days
           </span>
           {s.followUpSuggested && (
-            <Badge variant="destructive" className="ml-2">
+            <Badge variant="outline" className="ml-2">
               Clinical follow-up suggested
             </Badge>
           )}

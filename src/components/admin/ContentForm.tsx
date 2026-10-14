@@ -257,7 +257,7 @@ function FieldEditor({
           </Badge>
         )}
         <span className="font-medium text-navy">{field.label}</span>
-        {field.required && <span className="text-destructive">*</span>}
+        {field.required && <span className="text-attention">*</span>}
       </Label>
       {field.help && (
         <p id={helpId} className="text-[11px] text-muted-foreground">

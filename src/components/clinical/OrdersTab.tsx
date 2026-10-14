@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 import { isPrescriberRole } from "@/lib/roles";
 // §Orders — cart core (validation gate + attribution + attestation).
@@ -126,7 +127,7 @@ function OrderReasonDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button variant={destructive ? "destructive" : "default"} onClick={submit}>
+          <Button variant={destructive ? "outline" : "default"} onClick={submit}>
             {confirmLabel}
           </Button>
         </DialogFooter>
@@ -138,7 +139,7 @@ function OrderReasonDialog({
 function statusBadgeVariant(status: MedOrder["status"]) {
   if (status === "signed") return "default" as const;
   if (status === "held") return "secondary" as const;
-  if (status === "discontinued") return "destructive" as const;
+  if (status === "discontinued") return "outline" as const;
   return "outline" as const;
 }
 
@@ -334,8 +335,8 @@ export function DraftOrderCard({
           {order.isKop && <Badge variant="outline">KOP</Badge>}
           {order.isControlled && <Badge variant="outline">Controlled</Badge>}
           {order.deaSchedule && <Badge variant="outline">{order.deaSchedule}</Badge>}
-          {order.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
-          {order.manualDose && <Badge variant="destructive">Manual dose</Badge>}
+          {order.offCatalog && <Badge variant="outline">Off-catalog</Badge>}
+          {order.manualDose && <Badge variant="outline">Manual dose</Badge>}
           {order.strengthSource === "dailymed" && <Badge variant="outline">Strength: DailyMed</Badge>}
           <Button
             size="icon"
@@ -637,8 +638,8 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 {o.isKop && <Badge variant="outline">KOP</Badge>}
                 {o.isControlled && <Badge variant="outline">Controlled</Badge>}
                 {o.deaSchedule && <Badge variant="outline">{o.deaSchedule}</Badge>}
-                {o.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
-                {o.manualDose && <Badge variant="destructive">Manual dose</Badge>}
+                {o.offCatalog && <Badge variant="outline">Off-catalog</Badge>}
+                {o.manualDose && <Badge variant="outline">Manual dose</Badge>}
                 {o.clinicAdministered && <ClinicChainBadges orderId={o.id} orderedBy={(o as { signedBy?: string }).signedBy ?? o.createdBy} />}
                 {o.strengthSource === "dailymed" && (
                   <Badge variant="outline">Strength: DailyMed</Badge>
@@ -684,7 +685,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 </div>
               )}
               {o.allergyOverride && (
-                <div className="mt-1 text-xs text-destructive">Allergy override: {o.allergyOverride.reason}</div>
+                <div className="mt-1 text-xs text-attention">Allergy override: {o.allergyOverride.reason}</div>
               )}
               {o.status !== "signed" && o.statusChangedBy && (
                 <div className="mt-1 text-xs text-muted-foreground">
@@ -744,7 +745,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                   )}
                   <Button
                     size="sm"
-                    variant="destructive"
+                    variant="outline"
                     onClick={() => setPending({ order: o, kind: "discontinue" })}
                   >
                     Discontinue
@@ -837,7 +838,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
       {!viewOnly && drafts.length > 0 && (
         <div className="space-y-3">
           {safetyBlockers.length > 0 && (
-            <ul role="alert" aria-label="Signing blocked" className="space-y-1 rounded-md border border-destructive/60 bg-destructive/5 p-2 text-xs text-destructive">
+            <ul role="alert" aria-label="Signing blocked" className="space-y-1 rounded-md border-2 border-input bg-surface-sunk p-2 text-xs text-attention"><li aria-hidden="true"><CircleAlert className="size-4 shrink-0" /></li>
               {safetyBlockers.map((b) => (
                 <li key={b}>Can&apos;t sign yet: {b}</li>
               ))}

@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatClinicianName } from "@/lib/coordination";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -57,8 +58,8 @@ export const Route = createFileRoute("/admin-credentialing")({
 const statusStyle: Record<string, string> = {
   current: "bg-success/20 text-success",
   expiring: "bg-gold/20 text-navy",
-  expired: "bg-destructive/15 text-destructive",
-  missing: "bg-destructive/15 text-destructive",
+  expired: "bg-surface-sunk text-attention",
+  missing: "bg-surface-sunk text-attention",
   under_review: "bg-muted text-muted-foreground",
 };
 
@@ -172,7 +173,7 @@ function AddCredentialDialog({
               accept={CREDENTIAL_ACCEPT_ATTR}
               onChange={(e) => void pick(e.target.files?.[0])}
             />
-            {fileError && <p className="text-destructive text-xs">{fileError}</p>}
+            {fileError && <p className="text-attention text-xs"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{fileError}</p>}
             {file && (
               <p className="text-muted-foreground text-xs">
                 {file.fileName} · {formatBytes(file.fileSize)}
@@ -422,7 +423,7 @@ function ImportDialog({
               ))}
             </ul>
             {preview.problems.length > 0 && (
-              <ul className="text-destructive space-y-1 text-xs" data-testid="import-problems">
+              <ul className="text-attention space-y-1 text-xs" data-testid="import-problems">
                 {preview.problems.map((p, i) => (
                   <li key={i}>
                     Row {p.line}: {p.message}
@@ -526,8 +527,8 @@ function CredentialingAdminPage() {
       <a ref={downloadRef} className="hidden" aria-hidden="true" />
 
       {expiringSoon.length > 0 && (
-        <Card className="border-destructive/40 bg-destructive/5 p-4">
-          <h2 className="text-destructive mb-2 font-semibold">
+        <Card className="border-input bg-surface-sunk p-4">
+          <h2 className="text-attention mb-2 font-semibold">
             Action needed ({expiringSoon.length})
           </h2>
           <ul className="space-y-1 text-sm">

@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Pre-release build 3 — MAT (buprenorphine/naloxone) ordering entry point.
 //
 // Deliberately thin, exactly like NoteOrdersSection: every piece of order
@@ -147,8 +148,8 @@ export function MatOrderCard({
       {blockedReason && (
         <p
           data-testid="mat-blocked"
-          className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
-        >
+          className="mb-3 rounded-md border-2 border-input bg-surface-sunk p-2 text-xs text-attention"
+        ><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
           {blockedReason}
         </p>
       )}

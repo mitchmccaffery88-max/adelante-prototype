@@ -109,14 +109,14 @@ export function NoteRevisionPanel({
       )}
 
       {note.voidRequest && canApprove && (
-        <div className="rounded border border-destructive/40 p-2" data-testid="void-approval">
+        <div className="rounded border-2 border-input p-2" data-testid="void-approval">
           <p className="text-navy">
             {note.voidRequest.byName} asked to void this note: “{note.voidRequest.reason}”
           </p>
           <div className="mt-2 flex gap-2">
             <Button
               size="sm"
-              variant="destructive"
+              variant="outline"
               onClick={() =>
                 run(
                   () => AdelanteEHR.decideNoteVoid(patientId, note.id, { approve: true, staffId, clinicianId, name: staffName, role }),
@@ -242,7 +242,7 @@ export function NoteRevisionPanel({
           <div className="flex gap-2">
             <Button
               size="sm"
-              variant="destructive"
+              variant="outline"
               disabled={reason.trim().length < 3}
               onClick={() =>
                 run(

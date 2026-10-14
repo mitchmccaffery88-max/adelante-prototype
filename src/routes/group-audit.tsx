@@ -213,7 +213,7 @@ function GroupAuditPage() {
                       <td className="p-3 text-xs">{r.subjectLabel}</td>
                       <td className="p-3 text-xs">
                         <Badge
-                          variant={r.event.action === "group_enrollment_blocked" || r.event.action === "group_join_approval_blocked" ? "destructive" : "outline"}
+                          variant={r.event.action === "group_enrollment_blocked" || r.event.action === "group_join_approval_blocked" ? "outline" : "outline"}
                           className="text-[10px]"
                         >
                           {ACTION_LABEL.get(r.event.action as never) ?? r.event.action.replace(/_/g, " ")}

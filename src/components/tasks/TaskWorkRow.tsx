@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Clock } from "lucide-react";
 
 export const PRIORITY_TONE: Record<TaskPriority, string> = {
-  stat: "bg-destructive/15 text-destructive border-0",
+  stat: "bg-surface-sunk text-attention border-0",
   urgent: "bg-gold/25 text-navy border-0",
   routine: "bg-muted text-muted-foreground border-0",
 };
@@ -95,7 +95,7 @@ export function TaskWorkRow({
     <li
       className={cn(
         "rounded-lg border p-3 text-sm",
-        overdue && "border-destructive/40 bg-destructive/5",
+        overdue && "border-input bg-surface-sunk",
         className,
       )}
       data-testid="task-work-row"

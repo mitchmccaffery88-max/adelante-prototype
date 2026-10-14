@@ -1,3 +1,5 @@
+import { StatusChip } from "@/components/ui/status-chip";
+import { CircleAlert } from "lucide-react";
 // §Scribe Phase 1 — capture (consent gate → simulated live transcript → end)
 // and AI draft review (provenance, flags, resolve, confirm). All via runAction.
 import { useEffect, useState } from "react";
@@ -90,8 +92,8 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
           <h2 className="font-display text-lg text-navy">{canLive ? "Start AI scribe" : "Dictate after the encounter"} <Badge variant="outline" className="ml-1 text-[10px]">{simulatedSurfaceLabel("scribe_simulated")}</Badge></h2>
           {/* 10–30 s pattern: the reason and next step come first. */}
           {canLive && block && (
-            <div role="alert" className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm" data-testid="scribe-blocked">
-              <p className="font-medium text-destructive">{block.reason}</p>
+            <div role="alert" className="rounded border-2 border-input bg-surface-sunk p-3 text-sm" data-testid="scribe-blocked">
+              <p className="font-medium text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{block.reason}</p>
               <p className="mt-1 text-muted-foreground">What to do: {block.next}</p>
             </div>
           )}
@@ -155,7 +157,7 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
             <p className="font-medium">Dictate after the encounter</p>
             <p className="text-muted-foreground">Record your own spoken summary once you're online. Same review rules as a session draft. No audio is stored.</p>
             <p className="text-[11px] text-muted-foreground">{DICTATION_CONSENT_DRAFT_LABEL}</p>
-            {dictBlock && <p className="text-destructive" data-testid="scribe-dictation-blocked">{dictBlock.reason} <span className="text-muted-foreground">{dictBlock.next}</span></p>}
+            {dictBlock && <p className="text-attention" data-testid="scribe-dictation-blocked">{dictBlock.reason} <span className="text-muted-foreground">{dictBlock.next}</span></p>}
           </div>
           {/* Thumb zone on phones. */}
           <div className={bar}>
@@ -231,7 +233,7 @@ export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; c
   return (
     <Card className="p-4 space-y-3" data-testid="scribe-draft">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge className="border-0 bg-destructive/15 text-destructive">{signed ? "Signed" : AI_DRAFT_LABEL}</Badge>
+        <StatusChip lang="en" state={signed ? "done" : "upnext"} label={signed ? "Signed" : AI_DRAFT_LABEL} aiDraft={!signed} />
         <Badge variant="outline">{isAfbi ? "AFBI contact" : SCRIBE_FORMAT_LABEL[s.format]}</Badge>
         <Badge variant="outline" data-testid="scribe-draft-setting">{SCRIBE_SETTING_LABEL[s.setting]}{s.kind === "dictation" ? " · Dictation" : ""}</Badge>
         {s.includedSpanish && <Badge variant="outline">{SPANISH_MARKER}</Badge>}
@@ -291,8 +293,8 @@ export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; c
                     <li key={x.id} id={`snt-${x.id}`} className="rounded border p-2" data-testid={(x.unsupported || x.identifying) && !x.resolution ? "unsupported-sentence" : "sentence"}>
                       <span title={ex.map(({ r, seg }) => `${SPEAKER[r.speaker]}: ${seg?.text ?? "(transcript deleted — ref " + r.segmentId + ")"}`).join("\n") || UNSUPPORTED_LABEL}>{x.text}</span>
                       <div className="mt-1 flex flex-wrap gap-1 text-[10px]">
-                        {x.unsupported && <Badge className="border-0 bg-destructive/15 text-destructive">{x.resolution ? `Resolved: ${x.resolution.kind}` : UNSUPPORTED_LABEL}</Badge>}
-                        {x.identifying && <Badge className="border-0 bg-destructive/15 text-destructive" data-testid="identifying-flag">{x.resolution ? `Resolved: ${x.resolution.kind}` : IDENTIFYING_LABEL}</Badge>}
+                        {x.unsupported && <Badge className="border-0 bg-surface-sunk text-attention">{x.resolution ? `Resolved: ${x.resolution.kind}` : UNSUPPORTED_LABEL}</Badge>}
+                        {x.identifying && <Badge className="border-0 bg-surface-sunk text-attention" data-testid="identifying-flag">{x.resolution ? `Resolved: ${x.resolution.kind}` : IDENTIFYING_LABEL}</Badge>}
                         {x.speakerUncertain && <Badge variant="outline">{SPEAKER_UNCERTAIN_LABEL}</Badge>}
                         {x.unsure && <Badge variant="outline">{UNSURE_LABEL}</Badge>}
                         {ex.map(({ r }) => <Badge key={r.segmentId} variant="secondary">{SPEAKER[r.speaker]} · {r.atSec}s</Badge>)}

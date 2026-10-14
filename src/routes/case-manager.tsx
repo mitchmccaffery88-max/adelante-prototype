@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 import { coverageTypeLabel } from "@/lib/coverageStatus";
 import { VerificationSourceBadge } from "@/components/coverage/VerificationSourceBadge";
@@ -415,11 +416,11 @@ function CaseManagerPage() {
                     <TableCell className="text-xs text-muted-foreground">
                       {(() => {
                         const iso = lastContactAt(p);
-                        if (!iso) return <span className="text-destructive">No contact</span>;
+                        if (!iso) return <span className="text-attention">No contact</span>;
                         const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
                         const stale = d > 7;
                         return (
-                          <span className={stale ? "text-destructive" : ""}>{daysAgo(iso)}</span>
+                          <span className={stale ? "text-attention" : ""}>{daysAgo(iso)}</span>
                         );
                       })()}
                     </TableCell>
@@ -512,8 +513,8 @@ function CaseManagerPage() {
                     </div>
                     <div>
                       <dt className="text-muted-foreground">Last contact</dt>
-                      <dd className={stale ? "text-destructive" : "text-foreground"}>
-                        {iso ? daysAgo(iso) : <span className="text-destructive">No contact</span>}
+                      <dd className={stale ? "text-attention" : "text-foreground"}>
+                        {iso ? daysAgo(iso) : <span className="text-attention">No contact</span>}
                       </dd>
                     </div>
                     <div>
@@ -635,7 +636,7 @@ function CoverageBadge({ coverage }: { coverage?: NonNullable<ReturnType<typeof 
   const styles: Record<string, string> = {
     active: "bg-success/20 text-success",
     suspended: "bg-gold/30 text-navy",
-    none_unsure: "bg-destructive/15 text-destructive",
+    none_unsure: "bg-surface-sunk text-attention",
     other: "bg-muted text-muted-foreground",
   };
   const labels: Record<string, string> = {
@@ -677,9 +678,9 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
                 setDateError(undefined);
               }}
               aria-invalid={Boolean(dateError)}
-              className={dateError ? "ring-2 ring-destructive border-destructive" : undefined}
+              className={dateError ? "border-2 border-input" : undefined}
             />
-            {dateError && <p className="text-xs text-destructive">{dateError}</p>}
+            {dateError && <p className="text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{dateError}</p>}
           </div>
           <div className="space-y-1.5">
             <Label className="text-sm">Time</Label>
@@ -878,7 +879,7 @@ function RecentCheckInsCard({ patientId }: { patientId: string }) {
                     Attended
                   </Badge>
                 ) : (
-                  <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
+                  <Badge className="bg-surface-sunk text-attention border-0 text-[10px]">
                     Missed
                   </Badge>
                 )}
