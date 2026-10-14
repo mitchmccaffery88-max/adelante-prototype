@@ -17,6 +17,68 @@ import {
 import { crisisCopy } from "@/lib/crisisCopy";
 import { validateContact } from "@/lib/frontDoor";
 import { Phone, Siren } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.ed212fa164b9": {
+    "en": "Placeholder",
+    "es": "Marcador de posición"
+  },
+  "ui.8952ed242470": {
+    "en": "Tell us what brings you here",
+    "es": "Cuéntanos qué te trae por aquí"
+  },
+  "ui.88c58e353405": {
+    "en": "You're not here for mental health, medication, or substance use support for yourself — so let's not put you through an intake. Say a little about what you need and someone will point you in the right direction.",
+    "es": "Como no buscas apoyo para ti en salud mental, medicación o sustancias, no es necesario hacer la admisión. Cuéntanos qué necesitas y te guiaremos."
+  },
+  "ui.86c6be7acc57": {
+    "en": "In crisis now",
+    "es": "En crisis ahora"
+  },
+  "ui.b84862891786": {
+    "en": "Thanks — we've got it.",
+    "es": "Gracias, lo hemos recibido."
+  },
+  "ui.d9d318eee8d1": {
+    "en": "Someone will follow up. If this is urgent, call the main Adelante line, and if you're in crisis call or text 988.",
+    "es": "Alguien te contactará. Si es urgente, llama a la línea principal de Adelante; si estás en crisis, llama o envía un texto al 988."
+  },
+  "ui.ffca59bc5b7d": {
+    "en": "What are you looking for?",
+    "es": "¿Qué estás buscando?"
+  },
+  "ui.53d62299a411": {
+    "en": "In your own words — there's no wrong answer.",
+    "es": "En tus propias palabras; no hay respuestas incorrectas."
+  },
+  "ui.5a698f5f3b7f": {
+    "en": "Email or phone",
+    "es": "Correo o teléfono"
+  },
+  "ui.365a764d6885": {
+    "en": "you@example.com or (559) 555-0123",
+    "es": "tu@ejemplo.com o (559) 555-0123"
+  },
+  "ui.ff957a428999": {
+    "en": "Required — we can't point you anywhere if we can't reach you.",
+    "es": "Obligatorio: no podemos guiarte si no logramos contactarte."
+  },
+  "ui.9bc2575c3930": {
+    "en": "Send",
+    "es": "Enviar"
+  },
+  "ui.b52b36b7269f": {
+    "en": "Back",
+    "es": "Atrás"
+  },
+  "ui.6e1aec070fa6": {
+    "en": "Actually, I do want care for myself",
+    "es": "En realidad, sí quiero cuidado para mí"
+  }
+} as const;
+
 
 export const Route = createFileRoute("/start/other-help")({
   head: () => ({
@@ -46,6 +108,8 @@ export const Route = createFileRoute("/start/other-help")({
  * invented destination or a triage tree.
  */
 function OtherHelpPlaceholder() {
+  const { lang: screenLang } = useI18n();
+
   const [note, setNote] = useState("");
   const [contact, setContact] = useState("");
   const [touched, setTouched] = useState(false);
@@ -92,14 +156,10 @@ function OtherHelpPlaceholder() {
     <Card className="space-y-5 p-6">
       <div>
         <Badge variant="outline" className="border-gold/50 text-navy">
-          Placeholder
-        </Badge>
-        <h1 className="font-display mt-2 text-2xl text-navy">Tell us what brings you here</h1>
+          {SCREEN_COPY["ui.ed212fa164b9"][screenLang]} </Badge>
+        <h1 className="font-display mt-2 text-2xl text-navy">{SCREEN_COPY["ui.8952ed242470"][screenLang]}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          You're not here for mental health, medication, or substance use support for yourself — so
-          let's not put you through an intake. Say a little about what you need and someone will
-          point you in the right direction.
-        </p>
+          {SCREEN_COPY["ui.88c58e353405"][screenLang]} </p>
       </div>
 
       {crisis.matched ? (
@@ -122,7 +182,7 @@ function OtherHelpPlaceholder() {
               <a href="sms:988">{cc.frontDoorText}</a>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link to="/crisis">In crisis now</Link>
+              <Link to="/crisis">{SCREEN_COPY["ui.86c6be7acc57"][screenLang]}</Link>
             </Button>
           </div>
         </div>
@@ -130,53 +190,49 @@ function OtherHelpPlaceholder() {
 
       {sent ? (
         <div className="rounded-lg border-2 border-teal/40 bg-teal/5 p-4 text-sm">
-          <div className="font-medium text-navy">Thanks — we've got it.</div>
+          <div className="font-medium text-navy">{SCREEN_COPY["ui.b84862891786"][screenLang]}</div>
           <p className="mt-1 text-muted-foreground">
-            Someone will follow up. If this is urgent, call the main Adelante line, and if you're in
-            crisis call or text 988.
-          </p>
+            {SCREEN_COPY["ui.d9d318eee8d1"][screenLang]} </p>
         </div>
       ) : (
         <div className="space-y-2">
-          <Label htmlFor="other-help">What are you looking for?</Label>
+          <Label htmlFor="other-help">{SCREEN_COPY["ui.ffca59bc5b7d"][screenLang]}</Label>
           <Textarea
             id="other-help"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={5}
-            placeholder="In your own words — there's no wrong answer."
+            placeholder={SCREEN_COPY["ui.53d62299a411"][screenLang]}
           />
           <div className="space-y-1 pt-2">
             <Label htmlFor="other-help-contact">
-              Email or phone <span className="text-attention">*</span>
+              {SCREEN_COPY["ui.5a698f5f3b7f"][screenLang]} <span className="text-attention">*</span>
             </Label>
             <Input
               id="other-help-contact"
               value={contact}
               onBlur={() => setTouched(true)}
               onChange={(e) => setContact(e.target.value)}
-              placeholder="you@example.com or (559) 555-0123"
+              placeholder={SCREEN_COPY["ui.365a764d6885"][screenLang]}
               aria-invalid={touched && !contactCheck.valid}
             />
             <p className="text-xs text-muted-foreground">
-              Required — we can&apos;t point you anywhere if we can&apos;t reach you.
-            </p>
+              {SCREEN_COPY["ui.ff957a428999"][screenLang]} </p>
             {touched && contactCheck.error ? (
               <p className="text-xs font-medium text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{contactCheck.error}</p>
             ) : null}
           </div>
           <Button onClick={submit} disabled={!note.trim() || !contactCheck.valid}>
-            Send
-          </Button>
+            {SCREEN_COPY["ui.9bc2575c3930"][screenLang]} </Button>
         </div>
       )}
 
       <div className="flex flex-wrap gap-2 border-t pt-4">
         <Button asChild variant="outline">
-          <Link to="/start/support">Back</Link>
+          <Link to="/start/support">{SCREEN_COPY["ui.b52b36b7269f"][screenLang]}</Link>
         </Button>
         <Button asChild variant="ghost">
-          <Link to="/intake">Actually, I do want care for myself</Link>
+          <Link to="/intake">{SCREEN_COPY["ui.6e1aec070fa6"][screenLang]}</Link>
         </Button>
       </div>
     </Card>

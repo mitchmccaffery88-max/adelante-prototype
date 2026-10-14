@@ -13,12 +13,44 @@ import { AdvocateIdentityBanner } from "@/components/advocate/AdvocateIdentityBa
 import { AdvocateNextStepsPanel } from "@/components/advocate/AdvocateNextStepsPanel";
 import { useAdvocateSession } from "@/components/advocate/AdvocateSessionContext";
 import { useSupportingName } from "@/components/advocate/AdvocateViewParts";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.69a52c6de668": {
+    "en": "Next:",
+    "es": "Después:"
+  },
+  "ui.7b46aa88cda3": {
+    "en": "Open appointments",
+    "es": "Ver citas"
+  },
+  "ui.f1702b468627": {
+    "en": "Messages",
+    "es": "Mensajes"
+  },
+  "ui.114e7426f5ff": {
+    "en": "Once your authorization is on file, the person you support appears here.",
+    "es": "Cuando tengamos tu autorización, la persona a la que apoyas aparecerá aquí."
+  }
+} as const;
+
 
 export const Route = createFileRoute("/advocate/")({
+  head: () => ({ meta: [
+    { title: "Support home \u2014 Adelante advocate" },
+    { name: "description", content: "Your support home in the Adelante advocate portal." },
+    { property: "og:title", content: "Support home \u2014 Adelante advocate" },
+    { property: "og:description", content: "Your support home in the Adelante advocate portal." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdvocateDashboard,
 });
 
 function AdvocateDashboard() {
+  const { lang: screenLang } = useI18n();
+
   const { linkId, attestedName } = useAdvocateSession();
   const supportingName = useSupportingName(linkId);
   const schedule = useEhr(() => AdelanteEHR.advocateSchedule(linkId));
@@ -43,7 +75,7 @@ function AdvocateDashboard() {
               <p className="text-sm text-muted-foreground">
                 {next ? (
                   <>
-                    Next: {next.label} · <ClientDate
+                    {SCREEN_COPY["ui.69a52c6de668"][screenLang]} {next.label} · <ClientDate
                       value={next.start}
                       options={{ dateStyle: "medium", timeStyle: "short" }}
                     />
@@ -62,13 +94,12 @@ function AdvocateDashboard() {
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm">
               <Link to="/advocate/appointments">
-                Open appointments <ChevronRight className="h-4 w-4" />
+                {SCREEN_COPY["ui.7b46aa88cda3"][screenLang]} <ChevronRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="sm" variant="outline">
               <Link to="/advocate/messages">
-                <MessageSquare className="h-4 w-4" /> Messages
-              </Link>
+                <MessageSquare className="h-4 w-4" /> {SCREEN_COPY["ui.f1702b468627"][screenLang]} </Link>
             </Button>
           </div>
         </Card>
@@ -93,8 +124,7 @@ function AdvocateDashboard() {
       {!schedule.allowed && (
         <Card className="flex items-center gap-3 p-4 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
-          Once your authorization is on file, the person you support appears here.
-        </Card>
+          {SCREEN_COPY["ui.114e7426f5ff"][screenLang]} </Card>
       )}
     </div>
   );

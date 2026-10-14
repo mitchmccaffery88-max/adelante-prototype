@@ -9,12 +9,32 @@ import { ResourceDetail } from "@/components/reentry/ResourceDetail";
 import { patientBrowsableResource } from "@/lib/communityResources";
 import { PART2_CAUTION_CATEGORY_IDS } from "@/lib/sdohResourceMatch";
 import { Card } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.9bf8b7e6c623": {
+    "en": "Back to resources",
+    "es": "Volver a recursos"
+  }
+} as const;
+
 
 export const Route = createFileRoute("/advocate/resources/$categoryId/$orgId")({
+  head: () => ({ meta: [
+    { title: "Resource details \u2014 Adelante advocate" },
+    { name: "description", content: "Your resource details in the Adelante advocate portal." },
+    { property: "og:title", content: "Resource details \u2014 Adelante advocate" },
+    { property: "og:description", content: "Your resource details in the Adelante advocate portal." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdvocateResourceDetailRoute,
 });
 
 function AdvocateResourceDetailRoute() {
+  const { lang: screenLang } = useI18n();
+
   const { orgId, categoryId } = Route.useParams();
   const org = patientBrowsableResource(orgId);
   const cat = org?.categoryId ?? categoryId;
@@ -24,8 +44,7 @@ function AdvocateResourceDetailRoute() {
         Recovery services can be confidential under federal Part 2 rules, so named groups aren&apos;t
         shown here.{" "}
         <Link to="/advocate/resources" className="underline">
-          Back to resources
-        </Link>
+          {SCREEN_COPY["ui.9bf8b7e6c623"][screenLang]} </Link>
       </Card>
     );
   }

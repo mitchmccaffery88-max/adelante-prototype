@@ -33,11 +33,89 @@ import {
 import { LibraryLesson } from "./LibraryLesson";
 import { ExerciseBody } from "./ExercisePlayer";
 import { toast } from "sonner";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.1798b3ba42ee": {
+    "en": "Completed",
+    "es": "Completado"
+  },
+  "ui.633b9dd389ea": {
+    "en": "Placeholder content",
+    "es": "Contenido provisional"
+  },
+  "ui.6b21fb791ac0": {
+    "en": "About",
+    "es": "Acerca de"
+  },
+  "ui.be2e2bb698c7": {
+    "en": "minutes",
+    "es": "minutos"
+  },
+  "ui.d4ec572643e2": {
+    "en": "Real tools for real moments.",
+    "es": "Herramientas reales para momentos reales."
+  },
+  "ui.cb9ce97bfc9a": {
+    "en": "Lessons",
+    "es": "Lecciones"
+  },
+  "ui.4dc503dafcf2": {
+    "en": "Exercises",
+    "es": "Ejercicios"
+  },
+  "ui.a0c39ab06f61": {
+    "en": "My toolkit",
+    "es": "Mi caja de herramientas"
+  },
+  "ui.1e8c09c8a3d6": {
+    "en": "All collections",
+    "es": "Todas las colecciones"
+  },
+  "ui.de04fa0e29f9": {
+    "en": "of",
+    "es": "de"
+  },
+  "ui.f957097d7a22": {
+    "en": "finished",
+    "es": "terminado"
+  },
+  "ui.b48cc15f8db9": {
+    "en": "Reentry-specific",
+    "es": "Específico de reinserción"
+  },
+  "ui.b6c935d4f3c7": {
+    "en": "min",
+    "es": "min"
+  },
+  "ui.b11449a34df8": {
+    "en": "lesson",
+    "es": "lección"
+  },
+  "ui.e5fd9cfe0e80": {
+    "en": "done",
+    "es": "listo"
+  },
+  "ui.7db2208cc987": {
+    "en": "min · Open",
+    "es": "min · Abrir"
+  },
+  "ui.66eead64fb66": {
+    "en": "Nothing saved yet. Finishing a lesson or an exercise puts its takeaway here.",
+    "es": "Aún no hay nada guardado. Al terminar una lección o ejercicio, verás el resumen aquí."
+  },
+  "ui.3f66052a107e": {
+    "en": "From",
+    "es": "De"
+  }
+} as const;
+
 
 export function LibraryBrowser({
   initialExercise,
   initialItem,
 }: { initialExercise?: string; initialItem?: string } = {}) {
+  const { lang: screenLang } = useI18n();
+
   usePublishedContentVersion();
   const { t } = useI18n();
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
@@ -95,19 +173,16 @@ export function LibraryBrowser({
               <h1 className="font-semibold text-2xl text-foreground">{exercise.title}</h1>
               {done && (
                 <Badge className="border-0 bg-accent text-accent-foreground">
-                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Completed
-                </Badge>
+                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> {SCREEN_COPY["ui.1798b3ba42ee"][screenLang]} </Badge>
               )}
               {exercise.placeholder && (
                 <Badge variant="outline" className="border-amber-warm text-amber-warm-foreground">
-                  Placeholder content
-                </Badge>
+                  {SCREEN_COPY["ui.633b9dd389ea"][screenLang]} </Badge>
               )}
             </div>
             <p className="text-sm text-foreground">{exercise.subtitle}</p>
             <div className="flex items-center gap-1.5 text-xs text-foreground">
-              <Clock className="h-3.5 w-3.5" /> About {exercise.minutes} minutes
-            </div>
+              <Clock className="h-3.5 w-3.5" /> {SCREEN_COPY["ui.6b21fb791ac0"][screenLang]} {exercise.minutes} {SCREEN_COPY["ui.be2e2bb698c7"][screenLang]} </div>
           </div>
           <p className="rounded-2xl bg-secondary/50 p-3 text-sm text-foreground">{exercise.purpose}</p>
           <ExerciseBody exercise={exercise} />
@@ -133,15 +208,15 @@ export function LibraryBrowser({
       <PatientPageHeader
         icon={BookOpen}
         eyebrow="Self-help learning library"
-        title="Real tools for real moments."
+        title={SCREEN_COPY["ui.d4ec572643e2"][screenLang]}
         lede="Short lessons and practical exercises — most take 2 to 10 minutes. Work through a collection in order or open whatever fits today. It's yours to use for as long as you need it."
       />
 
       <Tabs defaultValue="lessons">
         <TabsList>
-          <TabsTrigger value="lessons">Lessons</TabsTrigger>
-          <TabsTrigger value="exercises">Exercises</TabsTrigger>
-          <TabsTrigger value="toolkit">My toolkit</TabsTrigger>
+          <TabsTrigger value="lessons">{SCREEN_COPY["ui.cb9ce97bfc9a"][screenLang]}</TabsTrigger>
+          <TabsTrigger value="exercises">{SCREEN_COPY["ui.4dc503dafcf2"][screenLang]}</TabsTrigger>
+          <TabsTrigger value="toolkit">{SCREEN_COPY["ui.a0c39ab06f61"][screenLang]}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="lessons" className="space-y-4 pt-4">
@@ -164,8 +239,7 @@ export function LibraryBrowser({
               return (
                 <div className="space-y-4">
                   <Button type="button" variant="ghost" onClick={() => setOpenCategory(null)}>
-                    <ArrowLeft className="mr-1 h-4 w-4" /> All collections
-                  </Button>
+                    <ArrowLeft className="mr-1 h-4 w-4" /> {SCREEN_COPY["ui.1e8c09c8a3d6"][screenLang]} </Button>
                   <Card className="space-y-4 p-5">
                     <div className="flex items-start gap-3">
                       <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-primary">
@@ -182,8 +256,7 @@ export function LibraryBrowser({
                     <div>
                       <div className="mb-1.5 flex justify-between text-xs text-foreground">
                         <span>
-                          {prog.completed} of {prog.total} finished
-                        </span>
+                          {prog.completed} {SCREEN_COPY["ui.de04fa0e29f9"][screenLang]} {prog.total} {SCREEN_COPY["ui.f957097d7a22"][screenLang]} </span>
                         <span>{prog.pct}%</span>
                       </div>
                       <Progress value={prog.pct} className="h-2" />
@@ -202,19 +275,17 @@ export function LibraryBrowser({
                                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
                                   {item.title}
                                   {done && (
-                                    <CheckCircle2 className="h-4 w-4 text-primary" aria-label="Completed" />
+                                    <CheckCircle2 className="h-4 w-4 text-primary" aria-label={SCREEN_COPY["ui.1798b3ba42ee"][screenLang]} />
                                   )}
                                   {item.populations && (
                                     <Badge variant="outline" className="text-[10px]">
-                                      Reentry-specific
-                                    </Badge>
+                                      {SCREEN_COPY["ui.b48cc15f8db9"][screenLang]} </Badge>
                                   )}
                                 </div>
                                 <p className="text-sm italic text-foreground">“{item.problem}”</p>
                                 <div className="flex flex-wrap items-center gap-2 text-xs text-foreground">
                                   <span className="inline-flex items-center gap-1">
-                                    <Clock className="h-3.5 w-3.5" aria-hidden /> {item.minutes} min
-                                  </span>
+                                    <Clock className="h-3.5 w-3.5" aria-hidden /> {item.minutes} {SCREEN_COPY["ui.b6c935d4f3c7"][screenLang]} </span>
                                   <Badge variant="secondary" className="text-[10px]">
                                     {activityKindLabel(item.activity.kind)}
                                   </Badge>
@@ -258,8 +329,7 @@ export function LibraryBrowser({
                         <div className="w-full">
                           <div className="mb-1.5 flex justify-between text-xs text-foreground">
                             <span>
-                              {items.length} lesson{items.length === 1 ? "" : "s"} · {prog.completed} done
-                            </span>
+                              {items.length} {SCREEN_COPY["ui.b11449a34df8"][screenLang]}{items.length === 1 ? "" : "s"} · {prog.completed} {SCREEN_COPY["ui.e5fd9cfe0e80"][screenLang]} </span>
                             <span>{prog.pct}%</span>
                           </div>
                           <Progress value={prog.pct} className="h-2" />
@@ -280,7 +350,7 @@ export function LibraryBrowser({
               <Card key={ex.id} className="flex flex-col gap-2 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-semibold text-lg text-foreground">{ex.title}</h3>
-                  {done && <CheckCircle2 className="h-4 w-4 text-primary" aria-label="Completed" />}
+                  {done && <CheckCircle2 className="h-4 w-4 text-primary" aria-label={SCREEN_COPY["ui.1798b3ba42ee"][screenLang]} />}
                 </div>
                 <p className="flex-1 text-sm text-foreground">{ex.subtitle}</p>
                 <div className="flex flex-wrap gap-1">
@@ -291,8 +361,7 @@ export function LibraryBrowser({
                   ))}
                 </div>
                 <Button type="button" size="sm" variant="outline" onClick={() => setOpenExercise(ex.id)}>
-                  {ex.minutes} min · Open
-                </Button>
+                  {ex.minutes} {SCREEN_COPY["ui.7db2208cc987"][screenLang]} </Button>
               </Card>
             );
           })}
@@ -301,8 +370,7 @@ export function LibraryBrowser({
         <TabsContent value="toolkit" className="space-y-3 pt-4">
           {toolkit.length === 0 ? (
             <Card className="p-6 text-sm text-foreground">
-              Nothing saved yet. Finishing a lesson or an exercise puts its takeaway here.
-            </Card>
+              {SCREEN_COPY["ui.66eead64fb66"][screenLang]} </Card>
           ) : (
             <ul className="space-y-2">
               {toolkit.map((t) => (
@@ -312,7 +380,7 @@ export function LibraryBrowser({
                     <div className="flex-1">
                       <div className="text-sm font-medium text-foreground">{t.label}</div>
                       <div className="text-xs text-foreground">
-                        From {t.from === "library" ? "a lesson" : "an exercise"}
+                        {SCREEN_COPY["ui.3f66052a107e"][screenLang]} {t.from === "library" ? "a lesson" : "an exercise"}
                       </div>
                     </div>
                     <Button

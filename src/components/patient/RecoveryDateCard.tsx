@@ -21,6 +21,40 @@ import {
   daysSoberLabel,
   passedMilestone,
 } from "@/lib/recoveryStartDate";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.e66f4923cc8d": {
+    "en": "My recovery start date",
+    "es": "Mi fecha de inicio de recuperación"
+  },
+  "ui.ff99f5b5f794": {
+    "en": "Start date",
+    "es": "Fecha de inicio"
+  },
+  "ui.efc007a393f6": {
+    "en": "Save",
+    "es": "Guardar"
+  },
+  "ui.719ea396ad92": {
+    "en": "Clear",
+    "es": "Borrar"
+  },
+  "ui.8e8be0bf8d9c": {
+    "en": "Recovery start date not set —",
+    "es": "Inicio de recuperación no establecido:"
+  },
+  "ui.14675582a1b9": {
+    "en": "Set your date",
+    "es": "Establece tu fecha"
+  },
+  "ui.285ca935499c": {
+    "en": "since your recovery start date",
+    "es": "desde tu inicio de recuperación"
+  }
+} as const;
+
 
 /** Patient's own date, or undefined. Only the patient can ever read this. */
 export function useMyRecoveryStartDate(patientId: string): string | undefined {
@@ -33,6 +67,8 @@ export function useMyRecoveryStartDate(patientId: string): string | undefined {
 
 /** Editable card for /profile — patient-controlled, no justification asked. */
 export function RecoveryDateCard({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const date = useMyRecoveryStartDate(patientId);
   const [draft, setDraft] = useState<string>(date ?? "");
   const days = daysSober(date);
@@ -40,8 +76,7 @@ export function RecoveryDateCard({ patientId }: { patientId: string }) {
   return (
     <Card className="p-5" id="recovery-date" data-testid="recovery-date-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <CalendarHeart className="h-4 w-4" /> My recovery start date
-      </div>
+        <CalendarHeart className="h-4 w-4" /> {SCREEN_COPY["ui.e66f4923cc8d"][screenLang]} </div>
       <p className="mt-1 text-xs text-muted-foreground">
         Only you can see this — it stays on your side of the app and isn&apos;t part of your
         medical record. Set it, change it, or clear it whenever you want — no explanation needed.
@@ -55,8 +90,7 @@ export function RecoveryDateCard({ patientId }: { patientId: string }) {
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <div>
           <Label htmlFor="recovery-date-input" className="text-xs">
-            Start date
-          </Label>
+            {SCREEN_COPY["ui.ff99f5b5f794"][screenLang]} </Label>
           <Input
             id="recovery-date-input"
             data-testid="recovery-date-input"
@@ -76,8 +110,7 @@ export function RecoveryDateCard({ patientId }: { patientId: string }) {
             toast.success("Saved. Yours to change any time.");
           }}
         >
-          Save
-        </Button>
+          {SCREEN_COPY["ui.efc007a393f6"][screenLang]} </Button>
         {date && (
           <Button
             type="button"
@@ -89,8 +122,7 @@ export function RecoveryDateCard({ patientId }: { patientId: string }) {
               toast.success("Cleared.");
             }}
           >
-            Clear
-          </Button>
+            {SCREEN_COPY["ui.719ea396ad92"][screenLang]} </Button>
         )}
       </div>
     </Card>
@@ -99,6 +131,8 @@ export function RecoveryDateCard({ patientId }: { patientId: string }) {
 
 /** Compact read-only line for Home and the Recovery Journey header. */
 export function DaysSoberLine({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const date = useMyRecoveryStartDate(patientId);
   const days = daysSober(date);
   if (!patientId) return null;
@@ -106,16 +140,13 @@ export function DaysSoberLine({ patientId }: { patientId: string }) {
     <p className="text-base text-muted-foreground" data-testid="days-sober-line">
       {days === null ? (
         <>
-          Recovery start date not set —{" "}
+          {SCREEN_COPY["ui.8e8be0bf8d9c"][screenLang]}{" "}
           <Link to="/profile" hash="recovery-date" className="underline">
-            Set your date
-          </Link>
+            {SCREEN_COPY["ui.14675582a1b9"][screenLang]} </Link>
         </>
       ) : (
         <>
-          <span className="font-medium text-foreground">{daysSoberLabel(days)}</span> since your
-          recovery start date
-        </>
+          <span className="font-medium text-foreground">{daysSoberLabel(days)}</span> {SCREEN_COPY["ui.285ca935499c"][screenLang]} </>
       )}
     </p>
   );

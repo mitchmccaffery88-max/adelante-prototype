@@ -14,8 +14,60 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.2bb6b986c5d6": {
+    "en": "active",
+    "es": "activo"
+  },
+  "ui.7f5bacad58ce": {
+    "en": "Request refill",
+    "es": "Solicitar renovación"
+  },
+  "ui.faf97fdcf0fc": {
+    "en": "Note for your prescriber (optional) — e.g. pharmacy name, ran out early",
+    "es": "Nota para quien receta (opcional), por ejemplo: nombre de la farmacia o se me acabó antes"
+  },
+  "ui.77dfd2135f4d": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  },
+  "ui.a89d64179469": {
+    "en": "Send request",
+    "es": "Enviar solicitud"
+  },
+  "ui.c7ca65b17eae": {
+    "en": "Prescriber note:",
+    "es": "Nota de quien receta:"
+  },
+  "ui.6deaed92d12f": {
+    "en": "My medications",
+    "es": "Mis medicamentos"
+  },
+  "ui.7f3e9658d048": {
+    "en": "Managed with your care team through eScribe.",
+    "es": "Se coordina con tu equipo de cuidado a través de eScribe."
+  },
+  "ui.4b08399f2919": {
+    "en": "Demo data · prototype prescriptions — no real e-prescribing.",
+    "es": "Datos de demostración · recetas de prueba; no se envían recetas reales."
+  },
+  "ui.0343fde56f51": {
+    "en": "Nothing prescribed through Adelante right now.",
+    "es": "Por ahora no tienes medicamentos recetados por Adelante."
+  },
+  "ui.8f13373a9e5f": {
+    "en": "Questions about your medication? Message your care team.",
+    "es": "¿Dudas sobre tu medicina? Escríbele a tu equipo."
+  }
+} as const;
+
 
 function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const requests = useEhr(() =>
     AdelanteEHR.listRefillRequests({ patientId }).filter((r) => r.medicationId === med.id),
   );
@@ -75,8 +127,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
             <StatusChip state={latest?.status === "pending" ? "team" : latest?.status === "approved" || latest?.status === "sent_to_pharmacy" ? "done" : "yourturn"} label={statusBadge.label} />
           ) : (
             <Badge variant="outline" className="text-[10px]">
-              active
-            </Badge>
+              {SCREEN_COPY["ui.2bb6b986c5d6"][screenLang]} </Badge>
           )}
           {(!latest || latest.status !== "pending") && (
             <Button
@@ -85,8 +136,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
               className="min-h-11 min-w-11 text-[11px]"
               onClick={() => setOpen((v) => !v)}
             >
-              Request refill
-            </Button>
+              {SCREEN_COPY["ui.7f5bacad58ce"][screenLang]} </Button>
           )}
         </div>
       </div>
@@ -95,7 +145,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Note for your prescriber (optional) — e.g. pharmacy name, ran out early"
+            placeholder={SCREEN_COPY["ui.faf97fdcf0fc"][screenLang]}
             className="min-h-[60px] text-xs"
           />
           <div className="flex justify-end gap-2">
@@ -105,21 +155,19 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
               className="min-h-11 text-[11px]"
               onClick={() => setOpen(false)}
             >
-              Cancel
-            </Button>
+              {SCREEN_COPY["ui.77dfd2135f4d"][screenLang]} </Button>
             <Button
               size="sm"
               className="min-h-11 bg-teal text-[11px] text-teal-foreground hover:bg-teal/90"
               onClick={submit}
             >
-              Send request
-            </Button>
+              {SCREEN_COPY["ui.a89d64179469"][screenLang]} </Button>
           </div>
         </div>
       )}
       {latest?.denyReason && (latest.status === "denied" || latest.status === "needs_appointment") && (
         <div className="mt-1 text-sm text-ink-muted">
-          Prescriber note: {latest.denyReason}
+          {SCREEN_COPY["ui.c7ca65b17eae"][screenLang]} {latest.denyReason}
         </div>
       )}
     </li>
@@ -127,24 +175,22 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
 }
 
 export function MyMedicationsCard({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const meds = useEhr(() => AdelanteEHR.listMedications(patientId));
   return (
     <Card className="p-5" id="my-medications" data-testid="my-medications-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <Pill className="h-4 w-4" /> My medications
-      </div>
+        <Pill className="h-4 w-4" /> {SCREEN_COPY["ui.6deaed92d12f"][screenLang]} </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Managed with your care team through eScribe.
-      </p>
+        {SCREEN_COPY["ui.7f3e9658d048"][screenLang]} </p>
       {meds.some((m) => m.demo) && (
         <p className="mt-1 text-[10px] text-muted-foreground" data-testid="meds-demo-label">
-          Demo data · prototype prescriptions — no real e-prescribing.
-        </p>
+          {SCREEN_COPY["ui.4b08399f2919"][screenLang]} </p>
       )}
       {meds.length === 0 ? (
         <p className="mt-3 rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-          Nothing prescribed through Adelante right now.
-        </p>
+          {SCREEN_COPY["ui.0343fde56f51"][screenLang]} </p>
       ) : (
         <ul className="mt-3 space-y-2 text-sm">
           {meds.map((m) => (
@@ -153,8 +199,7 @@ export function MyMedicationsCard({ patientId }: { patientId: string }) {
         </ul>
       )}
       <p className="mt-3 text-[10px] text-muted-foreground">
-        Questions about your medication? Message your care team.
-      </p>
+        {SCREEN_COPY["ui.8f13373a9e5f"][screenLang]} </p>
     </Card>
   );
 }

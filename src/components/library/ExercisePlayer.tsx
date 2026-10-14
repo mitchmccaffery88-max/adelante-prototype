@@ -20,6 +20,14 @@ import { BreathingPractice } from "./BreathingPractice";
 import { Clock, Wrench, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Exercise, ExerciseContent } from "@/lib/library";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.44c57abd888a": {
+    "en": "Reset",
+    "es": "Reiniciar"
+  }
+} as const;
+
 
 const InputContext = createContext<{ values: Record<string, string>; set: (key: string, value: string) => void }>({ values: {}, set: () => {} });
 function useFields() {
@@ -50,6 +58,8 @@ export function ExerciseTimer({
   autoStart?: boolean;
   onComplete?: () => void;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const [left, setLeft] = useState(c.seconds);
   const [running, setRunning] = useState(Boolean(autoStart));
   const ref = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -91,8 +101,7 @@ export function ExerciseTimer({
             setLeft(c.seconds);
           }}
         >
-          Reset
-        </Button>
+          {SCREEN_COPY["ui.44c57abd888a"][screenLang]} </Button>
       </div>
     </div>
   );

@@ -14,6 +14,36 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CRISIS_LIFELINE_NAME, CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.b4cee43de8d4": {
+    "en": "We don't have a record for you yet",
+    "es": "Aún no tenemos un registro tuyo"
+  },
+  "ui.0d69d52ce0b1": {
+    "en": "My safety plan",
+    "es": "Mi plan de seguridad"
+  },
+  "ui.f5b8ed165f42": {
+    "en": "Back to My care",
+    "es": "Volver a Mi cuidado"
+  },
+  "ui.e1322f2341e3": {
+    "en": "If you are in danger right now, call or text",
+    "es": "Si estás en peligro ahora mismo, llama o envía un texto al"
+  },
+  "ui.a08d1f37fdd0": {
+    "en": "), or",
+    "es": "), o"
+  },
+  "ui.9b4a329b73d6": {
+    "en": "open crisis help",
+    "es": "abrir ayuda en crisis"
+  }
+} as const;
+
 
 export const Route = createFileRoute("/safety-plan")({
   head: () => ({
@@ -37,6 +67,8 @@ export const Route = createFileRoute("/safety-plan")({
 });
 
 function SafetyPlanPage() {
+  const { lang: screenLang } = useI18n();
+
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
@@ -45,7 +77,7 @@ function SafetyPlanPage() {
     return (
       <PatientPage width="browse">
         <EmptyState
-          title="We don't have a record for you yet"
+          title={SCREEN_COPY["ui.b4cee43de8d4"][screenLang]}
           description="Once your care is set up, your safety plan lives here."
           action={{ label: "Get started", onClick: () => void navigate({ to: "/start" }) }}
         />
@@ -57,23 +89,22 @@ function SafetyPlanPage() {
     <PatientPage width="browse">
       <PatientPageHeader
         icon={LifeBuoy}
-        title="My safety plan"
+        title={SCREEN_COPY["ui.0d69d52ce0b1"][screenLang]}
         lede="In your own words: what the warning signs look like, what helps, and who to call."
         action={
           <Button asChild variant="ghost" size="sm">
-            <Link to="/home">Back to My care</Link>
+            <Link to="/home">{SCREEN_COPY["ui.f5b8ed165f42"][screenLang]}</Link>
           </Button>
         }
       />
       <Card className="border-destructive/30 bg-destructive/5 p-4 text-sm">
-        If you are in danger right now, call or text{" "}
+        {SCREEN_COPY["ui.e1322f2341e3"][screenLang]}{" "}
         <a className="font-semibold underline" href={`tel:${CRISIS_LIFELINE_NUMBER}`}>
           {CRISIS_LIFELINE_NUMBER}
         </a>{" "}
-        ({CRISIS_LIFELINE_NAME}), or{" "}
+        ({CRISIS_LIFELINE_NAME}{SCREEN_COPY["ui.a08d1f37fdd0"][screenLang]}{" "}
         <Link to="/crisis" className="font-semibold underline">
-          open crisis help
-        </Link>
+          {SCREEN_COPY["ui.9b4a329b73d6"][screenLang]} </Link>
         .
       </Card>
       <SafetyPlanPanel patientId={patient.id} author="patient" actorRole="patient" />

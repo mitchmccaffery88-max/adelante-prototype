@@ -19,8 +19,9 @@ for(const f of sources.keys()){if(!f.startsWith('src/routes/')||f.includes('/api
 for(const f of ['src/lib/i18n.tsx','src/lib/i18n.website.ts','src/lib/i18n.player.ts','src/lib/i18n.recovery.ts','src/lib/i18n.benefits.ts'])reach(f,f.includes('website')?'Public website':'Shared member UI');
 // Shared shell: audit only ordinary translated dictionaries, not staff JSX.
 const rows=new Map(),covered=new Set();
+const exclusions = JSON.parse(fs.readFileSync('scripts/spanish-review-exclusions.json', 'utf8'));
 function controlled(f,k=''){return /consent|cssrs|screeners|safetyPlan|safetyContent|crisisCopy|refusal|riskText|whatWouldHelp|recovery.*authored/i.test(f)|| /privacy|consent|sensitive|history|danger|risk|legal|justiceQ|seekingNote|advocateNote|handoff/i.test(k);}
-function add(f,key,en,es='',node){if(!en || !/[A-Za-zÀ-ÿ]/.test(en))return;const screen=[...(audiences.get(f)||['Shared member content'])].sort().join('; ');const status=controlled(f,key)?'controlled':'draft'; rows.set(f+':'+key,{key:f+':'+key,english:en,spanish:es,screen,status}); if(node)covered.add(f+":"+node.pos);}
+function add(f,key,en,es='',node){if(!en || !/[A-Za-zÀ-ÿ]/.test(en))return;const fullKey=f+':'+key;const exclusion=exclusions[fullKey];if(exclusion && /staff-only|false positive/i.test(exclusion))return;const screen=[...(audiences.get(f)||['Shared member content'])].sort().join('; ');const priority=/\/crisis\.|\/naloxone\.|\/safety-plan\.|GetHelpNow|CrisisNotice|AdelGuidedIntake|SlipSupportFlow/.test(f)||/988|911|getHelpNow/i.test(key+' '+en);const status=controlled(f,key)||exclusion?.startsWith('Controlled')?'controlled':priority?'draft-priority':'draft'; rows.set(fullKey,{key:fullKey,english:en,spanish:es,screen,status}); if(node)covered.add(f+":"+node.pos);}
 function unwrap(n){while(n&&(ts.isAsExpression(n)||ts.isParenthesizedExpression(n)||ts.isSatisfiesExpression?.(n)))n=n.expression;return n;}
 function text(n){n=unwrap(n);if(!n)return '';if(ts.isStringLiteralLike(n))return n.text;if(ts.isTemplateExpression(n))return n.head.text+n.templateSpans.map(s=>'{'+s.expression.getText()+'}'+s.literal.text).join('');if(ts.isArrowFunction(n)){let b=n.body;if(ts.isBlock(b)){const r=b.statements.find(ts.isReturnStatement);b=r?.expression;}return text(b);}return '';}
 function obj(n){n=unwrap(n);return n&&ts.isObjectLiteralExpression(n)?n:null;}
@@ -30,7 +31,7 @@ for(const [f,sf] of sources){if(!audiences.has(f))continue;const declarations=ne
  function collect(n){if(ts.isVariableDeclaration(n)&&ts.isIdentifier(n.name))declarations.set(n.name.text,n.initializer);ts.forEachChild(n,collect);}collect(sf);
  function pair(en,es,name){const e=flatten(en),s=flatten(es);for(const [k,v] of e)add(f,name+'.'+k,v.text,s.get(k)?.text||'',v.node);}
  for(const [name,n] of declarations){const p=props(n);if(p.has('en')&&p.has('es'))pair(p.get('en'),p.get('es'),name);if(/En$/.test(name))pair(n,declarations.get(name.replace(/En$/,'Es')),name.replace(/En$/,''));}
- function visit(n){const p=props(n);if(p.has('en')&&p.has('es')&&text(p.get('en')))add(f,'pair.'+crypto.createHash('sha1').update(text(p.get('en'))).digest('hex').slice(0,12),text(p.get('en')),text(p.get('es')),p.get('en'));
+ function visit(n){const p=props(n);if(p.has('en')&&p.has('es')&&text(p.get('en'))){const sourceKey=ts.isPropertyAssignment(n.parent)&&n.parent.name&&/^ui\./.test(n.parent.name.text)?n.parent.name.text:'pair.'+crypto.createHash('sha1').update(text(p.get('en'))).digest('hex').slice(0,12);add(f,sourceKey,text(p.get('en')),text(p.get('es')),p.get('en'));}
  if(ts.isConditionalExpression(n)&&/\blang\b/.test(n.condition.getText())){const yes=text(n.whenTrue),no=text(n.whenFalse);if(yes&&no&&/['"](?:es|en)['"]/.test(n.condition.getText())){const esFirst=/['"]es['"]/.test(n.condition.getText());add(f,'inline.'+crypto.createHash('sha1').update((esFirst?no:yes)).digest('hex').slice(0,12),esFirst?no:yes,esFirst?yes:no,n);covered.add(f+":"+n.whenTrue.pos);covered.add(f+":"+n.whenFalse.pos);}}
  ts.forEachChild(n,visit);}visit(sf);
  // Genuine JSX text/visible attributes and direct string expressions only, not enums, classes, IDs or test hooks.
@@ -66,10 +67,25 @@ for (const [f,sf] of sources) {
  for(const statement of sf.statements)if(ts.isVariableStatement(statement))for(const d of statement.declarationList.declarations)if(d.initializer)catalog(d.initializer,d.name.getText());
 }
 
+// Shared staff JSX may repeat a member dictionary's English literal. The
+// bilingual source dictionary is authoritative for the stable screen key.
+for (const [f, sf] of sources) {
+ if (!audiences.has(f)) continue;
+ function screenCopy(n) {
+  if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'SCREEN_COPY') {
+   for (const [key, value] of props(n.initializer)) {
+    const pair = props(value), en = text(pair.get('en')), es = text(pair.get('es'));
+    if (en && es) add(f, key, en, es, pair.get('en'));
+   }
+  }
+  ts.forEachChild(n, screenCopy);
+ }
+ screenCopy(sf);
+}
 const sorted=[...rows.values()].sort((a,b)=>a.key.localeCompare(b.key,'en'));
 function safe(v){v=String(v);if(/^[\s]*[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
 fs.mkdirSync('docs',{recursive:true});fs.writeFileSync('docs/spanish-review.csv',['key,english,spanish,screen,status',...sorted.map(r=>[r.key,r.english,r.spanish,r.screen,r.status].map(safe).join(','))].join('\n')+'\n');
 const gaps=sorted.filter(r=>!r.spanish&&r.status!=='controlled'),grouped=new Map();for(const r of gaps){if(!grouped.has(r.screen))grouped.set(r.screen,[]);grouped.get(r.screen).push(r);}
-const lines=['# Spanish gaps — Build 5b','',`Generated by \`bun scripts/export-spanish-review.cjs\`. ${gaps.length} ordinary member/public source keys with empty Spanish. Controlled clinical/legal gaps are excluded from drafting and retained in the CSV.`, '', 'Source dependency reachability can include shared components; review branch/audience before drafting. No patient records or runtime data are read. Dynamic authored content and expression-based labels require editorial review; this is a source inventory, not a certification of complete runtime coverage.',''];
+const lines=['# Spanish gaps — Build 5b','',`Generated by \`bun scripts/export-spanish-review.cjs\`. ${gaps.length} ordinary member/public source keys with empty Spanish. Controlled clinical/legal gaps are excluded from drafting and retained in the CSV.`, '', 'Reviewed staff-only keys and already-localized false positives are excluded using the source review manifest. Crisis-adjacent drafts have status draft-priority. Authored lesson/journey gaps remain for phase 7. No patient records or runtime data are read. Dynamic authored content and expression-based labels require editorial review; this is a source inventory, not a certification of complete runtime coverage.',''];
 for(const [screen,items] of [...grouped].sort((a,b)=>a[0].localeCompare(b[0])))lines.push(`## ${screen} (${items.length})`,'',...items.map(r=>`- \`${r.key}\` — ${r.english.replace(/\n/g,' / ')}`),'');
 fs.writeFileSync('docs/spanish-gaps.md',lines.join('\n'));console.log(JSON.stringify({rows:sorted.length,gaps:gaps.length,controlled:sorted.filter(r=>r.status==='controlled').length}));

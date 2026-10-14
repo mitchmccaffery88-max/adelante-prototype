@@ -25,6 +25,32 @@ import {
   subscribeDayZero,
   type DayZeroStep,
 } from "@/lib/reentryDayZero";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.6445beb865c1": {
+    "en": "I just got out",
+    "es": "Acabo de salir"
+  },
+  "ui.e948c2b02fdf": {
+    "en": "You don't have to figure everything out today. Ten short steps, in any order.",
+    "es": "No tienes que resolverlo todo hoy. Diez pasos cortos, en cualquier orden."
+  },
+  "ui.b6c935d4f3c7": {
+    "en": "min",
+    "es": "min"
+  },
+  "ui.f62f14fc0c5e": {
+    "en": "Save this so it's here on a hard day — your 24-hour plan, what you asked for help with, and the people you said you'd contact.",
+    "es": "Guarda esto para que esté aquí en un día difícil — tu plan de 24 horas, la ayuda que pediste y las personas a las que dijiste que contactarías."
+  },
+  "ui.b52b36b7269f": {
+    "en": "Back",
+    "es": "Atrás"
+  }
+} as const;
+
 
 function useDayZero(patientId: string) {
   return useSyncExternalStore(
@@ -43,6 +69,8 @@ export function ReentryDayZeroModule({ patientId }: { patientId: string }) {
 }
 
 function DayZeroBody({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const snapshot = useDayZero(patientId);
   const progress = JSON.parse(snapshot) as Partial<ReturnType<typeof getDayZeroProgress>> & object;
   const availability = dayZeroAvailability(patientId);
@@ -57,11 +85,9 @@ function DayZeroBody({ patientId }: { patientId: string }) {
   return (
     <Card className="p-5" data-testid="reentry-day-zero">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <LifeBuoy className="h-4 w-4" /> I just got out
-      </div>
+        <LifeBuoy className="h-4 w-4" /> {SCREEN_COPY["ui.6445beb865c1"][screenLang]} </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        You don't have to figure everything out today. Ten short steps, in any order.
-      </p>
+        {SCREEN_COPY["ui.e948c2b02fdf"][screenLang]} </p>
       <div className="mt-3 flex items-center gap-3">
         <Progress value={pct} className="h-2" />
         <span className="shrink-0 text-xs text-muted-foreground">
@@ -91,8 +117,7 @@ function DayZeroBody({ patientId }: { patientId: string }) {
                   <span className="block text-xs text-muted-foreground">{s.subtitle}</span>
                 </span>
                 <Badge variant="outline" className="ml-auto shrink-0 text-[10px]">
-                  {s.minutes} min
-                </Badge>
+                  {s.minutes} {SCREEN_COPY["ui.b6c935d4f3c7"][screenLang]} </Badge>
               </button>
             </li>
           ))}
@@ -113,6 +138,8 @@ function StepBody({
   progress: { immediateNeeds?: string[]; plan?: { picks: Record<string, string[]> } };
   onBack: () => void;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const [needs, setNeeds] = useState<string[]>(progress.immediateNeeds ?? []);
   const [picks, setPicks] = useState<Record<string, string[]>>(progress.plan?.picks ?? {});
 
@@ -192,9 +219,7 @@ function StepBody({
 
       {step.kind === "toolkit" && (
         <p className="rounded-lg bg-secondary/50 p-3 text-sm text-navy">
-          Save this so it's here on a hard day — your 24-hour plan, what you asked for help with,
-          and the people you said you'd contact.
-        </p>
+          {SCREEN_COPY["ui.f62f14fc0c5e"][screenLang]} </p>
       )}
 
       <div className="flex gap-2">
@@ -202,8 +227,7 @@ function StepBody({
           {step.kind === "plan" ? "Save my 24-hour plan" : "Done"}
         </Button>
         <Button type="button" variant="ghost" onClick={onBack}>
-          Back
-        </Button>
+          {SCREEN_COPY["ui.b52b36b7269f"][screenLang]} </Button>
       </div>
     </div>
   );

@@ -6,6 +6,16 @@ import type { LucideIcon } from "lucide-react";
 import { Lock } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.8a959e32c404": {
+    "en": "You don't have access right now",
+    "es": "No tienes acceso en este momento"
+  }
+} as const;
+
 
 export function AdvocateViewHeader({
   icon: Icon,
@@ -37,13 +47,15 @@ export function AdvocateSupportGate({
   linkId: string;
   children: React.ReactNode;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const view = useEhr(() => AdelanteEHR.advocateSchedule(linkId));
   if (view.allowed) return <>{children}</>;
   return (
     <Card className="flex gap-3 p-5 text-sm">
       <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       <div>
-        <p className="font-medium text-navy">You don't have access right now</p>
+        <p className="font-medium text-navy">{SCREEN_COPY["ui.8a959e32c404"][screenLang]}</p>
         <p className="mt-1 text-muted-foreground">{view.reason}</p>
         <p className="mt-2 text-xs text-muted-foreground">
           Nothing about this person's care is shown until that is resolved.

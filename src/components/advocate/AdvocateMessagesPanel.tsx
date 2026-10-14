@@ -16,8 +16,32 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, ShieldAlert, Lock } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.2c305038f6a7": {
+    "en": "Messages with the care team",
+    "es": "Mensajes con el equipo de atención"
+  },
+  "ui.c2e51bb253dd": {
+    "en": "Nothing from this person's thread is shown here while the review is open — the feature is built and tested, but it is switched off, not merely read-only.",
+    "es": "No se muestra nada de los mensajes de esta persona mientras la revisión esté abierta. La función está lista y probada, pero está desactivada, no solo en modo de lectura."
+  },
+  "ui.f98217d5d962": {
+    "en": "Write to the care team…",
+    "es": "Escribe al equipo de atención…"
+  },
+  "ui.9bc2575c3930": {
+    "en": "Send",
+    "es": "Enviar"
+  }
+} as const;
+
 
 export function AdvocateMessagesPanel({ linkId }: { linkId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const view = useEhr(() => AdelanteEHR.advocateCareMessages(linkId));
   const [draft, setDraft] = useState("");
   const reviewPending = ADVOCATE_MESSAGING_REVIEW.pending;
@@ -36,8 +60,7 @@ export function AdvocateMessagesPanel({ linkId }: { linkId: string }) {
     <Card className="space-y-3 p-4" data-testid="advocate-messages">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 text-sm font-medium text-navy">
-          <MessageSquare className="h-4 w-4 text-teal" /> Messages with the care team
-        </p>
+          <MessageSquare className="h-4 w-4 text-teal" /> {SCREEN_COPY["ui.2c305038f6a7"][screenLang]} </p>
         <StatusChip state={reviewPending ? "team" : view.allowed ? "done" : "restricted"} label={reviewPending ? "Pending clinical review" : view.allowed ? "Open" : "Not available"} />
       </div>
 
@@ -56,9 +79,7 @@ export function AdvocateMessagesPanel({ linkId }: { linkId: string }) {
 
       {reviewPending ? (
         <p className="text-xs text-muted-foreground">
-          Nothing from this person's thread is shown here while the review is open — the feature is
-          built and tested, but it is switched off, not merely read-only.
-        </p>
+          {SCREEN_COPY["ui.c2e51bb253dd"][screenLang]} </p>
       ) : !view.allowed ? (
         <p className="flex gap-2 text-sm text-muted-foreground">
           <Lock className="mt-0.5 h-4 w-4 shrink-0" />
@@ -80,12 +101,11 @@ export function AdvocateMessagesPanel({ linkId }: { linkId: string }) {
               <Textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Write to the care team…"
+                placeholder={SCREEN_COPY["ui.f98217d5d962"][screenLang]}
                 rows={3}
               />
               <Button size="sm" disabled={!draft.trim()} onClick={send}>
-                Send
-              </Button>
+                {SCREEN_COPY["ui.9bc2575c3930"][screenLang]} </Button>
           </div>
         </>
       )}

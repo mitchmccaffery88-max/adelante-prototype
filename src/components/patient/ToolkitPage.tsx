@@ -18,6 +18,64 @@ import { Badge } from "@/components/ui/badge";
 import { liveRecoveryLesson, usePublishedContentVersion } from "@/lib/contentCatalog";
 import { patientToolkit, type ToolkitPick } from "@/lib/toolkit";
 import { recoveryJourneyVisible } from "@/lib/seeking";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.a0c39ab06f61": {
+    "en": "My toolkit",
+    "es": "Mi caja de herramientas"
+  },
+  "ui.1234509cea72": {
+    "en": "Nothing built yet",
+    "es": "Nada creado aún"
+  },
+  "ui.6f1485495e5b": {
+    "en": "Your toolkit fills itself in as you finish lessons. Each Recovery lesson ends with \"Create my toolkit\" — your warning signs, your people, and one action for today.",
+    "es": "Tu caja de herramientas se completa a medida que terminas las lecciones."
+  },
+  "ui.0c8f336d70b4": {
+    "en": "Start a recovery lesson",
+    "es": "Empezar una lección"
+  },
+  "ui.c6cfcdb17347": {
+    "en": "Browse the library",
+    "es": "Explorar la biblioteca"
+  },
+  "ui.39098690aa94": {
+    "en": "My warning signs",
+    "es": "Mis señales de alerta"
+  },
+  "ui.a24c531e3125": {
+    "en": "My people",
+    "es": "Mis personas"
+  },
+  "ui.d325ad256793": {
+    "en": "One action for today",
+    "es": "Una acción para hoy"
+  },
+  "ui.50583f4f00cc": {
+    "en": "Saved takeaways",
+    "es": "Conclusiones guardadas"
+  },
+  "ui.fa7ce65f4b61": {
+    "en": "One line saved from every lesson and exercise you finished.",
+    "es": "Una línea guardada de cada lección y ejercicio que terminaste."
+  },
+  "ui.28316c1f3568": {
+    "en": "Open the lesson",
+    "es": "Abrir la lección"
+  },
+  "ui.c0ae8f6ea841": {
+    "en": "Saved",
+    "es": "Guardado"
+  },
+  "ui.81da4bbb18fa": {
+    "en": "Back to my recovery journey",
+    "es": "Volver a mi camino"
+  }
+} as const;
+
 
 function PickSection({
   icon: Icon,
@@ -69,6 +127,8 @@ function PickSection({
 }
 
 export function ToolkitPage() {
+  const { lang: screenLang } = useI18n();
+
   usePublishedContentVersion();
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const toolkit = useEhr(() => (patientId ? patientToolkit(patientId) : null));
@@ -79,7 +139,7 @@ export function ToolkitPage() {
     <PatientPage width="browse" data-testid="toolkit-page">
       <PatientPageHeader
         icon={Backpack}
-        title="My toolkit"
+        title={SCREEN_COPY["ui.a0c39ab06f61"][screenLang]}
         lede={
           <>
             Everything you built inside your lessons, kept in one place. Only you see this — it is
@@ -90,34 +150,32 @@ export function ToolkitPage() {
 
       {toolkit.isEmpty ? (
         <Card className="space-y-3 p-6" data-testid="toolkit-empty">
-          <h2 className="font-display text-lg text-foreground">Nothing built yet</h2>
+          <h2 className="font-display text-lg text-foreground">{SCREEN_COPY["ui.1234509cea72"][screenLang]}</h2>
           <p className="text-sm text-muted-foreground">
-            Your toolkit fills itself in as you finish lessons. Each Recovery lesson ends with
-            "Create my toolkit" — your warning signs, your people, and one action for today.
-          </p>
+            {SCREEN_COPY["ui.6f1485495e5b"][screenLang]} </p>
           <Button asChild className="min-h-11 rounded-2xl">
-            {showRecovery ? <Link to="/recovery-journey">Start a recovery lesson</Link> : <Link to="/library">Browse the library</Link>}
+            {showRecovery ? <Link to="/recovery-journey">{SCREEN_COPY["ui.0c8f336d70b4"][screenLang]}</Link> : <Link to="/library">{SCREEN_COPY["ui.c6cfcdb17347"][screenLang]}</Link>}
           </Button>
         </Card>
       ) : (
         <>
           <PickSection
             icon={TriangleAlert}
-            title="My warning signs"
+            title={SCREEN_COPY["ui.39098690aa94"][screenLang]}
             blurb="What you said tends to show up before things slide."
             picks={toolkit.warningSigns}
             showRecovery={showRecovery}
           />
           <PickSection
             icon={HeartHandshake}
-            title="My people"
+            title={SCREEN_COPY["ui.a24c531e3125"][screenLang]}
             blurb="Who you chose to reach for."
             picks={toolkit.supportPeople}
             showRecovery={showRecovery}
           />
           <PickSection
             icon={Footprints}
-            title="One action for today"
+            title={SCREEN_COPY["ui.d325ad256793"][screenLang]}
             blurb="The single step you picked at the end of each lesson."
             picks={toolkit.todayActions}
             showRecovery={showRecovery}
@@ -127,11 +185,9 @@ export function ToolkitPage() {
               <div className="space-y-1">
                 <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
                   <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-                  Saved takeaways
-                </h2>
+                  {SCREEN_COPY["ui.50583f4f00cc"][screenLang]} </h2>
                 <p className="text-sm text-muted-foreground">
-                  One line saved from every lesson and exercise you finished.
-                </p>
+                  {SCREEN_COPY["ui.fa7ce65f4b61"][screenLang]} </p>
               </div>
               <ul className="space-y-2">
                 {toolkit.takeaways.map((t) => {
@@ -152,10 +208,9 @@ export function ToolkitPage() {
                             search={{ lesson: t.id }}
                             className="text-xs text-primary underline-offset-2 hover:underline"
                           >
-                            Open the lesson
-                          </Link>
+                            {SCREEN_COPY["ui.28316c1f3568"][screenLang]} </Link>
                         ) : recovery ? (
-                          <span className="text-xs text-muted-foreground">Saved</span>
+                          <span className="text-xs text-muted-foreground">{SCREEN_COPY["ui.c0ae8f6ea841"][screenLang]}</span>
                         ) : (
                           <Link
                             to="/library"
@@ -178,8 +233,7 @@ export function ToolkitPage() {
       {showRecovery && (
         <Button asChild variant="ghost" className="min-h-11 rounded-2xl">
           <Link to="/recovery-journey">
-            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" /> Back to my recovery journey
-          </Link>
+            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.81da4bbb18fa"][screenLang]} </Link>
         </Button>
       )}
     </PatientPage>

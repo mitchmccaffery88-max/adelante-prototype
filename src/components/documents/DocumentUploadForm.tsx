@@ -21,6 +21,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Paperclip, ShieldAlert } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.74b1d89d8525": {
+    "en": "Choose a file",
+    "es": "Elige un archivo"
+  },
+  "ui.315b39a0fc19": {
+    "en": "KB",
+    "es": "KB"
+  },
+  "ui.89511a76c8cb": {
+    "en": "What is it?",
+    "es": "¿Qué es esto?"
+  },
+  "ui.9c82d3d99f32": {
+    "en": "Choose (optional)",
+    "es": "Elegir (opcional)"
+  },
+  "ui.1f405df33569": {
+    "en": "Anything the team should know? (optional)",
+    "es": "¿Hay algo que el equipo deba saber? (opcional)"
+  },
+  "ui.7c261af3753a": {
+    "en": "Every file is scanned before it is accepted, and nothing is added to the medical record until a care team member reviews it.",
+    "es": "Cada archivo se analiza antes de ser aceptado, y no se añade nada al expediente médico hasta que un miembro del equipo de cuidado lo revise."
+  }
+} as const;
+
 
 export interface DocumentUploadSubmission {
   file: UploadCandidate;
@@ -40,6 +70,8 @@ export function DocumentUploadForm({
   submitLabel?: string;
   disabled?: boolean;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<UploadCandidate | null>(null);
   const [isPart2, setIsPart2] = useState(false);
@@ -86,7 +118,7 @@ export function DocumentUploadForm({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <Label htmlFor="doc-file">Choose a file</Label>
+        <Label htmlFor="doc-file">{SCREEN_COPY["ui.74b1d89d8525"][screenLang]}</Label>
         <Input
           id="doc-file"
           ref={inputRef}
@@ -96,16 +128,15 @@ export function DocumentUploadForm({
         {file && (
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Paperclip className="h-3.5 w-3.5" />
-            {file.fileName} · {Math.max(1, Math.round(file.sizeBytes / 1024))} KB
-          </p>
+            {file.fileName} · {Math.max(1, Math.round(file.sizeBytes / 1024))} {SCREEN_COPY["ui.315b39a0fc19"][screenLang]} </p>
         )}
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="doc-type">What is it?</Label>
+        <Label htmlFor="doc-type">{SCREEN_COPY["ui.89511a76c8cb"][screenLang]}</Label>
         <Select value={docType} onValueChange={setDocType}>
           <SelectTrigger id="doc-type">
-            <SelectValue placeholder="Choose (optional)" />
+            <SelectValue placeholder={SCREEN_COPY["ui.9c82d3d99f32"][screenLang]} />
           </SelectTrigger>
           <SelectContent>
             {DOCUMENT_TYPES.map((d) => (
@@ -138,7 +169,7 @@ export function DocumentUploadForm({
       </label>
 
       <div className="space-y-1">
-        <Label htmlFor="doc-note">Anything the team should know? (optional)</Label>
+        <Label htmlFor="doc-note">{SCREEN_COPY["ui.1f405df33569"][screenLang]}</Label>
         <Textarea id="doc-note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
       </div>
 
@@ -146,9 +177,7 @@ export function DocumentUploadForm({
         {submitLabel}
       </Button>
       <p className="text-xs text-muted-foreground">
-        Every file is scanned before it is accepted, and nothing is added to the medical record
-        until a care team member reviews it.
-      </p>
+        {SCREEN_COPY["ui.7c261af3753a"][screenLang]} </p>
     </div>
   );
 }

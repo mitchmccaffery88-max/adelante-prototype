@@ -15,8 +15,32 @@ import { marRowLabel } from "@/lib/mar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.e3474595be07": {
+    "en": "How much you have left",
+    "es": "Cuánto te queda"
+  },
+  "ui.c75b61b35af2": {
+    "en": "Counted from the day each prescription started and how many days it was written for.",
+    "es": "Contado desde el día en que comenzó cada receta."
+  },
+  "ui.0a9e7cdadc10": {
+    "en": "MAT",
+    "es": "MAT"
+  },
+  "ui.fedd3a274634": {
+    "en": "Ask your care team about a refill",
+    "es": "Consulta a tu equipo sobre una renovación"
+  }
+} as const;
+
 
 export function RefillRunwayCard({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const orders = useEhr(() =>
     AdelanteEHR.listOrders(patientId).filter(
       (o) => o.status === "signed" || o.status === "held",
@@ -33,11 +57,9 @@ export function RefillRunwayCard({ patientId }: { patientId: string }) {
   return (
     <Card className="p-5" data-testid="refill-runway-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <CalendarClock className="h-4 w-4" aria-hidden="true" /> How much you have left
-      </div>
+        <CalendarClock className="h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.e3474595be07"][screenLang]} </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Counted from the day each prescription started and how many days it was written for.
-      </p>
+        {SCREEN_COPY["ui.c75b61b35af2"][screenLang]} </p>
       <ul className="mt-3 space-y-2 text-sm">
         {rows.map(({ order, runway, mat }, i) => (
           <li
@@ -55,8 +77,7 @@ export function RefillRunwayCard({ patientId }: { patientId: string }) {
                     className="border-0 bg-teal/15 text-[10px] text-teal"
                     data-testid={`mat-badge-${i}`}
                   >
-                    MAT
-                  </Badge>
+                    {SCREEN_COPY["ui.0a9e7cdadc10"][screenLang]} </Badge>
                 )}
               </div>
               <div className="mt-0.5 text-[11px] text-muted-foreground">
@@ -73,8 +94,7 @@ export function RefillRunwayCard({ patientId }: { patientId: string }) {
       </ul>
       <Button asChild variant="outline" size="sm" className="mt-3 min-h-11 rounded-2xl">
         <Link to="/home" hash="care-messages">
-          Ask your care team about a refill
-        </Link>
+          {SCREEN_COPY["ui.fedd3a274634"][screenLang]} </Link>
       </Button>
     </Card>
   );

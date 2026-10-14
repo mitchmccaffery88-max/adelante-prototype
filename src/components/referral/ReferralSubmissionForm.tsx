@@ -42,6 +42,86 @@ export function isValidEmail(v: string) {
 }
 import { REFERRER_CONTACT_REQUIRED_MSG } from "@/lib/referralOutreach";
 import { referralCriticalProblem } from "@/lib/referralChase";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.3452ff7a91dd": {
+    "en": "Referral received",
+    "es": "Referencia recibida"
+  },
+  "ui.ea10bb628600": {
+    "en": "Reference number",
+    "es": "Número de referencia"
+  },
+  "ui.51ecc5b21fd4": {
+    "en": "What happens next",
+    "es": "¿Qué pasa después?"
+  },
+  "ui.fc40449760a8": {
+    "en": "Our team will reach out to the person you referred with a warm welcome.",
+    "es": "Nuestro equipo se comunicará con la persona que derivaste para darle la bienvenida."
+  },
+  "ui.f05f81f85d3e": {
+    "en": "You'll get status updates as the referral moves forward.",
+    "es": "Recibirás actualizaciones de estado a medida que la referencia avance."
+  },
+  "ui.2c589003c73a": {
+    "en": "Keep the reference number if you need to contact us about this referral.",
+    "es": "Guarda el número de referencia por si necesitas contactarnos sobre esta derivación."
+  },
+  "ui.45ca7b806143": {
+    "en": "Refer someone else",
+    "es": "Referir a alguien más"
+  },
+  "ui.5c4698b6e0d6": {
+    "en": "About you",
+    "es": "Sobre ti"
+  },
+  "ui.74c3a493eaa3": {
+    "en": "About the person",
+    "es": "Sobre la persona"
+  },
+  "ui.9a1772fb879c": {
+    "en": "Is this individual justice-involved?",
+    "es": "¿Esta persona ha tenido contacto con el sistema judicial?"
+  },
+  "ui.965a60e49727": {
+    "en": "Currently or recently in custody, on probation or parole, or in a reentry program.",
+    "es": "Actualmente o recientemente bajo custodia, en libertad condicional o en un programa de reinserción."
+  },
+  "ui.da3042ae0e36": {
+    "en": "Optional details",
+    "es": "Detalles opcionales"
+  },
+  "ui.2cdafbc56cfb": {
+    "en": "No reliable phone — request manual outreach.",
+    "es": "Sin teléfono confiable: solicitar contacto personal."
+  },
+  "ui.48eebad5f076": {
+    "en": "No welcome text is sent. A follow-up task is created for the care team, due the next day, and the team will use your contact details if they can't reach this person.",
+    "es": "No se envía un mensaje de bienvenida. El equipo recibe una tarea para el día siguiente y usará tus datos si no logra contactar a esta persona."
+  },
+  "ui.92df01faf43c": {
+    "en": "Consent to contact:",
+    "es": "Consentimiento para contacto:"
+  },
+  "ui.faffa194e553": {
+    "en": "The person knows about this referral and is OK with us reaching out by text or call.",
+    "es": "La persona sabe de esta referencia y está de acuerdo con que nos comuniquemos por texto o llamada."
+  },
+  "ui.b5b0f2cd0aad": {
+    "en": "I'm not a robot.",
+    "es": "No soy un robot."
+  },
+  "ui.71a2220b52bf": {
+    "en": "Encrypted submission · rate-limited",
+    "es": "Envío cifrado · límite de solicitudes"
+  },
+  "ui.719c2be7b5fd": {
+    "en": "Send referral",
+    "es": "Enviar referencia"
+  }
+} as const;
+
 export { REFERRER_CONTACT_REQUIRED_MSG };
 /** Returns the first validation problem with contact details, or null. */
 export function referralContactProblem(f: {
@@ -80,6 +160,8 @@ export function ReferralSubmissionForm({
   /** Staff hosts close their dialog here; the public page shows its own thanks. */
   onSubmitted?: (referralId: string) => void;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const staff = variant === "staff";
   const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
@@ -249,10 +331,10 @@ export function ReferralSubmissionForm({
       <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16" data-testid="referral-confirmation">
         <div className="text-center">
           <CheckCircle2 className="h-12 w-12 text-teal mx-auto" />
-          <h1 className="font-display text-3xl text-navy mt-4">Referral received</h1>
+          <h1 className="font-display text-3xl text-navy mt-4">{SCREEN_COPY["ui.3452ff7a91dd"][screenLang]}</h1>
           {confirmation && (
             <p className="mt-2 text-sm text-muted-foreground">
-              Reference number{" "}
+              {SCREEN_COPY["ui.ea10bb628600"][screenLang]}{" "}
               <span className="font-mono font-semibold text-navy" data-testid="referral-reference">
                 {confirmation.reference}
               </span>
@@ -260,11 +342,11 @@ export function ReferralSubmissionForm({
           )}
         </div>
         <Card className="mt-8 p-5 text-left space-y-3">
-          <h2 className="font-display text-lg text-navy">What happens next</h2>
+          <h2 className="font-display text-lg text-navy">{SCREEN_COPY["ui.51ecc5b21fd4"][screenLang]}</h2>
           <ul className="space-y-2 text-sm text-foreground">
-            <li>Our team will reach out to the person you referred with a warm welcome.</li>
-            <li>You'll get status updates as the referral moves forward.</li>
-            <li>Keep the reference number if you need to contact us about this referral.</li>
+            <li>{SCREEN_COPY["ui.fc40449760a8"][screenLang]}</li>
+            <li>{SCREEN_COPY["ui.f05f81f85d3e"][screenLang]}</li>
+            <li>{SCREEN_COPY["ui.2c589003c73a"][screenLang]}</li>
           </ul>
           {confirmation && (
             <p className="text-xs text-muted-foreground" data-testid="referrer-text-status">
@@ -288,8 +370,7 @@ export function ReferralSubmissionForm({
               setConfirmation(null);
             }}
           >
-            Refer someone else
-          </Button>
+            {SCREEN_COPY["ui.45ca7b806143"][screenLang]} </Button>
         </div>
       </div>
     );
@@ -298,7 +379,7 @@ export function ReferralSubmissionForm({
   const formBody = (
     <form onSubmit={onSubmit} className="space-y-6">
       <section className="space-y-4">
-        <h2 className="font-display text-lg text-navy">About you</h2>
+        <h2 className="font-display text-lg text-navy">{SCREEN_COPY["ui.5c4698b6e0d6"][screenLang]}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Your name *">
             <Input
@@ -347,7 +428,7 @@ export function ReferralSubmissionForm({
       </section>
 
       <section className="space-y-4 pt-2 border-t">
-        <h2 className="font-display text-lg text-navy">About the person</h2>
+        <h2 className="font-display text-lg text-navy">{SCREEN_COPY["ui.74c3a493eaa3"][screenLang]}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="First name *">
             <Input
@@ -390,10 +471,9 @@ export function ReferralSubmissionForm({
         {/* §Phase 4c — one form, conditional fields. Unanswered by default:
             we never assume someone is not justice-involved. */}
         <div className="rounded-lg border p-4 space-y-3">
-          <Label className="text-sm">Is this individual justice-involved?</Label>
+          <Label className="text-sm">{SCREEN_COPY["ui.9a1772fb879c"][screenLang]}</Label>
           <p className="text-xs text-muted-foreground -mt-1">
-            Currently or recently in custody, on probation or parole, or in a reentry program.
-          </p>
+            {SCREEN_COPY["ui.965a60e49727"][screenLang]} </p>
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -434,7 +514,7 @@ export function ReferralSubmissionForm({
         {/* §Batch B2 — optional details. Blank is fine; staff follow up. */}
         <div className="rounded-lg border p-4 space-y-3" data-testid="referral-optional-details">
           <div>
-            <Label className="text-sm">Optional details</Label>
+            <Label className="text-sm">{SCREEN_COPY["ui.da3042ae0e36"][screenLang]}</Label>
             <p className="text-xs text-muted-foreground">Leave blank if you don&apos;t know — our team will follow up. (Draft — pending clinical sign-off)</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -475,10 +555,7 @@ export function ReferralSubmissionForm({
             onCheckedChange={(v) => setForm({ ...form, noPhone: Boolean(v) })}
           />
           <span>
-            <strong>No reliable phone — request manual outreach.</strong> No welcome text is sent.
-            A follow-up task is created for the care team, due the next day, and the team will use
-            your contact details if they can&apos;t reach this person.
-          </span>
+            <strong>{SCREEN_COPY["ui.2cdafbc56cfb"][screenLang]}</strong> {SCREEN_COPY["ui.48eebad5f076"][screenLang]} </span>
         </label>
       </section>
 
@@ -496,24 +573,21 @@ export function ReferralSubmissionForm({
             onCheckedChange={(v) => setForm({ ...form, consentToContact: Boolean(v) })}
           />
           <span>
-            <strong>Consent to contact:</strong> The person knows about this referral and is OK with
-            us reaching out by text or call.
-          </span>
+            <strong>{SCREEN_COPY["ui.92df01faf43c"][screenLang]}</strong> {SCREEN_COPY["ui.faffa194e553"][screenLang]} </span>
         </label>
         <label className="flex items-start gap-2 text-sm cursor-pointer">
           <Checkbox
             checked={form.notARobot}
             onCheckedChange={(v) => setForm({ ...form, notARobot: Boolean(v) })}
           />
-          <span>I'm not a robot.</span>
+          <span>{SCREEN_COPY["ui.b5b0f2cd0aad"][screenLang]}</span>
         </label>
       </div>
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-teal" />
-          Encrypted submission · rate-limited
-        </p>
+          {SCREEN_COPY["ui.71a2220b52bf"][screenLang]} </p>
         <Button
           type="submit"
           size="lg"
@@ -521,8 +595,7 @@ export function ReferralSubmissionForm({
           data-testid="referral-submit"
         >
           <Send className="h-4 w-4 mr-2" />
-          Send referral
-        </Button>
+          {SCREEN_COPY["ui.719c2be7b5fd"][screenLang]} </Button>
       </div>
     </form>
   );

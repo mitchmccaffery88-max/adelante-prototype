@@ -1,6 +1,20 @@
 import type { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.002ff598115d": {
+    "en": "Question",
+    "es": "Pregunta"
+  },
+  "ui.de04fa0e29f9": {
+    "en": "of",
+    "es": "de"
+  }
+} as const;
+
 
 export interface ChoiceOption<T extends string> {
   key: T;
@@ -30,11 +44,13 @@ export function QuestionCard<T extends string>({
   onAnswer: (value: T) => void;
   footer?: ReactNode;
 }) {
+  const { lang: screenLang } = useI18n();
+
   return (
     <Card className="space-y-5 p-6">
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Question {step} of {total}
+          {SCREEN_COPY["ui.002ff598115d"][screenLang]} {step} {SCREEN_COPY["ui.de04fa0e29f9"][screenLang]} {total}
         </p>
         <h1 className="font-display mt-2 text-2xl text-navy">{question}</h1>
         {help && <p className="mt-2 text-sm text-muted-foreground">{help}</p>}

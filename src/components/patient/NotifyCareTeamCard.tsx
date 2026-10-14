@@ -16,10 +16,24 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.c3a71a5a8921": {
+    "en": "Anything you want them to know (optional)",
+    "es": "Algo que quieras que sepan (opcional)"
+  },
+  "ui.7fdd49c4c931": {
+    "en": "Alert my care team",
+    "es": "Alertar a mi equipo de cuidado"
+  }
+} as const;
+
 
 const ACTOR = "Patient (asked for their care team)";
 
 export function NotifyCareTeamCard() {
+  const { lang: screenLang } = useI18n();
+
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [note, setNote] = useState("");
@@ -65,7 +79,7 @@ export function NotifyCareTeamCard() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             data-testid="notify-care-team-note"
-            placeholder="Anything you want them to know (optional)"
+            placeholder={SCREEN_COPY["ui.c3a71a5a8921"][screenLang]}
             className="mt-3 min-h-[70px] text-sm"
           />
           <Button
@@ -74,8 +88,7 @@ export function NotifyCareTeamCard() {
             className="mt-3 min-h-11 w-full rounded-2xl"
             onClick={send}
           >
-            Alert my care team
-          </Button>
+            {SCREEN_COPY["ui.7fdd49c4c931"][screenLang]} </Button>
           <p className="mt-2 text-xs text-muted-foreground">
             This is not an emergency service. For an emergency, call 911; to talk to someone right
             now, call or text 988.

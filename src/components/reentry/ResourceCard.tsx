@@ -8,6 +8,20 @@ import { Button } from "@/components/ui/button";
 import { type CommunityResource } from "@/lib/communityResources";
 import { Badge } from "@/components/ui/badge";
 import { isResourceSaved, toggleSavedResource } from "@/lib/selfTracking";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.291a0a58dfa6": {
+    "en": "Call",
+    "es": "Llamar"
+  },
+  "ui.2e8a57cc5c47": {
+    "en": "Website",
+    "es": "Sitio web"
+  }
+} as const;
+
 
 /**
  * §Phase 3 (Universal Resource Directory) — `surface` only decides which route
@@ -25,6 +39,8 @@ export function ResourceCard({
   patientId: string;
   surface?: ResourceSurface;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const params = { categoryId: r.categoryId, orgId: r.id };
   const linkClass =
     "group flex items-start gap-1 text-sm font-medium text-foreground hover:underline";
@@ -93,8 +109,7 @@ export function ResourceCard({
       <div className="flex flex-wrap gap-2 pt-2">
         <Button asChild size="sm" variant="outline">
           <a href={`tel:${r.phone.replace(/[^\d+]/g, "")}`} data-testid={`call-${r.id}`}>
-            <Phone className="mr-1 h-4 w-4" aria-hidden="true" /> Call
-          </a>
+            <Phone className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.291a0a58dfa6"][screenLang]} </a>
         </Button>
         {r.website && (
           <Button asChild size="sm" variant="outline">
@@ -104,8 +119,7 @@ export function ResourceCard({
               rel="noreferrer noopener"
               data-testid={`website-${r.id}`}
             >
-              <Globe className="mr-1 h-4 w-4" aria-hidden="true" /> Website
-            </a>
+              <Globe className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.2e8a57cc5c47"][screenLang]} </a>
           </Button>
         )}
       </div>

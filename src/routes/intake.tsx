@@ -143,6 +143,214 @@ import {
 
 import { useI18n } from "@/lib/i18n";
 import { PHASE9A_COPY } from "@/lib/phase9aCopy";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.5ffd37fc0001": {
+    "en": "A few quick details so we can reach you the right way. You can skip anything you're not ready to share.",
+    "es": "Unos pocos detalles para contactarte de la mejor manera. Puedes saltarte lo que no quieras compartir aún."
+  },
+  "ui.3ae6fae79d19": {
+    "en": "What language should we use with you?",
+    "es": "¿Qué idioma prefieres que usemos contigo?"
+  },
+  "ui.c3ac12937248": {
+    "en": "Preferred language / Idioma preferido",
+    "es": "Idioma preferido"
+  },
+  "ui.1cce4cbdca8f": {
+    "en": "Preferred name",
+    "es": "Nombre preferido"
+  },
+  "ui.68e7d7d55864": {
+    "en": "What should we call you?",
+    "es": "¿Cómo quieres que te llamemos?"
+  },
+  "ui.888bdc7ef222": {
+    "en": "Pronouns (optional)",
+    "es": "Pronombres (opcional)"
+  },
+  "ui.190c6f0dcefb": {
+    "en": "she/her, he/him, they/them…",
+    "es": "ella, él, elle…"
+  },
+  "ui.77064d526523": {
+    "en": "Phone",
+    "es": "Teléfono"
+  },
+  "ui.8d688bf5e98b": {
+    "en": "Best way to reach you",
+    "es": "Mejor forma de contactarte"
+  },
+  "ui.c3328c39b0e2": {
+    "en": "Text",
+    "es": "Texto"
+  },
+  "ui.cac056598c76": {
+    "en": "Phone call",
+    "es": "Llamada telefónica"
+  },
+  "ui.bc17c1f0179a": {
+    "en": "Video",
+    "es": "Video"
+  },
+  "ui.43b514a8dac5": {
+    "en": "Best time to reach you",
+    "es": "Mejor horario para contactarte"
+  },
+  "ui.a0cf42473466": {
+    "en": "Morning",
+    "es": "Mañana"
+  },
+  "ui.d682699b928c": {
+    "en": "Afternoon",
+    "es": "Tarde"
+  },
+  "ui.6734e19790f1": {
+    "en": "Evening",
+    "es": "Noche"
+  },
+  "ui.db8e303ba954": {
+    "en": "Mailing or temporary address",
+    "es": "Dirección postal o temporal"
+  },
+  "ui.e75f22b9c379": {
+    "en": "Street, city, state, zip",
+    "es": "Calle, ciudad, estado, código postal"
+  },
+  "ui.61689486e9fa": {
+    "en": "Emergency contacts",
+    "es": "Contactos de emergencia"
+  },
+  "ui.887796109a71": {
+    "en": "List as many people as you want us to be able to reach. The first one is who we try first.",
+    "es": "Añade a las personas que prefieras. Intentaremos contactar primero a la que pongas al inicio."
+  },
+  "ui.d70f93df5e8f": {
+    "en": "Address",
+    "es": "Dirección"
+  },
+  "ui.4a7169589f1c": {
+    "en": "Notes — best times, what they know, anything we should be careful about",
+    "es": "Notas: mejores horarios, qué saben, cualquier precaución necesaria"
+  },
+  "ui.935928d6d1e3": {
+    "en": "Add another contact",
+    "es": "Añadir otro contacto"
+  },
+  "ui.adb34e41d8f6": {
+    "en": "You've already completed intake.",
+    "es": "Ya has completado la admisión."
+  },
+  "ui.bed46d72fa64": {
+    "en": "You can update your answers below — your care team will be notified of any changes.",
+    "es": "Puedes actualizar tus respuestas a continuación; tu equipo de cuidado recibirá una notificación."
+  },
+  "ui.b3bdcc61ab74": {
+    "en": ". Nothing you do here changes that.",
+    "es": ". Nada de lo que hagas aquí cambia eso."
+  },
+  "ui.dc416e1088e4": {
+    "en": "Step",
+    "es": "Paso"
+  },
+  "ui.de04fa0e29f9": {
+    "en": "of",
+    "es": "de"
+  },
+  "ui.c0ae8f6ea841": {
+    "en": "Saved",
+    "es": "Guardado"
+  },
+  "ui.b52b36b7269f": {
+    "en": "Back",
+    "es": "Atrás"
+  },
+  "ui.80e13549b47a": {
+    "en": "Coverage",
+    "es": "Cobertura"
+  },
+  "ui.5c50d9b9f0be": {
+    "en": "Two separate things: how your care gets paid for, and whether you've been involved with the justice system. Neither one decides the other, and neither one changes the care you get.",
+    "es": "Dos temas distintos: cómo se paga tu cuidado y si has tenido contacto con el sistema judicial. Ninguno influye en el otro ni cambia el cuidado que recibes."
+  },
+  "ui.60dee3893395": {
+    "en": "County",
+    "es": "Condado"
+  },
+  "ui.aa8b29d48e32": {
+    "en": "We're checking for an existing plan",
+    "es": "Estamos buscando si existe un plan"
+  },
+  "ui.017374cb34fe": {
+    "en": "We found a record that looks like yours. Let's get you back into it instead of starting over.",
+    "es": "Encontramos un registro que parece ser el tuyo. Vamos a retomarlo en lugar de empezar de nuevo."
+  },
+  "ui.a8996b8bbf49": {
+    "en": "Reconnect to my record",
+    "es": "Reconectar con mi registro"
+  },
+  "ui.9d3fc8ca4099": {
+    "en": "We found more than one possible record, so a person needs to check which one is yours.",
+    "es": "Encontramos más de un registro posible, por lo que alguien debe verificar cuál es el tuyo."
+  },
+  "ui.f1b702a0fd25": {
+    "en": "Have someone check",
+    "es": "Pedir que alguien lo verifique"
+  },
+  "ui.799d7e705dca": {
+    "en": "We didn't find a plan started for you. That means coordination that should have happened before your release didn't — so we'll do all of it today instead, starting with your Medi-Cal.",
+    "es": "No encontramos un plan previo para ti. Esto significa que haremos la coordinación hoy mismo, comenzando con tu Medi-Cal."
+  },
+  "ui.5397e0583f14": {
+    "en": "Yes",
+    "es": "Sí"
+  },
+  "ui.816c52fd2bdd": {
+    "en": "No",
+    "es": "No"
+  },
+  "ui.3abb4105cea7": {
+    "en": "A few optional background questions. Answer only what you want to — your care team records these as your own estimate.",
+    "es": "Algunas preguntas opcionales. Responde solo lo que desees; tu equipo de cuidado las registrará como tu propia estimación."
+  },
+  "ui.064df9f9c00a": {
+    "en": "Some answers are already on file and shown below. Change anything that's out of date — what you leave as-is stays as-is.",
+    "es": "Algunas respuestas ya están registradas. Cambia lo que esté desactualizado; el resto se mantendrá igual."
+  },
+  "ui.349ac8fb67f7": {
+    "en": "Select…",
+    "es": "Seleccionar…"
+  },
+  "ui.6d337288c2fc": {
+    "en": "Who referred you",
+    "es": "Quién te recomendó"
+  },
+  "ui.a86c924520ca": {
+    "en": "Optional — how did you hear about Adelante? It helps us know what's working. You can skip this.",
+    "es": "Opcional: ¿cómo te enteraste de Adelante? Nos ayuda a mejorar. Puedes saltarte esta parte."
+  },
+  "ui.553993af25a6": {
+    "en": "Review and submit. Your care team will use this to plan your first session.",
+    "es": "Revisa y envía. Tu equipo de cuidado usará esto para planificar tu primera sesión."
+  },
+  "ui.1ae87ca91253": {
+    "en": "Everyday needs you picked",
+    "es": "Necesidades diarias que elegiste"
+  },
+  "ui.d94a0d036a65": {
+    "en": "Also on file from screening",
+    "es": "También registrado en la evaluación previa"
+  },
+  "ui.1d736ecea358": {
+    "en": "Save & continue",
+    "es": "Guardar y continuar"
+  },
+  "ui.2e1f60b6b585": {
+    "en": "Submit intake",
+    "es": "Enviar admisión"
+  }
+} as const;
+
 
 /** §Phase 9a — justice involvement is already known from the record. */
 function justiceKnownFor(patientId: string | null | undefined): boolean {
@@ -154,6 +362,10 @@ function justiceKnownFor(patientId: string | null | undefined): boolean {
 export const Route = createFileRoute("/intake")({
   head: () => ({
     meta: [
+      { property: "og:title", content: "Your intake — Adelante" },
+      { property: "og:description", content: "Share your everyday needs and contact details with your Adelante care team." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Intake & Screening — Adelante" },
       {
         name: "description",
@@ -213,6 +425,8 @@ function CoverageCallout({
 }
 
 function IntakePage() {
+  const { lang: screenLang } = useI18n();
+
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
@@ -786,9 +1000,7 @@ function IntakePage() {
   const aboutSection = (
           <div className="space-y-5">
             <p className="text-sm text-muted-foreground">
-              A few quick details so we can reach you the right way. You can skip anything you're
-              not ready to share.
-            </p>
+              {SCREEN_COPY["ui.5ffd37fc0001"][screenLang]} </p>
 
             {/* Language is promoted above the rest of this step: it drives the
                 app's language, Adel's replies, and — critically — the language
@@ -799,8 +1011,7 @@ function IntakePage() {
                 <Languages className="h-5 w-5 text-teal mt-0.5 shrink-0" />
                 <div className="space-y-1">
                   <Label className="text-base font-semibold leading-tight">
-                    What language should we use with you?
-                    <span className="block text-muted-foreground font-normal text-sm">
+                    {SCREEN_COPY["ui.3ae6fae79d19"][screenLang]} <span className="block text-muted-foreground font-normal text-sm">
                       ¿En qué idioma debemos hablarle?
                     </span>
                   </Label>
@@ -813,7 +1024,7 @@ function IntakePage() {
               </div>
               <div
                 role="radiogroup"
-                aria-label="Preferred language / Idioma preferido"
+                aria-label={SCREEN_COPY["ui.c3ac12937248"][screenLang]}
                 className="grid grid-cols-2 gap-2"
               >
                 {(
@@ -842,23 +1053,23 @@ function IntakePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-sm">Preferred name</Label>
+                <Label className="text-sm">{SCREEN_COPY["ui.1cce4cbdca8f"][screenLang]}</Label>
                 <Input
                   value={profile.preferredName}
                   onChange={(e) => setProfile({ ...profile, preferredName: e.target.value })}
-                  placeholder="What should we call you?"
+                  placeholder={SCREEN_COPY["ui.68e7d7d55864"][screenLang]}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Pronouns (optional)</Label>
+                <Label className="text-sm">{SCREEN_COPY["ui.888bdc7ef222"][screenLang]}</Label>
                 <Input
                   value={profile.pronouns}
                   onChange={(e) => setProfile({ ...profile, pronouns: e.target.value })}
-                  placeholder="she/her, he/him, they/them…"
+                  placeholder={SCREEN_COPY["ui.190c6f0dcefb"][screenLang]}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Phone</Label>
+                <Label className="text-sm">{SCREEN_COPY["ui.77064d526523"][screenLang]}</Label>
                 <Input
                   type="tel"
                   value={profile.phone}
@@ -867,7 +1078,7 @@ function IntakePage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Best way to reach you</Label>
+                <Label className="text-sm">{SCREEN_COPY["ui.8d688bf5e98b"][screenLang]}</Label>
                 <Select
                   value={profile.contactChannel}
                   onValueChange={(v) =>
@@ -878,14 +1089,14 @@ function IntakePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="call">Phone call</SelectItem>
-                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="text">{SCREEN_COPY["ui.c3328c39b0e2"][screenLang]}</SelectItem>
+                    <SelectItem value="call">{SCREEN_COPY["ui.cac056598c76"][screenLang]}</SelectItem>
+                    <SelectItem value="video">{SCREEN_COPY["ui.bc17c1f0179a"][screenLang]}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Best time to reach you</Label>
+                <Label className="text-sm">{SCREEN_COPY["ui.43b514a8dac5"][screenLang]}</Label>
                 <Select
                   value={profile.bestTime}
                   onValueChange={(v) => setProfile({ ...profile, bestTime: v as BestTime })}
@@ -894,18 +1105,18 @@ function IntakePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="morning">Morning</SelectItem>
-                    <SelectItem value="afternoon">Afternoon</SelectItem>
-                    <SelectItem value="evening">Evening</SelectItem>
+                    <SelectItem value="morning">{SCREEN_COPY["ui.a0cf42473466"][screenLang]}</SelectItem>
+                    <SelectItem value="afternoon">{SCREEN_COPY["ui.d682699b928c"][screenLang]}</SelectItem>
+                    <SelectItem value="evening">{SCREEN_COPY["ui.6734e19790f1"][screenLang]}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-sm">Mailing or temporary address</Label>
+                <Label className="text-sm">{SCREEN_COPY["ui.db8e303ba954"][screenLang]}</Label>
                 <Input
                   value={profile.address}
                   onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                  placeholder="Street, city, state, zip"
+                  placeholder={SCREEN_COPY["ui.e75f22b9c379"][screenLang]}
                 />
               </div>
             </div>
@@ -970,11 +1181,9 @@ function IntakePage() {
             )}
             <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
               <div>
-                <div className="text-sm font-medium text-navy">Emergency contacts</div>
+                <div className="text-sm font-medium text-navy">{SCREEN_COPY["ui.61689486e9fa"][screenLang]}</div>
                 <p className="text-xs text-muted-foreground">
-                  List as many people as you want us to be able to reach. The first one is who we
-                  try first.
-                </p>
+                  {SCREEN_COPY["ui.887796109a71"][screenLang]} </p>
               </div>
               {profile.emergencyContacts.map((c, i) => (
                 <div key={i} className="space-y-3 rounded-md border bg-card p-3" data-testid="emergency-contact-row">
@@ -1041,7 +1250,7 @@ function IntakePage() {
                     />
                     <Input
                       className="sm:col-span-2"
-                      placeholder="Address"
+                      placeholder={SCREEN_COPY["ui.d70f93df5e8f"][screenLang]}
                       aria-label={`Address — contact ${i + 1}`}
                       value={c.address ?? ""}
                       onChange={(e) =>
@@ -1055,7 +1264,7 @@ function IntakePage() {
                     />
                     <Input
                       className="sm:col-span-3"
-                      placeholder="Notes — best times, what they know, anything we should be careful about"
+                      placeholder={SCREEN_COPY["ui.4a7169589f1c"][screenLang]}
                       aria-label={`Notes — contact ${i + 1}`}
                       value={c.notes ?? ""}
                       onChange={(e) =>
@@ -1099,8 +1308,7 @@ function IntakePage() {
                   })
                 }
               >
-                <Plus className="mr-1.5 h-4 w-4" /> Add another contact
-              </Button>
+                <Plus className="mr-1.5 h-4 w-4" /> {SCREEN_COPY["ui.935928d6d1e3"][screenLang]} </Button>
             </div>
             {!inReassess && (
               <AdvocateSection
@@ -1146,10 +1354,9 @@ function IntakePage() {
         <Card className="mb-4 p-4 bg-teal/10 border-teal/30 flex items-start gap-3">
           <CheckCircle2 className="h-5 w-5 text-teal mt-0.5" />
           <div className="text-sm">
-            <div className="font-medium text-navy">You've already completed intake.</div>
+            <div className="font-medium text-navy">{SCREEN_COPY["ui.adb34e41d8f6"][screenLang]}</div>
             <div className="text-muted-foreground">
-              You can update your answers below — your care team will be notified of any changes.
-            </div>
+              {SCREEN_COPY["ui.bed46d72fa64"][screenLang]} </div>
           </div>
         </Card>
       )}
@@ -1158,17 +1365,15 @@ function IntakePage() {
           <ShieldCheck className="h-5 w-5 text-teal mt-0.5" />
           <div className="text-sm">
             <div className="font-medium text-navy">
-              Your consent is already on file — we won't ask again.
-            </div>
+              {"Your consent is already on file — we won't ask again."} </div>
             <div className="text-muted-foreground">
               HIPAA acknowledged, and substance-use sharing is currently{" "}
               <strong className="text-foreground">
                 {consentOnFile.part2Sud ? "allowed" : "not allowed"}
               </strong>
-              . Nothing you do here changes that.{" "}
+              {SCREEN_COPY["ui.b3bdcc61ab74"][screenLang]}{" "}
               <Link to="/consent" className="underline text-teal">
-                Review or change your consent
-              </Link>
+                {"Review or change your consent"} </Link>
               .
             </div>
           </div>
@@ -1215,12 +1420,11 @@ function IntakePage() {
         <Progress value={pct} className="h-2" />
         <div className="mt-1.5 text-xs text-muted-foreground flex items-center justify-between">
           <span>
-            Step {step + 1} of {total}
+            {SCREEN_COPY["ui.dc416e1088e4"][screenLang]} {step + 1} {SCREEN_COPY["ui.de04fa0e29f9"][screenLang]} {total}
           </span>
           {savedAt && (
             <span className="inline-flex items-center gap-1 text-teal">
-              <Save className="h-3 w-3" /> Saved
-            </span>
+              <Save className="h-3 w-3" /> {SCREEN_COPY["ui.c0ae8f6ea841"][screenLang]} </span>
           )}
         </div>
         </>)}
@@ -1246,8 +1450,7 @@ function IntakePage() {
               {aboutSection}
               <div className="flex justify-between gap-3">
                 <Button variant="outline" className="min-h-11" onClick={() => setReassess("ask")}>
-                  Back
-                </Button>
+                  {SCREEN_COPY["ui.b52b36b7269f"][screenLang]} </Button>
                 <Button
                   className="min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
                   data-testid="reassess-save-about"
@@ -1369,16 +1572,12 @@ function IntakePage() {
           <div className="space-y-5">
             <div>
               <Badge variant="outline" className="border-teal/40 text-teal">
-                Coverage
-              </Badge>
+                {SCREEN_COPY["ui.80e13549b47a"][screenLang]} </Badge>
               <p className="mt-2 text-sm text-muted-foreground">
-                Two separate things: how your care gets paid for, and whether you've been involved
-                with the justice system. Neither one decides the other, and neither one changes the
-                care you get.
-              </p>
+                {SCREEN_COPY["ui.5c50d9b9f0be"][screenLang]} </p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm">County</Label>
+              <Label className="text-sm">{SCREEN_COPY["ui.60dee3893395"][screenLang]}</Label>
               <input
                 value={coverage.countyOfRelease}
                 onChange={(e) => setCoverage({ ...coverage, countyOfRelease: e.target.value })}
@@ -1394,38 +1593,30 @@ function IntakePage() {
                 className="rounded-lg border bg-secondary/40 p-4 text-sm space-y-2"
               >
                 <div className="flex items-center gap-2 font-medium text-navy">
-                  <Search className="h-4 w-4 text-teal" /> We're checking for an existing plan
-                </div>
+                  <Search className="h-4 w-4 text-teal" /> {SCREEN_COPY["ui.aa8b29d48e32"][screenLang]} </div>
                 <p className="text-muted-foreground">{LOOKUP_DISCLOSURE}</p>
                 {lookup?.status === "match" && (
                   <div className="space-y-2">
                     <p className="text-foreground">
-                      We found a record that looks like yours. Let's get you back into it instead of
-                      starting over.
-                    </p>
+                      {SCREEN_COPY["ui.017374cb34fe"][screenLang]} </p>
                     <Button asChild size="sm">
-                      <Link to="/start/reconnect">Reconnect to my record</Link>
+                      <Link to="/start/reconnect">{SCREEN_COPY["ui.a8996b8bbf49"][screenLang]}</Link>
                     </Button>
                   </div>
                 )}
                 {lookup?.status === "ambiguous" && (
                   <div className="space-y-2">
                     <p className="text-foreground">
-                      We found more than one possible record, so a person needs to check which one
-                      is yours.
-                    </p>
+                      {SCREEN_COPY["ui.9d3fc8ca4099"][screenLang]} </p>
                     <Button asChild size="sm" variant="outline">
-                      <Link to="/start/reconnect">Have someone check</Link>
+                      <Link to="/start/reconnect">{SCREEN_COPY["ui.f1b702a0fd25"][screenLang]}</Link>
                     </Button>
                   </div>
                 )}
                 {missedHandoff && (
                   <div className="space-y-1" data-testid="missed-handoff-notice">
                     <p className="text-foreground">
-                      We didn't find a plan started for you. That means coordination that should
-                      have happened before your release didn't — so we'll do all of it today
-                      instead, starting with your Medi-Cal.
-                    </p>
+                      {SCREEN_COPY["ui.799d7e705dca"][screenLang]} </p>
                     <p className="text-muted-foreground">{MEDI_CAL_FOLLOW_UP_MESSAGE}</p>
                   </div>
                 )}
@@ -1468,8 +1659,7 @@ function IntakePage() {
               <p className="text-sm text-muted-foreground mt-2">
                 Federal law gives extra protection to information about alcohol or drug use.{" "}
                 <strong className="text-foreground">
-                  Nothing about substance use is collected unless you agree.
-                </strong>{" "}
+                  {"Nothing about substance use is collected unless you agree."} </strong>{" "}
                 If you say no, your probation officer and other referrers will not receive any SUD
                 details.
               </p>
@@ -1481,15 +1671,14 @@ function IntakePage() {
                 <label className="flex items-start min-h-11 gap-2 rounded-md border bg-card py-3 px-3 cursor-pointer">
                   <RadioGroupItem value="yes" />
                   <span className="text-sm">
-                    <strong>Yes</strong> — I consent to share substance-use information with my
+                    <strong>{SCREEN_COPY["ui.5397e0583f14"][screenLang]}</strong> — I consent to share substance-use information with my
                     Adelante care team.
                   </span>
                 </label>
                 <label className="flex items-start min-h-11 gap-2 rounded-md border bg-card py-3 px-3 cursor-pointer">
                   <RadioGroupItem value="no" />
                   <span className="text-sm">
-                    <strong>No</strong> — Skip substance-use screening for now.
-                  </span>
+                    <strong>{SCREEN_COPY["ui.816c52fd2bdd"][screenLang]}</strong> {"— Skip substance-use screening for now."} </span>
                 </label>
               </RadioGroup>
             </div>
@@ -1766,27 +1955,23 @@ function IntakePage() {
         {current.key === "history" && (
           <div className="space-y-4" data-testid="history-step">
             <p className="text-sm text-muted-foreground">
-              A few optional background questions. Answer only what you want to — your care team
-              records these as your own estimate.
-            </p>
+              {SCREEN_COPY["ui.3abb4105cea7"][screenLang]} </p>
             {historyOnFile && (
               <p
                 className="rounded-lg border border-amber-warm/60 bg-amber-warm/10 p-3 text-xs"
                 data-testid="history-prefilled-notice"
               >
-                Some answers are already on file and shown below. Change anything that&apos;s out of
-                date — what you leave as-is stays as-is.
-              </p>
+                {SCREEN_COPY["ui.064df9f9c00a"][screenLang]} </p>
             )}
 
             {effectiveSud === true && (
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-medium">Substance use</h3>
+                  <h3 className="text-sm font-medium">{"Substance use"}</h3>
                   <ProvenanceBadge source="self_report" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Main substance</Label>
+                  <Label className="text-xs">{"Main substance"}</Label>
                   <Select
                     value={history.substance ?? ""}
                     onValueChange={(v) =>
@@ -1794,7 +1979,7 @@ function IntakePage() {
                     }
                   >
                     <SelectTrigger className="min-h-11">
-                      <SelectValue placeholder="Select…" />
+                      <SelectValue placeholder={SCREEN_COPY["ui.349ac8fb67f7"][screenLang]} />
                     </SelectTrigger>
                     <SelectContent>
                       {CALOMS_SUBSTANCES.map((s) => (
@@ -1806,13 +1991,13 @@ function IntakePage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">How you mainly use it</Label>
+                  <Label className="text-xs">{"How you mainly use it"}</Label>
                   <Select
                     value={history.route ?? ""}
                     onValueChange={(v) => setHistory({ ...history, route: v as CalomsRoute })}
                   >
                     <SelectTrigger className="min-h-11">
-                      <SelectValue placeholder="Select…" />
+                      <SelectValue placeholder={SCREEN_COPY["ui.349ac8fb67f7"][screenLang]} />
                     </SelectTrigger>
                     <SelectContent>
                       {CALOMS_ROUTES.map((r) => (
@@ -1824,7 +2009,7 @@ function IntakePage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">How often in the past 30 days</Label>
+                  <Label className="text-xs">{"How often in the past 30 days"}</Label>
                   <Select
                     value={history.frequency ?? ""}
                     onValueChange={(v) =>
@@ -1832,7 +2017,7 @@ function IntakePage() {
                     }
                   >
                     <SelectTrigger className="min-h-11">
-                      <SelectValue placeholder="Select…" />
+                      <SelectValue placeholder={SCREEN_COPY["ui.349ac8fb67f7"][screenLang]} />
                     </SelectTrigger>
                     <SelectContent>
                       {CALOMS_FREQUENCIES.map((f) => (
@@ -1844,7 +2029,7 @@ function IntakePage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Age you first used it (your estimate)</Label>
+                  <Label className="text-xs">{"Age you first used it (your estimate)"}</Label>
                   <Input
                     className="min-h-11"
                     inputMode="numeric"
@@ -1853,7 +2038,7 @@ function IntakePage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Times you&apos;ve been in treatment before</Label>
+                  <Label className="text-xs">{"Times you've been in treatment before"}</Label>
                   <Select
                     value={history.priorEpisodes ?? ""}
                     onValueChange={(v) =>
@@ -1861,7 +2046,7 @@ function IntakePage() {
                     }
                   >
                     <SelectTrigger className="min-h-11">
-                      <SelectValue placeholder="Select…" />
+                      <SelectValue placeholder={SCREEN_COPY["ui.349ac8fb67f7"][screenLang]} />
                     </SelectTrigger>
                     <SelectContent>
                       {PRIOR_EPISODE_BUCKETS.map((b) => (
@@ -1873,7 +2058,7 @@ function IntakePage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Kind of treatment last time</Label>
+                  <Label className="text-xs">{"Kind of treatment last time"}</Label>
                   <Select
                     value={history.lastTreatmentType ?? ""}
                     onValueChange={(v) =>
@@ -1881,7 +2066,7 @@ function IntakePage() {
                     }
                   >
                     <SelectTrigger className="min-h-11">
-                      <SelectValue placeholder="Select…" />
+                      <SelectValue placeholder={SCREEN_COPY["ui.349ac8fb67f7"][screenLang]} />
                     </SelectTrigger>
                     <SelectContent>
                       {PRIOR_TREATMENT_TYPES.map((t) => (
@@ -1898,12 +2083,12 @@ function IntakePage() {
             {coverage.justiceInvolvement === "yes" && (
               <div className="space-y-3 rounded-lg border border-amber-warm/60 p-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-medium">Court or custody history</h3>
+                  <h3 className="text-sm font-medium">{"Court or custody history"}</h3>
                   <ProvenanceBadge source="self_report" />
                 </div>
                 <p className="text-xs text-muted-foreground">{JUSTICE_SELF_REPORT_NOTE}</p>
                 <div className="space-y-1">
-                  <Label className="text-xs">Arrests in the past 12 months (your estimate)</Label>
+                  <Label className="text-xs">{"Arrests in the past 12 months (your estimate)"}</Label>
                   <Input
                     className="min-h-11"
                     inputMode="numeric"
@@ -1914,7 +2099,7 @@ function IntakePage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Months in custody (your estimate)</Label>
+                  <Label className="text-xs">{"Months in custody (your estimate)"}</Label>
                   <Input
                     className="min-h-11"
                     inputMode="numeric"
@@ -1925,7 +2110,7 @@ function IntakePage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Who referred you</Label>
+                  <Label className="text-xs">{SCREEN_COPY["ui.6d337288c2fc"][screenLang]}</Label>
                   <Select
                     value={history.justiceReferralSource ?? ""}
                     onValueChange={(v) =>
@@ -1933,7 +2118,7 @@ function IntakePage() {
                     }
                   >
                     <SelectTrigger className="min-h-11">
-                      <SelectValue placeholder="Select…" />
+                      <SelectValue placeholder={SCREEN_COPY["ui.349ac8fb67f7"][screenLang]} />
                     </SelectTrigger>
                     <SelectContent>
                       {JUSTICE_REFERRAL_SOURCES.map((s) => (
@@ -1952,9 +2137,7 @@ function IntakePage() {
         {current.key === "source" && (
           <div className="space-y-3" data-testid="heard-about-step">
             <p className="text-sm text-muted-foreground">
-              Optional — how did you hear about Adelante? It helps us know what's working. You can
-              skip this.
-            </p>
+              {SCREEN_COPY["ui.a86c924520ca"][screenLang]} </p>
             <RadioGroup
               className="grid gap-2"
               value={heardAbout}
@@ -1977,8 +2160,7 @@ function IntakePage() {
         {current.key === "review" && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Review and submit. Your care team will use this to plan your first session.
-            </p>
+              {SCREEN_COPY["ui.553993af25a6"][screenLang]} </p>
             <div className="rounded-lg border bg-secondary/30 p-4 space-y-2 text-sm">
               {activeScreeners
                 .filter((s) => askCore || s.key !== "ahc-hrsn")
@@ -1998,7 +2180,7 @@ function IntakePage() {
                 );
               })}
               <div className="flex justify-between pt-2 border-t">
-                <span>Everyday needs you picked</span>
+                <span>{SCREEN_COPY["ui.1ae87ca91253"][screenLang]}</span>
                 <span className="font-medium text-navy" data-testid="review-needs-count">
                   {Object.values(topics).filter(Boolean).length +
                     needsPlan.capture.filter((k) => needs[k]).length +
@@ -2007,7 +2189,7 @@ function IntakePage() {
               </div>
               {needsPlan.onFileOnly.length > 0 && (
                 <div className="flex justify-between">
-                  <span>Also on file from screening</span>
+                  <span>{SCREEN_COPY["ui.d94a0d036a65"][screenLang]}</span>
                   <span className="font-medium text-navy">{needsPlan.onFileOnly.length}</span>
                 </div>
               )}
@@ -2023,23 +2205,20 @@ function IntakePage() {
       <div className="h-60 md:hidden" aria-hidden />
       <div className={`fixed md:sticky ${alreadyComplete ? "bottom-[calc(5.25rem+env(safe-area-inset-bottom))]" : "bottom-[env(safe-area-inset-bottom)]"} md:bottom-0 left-0 right-0 md:left-auto md:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t md:border-0 md:bg-transparent px-4 md:px-0 py-3 md:py-0`}>
         <Button variant="outline" className="min-h-11" onClick={back} disabled={step === 0}>
-          Back
-        </Button>
+          {SCREEN_COPY["ui.b52b36b7269f"][screenLang]} </Button>
         {step < total - 1 ? (
           <Button
             className="min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
             onClick={next}
             disabled={current.key === "consent" && (!hipaaConsent || sudConsent === null)}
           >
-            Save &amp; continue
-          </Button>
+            {SCREEN_COPY["ui.1d736ecea358"][screenLang]} </Button>
         ) : (
           <Button
             className="min-h-11 bg-teal text-teal-foreground hover:bg-teal/90"
             onClick={submit}
           >
-            Submit intake
-          </Button>
+            {SCREEN_COPY["ui.2e1f60b6b585"][screenLang]} </Button>
         )}
       </div>
       </>)}

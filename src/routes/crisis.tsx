@@ -8,6 +8,38 @@ import { CRISIS_LIFELINE_NAME, CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
 import { useI18n } from "@/lib/i18n";
 import { OUTSIDE_CRISIS_COPY, countyCrisisLines } from "@/lib/outsideCrisisResources";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.f5b8ed165f42": {
+    "en": "Back to My care",
+    "es": "Volver a Mi cuidado"
+  },
+  "ui.f76c2d587357": {
+    "en": "Try a breathing exercise",
+    "es": "Probar un ejercicio de respiración"
+  },
+  "ui.dd7e9af13906": {
+    "en": "Box breathing — four counts in, four hold, four out.",
+    "es": "Respiración profunda: inhala en cuatro tiempos, mantén cuatro y exhala en cuatro."
+  },
+  "ui.74b09d962d5d": {
+    "en": "Open my safety plan",
+    "es": "Abrir mi plan de seguridad"
+  },
+  "ui.a70439a66d18": {
+    "en": "Your warning signs, your people, your reasons — in your own words.",
+    "es": "Tus señales de alerta, tus personas de apoyo y tus razones, en tus propias palabras."
+  },
+  "ui.944c857921d8": {
+    "en": "Naloxone & overdose prevention",
+    "es": "Naloxona y prevención de sobredosis"
+  },
+  "ui.453858186b49": {
+    "en": "How to get it, how to use it, and what to do while you wait for help.",
+    "es": "Cómo obtenerlo, cómo usarlo y qué hacer mientras esperas ayuda."
+  }
+} as const;
+
 
 /**
  * §Patient portal Tier 1 Build A — the real crisis landing page.
@@ -18,6 +50,8 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
  * real Phase 5 box-breathing exercise and the real Phase 7 safety plan.
  */
 function CrisisPage() {
+  const { lang: screenLang } = useI18n();
+
   const { lang } = useI18n();
   const L = lang === "es" ? "es" : "en";
   const c = OUTSIDE_CRISIS_COPY[L];
@@ -35,7 +69,7 @@ function CrisisPage() {
         lede={c.lede}
         action={
           <Button asChild variant="ghost" size="sm" data-testid="crisis-back-link">
-            <Link to="/home">Back to My care</Link>
+            <Link to="/home">{SCREEN_COPY["ui.f5b8ed165f42"][screenLang]}</Link>
           </Button>
         }
       />
@@ -91,10 +125,9 @@ function CrisisPage() {
             <Wind className="h-5 w-5" aria-hidden="true" />
           </span>
           <span>
-            <span className="block text-base font-semibold">Try a breathing exercise</span>
+            <span className="block text-base font-semibold">{SCREEN_COPY["ui.f76c2d587357"][screenLang]}</span>
             <span className="block text-sm text-muted-foreground">
-              Box breathing — four counts in, four hold, four out.
-            </span>
+              {SCREEN_COPY["ui.dd7e9af13906"][screenLang]} </span>
           </span>
         </Link>
         <Link
@@ -106,10 +139,9 @@ function CrisisPage() {
             <LifeBuoy className="h-5 w-5" aria-hidden="true" />
           </span>
           <span>
-            <span className="block text-base font-semibold">Open my safety plan</span>
+            <span className="block text-base font-semibold">{SCREEN_COPY["ui.74b09d962d5d"][screenLang]}</span>
             <span className="block text-sm text-muted-foreground">
-              Your warning signs, your people, your reasons — in your own words.
-            </span>
+              {SCREEN_COPY["ui.a70439a66d18"][screenLang]} </span>
           </span>
         </Link>
         <Link
@@ -121,10 +153,9 @@ function CrisisPage() {
             <ShieldPlus className="h-5 w-5" aria-hidden="true" />
           </span>
           <span>
-            <span className="block text-base font-semibold">Naloxone & overdose prevention</span>
+            <span className="block text-base font-semibold">{SCREEN_COPY["ui.944c857921d8"][screenLang]}</span>
             <span className="block text-sm text-muted-foreground">
-              How to get it, how to use it, and what to do while you wait for help.
-            </span>
+              {SCREEN_COPY["ui.453858186b49"][screenLang]} </span>
           </span>
         </Link>
       </Card>

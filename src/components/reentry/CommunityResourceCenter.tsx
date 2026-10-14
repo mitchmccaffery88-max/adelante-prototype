@@ -44,6 +44,32 @@ import { savedResourceIds, subscribeSelfTracking } from "@/lib/selfTracking";
 import { ResourceCard, type ResourceSurface } from "@/components/reentry/ResourceCard";
 import { cn } from "@/lib/utils";
 import { recoveryJourneyVisible } from "@/lib/seeking";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.8151e15a11eb": {
+    "en": "Resources near you",
+    "es": "Recursos cerca de ti"
+  },
+  "ui.bc167e032784": {
+    "en": "Saved (",
+    "es": "Guardados ("
+  },
+  "ui.3b0dea9f45d4": {
+    "en": "Search by name or what they do",
+    "es": "Busca por nombre o actividad"
+  },
+  "ui.1514186eb48c": {
+    "en": "Search community resources",
+    "es": "Buscar recursos comunitarios"
+  },
+  "ui.069eb6508470": {
+    "en": "Our team has confirmed these listings, though details can still change; if something is wrong when you get there, tell your care team and we'll re-check it.",
+    "es": "Nuestro equipo confirmó estos lugares, pero los datos pueden cambiar. Si algo no está bien cuando llegues, avisa a tu equipo y lo revisaremos."
+  }
+} as const;
+
 
 // Category tile iconography. Kept local and explicit rather than pulled from
 // lucide's full map, so the patient bundle only carries these fourteen.
@@ -75,6 +101,8 @@ export function CommunityResourceCenter({
   surface?: ResourceSurface;
   initialCategory?: string;
 } = {}) {
+  const { lang: screenLang } = useI18n();
+
   const [category, setCategory] = useState<string | null>(
     initialCategory && RESOURCE_CATEGORIES.some((c) => c.id === initialCategory)
       ? initialCategory
@@ -125,13 +153,13 @@ export function CommunityResourceCenter({
       <PatientPageHeader
         icon={MapPinned}
         eyebrow="Tulare County, CA · updated regularly by your care team"
-        title="Resources near you"
+        title={SCREEN_COPY["ui.8151e15a11eb"][screenLang]}
         lede="Housing, food, work, meetings and more. Listings our team has called and confirmed show their details as confirmed; the rest are marked pending verification so you know to call ahead."
         action={
           surface === "patient" ? (
             <Button asChild variant="outline" size="patient" className="shrink-0">
               <Link to="/resources/saved" data-testid="saved-resources-link">
-                <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Saved ({savedCount})
+                <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.bc167e032784"][screenLang]}{savedCount})
               </Link>
             </Button>
           ) : undefined
@@ -146,8 +174,8 @@ export function CommunityResourceCenter({
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name or what they do"
-          aria-label="Search community resources"
+          placeholder={SCREEN_COPY["ui.3b0dea9f45d4"][screenLang]}
+          aria-label={SCREEN_COPY["ui.1514186eb48c"][screenLang]}
           data-testid="resource-search"
           className="h-12 pl-9"
         />
@@ -201,9 +229,7 @@ export function CommunityResourceCenter({
       )}
 
       <p className="text-xs text-muted-foreground" data-testid="resources-disclaimer">
-        Our team has confirmed these listings, though details can still change; if
-        something is wrong when you get there, tell your care team and we&apos;ll re-check it.
-      </p>
+        {SCREEN_COPY["ui.069eb6508470"][screenLang]} </p>
     </PatientPage>
   );
 }

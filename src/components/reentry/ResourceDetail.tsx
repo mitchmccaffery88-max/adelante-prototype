@@ -30,6 +30,56 @@ import {
 } from "@/lib/communityResources";
 import { isResourceSaved, subscribeSelfTracking, toggleSavedResource } from "@/lib/selfTracking";
 import type { ResourceSurface } from "@/components/reentry/ResourceCard";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.516d895bf73c": {
+    "en": "This listing isn't available",
+    "es": "Este lugar no está disponible"
+  },
+  "ui.9bf8b7e6c623": {
+    "en": "Back to resources",
+    "es": "Volver a recursos"
+  },
+  "ui.be79cc83f91c": {
+    "en": "All resources",
+    "es": "Todos los recursos"
+  },
+  "ui.291a0a58dfa6": {
+    "en": "Call",
+    "es": "Llamar"
+  },
+  "ui.2e8a57cc5c47": {
+    "en": "Website",
+    "es": "Sitio web"
+  },
+  "ui.f814a9fb4687": {
+    "en": "Directions",
+    "es": "Direcciones"
+  },
+  "ui.c0ae8f6ea841": {
+    "en": "Saved",
+    "es": "Guardado"
+  },
+  "ui.efc007a393f6": {
+    "en": "Save",
+    "es": "Guardar"
+  },
+  "ui.d6f519fc0c3f": {
+    "en": "No street address to map — this one is reached by phone or online.",
+    "es": "No hay una dirección para mostrar en el mapa. Puedes comunicarte por teléfono o en línea."
+  },
+  "ui.48a6796b6c25": {
+    "en": "Ask Adel about",
+    "es": "Pregúntale a Adel sobre"
+  },
+  "ui.126646707f74": {
+    "en": "Someone on our team called this organisation and confirmed the address, phone and hours above. Details can still change after a call — and listings that are still waiting on that confirmation aren't shown here yet, so this isn't the whole list of help nearby. Ask your care team if you can't find what you need.",
+    "es": "Nuestro equipo llamó a este lugar y confirmó la dirección, el teléfono y los horarios. Los datos pueden cambiar. Solo mostramos lugares confirmados, así que esta no es toda la ayuda cercana. Pregunta a tu equipo si no encuentras lo que necesitas."
+  }
+} as const;
+
 
 export function ResourceDetail({
   orgId,
@@ -38,6 +88,8 @@ export function ResourceDetail({
   orgId: string;
   surface?: ResourceSurface;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const snapshot = useSyncExternalStore(
     subscribeResources,
@@ -57,14 +109,14 @@ export function ResourceDetail({
       <PatientPage width="reading" data-testid="resource-detail-missing">
         <EmptyState
           icon={MapPinFallback}
-          title="This listing isn't available"
+          title={SCREEN_COPY["ui.516d895bf73c"][screenLang]}
           description="It may have been taken down. Your care team can connect you directly."
         />
         <Button asChild variant="outline" size="patient">
           {surface === "advocate" ? (
-            <Link to="/advocate/resources">Back to resources</Link>
+            <Link to="/advocate/resources">{SCREEN_COPY["ui.9bf8b7e6c623"][screenLang]}</Link>
           ) : (
-            <Link to="/resources">Back to resources</Link>
+            <Link to="/resources">{SCREEN_COPY["ui.9bf8b7e6c623"][screenLang]}</Link>
           )}
         </Button>
       </PatientPage>
@@ -83,12 +135,10 @@ export function ResourceDetail({
         {category && <span className="rounded-full bg-secondary px-3 py-1">{category.name}</span>}
         {surface === "advocate" ? (
           <Link to="/advocate/resources" className="underline">
-            All resources
-          </Link>
+            {SCREEN_COPY["ui.be79cc83f91c"][screenLang]} </Link>
         ) : (
           <Link to="/resources" className="underline">
-            All resources
-          </Link>
+            {SCREEN_COPY["ui.be79cc83f91c"][screenLang]} </Link>
         )}
       </div>
 
@@ -102,22 +152,19 @@ export function ResourceDetail({
           {tel && (
             <Button asChild size="patient" data-testid="detail-call">
               <a href={`tel:${tel}`}>
-                <Phone className="mr-1 h-4 w-4" aria-hidden="true" /> Call
-              </a>
+                <Phone className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.291a0a58dfa6"][screenLang]} </a>
             </Button>
           )}
           {r.website && (
             <Button asChild size="patient" variant="outline" data-testid="detail-website">
               <a href={r.website} target="_blank" rel="noreferrer noopener">
-                <Globe className="mr-1 h-4 w-4" aria-hidden="true" /> Website
-              </a>
+                <Globe className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.2e8a57cc5c47"][screenLang]} </a>
             </Button>
           )}
           {directions && (
             <Button asChild size="patient" variant="outline" data-testid="detail-directions">
               <a href={directions} target="_blank" rel="noreferrer noopener">
-                <Navigation className="mr-1 h-4 w-4" aria-hidden="true" /> Directions
-              </a>
+                <Navigation className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.f814a9fb4687"][screenLang]} </a>
             </Button>
           )}
           {/* Saving is patient-scoped (`savedResourceIds(patientId)`), and the
@@ -136,37 +183,30 @@ export function ResourceDetail({
             >
               {saved ? (
                 <>
-                  <BookmarkCheck className="mr-1 h-4 w-4" aria-hidden="true" /> Saved
-                </>
+                  <BookmarkCheck className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.c0ae8f6ea841"][screenLang]} </>
               ) : (
                 <>
-                  <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Save
-                </>
+                  <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.efc007a393f6"][screenLang]} </>
               )}
             </Button>
           )}
         </div>
         {!directions && (
           <p className="text-xs text-muted-foreground">
-            No street address to map — this one is reached by phone or online.
-          </p>
+            {SCREEN_COPY["ui.d6f519fc0c3f"][screenLang]} </p>
         )}
       </Card>
 
       {surface === "patient" && (
         <Button asChild variant="outline" size="patient" data-testid="detail-ask-adel">
           <Link to="/adel" search={{ resource: r.id }}>
-            <Sparkles className="mr-1 h-4 w-4" aria-hidden="true" /> Ask Adel about {r.name}
+            <Sparkles className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.48a6796b6c25"][screenLang]} {r.name}
           </Link>
         </Button>
       )}
 
       <p className="text-xs text-muted-foreground">
-        Someone on our team called this organisation and confirmed the address, phone and hours
-        above. Details can still change after a call — and listings that are still waiting on that
-        confirmation aren't shown here yet, so this isn't the whole list of help nearby. Ask your
-        care team if you can't find what you need.
-      </p>
+        {SCREEN_COPY["ui.126646707f74"][screenLang]} </p>
     </PatientPage>
   );
 }

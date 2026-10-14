@@ -34,6 +34,56 @@ import {
   type CheckInReasonId,
   type EmotionId,
 } from "@/lib/selfTracking";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.38e944e4d398": {
+    "en": "Thanks for checking in. That's today done.",
+    "es": "Gracias por registrarte. Terminamos por hoy."
+  },
+  "ui.63daf81fc500": {
+    "en": "From the library · about",
+    "es": "De la biblioteca · acerca de"
+  },
+  "ui.b6c935d4f3c7": {
+    "en": "min",
+    "es": "min"
+  },
+  "ui.fa9311cbffc8": {
+    "en": "Done for now",
+    "es": "Listo por ahora"
+  },
+  "ui.35afba0c81ce": {
+    "en": "Daily check-in",
+    "es": "Registro diario"
+  },
+  "ui.99a6d1ab860f": {
+    "en": "You checked in today —",
+    "es": "Te registraste hoy:"
+  },
+  "ui.0b2cad8a7f34": {
+    "en": "Change it",
+    "es": "Cambiar"
+  },
+  "ui.8f121e3e99fe": {
+    "en": "How are you doing today? Pick anything that fits.",
+    "es": "¿Cómo estás hoy? Elige lo que sientas."
+  },
+  "ui.bc981983e7f5": {
+    "en": "Next",
+    "es": "Siguiente"
+  },
+  "ui.cc9b59140471": {
+    "en": "Anything behind it? Only if you want to say.",
+    "es": "¿Hay algo más? Solo si quieres contarnos."
+  },
+  "ui.9cb99df0ac97": {
+    "en": "Skip this part",
+    "es": "Saltar esta parte"
+  }
+} as const;
+
 
 function CheckInSummary({
   patientId,
@@ -44,6 +94,8 @@ function CheckInSummary({
   emotions: EmotionId[];
   onDone: () => void;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const population = usePopulation(patientId);
   const contentVersion = usePublishedContentVersion();
   const resourceKey = useSyncExternalStore(
@@ -71,7 +123,7 @@ function CheckInSummary({
 
   return (
     <div className="mt-2" data-testid="check-in-summary">
-      <p className="text-base">Thanks for checking in. That's today done.</p>
+      <p className="text-base">{SCREEN_COPY["ui.38e944e4d398"][screenLang]}</p>
       {plan && (
         <p className="mt-2 rounded-2xl bg-secondary p-3 text-base" data-testid="check-in-reflection">
           {plan.reflection}
@@ -91,8 +143,7 @@ function CheckInSummary({
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">{lesson.title}</span>
             <span className="block text-xs text-muted-foreground">
-              From the library · about {lesson.minutes} min
-            </span>
+              {SCREEN_COPY["ui.63daf81fc500"][screenLang]} {lesson.minutes} {SCREEN_COPY["ui.b6c935d4f3c7"][screenLang]} </span>
           </span>
           <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         </Link>
@@ -127,13 +178,14 @@ function CheckInSummary({
         className="mt-3 min-h-11 w-full rounded-2xl"
         onClick={onDone}
       >
-        Done for now
-      </Button>
+        {SCREEN_COPY["ui.fa9311cbffc8"][screenLang]} </Button>
     </div>
   );
 }
 
 export function DailyCheckInCard({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const todayJson = useSyncExternalStore(
     subscribeSelfTracking,
     () => JSON.stringify(todaysCheckIn(patientId) ?? null),
@@ -156,8 +208,7 @@ export function DailyCheckInCard({ patientId }: { patientId: string }) {
   return (
     <Card className="p-5" data-testid="daily-check-in-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary">
-        <HeartPulse className="h-4 w-4" aria-hidden="true" /> Daily check-in
-      </div>
+        <HeartPulse className="h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.35afba0c81ce"][screenLang]} </div>
 
       {step === "summary" ? (
         <CheckInSummary
@@ -171,7 +222,7 @@ export function DailyCheckInCard({ patientId }: { patientId: string }) {
       ) : done ? (
         <div className="mt-2" data-testid="daily-check-in-done">
           <p className="text-base">
-            You checked in today —{" "}
+            {SCREEN_COPY["ui.99a6d1ab860f"][screenLang]}{" "}
             {today.emotions
               .map((id) => CHECK_IN_EMOTIONS.find((e) => e.id === id))
               .filter(Boolean)
@@ -194,12 +245,11 @@ export function DailyCheckInCard({ patientId }: { patientId: string }) {
               setStep("emotions");
             }}
           >
-            Change it
-          </Button>
+            {SCREEN_COPY["ui.0b2cad8a7f34"][screenLang]} </Button>
         </div>
       ) : step === "emotions" ? (
         <div className="mt-2">
-          <p className="text-base">How are you doing today? Pick anything that fits.</p>
+          <p className="text-base">{SCREEN_COPY["ui.8f121e3e99fe"][screenLang]}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {CHECK_IN_EMOTIONS.map((e) => {
               const on = emotions.includes(e.id);
@@ -232,12 +282,11 @@ export function DailyCheckInCard({ patientId }: { patientId: string }) {
             className="mt-4 min-h-11 w-full rounded-2xl"
             onClick={() => setStep("reason")}
           >
-            Next
-          </Button>
+            {SCREEN_COPY["ui.bc981983e7f5"][screenLang]} </Button>
         </div>
       ) : (
         <div className="mt-2">
-          <p className="text-base">Anything behind it? Only if you want to say.</p>
+          <p className="text-base">{SCREEN_COPY["ui.cc9b59140471"][screenLang]}</p>
           <div className="mt-3 space-y-2">
             {CHECK_IN_REASONS.map((r) => (
               <button
@@ -258,8 +307,7 @@ export function DailyCheckInCard({ patientId }: { patientId: string }) {
             className="mt-3 min-h-11 w-full rounded-2xl"
             onClick={() => save()}
           >
-            Skip this part
-          </Button>
+            {SCREEN_COPY["ui.9cb99df0ac97"][screenLang]} </Button>
         </div>
       )}
     </Card>

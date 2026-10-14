@@ -13,6 +13,24 @@ import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage
 import { PatientDocumentsCard } from "@/components/documents/PatientDocumentsCard";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.b4cee43de8d4": {
+    "en": "We don't have a record for you yet",
+    "es": "Aún no tenemos un registro tuyo"
+  },
+  "ui.8485be9e7b3e": {
+    "en": "Your documents",
+    "es": "Tus documentos"
+  },
+  "ui.ca6eccbf8231": {
+    "en": "Back to profile",
+    "es": "Volver al perfil"
+  }
+} as const;
+
 
 export const Route = createFileRoute("/documents")({
   head: () => ({
@@ -36,6 +54,8 @@ export const Route = createFileRoute("/documents")({
 });
 
 function DocumentsPage() {
+  const { lang: screenLang } = useI18n();
+
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
@@ -44,7 +64,7 @@ function DocumentsPage() {
     return (
       <PatientPage width="browse">
         <EmptyState
-          title="We don't have a record for you yet"
+          title={SCREEN_COPY["ui.b4cee43de8d4"][screenLang]}
           description="Once your care is set up, you can send paperwork here."
           action={{ label: "Get started", onClick: () => void navigate({ to: "/start" }) }}
         />
@@ -56,11 +76,11 @@ function DocumentsPage() {
     <PatientPage width="browse">
       <PatientPageHeader
         icon={FileText}
-        title="Your documents"
+        title={SCREEN_COPY["ui.8485be9e7b3e"][screenLang]}
         lede="Send your care team what they've asked for, and see what's been reviewed."
         action={
           <Button asChild variant="ghost" size="sm">
-            <Link to="/profile">Back to profile</Link>
+            <Link to="/profile">{SCREEN_COPY["ui.ca6eccbf8231"][screenLang]}</Link>
           </Button>
         }
       />
