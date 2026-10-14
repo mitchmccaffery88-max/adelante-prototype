@@ -14,15 +14,14 @@ import { AdelanteEHR, type Patient } from "./ehr";
 import { isJusticeInvolved } from "./justiceInvolvement";
 import { liveCurricula, type Curriculum } from "./curriculumTypes";
 import { autoAddJourneyAssignment, getStructuredPlan, markFlagRemovedForReview, markPathwayChangedForReview, type SpecialtyFlag } from "./structuredCarePlan";
-import { listEpisodes } from "./outpatientCare";
 import { listContent } from "./contentPublishing";
+import { sudSignalReason } from "./sudSignal";
 
 export const FLAG_JOURNEY_DRAFT_LABEL = "Draft — pending clinical sign-off";
 export const NEW_CONTENT_NOTICE = { en: "New content was added to your plan", es: "Se agregó contenido nuevo a tu plan" } as const;
 export const NEW_CONTENT_BODY = { en: "Open My journeys to see it.", es: "Abre Mis caminos para verlo. (Borrador de traducción)" } as const;
 export const CONTENT_GAP_LABEL = "Content gap — no live journey matches a care-plan flag";
 
-const SUD_ICD = /^F1[0-9]/i;
 
 /** Why the flag is on, phrased as the audit reason's trigger. Reason always matches the rule (S5). */
 export function detectFlags(p: Patient): Partial<Record<SpecialtyFlag, string>> {
@@ -38,11 +37,8 @@ export function detectFlags(p: Patient): Partial<Record<SpecialtyFlag, string>> 
         : p.coverage?.jiReentryFlag ? "reentry initiative answer at intake"
         : "missed pre-release coordination flag");
   }
-  const sudProblem = (p.problems ?? []).some((x) => x.status === "active" && (x.category === "sud" || SUD_ICD.test(x.icd10Code ?? "")));
-  const sudEpisode = p.episodes?.some((e) => e.type === "sud_dmc_ods") || safeEpisodes(p.id).some((e) => e.program === "outpatient_sud" && !e.closedAt);
-  if (sudProblem) out.sud = "SUD diagnosis on the problem list";
-  else if (sudEpisode) out.sud = "episode set to an SUD program";
-  else if (p.needs?.substanceUse) out.sud = p.flagSources?.sud ?? (p.referralId ? "SUD indicator at referral" : "SUD indicator at intake");
+  const sud = sudSignalReason(p);
+  if (sud) out.sud = sud;
   return out;
 }
 
@@ -68,13 +64,6 @@ export function pathwayToContentPopulation(x: Pathway): "justice_involved" | "ge
   return pathwayHasReentry(x) ? "justice_involved" : "general";
 }
 
-function safeEpisodes(patientId: string) {
-  try {
-    return listEpisodes(patientId) as { program: string; closedAt?: string }[];
-  } catch {
-    return [];
-  }
-}
 
 /** Live published journeys tagged for a flag (legacy tag). Never hard-coded lesson ids. */
 export function journeysForFlag(flag: SpecialtyFlag): Curriculum[] {

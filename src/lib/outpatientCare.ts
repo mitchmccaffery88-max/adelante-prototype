@@ -1,3 +1,4 @@
+import { registerSudSignalSource } from "./sudSignal";
 import { STAFF_ROSTER } from "./roles";
 // §B3/B4 — outpatient episodes of care and higher-level-of-care referrals.
 // Separate from the in-facility pre-release episodes (unchanged). All writes
@@ -410,3 +411,8 @@ export function seedOutpatientCareDemo(): void {
 export function _mergeRows(): Record<string, { patientId: string }[]> {
   return { episodes, referrals, disclosures };
 }
+
+// One SUD signal (sudSignal.ts): an open outpatient SUD episode counts.
+registerSudSignalSource("openSudEpisode", (patientId) =>
+  listEpisodes(patientId).some((e) => (e as { program: string }).program === "outpatient_sud" && !(e as { closedAt?: string }).closedAt),
+);

@@ -2146,6 +2146,7 @@ export function TaskList({
     note_automation: "Note automation",
     med_side_effect: "Side effect reported",
     sdoh_follow_up: "Social-needs follow-up",
+    recovery_journey_review: "Screener",
   };
   return (
     <div className="space-y-1.5">

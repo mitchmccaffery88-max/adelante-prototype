@@ -19,6 +19,7 @@
 // there is no runtime cycle. The gate LOGIC is Phase 2's, restated in the one
 // place it is applied (`isLibraryItemVisible`) rather than duplicated widely.
 import type { PopulationResolution, PopulationTrack } from "@/lib/population";
+import { audienceVisible, audiencesForResolution, type ContentAudience } from "@/lib/contentAudience";
 // §Lesson-player Phase D — the optional authoring surface, shared verbatim
 // with `RecoveryLesson`. Every field ships absent on all 90 items here.
 import type { LessonAuthoringExtras } from "@/lib/lessonAuthoring";
@@ -106,6 +107,9 @@ export interface LibraryItem extends LessonAuthoringExtras {
    * references custody or release and must not be shown to someone it does
    * not describe.
    */
+  /** "Who it's for" (any-match; empty = everyone). */
+  audiences?: ContentAudience[];
+  /** Retired gate; converted on read by `audiencesOf`. */
   populations?: PopulationTrack[];
   /**
    * TRUE when the lesson's own TITLE is 42 CFR Part 2 content (SUD treatment).
@@ -231,6 +235,9 @@ export interface Exercise {
   /** Why a clinician would hand this to someone. */
   purpose: string;
   content: ExerciseContent;
+  /** "Who it's for" (any-match; empty = everyone). */
+  audiences?: ContentAudience[];
+  /** Retired gate; converted on read by `audiencesOf`. */
   populations?: PopulationTrack[];
   part2Sensitive?: boolean;
   placeholder?: boolean;
@@ -1035,13 +1042,12 @@ export function itemsInCategory(categoryId: string): LibraryItem[] {
  * "not sure" answer never surfaces reentry-specific copy.
  */
 export function isLibraryItemVisible(
-  item: { populations?: PopulationTrack[] },
+  item: { audiences?: ContentAudience[]; populations?: PopulationTrack[] },
   resolution: PopulationResolution,
 ): boolean {
-  if (!item.populations || item.populations.length === 0) return true;
-  // Identical to `isPopulationAllowed(resolution, item.populations)` with the
-  // default `requireConfirmed: true`.
-  return item.populations.includes(resolution.track) && !resolution.provisional;
+  // "Who it's for", any-match. Empty = everyone. A provisional ("not sure")
+  // resolution never matches justice_involved.
+  return audienceVisible(item, audiencesForResolution(resolution));
 }
 
 export function visibleItemsInCategory(

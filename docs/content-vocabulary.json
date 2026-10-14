@@ -212,10 +212,6 @@
   ],
   "reentryStages": [
     {
-      "id": "pre_release",
-      "label": "Pre-release"
-    },
-    {
       "id": "first_30",
       "label": "First 30 days"
     },
@@ -228,36 +224,18 @@
       "label": "After 90 days"
     }
   ],
-  "contentPopulations": [
+  "audiences": [
     {
       "id": "justice_involved",
-      "label": "justice_involved"
+      "label": "Justice-involved"
     },
     {
-      "id": "general",
-      "label": "general"
-    },
-    {
-      "id": "advocate",
-      "label": "advocate"
-    }
-  ],
-  "populationGateTracks": [
-    {
-      "id": "pre_release_ji",
-      "label": "Pre-release (justice-involved)"
-    },
-    {
-      "id": "post_release_ji",
-      "label": "Post-release / direct referral (justice-involved)"
-    },
-    {
-      "id": "general_population",
-      "label": "General population"
+      "id": "sud",
+      "label": "Substance use"
     },
     {
       "id": "advocate",
-      "label": "Advocate (viewing another person's record)"
+      "label": "Advocate"
     }
   ],
   "activityKinds": [

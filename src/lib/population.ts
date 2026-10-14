@@ -19,6 +19,7 @@
 import { AdelanteEHR } from "@/lib/ehr";
 import type { HeardAboutSource, TriState } from "@/lib/frontDoor";
 import { isJusticeInvolved } from "@/lib/justiceInvolvement";
+import { sudSignalReason } from "@/lib/sudSignal";
 
 export type PopulationTrack =
   /** Track A — in custody, coordination happening before release. */
@@ -74,7 +75,15 @@ export interface PopulationResolution {
    * justice-specific content; it means "ask", not "assume".
    */
   provisional: boolean;
+  /**
+   * Content audiences this person matches (set by `resolvePopulation`). When
+   * absent (pure `resolvePopulationTrack`), it is derived from the track.
+   */
+  audiences?: ContentAudience[];
 }
+
+export { CONTENT_AUDIENCES, audiencesOf, audienceVisible, audiencesForResolution, type ContentAudience } from "./contentAudience";
+import { audiencesForResolution, type ContentAudience } from "./contentAudience";
 
 /** PURE. Given facts, decide the track. */
 export function resolvePopulationTrack(facts: PopulationFacts): PopulationResolution {
@@ -174,15 +183,32 @@ export function resolvePopulation(
       track: "advocate",
       basis: "advocate link — separate surface, not a patient population",
       provisional: false,
+      audiences: ["advocate"],
     };
   }
   const facts = patientId ? populationFactsFor(patientId) : undefined;
   if (!facts) {
     // Unknown record: the safe default is the track with no population-specific
     // promises attached to it.
-    return { track: "general_population", basis: "no patient record", provisional: true };
+    return { track: "general_population", basis: "no patient record", provisional: true, audiences: [] };
   }
-  return resolvePopulationTrack(facts);
+  const r = resolvePopulationTrack(facts);
+  const audiences = audiencesForResolution(r);
+  const p = AdelanteEHR.getPatient(patientId!);
+  if (p && sudSignalReason(p)) audiences.push("sud");
+  return { ...r, audiences };
+}
+
+/**
+ * The person side of "Who it's for". `justice_involved` = any confirmed justice
+ * signal (the confirmed track; "not sure" stays unconfirmed). `sud` = the one
+ * SUD signal (`sudSignalReason`). `advocate` = the advocate viewer only.
+ */
+export function personAudiences(
+  patientId: string | undefined,
+  viewer: PopulationViewer = { kind: "patient" },
+): ContentAudience[] {
+  return resolvePopulation(patientId, viewer).audiences ?? [];
 }
 
 /**

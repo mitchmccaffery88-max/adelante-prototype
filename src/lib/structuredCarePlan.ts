@@ -6,6 +6,7 @@
 // problem (and anything assigned under it) is `sud` and hidden from roles
 // failing roleSeesAsamSection. Thresholds, Z-codes and patient wording are
 // "Draft — pending clinical sign-off". Spanish pending bilingual review.
+import { registerSudSignalSource } from "./sudSignal";
 import { isJusticeInvolved } from "./justiceInvolvement";
 import { AdelanteEHR, type Patient, type SdohStatus } from "./ehr";
 import type { StaffRole } from "./roles";
@@ -722,3 +723,8 @@ export function resolveFlagReview(patientId: string, assignmentId: string, decis
   audit("plan_journey_flag_review", patientId, actor, { assignmentId, decision, reason: a.flagReview.reason });
   return a;
 }
+
+// One SUD signal (sudSignal.ts): an active substance-use goal counts. Draft — pending clinical sign-off.
+registerSudSignalSource("sudCarePlanGoal", (patientId) =>
+  getStructuredPlan(patientId).goals.some((g) => g.sud && g.status === "active"),
+);

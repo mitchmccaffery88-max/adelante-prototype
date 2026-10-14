@@ -20,7 +20,7 @@ import {
 import { taggedCatalog } from "../src/lib/contentTags";
 import { liveAdvocateLibraryCategories, liveRecoveryModules } from "../src/lib/contentCatalog";
 import { RESOURCE_CATEGORIES } from "../src/lib/communityResources";
-import { POPULATION_LABEL } from "../src/lib/population";
+import { CONTENT_AUDIENCES, audiencesOf } from "../src/lib/contentAudience";
 import { COVERAGE_STAGES } from "../src/lib/contentTags";
 
 // Same wording as ContentInventoryTable.inventoryStatus (kept identical; that
@@ -66,7 +66,7 @@ const header = [
   "typeId", "id", "title", "title_es", "status", "container_id", "container_name", "audience", "order", "minutes", "activity_kind",
   "es_status", "reading_grade", "above_target",
   "part2_current", "part2_suggested", "clinical_current",
-  "sdoh", "bands", "asam", "stages", "meta_populations", "population_gate", "flags",
+  "sdoh", "bands", "asam", "stages", "audiences", "flags",
   "tags_backfilled", "owner", "last_reviewed", "next_review",
   "problem", "learn_title", "insight", "clinical_target", "description", "placeholder_or_pending",
 ];
@@ -90,7 +90,7 @@ for (const e of inventory(CONTENT)) {
     advocate ? "advocate" : String(b["audience"] ?? "patient"), str(b, "order"), str(b, "minutes", "estimatedMinutes"), activity["kind"] ?? "",
     spanishStatusOf(b), rl.grade, rl.aboveTarget,
     isPart2Content(e.typeId, b), part2Suggested(e.typeId, b), meta.clinical === true,
-    pipe(meta.sdoh), pipe(meta.bands), pipe(meta.asam), pipe(meta.stages), pipe(meta.populations), pipe(b["populations"]), pipe(meta.flags),
+    pipe(meta.sdoh), pipe(meta.bands), pipe(meta.asam), pipe(meta.stages), audiencesOf(b).join("|"), pipe(meta.flags),
     backfilled, meta.owner ?? "", meta.lastReviewed ?? "", meta.nextReview ?? "",
     txt(b["problem"]), txt(b["learnTitle"]), txt(b["insight"]), txt(b["clinicalTarget"]), txt(str(b, "desc", "description", "subtitle", "mission")), pending,
   ]);
@@ -117,7 +117,7 @@ for (const e of inventory(["community_resource", "naloxone_access_point"])) {
 writeFileSync("docs/resource-inventory.csv", csv(rrows));
 
 // ---- vocabulary ----------------------------------------------------------
-const STAGE_LABELS: Record<string, string> = { pre_release: "Pre-release", first_30: "First 30 days", days_30_90: "Days 30–90", after_90: "After 90 days" };
+const STAGE_LABELS: Record<string, string> = { first_30: "First 30 days", days_30_90: "Days 30–90", after_90: "After 90 days" };
 const vocab = {
   generatedBy: "scripts/export-content-inventory.ts",
   libraryCategories: libCats.map((c) => ({ id: c.id, label: catName.get(c.id), audience: "patient" })).concat(advCats.map((c) => ({ id: c.id, label: catName.get(c.id), audience: "advocate" }))),
@@ -126,8 +126,7 @@ const vocab = {
   screenerBands: SCREENER_BANDS.map((id) => ({ id, label: id })),
   asamDimensions: [1, 2, 3, 4, 5, 6].map((id) => ({ id, label: `ASAM dimension ${id}` })),
   reentryStages: COVERAGE_STAGES.map((id) => ({ id, label: STAGE_LABELS[id] ?? id })),
-  contentPopulations: ["justice_involved", "general", "advocate"].map((id) => ({ id, label: id })),
-  populationGateTracks: Object.entries(POPULATION_LABEL).map(([id, label]) => ({ id, label })),
+  audiences: CONTENT_AUDIENCES.map((a) => ({ id: a.id, label: a.label })),
   activityKinds: ACTIVITY_KINDS.map((k) => ({ id: k.value, label: k.label })),
   metaFlags: [{ id: "justice_involved", label: "Justice-involved" }, { id: "sud", label: "Substance use (Part 2)" }],
   clinicalReviewerRoles: CLINICAL_REVIEWER_ROLES.map((id) => ({ id, label: id })),

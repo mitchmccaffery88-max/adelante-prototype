@@ -1,3 +1,4 @@
+import { CONTENT_AUDIENCES, audiencesOf } from "@/lib/contentAudience";
 import { StatusChip } from "@/components/ui/status-chip";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -19,29 +20,38 @@ export function inventoryStatus(e: ContentEntry): string {
 const STATUS_FILTERS: [string, string][] = [["all", "All statuses"], ["draft", "Draft"], ["pending_review", "In review"], ["published", "Live"], ["shipped", "Live (shipped)"], ["retired", "Retired"]];
 const FLAG_FILTERS: [string, string][] = [["all", "All flags"], ["part2", "Part 2"], ["clinical", "Clinical"], ["missing_es", "Spanish missing"], ["above_grade", `Above grade ${READING_LEVEL_TARGET}`]];
 
+function audienceLabel(body: unknown): string {
+  const aud = audiencesOf(body);
+  return aud.length ? aud.map((id) => CONTENT_AUDIENCES.find((a) => a.id === id)?.label ?? id).join(", ") : "Everyone";
+}
+
 export function ContentInventoryTable({ entries, edit, review, canReview, canEdit = true }: { entries: ContentEntry[]; edit: (id: string) => void; review: (ids: string[], reason: string) => void; canReview: boolean; canEdit?: boolean }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [status, setStatus] = useState("all");
   const [reason, setReason] = useState("");
   const [flag, setFlag] = useState("all");
+  const [audience, setAudience] = useState("all");
   const rows = entries.filter((e) => {
     const label = inventoryStatus(e);
     const statusOk = status === "all" || (status === "shipped" ? label === "Live (shipped)" : status === "retired" ? label === "Retired" : label !== "Live (shipped)" && label !== "Retired" && e.status === status);
     const m = metaOf(e.body);
     const flagOk = flag === "all" || (flag === "part2" && isPart2Content(e.typeId, e.body)) || (flag === "clinical" && !!m.clinical) || (flag === "missing_es" && spanishStatusOf(e.body) === "missing") || (flag === "above_grade" && readingLevelOf(e.typeId, e.body).aboveTarget);
-    return statusOk && flagOk;
+    const aud = audiencesOf(e.body);
+    const audienceOk = audience === "all" || (audience === "everyone" ? aud.length === 0 : aud.includes(audience as never));
+    return statusOk && flagOk && audienceOk;
   });
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap gap-2">
         <Select value={status} onValueChange={setStatus}><SelectTrigger className="w-40" aria-label="Status filter"><SelectValue /></SelectTrigger><SelectContent>{STATUS_FILTERS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
         <Select value={flag} onValueChange={setFlag}><SelectTrigger className="w-44" aria-label="Manage flags"><SelectValue /></SelectTrigger><SelectContent>{FLAG_FILTERS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
+        <Select value={audience} onValueChange={setAudience}><SelectTrigger className="w-44" aria-label="Who it's for filter"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Anyone it's for</SelectItem><SelectItem value="everyone">Everyone</SelectItem>{CONTENT_AUDIENCES.map((a) => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}</SelectContent></Select>
         <Input className="max-w-xs" aria-label="Review reason" placeholder="Reason for review" value={reason} onChange={(e) => setReason(e.target.value)} />
         <Button variant="outline" disabled={!canReview || !selected.length || !reason.trim()} onClick={() => { review(selected, reason); setSelected([]); setReason(""); }}>Mark reviewed ({selected.length})</Button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead><tr className="border-b border-border">{["Select", "Title", "Type", "Status", "Part 2 / Clinical", "ES", "Reading level (Draft)", "Owner", "Last reviewed", "Next review", ""].map((s, i) => <th key={i} className="p-2">{s}</th>)}</tr></thead>
+          <thead><tr className="border-b border-border">{["Select", "Title", "Type", "Status", "Part 2 / Clinical", "Who it's for", "ES", "Reading level (Draft)", "Owner", "Last reviewed", "Next review", ""].map((s, i) => <th key={i} className="p-2">{s}</th>)}</tr></thead>
           <tbody>
             {rows.map((e) => {
               const m = metaOf(e.body);
@@ -56,6 +66,7 @@ export function ContentInventoryTable({ entries, edit, review, canReview, canEdi
                   <td className="p-2">{contentType(e.typeId).label}</td>
                   <td className="p-2" data-testid="inventory-status"><StatusChip lang="en" state={label === "Retired" ? "closed" : shipped || e.status === "published" ? "done" : e.status === "pending_review" ? "team" : "upnext"} label={e.status === "pending_review" && !shipped && label !== "Retired" ? "In clinical review" : label} /></td>
                   <td className="p-2">{isPart2Content(e.typeId, e.body) && <Badge variant="outline">Part 2</Badge>}{m.clinical && <Badge variant="secondary">Clinical</Badge>}</td>
+                  <td className="p-2 text-sm" data-testid="inventory-audiences">{audienceLabel(e.body)}</td>
                   <td className="p-2">{spanishStatusOf(e.body)}</td>
                   <td className="p-2" data-testid="reading-grade">≈ grade {rl.grade}{rl.aboveTarget && <Badge variant="outline" className="ml-1">Above {READING_LEVEL_TARGET}</Badge>}</td>
                   <td className="p-2">{m.owner || "Unassigned"}</td>

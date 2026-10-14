@@ -81,7 +81,6 @@ function backfill(kind: TaggedKind, id: string, extra: { categoryId?: string; mo
   if (BANDS_BY_ID[id]) m.bands = BANDS_BY_ID[id];
   if (extra.categoryId === "back-on-feet" || extra.categoryId === "starting-strong" || id === "first-days-out" || extra.moduleId === "first-days-out") {
     m.stages = ["first_30", "days_30_90"];
-    m.populations = ["justice_involved"];
   }
   if (extra.moduleId === "when-recovery-gets-hard" || id === "when-recovery-gets-hard") m.asam = [3, 5];
   if (extra.moduleId === "understanding-my-addiction" || id === "understanding-my-addiction") m.asam = [4];
@@ -192,7 +191,7 @@ export function reentryStageOf(p: Patient | undefined, now = new Date()): Reentr
   if (!rel) return undefined;
   const d = Math.floor((now.getTime() - Date.parse(rel)) / DAY);
   if (!Number.isFinite(d)) return undefined;
-  if (d < 0) return "pre_release";
+  // Everyone on this platform has been released: no pre-release content stage.
   if (d <= 30) return "first_30";
   if (d <= 90) return "days_30_90";
   return "after_90";
@@ -291,7 +290,7 @@ export function suggestContentForPatient(
 // ---------------------------------------------------------------------------
 export const COVERAGE_SDOH = ["housing", "food", "employment", "transportation", "financial", "legal", "healthcare", "education", "parenting"];
 export const COVERAGE_BANDS: ScreenerBand[] = ["gad7>=10", "phq9>=10", "phq9>=20"];
-export const COVERAGE_STAGES: ReentryStage[] = ["pre_release", "first_30", "days_30_90", "after_90"];
+export const COVERAGE_STAGES: ReentryStage[] = ["first_30", "days_30_90", "after_90"];
 
 export interface CoverageReport {
   needsWithoutLesson: string[];

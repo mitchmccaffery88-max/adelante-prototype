@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
+import { CONTENT_AUDIENCES } from "@/lib/contentAudience";
 import {
   ACTIVITY_KINDS,
   emptyActivity,
@@ -328,6 +329,31 @@ function FieldEditor({
           }
           onChange={(next) => set(next)}
         />
+      )}
+      {field.kind === "audiences" && (
+        <fieldset className="flex flex-wrap gap-x-4 gap-y-1" aria-describedby={helpId} data-testid={`field-${field.key}`}>
+          <legend className="sr-only">{field.label}</legend>
+          {CONTENT_AUDIENCES.map((a) => {
+            const current = Array.isArray(value) ? (value as string[]) : [];
+            const id = `${fieldId}-${a.id}`;
+            return (
+              <label key={a.id} htmlFor={id} className="flex min-h-12 items-center gap-2 text-sm text-foreground md:min-h-9">
+                <Checkbox
+                  id={id}
+                  checked={current.includes(a.id)}
+                  onCheckedChange={(v) => set(v === true ? [...new Set([...current, a.id])] : current.filter((x) => x !== a.id))}
+                />
+                {a.label}
+              </label>
+            );
+          })}
+          <span className="flex min-h-12 items-center text-sm text-muted-foreground md:min-h-9">
+            {Array.isArray(value) && (value as string[]).length > 0 ? "" : "Everyone"}
+          </span>
+          {Array.isArray(value) && (value as string[]).includes("advocate") && (
+            <p className="w-full text-sm text-muted-foreground">Patients won't see this. Advocate only.</p>
+          )}
+        </fieldset>
       )}
       {field.kind === "toggle" && (
         <div className="flex items-center gap-2">

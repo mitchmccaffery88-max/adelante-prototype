@@ -1,5 +1,5 @@
 import { AdelanteEHR } from "./ehr";
-import { resolvePopulation } from "./population";
+import { audienceVisible, personAudiences } from "./population";
 import { recoveryJourneyVisible } from "./seeking";
 import { liveCurricula, type Curriculum, type CurriculumStep } from "./curriculumTypes";
 import { getEngagement } from "./engagement";
@@ -25,8 +25,7 @@ export function curriculumVisible(patientId: string, j: Curriculum) {
   // §Group 1 C2 — a journey auto-added to the patient's own plan is theirs to see.
   if (autoAddedJourneyIds(patientId).includes(j.id)) return true;
   if ((j.part2Sensitive || j.meta?.part2) && !recoveryJourneyVisible(p)) return false;
-  if (j.justiceInvolved && !(p.coverage?.justiceInvolvement === "yes")) return false;
   if (j.positiveSignal && !((p.needs as unknown as Record<string, unknown> | undefined)?.[j.positiveSignal])) return false;
-  const track = resolvePopulation(patientId).track;
-  return !j.populations?.length || j.populations.includes(track);
+  // "Who it's for", any-match, with ONE justice test (the confirmed track).
+  return audienceVisible(j, personAudiences(patientId));
 }

@@ -62,7 +62,7 @@ function useDayZero(patientId: string) {
 
 export function ReentryDayZeroModule({ patientId }: { patientId: string }) {
   return (
-    <PopulationGate patientId={patientId} allow={["pre_release_ji", "post_release_ji"]}>
+    <PopulationGate patientId={patientId} audience="justice_involved">
       <DayZeroBody patientId={patientId} />
     </PopulationGate>
   );
