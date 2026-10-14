@@ -4,7 +4,8 @@
 
 ## Phase 6 — Emotion check-in (approved 14 Oct)
 - [ ] Shared eleven-emotion flow, private dismissal, real-record choices and timer
-- [ ] Approved allowlist/snapshot and audiences-test setup corrections only
+- [x] Approved allowlist/snapshot and audiences-test setup corrections only
+- [ ] Blocked on Mitch: contentBackup.test.ts:97 author restore expectation; group1Profile.test.ts:162 assignment-active expectation after goal closure. See Phase 6 report.
 - [ ] Full units then every browser/axe, Spanish review exports and 390px screenshot
 - [ ] Phase 6 report, architecture rules and final results
 
