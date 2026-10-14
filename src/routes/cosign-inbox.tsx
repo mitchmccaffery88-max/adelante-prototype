@@ -306,9 +306,7 @@ function Section({
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               {isNoteSudSensitive(note) && (
-                <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                  42 CFR 2
-                </Badge>
+                <StatusChip lang="en" state="restricted" label="42 CFR 2" />
               )}
               {note.authorSource === "ai_draft" && (
                 <Badge className="bg-muted text-muted-foreground border-0 text-[10px]">
@@ -442,7 +440,7 @@ function CosignDetail({
             />
             <Button
               size="sm"
-              variant="destructive"
+              variant="outline"
               className="w-full"
               disabled={reason.trim().length < 3}
               onClick={decline}
@@ -502,7 +500,7 @@ function CosignRoutingSection() {
       <h2 className="font-display text-sm text-navy">
         Pending cosigns <span className="text-muted-foreground">({rows.length})</span>
         {needs > 0 && (
-          <Badge variant="destructive" className="ml-2 text-[10px]">
+          <Badge variant="outline" className="ml-2 text-[10px]">
             {needs} need a supervisor
           </Badge>
         )}
@@ -545,7 +543,7 @@ function RoutingRow({
   };
   const needs = row.own.kind === "needs_supervisor";
   return (
-    <Card className={`space-y-2 p-3 ${needs ? "border-destructive/50" : ""}`} data-testid={`routing-row-${row.id}`}>
+    <Card className={`space-y-2 p-3 ${needs ? "border-input" : ""}`} data-testid={`routing-row-${row.id}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-navy">

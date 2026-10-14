@@ -64,7 +64,7 @@ export function NurseRefusalWorklist({
       <div className="flex items-center gap-2">
         <FileSignature className="h-4 w-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold text-navy">Refusal documents to sign</h3>
-        <Badge variant={rows.length ? "destructive" : "outline"}>{rows.length}</Badge>
+        <Badge variant={rows.length ? "outline" : "outline"}>{rows.length}</Badge>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
         The refusals themselves are already charted on the MAR. These are the separate legal

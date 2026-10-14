@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Phase 10d-3 — DMC-ODS operational readiness (PROTOTYPE). CalOMS
 // completeness worklist + export-ready per-episode view. Part 2 protected:
 // roles failing `canAccess(role, "screeners_sud")` see nothing.
@@ -96,7 +97,7 @@ function ReadinessPage() {
                   {r.patientName}
                 </Link>
                 {r.admissionMissing.length > 0 && <p className="text-xs text-muted-foreground">Admission missing: {r.admissionMissing.join(", ")}</p>}
-                {r.dischargeMissing.length > 0 && <p className="text-xs text-destructive">Discharge missing: {r.dischargeMissing.join(", ")}</p>}
+                {r.dischargeMissing.length > 0 && <p className="text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />Discharge missing: {r.dischargeMissing.join(", ")}</p>}
               </li>
             ))}
           </ul>

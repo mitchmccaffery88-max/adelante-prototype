@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Group 2 O2 — advocate status for the patient: Invited, Waiting for your
 // consent, Waiting for their sign-up, Active. Delivery errors are shown.
@@ -29,7 +30,7 @@ export function AdvocateStatusList({ patientId }: { patientId: string }) {
               <StatusChip state={st === "active" ? "done" : st === "waiting_consent" ? "yourturn" : "team"} label={ADVOCATE_STATUS_LABEL[st][es ? "es" : "en"]} data-testid="advocate-status" />
             </div>
             {l.notificationDelivery?.status === "failed" && (
-              <p role="alert" className="text-xs text-destructive">
+              <p role="alert" className="text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
                 {es ? "No se pudo enviar la invitación: " : "The invitation could not be sent: "}{l.notificationDelivery.detail ?? ""}
               </p>
             )}

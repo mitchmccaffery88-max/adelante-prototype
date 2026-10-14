@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -174,7 +175,7 @@ function ResultList({
 }) {
   if (error) {
     return (
-      <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive">
+      <div className="rounded-md border-2 border-input bg-surface-sunk p-2 text-xs text-attention">
         {error}
       </div>
     );
@@ -194,9 +195,7 @@ function ResultList({
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm text-navy">{r.title}</span>
               {r.isSud && (
-                <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                  42 CFR 2
-                </Badge>
+                <StatusChip lang="en" state="restricted" label="42 CFR 2" />
               )}
               {r.isMh && !r.isSud && (
                 <Badge className="bg-teal/20 text-teal border-0 text-[10px]">MH</Badge>

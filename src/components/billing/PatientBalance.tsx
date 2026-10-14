@@ -47,7 +47,7 @@ export function PatientBalance({ claim, canWrite }: { claim: Claim; canWrite: bo
         </div>
       ) : null}
       {claim.overpaidReview && (
-        <div className="text-destructive">Paid more than current charge — review</div>
+        <div className="text-attention">Paid more than current charge — review</div>
       )}
       {payments.length > 0 && (
         <ul className="text-muted-foreground">

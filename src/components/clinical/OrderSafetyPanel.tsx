@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §B1/B2 — allergy cross-check, NKDA prompt and the CURES/PDMP step on a
 // draft order. The store (`orderSigningBlocker`) enforces the same rules.
 import { act, actFor } from "@/lib/actions/act";
@@ -49,8 +50,8 @@ export function OrderSafetyPanel({ order, patientId }: { order: MedOrder; patien
   return (
     <div className="space-y-2">
       {noAllergies && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/60 bg-destructive/5 p-3 text-xs text-destructive">
-          <ShieldAlert className="h-4 w-4" />
+        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-input bg-surface-sunk p-3 text-xs text-attention">
+          <CircleAlert className="h-4 w-4" aria-hidden="true" />
           <span className="flex-1 min-w-0">Allergies not recorded — confirm NKDA or add allergies before signing.</span>
           <Button size="sm" variant="outline" onClick={() => run(() => AdelanteEHR.confirmNkda(patientId, staffName), "NKDA recorded")}>
             Confirm NKDA
@@ -85,7 +86,7 @@ export function OrderSafetyPanel({ order, patientId }: { order: MedOrder; patien
       {needsCures && (
         <div className="space-y-2 rounded-lg border p-3 text-xs" aria-label="CURES check">
           <div className="flex items-center gap-2 font-medium text-navy">
-            {order.curesCheck ? <ShieldCheck className="h-4 w-4 text-teal" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
+            {order.curesCheck ? <ShieldCheck className="h-4 w-4 text-teal" /> : <ShieldAlert className="h-4 w-4 text-attention" />}
             CURES check required ({deaScheduleOf(order) ?? "controlled"})
           </div>
           <p className="rounded bg-muted px-2 py-1 text-muted-foreground">{CURES_PLACEHOLDER_LABEL}</p>

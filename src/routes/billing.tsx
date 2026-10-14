@@ -385,7 +385,7 @@ function BillingPage() {
               type="button"
               data-testid="no-rate-filter"
               onClick={() => setNoRateOnly((v) => !v)}
-              className={`rounded-full border px-2.5 py-1 text-xs ${noRateOnly ? "border-destructive bg-destructive/10 text-destructive" : "text-muted-foreground"}`}
+              className={`rounded-full border px-2.5 py-1 text-xs ${noRateOnly ? "border-input bg-surface-sunk text-attention" : "text-muted-foreground"}`}
             >
               No rate on file ({noRateCount})
             </button>
@@ -452,7 +452,7 @@ function BillingPage() {
                               <span className="ml-1 text-[10px] text-muted-foreground">{claim.state}</span>
                             )}
                             {claim.state === "denied" && claim.denialReason && (
-                              <div className="text-[10px] text-destructive mt-0.5">{claim.denialReason}</div>
+                              <div className="text-[10px] text-attention mt-0.5">{claim.denialReason}</div>
                             )}
                           </>
                         ) : (
@@ -569,7 +569,7 @@ function BillingPage() {
                   const canBook = AdelanteEHR.canBook(c.id);
                   const expired = c.mediCalStatus === "expired" || !canBook.ok;
                   return (
-                    <tr key={c.id} className={`border-t ${expired ? "bg-destructive/5" : ""}`}>
+                    <tr key={c.id} className={`border-t ${expired ? "bg-surface-sunk" : ""}`}>
                       <td className="px-3 py-2">{c.name}</td>
                       <td className="px-3 py-2">{c.credential}</td>
                       <td className="px-3 py-2">
@@ -579,7 +579,7 @@ function BillingPage() {
                               ? "bg-teal/15 text-teal"
                               : c.mediCalStatus === "pending"
                                 ? "bg-gold/20 text-navy"
-                                : "bg-destructive/10 text-destructive"
+                                : "bg-surface-sunk text-attention"
                           }`}
                         >
                           {c.mediCalStatus}
@@ -599,7 +599,7 @@ function BillingPage() {
                           </span>
                         ) : (
                           <span
-                            className="text-[10px] rounded-full px-2 py-0.5 bg-destructive/10 text-destructive"
+                            className="text-[10px] rounded-full px-2 py-0.5 bg-surface-sunk text-attention"
                             title={canBook.reason}
                           >
                             Blocked

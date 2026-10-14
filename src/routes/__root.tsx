@@ -239,7 +239,7 @@ function RootComponent() {
       <I18nProvider>
         <AppShell />
         <BookVisitDrawerHost />
-        <Toaster richColors position="top-right" />
+        <Toaster richColors={false} position="top-right" />
       </I18nProvider>
     </QueryClientProvider>
   );

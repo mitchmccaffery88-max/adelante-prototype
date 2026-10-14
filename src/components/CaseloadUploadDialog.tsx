@@ -324,7 +324,7 @@ export function CaseloadUploadDialog({
                 Needs review: {counts.needsReview}
               </Badge>
               <Badge className="bg-teal/15 text-teal border-0">Will create: {counts.created}</Badge>
-              <Badge className="bg-destructive/15 text-destructive border-0">
+              <Badge className="bg-surface-sunk text-attention border-0">
                 Skipped: {counts.skipped}
               </Badge>
             </div>
@@ -384,7 +384,7 @@ function OutcomeBadge({ outcome }: { outcome: Outcome }) {
     matched_program: { cls: "bg-success/20 text-success", label: "Matched (Program ID)" },
     matched_name_dob: { cls: "bg-gold/30 text-navy", label: "Needs review (name+DOB)" },
     created: { cls: "bg-teal/15 text-teal", label: "Will create" },
-    skipped: { cls: "bg-destructive/15 text-destructive", label: "Skipped" },
+    skipped: { cls: "bg-surface-sunk text-attention", label: "Skipped" },
   };
   const v = map[outcome];
   return <Badge className={`${v.cls} border-0 text-[10px]`}>{v.label}</Badge>;

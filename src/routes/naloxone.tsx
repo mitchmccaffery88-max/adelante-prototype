@@ -85,8 +85,8 @@ function NaloxonePage() {
       <AccessVerifiedBanner />
       <ReviewPendingBanner />
 
-      <Card className="soft-shadow space-y-3 border-crisis/30 bg-crisis-soft p-5">
-        <h2 className="flex items-center gap-2 font-display text-xl text-crisis">
+      <Card className="soft-shadow space-y-3 border-line-strong bg-surface-sunk p-5">
+        <h2 className="flex items-center gap-2 font-display text-xl text-ink-muted">
           <TriangleAlert className="h-5 w-5" aria-hidden="true" /> Your tolerance
         </h2>
         <p className="text-base leading-relaxed">{TOLERANCE_WARNING}</p>

@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §K2 — staff edit of emergency contacts + advocate, the same model as
 // onboarding: relationship dropdown, separate phone and email, "Make this
 // person the advocate" link, and the change prompt (AdvocateStatusList).
@@ -51,9 +52,9 @@ export function StaffContactsEditor({ patient, readOnly }: { patient: Patient; r
             <Input aria-label={`Name — contact ${i + 1}`} placeholder="Name" value={c.name} disabled={readOnly} onChange={(e) => set(i, { name: e.target.value })} />
             <RelationshipSelect value={rel.id} other={rel.other} lang="en" label={`Relationship — contact ${i + 1}`} onChange={(id, other) => set(i, { relationship: relationshipText(id, other) })} />
             <Input aria-label={`Phone — contact ${i + 1}`} placeholder="Phone" value={c.phone} disabled={readOnly} onChange={(e) => set(i, { phone: e.target.value })} />
-            {errs[i]!.includes("phone") && <p className="text-xs text-destructive">Enter a 10-digit phone number.</p>}
+            {errs[i]!.includes("phone") && <p className="text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />Enter a 10-digit phone number.</p>}
             <Input aria-label={`Email — contact ${i + 1}`} placeholder="Email" value={c.email ?? ""} disabled={readOnly} onChange={(e) => set(i, { email: e.target.value })} />
-            {errs[i]!.includes("email") && <p className="text-xs text-destructive">Enter a valid email.</p>}
+            {errs[i]!.includes("email") && <p className="text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />Enter a valid email.</p>}
             {!readOnly && c.id && <button type="button" className="min-h-11 text-xs font-medium text-teal underline" onClick={() => setAdv(advocateDraftFromContact(c, emptyAdvocateDraft()))}>Make this person the advocate</button>}
           </div>
         );

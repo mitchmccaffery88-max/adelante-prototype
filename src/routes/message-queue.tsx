@@ -85,7 +85,7 @@ function MessageQueuePage() {
                 </Badge>
               </div>
               {latest.sudFlagged && (
-                <p className="flex items-center gap-1 text-[10px] font-medium text-destructive">
+                <p className="flex items-center gap-1 text-[10px] font-medium text-attention">
                   <ShieldAlert className="h-3 w-3" /> Sensitive content flagged
                 </p>
               )}

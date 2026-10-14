@@ -37,7 +37,7 @@ export function DocumentStatusBadge({
 }) {
   const { t } = useI18n();
   if (status === "verified") return <Badge variant="default">{t("docStatusVerified")}</Badge>;
-  if (status === "rejected") return <Badge variant="destructive">{t("docStatusRejected")}</Badge>;
+  if (status === "rejected") return <Badge variant="outline">{t("docStatusRejected")}</Badge>;
   return <Badge variant="secondary">{t("docStatusPending")}</Badge>;
 }
 
@@ -83,7 +83,7 @@ export function PatientDocumentsCard({ patientId }: { patientId: string }) {
                   {d.isPart2 ? ` · ${t("docPart2Flag")}` : ""}
                 </span>
                 {d.rejectedReason && (
-                  <span className="mt-1 block text-xs text-destructive">{d.rejectedReason}</span>
+                  <span className="mt-1 block text-xs text-attention">{d.rejectedReason}</span>
                 )}
               </span>
               <span className="flex shrink-0 items-center gap-2">

@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
 const BAND_CLS: Record<Band, string> = {
-  red: "border-destructive/50 bg-destructive/10 text-destructive",
+  red: "border-input bg-surface-sunk text-attention",
   amber: "border-gold/60 bg-gold/20 text-navy",
   green: "border-teal/40 bg-teal/10 text-teal",
 };
@@ -105,7 +105,7 @@ export function BriefTab({ patientId, visibleSections, onSelectSection }: { pati
               data-testid={`due-bucket-${b}`}
               aria-pressed={activeBucket === b}
               onClick={() => setBucket(b)}
-              className={`rounded-full border px-2 py-0.5 text-xs ${activeBucket === b ? "bg-navy text-primary-foreground" : ""} ${b === "past" && buckets.past.length ? "border-destructive/50" : ""}`}
+              className={`rounded-full border px-2 py-0.5 text-xs ${activeBucket === b ? "bg-navy text-primary-foreground" : ""} ${b === "past" && buckets.past.length ? "border-input" : ""}`}
             >
               {b === "past" ? "Past due" : b === "today" ? "Due today" : "Next 7 days"} ({buckets[b].length})
             </button>
@@ -157,7 +157,7 @@ export function BriefTab({ patientId, visibleSections, onSelectSection }: { pati
               );
             })}
             {cs && (
-              <div className={`rounded-md border px-2 py-1 text-xs ${BAND_CLS[/high/i.test(cs.severity) ? "red" : /moderate/i.test(cs.severity) ? "amber" : "green"]}`}>
+              <div className={`rounded-md border px-2 py-1 text-xs ${/high/i.test(cs.severity) ? "border-destructive/50 bg-destructive/10 text-destructive" : BAND_CLS[/moderate/i.test(cs.severity) ? "amber" : "green"]}`}>
                 <span className="font-semibold">C-SSRS</span> {cs.severity} · {new Date(cs.completedAt).toLocaleDateString()}
               </div>
             )}

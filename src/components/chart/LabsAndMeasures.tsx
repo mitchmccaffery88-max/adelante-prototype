@@ -235,7 +235,7 @@ export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string
                 {o.result ? (
                   <p className="text-xs">
                     {o.result.value} {o.result.unit} ·{" "}
-                    <span className={o.result.flag === "normal" ? "" : "font-semibold text-destructive"}>{o.result.flag}</span> ·{" "}
+                    <span className={o.result.flag === "normal" ? "" : "font-semibold text-attention"}>{o.result.flag}</span> ·{" "}
                     {new Date(o.result.date).toLocaleDateString()}
                   </p>
                 ) : canResult ? (
@@ -280,9 +280,9 @@ export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string
                   return (
                     <li key={m.id} className="flex flex-wrap gap-2">
                       <span>{new Date(m.at).toLocaleDateString()}</span>
-                      <span className={f.bp === "high" ? "font-semibold text-destructive" : ""}>BP {m.bpSystolic}/{m.bpDiastolic}</span>
+                      <span className={f.bp === "high" ? "font-semibold text-attention" : ""}>BP {m.bpSystolic}/{m.bpDiastolic}</span>
                       <span>{m.weightKg} kg · {m.heightCm} cm</span>
-                      <span className={f.bmi !== "normal" ? "font-semibold text-destructive" : ""}>BMI {m.bmi}</span>
+                      <span className={f.bmi !== "normal" ? "font-semibold text-attention" : ""}>BMI {m.bmi}</span>
                     </li>
                   );
                 })}

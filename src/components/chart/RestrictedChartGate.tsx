@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Access A1 — a Restricted record asks anyone off the care team for a reason
 // before it opens. The open is logged and raises a compliance item.
 import { useState, type ReactNode } from "react";
@@ -37,7 +38,7 @@ export function RestrictedChartGate({ patientId, children }: { patientId: string
           You're not on this client's care team. Opening it is logged and reviewed by compliance. Tell us why you need it.
         </p>
         <Textarea aria-label="Reason for opening" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for opening this chart" />
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-sm text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{error}</p>}
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-muted-foreground">{ACCESS_MODEL_DRAFT_LABEL}</span>
           <Button disabled={!reason.trim()} onClick={submit}>Open chart</Button>

@@ -146,13 +146,13 @@ export function ChartHeader({
         {!condensed && (
           <div className="space-y-1.5">
             {allergyAccess.level !== "none" && !allergyAccess.locked && (
-              <div data-testid="allergy-strip" className="flex flex-wrap items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1 text-xs">
-                <span className="font-semibold text-destructive">Allergies:</span>
+              <div data-testid="allergy-strip" className="flex flex-wrap items-center gap-1.5 rounded-md border-2 border-input bg-surface-sunk px-2 py-1 text-xs">
+                <span className="font-semibold text-attention">Allergies:</span>
                 {allergies.length === 0 ? (
                   <span className="text-muted-foreground">None recorded — confirm NKDA</span>
                 ) : (
                   allergies.map((a) => (
-                    <span key={a.id} className="font-medium text-destructive">
+                    <span key={a.id} className="font-medium text-ink-muted">
                       {a.substance}
                       {a.reaction ? ` (${a.reaction})` : ""}
                       {a.severity === "severe" ? " · severe" : ""}
@@ -179,7 +179,7 @@ export function ChartHeader({
                     key={a.id}
                     type="button"
                     onClick={() => onSelectSection(a.sectionId)}
-                    className={`rounded px-1.5 py-0.5 font-medium hover:underline ${a.tone === "red" ? "text-destructive" : "text-navy"}`}
+                    className={`rounded px-1.5 py-0.5 font-medium hover:underline ${a.tone === "red" && (a.id === "cssrs" || a.id.startsWith("mat-cont-")) ? "text-destructive" : a.tone === "red" ? "text-attention" : "text-navy"}`}
                   >
                     {a.label}
                   </button>

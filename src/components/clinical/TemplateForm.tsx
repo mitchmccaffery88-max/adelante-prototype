@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Clinical documentation Phase 3a — template renderer.
 //
 // Port of BaggaEMR's TemplateForm.tsx: renders all 8 field types, groups by
@@ -85,7 +86,7 @@ export function TemplateForm({
           data-testid="template-es-draft-banner"
           className="flex items-start gap-1.5 rounded-md border border-gold/50 bg-gold/15 p-2 text-[11px] text-navy"
         >
-          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
             {ES_DRAFT_NOTICE_ES} · {ES_DRAFT_NOTICE_EN}
           </span>
@@ -130,8 +131,8 @@ export function TemplateForm({
                 </span>
               </div>
               {s.incomplete && (
-                <p className="mt-1 flex items-start gap-1.5 text-[11px] text-destructive">
-                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                <p className="mt-1 flex items-start gap-1.5 text-[11px] text-attention">
+                  <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                   <span>
                     Incomplete score — do not rely on this total. Missing:{" "}
                     {s.missingKeys.join(", ")}.
@@ -167,14 +168,14 @@ function FieldRenderer({
   const label = (
     <Label htmlFor={id} className="text-xs">
       {labelText}
-      {field.required && <span className="ml-0.5 text-destructive">*</span>}
+      {field.required && <span className="ml-0.5 text-attention">*</span>}
     </Label>
   );
 
   const selected = Array.isArray(value) ? value : [];
 
   return (
-    <div className={`space-y-1.5 ${missing ? "rounded-md border border-destructive/40 p-2" : ""}`}>
+    <div className={`space-y-1.5 ${missing ? "rounded-md border-2 border-input p-2" : ""}`}>
       {label}
       {field.type === "text" && (
         <Input

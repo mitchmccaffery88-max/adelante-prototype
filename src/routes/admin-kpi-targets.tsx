@@ -403,7 +403,7 @@ function AdminKpiTargetsPage() {
               Cancel
             </Button>
             <Button
-              variant="destructive"
+              variant="outline"
               onClick={() => {
                 try {
                   AdelanteEHR.setKpiTargetActive(deactivating!.id, false, staffName, reason);

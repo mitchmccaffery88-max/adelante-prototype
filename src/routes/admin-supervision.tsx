@@ -126,7 +126,7 @@ function SupervisionAdminPage() {
         <div
           role="alert"
           data-testid="supervision-assign-error"
-          className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          className="rounded-md border-2 border-input bg-surface-sunk p-3 text-sm text-attention"
         >
           {error}
         </div>

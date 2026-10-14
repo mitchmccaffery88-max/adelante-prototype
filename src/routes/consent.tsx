@@ -192,7 +192,7 @@ function ConsentPage() {
                         className={`text-[10px] rounded-full px-2 py-0.5 ${
                           e.action === "granted"
                             ? "bg-teal/15 text-teal"
-                            : "bg-destructive/10 text-destructive"
+                            : "bg-surface-sunk text-attention"
                         }`}
                       >
                         {e.action}
@@ -231,7 +231,7 @@ function ConsentPage() {
                             className={`text-[10px] rounded-full px-2 py-0.5 ${
                               e.action === "granted"
                                 ? "bg-teal/15 text-teal"
-                                : "bg-destructive/10 text-destructive"
+                                : "bg-surface-sunk text-attention"
                             }`}
                           >
                             {e.action}
@@ -270,7 +270,7 @@ function LegalDisclosureCard({ patientId, focused }: { patientId: string; focuse
           <div className="font-medium text-navy break-words">To: {d.recipient}</div>
           <div className="text-xs text-muted-foreground break-words">Purpose: {d.purpose} · recorded <ClientDate value={d.recordedAt} /> by {d.recordedBy}</div>
           {d.revokedAt ? (
-            <p className="text-xs text-destructive">Revoked <ClientDate value={d.revokedAt} /> by {d.revokedBy} — {d.revokeReason}</p>
+            <p className="text-xs text-attention">Revoked <ClientDate value={d.revokedAt} /> by {d.revokedBy} — {d.revokeReason}</p>
           ) : (
             <div className="flex flex-col sm:flex-row gap-2">
               <Input aria-label="Revoke reason" placeholder="Reason for revoking" className="h-9" value={reason[d.id] ?? ""} onChange={(e) => setReason({ ...reason, [d.id]: e.target.value })} />

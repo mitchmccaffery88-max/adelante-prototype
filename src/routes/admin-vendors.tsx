@@ -202,7 +202,7 @@ function VendorPanel({
       <div className="mt-2 flex items-center gap-2">
         <Badge className="bg-gold/30 text-navy border-0 text-[10px]">{mode}</Badge>
         {last && (
-          last.ok ? <StatusChip lang="en" state="done" label="healthy" /> : <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">degraded</Badge>
+          last.ok ? <StatusChip lang="en" state="done" label="healthy" /> : <Badge className="bg-surface-sunk text-attention border-0 text-[10px]">degraded</Badge>
         )}
       </div>
       <div className="mt-3 text-xs text-muted-foreground">
@@ -229,7 +229,7 @@ function StateBadge({ state }: { state: string }) {
     in_progress: "bg-teal/20 text-teal",
     ended: "bg-success/20 text-success",
     expired: "bg-muted text-muted-foreground",
-    failed: "bg-destructive/15 text-destructive",
+    failed: "bg-surface-sunk text-attention",
   };
   return (
     <Badge className={`${map[state] ?? "bg-muted"} border-0 text-[10px]`}>

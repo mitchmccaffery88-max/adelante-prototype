@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Consent W2/W4/W5/W6 — staff side in the chart's Consents section: send,
 // track, signed copies (read-only), renew, revoke, sign in person.
@@ -55,7 +56,7 @@ export function ConsentFormsPanel({ patient }: { patient: Patient }) {
           <Button size="sm" data-testid="sign-in-person" onClick={() => setInPerson("on")}>Sign in person</Button>
         </div>
       </div>
-      {snap.blocked && <p className="rounded bg-destructive/10 p-2 text-xs font-medium text-destructive">HIPAA declined — care can't start until it is signed.</p>}
+      {snap.blocked && <p className="rounded bg-surface-sunk p-2 text-xs font-medium text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />HIPAA declined — care can't start until it is signed.</p>}
       {snap.gate && <p className="rounded bg-amber-500/10 p-2 text-xs font-medium" data-testid="group-consent-needed">{snap.gate} — group booking unavailable. Individual visits and MAT are not affected.</p>}
       {latest.size === 0 ? <p className="text-xs text-muted-foreground">No forms sent yet.</p> : (
         <ul className="divide-y text-sm" data-testid="form-status-list">
@@ -126,7 +127,7 @@ export function ConsentFormsPanel({ patient }: { patient: Patient }) {
           <SheetHeader><SheetTitle>Revoke signed form</SheetTitle></SheetHeader>
           {revoke && <p className="mt-2 rounded bg-amber-500/10 p-2 text-sm" data-testid="care-impact">{CARE_IMPACT[revoke].en}</p>}
           <Textarea className="mt-3" aria-label="Reason" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} />
-          <Button className="mt-3 w-full" variant="destructive" disabled={reason.trim().length < 3} onClick={() => { if (run("consent_form_revoke", "revokeForm", [{ patientId: patient.id, formKey: revoke, by: "staff", reason, actor: storeActor }], "Revoked — the signed copy stays on file")) setRevoke(null); }}>Revoke</Button>
+          <Button className="mt-3 w-full" variant="outline" disabled={reason.trim().length < 3} onClick={() => { if (run("consent_form_revoke", "revokeForm", [{ patientId: patient.id, formKey: revoke, by: "staff", reason, actor: storeActor }], "Revoked — the signed copy stays on file")) setRevoke(null); }}>Revoke</Button>
         </SheetContent>
       </Sheet>
 

@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Messaging Phase 2 — staff side of the patient's care-team thread.
 import { act, actFor } from "@/lib/actions/act";
 import { useEffect, useState } from "react";
@@ -69,7 +70,7 @@ export function StaffMessagesTab({
         unflagged message is <strong>not</strong> a clearance; this never replaces your own review.
       </p>
       {autoFlagged > 0 && (
-        <p className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+        <p className="rounded-md border-2 border-input bg-surface-sunk p-2 text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
           A message in this thread triggered automatic crisis-language detection. The care team was
           alerted and a crisis escalation is open with the clinical coordinator — you do not need to
           escalate it again. Keep responding as you normally would.

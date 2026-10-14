@@ -44,7 +44,7 @@ export function DisclosureAccounting({ patientId }: { patientId: string }) {
               <span className="font-medium">{r.recipient.name}{r.recipient.organization ? ` (${r.recipient.organization})` : ""}</span>
               <span>· {r.purpose}</span>
               <span className="text-muted-foreground">· {CHANNEL_LABEL[r.channel]} · {r.recordClasses.join(", ")} · by {r.actorName} ({r.actingRole.replace(/_/g, " ")})</span>
-              {r.emergency && <span className="font-medium text-destructive">· Emergency — {r.complianceReview === "reviewed" ? "reviewed" : "compliance review pending"}</span>}
+              {r.emergency && <span className="font-medium text-attention">· Emergency — {r.complianceReview === "reviewed" ? "reviewed" : "compliance review pending"}</span>}
               {r.simulated && <span className="text-muted-foreground">· Simulated</span>}
             </li>
           ))}

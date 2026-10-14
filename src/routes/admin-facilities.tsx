@@ -586,7 +586,7 @@ function EditDialog({
           <Button
             className="mt-2"
             size="sm"
-            variant={facility.active ? "destructive" : "secondary"}
+            variant={facility.active ? "outline" : "secondary"}
             disabled={!reason.trim()}
             onClick={toggleActive}
           >

@@ -25,7 +25,7 @@ import { CheckCircle2, XCircle, HelpCircle, Circle, Stethoscope } from "lucide-r
 const OUTCOME_UI: Record<AhcdChecklistOutcome, { label: string; icon: typeof Circle; cls: string }> = {
   pending: { label: "Not checked", icon: Circle, cls: "text-muted-foreground" },
   verified: { label: "Verified", icon: CheckCircle2, cls: "text-teal" },
-  failed: { label: "Failed", icon: XCircle, cls: "text-destructive" },
+  failed: { label: "Failed", icon: XCircle, cls: "text-attention" },
   unclear: { label: "Unclear", icon: HelpCircle, cls: "text-amber-600" },
 };
 

@@ -29,7 +29,7 @@ export function PatientSignedForms({ patientId, lang = "en" }: { patientId: stri
                 <p className="rounded bg-amber-500/10 p-2">{CARE_IMPACT[c.formKey][lang]}</p>
                 <Textarea aria-label={es ? "Motivo (opcional)" : "Reason (optional)"} placeholder={es ? "Motivo (opcional)" : "Reason (optional)"} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} />
                 <div className="flex gap-2">
-                  <Button variant="destructive" className="min-h-11" onClick={() => { try { revokeForm({ patientId, formKey: c.formKey, by: "patient", ...(reason.trim() ? { reason } : {}) }); toast.success(es ? "Se dejó de compartir" : "Sharing stopped"); setConfirm(null); } catch (e) { toast.error((e as Error).message); } }}>{es ? "Sí, dejar de compartir" : "Yes, stop sharing"}</Button>
+                  <Button variant="outline" className="min-h-11" onClick={() => { try { revokeForm({ patientId, formKey: c.formKey, by: "patient", ...(reason.trim() ? { reason } : {}) }); toast.success(es ? "Se dejó de compartir" : "Sharing stopped"); setConfirm(null); } catch (e) { toast.error((e as Error).message); } }}>{es ? "Sí, dejar de compartir" : "Yes, stop sharing"}</Button>
                   <Button variant="ghost" className="min-h-11" onClick={() => setConfirm(null)}>{es ? "Mantener" : "Keep it"}</Button>
                 </div>
               </div>

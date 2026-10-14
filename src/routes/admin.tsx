@@ -440,7 +440,7 @@ function CoverageBadge({ status }: { status?: string }) {
   const styles: Record<string, string> = {
     active: "bg-success/20 text-success",
     suspended: "bg-gold/30 text-navy",
-    none_unsure: "bg-destructive/15 text-destructive",
+    none_unsure: "bg-surface-sunk text-attention",
     other: "bg-muted text-muted-foreground",
   };
   const labels: Record<string, string> = {
@@ -543,7 +543,7 @@ function AuditLogCard({ events }: { events: ReturnType<typeof AdelanteEHR.listAl
                 className={
                   (e.action === "granted"
                     ? "bg-success/20 text-success"
-                    : "bg-destructive/15 text-destructive") + " border-0"
+                    : "bg-surface-sunk text-attention") + " border-0"
                 }
               >
                 {actionLabels[e.action] ?? e.action}
@@ -592,7 +592,7 @@ function CredentialingCard() {
                 </div>
               </div>
               {r.expired ? (
-                <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
+                <Badge className="bg-surface-sunk text-attention border-0 text-[10px]">
                   <AlertTriangle className="h-3 w-3 mr-1" /> Expired — booking blocked
                 </Badge>
               ) : (
@@ -622,7 +622,7 @@ function NotificationHealthCard() {
           className={
             (failed.length === 0
               ? "bg-success/20 text-success"
-              : "bg-destructive/15 text-destructive") + " border-0 text-[10px]"
+              : "bg-surface-sunk text-attention") + " border-0 text-[10px]"
           }
         >
           {failed.length} failed

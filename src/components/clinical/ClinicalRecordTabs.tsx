@@ -92,7 +92,7 @@ function RemovalReasonDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={submit}>
+          <Button variant="outline" onClick={submit}>
             Remove
           </Button>
         </DialogFooter>
@@ -248,9 +248,7 @@ function ProblemRow({
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <StatusChip lang="en" state={active ? "done" : "closed"} label={active ? "Active" : "Resolved"} />
               {problem.category === "sud" && (
-                <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                  42 CFR 2
-                </Badge>
+                <StatusChip lang="en" state="restricted" label="42 CFR 2" />
               )}
               {problem.category === "mental_health" && (
                 <Badge className="bg-teal/20 text-teal border-0 text-[10px]">MH</Badge>
@@ -280,7 +278,7 @@ function ProblemRow({
                 </Button>
               )}
               <Button size="sm" variant="ghost" onClick={onRemove}>
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                <Trash2 className="h-3.5 w-3.5 text-attention" />
               </Button>
             </div>
           )}
@@ -401,7 +399,7 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
                   </div>
                   {canWrite && (
                     <Button size="sm" variant="ghost" onClick={() => setToRemove(a)}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      <Trash2 className="h-3.5 w-3.5 text-attention" />
                     </Button>
                   )}
                 </div>
@@ -543,7 +541,7 @@ export function AlertsTab({ patientId }: { patientId: string }) {
                   </div>
                   {canWrite && (
                     <Button size="sm" variant="ghost" onClick={() => setToRemove(a)}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      <Trash2 className="h-3.5 w-3.5 text-attention" />
                     </Button>
                   )}
                 </div>
@@ -577,17 +575,17 @@ function AlertSeverityBadge({ severity }: { severity: PatientAlert["severity"] }
   const map = {
     info: "bg-muted text-muted-foreground",
     warning: "bg-gold/30 text-navy",
-    critical: "bg-destructive/15 text-destructive",
+    critical: "bg-surface-sunk text-attention",
   } as const;
   return <Badge className={`${map[severity]} border-0 text-[10px] capitalize`}>{severity}</Badge>;
 }
 
 function LockedNote({ reason }: { reason?: string }) {
   return (
-    <Card className="p-4 flex items-start gap-2 border-destructive/30 bg-destructive/5">
-      <Lock className="h-4 w-4 text-destructive mt-0.5" />
+    <Card className="p-4 flex items-start gap-2 border-input bg-surface-sunk">
+      <Lock className="h-4 w-4 text-attention mt-0.5" />
       <div className="text-sm">
-        <div className="font-medium text-destructive">Access restricted</div>
+        <StatusChip lang="en" state="restricted" label="Access restricted" />
         <div className="text-xs text-muted-foreground mt-0.5">
           {reason ?? "Your role does not have access to this section."}
         </div>

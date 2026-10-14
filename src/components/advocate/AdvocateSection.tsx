@@ -122,7 +122,7 @@ export function AdvocateSection({ draft, onChange, on, onToggle, errors, lang }:
             <p className="text-xs text-muted-foreground" data-testid="advocate-sign-in-forms">{t.later}</p>
           </div>
           {errors.length > 0 && (
-            <ul role="alert" className="space-y-1 text-xs text-destructive" data-testid="advocate-errors">
+            <ul role="alert" className="space-y-1 text-xs text-attention" data-testid="advocate-errors">
               {errors.map((e) => <li key={e}>{t.errors[e]}</li>)}
             </ul>
           )}

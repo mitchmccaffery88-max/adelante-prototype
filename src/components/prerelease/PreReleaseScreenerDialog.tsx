@@ -108,7 +108,7 @@ export function PreReleaseScreenerDialog({
                 {preview.domains
                   ?.filter((d) => d.positive)
                   .map((d) => (
-                    <Badge key={d.key} variant="destructive">
+                    <Badge key={d.key} variant="outline">
                       {d.label}
                     </Badge>
                   ))}

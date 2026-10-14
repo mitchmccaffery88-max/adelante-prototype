@@ -294,7 +294,7 @@ function CoverageRow({ appt, label, clinicianName, canAct }: { appt: Appointment
           <Textarea aria-label="Cancel note" placeholder="Note (required for Other)" value={note} onChange={(e) => setNote(e.target.value)} />
           <div className="flex gap-2 justify-end">
             <Button size="sm" variant="ghost" onClick={reset}>Close</Button>
-            <Button size="sm" variant="destructive" disabled={!reason} onClick={() => run(() => coordinationCancel({ apptId: appt.id, reason: reason as StaffCancelReason, note, actor: who }), "Visit cancelled.")}>
+            <Button size="sm" variant="outline" disabled={!reason} onClick={() => run(() => coordinationCancel({ apptId: appt.id, reason: reason as StaffCancelReason, note, actor: who }), "Visit cancelled.")}>
               Confirm cancel
             </Button>
           </div>

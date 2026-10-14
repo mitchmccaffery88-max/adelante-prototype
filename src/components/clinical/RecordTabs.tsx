@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 import { isMyCosign } from "@/lib/notes";
 import { StaffContactsEditor } from "@/components/clinical/StaffContactsEditor";
@@ -396,9 +397,9 @@ export function CheckInsTab({ patientId, readOnly }: { patientId: string; readOn
                   setDateError(undefined);
                 }}
                 aria-invalid={Boolean(dateError)}
-                className={dateError ? "ring-2 ring-destructive border-destructive" : undefined}
+                className={dateError ? "border-2 border-input" : undefined}
               />
-              {dateError && <p className="text-xs text-destructive">{dateError}</p>}
+              {dateError && <p className="text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{dateError}</p>}
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Time</Label>
@@ -808,7 +809,7 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
               </Badge>
               <Badge variant="outline" className="text-[10px]">{(_SRC ?? {})[i.source]}</Badge>
               {i.urgency && (
-                <Badge variant={i.urgency === "today" ? "destructive" : "outline"} className="text-[10px]">
+                <Badge variant={i.urgency === "today" ? "outline" : "outline"} className="text-[10px]">
                   Urgency: {URGENCY_LABEL.en[i.urgency]}
                 </Badge>
               )}
@@ -965,7 +966,7 @@ function NeedAgingLine({ patientId, item }: { patientId: string; item: SdohPlanI
   if (aging.state !== "due" && aging.state !== "overdue") return null;
   return (
     <div
-      className={`text-[11px] ${aging.state === "overdue" ? "text-destructive" : "text-muted-foreground"}`}
+      className={`text-[11px] ${aging.state === "overdue" ? "text-attention" : "text-muted-foreground"}`}
     >
       {sdohAgingLabel(aging)} · {SDOH_AGING_DRAFT.label}
     </div>
@@ -1190,7 +1191,7 @@ export function ReferralsTab({
                 if (aging.state !== "due" && aging.state !== "overdue") return null;
                 return (
                   <div
-                    className={`text-[11px] ${aging.state === "overdue" ? "text-destructive" : "text-muted-foreground"}`}
+                    className={`text-[11px] ${aging.state === "overdue" ? "text-attention" : "text-muted-foreground"}`}
                   >
                     {sdohAgingLabel(aging)} · {SDOH_AGING_DRAFT.label}
                   </div>
@@ -1666,8 +1667,8 @@ export function CoordinationTab({
   return (
     <div className="space-y-4">
       {!part2Consent && (
-        <Card className="p-3 border-destructive/30 bg-destructive/5 flex items-start gap-2 text-xs">
-          <ShieldAlert className="h-4 w-4 text-destructive mt-0.5" />
+        <Card className="p-3 border-input bg-surface-sunk flex items-start gap-2 text-xs">
+          <ShieldAlert className="h-4 w-4 text-attention mt-0.5" />
           <span>
             <strong>42 CFR Part 2:</strong> SUD-identifying detail cannot be shared with probation,
             parole, or external partners without the patient's specific Part 2 consent. Disclosure
@@ -1886,9 +1887,7 @@ export function CoordinationTab({
             </div>
             <div className="text-muted-foreground mt-1">{e.summary}</div>
             {e.part2Disclosed && (
-              <Badge className="bg-destructive/15 text-destructive border-0 text-[10px] mt-1">
-                Part 2 disclosure
-              </Badge>
+              <StatusChip lang="en" state="restricted" label="Part 2 disclosure" />
             )}
           </div>
         ))}
@@ -2488,7 +2487,7 @@ export function NotesTab({
             Authoring as <span className="text-navy font-medium">{staffName}</span>
           </p>
           {!authorId && (
-            <p className="mt-1 text-[11px] text-destructive">
+            <p className="mt-1 text-[11px] text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
               No acting staff identity on this session — pick a staff member to author notes.
             </p>
           )}
@@ -2995,9 +2994,7 @@ function ProgressNoteCard({
           </Badge>
           <NoteStatusBadge note={note} />
           {note.category === "sud" && (
-            <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-              42 CFR 2
-            </Badge>
+            <StatusChip lang="en" state="restricted" label="42 CFR 2" />
           )}
           {note.authorSource === "ai_draft" && (
             <Badge className="bg-muted text-muted-foreground border-0 text-[10px]" data-testid="ai-draft-badge">
@@ -3084,7 +3081,7 @@ function ProgressNoteCard({
       {!sudLocked && note.aiScribe?.sessionId && <div className="mt-2"><ScribeDraftReview sessionId={note.aiScribe.sessionId} compact /></div>}
       {!sudLocked && <NoteRevisionPanel patientId={patientId} note={note} canWrite={canWrite} />}
       {note.declineReason && status === "draft" && (
-        <p className="mt-2 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
+        <p className="mt-2 rounded border-2 border-input bg-surface-sunk p-2 text-[11px] text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
           Cosign declined by {note.declinedBy}: {note.declineReason} — revise and re-sign.
         </p>
       )}
@@ -3107,7 +3104,7 @@ function ProgressNoteCard({
       {chwBlock && (
         <div
           data-testid="chw-billing-block-banner"
-          className="mt-2 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive"
+          className="mt-2 rounded border-2 border-input bg-surface-sunk p-2 text-[11px] text-attention"
         >
           <p className="font-medium">
             {t("chwBlockTitle")} —{" "}

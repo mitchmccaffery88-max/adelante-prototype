@@ -65,7 +65,7 @@ export function CrisisQueueDetails({ lane }: { lane?: "sdoh" | "clinical" }) {
     <div className="space-y-4" data-testid="crisis-details">
       <header className="space-y-2">
         <h2 className="font-display text-lg text-navy flex items-center gap-2">
-          <Siren className="h-5 w-5 text-destructive" />{" "}
+          <Siren className={lane === "sdoh" ? "h-5 w-5 text-attention" : "h-5 w-5 text-destructive"} />{" "}
           {access.locked
             ? "Crises you flagged"
             : lane === "sdoh"
@@ -186,7 +186,7 @@ export function CrisisQueueDetails({ lane }: { lane?: "sdoh" | "clinical" }) {
                 <ClientDate value={escalation.triggeredAt} />
               </p>
               {(escalation.retriggers?.length ?? 0) > 0 && (
-                <ul className="space-y-0.5 border-l-2 border-destructive/40 pl-2 text-muted-foreground">
+                <ul className={`space-y-0.5 border-l-2 pl-2 text-muted-foreground ${escalation.category === "sdoh" ? "border-line-strong" : "border-destructive/40"}`}>
                   {escalation.retriggers!.map((r, i) => (
                     <li key={i}>
                       Further signal <ClientDate value={r.at} /> — {r.detail}

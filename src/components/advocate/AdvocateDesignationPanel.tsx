@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 // §v3.0 Phase 4 — designation surface for advocates / family members.
 //
@@ -84,7 +85,7 @@ export function AdvocateDesignationPanel({
                 </p>
               )}
               {(l.notificationDelivery?.status === "failed" || l.notificationDelivery?.status === "not_configured") && (
-                <p className="text-xs text-destructive" role="alert">
+                <p className="text-xs text-attention" role="alert"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />
                   {l.notificationDelivery.status === "not_configured"
                     ? "We couldn't send this invitation because messaging is not connected. Your care team can help."
                     : "We couldn't send this invitation. Your care team can help confirm the contact method and try again."}

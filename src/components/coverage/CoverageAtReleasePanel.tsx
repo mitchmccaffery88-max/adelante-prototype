@@ -45,7 +45,7 @@ export function CoverageAtReleasePanel({ compact = false }: { compact?: boolean 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">Coverage at release</h2>
         <div className="flex gap-2">
-          {overdue > 0 && <Badge variant="destructive">{overdue} overdue reactivation{overdue === 1 ? "" : "s"}</Badge>}
+          {overdue > 0 && <Badge variant="outline">{overdue} overdue reactivation{overdue === 1 ? "" : "s"}</Badge>}
           <Badge variant="outline">{COVERAGE_RELEASE_DRAFT.label}</Badge>
           {compact && <Link to="/coverage-release" className="text-sm underline">Open tracker</Link>}
         </div>

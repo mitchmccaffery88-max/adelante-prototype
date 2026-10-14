@@ -470,7 +470,7 @@ function ClaimsPage() {
                       <TableCell className="px-2 py-2" data-cell="clinician">{cl?.name}</TableCell>
                       <TableCell className="px-2 py-2" data-cell="state">{c.state === "denied" ? <Badge className={stateStyle[c.state]}>{c.state}</Badge> : <StatusChip lang="en" state={c.state === "documented" ? "upnext" : c.state === "submitted" ? "team" : c.state === "paid" ? "done" : c.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={c.state === "documented" ? "Documented" : c.state === "signed" || c.state === "coded" || c.state === "generated" ? "Ready to submit" : c.state === "submitted" ? "With payer" : c.state === "partial" ? "Partly paid — review" : c.state} />}<ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = gateMessageFor(role, c); return m ? <p className="mt-1 text-[11px] text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</TableCell>
                       <TableCell className="px-2 py-2 font-mono text-xs" data-cell="charge"><ClaimAmount claim={c} /></TableCell>
-                      <TableCell className="px-2 py-2">{c.reviewFlag ? <span data-testid="claim-review-flag" className="font-medium text-destructive">{c.reviewFlag.label}</span> : (c.denialReason ?? "—")}</TableCell>
+                      <TableCell className="px-2 py-2">{c.reviewFlag ? <span data-testid="claim-review-flag" className="font-medium text-attention">{c.reviewFlag.label}</span> : (c.denialReason ?? "—")}</TableCell>
                       <TableCell className="px-2 py-2 text-right space-x-2">
                         {!canWrite ? (
                           <span className="text-xs text-muted-foreground">View only</span>

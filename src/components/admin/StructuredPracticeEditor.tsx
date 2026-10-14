@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §F4 Designed forms for structured practice: every exercise kind and every
 // rich lesson activity kind gets plain-language labels instead of raw keys.
 import { useActingStaff } from "@/lib/roles";
@@ -85,7 +86,7 @@ export function RichActivityFields({ kind, value, onChange }: { kind: string; va
   const specs = ACTIVITY_FORMS[kind];
   if (!specs) return null;
   const problems = activityProblems(kind, value);
-  return <div className="space-y-2" data-testid="rich-activity-fields"><DesignedFields specs={specs} value={value} onChange={onChange} />{problems.map((p) => <p key={p} className="text-xs text-destructive">{p}</p>)}</div>;
+  return <div className="space-y-2" data-testid="rich-activity-fields"><DesignedFields specs={specs} value={value} onChange={onChange} />{problems.map((p) => <p key={p} className="text-xs text-attention"><CircleAlert className="mr-1 inline size-4 shrink-0 align-text-bottom" aria-hidden="true" />{p}</p>)}</div>;
 }
 
 // --- Journey steps ---------------------------------------------------------

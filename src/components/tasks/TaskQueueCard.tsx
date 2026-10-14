@@ -79,7 +79,7 @@ export function TaskQueueCard({
         </h2>
         {source.kind !== "none" && (
           <div className="flex items-center gap-2 text-xs">
-            <Badge className="bg-destructive/15 text-destructive border-0">
+            <Badge className="bg-surface-sunk text-ink-muted border-0">
               {overdue.length} overdue
             </Badge>
             <Badge className="bg-gold/25 text-navy border-0">{dueToday.length} due today</Badge>

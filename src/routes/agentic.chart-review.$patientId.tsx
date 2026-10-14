@@ -148,7 +148,7 @@ function GuidedChartReview() {
               <ul className="space-y-1.5 text-sm">
                 {facts.careGaps.map((g) => (
                   <li key={g} className="flex gap-2">
-                    <span className="text-destructive">•</span>
+                    <span className="text-attention">•</span>
                     <span>{g}</span>
                   </li>
                 ))}

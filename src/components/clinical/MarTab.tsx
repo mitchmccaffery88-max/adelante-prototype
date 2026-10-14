@@ -176,7 +176,7 @@ function ReasonDialog({
             Cancel
           </Button>
           <Button
-            variant={destructive ? "destructive" : "default"}
+            variant={destructive ? "outline" : "default"}
             onClick={() => {
               const t = reason.trim();
               if (t.length < minLength) {
@@ -800,7 +800,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
           {slot.order.status !== "signed" && (
             <Badge variant="secondary">{ORDER_STATUS_LABEL[slot.order.status]}</Badge>
           )}
-          {late && !done && <Badge variant="destructive">Late</Badge>}
+          {late && !done && <Badge variant="outline">Late</Badge>}
         </div>
         {(slot.order.sigOverride ?? slot.order.sig) && (
           <div className="mt-1 text-xs italic text-muted-foreground">

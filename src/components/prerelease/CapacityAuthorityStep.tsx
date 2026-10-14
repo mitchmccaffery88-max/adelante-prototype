@@ -89,7 +89,7 @@ export function CapacityAuthorityStep({
         </div>
         <Badge
           data-testid="capacity-gate-badge"
-          variant={state.decision.canProceed ? "default" : "destructive"}
+          variant={state.decision.canProceed ? "default" : "outline"}
         >
           {CAPACITY_GATE_BADGE[state.decision.state]}
         </Badge>
@@ -159,7 +159,7 @@ export function CapacityAuthorityStep({
           {!state.decision.canProceed && (
             <p
               data-testid="capacity-block-reason"
-              className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+              className="flex items-start gap-2 rounded-md border-2 border-input bg-surface-sunk p-3 text-xs text-attention"
             >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {state.decision.reason}

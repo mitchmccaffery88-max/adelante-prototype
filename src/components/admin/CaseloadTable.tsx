@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, type Patient, type EpisodeType } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
@@ -277,7 +278,7 @@ export function CaseloadTable({
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground truncate max-w-[140px]">
                           {primary?.name ?? (
-                            <span className="text-destructive">Unassigned</span>
+                            <StatusChip lang="en" state={showAssignClinician ? "yourturn" : "team"} label="Unassigned" />
                           )}
                         </span>
                         <AssignClinicianButton patientId={p.id} size="sm" variant="ghost" />
@@ -303,7 +304,7 @@ function CoverageBadge({ status }: { status?: string }) {
   const styles: Record<string, string> = {
     active: "bg-success/20 text-success",
     suspended: "bg-gold/30 text-navy",
-    none_unsure: "bg-destructive/15 text-destructive",
+    none_unsure: "bg-surface-sunk text-attention",
     other: "bg-muted text-muted-foreground",
   };
   const labels: Record<string, string> = {

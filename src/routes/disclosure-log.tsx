@@ -101,7 +101,7 @@ function DisclosureLogPage() {
             {r.simulated && <Badge variant="outline">Simulated</Badge>}
             {r.emergency && (
               <>
-                <Badge variant="destructive">Emergency — {r.complianceReview === "reviewed" ? "reviewed" : "review pending"}</Badge>
+                <Badge variant="outline">Emergency — {r.complianceReview === "reviewed" ? "reviewed" : "review pending"}</Badge>
                 {r.complianceReview !== "reviewed" && (
                   <Button size="sm" variant="outline" className="h-7" onClick={() => {
                     try { markEmergencyReviewed(r.id, { name: me.staffName, role: me.role, staffId: me.staffId }); AdelanteEHR._emit(); toast.success("Marked reviewed."); }

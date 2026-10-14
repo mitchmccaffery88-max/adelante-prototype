@@ -51,7 +51,7 @@ export function ChartTabBar({
         >
           {t.label}
           {badges[t.id] && (
-            <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] font-semibold text-destructive">{badges[t.id]}</span>
+            <span className="rounded-full bg-surface-sunk px-1.5 text-[10px] font-semibold text-ink-muted">{badges[t.id]}</span>
           )}
         </button>
       ))}

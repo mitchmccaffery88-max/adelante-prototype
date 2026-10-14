@@ -46,7 +46,7 @@ export function ClaimAmount({ claim }: { claim: Claim }) {
         <span
           data-testid="no-rate-badge"
           title={claim.noRateReason}
-          className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive"
+          className="inline-flex items-center gap-1 rounded-full bg-surface-sunk px-2 py-0.5 text-[10px] text-attention"
         >
           <AlertTriangle className="h-3 w-3" /> No rate on file
         </span>
@@ -212,7 +212,7 @@ export function RatesPanel({ canWrite }: { canWrite: boolean }) {
                   {c.unitType === "per_minutes" &&
                     (c.roundingRule === "half_plus" ? " · counts once more than half is delivered" : " · whole units only")}
                 </div>
-                {c.needsReview && <div className="text-[10px] text-destructive">Needs billing review: {c.needsReview}</div>}
+                {c.needsReview && <div className="text-[10px] text-attention">Needs billing review: {c.needsReview}</div>}
               </div>
               {c.draft && (
                 <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-navy">Draft — pending billing review</span>

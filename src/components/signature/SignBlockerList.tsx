@@ -15,7 +15,7 @@ export function SignBlockerList({
   return (
     <div
       data-testid="sign-blocker-list"
-      className="rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive"
+      className="rounded border-2 border-input bg-surface-sunk p-2 text-[11px] text-attention"
     >
       <p className="font-medium">
         {title} ({blockers.length})

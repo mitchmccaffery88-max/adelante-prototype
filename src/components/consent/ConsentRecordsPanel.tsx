@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 // §ASCMI consent infrastructure — staff-facing capture + revocation UI.
 //
 // PLACEHOLDER WARNING: every category label and the attestation wording here
@@ -241,7 +242,7 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
       ) : null}
 
       {heldCount > 0 ? (
-        <p className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm" data-testid="merge-held-count">
+        <p className="rounded-xl border-2 border-input bg-surface-sunk p-3 text-sm" data-testid="merge-held-count">
           {heldCount} item{heldCount === 1 ? "" : "s"} from a merged record stay hidden until consent is re-confirmed.
         </p>
       ) : null}
@@ -257,9 +258,7 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
                 <span className="text-sm font-medium">
                   {r.formType} · {r.status}
                   {r.needsReviewAfterMerge && (
-                    <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-xs text-destructive" data-testid="consent-needs-review">
-                      Consent needs review (merged record — not in effect)
-                    </span>
+                    <StatusChip lang="en" state="restricted" label="Consent needs review (merged record — not in effect)" data-testid="consent-needs-review" />
                   )}
                 </span>
                 {r.needsReviewAfterMerge && canReviewMatches(role) ? (
@@ -296,7 +295,7 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
                   .join(", ") || "none"}
               </div>
               {r.status === "revoked" ? (
-                <div className="text-xs text-destructive">
+                <div className="text-xs text-attention">
                   Revoked {r.revokedAt ? new Date(r.revokedAt).toLocaleString() : ""} by{" "}
                   {r.revokedBy} — {r.revocationReason}
                 </div>

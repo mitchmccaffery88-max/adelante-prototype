@@ -467,7 +467,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           <div className="flex gap-2">
             <Button
               size="sm"
-              variant="destructive"
+              variant="outline"
               disabled={!reason || (reason === "other" && !note.trim()) || busy}
               onClick={() =>
                 run(

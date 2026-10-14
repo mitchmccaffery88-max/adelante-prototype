@@ -97,7 +97,7 @@ const statusBadge: Record<SessionStatus, string> = {
   scheduled: "bg-teal/15 text-teal",
   checked_in: "bg-gold/30 text-navy",
   attended: "bg-success/20 text-success",
-  no_show: "bg-destructive/15 text-destructive",
+  no_show: "bg-surface-sunk text-attention",
   cancelled: "bg-muted text-muted-foreground",
   late_cancel: "bg-muted text-muted-foreground",
   rescheduled: "bg-muted text-muted-foreground",
@@ -269,7 +269,7 @@ function ClinicianPage() {
                     ? "bg-success/20 text-success border-0"
                     : clinician.mediCalStatus === "pending"
                       ? "bg-gold/30 text-navy border-0"
-                      : "bg-destructive/15 text-destructive border-0"
+                      : "bg-surface-sunk text-attention border-0"
                 }
               >
                 Medi-Cal enrollment: {clinician.mediCalStatus}
@@ -503,7 +503,7 @@ function QueueCountRow() {
             className={
               "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors " +
               (hot
-                ? "border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/15"
+                ? "border-input bg-surface-sunk text-attention hover:bg-surface-sunk"
                 : "bg-card text-foreground/80 hover:bg-secondary")
             }
           >
@@ -512,7 +512,7 @@ function QueueCountRow() {
               className={
                 "rounded-full px-1.5 py-0.5 text-[11px] tabular-nums " +
                 (hot
-                  ? "bg-destructive text-destructive-foreground"
+                  ? "bg-surface-sunk text-on-gold"
                   : i.count > 0
                     ? "bg-navy text-navy-foreground"
                     : "bg-muted text-muted-foreground")
@@ -870,7 +870,7 @@ function RescreenDuePanel({
               trendCls = "text-success";
             } else if (latest.score > prev.score) {
               TrendIcon = TrendingUp;
-              trendCls = "text-destructive";
+              trendCls = "text-attention";
             } else {
               TrendIcon = Minus;
               trendCls = "text-muted-foreground";

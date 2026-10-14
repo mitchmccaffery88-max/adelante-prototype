@@ -77,7 +77,7 @@ export function ReferralOutreachStatus({ referral }: { referral: Referral }) {
     );
   }
   if (sms?.status === "failed") {
-    return <div className="mt-1.5 text-[10px] text-destructive">⚑ Welcome text failed to send</div>;
+    return <div className="mt-1.5 text-[10px] text-attention">⚑ Welcome text failed to send</div>;
   }
   if (referral.outreachTask === "manual_call") {
     return (

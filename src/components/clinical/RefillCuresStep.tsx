@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 // §Refill safety — CURES step on a controlled (DEA II–V) refill. The store
 // (`reviewRefill` with actorRole) enforces the same rule.
 import { act, actFor } from "@/lib/actions/act";
@@ -23,7 +24,7 @@ export function RefillCuresStep({ refill }: { refill: RefillRequest }) {
   return (
     <div className="mt-2 space-y-2 rounded-lg border p-3 text-xs" aria-label="CURES check for refill">
       <div className="flex items-center gap-2 font-medium text-navy">
-        {c ? <ShieldCheck className="h-4 w-4 text-teal" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
+        {c ? <ShieldCheck className="h-4 w-4 text-teal" /> : <CircleAlert className="h-4 w-4 text-attention" aria-hidden="true" />}
         CURES check required before approval
       </div>
       <p className="rounded bg-muted px-2 py-1 text-muted-foreground">{CURES_PLACEHOLDER_LABEL}</p>

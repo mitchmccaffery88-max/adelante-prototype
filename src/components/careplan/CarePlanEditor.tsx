@@ -86,7 +86,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
             {r.signedAt ? (
               <>
                 Version {r.version} signed by {r.signedBy} · <ClientDate value={r.signedAt} />
-                {r.changedSinceSigned && <span className="text-destructive"> · Changed since signing</span>}
+                {r.changedSinceSigned && <span className="text-attention"> · Changed since signing</span>}
               </>
             ) : (
               "Not signed yet"

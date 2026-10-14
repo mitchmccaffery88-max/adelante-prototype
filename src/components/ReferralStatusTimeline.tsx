@@ -216,7 +216,7 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
         <div
           className={`mt-3 rounded border p-2 text-[11px] ${
             staleness.state === "overdue"
-              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              ? "border-input bg-surface-sunk text-attention"
               : "border-gold/50 bg-gold/10 text-navy"
           }`}
           title={POST_ENROLLMENT_STALENESS_NOTE}

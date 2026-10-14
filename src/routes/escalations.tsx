@@ -91,7 +91,7 @@ function EscalationsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-4">
       <header className="space-y-2">
-        <h1 className="flex items-center gap-2 font-display text-2xl text-navy"><Siren className="h-5 w-5 text-destructive" /> Escalations</h1>
+        <h1 className="flex items-center gap-2 font-display text-2xl text-navy"><Siren className="h-5 w-5 text-attention" /> Escalations</h1>
         <p className="text-sm text-muted-foreground">Crisis, score changes, overdue crisis notes, urgent social needs and missed handoffs — overdue first, then by due time.</p>
         <p className="text-[11px] text-amber-900">Due times use each pathway's own clock. {ESCALATION_DRAFT_LABEL}</p>
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Escalation view">
