@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Consent W3 — patient "Forms to sign". One card per form, one checkbox,
 // ONE signature step at the end. Part 2 has its own card naming who receives
@@ -92,7 +93,7 @@ export function FormsToSign({ patientId, lang = "en", channel = "portal", only, 
           )}
           <Input aria-label={t.name} placeholder={t.name} value={name} maxLength={100} onChange={(e) => setName(e.target.value)} className="min-h-11" />
           {needTyped && <Input aria-label={t.typed} placeholder={t.typed} value={typed} maxLength={100} onChange={(e) => setTyped(e.target.value)} className="min-h-11" />}
-          {needDrawn && <button type="button" className="min-h-20 w-full rounded-xl border border-dashed text-sm" onClick={() => setDrawn(true)}>{drawn ? "✓" : t.draw}</button>}
+          {needDrawn && <button type="button" className="min-h-20 w-full rounded-xl border border-dashed text-sm" onClick={() => setDrawn(true)}>{drawn ? <Check className="mx-auto size-5" aria-label={t.draw} /> : t.draw}</button>}
           <Button className="min-h-11 w-full rounded-full" onClick={sign} data-testid="forms-sign">{t.sign}</Button>
         </div>
       )}

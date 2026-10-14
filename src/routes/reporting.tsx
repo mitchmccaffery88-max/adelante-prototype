@@ -357,7 +357,7 @@ function ReportingHome() {
         <div>
           <h2 className="font-display text-base text-navy">My work</h2>
           <p className="max-w-xl text-xs text-muted-foreground">
-            Crisis escalations you claimed, your unsigned notes and overdue tasks, plus re-screens
+            Crisis escalations you claimed, your unsigned notes and follow-up needed tasks, plus re-screens
             due and caseload patients going quiet.
           </p>
         </div>
@@ -403,7 +403,7 @@ function ReportingHome() {
               note="As of now — current backlog, not a period measure"
             />
             <Stat
-              label="Overdue tasks"
+              label="Tasks needing follow-up"
               value={String(metrics.overdue_task_count.value ?? 0)}
               note="As of now — current backlog, not a period measure"
             />
@@ -645,7 +645,7 @@ function ReportingHome() {
           <div className="mt-3 grid gap-3 sm:grid-cols-3" data-testid="request-to-booked">
             <Stat label="Appointment requests" value={String(reqBooked.requested)} note="Made at intake — waiting for or given staff confirmation" />
             <Stat
-              label="Request → booked"
+              label="Request to booked"
               value={String(reqBooked.booked)}
               note={reqBooked.medianDaysToBooked === null ? "None booked yet" : `Median ${reqBooked.medianDaysToBooked} day(s) from request`}
               muted={reqBooked.booked === 0}
@@ -670,7 +670,7 @@ function ReportingHome() {
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
             {REFERRAL_FUNNEL_ASSOCIATION_NOTE} Contacted means the person was actually reached — an
             unanswered call, a voicemail or a dead number counts as effort, not contact, and is
-            reported separately below. A cancelled or no-showed visit never counts as attended.{" "}
+            reported separately below. A cancelled or Missed visited visit never counts as attended.{" "}
             {REFERRAL_SOURCE_FOLD_NOTE}
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -702,7 +702,7 @@ function ReportingHome() {
                 </li>
                 <li className="flex items-baseline justify-between gap-3">
                   <span className="text-muted-foreground">
-                    Overdue before first contact (as of now)
+                    Follow-up needed before first contact (as of now)
                   </span>
                   <span className="tabular-nums text-foreground">
                     {refDropOff.overdueBeforeFirstContact}
@@ -730,7 +730,7 @@ function ReportingHome() {
                 </li>
               </ul>
               <p className="text-[11px] leading-snug text-muted-foreground">
-                Overdue uses the Phase 4c draft threshold (no staff action for{" "}
+                Follow-up needed uses the Phase 4c draft threshold (no staff action for{" "}
                 {REFERRAL_AGING_DRAFT.overdueDays} days), pending care-operations sign-off. It is a
                 current-state count, so it reads "as of now" rather than over the selected period.
               </p>
@@ -765,7 +765,7 @@ function ReportingHome() {
               <Badge variant="outline" className="text-[10px]">Draft values</Badge>
               <p className="text-xs text-muted-foreground">
                 Due windows, reassessment interval and timeliness windows ({ASAM_TIMELINESS_DRAFT.triggerToAssessmentDays} days
-                trigger → assessment, {ASAM_TIMELINESS_DRAFT.assessmentToFirstServiceDays} days assessment → first DMC-ODS
+                trigger to assessment, {ASAM_TIMELINESS_DRAFT.assessmentToFirstServiceDays} days assessment to first DMC-ODS
                 service): {ASAM_DRAFT_NOTE}. {ASAM_REPORTING_ASSOCIATION_NOTE}
               </p>
               {asamReport.guard.belowMinimumCohort && (
@@ -781,7 +781,7 @@ function ReportingHome() {
             <div className="grid gap-3 sm:grid-cols-4">
               <Stat label="Needed" value={String(asamReport.tasks.filter((t) => t.state === "needed").length)} />
               <Stat label="Due (next 7 days)" value={String(asamReport.tasks.filter((t) => t.state === "due").length)} />
-              <Stat label="Overdue" value={String(asamReport.tasks.filter((t) => t.state === "overdue").length)} />
+              <Stat label="Follow-up needed" value={String(asamReport.tasks.filter((t) => t.state === "overdue").length)} />
               <Stat label="Awaiting co-signature" value={String(asamReport.cosignCount)} />
               <Stat label="Assessment visit scheduled" value={String(asamReport.visitScheduled)} />
               <Stat label="Assessment visit not yet scheduled" value={String(asamReport.visitNotScheduled)} />
@@ -805,7 +805,7 @@ function ReportingHome() {
                     <p className="text-xs text-muted-foreground">No open ASAM tasks.</p>
                   ) : (
                     <table className="w-full text-xs">
-                      <thead className="text-muted-foreground"><tr><th className="text-left font-normal">Name</th><th className="font-normal">Needed</th><th className="font-normal">Due</th><th className="font-normal">Overdue</th></tr></thead>
+                      <thead className="text-muted-foreground"><tr><th className="text-left font-normal">Name</th><th className="font-normal">Needed</th><th className="font-normal">Due</th><th className="font-normal">Follow-up needed</th></tr></thead>
                       <tbody>{rows.map((r) => (
                         <tr key={r.key}><td>{r.label}</td><td className="text-center">{r.needed}</td><td className="text-center">{r.due}</td><td className="text-center">{r.overdue}</td></tr>
                       ))}</tbody>
@@ -837,12 +837,12 @@ function ReportingHome() {
             <div className="grid gap-3 sm:grid-cols-3">
               <Stat label="Reassessments due (30 days)" value={String(asamReport.reassessmentsDue30.length)} note={`Draft interval — ${ASAM_DRAFT_NOTE}`} />
               <Stat
-                label="Median days, trigger → signed assessment"
+                label="Median days, trigger to signed assessment"
                 value={asamReport.timeliness.triggerToAssessment.medianDays === null ? "—" : String(asamReport.timeliness.triggerToAssessment.medianDays)}
                 note={`${asamReport.timeliness.triggerToAssessment.withinWindow} of ${asamReport.timeliness.triggerToAssessment.cohortSize} within the draft ${asamReport.timeliness.triggerToAssessment.windowDays}-day window`}
               />
               <Stat
-                label="Median days, signed → first DMC-ODS service"
+                label="Median days, signed to first DMC-ODS service"
                 value={asamReport.timeliness.assessmentToService.medianDays === null ? "—" : String(asamReport.timeliness.assessmentToService.medianDays)}
                 note={asamReport.timeliness.assessmentToService.cohortSize === 0 ? "No DMC-ODS treatment service recorded after a signed assessment yet" : `${asamReport.timeliness.assessmentToService.withinWindow} of ${asamReport.timeliness.assessmentToService.cohortSize} within the draft ${asamReport.timeliness.assessmentToService.windowDays}-day window`}
               />

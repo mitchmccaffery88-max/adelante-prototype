@@ -302,7 +302,7 @@ export function listEscalations(viewer: { role: StaffRole; staffId?: string }, n
       pool: !ownerStaffId,
       dueAt: raw.dueAt,
       overdue,
-      countdown: raw.resolved ? "Resolved" : cd.overdue ? cd.text : overdue ? "Overdue" : cd.text,
+      countdown: raw.resolved ? "Resolved" : cd.overdue ? cd.text : overdue ? "Follow-up needed" : cd.text,
       status,
       sud: raw.sud,
       masked,

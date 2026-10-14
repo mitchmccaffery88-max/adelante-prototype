@@ -73,7 +73,7 @@ function ReferralQueuePage() {
         </div>
         <Button onClick={() => setSubmitOpen(true)} data-testid="staff-submit-referral">
           <Plus className="h-4 w-4 mr-2" />
-          Submit a referral
+          Send referral
         </Button>
       </header>
 
@@ -95,7 +95,7 @@ function ReferralQueuePage() {
       <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Submit a referral on someone&apos;s behalf</DialogTitle>
+            <DialogTitle>Send referral on someone&apos;s behalf</DialogTitle>
             <DialogDescription>
               The same form the public uses. Enter the referring person and agency as they gave them
               to you — not your own details unless you are the referrer.

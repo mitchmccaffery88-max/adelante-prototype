@@ -95,7 +95,7 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                 <StatusChip lang="en" state={referral.status === "enrolled" ? "done" : referral.status === "declined" ? "closed" : referral.status === "submitted" && canPerformReferralAction(viewer.role, "enroll") ? "yourturn" : "team"} label={referral.status} />
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
-                Submitted <ClientDate value={referral.createdAt} />{" "}
+                Sent <ClientDate value={referral.createdAt} />{" "}
                 <span data-testid="referral-submitted-by">
                   {referral.submittedBy?.kind === "staff"
                     ? `by ${referral.submittedBy.actor.name} (${referral.submittedBy.actor.role.replace(/_/g, " ")})`
@@ -155,7 +155,7 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
               <Card className="p-4 space-y-3">
                 <h3 className="font-display text-sm text-navy">Client journey</h3>
                 <ol className="space-y-2">
-                  <TimelineRow label="Referral submitted" iso={referral.createdAt} reached />
+                  <TimelineRow label="Referral sent" iso={referral.createdAt} reached />
                   {/* §Phase 4a — only a genuine send counts as reached. */}
                   <TimelineRow
                     label={
@@ -280,7 +280,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           <p className="mt-1 text-xs text-muted-foreground">
             {referral.status === "enrolled"
               ? "This referral is enrolled. Further care happens on the client's chart."
-              : "This referral is closed. Reopening isn't available — submit a new referral instead."}
+              : "This referral is closed. Reopening isn't available — send a new referral instead."}
           </p>
           <ReferrerUpdateLog referral={referral} />
         </Card>

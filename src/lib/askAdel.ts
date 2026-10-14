@@ -206,7 +206,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
   {
     id: "clinical-rescreens",
     group: "clinical",
-    prompt: "Which of my patients have overdue re-screens?",
+    prompt: "Which of my patients have follow-up needed re-screens?",
     anyOf: ["screeners_mh"],
     answer: (ctx) => {
       const rows = screenerDueRows(myCaseload(ctx), { role: ctx.role });
@@ -439,7 +439,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
         lines: tasks.length
           ? [
               `${plural(tasks.length, "task", "tasks")} assigned to you ${tasks.length === 1 ? "is" : "are"} past due.`,
-              ...tasks.slice(0, 5).map((t) => `${t.patientName} — ${t.task.title}, ${t.overdueDays} days overdue`),
+              ...tasks.slice(0, 5).map((t) => `${t.patientName} — ${t.task.title}, Due ${t.overdueDays} days ago`),
             ]
           : ["Nothing assigned to you is past due."],
         notes: [ASK_ADEL_CASELOAD_NOTE],
@@ -474,7 +474,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
   {
     id: "admin-eligibility",
     group: "admin",
-    prompt: "Which Medi-Cal eligibility checks are overdue?",
+    prompt: "Which Medi-Cal eligibility checks are follow-up needed?",
     anyOf: ["eligibility"],
     answer: () => {
       const s = coverageWorklistSummary(coverageWorklistRows());
@@ -482,7 +482,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
         backing: "real",
         guard: cohortGuard(s.total),
         lines: [
-          `${s.neverChecked} patients have never had a coverage check, ${s.overdue} are overdue and ${s.due} are due.`,
+          `${s.neverChecked} patients have never had a coverage check, ${s.overdue} are follow-up needed and ${s.due} are due.`,
           `${s.current} are current.`,
         ],
         notes: [

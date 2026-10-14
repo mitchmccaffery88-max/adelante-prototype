@@ -26,11 +26,11 @@ const COPY = {
       "From our community directory. After you finish, you can ask your care team to connect you from My Care.",
   },
   es: {
-    ask: "¿Quiere que su equipo de atención le ayude a conectarse?",
-    done: "Solicitado — su equipo de atención se comunicará con usted.",
+    ask: "¿Quieres que tu equipo de atención te ayude a conectarte?",
+    done: "Solicitado — tu equipo de atención se comunicará contigo.",
     previewTitle: "Lugares que coinciden hasta ahora",
     previewNote:
-      "De nuestro directorio comunitario. Al terminar, puede pedir a su equipo que le conecte desde Mi atención. (Traducción pendiente de revisión bilingüe.)",
+      "De nuestro directorio comunitario. Al terminar, puedes pedir a tu equipo que te conecte desde Mi atención. (Traducción pendiente de revisión bilingüe.)",
   },
 } as const;
 

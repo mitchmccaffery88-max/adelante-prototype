@@ -57,7 +57,7 @@ export const Route = createFileRoute("/dashboards")({
       {
         name: "description",
         content:
-          "Cross-patient KPI vs target view for MAR compliance, unsigned notes and overdue case tasks, with drill-down into the records behind each number.",
+          "Cross-patient KPI vs target view for MAR compliance, unsigned notes and follow-up needed case tasks, with drill-down into the records behind each number.",
       },
       { property: "og:title", content: "Population health dashboard — Adelante" },
       {
@@ -153,17 +153,17 @@ function DashboardsPage() {
         { key: "origin", header: "Origin", render: (r) => r.origin },
         {
           key: "overdue",
-          header: "Overdue",
+          header: "Follow-up needed",
           className: "text-right",
           render: (r) => `${r.overdueDays}d`,
         },
       ];
       return {
-        title: "Overdue case tasks",
+        title: "Follow-up needed case tasks",
         description: "Open case tasks past their recorded due date.",
         columns,
         loader: () => overdueTasks(AdelanteEHR.listCaseTasks(), AdelanteEHR.listPatients()),
-        emptyMessage: "No overdue tasks.",
+        emptyMessage: "No follow-up needed tasks.",
       };
     }
     if (drill === "mar_compliance_pct") {

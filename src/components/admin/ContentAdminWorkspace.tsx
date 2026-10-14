@@ -537,7 +537,7 @@ function ManageTab({ version }: { version: number }) {
         reviewer who isn&apos;t the author. Lessons need Spanish, or a recorded reason.
       </p>
       {!mayAuthor && (
-        <StatusChip lang="en" state="restricted" label="Your role can read this workspace but cannot author or submit content." />
+        <StatusChip lang="en" state="restricted" label="Your role can read this workspace but cannot author or send content for review." />
       )}
 
       <Input aria-label="Search managed content" placeholder="Search this type" value={manageQuery} onChange={(e) => setManageQuery(e.target.value)} />
@@ -676,7 +676,7 @@ function ReviewTab({ version }: { version: number }) {
               </div>
               {submitted && (
                 <p className="text-xs text-muted-foreground">
-                  Submitted by {submitted.by} ({submitted.byRole}) on{" "}
+                  Sent for review by {submitted.by} ({submitted.byRole}) on{" "}
                   <ClientDate value={submitted.at} />
                   {submitted.note ? ` — "${submitted.note}"` : ""}
                 </p>

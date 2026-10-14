@@ -29,7 +29,7 @@ function ScribeVendorCard() {
         <p className="text-sm text-muted-foreground" data-testid="scribe-metrics-suppressed">Hidden until at least 11 signed scribe notes exist.</p>
       ) : (
         <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4" data-testid="scribe-metrics">
-          <div><dt className="text-[11px] text-muted-foreground">Session end → sign (median min)</dt><dd>{m.medianEndToSignMin}</dd></div>
+          <div><dt className="text-[11px] text-muted-foreground">Session end to sign (median min)</dt><dd>{m.medianEndToSignMin}</dd></div>
           <div><dt className="text-[11px] text-muted-foreground">Draft text edited (mean %)</dt><dd>{m.meanEditPct}%</dd></div>
           <div><dt className="text-[11px] text-muted-foreground">Unsupported sentences</dt><dd>{m.unsupportedTotal}</dd></div>
           <div><dt className="text-[11px] text-muted-foreground">Clinician rating (1–5)</dt><dd>{m.meanRating ?? "—"}</dd></div>

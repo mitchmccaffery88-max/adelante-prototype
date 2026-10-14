@@ -73,8 +73,8 @@ export function PatientMatchingQueue() {
           {r.newPatientId && (
             <Button size="sm" onClick={() => { try { setPreview({ reviewId: r.id, summary: previewMerge(r.existingPatientId, r.newPatientId!) }); } catch (e) { toast.error((e as Error).message); } }}>Merge…</Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => run("patient_match_decide", b, "markNotSamePerson", [r.id, why, me], r.kind === "signup_attempt" ? "Dismissed" : "Marked not the same person")}>
-            {r.kind === "signup_attempt" ? "Dismiss" : "Not the same person"}
+          <Button size="sm" variant="outline" onClick={() => run("patient_match_decide", b, "markNotSamePerson", [r.id, why, me], r.kind === "signup_attempt" ? "Signup request not used" : "Marked not the same person")}>
+            {r.kind === "signup_attempt" ? "Don't use this draft" : "Not the same person"}
           </Button>
           {r.newPatientId && (
             <Button size="sm" variant="ghost" onClick={() => run("patient_match_decide", b, "linkAsRelated", [r.id, why, me], "Linked as related")}>Link as related</Button>
@@ -107,7 +107,7 @@ export function PatientMatchingQueue() {
         return (
           <div key={l.id} className="space-y-2 rounded-md border p-3 text-xs" data-testid={`afbi-link-${l.id}`}>
             <div className="flex flex-wrap items-center gap-2"><Badge variant="outline">Field outreach (AFBI)</Badge><span className="text-muted-foreground">Asked by {l.requestedBy} · {new Date(l.requestedAt).toLocaleDateString()}</span></div>
-            <p>Contact with <span className="font-medium">{c?.initials ?? "—"}</span> on {c ? new Date(c.at).toLocaleDateString() : "—"} → link to <span className="font-medium">{nm(p)}</span> (DOB {p?.dob ?? "—"}). Never merged — only the outreach contact is attached.</p>
+            <p>Contact with <span className="font-medium">{c?.initials ?? "—"}</span> on {c ? new Date(c.at).toLocaleDateString() : "—"} to link to <span className="font-medium">{nm(p)}</span> (DOB {p?.dob ?? "—"}). Never merged — only the outreach contact is attached.</p>
             <div className="flex gap-2">
               <Button size="sm" onClick={() => run("afbi_link_decide", p, "decideAfbiLink", [me, l.id, true], "Contact linked to the chart")}>Link to chart</Button>
               <Button size="sm" variant="outline" onClick={() => run("afbi_link_decide", p, "decideAfbiLink", [me, l.id, false], "Link declined")}>Not this person</Button>
@@ -146,7 +146,7 @@ export function PatientMatchingQueue() {
           <p className="text-sm font-medium">Recent merges</p>
           {merges.map((m) => (
             <div key={m.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-xs">
-              <span>{nm(all(m.otherId))} → {nm(all(m.survivorId))} · {new Date(m.at).toLocaleDateString()} · by {m.by}</span>
+              <span>{nm(all(m.otherId))} to {nm(all(m.survivorId))} · {new Date(m.at).toLocaleDateString()} · by {m.by}</span>
               {m.status === "active" && (
                 <Link to="/record/$patientId" params={{ patientId: m.survivorId }} search={{ section: "consents" } as never} className="text-teal underline">
                   Open consents

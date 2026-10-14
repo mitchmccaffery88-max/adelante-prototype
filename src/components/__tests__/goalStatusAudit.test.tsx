@@ -73,7 +73,7 @@ describe("PatientHome goal cycling — audit trail", () => {
 
   it("renders the resulting history in the timeline the same session", () => {
     fireEvent.click(renderPatientCard());
-    expect(screen.getAllByText(/open\s*→\s*in progress/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/open\s*to\s*in progress/i).length).toBeGreaterThan(0);
   });
 });
 

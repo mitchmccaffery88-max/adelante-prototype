@@ -346,7 +346,7 @@ export const STAFF_NAV: NavEntry[] = [
   {
     id: "escalations",
     label: "Escalations",
-    desc: "Crisis, score changes, overdue crisis notes, urgent needs",
+    desc: "Crisis, score changes, follow-up needed crisis notes, urgent needs",
     icon: Siren,
     to: "/escalations",
     group: "queues",
@@ -432,7 +432,7 @@ export const STAFF_NAV: NavEntry[] = [
   {
     id: "pre-release",
     label: "Pre-release list",
-    desc: "D90→0 forms & reentry care plan",
+    desc: "D90to0 forms & reentry care plan",
     icon: ClipboardSignature,
     to: "/pre-release",
     group: "facility",
@@ -513,7 +513,7 @@ export const STAFF_NAV: NavEntry[] = [
     // already reach one chart at a time.
     id: "eligibility-worklist",
     label: "Medi-Cal verification",
-    desc: "Never checked, overdue & follow-ups",
+    desc: "Never checked, follow-up needed & follow-ups",
     icon: ShieldCheck,
     to: "/eligibility-worklist",
     group: "revenue",

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { UserPlus } from "lucide-react";
+import {Check,  UserPlus } from "lucide-react";
 import { useActingRole } from "@/lib/roles";
 
 interface Props {
@@ -115,7 +115,7 @@ export function AssignClinicianButton({
                           </span>
                         </span>
                         <span className="text-[10px] text-muted-foreground">
-                          {c.mediCalStatus === "active" ? "Medi-Cal ✓" : c.mediCalStatus}
+                          {c.mediCalStatus === "active" ? <>Medi-Cal <Check className="inline size-4" aria-hidden="true" /></> : c.mediCalStatus}
                           {" · "}
                           {n} upcoming
                         </span>

@@ -150,7 +150,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   { id: "content_edit", label: { en: "Edit content", es: "Edit content" }, group: "admin", menu: false, needsPatient: false,
     check: "canAuthorContent", store: refs(["saveContentDraft", saveContentDraft]),
     allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
-  { id: "content_submit", label: { en: "Submit content", es: "Submit content" }, group: "admin", menu: false, needsPatient: false,
+  { id: "content_submit", label: { en: "Send content for review", es: "Send content for review" }, group: "admin", menu: false, needsPatient: false,
     check: "canAuthorContent", store: refs(["submitContentForReview", submitContentForReview]),
     allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
   { id: "content_approve", label: { en: "Approve content", es: "Approve content" }, group: "admin", menu: false, needsPatient: false,
@@ -1176,7 +1176,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   // §Batch D — County reporting hub (prototype; nothing is submitted anywhere).
   ...([
     ["county_generate", "Generate county report draft", "Generar borrador de informe al condado", "generateReport", generateReport, "canViewCountyReporting(role); CalOMS needs hasSudReportingAccess"],
-    ["county_submit", "Submit county report (Simulated)", "Enviar informe al condado (simulado)", "submitReport", submitReport, "canViewCountyReporting(role)"],
+    ["county_submit", "Send county report (Simulated)", "Enviar informe al condado (simulado)", "submitReport", submitReport, "canViewCountyReporting(role)"],
     ["county_simulate_response", "Simulate county response", "Simular respuesta del condado", "simulateCountyResponse", simulateCountyResponse, "canViewCountyReporting(role)"],
     ["county_fix_error", "Mark county error fixed", "Marcar error del condado corregido", "fixCountyError", fixCountyError, "canViewCountyReporting(role)"],
     ["county_resend", "Resend county report (Simulated)", "Reenviar informe al condado (simulado)", "resendReport", resendReport, "canViewCountyReporting(role)"],
@@ -1416,7 +1416,7 @@ function visitActions(): ChartAction[] {
   return [
     mk("visit_check_in", "Check in", "Registrar llegada", "checkInAppointment", (...a: any[]) => (AdelanteEHR.checkInAppointment as any)(...a)),
     mk("visit_attended", "Mark attended", "Marcar asistida", "markAppointmentAttended", (...a: any[]) => (AdelanteEHR.markAppointmentAttended as any)(...a)),
-    mk("visit_no_show", "Mark no-show", "Marcar no asistió", "markAppointmentNoShow", (...a: any[]) => (AdelanteEHR.markAppointmentNoShow as any)(...a)),
+    mk("visit_no_show", "Mark missed visit", "Marcar cita perdida", "markAppointmentNoShow", (...a: any[]) => (AdelanteEHR.markAppointmentNoShow as any)(...a)),
     {
       id: "rescreen_send",
       label: { en: "Send re-screen", es: "Enviar re-evaluación" },

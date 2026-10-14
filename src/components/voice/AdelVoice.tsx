@@ -55,7 +55,7 @@ export function VoiceBar({ voice, lang, text, tapOnly, draft = true }: { voice: 
         <Button size="sm" variant="destructive" asChild className="ml-auto"><Link to="/crisis"><LifeBuoy className="h-4 w-4 mr-1" aria-hidden="true" />{c.helpNow}</Link></Button>
       </div>
       <div className="text-sm">
-        <div className="text-xs font-medium text-muted-foreground">{c.transcript}{voice.speaking ? " 🔊" : ""}</div>
+        <div className="text-xs font-medium text-muted-foreground">{c.transcript}{voice.speaking && <Volume2 className="ml-1 inline size-4" aria-hidden="true" />}</div>
         <p className="whitespace-pre-line text-foreground" data-testid="voice-transcript">{voice.transcript || text}</p>
         {draft && <p className="text-[11px] text-muted-foreground mt-1">{VOICE_DRAFT_LABEL}</p>}
       </div>

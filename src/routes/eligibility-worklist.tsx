@@ -47,12 +47,12 @@ export const Route = createFileRoute("/eligibility-worklist")({
       {
         name: "description",
         content:
-          "Program-level Medi-Cal eligibility worklist: who has never had a check recorded, whose last check is overdue, and which coverage follow-ups are still open.",
+          "Program-level Medi-Cal eligibility worklist: who has never had a check recorded, whose last check is follow-up needed, and which coverage follow-ups are still open.",
       },
       { property: "og:title", content: "Medi-Cal verification worklist — Adelante" },
       {
         property: "og:description",
-        content: "Never-checked, overdue and open coverage follow-ups across the whole caseload.",
+        content: "Never-checked, follow-up needed and open coverage follow-ups across the whole caseload.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -136,7 +136,7 @@ function EligibilityWorklistPage() {
         <Stat label="Never checked" value={summary.neverChecked} tone="destructive" />
         <Stat label="Needs verification" value={summary.needsVerification} />
         <Stat label="Not Medi-Cal (reported)" value={summary.notMediCalReported} />
-        <Stat label="Overdue" value={summary.overdue} tone="destructive" />
+        <Stat label="Follow-up needed" value={summary.overdue} tone="destructive" />
         <Stat label="Due" value={summary.due} />
         <Stat label="Open follow-ups" value={summary.openFollowUps} />
       </div>
@@ -180,7 +180,7 @@ function EligibilityWorklistPage() {
               <SelectItem value="needs_work">Needs a check</SelectItem>
               <SelectItem value="never_checked">Never checked</SelectItem>
               <SelectItem value="needs_verification">Needs verification</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="overdue">Follow-up needed</SelectItem>
               <SelectItem value="due">Due</SelectItem>
               <SelectItem value="current">Current</SelectItem>
               <SelectItem value="not_medi_cal_reported">Not Medi-Cal (reported)</SelectItem>

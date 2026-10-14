@@ -99,7 +99,7 @@ function CountyReportingPage() {
     const s = latest(r);
     const errOpen = errs.some((e) => e.report === r && e.status === "open");
     if (s?.status === "submitted" && !errOpen) return <Button size="sm" variant="outline" onClick={() => run("county_simulate_response", "simulateCountyResponse", s.id)}>Simulate county response</Button>;
-    if (s?.status === "ready") return <Button size="sm" onClick={() => run("county_submit", "submitReport", s.id)}>Submit (Simulated)</Button>;
+    if (s?.status === "ready") return <Button size="sm" onClick={() => run("county_submit", "submitReport", s.id)}>Send county report (Simulated)</Button>;
     if (s && errOpen) return <a href="#county-errors" className="text-xs text-teal underline">Open error queue</a>;
     if (r === "caloms" && !client) return null;
     return <Button size="sm" variant="outline" onClick={() => run("county_generate", "generateReport", r, period)}>Generate draft</Button>;

@@ -281,7 +281,7 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
                 ) : null}
               </div>
               <div className="text-xs text-muted-foreground">
-                Effective {r.effectiveDate} → {r.expirationDate ?? "no expiration"} · signed{" "}
+                Effective {r.effectiveDate} to {r.expirationDate ?? "no expiration"} · signed{" "}
                 {new Date(r.signedAt).toLocaleString()} by {r.signedBy.name} ({
                   r.signedBy.relationship
                 })

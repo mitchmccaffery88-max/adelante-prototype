@@ -369,3 +369,15 @@ Validation: build OK; 2,561 units and 79/79 browsers (axe/Back to top) passed; 2
 - [x] Release-cycle continuity record, two registry actions, shared panel + side drawer in pre-release episode detail and chart Reentry hand-off; 7 new unit tests
 - [ ] Part A red cleanup (next build)
 - [ ] Persistent Demo seed of a person with MOUD + release episode (not added; would change shared Luis demo flows)
+
+## Phase 5a — Copy, tú, review export and staff English (14 Oct)
+- [x] Outcome verbs, deadline wording, missed visits, dismissal semantics and icon classification; preserve historical/clinical text
+- [x] Monthly member check-in presentation and confirmed tú conversions only
+- [x] Development Spanish review CSV and per-screen gap list; no missing Spanish drafts (5b)
+- [x] English staff surfaces with local Spanish content previews
+- [x] Authorized assertion-text edits, full units then all browsers/axe, warm reruns and 390px Spanish checks
+- [x] Report changed files, pattern counts, gaps and editorial/clinical exceptions
+
+Validation report: docs/phase5a-report.md. Build green; 308 unit files / 2,570 tests passed; initial browsers 75/79, final complete browsers 76/79 (all axe/Back-to-top passed); one authorized warm staffNav rerun 22/22. Final failures: missing Rosa role option within 2s, consent packet navigation timeout, Spanish tablet navigation destroyed context. Spanish mobile checks 390px across seven changed member screens. CSV 4,531 rows, 1,657 ordinary draft gaps, 1,746 controlled rows.
+- [ ] Preview in Spanish switch blocked by frozen e2e/staffContent.spec.ts:16–17; retained local EN / ES · Draft buttons, requires Mitch's assertion-line approval.
+- [ ] Build 5b missing Spanish drafting is not started; await Mitch's separate approval, source gap list includes audience/dynamic-review caveats.

@@ -149,9 +149,9 @@ function rebuild(b: BriefBullet, recs: unknown[], p: Patient, role: StaffRole, n
     return { expected: `${plural(R.length, "missed dose")} self-reported in the last 14 days.`, completeIds: all.map((s) => `${s.orderId}@${s.scheduledAt}`) };
   }
   if (b.id === "rescreen-overdue") {
-    if (R.some((r) => screenerRequestStatus(r, now) !== "overdue")) return { error: "re-screen not overdue" };
+    if (R.some((r) => screenerRequestStatus(r, now) !== "overdue")) return { error: "re-screen not follow-up needed" };
     const all = listScreenerRequests(p.id, role).filter((r) => screenerRequestStatus(r, now) === "overdue");
-    return { expected: `Overdue re-screen: ${R.map((r) => r.key.toUpperCase()).join(", ")}.`, completeIds: all.map((r) => r.id) };
+    return { expected: `Follow-up needed re-screen: ${R.map((r) => r.key.toUpperCase()).join(", ")}.`, completeIds: all.map((r) => r.id) };
   }
   if (b.id === "visits") {
     const all = pastAppts(p, now).filter((a) => +now - +new Date(a.start) <= 60 * DAY);

@@ -65,7 +65,7 @@ export function GroupJoinRequestsQueue() {
 function label(r: GroupJoinRequest) {
   const p = AdelanteEHR.getPatient(r.patientId);
   const g = AdelanteEHR.listGroupSessions().find((x) => x.id === r.sessionId);
-  return `${p ? `${p.firstName} ${p.lastName}` : "Patient"} → ${g?.topic ?? "Group"}`;
+  return `${p ? `${p.firstName} ${p.lastName}` : "Patient"} to ${g?.topic ?? "Group"}`;
 }
 
 function RequestRow({ r }: { r: GroupJoinRequest }) {

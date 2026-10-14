@@ -184,7 +184,7 @@ function CoordinationPage() {
                   <div>
                     <b>{COORDINATION_ACTION_LABEL[e.action] ?? e.action}</b>
                     {pt ? ` · ${pt.firstName} ${pt.lastName}` : ""}
-                    {e.action === "coordination_reassign" ? ` · ${nameOf(d.from)} → ${nameOf(d.to)}` : ""}
+                    {e.action === "coordination_reassign" ? ` · ${nameOf(d.from)} to ${nameOf(d.to)}` : ""}
                     {d.clinicianId ? ` · ${nameOf(d.clinicianId)}` : ""}
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -203,7 +203,7 @@ function CoordinationPage() {
       )}
       {canAct && (
         <p className="text-sm text-muted-foreground">
-          Related: <Link to="/admin-content" className="underline">Resource verification → Patient Content &amp; Resources Center</Link>
+          Related: <Link to="/admin-content" className="underline">Resource verification to Patient Content &amp; Resources Center</Link>
         </p>
       )}
     </div>

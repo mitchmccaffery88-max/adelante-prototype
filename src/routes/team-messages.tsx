@@ -42,7 +42,7 @@ function TeamMessagesPage() {
           {composing && <div className="border-b p-3"><NewThreadForm onDone={() => setComposing(false)} /></div>}
           <ThreadList selected={thread} />
         </Card>
-        <Card className="p-4">{thread ? <ThreadView threadId={thread} /> : <p className="text-sm text-muted-foreground">Choose a thread. Patient threads start from a chart, “+ New → Message team”, or “Discuss” on an escalation.</p>}</Card>
+        <Card className="p-4">{thread ? <ThreadView threadId={thread} /> : <p className="text-sm text-muted-foreground">Choose a thread. Patient threads start from a chart, “+ New to Message team”, or “Discuss” on an escalation.</p>}</Card>
       </div>
     </div>
   );

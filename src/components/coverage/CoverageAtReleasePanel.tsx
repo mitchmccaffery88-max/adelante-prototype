@@ -45,7 +45,7 @@ export function CoverageAtReleasePanel({ compact = false }: { compact?: boolean 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">Coverage at release</h2>
         <div className="flex gap-2">
-          {overdue > 0 && <Badge variant="outline">{overdue} overdue reactivation{overdue === 1 ? "" : "s"}</Badge>}
+          {overdue > 0 && <Badge variant="outline">{overdue} reactivation follow-up needed{overdue === 1 ? "" : "s"}</Badge>}
           <Badge variant="outline">{COVERAGE_RELEASE_DRAFT.label}</Badge>
           {compact && <Link to="/coverage-release" className="text-sm underline">Open tracker</Link>}
         </div>
@@ -62,7 +62,7 @@ export function CoverageAtReleasePanel({ compact = false }: { compact?: boolean 
                   <td>{r.releaseDate}{r.released ? "" : " (expected)"}</td>
                   <td><StatusChip lang="en" state={r.status === "active" ? "done" : r.status === "pending" || r.status === "reactivation_submitted" ? "team" : mayEdit && (r.ownerStaffId ? r.ownerStaffId === me.staffId : me.role === "clinical_coordinator" || me.role === "sys_admin") ? "yourturn" : "team"} label={r.status === "suspended" ? "Suspended — renew" : r.status === "unknown" || r.status === "not_enrolled" ? "Needs coverage help" : r.statusLabel} /><div className="text-xs text-muted-foreground">{r.source} · {r.statusAt}</div></td>
                   <td>{dayOffsetLabel(r.dayOffset)}</td>
-                  <td>{r.escalation ? <StatusChip lang="en" state={mayEdit && (r.ownerStaffId ? r.ownerStaffId === me.staffId : me.role === "clinical_coordinator" || me.role === "sys_admin") ? "yourturn" : "team"} label={`Overdue — ${NEXT_ACTION_LABEL[r.nextAction]}`} /> : NEXT_ACTION_LABEL[r.nextAction]}{r.flagged && <Badge variant="outline" className="ml-1">10+ days</Badge>}</td>
+                  <td>{r.escalation ? <StatusChip lang="en" state={mayEdit && (r.ownerStaffId ? r.ownerStaffId === me.staffId : me.role === "clinical_coordinator" || me.role === "sys_admin") ? "yourturn" : "team"} label={`Follow-up needed — ${NEXT_ACTION_LABEL[r.nextAction]}`} /> : NEXT_ACTION_LABEL[r.nextAction]}{r.flagged && <Badge variant="outline" className="ml-1">10+ days</Badge>}</td>
                   <td>{r.ownerName}</td>
                   <td className="whitespace-nowrap">{mayEdit && <><Button size="sm" variant="outline" onClick={() => { setEdit(r); setStatus(r.status); }}>Update</Button> <Button size="sm" variant="ghost" onClick={() => check(r)}>Check (Simulated)</Button></>}</td>
                 </tr>

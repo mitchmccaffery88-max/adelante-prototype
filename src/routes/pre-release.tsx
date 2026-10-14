@@ -145,7 +145,7 @@ function PreReleasePage() {
         <div className="flex-1">
           <h1 className="text-xl font-semibold">Pre-release list</h1>
           <p className="text-sm text-muted-foreground">
-            D90 → D0 countdown. Clinical assessment uses real instruments (AUDIT-10, DAST-10,
+            D90 to D0 countdown. Clinical assessment uses real instruments (AUDIT-10, DAST-10,
             AHC-HRSN); the Medi-Cal enrollment field sets are still placeholders.
           </p>
         </div>

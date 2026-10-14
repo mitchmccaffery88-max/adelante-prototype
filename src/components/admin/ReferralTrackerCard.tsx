@@ -133,7 +133,7 @@ export function ReferralTrackerCard({
           <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="submitted">Sent</SelectItem>
             <SelectItem value="contacted">Contacted</SelectItem>
             <SelectItem value="enrolled">Enrolled</SelectItem>
             <SelectItem value="declined">Declined</SelectItem>
@@ -200,7 +200,7 @@ export function ReferralTrackerCard({
             const enrolledAt =
               patient?.enrolledAt ?? (r.status === "enrolled" ? r.createdAt : undefined);
             const stepDates: { label: string; iso?: string }[] = [
-              { label: "Submitted", iso: r.createdAt },
+              { label: "Sent", iso: r.createdAt },
               { label: "Outreach", iso: outreachAt },
               { label: "Enrolled", iso: enrolledAt },
             ];

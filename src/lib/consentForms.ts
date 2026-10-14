@@ -24,8 +24,8 @@ export const COUNSEL_PENDING = "Counsel: pending";
 export const UNSIGNED_TASK_DAYS = 3; // Draft
 export const RENEWAL_LEAD_DAYS = 30; // Draft
 export const RETENTION_YEARS = 10; // Draft, WIC 14124.1
-export const FORM_NOTICE = { en: "You have a form to review", es: "Tiene un formulario para revisar" } as const;
-export const FORM_NOTICE_BODY = { en: "Open Forms to sign in the app.", es: "Abra Formularios para firmar en la app. (Borrador de traducción)" } as const;
+export const FORM_NOTICE = { en: "You have a form to review", es: "Tienes un formulario para revisar" } as const;
+export const FORM_NOTICE_BODY = { en: "Open Forms to sign in the app.", es: "Abre Formularios para firmar en la app. (Borrador de traducción)" } as const;
 
 export type FormKey =
   | "hipaa"

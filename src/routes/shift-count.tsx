@@ -324,7 +324,7 @@ export function ShiftCountPage() {
                   <Badge variant="outline">{c.scheduleFilter}</Badge>
                   {c.housingUnit && <Badge variant="outline">{c.housingUnit}</Badge>}
                   <span className="font-medium">
-                    <ClientDate value={c.windowStart} /> → <ClientDate value={c.windowEnd} />
+                    <ClientDate value={c.windowStart} /> to <ClientDate value={c.windowEnd} />
                   </span>
                   <span className="text-muted-foreground">
                     {c.totalGiven} given · {c.totalRefusedOrHeld} refused/held · {c.lines.length}{" "}

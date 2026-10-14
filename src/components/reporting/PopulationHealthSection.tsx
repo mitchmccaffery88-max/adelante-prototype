@@ -38,7 +38,7 @@ function SliceBody({ r, compact }: { r: SliceReport; compact?: boolean }) {
               <th className="text-left font-normal">Screener</th>
               <th className="font-normal">Screened</th>
               <th className="font-normal">Positive (draft cutoff)</th>
-              <th className="font-normal">Intake → latest</th>
+              <th className="font-normal">Intake to latest</th>
             </tr>
           </thead>
           <tbody>

@@ -512,7 +512,7 @@ export const VISIT_STATUS_LABEL: Record<SessionStatus, string> = {
   scheduled: "Scheduled",
   checked_in: "Checked in",
   attended: "Attended",
-  no_show: "No-show",
+  no_show: "Missed visit",
   cancelled: "Cancelled",
   late_cancel: "Late cancel",
   rescheduled: "Rescheduled",
@@ -9735,8 +9735,8 @@ export const AdelanteEHR = {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) throw new Error("That visit no longer exists.");
     _assertApptActor(actor);
-    if (a.status !== "scheduled") throw new Error("Only a scheduled, unattended visit can be marked a no-show.");
-    if (+new Date(a.start) > now) throw new Error("A visit can be marked a no-show only after its start time.");
+    if (a.status !== "scheduled") throw new Error("Only a scheduled, unattended visit can be marked a Missed visit.");
+    if (+new Date(a.start) > now) throw new Error("A visit can be marked a Missed visit only after its start time.");
     AdelanteEHR.updateAppointmentStatus(a.id, "no_show");
     a.noShow = { at: new Date(now).toISOString(), byName: actor.name, byRole: actor.role, ...(actor.id ? { byId: actor.id } : {}) };
     appendAudit({

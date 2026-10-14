@@ -37,7 +37,7 @@ export const BACKGROUND_COPY = {
     seekingNote:
       "Esto nos ayuda a sugerir contenido y recursos adecuados. No cambia las preguntas que se hacen a todos. El uso de sustancias solo se guarda si acepta compartirlo en el paso de Consentimiento.",
     alsoAdvocate: "Hacer a esta persona mi defensor (Borrador)",
-    nameAdvocate: "Nombrar a un defensor (alguien que pueda ayudar con su cuidado)",
+    nameAdvocate: "Nombrar a un defensor (alguien que pueda ayudar con tu cuidado)",
     advName: "Nombre del defensor",
     advRel: "Relación",
     advContact: "Su teléfono o correo",

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
 import { STAFF_ROLES, setActingRole, type StaffRole } from "@/lib/roles";
-import { Sparkles, ShieldCheck, ArrowRight, User } from "lucide-react";
+import {Check,  Sparkles, ShieldCheck, ArrowRight, User } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -25,6 +25,10 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — Adelante" },
+      { property: "og:title", content: "Sign in — Adelante" },
+      { property: "og:description", content: "Sign in to Adelante to access your care plan, sessions, and goals." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content: "Sign in to Adelante to access your care plan, sessions, and goals.",
@@ -235,7 +239,7 @@ function AuthPage() {
                           : "border-gold/50 text-navy")
                       }
                     >
-                      {p.intakeCompletedAt ? "intake ✓" : "new"}
+                      {p.intakeCompletedAt ? <>intake <Check className="inline size-4" aria-hidden="true" /></> : "new"}
                     </Badge>
                   </label>
                 ))}

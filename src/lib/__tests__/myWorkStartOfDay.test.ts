@@ -7,7 +7,7 @@ describe("My work start-of-day", () => {
   it("says Due today instead of 0d overdue", () => {
     const now = new Date();
     expect(dueLabel(now.toISOString().slice(0, 10), now)).toBe("Due today");
-    expect(dueLabel(new Date(+now - 3 * 86400000).toISOString().slice(0, 10), now)).toBe("3d overdue");
+    expect(dueLabel(new Date(+now - 3 * 86400000).toISOString().slice(0, 10), now)).toBe("Due 3 days ago");
   });
   it("gives prescribers today's visits and their own pending refills", () => {
     const bagga = { staffId: "s-np1", staffName: "Dr. M. Bagga", clinicianId: "c5" };

@@ -80,7 +80,7 @@ export function TaskQueueCard({
         {source.kind !== "none" && (
           <div className="flex items-center gap-2 text-xs">
             <Badge className="bg-surface-sunk text-ink-muted border-0">
-              {overdue.length} overdue
+              {overdue.length} follow-up needed
             </Badge>
             <Badge className="bg-gold/25 text-navy border-0">{dueToday.length} due today</Badge>
             <Badge variant="outline">{snoozed.length} snoozed</Badge>
@@ -105,7 +105,7 @@ export function TaskQueueCard({
         </div>
       ) : list.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Nothing on the queue. New tasks appear here after no-shows, crisis flags, or failed
+          Nothing on the queue. New tasks appear here after Missed visits, crisis flags, or failed
           messages.
         </div>
       ) : (

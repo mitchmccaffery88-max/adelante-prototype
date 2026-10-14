@@ -614,7 +614,7 @@ export function submitReport(actor: CountyActor, submissionId: string, now = new
 export function simulateCountyResponse(actor: CountyActor, submissionId: string): CountyError[] {
   assertHub(actor);
   const s = submissions.find((x) => x.id === submissionId);
-  if (!s || s.status !== "submitted") throw new Error("Submit the report (Simulated) first.");
+  if (!s || s.status !== "submitted") throw new Error("Send the report (Simulated) first.");
   const made: CountyError[] = [];
   const refs = s.file.split("\n").filter((l) => !l.startsWith("#")).slice(1, 3);
   const list = refs.length ? refs : ["summary"];
@@ -678,7 +678,7 @@ export const CARD_STATUS_LABEL: Record<CardStatus, string> = {
   not_started: "Not started",
   draft_ready: "Draft ready",
   blockers: "Blockers",
-  submitted: "Submitted (Simulated)",
+  submitted: "Simulated — not sent to county",
   errors_returned: "Errors returned",
 };
 export interface ReportCard {
@@ -704,7 +704,7 @@ export function reportCards(role: StaffRole, now = new Date()): ReportCard[] {
     const nextAction =
       status === "errors_returned" ? "Fix returned errors, then resend"
         : status === "submitted" ? "Wait for county response (Simulated)"
-          : status === "draft_ready" ? "Submit (Simulated)"
+          : status === "draft_ready" ? "Send county report (Simulated)"
             : status === "blockers" ? (seesClientLevel(role) ? "Fix blocker records in the chart" : "Ask the billing coordinator (SUD reporting access) to fix blockers")
               : clientOnly && !seesClientLevel(role) ? "The billing coordinator (SUD reporting access) generates this file"
                 : report === "tps" && !tpsWindow() ? "Set the survey window (admin)"

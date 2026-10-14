@@ -1,3 +1,4 @@
+import { facilityDateKey } from "@/lib/facilityTime";
 // §Patient portal Build 2 — check-in streak.
 //
 // Cathy's dashboard shows "{n}-day check-in streak". This computes that from
@@ -92,4 +93,15 @@ export function checkInStreakFrom(
     if (!Number.isNaN(d.getTime())) keys.add(dayKey(d));
   }
   return computeCheckInStreak([...keys], dayKey(now));
+}
+
+/** Read-only distinct check-in days in the facility's current calendar month. */
+export function monthlyCheckInCount(sources: CheckInSources, now = new Date(), timezone?: string): number {
+  const today = facilityDateKey(now, timezone);
+  const keys = new Set([...sources.doseSelfReportDates, ...(sources.dailyCheckInDayKeys ?? [])]);
+  for (const iso of sources.quickCheckCompletedAt) {
+    const instant = new Date(iso);
+    if (!Number.isNaN(instant.getTime())) keys.add(facilityDateKey(instant, timezone));
+  }
+  return [...keys].filter((key) => /^\d{4}-\d{2}-\d{2}$/.test(key) && key.startsWith(today.slice(0, 7)) && key <= today).length;
 }

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { WebsiteLayout } from "@/components/WebsiteLayout";
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useI18n } from "@/lib/i18n";
+import { EnglishSurface, useI18n } from "@/lib/i18n";
 import { PatientHelpLink } from "@/components/PatientHelpLink";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -43,6 +43,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function AppShell() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const member = PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]) || pathname.startsWith("/rescreen/") || pathname.startsWith("/resources/") || ["/next-steps", "/consent", "/safety-check"].includes(pathname);
+  const staff = !member && !isPublicRoute(pathname) && !isAdvocateRoute(pathname) && (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/") || pathname === "/pre-release-import" || pathname.startsWith("/agentic/"));
+  return staff ? <EnglishSurface><AppShellContent /></EnglishSurface> : <AppShellContent />;
+}
+
+function AppShellContent() {
   const { lang, setLang, t } = useI18n();
   // §Reminders — client-side approximation of a scheduler: due reminders are
   // swept while the app is open. NOT a background service; production needs a
@@ -184,7 +191,7 @@ export function AppShell() {
               <ShieldCheck className="h-4 w-4 text-teal" />
               HIPAA · 42 CFR Part 2
             </div>
-            <div className="rounded-full bg-secondary p-0.5 flex text-xs">
+            {!isStaffSurface && <div className="rounded-full bg-secondary p-0.5 flex text-xs">
               <button
                 onClick={() => setLang("en")}
                 aria-label="Switch language to English"
@@ -207,7 +214,7 @@ export function AppShell() {
               >
                 ES
               </button>
-            </div>
+            </div>}
 
             {isPatientSurface && !onboarding && <PatientHelpLink className="hidden sm:inline-flex" />}
 

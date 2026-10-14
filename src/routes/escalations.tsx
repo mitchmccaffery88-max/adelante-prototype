@@ -43,9 +43,9 @@ export const Route = createFileRoute("/escalations")({
   head: () => ({
     meta: [
       { title: "Escalations — Adelante" },
-      { name: "description", content: "One queue for crisis escalations, score changes, overdue crisis notes, urgent social needs and missed handoffs." },
+      { name: "description", content: "One queue for crisis escalations, score changes, follow-up needed crisis notes, urgent social needs and missed handoffs." },
       { property: "og:title", content: "Escalations — Adelante" },
-      { property: "og:description", content: "Every escalation in one place, overdue first, with a named owner and countdown." },
+      { property: "og:description", content: "Every escalation in one place, follow-up needed first, with a named owner and countdown." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -53,7 +53,7 @@ export const Route = createFileRoute("/escalations")({
   component: EscalationsPage,
 });
 
-const STATUS_LABEL: Record<EscalationRow["status"], string> = { new: "New", acknowledged: "Acknowledged", handed_off: "Handed off", overdue: "Overdue", resolved: "Resolved" };
+const STATUS_LABEL: Record<EscalationRow["status"], string> = { new: "New", acknowledged: "Acknowledged", handed_off: "Handed off", overdue: "Follow-up needed", resolved: "Resolved" };
 
 function EscalationsPage() {
   const s = useActingStaff();
@@ -92,7 +92,7 @@ function EscalationsPage() {
     <div className="mx-auto max-w-5xl space-y-4 p-4">
       <header className="space-y-2">
         <h1 className="flex items-center gap-2 font-display text-2xl text-navy"><Siren className="h-5 w-5 text-attention" /> Escalations</h1>
-        <p className="text-sm text-muted-foreground">Crisis, score changes, overdue crisis notes, urgent social needs and missed handoffs — overdue first, then by due time.</p>
+        <p className="text-sm text-muted-foreground">Crisis, score changes, follow-up needed crisis notes, urgent social needs and missed handoffs — follow-up needed first, then by due time.</p>
         <p className="text-[11px] text-amber-900">Due times use each pathway's own clock. {ESCALATION_DRAFT_LABEL}</p>
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Escalation view">
           <Button size="sm" variant={view === "mine" ? "default" : "outline"} onClick={() => setSearch({ view: "mine" })}>Mine</Button>
@@ -108,7 +108,7 @@ function EscalationsPage() {
             <option value="pool">Coordinator pool</option>
             {owners.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
-          <label className="flex items-center gap-1"><input type="checkbox" checked={!!search.overdue} onChange={(e) => setSearch({ overdue: e.target.checked || undefined })} /> Overdue only</label>
+          <label className="flex items-center gap-1"><input type="checkbox" checked={!!search.overdue} onChange={(e) => setSearch({ overdue: e.target.checked || undefined })} /> Follow-up needed only</label>
         </div>
       </header>
 

@@ -27,7 +27,7 @@ test("MAT continuity, coverage at release, deactivation, intake median, screener
   await as(page, "s-cc1", "clinical_coordinator");
   await go(page, "/coverage-release");
   const panel = page.getByTestId("coverage-at-release");
-  await expect(panel).toContainText("1 overdue reactivation", { timeout: 15_000 });
+  await expect(panel).toContainText("1 reactivation follow-up needed", { timeout: 15_000 });
   await expect(panel).toContainText("Elena Vargas");
   await expect(panel).toContainText("4 days after release");
   await expect(panel).toContainText("Jordan Vega");

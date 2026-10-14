@@ -347,7 +347,7 @@ function AdminKpiTargetsPage() {
       <Card className="p-4 text-sm text-muted-foreground" data-testid="calaim-codes-moved">
         CalAIM qualifying codes are now managed by billing —{" "}
         <Link to="/billing-calaim-codes" className="text-navy underline">
-          Revenue &amp; billing → CalAIM qualifying codes
+          Revenue &amp; billing to CalAIM qualifying codes
         </Link>
         .
       </Card>

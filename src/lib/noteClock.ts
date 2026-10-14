@@ -86,7 +86,7 @@ export function noteClock(note: ClockNote, now: Date = new Date()): NoteClock {
       kind: "crisis",
       dueAt: due.toISOString(),
       state: overdue ? "overdue" : "due_today",
-      label: overdue ? "Crisis note overdue" : `Crisis note due in ${hrs}h`,
+      label: overdue ? `Crisis note due ${Math.floor((now.getTime() - due.getTime()) / 86400000)} days ago` : `Crisis note due in ${hrs}h`,
       draftLabel: NOTE_CLOCK_DRAFT_LABEL,
       tooltip: "Crisis notes: 24 hours on the calendar — holidays and time off never pause crisis work (Draft).",
     };
@@ -97,7 +97,7 @@ export function noteClock(note: ClockNote, now: Date = new Date()): NoteClock {
   const due = standardNoteDue(note, note.signedAt);
   const authorOut = !!staffTimeOffOn(owner, facilityDateKey(now, tz));
   if (now > due)
-    return { kind: "standard", dueAt: due.toISOString(), state: "overdue", label: "Overdue", draftLabel: NOTE_CLOCK_DRAFT_LABEL, workingDaysLeft: 0, tooltip: NOTE_CLOCK_TOOLTIP(0), authorOut };
+    return { kind: "standard", dueAt: due.toISOString(), state: "overdue", label: `Due ${Math.floor((now.getTime() - due.getTime()) / 86400000)} days ago`, draftLabel: NOTE_CLOCK_DRAFT_LABEL, workingDaysLeft: 0, tooltip: NOTE_CLOCK_TOOLTIP(0), authorOut };
   const left = workingDaysBetween(facilityDateKey(now, tz), facilityDateKey(due, tz), { ownerId: owner, siteId: site });
   return {
     kind: "standard",

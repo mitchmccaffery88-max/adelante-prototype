@@ -35,6 +35,10 @@ export const Route = createFileRoute("/admin-claims")({
   head: () => ({
     meta: [
       { title: "Claims Worklist — Adelante" },
+      { property: "og:title", content: "Claims Worklist — Adelante" },
+      { property: "og:description", content: "Track charges from documentation to payment." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "description", content: "Track charges from documentation to payment." },
     ],
   }),
@@ -346,7 +350,7 @@ function ClaimsPage() {
           onChange={setOutcome}
           options={[
             { value: "all", label: "All claims" },
-            { value: "submitted", label: "Submitted" },
+            { value: "submitted", label: "With payer" },
             { value: "blocked", label: `Blocked attempts (${visibleBlocked.length})` },
           ]}
         />
@@ -468,7 +472,7 @@ function ClaimsPage() {
                         {c.serviceCode ? `${c.serviceCode}${c.units ? ` ×${c.units}` : ""}` : "—"}
                       </TableCell>
                       <TableCell className="px-2 py-2" data-cell="clinician">{cl?.name}</TableCell>
-                      <TableCell className="px-2 py-2" data-cell="state">{c.state === "denied" ? <Badge className={stateStyle[c.state]}>{c.state}</Badge> : <StatusChip lang="en" state={c.state === "documented" ? "upnext" : c.state === "submitted" ? "team" : c.state === "paid" ? "done" : c.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={c.state === "documented" ? "Documented" : c.state === "signed" || c.state === "coded" || c.state === "generated" ? "Ready to submit" : c.state === "submitted" ? "With payer" : c.state === "partial" ? "Partly paid — review" : c.state} />}<ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = gateMessageFor(role, c); return m ? <p className="mt-1 text-[11px] text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</TableCell>
+                      <TableCell className="px-2 py-2" data-cell="state">{c.state === "denied" ? <Badge className={stateStyle[c.state]}>{c.state}</Badge> : <StatusChip lang="en" state={c.state === "documented" ? "upnext" : c.state === "submitted" ? "team" : c.state === "paid" ? "done" : c.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={c.state === "documented" ? "Documented" : c.state === "signed" || c.state === "coded" || c.state === "generated" ? "Ready to send" : c.state === "submitted" ? "With payer" : c.state === "partial" ? "Partly paid — review" : c.state} />}<ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = gateMessageFor(role, c); return m ? <p className="mt-1 text-[11px] text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</TableCell>
                       <TableCell className="px-2 py-2 font-mono text-xs" data-cell="charge"><ClaimAmount claim={c} /></TableCell>
                       <TableCell className="px-2 py-2">{c.reviewFlag ? <span data-testid="claim-review-flag" className="font-medium text-attention">{c.reviewFlag.label}</span> : (c.denialReason ?? "—")}</TableCell>
                       <TableCell className="px-2 py-2 text-right space-x-2">
@@ -477,8 +481,8 @@ function ClaimsPage() {
                         ) : (
                           <>
                             {next && (
-                              <Button size="sm" variant="outline" onClick={() => { const r = AdelanteEHRExt.transitionClaim(c.id, next); if (r.ok) toast.success(`→ ${next}`); else toast.error(r.error); }}>
-                                → {next}
+                              <Button size="sm" variant="outline" onClick={() => { const r = AdelanteEHRExt.transitionClaim(c.id, next); if (r.ok) toast.success(`to ${next}`); else toast.error(r.error); }}>
+                                Move to {next}
                               </Button>
                             )}
                             {c.state === "submitted" && (

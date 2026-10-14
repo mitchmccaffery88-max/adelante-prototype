@@ -95,15 +95,15 @@ function SuggestionCard({ patientId, s }: { patientId: string; s: AsamPlanSugges
       )}
       {mode === "dismiss" && (
         <div className="flex flex-wrap gap-2">
-          <Input aria-label="Reason for dismissing" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} className="min-w-0 flex-1" />
-          <Button size="sm" variant="outline" onClick={() => run(() => actFor("asam_plan_suggestion", "dismissAsamSuggestion", patientId, patientId, s.id, reason, me), "Suggestion dismissed")}>Dismiss</Button>
+          <Input aria-label="Reason for not using this draft" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} className="min-w-0 flex-1" />
+          <Button size="sm" variant="outline" onClick={() => run(() => actFor("asam_plan_suggestion", "dismissAsamSuggestion", patientId, patientId, s.id, reason, me), "Suggestion not used")}>Don't use this draft</Button>
         </div>
       )}
       {mode === "view" && (
         <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => accept(false)} data-testid="asam-suggestion-accept">Accept</Button>
           <Button size="sm" variant="outline" onClick={() => setMode("edit")}>Edit</Button>
-          <Button size="sm" variant="ghost" onClick={() => setMode("dismiss")}>Dismiss…</Button>
+          <Button size="sm" variant="ghost" onClick={() => setMode("dismiss")}>Don't use this draft</Button>
         </div>
       )}
     </li>
@@ -122,7 +122,7 @@ export function AsamGoalChips({ patientId, goal, canEdit }: { patientId: string;
       {goal.reviewFlag && (
         <>
           <Badge variant="outline" className="text-[10px]" data-testid="asam-review-flag">
-            {goal.reviewFlag.label} (rating {goal.reviewFlag.fromRating} → {goal.reviewFlag.toRating})
+            {goal.reviewFlag.label} (rating {goal.reviewFlag.fromRating} to {goal.reviewFlag.toRating})
           </Badge>
           {canEdit && (
             <Button size="sm" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => run(() => actFor("asam_plan_suggestion", "markAsamGoalReviewed", patientId, patientId, goal.id, me), "Marked reviewed")}>

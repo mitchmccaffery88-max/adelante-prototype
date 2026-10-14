@@ -31,7 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, FlaskConical } from "lucide-react";
+import {Check,  ChevronDown, FlaskConical } from "lucide-react";
 
 const ADVOCATE_SESSION_KEY = "adelante.advocateLinkId";
 const ACTIVE_DEMO_STATE_KEY = "adelante.activeDemoState";
@@ -75,7 +75,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   sud_consented: {
     group: "Intake by need",
     label: "2c · Luis C. — Substance use (Part 2 consent)",
-    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown; his ASAM-linked assessment visit two days ago was marked a no-show, so the task is back to \"not yet scheduled · missed <date>\"; My Care shows a generic first visit still to schedule",
+    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown; his ASAM-linked assessment visit two days ago was marked a Missed visit, so the task is back to \"not yet scheduled · missed <date>\"; My Care shows a generic first visit still to schedule",
   },
   combination: {
     group: "Intake by need",
@@ -85,7 +85,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   ji_self_report: {
     group: "Justice",
     label: "3 · Victor H. — Previously justice-involved (self-reported)",
-    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today → same-day task for case manager Lupita Sanchez; crisis queue: \"In crisis now\" request; same-day ID task in the case manager bell",
+    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today to same-day task for case manager Lupita Sanchez; crisis queue: \"In crisis now\" request; same-day ID task in the case manager bell",
   },
   sud_no_consent: {
     group: "Intake by need",
@@ -100,7 +100,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   public_referral: {
     group: "Referral",
     label: "5 · Carmen I. — Public referral form",
-    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff; staff booked her therapy from the referral; completing intake with counseling makes no new request and My Care shows \"Already scheduled for you\"; crisis queue: staff-flagged urgent social need (safe place tonight) in the social-needs lane; pending patient cancel request on her therapy visit",
+    hint: "Referral to outreach logged to enrolled to claim code; opens the referral queue as staff; staff booked her therapy from the referral; completing intake with counseling makes no new request and My Care shows \"Already scheduled for you\"; crisis queue: staff-flagged urgent social need (safe place tonight) in the social-needs lane; pending patient cancel request on her therapy visit",
   },
   advocate: {
     group: "Advocates",
@@ -130,7 +130,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   marcus: {
     group: "Existing demo records",
     label: "Marcus — Legacy AUDIT result",
-    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only); crisis queue: manual staff flag (welfare call); an assessment visit yesterday is still unmarked — mark it No-show as Marisol Reyes in the chart's Tasks tab"
+    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; follow-up needed ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only); crisis queue: manual staff flag (welfare call); an assessment visit yesterday is still unmarked — mark it Missed visit as Marisol Reyes in the chart's Tasks tab"
   },
   kayla: {
     group: "Existing demo records",
@@ -442,7 +442,7 @@ export function DemoStateSwitcher() {
                     p.intakeCompletedAt ? "bg-teal/15 text-teal" : "bg-gold/20 text-navy",
                   )}
                 >
-                  {p.intakeCompletedAt ? "intake ✓" : "new"}
+                  {p.intakeCompletedAt ? <>intake <Check className="inline size-4" aria-hidden="true" /></> : "new"}
                 </span>
               </DropdownMenuItem>
             ))}

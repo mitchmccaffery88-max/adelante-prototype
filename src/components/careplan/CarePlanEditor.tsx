@@ -161,10 +161,10 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                   variant="outline"
                   onClick={() => {
                     const reason = window.prompt("Why dismiss this suggestion? (required)") ?? "";
-                    run(() => dismissSuggestion(patientId, s.id, reason, me), "Suggestion dismissed");
+                    run(() => dismissSuggestion(patientId, s.id, reason, me), "Suggestion not used");
                   }}
                 >
-                  Dismiss
+                  Don't use this draft
                 </Button>
               </li>
             ))}
@@ -319,7 +319,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
         <ul className="mt-2 space-y-1 text-xs">
           {needs.map((n) => (
             <li key={n.id}>
-              {n.need}: {NEED_LADDER.map((s) => (s === n.step ? `[${s}]` : s)).join(" → ")}
+              {n.need}: {NEED_LADDER.map((s) => (s === n.step ? `[${s}]` : s)).join(" to ")}
               {n.goalIds.length > 0 && <span className="text-muted-foreground"> · supports {n.goalIds.length} goal{n.goalIds.length === 1 ? "" : "s"}</span>}
             </li>
           ))}

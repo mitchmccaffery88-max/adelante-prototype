@@ -164,10 +164,10 @@ export function recoveryMilestones(input: RecoveryMilestoneInput): RecoveryMiles
   if (tier) {
     out.push({
       id: `streak_${tier}`,
-      title: `You've checked in ${input.streakDays} days in a row`,
+      title: "You've made time to check in",
       body:
         tier >= 14
-          ? "That's a habit now, not a streak. It held through days that weren't easy."
+          ? "You made time for yourself through days that weren't easy."
           : "Showing up on the ordinary days is the part that actually builds something.",
     });
   }
