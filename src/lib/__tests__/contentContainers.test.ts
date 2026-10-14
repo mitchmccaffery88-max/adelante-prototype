@@ -164,7 +164,7 @@ describe("recovery modules as managed content", () => {
       subtitle: "s",
       icon: "Users",
       order: 1,
-      populations: ["post_release_ji"],
+      audiences: ["justice_involved"],
     };
     expect(RECOVERY_MODULE_TYPE.validate(body)).toEqual([]);
   });
