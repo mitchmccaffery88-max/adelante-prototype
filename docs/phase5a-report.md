@@ -30,7 +30,7 @@ Only approved assertion text changed in six files (seven assertions because outp
 - Harness build green.
 - Full units: 308 files / 2570 tests passed (2 new monthly tests).
 - Initial complete browser run: 75/79, including all axe/Back-to-top specs. All failures were collected: crossRole clinical_coordinator duplicate Search patients controls during role transition; crossRole sys_admin missing Luis row/undefined dob during transition; staffContent waits for frozen ES · Draft after the proposed switch (restored); staffNav clinical_coordinator redirect remained /case-manager instead of /worklist at 10 seconds.
-- Final complete browser run: **76/79 passed**. staffContent, both crossRole failures and staffNav all passed in this final full run. Three other failures: cfProxyMode proxy-enter, consentWorkflow packet and Spanish tablet; exact causes recorded below. One permitted warm staffNav rerun is in progress for the initial redirect timeout.
+- Final complete browser run: **76/79 passed**. staffContent, both crossRole failures and staffNav all passed in this final full run. Three other failures: cfProxyMode proxy-enter, consentWorkflow packet and Spanish tablet; exact causes recorded below. One permitted warm staffNav rerun: see final accounting below.
 - 390px Spanish: Home, My care, Intake, selected lesson, Profile, Next steps, Check-in each scrollWidth 390. Screenshots in /tmp/browser/phase5. Existing English gaps remain deliberately undrafted.
 - Direct content preview switch worked before contract restoration; local controls remain non-persistent. Monthly same-day check-in stays deduplicated (1 before/after), with saved private acknowledgement; no new counted day invented.
 - Direct admin-content initial SSR showed existing role-dependent legal-tab hydration mismatch; no permissions or workflow changes applied. Record this as a diagnostic, not a passing no-error claim.
@@ -153,3 +153,11 @@ Only approved assertion text changed in six files (seven assertions because outp
 - `src/routes/shift-count.tsx`
 - `src/routes/team-messages.tsx`
 - `src/routes/worklist.tsx`
+
+## Final browser failure causes
+- cfProxyMode.spec.ts:96: Rosa T. role option did not appear within the existing 2-second lookup. No role/permission/test change applied.
+- consentWorkflow.spec.ts:40: send-intake-packet click waited for navigation until the existing 240-second timeout. No consent behavior/test change applied.
+- consentWorkflow.spec.ts:114: browser execution context destroyed during navigation while reading patient id. No test retry/threshold change applied.
+- Initial staff preview timeout was caused by the unapproved ES · Draft contract; the proposed switch was rolled back. Final staffContent passed. Initial crossRole role-transition/duplicate-search failures passed in final full run.
+
+Metadata completed for four changed pages lacking social title/description; no new route or public English copy change.
