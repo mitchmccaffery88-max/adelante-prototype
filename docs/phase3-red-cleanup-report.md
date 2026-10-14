@@ -16,7 +16,7 @@ Neutral root toasts with attention CircleAlert; shared and inventoried form erro
 
 ## Inventory accounting
 
-Original: 305 unique lines / 138 files; overlapping pattern counts unchanged in the read-only inventory. Parsed primary source references: 308; 239 CHANGE-only, 11 conditional MIXED, 59 KEEP (overlap possible). Supplementary declarations and definitions are listed separately in the inventory. Dormant ProtocolsTab excluded. Final remaining-red scan is below; no blanket palette override.
+Original: 305 unique lines / 138 files; overlapping pattern counts unchanged in the read-only inventory. The line-reference parser additionally includes supplementary declarations: 308 references; 239 CHANGE-only, 11 conditional MIXED, 59 KEEP (overlap possible). This is not a replacement for the inventory’s 305-line count. Supplementary declarations and definitions are listed separately in the inventory. Dormant ProtocolsTab excluded. Final remaining-red scan is below; no blanket palette override.
 
 ## Actions without a separate confirmation (unchanged)
 
@@ -174,7 +174,7 @@ Five direct action controls: delete frequency (`admin-catalog-governance.tsx`), 
 - `src/components/clinical/RecordTabs.tsx:3150` — KEEP crisis/988/safety presentation from inventory (member safety unchanged).
 - `src/components/clinical/RecordTabs.tsx:3152` — KEEP crisis/988/safety presentation from inventory (member safety unchanged).
 - `src/components/clinician/WorkspaceDashboard.tsx:106` — KEEP crisis/988/safety presentation from inventory (member safety unchanged).
-- `src/components/dashboards/KpiVsTargetSection.tsx:36` — KEEP crisis/988/safety presentation from inventory (member safety unchanged).
+- `src/components/dashboards/KpiVsTargetSection.tsx:36` — KEEP explicit KPI Met/Close/Below exception.
 - `src/components/escalations/CrisisQueueDetails.tsx:68` — KEEP crisis escalation/safety; SDOH mixed branches neutral.
 - `src/components/escalations/CrisisQueueDetails.tsx:131` — KEEP crisis escalation/safety; SDOH mixed branches neutral.
 - `src/components/escalations/CrisisQueueDetails.tsx:139` — KEEP crisis escalation/safety; SDOH mixed branches neutral.
