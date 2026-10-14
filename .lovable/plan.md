@@ -79,16 +79,10 @@ Each goes through runAction, so each gets one `action.succeeded` or `action.bloc
 - `src/components/admin/ContentRestoreDialog.tsx` (new): the preview dialog.
 - `vite.config.ts`: define for the commit SHA (null fallback).
 - `src/lib/__tests__/contentBackup.test.ts` (new).
-- `src/lib/__tests__/__snapshots__/runAction.test.ts.snap`: needs your approval (see below).
 - `src/lib/AGENTS.md` (one rule), `roadmap.md`, `docs/content-backup.md` (short how-to and the seed path).
 
-## Permissions snapshot (needs approval)
-The runAction snapshot lists every action per role. It will gain two lines per role block, in alphabetical position after `content_edit`:
-```text
-    "content_export": "hidden" | "allowed",
-    "content_restore": "hidden" | "allowed",
-```
-The value is "allowed" exactly where `content_create` is already "allowed", and "hidden" elsewhere. No other snapshot or assertion changes. I'll paste the exact diff before committing it.
+## Permissions snapshot (Mitch's condition: not touched)
+The runAction permissions snapshot file stays exactly as it is. That snapshot lists every registry action for each role, so adding `content_export` and `content_restore` to `CHART_ACTIONS` may make it fail. The build will report any failure plainly, and it will not edit the snapshot or update it automatically. The way to handle it is waiting on your next message.
 
 ## Tests (new only)
 1. Round trip: seed drafts, published content, a returned note, a Part 2 item and a resource verification, then export, reset, load, and check the result deep-equals the original store.
