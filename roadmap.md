@@ -407,3 +407,5 @@ Validation: build OK; 2,561 units and 79/79 browsers (axe/Back to top) passed; 2
 Validation report: docs/phase5a-report.md. Build green; 308 unit files / 2,570 tests passed; initial browsers 75/79, final complete browsers 76/79 (all axe/Back-to-top passed); one authorized warm staffNav rerun 22/22. Final failures: missing Rosa role option within 2s, consent packet navigation timeout, Spanish tablet navigation destroyed context. Spanish mobile checks 390px across seven changed member screens. CSV 4,531 rows, 1,657 ordinary draft gaps, 1,746 controlled rows.
 - [ ] Preview in Spanish switch blocked by frozen e2e/staffContent.spec.ts:16–17; retained local EN / ES · Draft buttons, requires Mitch's assertion-line approval.
 - [ ] Build 5b missing Spanish drafting is not started; await Mitch's separate approval, source gap list includes audience/dynamic-review caveats.
+
+- [x] Phase 6 emotion check-in complete (SUD goal origin fix, tests, exports, ES 390px screenshot)

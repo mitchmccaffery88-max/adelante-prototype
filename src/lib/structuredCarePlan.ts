@@ -48,6 +48,8 @@ export interface StructuredGoal {
   createdBy: string;
   /** Set when migrated from the old plain-text goal list. */
   legacyGoalId?: string;
+  /** "clinician" only when added through addStructuredGoal (care_plan_goal); system paths leave it unset or "system". */
+  origin?: "clinician" | "system";
   /** §C1 — provenance when accepted from an ASAM-derived suggestion (Part 2). */
   source?: { kind: "asam"; suggestionId: string; asamId: string; asamVersion: number; dimensionKey: string; dimensionName: string; rating: number };
   /** §C1 — set when a newer signed ASAM version changed the source dimension's rating. */
@@ -330,6 +332,7 @@ export function addStructuredGoal(input: {
     sud,
     createdAt: new Date().toISOString(),
     createdBy: input.actor.name,
+    origin: "clinician",
   };
   plan.goals.push(g);
   touch(plan);
@@ -683,7 +686,7 @@ export function autoAddJourneyAssignment(input: { patientId: string; journeyId: 
     const problems = buildPlanProblems(patientOf(input.patientId));
     const problemIds = problems.filter((x) => (input.flag === "sud" ? x.sud : x.source === "reentry" || x.code === "Z65.2")).map((x) => x.id);
     const t = FLAG_GOAL_TEXT[input.flag];
-    g = { id: uid(), patientId: input.patientId, problemIds, needIds: [], owner: "patient", measure: "Journey steps done", clinicalText: t.clinical, patientText: { en: t.en, es: t.es }, status: "active", sud, createdAt: at, createdBy: "Adelante (automatic)" };
+    g = { id: uid(), patientId: input.patientId, problemIds, needIds: [], owner: "patient", measure: "Journey steps done", clinicalText: t.clinical, patientText: { en: t.en, es: t.es }, status: "active", sud, createdAt: at, createdBy: "Adelante (automatic)", origin: "system" };
     plan.goals.push(g);
   }
   const a: PlanAssignment = { id: uid(), patientId: input.patientId, goalId: g.id, kind: "activity", activityId: input.journeyId, label: input.label, frequency: "weekly", startAt: at, assignedBy: "Adelante (automatic)", reason: "rule", completions: [], active: true, sud: sud || g.sud, autoAdded: { flag: input.flag, trigger: input.trigger, at } };
@@ -724,7 +727,9 @@ export function resolveFlagReview(patientId: string, assignmentId: string, decis
   return a;
 }
 
-// One SUD signal (sudSignal.ts): an active substance-use goal counts. Draft — pending clinical sign-off.
+// One SUD signal (sudSignal.ts): only an open substance-use goal a clinician added
+// through the care-plan goal action counts; journey auto-add goals never do
+// (otherwise auto-add would keep the flag on forever). Draft — pending clinical sign-off.
 registerSudSignalSource("sudCarePlanGoal", (patientId) =>
-  getStructuredPlan(patientId).goals.some((g) => g.sud && g.status === "active"),
+  getStructuredPlan(patientId).goals.some((g) => g.sud && g.status === "active" && g.origin === "clinician"),
 );

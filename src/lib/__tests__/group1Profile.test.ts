@@ -15,7 +15,7 @@ import { listSites } from "@/lib/providerReference";
 import { staffSiteIds } from "@/lib/chartAccess";
 import { credentialKindsFor, credentialSummary } from "@/lib/credentialAccess";
 import { applyFlagJourneys, journeysForFlag, NEW_CONTENT_NOTICE, NEW_CONTENT_BODY } from "@/lib/flagJourneys";
-import { getStructuredPlan, staffPlanView, closeStructuredGoal } from "@/lib/structuredCarePlan";
+import { getStructuredPlan, staffPlanView } from "@/lib/structuredCarePlan";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 
 const staffOf = (role: StaffRole) => STAFF_ROSTER.find((s) => s.role === role && s.active !== false)!;
@@ -155,7 +155,6 @@ describe("C2 flag-driven journeys", () => {
   it("removing the flag marks the item for review without deleting it", () => {
     const p = AdelanteEHR.listPatients().find((x) => getStructuredPlan(x.id).assignments.some((a) => a.active && a.autoAdded?.flag === "sud" && x.problems?.some((pr) => pr.icd10Code === "F11.20")))!;
     for (const pr of p.problems!.filter((x) => x.icd10Code === "F11.20")) AdelanteEHR.resolveProblem(p.id, pr.id, "test");
-    for (const goal of getStructuredPlan(p.id).goals.filter(g => g.sud && g.status === "active")) closeStructuredGoal(p.id, goal.id, "closed", "Test: substance-use goal closed", { name: "Test prescriber", role: "pmhnp" });
     const flags = applyFlagJourneys(p.id);
     void flags;
     const items = getStructuredPlan(p.id).assignments.filter((a) => a.autoAdded?.flag === "sud");

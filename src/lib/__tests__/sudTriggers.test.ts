@@ -2,9 +2,9 @@
 // flag; AUDIT/DAST screeners only create a staff task.
 import { describe, it, expect } from "vitest";
 import { AdelanteEHR, type ScreenerResult } from "@/lib/ehr";
-import { addStructuredGoal, buildPlanProblems } from "@/lib/structuredCarePlan";
+import { addStructuredGoal, buildPlanProblems, getStructuredPlan } from "@/lib/structuredCarePlan";
 import { sudSignalReason } from "@/lib/sudSignal";
-import { autoAddedJourneyIds, detectFlags } from "@/lib/flagJourneys";
+import { applyFlagJourneys, autoAddedJourneyIds, detectFlags } from "@/lib/flagJourneys";
 
 const PMHNP = { name: "Test PMHNP", role: "pmhnp" as const };
 const at = (min: number) => new Date(Date.now() - min * 60000).toISOString();
@@ -55,5 +55,42 @@ describe("screener task", () => {
     const t = reviewTasks(p.id)[0]!;
     const notes = AdelanteEHR.listNotifications?.().filter((n: { taskKey?: string }) => n.taskKey === `task:${t.id}`) ?? [];
     for (const n of notes as { subject: string; body: string }[]) expect(`${n.subject} ${n.body}`).not.toMatch(/recovery|audit|dast|score/i);
+  });
+});
+
+describe("care-plan SUD trigger origin (Draft — pending clinical sign-off)", () => {
+  const setup = (last: string) => {
+    const p = AdelanteEHR.createPatient({ firstName: "Trig", lastName: last });
+    const prob = AdelanteEHR.addProblem(p.id, { description: "Opioid use disorder", icd10Code: "F11.20", category: "sud", enteredBy: "test" });
+    const problemId = (prob as { id?: string } | undefined)?.id ?? AdelanteEHR.getPatient(p.id)!.problems!.at(-1)!.id;
+    return { p, problemId };
+  };
+  it("a clinician-added SUD goal sets the flag", () => {
+    const { p, problemId } = setup("Clin");
+    const planProblem = buildPlanProblems(AdelanteEHR.getPatient(p.id)!).find((x) => x.sud)!;
+    const g = addStructuredGoal({ patientId: p.id, problemIds: [planProblem.id], owner: "patient" as never, measure: "Fewer use days", clinicalText: "Reduce opioid use", actor: PMHNP });
+    expect(g.origin).toBe("clinician");
+    AdelanteEHR.resolveProblem(p.id, problemId, "test");
+    expect(sudSignalReason(AdelanteEHR.getPatient(p.id)!)).toBe("substance-use goal on the care plan");
+  });
+  it("an auto-added journey goal does not set the flag, and it clears when the diagnosis resolves", () => {
+    const { p, problemId } = setup("Auto");
+    applyFlagJourneys(p.id);
+    const goals = getStructuredPlan(p.id).goals.filter((g) => g.sud && g.status === "active");
+    expect(goals.length).toBeGreaterThan(0);
+    expect(goals.every((g) => g.origin === "system")).toBe(true);
+    AdelanteEHR.resolveProblem(p.id, problemId, "test");
+    expect(sudSignalReason(AdelanteEHR.getPatient(p.id)!)).toBeUndefined();
+    expect(detectFlags(AdelanteEHR.getPatient(p.id)!).sud).toBeUndefined();
+  });
+  it("auto-added assignments stay active after the flag clears (never removed)", () => {
+    const { p, problemId } = setup("Keep");
+    applyFlagJourneys(p.id);
+    AdelanteEHR.resolveProblem(p.id, problemId, "test");
+    applyFlagJourneys(p.id);
+    const items = getStructuredPlan(p.id).assignments.filter((a) => a.autoAdded?.flag === "sud");
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((a) => a.active)).toBe(true);
+    expect(items.some((a) => a.flagReview && !a.flagReview.resolved)).toBe(true);
   });
 });
