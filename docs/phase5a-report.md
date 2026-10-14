@@ -30,7 +30,7 @@ Only approved assertion text changed in six files (seven assertions because outp
 - Harness build green.
 - Full units: 308 files / 2570 tests passed (2 new monthly tests).
 - Initial complete browser run: 75/79, including all axe/Back-to-top specs. All failures were collected: crossRole clinical_coordinator duplicate Search patients controls during role transition; crossRole sys_admin missing Luis row/undefined dob during transition; staffContent waits for frozen ES · Draft after the proposed switch (restored); staffNav clinical_coordinator redirect remained /case-manager instead of /worklist at 10 seconds.
-- Final complete browser run and one permitted warm staffNav rerun: pending below.
+- Final complete browser run: **76/79 passed**. staffContent, both crossRole failures and staffNav all passed in this final full run. Three other failures: cfProxyMode proxy-enter, consentWorkflow packet and Spanish tablet; exact causes recorded below. One permitted warm staffNav rerun is in progress for the initial redirect timeout.
 - 390px Spanish: Home, My care, Intake, selected lesson, Profile, Next steps, Check-in each scrollWidth 390. Screenshots in /tmp/browser/phase5. Existing English gaps remain deliberately undrafted.
 - Direct content preview switch worked before contract restoration; local controls remain non-persistent. Monthly same-day check-in stays deduplicated (1 before/after), with saved private acknowledgement; no new counted day invented.
 - Direct admin-content initial SSR showed existing role-dependent legal-tab hydration mismatch; no permissions or workflow changes applied. Record this as a diagnostic, not a passing no-error claim.
