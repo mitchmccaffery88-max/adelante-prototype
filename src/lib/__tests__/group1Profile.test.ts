@@ -15,7 +15,7 @@ import { listSites } from "@/lib/providerReference";
 import { staffSiteIds } from "@/lib/chartAccess";
 import { credentialKindsFor, credentialSummary } from "@/lib/credentialAccess";
 import { applyFlagJourneys, journeysForFlag, NEW_CONTENT_NOTICE, NEW_CONTENT_BODY } from "@/lib/flagJourneys";
-import { getStructuredPlan, staffPlanView, closeStructuredGoal } from "@/lib/structuredCarePlan";
+import { getStructuredPlan, staffPlanView } from "@/lib/structuredCarePlan";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 
 const staffOf = (role: StaffRole) => STAFF_ROSTER.find((s) => s.role === role && s.active !== false)!;
