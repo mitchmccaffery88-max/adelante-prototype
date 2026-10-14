@@ -1,6 +1,7 @@
 import { seedSimulatedContentSample } from "@/lib/contentAnalytics";
 import { canBrowseContent } from "@/lib/contentStaff";
 import { markContentReviewed } from "./contentPublishing";
+import { exportContentEntries, restoreContentEntries } from "./contentBackup";
 import { patientSelfBook, patientReschedule, advocateReschedule, PATIENT_ACTOR_ROLE, ADVOCATE_ACTOR_ROLE } from "@/lib/patientBooking";
 import { bookingRightFor, canScheduleRole } from "./bookingRights";
 // §Chart redesign — single action registry. Source of truth for every chart
@@ -165,6 +166,14 @@ export const CHART_ACTIONS: ChartAction[] = [
   { id: "content_withdraw", label: { en: "Withdraw content", es: "Withdraw content" }, group: "admin", menu: false, needsPatient: false,
     check: "canPublishContent", store: refs(["retireContent", retireContent]),
     allowed: ({ role }) => canPublishContent(role) ? ok() : hide("This role cannot take this content action."), },
+  // §Content backup — "Download / Load my changes" (contentBackup.ts). Per-entry
+  // publish and Part 2 checks happen inside the store.
+  { id: "content_export", label: { en: "Download content changes", es: "Download content changes" }, group: "admin", menu: false, needsPatient: false,
+    check: "canAuthorContent", store: refs(["exportContentEntries", exportContentEntries]),
+    allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
+  { id: "content_restore", label: { en: "Load content changes", es: "Load content changes" }, group: "admin", menu: false, needsPatient: false,
+    check: "canAuthorContent", store: refs(["restoreContentEntries", restoreContentEntries]),
+    allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
   { id: "content_discard", label: { en: "Discard content draft", es: "Discard content draft" }, group: "admin", menu: false, needsPatient: false,
     check: "canAuthorContent", store: refs(["discardContentDraft", discardContentDraft]),
     allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
