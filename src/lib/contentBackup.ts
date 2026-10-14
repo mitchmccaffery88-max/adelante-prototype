@@ -100,7 +100,9 @@ function shapeProblem(e: Record<string, unknown>): string | undefined {
   if (!KNOWN_TYPES.has(String(e["typeId"]))) return `Unknown content type "${String(e["typeId"])}"`;
   if (!e["body"] || typeof e["body"] !== "object") return "Missing body";
   const revs = e["revisions"];
-  if (!Array.isArray(revs) || revs.length === 0) return "Missing revision history";
+  // An entry may legitimately have no revisions yet (e.g. working facts synced
+  // from a resource edit); it is restored as-is, never given an invented one.
+  if (!Array.isArray(revs)) return "Missing revision history";
   for (let i = 0; i < revs.length; i++) {
     const r = revs[i] as Partial<ContentRevision> | null;
     if (!r || r.rev !== i + 1) return "Revisions are not numbered 1 to n";
@@ -111,7 +113,7 @@ function shapeProblem(e: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
-const latest = (e: ContentEntry) => e.revisions[e.revisions.length - 1]!;
+const latest = (e: ContentEntry): { rev: number; at: string } => e.revisions[e.revisions.length - 1] ?? { rev: 0, at: "" };
 
 function classify(f: ContentBackupFile, actor: ContentActor): { items: RestoreItem[]; writes: ContentEntry[] } {
   const items: RestoreItem[] = [];
@@ -139,7 +141,7 @@ function classify(f: ContentBackupFile, actor: ContentActor): { items: RestoreIt
       continue;
     }
     if (a.rev > b.rev || (a.rev === b.rev && a.at > b.at)) {
-      if (a.rev > b.rev && JSON.stringify(e.revisions[b.rev - 1]) !== JSON.stringify(b)) {
+      if (a.rev > b.rev && b.rev > 0 && JSON.stringify(e.revisions[b.rev - 1]) !== JSON.stringify(b)) {
         items.push({ typeId, id, outcome: "skipped", reason: "Edited in two places; not replaced" }); continue;
       }
       items.push({ typeId, id, outcome: "updated" }); writes.push(e); continue;
