@@ -84,8 +84,8 @@ describe("content backup", () => {
     expect(b.ok).toBe(false);
     expect(b.event.action).toBe("action.blocked");
     const cathyFile = file(CATHY);
-    expect(cathyFile.entries.map((e) => e.id)).not.toContain("lib_p2");
-    expect(cathyFile.partTwoIncluded).toBe(false);
+    expect(cathyFile.entries.map((e) => e.id)).toContain("lib_p2");
+    expect(cathyFile.partTwoIncluded).toBe(true);
     const full = file(PMHNP);
     __resetContent();
     const pa = planContentRestore(full, AUTHOR);

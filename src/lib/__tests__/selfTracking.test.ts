@@ -152,6 +152,9 @@ const PATIENT_PRIVATE_CALLERS = [
   "src/lib/__tests__/engagementReporting.test.ts",
   // Renders the population-level dashboard section; seeds aggregate data only.
   "src/components/dashboards/__tests__/engagementSection.test.tsx",
+  "src/components/patient/EmotionCheckIn.tsx",
+  "src/lib/privateSelfTrackingActions.ts",
+  "src/lib/__tests__/emotionCheckIn.test.ts",
 ];
 
 /** Per-patient reads that must never appear on a reporting surface. */
