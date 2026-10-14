@@ -5,6 +5,7 @@ import { ContentInventoryTable } from "./ContentInventoryTable";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { contentVisibleToStaff, staffContentInventory, defaultContentMode } from "@/lib/contentStaff";
 import { ContentBrowse } from "./ContentBrowse";
+import { ContentBackupBar } from "./ContentBackupBar";
 import { ContentAudit } from "./ContentAudit";
 import { generatedContentId } from "@/lib/contentStaff";
 // §Content Management admin tooling — the real admin surface.
@@ -880,6 +881,7 @@ export function ContentAdminWorkspace({ browseOnly = false }: { browseOnly?: boo
           Manage what patients see: education, recovery content, community resources and naloxone sites. Verify resources with the provider before they go live.
         </p>
       </div>
+      {!browseOnly && <ContentBackupBar version={version} />}
       <HomeDigest version={version} />
       <Tabs key={role} defaultValue={browseOnly ? "browse" : defaultContentMode(role, queueCount, canAuthorContent(role))}>
         <TabsList>
