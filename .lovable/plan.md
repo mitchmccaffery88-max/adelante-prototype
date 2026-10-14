@@ -1,94 +1,126 @@
-# Part 2 content visible to content authors
+# Content audiences and Part 2 for authors
 
-## Part A — the change
-
-### Rule
-Any role with `content_authoring` **write** (`canAuthorContent`) sees Part 2 **content** in /admin-content. Everyone else keeps today's rule: they see it only if `roleSeesAsamSection` passes. Patient data checks stay exactly as they are.
-
-Roles that gain Part 2 content access (they have write but fail `roleSeesAsamSection`): `clinical_coordinator` (Cathy), `ecm_provider`, and any other write role whose screener access is limited (confirmed role by role in a test, not assumed). `sys_admin`, `pmhnp`, `therapist` and the rest already pass.
-
-### The one change
-In `src/lib/contentStaff.ts`, add one rule and use it inside `contentVisibleToStaff`:
-
-```text
-contentPart2VisibleToStaff(role) = canAuthorContent(role) || roleSeesAsamSection(role)
-contentVisibleToStaff(role, type, body) =
-  canBrowseContent(role) && (!isPart2Content(type, body) || contentPart2VisibleToStaff(role))
-```
-
-`roleSeesAsamSection`, `SUD_MED_WITHHELD_ROLES`, `asamReporting.ts` and `roles.ts` stay untouched. The rule gets the label "Draft — pending compliance review", like the list it sits beside.
-
-### Content-center readers
-These change automatically, because each one already goes through `contentVisibleToStaff` or `staffContentInventory`:
-- Manage inventory (`ContentAdminWorkspace.tsx` inventory tab, through `staffContentInventory`)
-- Review queue and its counts (`ContentAdminWorkspace.tsx`, review tab and badge counts)
-- History tab (`ContentAdminWorkspace.tsx` HistoryTab)
-- Browse tab (`ContentBrowse.tsx`, through `staffContentInventory`). This changes only for authors.
-- Backup export filter and the restore Part 2 check (`contentBackup.ts`). Cathy's file will now include recovery lessons and modules, and say `partTwoIncluded: true`.
-
-These stay as they are:
-- Browse for non-authors (for example `medical_assistant` with read access, and care-plan readers without write). They still need `roleSeesAsamSection`. Your expectation holds: this does not change.
-- The "Part 2" badges and edit-drawer chips. These only label items; they don't decide who sees them.
-- The audit redaction in `contentPublishing.ts`: Part 2 ids still show as "protected-content" in audit text.
-- The Part 2 check in `contentTags.ts` that matches content to a patient's needs. It feeds patient care-plan suggestions, so it stays on the patient-record rule.
-- Everything on patient records: ASAM sections, SUD meds, screeners, `disclose()`, care plans, audit and notification text.
-
-### Tests (new file `src/lib/__tests__/contentPart2Authoring.test.ts`)
-1. `clinical_coordinator` sees a recovery lesson, a module, and a journey and exercise flagged Part 2 through `contentVisibleToStaff`. `roleSeesAsamSection("clinical_coordinator")` is still false.
-2. For every role: if `canAuthorContent` passes, it sees Part 2 content. If it doesn't, the result equals the old rule (`roleSeesAsamSection`).
-3. A non-author with read access (`medical_assistant`), and `peer_specialist` if it lacks write, still can't see Part 2 content. The existing `peer_specialist` assertion stays as it is. If `peer_specialist` turns out to have write, I'll report the conflict before building.
-4. The backup export as Cathy includes the recovery entries and `partTwoIncluded: true`, and the round trip still deep-equals.
-5. Patient side unchanged: `SUD_MED_WITHHELD_ROLES` still contains the same four roles, and a patient-record ASAM section is still hidden from `clinical_coordinator`.
-
-No existing assertion, retry or threshold changes. One risk to check before building: `peer_specialist` has `content_authoring` write, but `staffContentCenter.test.ts:14` expects it **not** to see Part 2 content. Under this rule that test would fail. If so, I stop and ask Mitch to choose between narrowing the rule to `CONTENT_PUBLISHER_ROLES` (which keeps the test green) or approving that one line. The permissions snapshot is not affected, because no actions change.
-
-### Files
-`src/lib/contentStaff.ts`, the new test file, `src/lib/AGENTS.md` (one rule), `docs/content-backup.md`, `roadmap.md`.
+Two approved changes, built together: (A) everyone who authors content sees Part 2 content in /admin-content; (B) one "Who it's for" audience field that shows an item when any of its audiences matches the person, with no before/after-release split in patient content.
 
 ---
 
-## Part B — how the app decides what a patient sees (no build)
+## Part A: Part 2 content visible to content authors
 
-**1. Populations and conditions**
-- **Population:** `resolvePopulation` / `resolvePopulationTrack` in `population.ts` give one track only. The order is: an open pre-release episode means `pre_release_ji`; released or missed handoff, a front-door "yes", Z65.2 or custody (`isJusticeInvolved`), the reentry flag, or a justice referral source means `post_release_ji`; "not sure" means `post_release_ji` but provisional; otherwise `general_population`. SUD plays no part in it. `cohorts.ts` `resolveCohorts` runs the same logic for a whole caseload.
-- **SUD:** `flagJourneys.ts` `detectFlags` marks SUD for an active problem in the SUD category or an F10–F19 code, an open `sud_dmc_ods` or `outpatient_sud` episode, or `needs.substanceUse` from the intake/seeking answer. Screener scores and care plans don't set it. A separate check, `seeking.ts` `recoveryJourneyVisible`, needs `needs.substanceUse` plus Part 2 consent, an SUD program episode, or SUD CalOMS data (a justice answer alone never counts).
-- **Combined:** yes, one person can be all three. JI and SUD are separate flags, and the advocate is a separate `AdvocateLink`.
-- **Pathways:** `flagJourneys.ts` `pathwayFromFlags` / `patientPathway`: JI and SUD gives `reentry_sud`, JI only gives `reentry`, SUD only gives `sud`, neither gives `general`.
+- In `src/lib/contentStaff.ts`, add `contentPart2VisibleToStaff(role) = canAuthorContent(role) || roleSeesAsamSection(role)` and use it inside `contentVisibleToStaff`. It is labelled "Draft — pending compliance review".
+- **What changes automatically** (each already goes through `contentVisibleToStaff`): the Manage inventory, the review queue and its counts, History, and Browse for authors. The backup export and restore check change too, so Cathy's file now includes recovery content with `partTwoIncluded: true`.
+- **What stays the same:** Browse for non-authors (e.g. `medical_assistant` read), the Part 2 badges, the "protected-content" text in the audit, the patient-matching Part 2 check in `contentTags.ts`, and every patient-record check (`roleSeesAsamSection`, `SUD_MED_WITHHELD_ROLES`, ASAM, SUD meds, screeners, `disclose()`, care plans, audit text).
+- **Approved line change**, `staffContentCenter.test.ts:14`:
+  - From: `expect(contentVisibleToStaff("peer_specialist", "recovery_lesson", { title: "Recovery" })).toBe(false);`
+  - To: `expect(contentVisibleToStaff("peer_specialist", "recovery_lesson", { title: "Recovery" })).toBe(true);`
+  - The `pmhnp` line stays.
 
-**2. What each signal unlocks** (seeded in `curriculumTypes.ts` `initializePracticeContent`)
-- **Starting Strong and Back on My Feet:** `justiceInvolved: true`, `meta.flags [justice_involved]`, `meta.pathways [reentry]`.
-- **My First Days Out:** `meta.pathways [reentry_sud]` only, Part 2.
-- **Recovery Journey (`reentry-curriculum`, 9 modules):** `meta.flags [sud]`, `meta.pathways [sud, reentry_sud]`, Part 2.
-- **Where the gates are:**
-  - `curriculumProgress.ts` `curriculumVisible`: auto-added journeys always show. Otherwise, Part 2 journeys need `recoveryJourneyVisible`; `justiceInvolved` needs a literal front-door "yes"; `positiveSignal` checks `needs[signal]`; and top-level `populations` is checked against the track.
-  - Library lessons: `library.ts` `isLibraryItemVisible`, using top-level `populations` with confirmed tracks only.
-  - Recovery modules: the same `populations` field in `recovery.ts`.
-- **90-day reentry features:** wrapped in `PopulationGate` (confirmed justice-involved tracks only), for example `ReleaseDayChecklist`.
-- **Advocate library:** the `advocate-support` category (`library.advocateCategory.seed.ts`). It's for advocates and has no lessons yet.
+---
 
-**3. When it updates**
-- The track, pathway and visibility are worked out fresh each time they're read, from the live record, so they always reflect the latest information.
-- Adding journeys happens when something changes: `flagJourneys.ts` `sweepFlagJourneys` runs on every save to a record. When the flags change, `applyFlagJourneys` adds the journeys for that pathway through `autoAddJourneyAssignment`. That covers a referral, intake answers, a new F1x or Z65.2 diagnosis, or an SUD episode opening. Screener results and care-plan edits don't change the flags.
-- **Automatic or suggested:** journeys are added automatically. Staff get a task only when nothing matches (`raiseGap`, sent to the content owner). Journeys are never removed; changes are marked "Pathway changed — review".
+## Part B: "Who it's for" (`audiences`), any-match
 
-**4. Content tags**
-- **Read by logic:**
-  - `sdoh`, `stages` and `bands`: content matching in `contentTags.ts`.
-  - `asam`: `asamCarePlan.ts`.
-  - `flags` and `pathways`: auto-adding journeys in `flagJourneys.ts`.
-  - `part2`: promoted to `part2Sensitive`, and controls who can see it.
-- **Stored but not read for targeting:** `clinical` is only shown in the content center and exports. No targeting reads it.
-- **`meta.populations`:** nothing reads it for targeting. Targeting uses the separate top-level `populations` field.
+### Rule
+- **Values:** an item's `audiences` field takes any of `justice_involved`, `sud`, `advocate`. Leaving it empty means everyone.
+- **Who sees it:** a person sees an item when it has no audiences, or when any one of its audiences matches them.
+- **Part 2:** still applies on top. SUD content also needs the existing consent rule and `recoveryJourneyVisible`.
+- **Release timing:** no patient content branches on before vs. after release.
 
-**5. Advocates**
-- **What they see:** the `/advocate` pages, limited by tier (`advocate.ts` `ADVOCATE_TIER_BY_TYPE`), with Part 2 access on its own setting (`ADVOCATE_SUD_MODE_BY_TIER`). In practice they can view the schedule, documents, resources, messages and their own library.
-- **Their own track:** `resolvePopulation` returns `advocate` before it reads anything from the patient's record.
-- **Can an advocate also be a patient?** Yes, through "Support for myself" (`advocate.support-for-myself.tsx`), which opens a separate record of their own. That record gets its own track and pathway.
+### Person side: one function
+`personAudiences(patientId, viewer)` goes in `src/lib/population.ts`:
+- **`justice_involved`:** the person's resolved track is `pre_release_ji` or `post_release_ji` and is not provisional. That track already includes every `isJusticeInvolved` signal: custody, Z65.2, the reentry flag, missed coordination, a front-door "yes", a justice referral source, or a pre-release episode. A "not sure" answer stays unconfirmed.
+- **`sud`:** the existing `detectFlags` SUD signal (`flagJourneys.ts`), plus the new care-plan trigger below.
+- **`advocate`:** returned only for the advocate viewer, and that viewer gets no patient audiences.
+- **Where it's used:**
+  - `curriculumVisible` (`curriculumProgress.ts`), which replaces the literal `coverage.justiceInvolvement === "yes"` check and the `populations` check.
+  - `isLibraryItemVisible` (`library.ts`).
+  - Module and lesson visibility (`recovery.ts`).
+  - Patient-facing `PopulationGate` checks.
 
-**6. Gaps for people who are several things at once**
-- **One track only:** the track has no SUD part. So anything gated only by `populations` treats a JI + SUD person the same as JI only.
-- **Two different "justice-involved" tests:** `curriculumVisible` needs a literal front-door "yes", but `isJusticeInvolved` also counts custody, Z65.2, the reentry flag and missed coordination. Those people are still auto-added to Starting Strong and Back on My Feet, so the journeys show, but they can't find them by browsing unless they're auto-added.
-- **My First Days Out:** SUD-only people never get it, because it's tagged `reentry_sud` only. This is the interim rule, pending Cathy.
-- **"Not sure" answers:** a provisional answer opens no justice-gated content or reentry features, by design.
-- **At release:** pre-release to post-release is a hard switch. Content gated to `pre_release_ji` disappears on release day.
-- **Screener only:** a positive screener alone (no diagnosis, episode or "seeking" answer) doesn't set the SUD flag, so no Recovery Journey is added.
+### PopulationGate today
+- **Four places use it.** None separates pre-release from post-release; each allows both tracks.
+  - Patient screens: `PoDisclosureCard.tsx:83`, `ReentryDayZeroModule.tsx:65` and `ObligationsCard.tsx:81`.
+  - Staff panel: `AdvocatePoAwarenessPanel.tsx:74`.
+  - The patient menu entry for obligations (`navSections.ts:993`) uses the same pair.
+- **Change:** I add an `audience="justice_involved"` form to `PopulationGate` and use it on these screens. Patients see exactly what they see today.
+- **Day-0 module:** it also checks whether release has been confirmed. That is a release-date check, not content targeting, so it stays.
+- **Staff workflows:** `PopulationTrack` and the pre-release episode logic stay as they are.
+
+### Migration table (through real store functions)
+
+| Item | Today | Becomes |
+|---|---|---|
+| Library `understanding-psychosis` | populations pre_release_ji, post_release_ji | audiences justice_involved |
+| Library `back-on-feet-work` | same | justice_involved |
+| Library `back-on-feet-legal-responsibilities` | same | justice_involved |
+| Library `success-plan-goals-that-matter` | same | justice_involved |
+| Journey `starting-strong-curriculum` | justiceInvolved true | justice_involved |
+| Journey `back-on-feet-curriculum` | justiceInvolved true | justice_involved |
+| The 31 items with label-only `meta.populations` | label only | no audiences (still visible to everyone) |
+| Modules, exercises, other journeys | no gate | no audiences |
+
+- **Shipped items:** the shipped seeds are edited in place (`library.ported.ts`, `curriculumTypes.ts`).
+- **Stored entries:** any stored entry that still has `populations` or `justiceInvolved` is converted when read, by one function in `contentTypes.ts`. The old fields are then dropped from the editor and from validation.
+- **`meta.populations`:** removed from the What-this-addresses panel and from the backfill in `contentTags.ts`. The values left on stored entries are ignored.
+- **Effect for patients:** one visible difference. A justice-involved patient whose front-door answer wasn't a literal "yes" can now browse Starting Strong and Back on My Feet. This is the gap fix. They could already get these journeys when auto-added.
+
+### No release split in content
+- **Stage options:** I remove `pre_release` from the content stage options. That covers `COVERAGE_STAGES` and the `d < 0` stage branch in `contentTags.ts`, the journey "Reentry stage" select in `curriculumTypes.ts:34`, and `STAGE_LABELS` and the chip row in `ContentAdminWorkspace.tsx`.
+- **Before release:** for a release date in the future, the stage reads `first_30`.
+- **Pathways:** `pathwayFromFlags` and `journeysForPathway` read only the justice and SUD flags. Neither branches on release timing; confirmed.
+
+### SUD triggers (Draft — pending clinical sign-off)
+- **Care plan:** a substance-use goal is a `StructuredGoal` with `sud: true` (`structuredCarePlan.ts`). A goal gets that mark when it is linked to a problem with `sud: true`, through `addStructuredGoal` and the `care_plan_goal` action.
+  - **Problems:** a substance-use problem is `Patient.problems[]` with `category: "sud"` or an F10–F19 code. `detectFlags` already reads these.
+  - **What I add:** `detectFlags` also sets SUD for any open `StructuredGoal` with `sud: true`, with the source "substance-use goal on the care plan".
+  - **What follows:** `sweepFlagJourneys` then adds the Recovery Journey automatically. Journeys are still never removed, and "Pathway changed — review" still applies.
+- **Screener:** in the screener-result path in `ehr.ts`, a completed AUDIT with a score of 8 or more, or a DAST-10 with 3 or more, creates one staff task per result through a new registered store function, `requestRecoveryJourneyReview`.
+  - **Wording:** "Consider the Recovery Journey". The text never names the instrument or the score, and it uses the existing Part 2 task privacy.
+  - **Who gets it:** the assigned care team, through the same assignment routing the ASAM task uses.
+  - **No duplicates:** the dedupe key is the screener result id. Nothing is created below the cutoff.
+  - **The SUD flag:** not set.
+  - **Existing ASAM task:** it still runs on the existing "positive" result, unchanged.
+
+### Content center
+- **Editor:** one "Who it's for" checkbox group (Justice-involved / Substance use / Advocate; none checked means Everyone). It replaces the "Population gates" list, the "Justice-involved only" toggle and the population chip row. Checkboxes are neutral, 48px on touch, with text at least 14px.
+- **Inventory:** gains a "Who it's for" column and filter (`ContentInventoryTable.tsx`).
+- **Inventory export:** `scripts/export-content-inventory.ts` gains an `audiences` column, drops `population_gate` and `meta_populations`, and the vocabulary gains the audience values with `pre_release` removed. I re-run it.
+
+### New tests
+- **`contentAudiences.test.ts`:**
+  - A JI + SUD person sees both sets.
+  - JI only sees no SUD content.
+  - SUD only sees no JI-only content.
+  - A general person sees only everyone-items.
+  - An advocate viewer sees advocate items and no patient audiences.
+  - A Z65.2-only person can browse Starting Strong.
+  - A "not sure" person sees no JI content.
+  - Migration: each of the 4 lessons and 2 journeys keeps the same visibility for a confirmed JI patient and a general patient.
+- **`sudTriggers.test.ts`:**
+  - A SUD care-plan goal sets the flag and the Recovery Journey is added automatically.
+  - Removing the goal doesn't remove the journey.
+  - Screener tasks: AUDIT 8 or more creates one task, re-recording the same result doesn't duplicate it, AUDIT 7 and DAST 2 create none, and task text has no score or instrument.
+- **`contentStages.test.ts`:** no `pre_release` in stage options or `COVERAGE_STAGES`.
+- **Part A:** the new `contentPart2Authoring.test.ts` as planned.
+
+### Existing test lines that would change (approval needed, each line only)
+1. **`contentContainers.test.ts:167`:**
+   - From: `populations: ["post_release_ji"],`
+   - To: `audiences: ["justice_involved"],` (the fixture's expected visibility stays the same).
+2. **`contentCenterFinish.test.ts:109`:** `expect(curriculumVisible(p, j)).toBe(true);`. No change expected. I'll check whether its fixture depends on the literal "yes"; if it does, I'll stop and send the exact line.
+3. **Population-track tests:** these test staff and episode logic and stay unchanged: `populationTrack.test.ts`, `preReleaseRelease.test.ts`, `populationNavGating.test.ts`, `preReleaseCapacityIntake.test.ts`, `justiceInvolvementGate.test.ts`, `selfHelpLibrary.test.ts:199`.
+4. **No browser test** asserts these rules.
+
+If the build turns up any other existing assertion, I stop and list it rather than edit it.
+
+### Files
+- **Part A:** `contentStaff.ts`.
+- **Logic:** `population.ts`, `curriculumProgress.ts`, `library.ts`, `library.ported.ts`, `recovery.ts`, `curriculumTypes.ts`, `contentTypes.ts`, `contentTags.ts`, `flagJourneys.ts`, `ehr.ts` (screener path + new task function), `chartActions.ts` (only if the task function needs registry entry; system-triggered, so likely not).
+- **Screens and tools:** `PopulationGate.tsx`, the four gate users, `navSections.ts`, `ContentAdminWorkspace.tsx`, `ContentInventoryTable.tsx`, `ContentForm.tsx`, `scripts/export-content-inventory.ts` plus the three docs outputs.
+- **Docs and tests:** `AGENTS.md`/`src/lib/AGENTS.md` (one rule each), `roadmap.md`, new tests, `staffContentCenter.test.ts:14`.
+
+### What I'd do differently
+- **Keep `advocate` off patient content.** Advocate items stay in their own library (`audience: "advocate"`). Checking `advocate` on a patient lesson would hide it from every patient, so the editor will warn about that.
+- **Use the existing positive result.** The screener cutoffs (AUDIT 8, DAST 3) are written separately from the existing positive result the ASAM task uses. If those match, I'd reuse the existing positive result to avoid having two cutoffs.
+- **Which justice check counts.** Using the confirmed track for `justice_involved`, not `isJusticeInvolved` alone, also counts justice referral sources and the reentry flag. That matches "any confirmed justice signal".
+
+### Validation
+Build, then the full unit suite, then every browser spec including axe, all run to completion. Every failure is reported together. The permissions snapshot is left untouched.
