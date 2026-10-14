@@ -84,7 +84,7 @@ for (const e of inventory(CONTENT)) {
   const es = (b["es"] ?? {}) as Record<string, unknown>;
   const activity = (b["activity"] ?? {}) as Record<string, unknown>;
   const rl = readingLevelOf(e.typeId, b);
-  const pending = [b["placeholder"] ? "placeholder" : "", b["contentPending"] ? "contentPending" : ""].filter(Boolean).join("|");
+  const pending = [b["placeholder"] ? "placeholder" : "", b["contentPending"] ? "contentPending" : "", /pending (clinical )?authoring/i.test(String(str(b, "desc", "description", "clinicalTarget"))) ? "authoring pending" : ""].filter(Boolean).join("|");
   rows.push([
     e.typeId, e.id, contentType(e.typeId).titleOf(b), es["title"] ?? es["name"] ?? "", inventoryStatus(e), container, containerName,
     advocate ? "advocate" : String(b["audience"] ?? "patient"), str(b, "order"), str(b, "minutes", "estimatedMinutes"), activity["kind"] ?? "",
