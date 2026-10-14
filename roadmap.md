@@ -2,6 +2,13 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Content audiences + Part 2 for authors (14 Oct)
+- [x] Part A: content authors see Part 2 content (approved line staffContentCenter.test.ts:14)
+- [x] Part B: "Who it's for" audiences, any-match; migration of 4 lessons + 2 journeys; no pre_release content stage
+- [x] SUD triggers: care-plan SUD goal sets flag; AUDIT >= 8 / DAST >= 3 neutral staff task (Draft)
+- [x] Editor checkboxes, inventory column/filter, export re-run
+- [ ] Mitch approval: contentBackup.test.ts:87-88 and group1Profile.test.ts:162 (consequences of the approved rules); runAction snapshot (still pending)
+
 ## Phase 5b — Draft member and public screen Spanish (14 Oct)
 - [x] Re-check cfProxyMode and consentWorkflow twice before edits; classify staff-only gaps
 - [x] Draft ordinary screen Spanish in tú; preserve authored and controlled content

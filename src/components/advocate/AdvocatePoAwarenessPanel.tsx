@@ -74,7 +74,7 @@ export function AdvocatePoAwarenessPanel({
     <PopulationGate
       patientId={patientId}
       viewer={{ kind: "staff" }}
-      allow={["pre_release_ji", "post_release_ji"]}
+      audience="justice_involved"
     >
       <Body linkId={linkId} />
     </PopulationGate>

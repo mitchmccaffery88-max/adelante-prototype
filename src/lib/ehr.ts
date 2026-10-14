@@ -4249,6 +4249,10 @@ export type TaskPriority = "stat" | "urgent" | "routine";
  */
 export type WorklistStatus = "pending" | "in_progress" | "completed" | "cancelled" | "missed";
 
+/** Draft — pending clinical sign-off. */
+export const RECOVERY_REVIEW_AUDIT_MIN = 8;
+export const RECOVERY_REVIEW_DAST_MIN = 3;
+export const RECOVERY_REVIEW_DEDUPE_PREFIX = "recovery_journey_review:";
 export type CaseTaskOrigin =
   | "manual"
   | "missed_appt"
@@ -4267,7 +4271,9 @@ export type CaseTaskOrigin =
   /** §5d-3 — a follow-up on a social need or a resource referral. */
   | "sdoh_follow_up"
   /** §Phase 10c — an ASAM assessment is needed (Part 2 protected). */
-  | "asam_needed";
+  | "asam_needed"
+  /** Positive AUDIT/DAST-10 — consider the Recovery Journey (Draft). */
+  | "recovery_journey_review";
 
 export interface CaseTask {
   id: string;
@@ -9867,8 +9873,43 @@ export const AdelanteEHR = {
         `Positive ${result.key === "audit" ? "AUDIT" : "DAST-10"} ${when} (score ${result.score})`,
       );
     }
+    // Draft — pending clinical sign-off: AUDIT >= 8 or DAST-10 >= 3 asks the
+    // care team to consider the Recovery Journey. It does NOT set the SUD flag.
+    if (
+      (result.key === "audit" && result.score >= RECOVERY_REVIEW_AUDIT_MIN) ||
+      (result.key === "dast-10" && result.score >= RECOVERY_REVIEW_DAST_MIN)
+    ) {
+      AdelanteEHR.requestRecoveryJourneyReview(patientId, `${result.key}:${result.completedAt}`);
+    }
     _recomputeCarePlan(p.id, `screener:${result.key}`);
     emit();
+  },
+
+  /**
+   * One staff task per qualifying screener result: "Consider the Recovery
+   * Journey". Neutral Part 2 wording — never the instrument or the score.
+   * Routed like the ASAM task (Part 2-capable roles). Draft — pending clinical sign-off.
+   */
+  requestRecoveryJourneyReview(patientId: string, resultRef: string): CaseTask | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return undefined;
+    const dedupeKey = `${RECOVERY_REVIEW_DEDUPE_PREFIX}${p.id}:${resultRef}`;
+    const existing = caseTasks.find((t) => t.dedupeKey === dedupeKey);
+    if (existing) return existing;
+    const task = AdelanteEHR.createCaseTask({
+      patientId: p.id,
+      assignedTo: p.primaryClinicianId ?? "s-sudc1",
+      title: "Consider the Recovery Journey",
+      detail: "A recent result suggests the Recovery Journey may help. Review with the person. Draft — pending clinical sign-off.",
+      dueDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+      origin: "recovery_journey_review",
+      dedupeKey,
+      // "sud_" prefix marks the task Part 2-protected (_TASK_PART2_RE) without naming it in the text.
+      taskType: "sud_recovery_journey_review",
+      allowedRoles: [...ASAM_TASK_ROLES],
+      priority: "routine",
+    });
+    return task;
   },
 
   // ----- §Phase 10b — C-SSRS -------------------------------------------------

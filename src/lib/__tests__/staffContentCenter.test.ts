@@ -11,7 +11,7 @@ import { AdelanteEHR } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
 const actor = { name: "Mitch", staffId: "s-admin", role: "sys_admin" as const };
 describe("staff content center", () => {
- it("hides Part 2 items instead of teasers", () => { expect(contentVisibleToStaff("peer_specialist", "recovery_lesson", { title: "Recovery" })).toBe(false); expect(contentVisibleToStaff("pmhnp", "recovery_lesson", { title: "Recovery" })).toBe(true); });
+ it("hides Part 2 items instead of teasers", () => { expect(contentVisibleToStaff("peer_specialist", "recovery_lesson", { title: "Recovery" })).toBe(true); expect(contentVisibleToStaff("pmhnp", "recovery_lesson", { title: "Recovery" })).toBe(true); });
  it("generates title ids and handles collisions", () => { const id = generatedContentId("exercise", "A fresh Tool!"); expect(id).toBe("a-fresh-tool"); seedPublishedContent({ typeId: "exercise", id, body: { title: "A fresh Tool!" }, actor, atISO: new Date().toISOString() }); expect(generatedContentId("exercise", "A fresh Tool!")).toBe("a-fresh-tool-2"); });
  it("migrates exercises and Journeys through store functions", () => { initializePracticeContent(); expect(getContentEntry("exercise", "box-breathing")?.publishedRev).toBe(1); expect(liveCurricula()).toHaveLength(4); });
  it("suppresses all small cohort cells and exports no patient fields", () => { const m = contentMetrics("exercise", "box-breathing", "pmhnp"); expect(m?.starts).toBe(null); const csv = contentMetricCsv([{ title: "Breath", type: "exercise", id: "box-breathing" }], "pmhnp"); expect(csv).toContain("<11"); expect(csv).not.toMatch(/patientId|supportPeople|text/); expect(inventoryCsv("peer_specialist")).not.toContain("Re-entry Journey"); });

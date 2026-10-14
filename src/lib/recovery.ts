@@ -18,6 +18,7 @@ import type { LibraryActivity } from "@/lib/library";
 // §Lesson-player Phase D — same optional authoring surface the Library uses.
 import type { LessonAuthoringExtras } from "@/lib/lessonAuthoring";
 import type { PopulationTrack } from "@/lib/population";
+import type { ContentAudience } from "@/lib/contentAudience";
 // Ported Adelante Journey lessons for modules 2–9 (generated).
 import { PORTED_RECOVERY_LESSONS } from "@/lib/recovery.ported";
 
@@ -50,6 +51,9 @@ export interface RecoveryLesson extends LessonAuthoringExtras {
   /** 6 */ insight: string;
   /** 7–9 */ toolFlow: RecoveryToolFlow;
   /** 10 */ toolkitLabel: string;
+  /** "Who it's for" (any-match; empty = everyone). */
+  audiences?: ContentAudience[];
+  /** Retired gate; converted on read by `audiencesOf`. */
   populations?: PopulationTrack[];
   part2Sensitive?: boolean;
   placeholder?: boolean;
@@ -64,6 +68,9 @@ export interface RecoveryModule {
   subtitle: string;
   /** lucide-react icon NAME, resolved by the UI. Keeps this module pure. */
   icon: string;
+  /** "Who it's for" (any-match; empty = everyone). */
+  audiences?: ContentAudience[];
+  /** Retired gate; converted on read by `audiencesOf`. */
   populations?: PopulationTrack[];
   /**
    * Content is written for people leaving custody, but the module is visible

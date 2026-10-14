@@ -135,7 +135,6 @@ function GovernanceChips({ typeId, body }: { typeId: ContentTypeId; body: Conten
 }
 
 const STAGE_LABELS: Record<string, string> = {
-  pre_release: "Pre-release",
   first_30: "First 30 days",
   days_30_90: "30–90 days",
   after_90: "After 90 days",
@@ -197,16 +196,8 @@ function MetaPanel({
       <div className="space-y-1">
         <Label className="text-xs">Reentry stage</Label>
         <div className="flex flex-wrap gap-1">
-          {(["pre_release", "first_30", "days_30_90", "after_90"] as const).map((st) =>
+          {(["first_30", "days_30_90", "after_90"] as const).map((st) =>
             chip((m.stages ?? []).includes(st), STAGE_LABELS[st]!, () => set({ stages: toggle(m.stages, st) }), `tag-stage-${st}`),
-          )}
-        </div>
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Population</Label>
-        <div className="flex flex-wrap gap-1">
-          {(["justice_involved", "general", "advocate"] as const).map((pp) =>
-            chip((m.populations ?? []).includes(pp), pp.replace("_", "-"), () => set({ populations: toggle(m.populations, pp) })),
           )}
         </div>
       </div>

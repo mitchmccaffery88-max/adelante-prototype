@@ -16,7 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Clock, Wrench, X } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { usePopulation } from "@/components/PopulationGate";
-import { getExercise, visibleExercises } from "@/lib/library";
+import { getExercise, isLibraryItemVisible, visibleExercises } from "@/lib/library";
+import { audiencesOf } from "@/lib/contentAudience";
 import { resolveContentIcon } from "@/lib/contentIcons";
 import { activityKindLabel, categoryEyebrow } from "@/lib/contentDisplay";
 // Lessons resolve through the CONTENT CATALOG, not the raw baseline module:
@@ -201,7 +202,7 @@ export function LibraryBrowser({
     );
   }
 
-  const exercises = liveExercises().filter((e) => !e.populations?.length || e.populations.includes(population.track));
+  const exercises = liveExercises().filter((e) => isLibraryItemVisible(e, population));
 
   return (
     <PatientPage width="browse" className="space-y-6">
@@ -277,7 +278,7 @@ export function LibraryBrowser({
                                   {done && (
                                     <CheckCircle2 className="h-4 w-4 text-primary" aria-label={SCREEN_COPY["ui.1798b3ba42ee"][screenLang]} />
                                   )}
-                                  {item.populations && (
+                                  {audiencesOf(item).includes("justice_involved") && (
                                     <Badge variant="outline" className="text-[10px]">
                                       {SCREEN_COPY["ui.b48cc15f8db9"][screenLang]} </Badge>
                                   )}

@@ -14,7 +14,9 @@
 import type { ReactNode } from "react";
 import { useEhr } from "@/lib/ehr";
 import {
+  audiencesForResolution,
   isPopulationAllowed,
+  type ContentAudience,
   resolvePopulation,
   type PopulationResolution,
   type PopulationTrack,
@@ -32,13 +34,17 @@ export function usePopulation(
 export function PopulationGate({
   patientId,
   allow,
+  audience,
   viewer,
   requireConfirmed,
   fallback = null,
   children,
 }: {
   patientId: string | undefined;
-  allow: PopulationTrack[];
+  /** Retired form; prefer `audience`. */
+  allow?: PopulationTrack[];
+  /** "Who it's for" form: open when the person matches this audience (confirmed). */
+  audience?: ContentAudience;
   viewer?: PopulationViewer;
   /** Default true — an unconfirmed ("not sure") track does not open the gate. */
   requireConfirmed?: boolean;
@@ -46,10 +52,8 @@ export function PopulationGate({
   children: ReactNode;
 }) {
   const resolution = usePopulation(patientId, viewer);
-  const allowed = isPopulationAllowed(
-    resolution,
-    allow,
-    requireConfirmed === undefined ? {} : { requireConfirmed },
-  );
+  const allowed = audience
+    ? audiencesForResolution(resolution).includes(audience)
+    : isPopulationAllowed(resolution, allow ?? [], requireConfirmed === undefined ? {} : { requireConfirmed });
   return <>{allowed ? children : fallback}</>;
 }

@@ -1,3 +1,4 @@
+import { audienceVisible, type ContentAudience } from "./contentAudience";
 // §Adel Build 1 — the real system prompt.
 //
 // Structure and clinical discipline are ported verbatim from the source
@@ -32,16 +33,17 @@ export interface AdelAudience {
   reentry: boolean;
 }
 const OPEN_AUDIENCE: AdelAudience = { sud: false, reentry: false };
+const adelPersonAudiences = (a: AdelAudience): ContentAudience[] => [
+  ...(a.reentry ? (["justice_involved"] as const) : []),
+  ...(a.sud ? (["sud"] as const) : []),
+];
 function lessonFits(i: LibraryItem, a: AdelAudience): boolean {
   if (i.part2Sensitive && !a.sud) return false;
-  const pops = (i as { populations?: string[] }).populations;
-  if (pops?.length && !a.reentry && pops.every((x) => x !== "general_population")) return false;
-  return true;
+  return audienceVisible(i, adelPersonAudiences(a));
 }
 function exerciseFits(e: Exercise, a: AdelAudience): boolean {
   if (e.part2Sensitive && !a.sud) return false;
-  if (e.populations?.length && !a.reentry && !e.populations.includes("general_population")) return false;
-  return true;
+  return audienceVisible(e, adelPersonAudiences(a));
 }
 export const adelLessons = (a: AdelAudience = OPEN_AUDIENCE) => liveLessons().filter((i) => lessonFits(i, a));
 export const adelExercises = (a: AdelAudience = OPEN_AUDIENCE) => liveExercises().filter((e) => exerciseFits(e, a));

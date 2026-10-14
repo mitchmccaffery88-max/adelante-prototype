@@ -78,7 +78,7 @@ const SCREEN_COPY = {
 
 export function ObligationsCard({ patientId }: { patientId: string }) {
   return (
-    <PopulationGate patientId={patientId} allow={["pre_release_ji", "post_release_ji"]}>
+    <PopulationGate patientId={patientId} audience="justice_involved">
       <ObligationsBody patientId={patientId} />
     </PopulationGate>
   );

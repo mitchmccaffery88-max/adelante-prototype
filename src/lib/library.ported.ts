@@ -256,9 +256,8 @@ export const PORTED_LIBRARY_ITEMS: LibraryItem[] = [
     "insight": "This is a health condition with a treatment plan, not a verdict on who you are.",
     "action": "Protect your sleep tonight — it's the single biggest lever.",
     "toolkitLabel": "What helps my filter",
-    "populations": [
-      "pre_release_ji",
-      "post_release_ji"
+    "audiences": [
+      "justice_involved"
     ]
   },
   {
@@ -1988,9 +1987,8 @@ export const PORTED_LIBRARY_ITEMS: LibraryItem[] = [
     "insight": "Own it in one sentence, then move to what you bring.",
     "action": "Say your one-sentence answer out loud three times today.",
     "toolkitLabel": "My interview answer",
-    "populations": [
-      "pre_release_ji",
-      "post_release_ji"
+    "audiences": [
+      "justice_involved"
     ]
   },
   {
@@ -2198,9 +2196,8 @@ export const PORTED_LIBRARY_ITEMS: LibraryItem[] = [
     "insight": "Call before, not after. Every time.",
     "action": "Put every legal date in your phone with a two-day reminder.",
     "toolkitLabel": "My legal calendar",
-    "populations": [
-      "pre_release_ji",
-      "post_release_ji"
+    "audiences": [
+      "justice_involved"
     ]
   },
   {
@@ -2292,9 +2289,8 @@ export const PORTED_LIBRARY_ITEMS: LibraryItem[] = [
     "insight": "A goal has a number and a date. Everything else is a wish.",
     "action": "Rewrite one wish as a goal with a date.",
     "toolkitLabel": "My real goals",
-    "populations": [
-      "pre_release_ji",
-      "post_release_ji"
+    "audiences": [
+      "justice_involved"
     ]
   },
   {

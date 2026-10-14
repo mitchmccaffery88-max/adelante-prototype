@@ -1,12 +1,20 @@
 import { canAccess, type StaffRole } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
+import { canAuthorContent } from "./contentPublishing";
 import { isPart2Content, metaOf } from "./contentGovernance";
 import { contentType, CONTENT_TYPES } from "./contentTypes";
 import { listContent, getContentEntry, type ContentBody, type ContentEntry, type ContentTypeId } from "./contentPublishing";
 import { AdelanteEHR } from "./ehr";
 import { getStructuredPlan } from "./structuredCarePlan";
 export function canBrowseContent(role: StaffRole) { return ["content_authoring", "care_plan"].some((record) => canAccess(role, record as Parameters<typeof canAccess>[1]).level !== "none" && !canAccess(role, record as Parameters<typeof canAccess>[1]).locked) || role === "clinical_coordinator"; }
-export function contentVisibleToStaff(role: StaffRole, type: ContentTypeId, body: ContentBody) { return canBrowseContent(role) && (!isPart2Content(type, body) || roleSeesAsamSection(role)); }
+/**
+ * Part 2 CONTENT (lessons, modules, journeys, exercises) is visible to every
+ * content author so they can create and maintain it; other roles keep the
+ * patient-record rule. Patient Part 2 data checks are unaffected.
+ * Draft — pending compliance review.
+ */
+export function contentPart2VisibleToStaff(role: StaffRole) { return canAuthorContent(role) || roleSeesAsamSection(role); }
+export function contentVisibleToStaff(role: StaffRole, type: ContentTypeId, body: ContentBody) { return canBrowseContent(role) && (!isPart2Content(type, body) || contentPart2VisibleToStaff(role)); }
 export function staffContentInventory(role: StaffRole): ContentEntry[] {
   const entries = listContent();
   for (const descriptor of CONTENT_TYPES) for (const id of descriptor.baselineIds()) {

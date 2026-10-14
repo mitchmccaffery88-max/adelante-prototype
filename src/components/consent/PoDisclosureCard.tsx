@@ -80,7 +80,7 @@ export function PoDisclosureCard({ patientId }: { patientId: string }) {
   // Population-scoped (Phase 2 pattern): showing PO sharing to a General
   // Population member would be actively wrong, not merely noisy.
   return (
-    <PopulationGate patientId={patientId} allow={["pre_release_ji", "post_release_ji"]}>
+    <PopulationGate patientId={patientId} audience="justice_involved">
       <PoDisclosureBody patientId={patientId} />
     </PopulationGate>
   );

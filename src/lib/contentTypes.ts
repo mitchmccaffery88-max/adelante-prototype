@@ -25,7 +25,7 @@ import {
   type RecoveryLesson,
   type RecoveryModule,
 } from "@/lib/recovery";
-import { POPULATION_LABEL, type PopulationTrack } from "@/lib/population";
+import { CONTENT_AUDIENCES } from "@/lib/contentAudience";
 import {
   RESOURCE_CATEGORIES,
   SEED_RESOURCES,
@@ -51,7 +51,9 @@ export type ContentFieldKind =
   | "stages"
   | "toggle"
   | "exercise"
-  | "curriculum";
+  | "curriculum"
+  /** "Who it's for" checkbox group (ContentAudience values; none = everyone). */
+  | "audiences";
 
 export interface ContentField {
   /** Dotted path into the body, e.g. `toolFlow.warningSigns`. */
@@ -419,7 +421,7 @@ export const LIBRARY_LESSON_TYPE: ContentTypeDescriptor = {
   label: "Library lesson",
   labelPlural: "Library lessons",
   publishEffect:
-    "Publishing puts this lesson in the patient Library immediately, inside its category, subject to the same population gate every other lesson uses.",
+    "Publishing puts this lesson in the patient Library immediately, inside its category, subject to the same “Who it's for” audiences every other lesson uses.",
   fields: [...LIBRARY_FIELDS, ...PHASE_D_FIELDS],
   fieldsFor: () => [libraryCategoryField(), ...LIBRARY_FIELDS.slice(1), ...PHASE_D_FIELDS],
   baselineIds: () => LIBRARY_ITEMS.map((i) => i.id),
@@ -770,14 +772,8 @@ export const LIBRARY_CATEGORY_TYPE: ContentTypeDescriptor = {
 };
 
 // ---------------------------------------------------------------------------
-// §Recovery module — the CONTAINER, with its real population gate
+// §Recovery module — the CONTAINER, with its "Who it's for" audiences
 // ---------------------------------------------------------------------------
-
-const POPULATION_GATE_VALUES: PopulationTrack[] = [
-  "pre_release_ji",
-  "post_release_ji",
-  "general_population",
-];
 
 const MODULE_FIELDS: ContentField[] = [
   { key: "name", label: "Module name", kind: "text", required: true },
@@ -804,10 +800,10 @@ const MODULE_FIELDS: ContentField[] = [
     help: "Lower numbers come first. This number is also shown to patients as the module number.",
   },
   {
-    key: "populations",
-    label: "Population gate",
-    kind: "list",
-    help: `Leave empty to show this module to everyone. Otherwise list tracks: ${POPULATION_GATE_VALUES.join(", ")}.`,
+    key: "audiences",
+    label: "Who it's for",
+    kind: "audiences",
+    help: "Leave all unchecked for everyone. A person sees this when any checked group matches them.",
   },
 ];
 
@@ -816,7 +812,7 @@ export const RECOVERY_MODULE_TYPE: ContentTypeDescriptor = {
   label: "Recovery module",
   labelPlural: "Recovery modules",
   publishEffect:
-    "Publishing adds this module to the patient Recovery Journey immediately, subject to its population gate, and makes it selectable when authoring a recovery lesson.",
+    "Publishing adds this module to the patient Recovery Journey immediately, subject to its “Who it's for” audiences, and makes it selectable when authoring a recovery lesson.",
   fields: MODULE_FIELDS,
   baselineIds: () => RECOVERY_MODULES.map((m) => m.id),
   baselineBody: (id) => {
@@ -830,20 +826,20 @@ export const RECOVERY_MODULE_TYPE: ContentTypeDescriptor = {
     subtitle: "",
     icon: "Compass",
     order: (liveRecoveryModuleList().at(-1)?.order ?? 0) + 1,
-    populations: [],
+    audiences: [],
   }),
   titleOf: (b) => str(b, "name") || "(unnamed module)",
   validate: (b) => {
     const errors = [...requireText(b, MODULE_FIELDS), ...validateIconName(b)];
-    // A gate that names a track the population resolver cannot produce would
-    // hide the module from everyone, silently. Refuse it.
-    const bad = list(b, "populations").filter(
-      (p) => !POPULATION_GATE_VALUES.includes(p as PopulationTrack),
-    );
+    // An audience the resolver cannot produce would hide the module silently.
+    const bad = list(b, "audiences").filter((a) => !CONTENT_AUDIENCES.some((x) => x.id === a));
+    // A retired `populations` gate on an older body is still checked, so a
+    // value the resolver never produced is refused rather than silently ignored.
+    const legacy = list(b, "populations").filter((p) => !["pre_release_ji", "post_release_ji", "general_population"].includes(p));
+    if (legacy.length > 0)
+      errors.push(`Not a real population track: ${legacy.join(", ")}. Use "Who it's for" instead.`);
     if (bad.length > 0)
-      errors.push(
-        `Not a real population track: ${bad.join(", ")}. Use ${POPULATION_GATE_VALUES.map((p) => `${p} (${POPULATION_LABEL[p]})`).join(", ")}.`,
-      );
+      errors.push(`Not a real audience: ${bad.join(", ")}. Use ${CONTENT_AUDIENCES.map((a) => `${a.id} (${a.label})`).join(", ")}.`);
     return errors;
   },
 };
@@ -880,7 +876,7 @@ export function contentType(typeId: ContentTypeId): ContentTypeDescriptor {
 export function descriptorFields(d: ContentTypeDescriptor): ContentField[] {
   const fields = d.fieldsFor ? d.fieldsFor() : d.fields;
   const extra: ContentField[] = [];
-  if (["library_lesson", "recovery_lesson"].includes(d.typeId)) extra.push({ key: "populations", label: "Population gates", kind: "list" }, { key: "part2Sensitive", label: "Part 2 sensitive", kind: "toggle" }, ...["title", "problem", "learnTitle", "learnBody", "action", "toolkitLabel"].map((key) => ({ key: `es.${key}`, label: `Spanish ${key} (Draft)`, kind: "textarea" as const })));
+  if (["library_lesson", "recovery_lesson"].includes(d.typeId)) extra.push({ key: "audiences", label: "Who it's for", kind: "audiences", help: "Leave all unchecked for everyone. A person sees this when any checked group matches them." }, { key: "part2Sensitive", label: "Part 2 sensitive", kind: "toggle" }, ...["title", "problem", "learnTitle", "learnBody", "action", "toolkitLabel"].map((key) => ({ key: `es.${key}`, label: `Spanish ${key} (Draft)`, kind: "textarea" as const })));
   if (d.typeId === "recovery_module") extra.push({ key: "reentryFocus", label: "Reentry focus", kind: "toggle" });
   return [...fields, ...extra];
 }

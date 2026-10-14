@@ -4,11 +4,11 @@ import { AUTHORED_FIRST_DAYS_OUT_LESSONS } from "./recovery.firstDaysOut.authore
 import { getContentEntry, seedPublishedContent, publishedContentOfType, type ContentBody } from "./contentPublishing";
 import type { ContentField, ContentTypeDescriptor } from "./contentTypes";
 export interface CurriculumStep { type: "library_lesson" | "recovery_lesson" | "recovery_module" | "exercise"; id: string; required: boolean }
-export interface Curriculum { id: string; title: string; description: string; unlock: "open" | "sequential"; steps: CurriculumStep[]; populations?: string[]; positiveSignal?: string; justiceInvolved?: boolean; reentryStage?: string; part2Sensitive?: boolean; es?: { title: string; description: string }; meta?: ContentBody }
+export interface Curriculum { id: string; title: string; description: string; unlock: "open" | "sequential"; steps: CurriculumStep[]; audiences?: import("./contentAudience").ContentAudience[]; /** Retired; converted on read. */ populations?: string[]; positiveSignal?: string; /** Retired; converted on read. */ justiceInvolved?: boolean; reentryStage?: string; part2Sensitive?: boolean; es?: { title: string; description: string }; meta?: ContentBody }
 const common: ContentField[] = [
   { key: "title", label: "Title", kind: "text", required: true },
   { key: "es.title", label: "Spanish title (Draft)", kind: "text" },
-  { key: "populations", label: "Population gates", kind: "list" },
+  { key: "audiences", label: "Who it's for", kind: "audiences", help: "Leave all unchecked for everyone. A person sees this when any checked group matches them." },
   { key: "part2Sensitive", label: "Part 2 sensitive", kind: "toggle" },
 ];
 const exerciseKinds = ["timer", "breathing", "checklist", "worksheet", "mapper", "calculator", "scale"];
@@ -31,7 +31,7 @@ export const EXERCISE_CONTENT_TYPE: ContentTypeDescriptor = {
 };
 export const JOURNEY_CONTENT_TYPE: ContentTypeDescriptor = {
   typeId: "journey", label: "Journey", labelPlural: "Journeys", publishEffect: "Published ordered curriculum can be assigned to a patient.",
-  fields: [...common, { key: "description", label: "Description", kind: "textarea", required: true }, { key: "es.description", label: "Spanish description (Draft)", kind: "textarea" }, { key: "unlock", label: "Unlock rule", kind: "select", options: [{ value: "open", label: "Open" }, { value: "sequential", label: "Sequential" }] }, { key: "justiceInvolved", label: "Justice-involved only", kind: "toggle" }, { key: "positiveSignal", label: "Positive-signal gate", kind: "text" }, { key: "meta.sdoh", label: "What this addresses — needs (Draft tags)", kind: "list" }, { key: "meta.stages", label: "What this addresses — reentry stages (Draft tags)", kind: "list" }, { key: "meta.flags", label: "What this addresses — care-plan flags: justice_involved, sud (Draft; adds the Journey automatically)", kind: "list" }, { key: "reentryStage", label: "Reentry stage", kind: "select", options: ["pre_release", "first_30", "days_30_90", "after_90"].map((value) => ({ value, label: value })) }, { key: "steps", label: "Ordered steps", kind: "curriculum" }],
+  fields: [...common, { key: "description", label: "Description", kind: "textarea", required: true }, { key: "es.description", label: "Spanish description (Draft)", kind: "textarea" }, { key: "unlock", label: "Unlock rule", kind: "select", options: [{ value: "open", label: "Open" }, { value: "sequential", label: "Sequential" }] }, { key: "positiveSignal", label: "Positive-signal gate", kind: "text" }, { key: "meta.sdoh", label: "What this addresses — needs (Draft tags)", kind: "list" }, { key: "meta.stages", label: "What this addresses — reentry stages (Draft tags)", kind: "list" }, { key: "meta.flags", label: "What this addresses — care-plan flags: justice_involved, sud (Draft; adds the Journey automatically)", kind: "list" }, { key: "reentryStage", label: "Reentry stage", kind: "select", options: ["first_30", "days_30_90", "after_90"].map((value) => ({ value, label: value })) }, { key: "steps", label: "Ordered steps", kind: "curriculum" }],
   baselineIds: () => [], baselineBody: () => undefined, emptyBody: () => ({ title: "", description: "", unlock: "sequential", steps: [] }), titleOf: (b) => String(b.title || "Untitled Journey"),
   validate: (b) => {
     const steps = Array.isArray(b.steps) ? b.steps as CurriculumStep[] : [];
@@ -60,8 +60,8 @@ export function initializePracticeContent() {
   const libSteps = (cat: string): CurriculumStep[] => LIBRARY_ITEMS.filter((i) => i.categoryId === cat).map((i) => ({ type: "library_lesson" as const, id: i.id, required: true }));
   const cat = (id: string) => LIBRARY_CATEGORIES.find((c) => c.id === id);
   journeys.push(
-    { id: "starting-strong-curriculum", title: cat("starting-strong")?.name ?? "Starting Strong", description: cat("starting-strong")?.desc ?? "", unlock: "open", justiceInvolved: true, part2Sensitive: false, steps: libSteps("starting-strong"), es: { title: "Empezar con fuerza", description: "Borrador — Los primeros pasos: estabilizar el día, el cuerpo y la mente." } },
-    { id: "back-on-feet-curriculum", title: cat("back-on-feet")?.name ?? "Back on My Feet", description: cat("back-on-feet")?.desc ?? "", unlock: "open", justiceInvolved: true, part2Sensitive: false, steps: libSteps("back-on-feet"), es: { title: "De nuevo en pie", description: "Borrador — Vivienda, trabajo, dinero y comida después de salir." } },
+    { id: "starting-strong-curriculum", title: cat("starting-strong")?.name ?? "Starting Strong", description: cat("starting-strong")?.desc ?? "", unlock: "open", audiences: ["justice_involved"], part2Sensitive: false, steps: libSteps("starting-strong"), es: { title: "Empezar con fuerza", description: "Borrador — Los primeros pasos: estabilizar el día, el cuerpo y la mente." } },
+    { id: "back-on-feet-curriculum", title: cat("back-on-feet")?.name ?? "Back on My Feet", description: cat("back-on-feet")?.desc ?? "", unlock: "open", audiences: ["justice_involved"], part2Sensitive: false, steps: libSteps("back-on-feet"), es: { title: "De nuevo en pie", description: "Borrador — Vivienda, trabajo, dinero y comida después de salir." } },
   );
   const TAGS: Record<string, { flags: ("justice_involved" | "sud")[]; pathways: string[]; pathwayOrder: number; part2: boolean }> = {
     "starting-strong-curriculum": { flags: ["justice_involved"], pathways: ["reentry"], pathwayOrder: 1, part2: false },
