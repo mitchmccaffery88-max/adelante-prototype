@@ -1,10 +1,12 @@
 # Roadmap
 
 ## Phase 3 Part A — Safety-only red (14 Oct)
-- [ ] Apply only inventory CHANGE / non-safety MIXED presentation treatments; preserve KEEP exceptions and member boundaries
-- [ ] Final inventory scan and complete file/location report
-- [ ] Full units, then every browser spec/axe; conditional single warm timeout rerun
-- [ ] Settled light contrast and requested 1280px/390px screenshots; report all failures
+
+Report: `docs/phase3-red-cleanup-report.md` — build green; 2,568 units; final browsers 78/79 (English public language control duplicate-selector failure), previous complete run 79/79; settled contrast minimum 5.51:1.
+- [x] Apply only inventory CHANGE / non-safety MIXED presentation treatments; preserve KEEP exceptions and member boundaries
+- [x] Final inventory scan and complete file/location report
+- [x] Full units, then every browser spec/axe; conditional single warm timeout rerun
+- [x] Settled light contrast and requested 1280px/390px screenshots; report all failures
 
 ## Staff StatusChip — batch 2b-2 (13 Oct)
 - [x] Operations-only status chips and two authorized care-work corrections; preserve exceptions, member views and test contracts
