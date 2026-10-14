@@ -17,7 +17,6 @@ import {
 } from "./i18n.recovery";
 import { benefitsEn, benefitsEs } from "./i18n.benefits";
 
-import { Button } from "@/components/ui/button";
 import { playerEn, playerEs } from "./i18n.player";
 import { websiteEn, websiteEs } from "./i18n.website";
 
