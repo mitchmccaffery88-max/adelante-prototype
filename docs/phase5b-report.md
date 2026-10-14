@@ -102,3 +102,12 @@ cfProxyMode.spec.ts and consentWorkflow.spec.ts both ran twice before 5b edits: 
 - `src/routes/safety-plan.tsx`
 - `src/routes/start.other-help.tsx`
 - `src/routes/start.reconnect.tsx`
+
+## 5c — final Phase 5 cleanup (Oct 14)
+
+- Content preview language: the local EN / "ES · Draft" buttons are replaced by a "Preview in Spanish" switch (`ContentPreviewLanguage`, `src/lib/i18n.tsx`). Local state only; html lang stays en; no member preference write.
+- Approved test line updates only: `e2e/staffContent.spec.ts:16–17` (switch + aria-checked), `e2e/advocateOnboardingActive.spec.ts:40` and `e2e/group2Pathways.spec.ts:90` (accept "Añadir otro contacto"), `e2e/publicWebsite.spec.ts:70` ("Sobre ti" in Spanish).
+- cfProxyMode.spec.ts:75: not reproducible after 5b — passed 2/2 with one worker, 2/2 with three workers, and in the full suite. No app change. The 5b failures happened while the dev server was recompiling the ~80 files 5b changed (cold module transforms on the first /case-manager → /pre-release entry), not from a render loop; the pre-release path does not use the shared dialog/sheet close labels until a dialog opens.
+- adelBrief.spec.ts:46: two reruns opened in 147–664ms (limit 1,500ms). The 1,536ms reading was load variance; no app change.
+- Results: build green; units 308 files / 2,570 passed; browsers 79/79 (incl. axe) in 5.9m.
+- Files changed: src/lib/i18n.tsx, e2e/staffContent.spec.ts, e2e/advocateOnboardingActive.spec.ts, e2e/group2Pathways.spec.ts, e2e/publicWebsite.spec.ts, docs/phase5b-report.md, roadmap.md.
