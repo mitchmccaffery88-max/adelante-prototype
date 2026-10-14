@@ -4,7 +4,7 @@ import {
   __resetContent,
   getContentEntry,
   listContent,
-  publishContent,
+  seedPublishedContent,
   saveContentDraft,
 } from "@/lib/contentPublishing";
 import { LIBRARY_LESSON_TYPE } from "@/lib/contentTypes";
@@ -28,8 +28,7 @@ const body = (id: string, extra: Record<string, unknown> = {}) => ({ ...LIBRARY_
 
 function seedStore() {
   saveContentDraft({ typeId: "library_lesson", id: "lib_a", body: body("lib_a"), actor: AUTHOR });
-  saveContentDraft({ typeId: "library_lesson", id: "lib_b", body: body("lib_b"), actor: CATHY });
-  publishContent({ typeId: "library_lesson", id: "lib_b", actor: CATHY, note: "ok" });
+  seedPublishedContent({ typeId: "library_lesson", id: "lib_b", body: body("lib_b"), actor: CATHY, atISO: "2026-10-01T10:00:00.000Z" });
   saveContentDraft({ typeId: "library_lesson", id: "lib_p2", body: body("lib_p2", { part2Sensitive: true }), actor: PMHNP });
 }
 
@@ -59,22 +58,25 @@ describe("content backup", () => {
     const old = file(CATHY);
     saveContentDraft({ typeId: "library_lesson", id: "lib_a", body: body("lib_a", { title: "v2" }), actor: CATHY });
     const newer = file(CATHY);
+    const only = (f: ContentBackupFile) => ({ ...f, entries: f.entries.filter((e) => e.id === "lib_a") });
+    void only;
     const p1 = planContentRestore(newer, CATHY);
-    expect(p1.ok && p1.counts.unchanged).toBe(1);
+    expect(p1.ok && p1.items.find((i) => i.id === "lib_a")!.outcome).toBe("unchanged");
     const p2 = planContentRestore(old, CATHY);
-    expect(p2.ok && p2.items[0]!.outcome).toBe("skipped");
-    expect(p2.ok && p2.items[0]!.reason).toMatch(/newer version/);
+    const a2 = p2.ok ? p2.items.find((i) => i.id === "lib_a")! : undefined;
+    expect(a2!.outcome).toBe("skipped");
+    expect(a2!.reason).toMatch(/newer version/);
     __resetContent();
     saveContentDraft({ typeId: "library_lesson", id: "lib_a", body: body("lib_a"), actor: CATHY });
     // Store is at rev 1 matching `old`; `newer` is rev 2 → updated.
     const store = getContentEntry("library_lesson", "lib_a")!;
     const forkedNewer = { ...newer, entries: newer.entries.map((e) => ({ ...e, revisions: [store.revisions[0]!, { ...e.revisions[1]!, rev: 2 }] })) };
     const p3 = planContentRestore(forkedNewer, CATHY);
-    expect(p3.ok && p3.items[0]!.outcome).toBe("updated");
+    expect(p3.ok && p3.items.find((i) => i.id === "lib_a")!.outcome).toBe("updated");
     // A fork: same rev, different content.
     const fork = { ...old, entries: old.entries.map((e) => ({ ...e, body: { ...e.body, title: "fork" } })) };
     const p4 = planContentRestore(fork, CATHY);
-    expect(p4.ok && p4.items[0]!.reason).toBe("Edited in two places; not replaced");
+    expect(p4.ok && p4.items.find((i) => i.id === "lib_a")!.reason).toBe("Edited in two places; not replaced");
   });
 
   it("role gates: billing blocked, authors cannot load published state, Part 2 filtered", () => {
