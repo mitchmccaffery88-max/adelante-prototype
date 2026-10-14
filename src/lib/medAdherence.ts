@@ -112,7 +112,12 @@ function row(patientId: string): Row {
 
 const MAT_PATTERN = /buprenorphine|suboxone|zubsolv|sublocade|methadone|naltrexone|vivitrol/;
 
-/** True when a real MedOrder is a MAT/MOUD medication. */
+/**
+ * True when a real MedOrder is a MAT/MOUD medication.
+ * Note: includes naltrexone/Vivitrol, which is broader than OUD-specific MOUD
+ * (also used for alcohol use disorder). Flagged for Dr. Bagga's review; kept
+ * unchanged until clinical sign-off.
+ */
 export function isMatOrder(order: MedOrder): boolean {
   const name = [order.drugName, order.productName, ...(order.ingredientNames ?? [])]
     .filter(Boolean)
