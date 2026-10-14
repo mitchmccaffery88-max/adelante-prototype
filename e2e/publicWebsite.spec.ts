@@ -67,7 +67,7 @@ for (const lang of ["en", "es"] as const) {
     await expect(page).toHaveURL(/\/about#partners$/); await anchorAligned(page, "partners");
     await page.getByTestId("website-footer").getByRole("link", { name: d.websiteReferral, exact: true }).click();
     await expect(page).toHaveURL(/\/referral$/);
-    await expect(page.getByRole("heading", { name: "About you" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: lang === "es" ? "Sobre ti" : "About you" })).toBeVisible();
   });
 }
 
