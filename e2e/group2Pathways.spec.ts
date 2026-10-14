@@ -87,7 +87,7 @@ for (const lang of ["en", "es"] as const) {
     }
     await expect(contacts).toBeVisible();
     const rows = page.getByTestId("emergency-contact-row");
-    if ((await rows.count()) < 2) await page.getByRole("button", { name: /Add another contact/ }).click();
+    if ((await rows.count()) < 2) await page.getByRole("button", { name: /Add another contact|Añadir otro contacto/ }).click();
     const fill = async (i: number, name: string, phone: string, rel: string) => {
       await page.getByLabel(`Name — contact ${i}`).fill(name);
       await page.getByLabel(`Phone — contact ${i}`).fill(phone);

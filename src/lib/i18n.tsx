@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { Switch } from "@/components/ui/switch";
 import { useEhr } from "@/lib/ehr";
 import {
   LANG_STORAGE_KEY,
@@ -953,10 +954,11 @@ export function EnglishSurface({ children }: { children: ReactNode }) {
 export function ContentPreviewLanguage({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("en");
   return <I18nCtx.Provider value={{ lang, setLang, t: (k) => dict[lang][k] }}>
-    <div role="group" aria-label="Preview language" className="mb-3 flex gap-2">
-      <Button variant="outline" type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</Button>
-      <Button variant="outline" type="button" aria-pressed={lang === "es"} onClick={() => setLang("es")}>ES · Draft</Button>
-    </div>{children}
+    <label className="mb-3 flex items-center gap-3 text-base">
+      <Switch checked={lang === "es"} onCheckedChange={(on) => setLang(on ? "es" : "en")} aria-label="Preview in Spanish" />
+      <span>Preview in Spanish</span>{lang === "es" ? <span className="text-sm text-muted-foreground">Draft</span> : null}
+    </label>
+    {children}
   </I18nCtx.Provider>;
 }
 

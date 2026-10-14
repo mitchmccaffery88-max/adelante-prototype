@@ -13,8 +13,8 @@ test("staff library privately previews actual players, manages exercises and aud
  const preview = page.getByTestId("private-content-preview"); await expect(preview).toContainText("Preview — nothing is saved");
  await expect(preview.locator(".patient-theme").first()).toBeVisible();
  await expect(preview.getByText("Read aloud (Simulated voice)").first()).toBeVisible();
- await preview.getByRole("button", { name: "ES · Draft", exact: true }).click();
- await expect(preview.getByRole("button", { name: "ES · Draft", exact: true })).toHaveAttribute("aria-pressed", "true");
+ await preview.getByRole("switch", { name: "Preview in Spanish", exact: true }).click();
+ await expect(preview.getByRole("switch", { name: "Preview in Spanish", exact: true })).toHaveAttribute("aria-checked", "true");
  await preview.screenshot({ path: "/tmp/browser/staff-content-preview.png" });
  await page.keyboard.press("Escape");
  const after = await page.evaluate(async () => { const app = (window as any).__adelante; const { eng } = await app.content(); return JSON.stringify(eng.getEngagement(app.AdelanteEHR.getCurrentPatientId())); });

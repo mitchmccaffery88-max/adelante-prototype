@@ -37,7 +37,7 @@ async function patientSteps(page: Page, lang: "en" | "es") {
   const contacts = page.getByText(/Emergency contacts|Contactos de emergencia/).first();
   for (let i = 0; i < 12 && !(await contacts.isVisible()); i++) await page.getByRole("button", { name: /^(Next|Continue|Save & continue|Siguiente|Continuar|Guardar)/ }).last().click();
   await expect(contacts).toBeVisible();
-  if ((await page.getByTestId("emergency-contact-row").count()) < 2) await page.getByRole("button", { name: /Add another contact/ }).click();
+  if ((await page.getByTestId("emergency-contact-row").count()) < 2) await page.getByRole("button", { name: /Add another contact|Añadir otro contacto/ }).click();
   const fill = async (i: number, name: string, phone: string, rel: string) => {
     await page.getByLabel(`Name — contact ${i}`).fill(name);
     await page.getByLabel(`Phone — contact ${i}`).fill(phone);
