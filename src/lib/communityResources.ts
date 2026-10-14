@@ -774,3 +774,44 @@ function applyBaselineVerification(): void {
 }
 
 applyRecordedVerifications();
+
+// §Content backup — verification facts travel with "Download my changes".
+export interface ResourceVerificationExport {
+  resourceId: string;
+  verification: ResourceVerification;
+  status: VerificationStatus;
+  verified: boolean;
+  placeholder?: boolean;
+  facts: Pick<CommunityResource, "name" | "address" | "phone" | "hours" | "description" | "website">;
+}
+export function exportResourceVerifications(): ResourceVerificationExport[] {
+  return [...resources.values()]
+    .filter((r) => r.verification)
+    .map((r) => structuredClone({
+      resourceId: r.id,
+      verification: r.verification!,
+      status: r.status,
+      verified: r.verified,
+      placeholder: r.placeholder,
+      facts: { name: r.name, address: r.address, phone: r.phone, hours: r.hours, description: r.description, website: r.website },
+    }));
+}
+/** Newer-wins on verifiedAt; unknown resource ids are skipped. Returns how many were applied. */
+export function restoreResourceVerifications(list: ResourceVerificationExport[]): { applied: number; skipped: { resourceId: string; reason: string }[] } {
+  let applied = 0;
+  const skipped: { resourceId: string; reason: string }[] = [];
+  for (const v of list) {
+    const r = resources.get(v.resourceId);
+    if (!r) { skipped.push({ resourceId: v.resourceId, reason: "Unknown resource" }); continue; }
+    if (r.verification && r.verification.verifiedAt >= v.verification.verifiedAt) continue;
+    Object.assign(r, structuredClone(v.facts), {
+      verification: structuredClone(v.verification),
+      status: v.status,
+      verified: v.verified,
+      ...(v.placeholder !== undefined ? { placeholder: v.placeholder } : {}),
+    });
+    applied += 1;
+  }
+  if (applied) notify();
+  return { applied, skipped };
+}

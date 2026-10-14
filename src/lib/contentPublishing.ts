@@ -654,3 +654,26 @@ export function markContentReviewed(input: { typeId: ContentTypeId; ids: string[
   }
   notify(); return { ok: true, entry: clone(records[0]!) };
 }
+
+// ---------------------------------------------------------------------------
+// §Content backup — "Download / Load my changes". The plan, validation and role
+// rules live in `contentBackup.ts`; this is the one verbatim writer it uses.
+// ---------------------------------------------------------------------------
+
+/**
+ * Write already-validated entries back EXACTLY as given: revision history,
+ * actors and timestamps verbatim. Never appends, renumbers or stamps "now".
+ * Only `restoreContentEntries` (contentBackup.ts) calls this, after its
+ * conflict and role checks.
+ */
+export function writeRestoredContentEntries(list: ContentEntry[]): void {
+  for (const e of list) entries.set(key(e.typeId, e.id), clone(e));
+  if (list.length) notify();
+}
+
+/** Revisions recorded after `sinceISO` (all of them when never downloaded). */
+export function contentChangesSince(sinceISO?: string | null): number {
+  let n = 0;
+  for (const e of entries.values()) for (const r of e.revisions) if (!sinceISO || r.at > sinceISO) n += 1;
+  return n;
+}
