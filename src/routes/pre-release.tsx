@@ -63,6 +63,7 @@ import { PreReleaseTimelineCard } from "@/components/prerelease/PreReleaseTimeli
 import { preReleaseTimeline, visiblePreReleaseEpisodes } from "@/lib/preReleaseTimeline";
 import { PreReleaseScreenerDialog } from "@/components/prerelease/PreReleaseScreenerDialog";
 import { MatOrderCard } from "@/components/prerelease/MatOrderCard";
+import { MoudContinuityPanel } from "@/components/prerelease/MoudContinuityPanel";
 import { PreReleaseAppointmentCard } from "@/components/prerelease/PreReleaseAppointmentCard";
 import { screenerByKey } from "@/lib/screeners";
 import { EmptyState } from "@/components/EmptyState";
@@ -611,6 +612,8 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
           </p>
         )}
       </Card>
+
+      <MoudContinuityPanel patientId={episode.patientId} />
 
       {PRE_RELEASE_FORM_CATEGORIES.map((cat) => (
         cat.key === "capacity_authority" ? (

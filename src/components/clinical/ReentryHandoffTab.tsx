@@ -14,6 +14,7 @@ import { useActingStaff } from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/EmptyState";
+import { MoudContinuityPanel } from "@/components/prerelease/MoudContinuityPanel";
 import { KeyRound, Pill, Route as RouteIcon } from "lucide-react";
 
 const KIND_LABEL: Record<string, string> = {
@@ -57,6 +58,8 @@ export function ReentryHandoffTab({ patientId }: { patientId: string }) {
 
   if (!plan) {
     return (
+      <div className="space-y-3">
+      <MoudContinuityPanel patientId={patientId} />
       <EmptyState
         icon={RouteIcon}
         title="No reentry care plan"
@@ -66,6 +69,7 @@ export function ReentryHandoffTab({ patientId }: { patientId: string }) {
             : "This member has no pre-release episode."
         }
       />
+      </div>
     );
   }
 
@@ -77,6 +81,8 @@ export function ReentryHandoffTab({ patientId }: { patientId: string }) {
         </Badge>
         <span className="text-xs text-muted-foreground">{decision.reason}</span>
       </div>
+
+      <MoudContinuityPanel patientId={patientId} />
 
       {plan.enrollmentCode && (
         <Card className="p-3">
