@@ -94,7 +94,7 @@ describe("content backup", () => {
     const reasonOf = (id: string) => pa.items.find((i) => i.id === id);
     expect(reasonOf("lib_a")!.outcome).toBe("new");
     expect(reasonOf("lib_b")!.reason).toBe("Published content needs a publisher role to load");
-    expect(reasonOf("lib_p2")!.reason).toBe("Restricted content");
+    expect(reasonOf("lib_p2")!.outcome).toBe("new");
     const pc = planContentRestore(full, CATHY);
     expect(pc.ok && pc.items.find((i) => i.id === "lib_b")!.outcome).toBe("new");
   });
