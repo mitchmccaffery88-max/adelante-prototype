@@ -356,3 +356,8 @@ Validation: build OK; 2,561 units and 79/79 browsers (axe/Back to top) passed; 2
 - [x] K1 chartAccess comment · [x] K2 event + routing tests (notificationEvents.test.ts)
 - [x] P1–P4, A1–A4, C2 with unit tests (group1Profile.test.ts)
 - [ ] Browser walkthrough spec for Group 1 flows (not yet written)
+
+## Phase 3 Part B — MOUD continuity (13 Oct)
+- [x] Release-cycle continuity record, two registry actions, shared panel + side drawer in pre-release episode detail and chart Reentry hand-off; 7 new unit tests
+- [ ] Part A red cleanup (next build)
+- [ ] Persistent Demo seed of a person with MOUD + release episode (not added; would change shared Luis demo flows)

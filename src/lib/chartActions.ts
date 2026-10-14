@@ -57,9 +57,10 @@ import { canAuthorContent, canPublishContent, saveContentDraft, submitContentFor
 import { sendForms, resendCurrent, buildIntakePacket, createFormDraft, editForm, submitForLegalReview, approveForm, publishForm, revokeForm, signChecked, declineForm, setChecked } from "@/lib/consentForms";
 import { RESTRICT_ROLES, COMPLIANCE_ROLES, roleHasChartEntry, setRecordRestricted, openRestrictedChart, acknowledgeRestrictedOpen } from "@/lib/chartAccess";
 import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";
+import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/moudContinuity";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-08.content-player";
+export const REGISTRY_VERSION = "2026-10-13.moud-continuity";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -180,6 +181,13 @@ export const CHART_ACTIONS: ChartAction[] = [
     }]),
     allowed: ({ role }) => RESOURCE_VERIFIER_ROLES.includes(role) ? ok() : hide("This role cannot publish a community resource."),
   },
+  // §Phase 3 Part B — release-cycle continuity plan / confirmation. Person-level writer check.
+  { id: "moud_plan_record", label: { en: "Record continuity plan", es: "Registrar plan de continuidad" }, group: "care", menu: false,
+    check: "moudWriterCheck", store: refs(["recordMoudPlan", recordMoudPlan]),
+    allowed: (a, p) => { if (!p) return hide("Choose a patient first."); const c = moudWriterCheck(a, p.id); return c.ok ? ok() : hide(c.reason); } },
+  { id: "moud_continuity_confirm", label: { en: "Confirm continuity", es: "Confirmar continuidad" }, group: "care", menu: false,
+    check: "moudWriterCheck", store: refs(["confirmMoudContinuity", confirmMoudContinuity]),
+    allowed: (a, p) => { if (!p) return hide("Choose a patient first."); const c = moudWriterCheck(a, p.id); return c.ok ? ok() : hide(c.reason); } },
   {
     id: "progress_note",
     label: { en: "Progress note", es: "Nota de progreso" },
