@@ -1,155 +1,113 @@
-# Phase 2b — Staff/Admin StatusChip Review
+# Phase 5 — Copy, Voice and Spanish
 
-Review only; no app/test edits. Chips use existing labels and lang="en"; counts/primitives/members/exceptions unchanged.
+Review only; application and tests unchanged. Preserve Mitch’s English website copy verbatim, clinical/legal sign-off, Part 2 boundaries and phase-6 emotion assets.
 
-**Knowledge limitation:** lookup returned architecture rules, not status tables. Mappings follow Mitch’s explicit rules; ambiguous statuses need table confirmation.
+**Audit limitation:** independent reviews returned contradictory counts and included identifiers/staff-only components. The confirmed findings below are useful, but the missing-Spanish and icon inventories are not yet exhaustive. Complete those inventories before approving a build file list; do not use the unreliable “32 strings / 62 screens” estimates.
 
-## 1. Batch 2b-1 — Care Work
+References: `C/` = src/components, `L/` = src/lib, `R/` = src/routes. Counts below are source text literals, not rendered instances.
 
-Paths below are exact; `C/` means `src/components/`, `R/` means `src/routes/`.
+## 1. Voice batches
 
-**Ownership:** yourturn for existing assignee/eligible role; team for others. Preserve record word; name actual owner beside it. No invented names or routing changes.
+### Submit — 22 ordinary-copy literals / 21 lines
 
-| Exact files | Status → state |
-|---|---|
-| `C/clinical/RecordTabs.tsx` | Notes: Draft/Declined → yourturn; Awaiting cosign → yourturn for actual cosigner, team otherwise; Signed/Cosigned → done. Handoffs: pending_review →  yourturn/team; acknowledged → done. SDOH: identified/not_completed → yourturn for owner, team otherwise; sent/accepted/scheduled → team; completed → done. Refill variants unconfirmed. |
-| `R/cosign-inbox.tsx` | Awaiting cosign/Awaiting LPHA cosign →  yourturn/team ; Needs a supervisor/not billable → yourturn. AI-draft stays a modifier. |
-| `C/clinical/AsamPanel.tsx` | Draft/Co-signature declined — back to draft → author’s yourturn, others team; Awaiting LPHA co-signature → cosigner’s yourturn, others team; Signed → done.  |
-| `C/clinical/NoteRevisionPanel.tsx` | Voided → closed; Corrected → done; Void pending approval → approver’s yourturn, others team. Late entry unchanged. |
-| `C/clinical/OrdersTab.tsx`, `C/CarePlanCard.tsx` (staff medication branch) | Draft → signing clinician’s yourturn, others team; signed/Active → done; Held → upnext; Discontinued → closed; Completed → done. Attributes unchanged. |
-| `C/clinical/MedReconTab.tsx` | Completed reconciliation → done; unfinished reconciliation → reviewer’s yourturn, others team. Decisions unconfirmed. |
-| `C/nursing/NursingSection.tsx` | Awaiting nurse review → nurse’s yourturn, others team; Verified by/Given by → done; Returned by → ordering/reviewing owner’s yourturn, others team; dose cosign pending → cosigner’s yourturn, others team. Metadata unchanged; outpatient review ungated. |
-| `C/chart/LabsAndMeasures.tsx` | Result pending → team; Resulted/Completed → done; Waiting on patient → team; Missed questionnaire → owner yourturn, others team. Placeholder labels unchanged. |
-| `C/chart/ChartDocumentsList.tsx`, `C/documents/DocumentVerifyQueue.tsx` | Verified → done; Rejected → yourturn for correction owner; Pending review → reviewer’s yourturn, others team.  |
-| `C/scheduling/VisitActions.tsx` | Staff-only: Checked in → treating clinician’s yourturn, others team; Attended → done; No-show → yourturn; Cancelled/Late cancel/Rescheduled → closed.  |
-| `R/group-sessions.tsx`, `C/groups/GroupJoinRequestsQueue.tsx` | Cancelled/Moved → closed; Attendance taken/Notes complete → done; Attendance not taken/notes owed → owner yourturn, others team. Join pending → approver’s yourturn, others team; approved → done; declined → closed. Delivery sent → done; failed/missing configuration → yourturn. Billing tags unchanged. |
-| `C/consent/ConsentFormsPanel.tsx` | Sent/Viewed → team (patient signature outstanding); Signed → done; Declined → closed; Expired → sending staff yourturn, others team.  |
-| `C/ReferralTimelineDrawer.tsx`, `C/admin/ReferralTrackerCard.tsx` | Submitted → intake owner’s yourturn, others team; Contacted → team; Enrolled → done; Declined → closed. Call needed/stale → owner yourturn, others team. Open task → existing task owner’s yourturn, others team; Task closed → done.  |
-| `C/chart/BriefTab.tsx`, `C/clinical/CareEpisodesPanel.tsx`, `R/clinical-referrals.tsx` | HLOC drafted → author’s yourturn, others team; sent/accepted → team with owner; admitted → done; declined/closed → closed. Active episode → done; Discharged → closed. Readmission remains a modifier. Urgency unconfirmed. |
-| `C/inbox/InboxActionQueue.tsx`, `C/inbox/AdvocateReviewQueue.tsx`, `C/inbox/CommunityInquiryQueue.tsx` | Unclaimed/Pending review/New → eligible viewer’s yourturn, others team; claimed/Owner →  yourturn/team; Contacted → team; Done/Resolved/Task made → done. Metadata unchanged. Existing crisis-marked inquiry remains urgent. |
-| `C/tasks/TaskWorkRow.tsx`, `R/worklist.tsx` | Pending/In progress → actual owner or role yourturn, others team; Completed → done; Cancelled → closed; Missed → yourturn; Upcoming/snoozed → upnext. Priority ≠ safety.  |
-| `R/admin-coordination.tsx`, `R/case-manager.tsx` | Active → done; Frozen/Unassigned → responsible coordinator’s yourturn, others team. Coverage Active → done; Suspended/Assistance → yourturn; Other needs table confirmation. Attended → done; Missed/contact overdue → owner yourturn. Crisis → urgent; counts unchanged. |
-| `C/careplan/CarePlanEditor.tsx` | Goal met → done; closed → closed; active → owner-relative yourturn/team. Plan review due/pathway changed/flag review → reviewer’s yourturn, others team; future review → upnext. Auto-added remains provenance. |
-| `C/clinical/CrisisPanel.tsx`, `C/escalations/CrisisQueueDetails.tsx`, `R/escalations.tsx` | Active crisis/Open and crisis critical/urgent severity → urgent; Resolved → done. Noncrisis new/acknowledged → owner-relative yourturn/team; handed_off → team; overdue → yourturn, not red unless still safety-urgent.  Counts/Draft unchanged. |
-| `C/chart/ChartHeader.tsx`, `C/chart/CoverageExtras.tsx`, `C/chart/SeverityFlagsPanel.tsx`, `C/clinical/ClinicalRecordTabs.tsx` | Medi-Cal active/eligible → done; needs check/missing custody time → yourturn; possible duplicate — in review → reviewer’s yourturn, others team. Worsening/Severity change → yourturn; Improving → done. Problem Active → done; Resolved → closed. Safety exceptions unchanged. |
-| `C/hie/OutsideRecords.tsx` | Accepted follow-up/medication → done; dismissed/ignored → closed; awaiting review → reviewer’s yourturn, others team; withheld for consent/role → restricted. Banners/counts unchanged. |
-| `C/clinical/refusal/RefusalRiskTextRecord.tsx` | Reviewed → done; clinical-role restriction → restricted. Metadata/Draft unchanged. |
+C/ReferralTimelineDrawer.tsx:283; admin/ContentAdminWorkspace.tsx:540; ops/OpsActionLauncher.tsx:242; ops/OpsWorkspace.tsx:59,101; referral/ReferralSubmissionForm.tsx:524; screeners/CssrsForm.tsx:112; L/chartActions.ts:153 (EN/ES),1179; contentPublishing.ts:352; countyReporting.ts:617,707; coverageRelease.ts:73; ehr.ts:10364; R/admin-claims.tsx:471; billing.tsx:683; county-reporting.tsx:102; intake.tsx:1980,2041; referral-queue.tsx:76,98.
 
-### Items not safely table-certified
+Replace by outcome: “Send referral”, patient “Send to my team”, staff “Save answers”, “Send content for review”, “Send claim”, “Send county report (Simulated)”, “Send application / reactivation”, “Ready to send”. Commands only; method/action IDs and stored submitted states stay.
 
-- Refill review variants and “Other” coverage; HLOC urgent/emergent priority; C-SSRS risk bands (`C/screeners/CssrsStaffControl.tsx`); historical severity flags; pre-release continuity/MAT statuses in shared `CarePlanCard`.
-- `C/clinical/ProtocolsTab.tsx`: active/completed/stopped and round states exist; dormant facility UI excluded from outpatient build pending direction.
-- Episode summary/pathway/provenance/Readmission/clinical-decision/request-type labels are not necessarily workflow states.
-- `C/consent/ConsentRecordsPanel.tsx`: combined prose heading, not badge; `R/consent-audit.tsx`: event categories, not status. Unchanged.
+Related Submitted display copy: C/ReferralStatusTimeline.tsx:67; ReferralTimelineDrawer.tsx:98,158; referral/ReferralSubmissionForm.tsx:231,235,242; admin/ContentAdminWorkspace.tsx:679; admin/ReferralTrackerCard.tsx:136,203; billing/BillingStatusSummary.tsx:14; L/askAdel.ts:463; coverageRelease.ts:22; countyReporting.ts:681; i18n.tsx:232; R/admin-claims.tsx:349; reporting.tsx:598. Use “Sent” where factually true; simulation must say nothing was actually sent. Never rewrite historical records/audits.
 
-## 2. Batch 2b-2 — Operations File List and Counts
+### Overdue — 72 non-enum text candidates, plus one JSX count
 
-Counts: render positions; conditional variants count once; prose excluded.
+Components: C/DemoStateSwitcher.tsx:133; clinical/CrisisPanel.tsx:106; clinical/RecordTabs.tsx:3302,3349; coverage/CoverageAtReleasePanel.tsx:48,65; referral/ReferralChasePanel.tsx:56. Additional count: tasks/TaskQueueCard.tsx:83.
 
-| Area | Files | Sites |
-|---|---|---:|
-| Claims | `R/admin-claims.tsx`; `C/ops/OpsActionLauncher.tsx` | 4 (denied branches unchanged) |
-| Coverage | `R/eligibility-worklist.tsx`; `C/coverage/CoverageAtReleasePanel.tsx`; `C/coverage/CoveragePlansCard.tsx` | 4 |
-| Credentialing | `R/admin-credentialing.tsx` | 4 |
-| Content/forms | `C/admin/ContentBrowse.tsx`; `C/admin/ContentInventoryTable.tsx`; `C/admin/ResourceVerificationQueue.tsx`; `C/admin/ClinicalContentReviewCard.tsx`; `C/admin/RiskTextReviewPanel.tsx`; `C/admin/ConsentFormLibrary.tsx` | 7 |
-| County reporting | `R/county-reporting.tsx` | 1 |
-| Data exchange | `R/data-exchange.tsx` | 2 |
-| Admin/vendor/supervision/staff | `R/admin-vendors.tsx`; `R/admin-supervision.tsx`; `R/admin-staff.tsx` | 4 |
-| Compliance | `R/quality-compliance.tsx` | 1 |
+Libraries: L/adelBrief.ts:164; adelBriefCheck.ts:154; adelDrafts.ts:181,196; agenticPrototype.ts:206,242,259,264; asam.ts:246; askAdel.ts:209,442,477,485; caseloadReview.ts:23; clinicianWorkspace.ts:115,134,171,234; coverageWorklist.ts:53,62; dashboardMetrics.ts:48; ehr.ts:6516,21369,21377; escalations.ts:305; myWork.ts:291; navSections.ts:349,516; noteClock.ts:89,100; referralAging.ts:22; reportingPeriods.ts:66; sdohAging.ts:36.
 
-**27 sites.** Excludes taxonomy, provenance, KPIs, numeric counts, Simulated/Prototype/Not built yet and Draft-policy labels. Risk-text Draft untouched; Approved included.
+Routes: R/caseload-review.tsx:236; dashboards.tsx:60,156,162,166; data-exchange.tsx:122,145; eligibility-worklist.tsx:50,55,139,183; escalations.tsx:46,48,56,95,111; my-work.tsx:65,495,512,528,542,627,654,673; reporting.tsx:360,406,705,733,759,784,808; worklist.tsx:254.
 
-## 3. Test Contracts
+Rows: owner-relative Your turn / With others, with “Waiting N days” only from authoritative waiting-start dates. Aggregate/filter labels cannot honestly say “Waiting N days”; use neutral “Follow-up needed”, retaining values. Deadline-age (`overdueByMs`, days past due) is not total wait: never relabel that number. Crisis remains urgent. Draft-policy definitions (coverageWorklist:53, referralAging:22, sdohAging:36), signed narrative and historical audit text remain excluded. Notification presentation stays neutral; no stored notification/data rewrite.
 
-Safe with exact words/selectors retained:
-- `e2e/consentWorkflow.spec.ts:41,60,61,125,135`: Sent/Signed/Declined, `form-status-*`.
-- `e2e/adminContent.spec.ts:39–41`: Verified and verifier provenance. Line 29 is a filter, not a badge.
-- `e2e/cfProxyMode.spec.ts:81–83,98–99`: proxy text/visibility/count; context badges unchanged.
-- `src/components/__tests__/groupBillingStatus.test.tsx:14–22,42–46`: billing words/data-billable; unchanged.
-- `src/components/clinical/refusal/__tests__/RefusalRiskTextRecord.test.tsx:46–47,64,89`: version/Draft/Reviewed/restriction words.
-- `src/lib/__tests__/badgeInline.test.tsx:8`: single-span Badge markup; primitive unchanged.
+### No-show — 17 copy literals
 
-Shared hazard: `e2e/group2Pathways.spec.ts:127,134–135` and `e2e/advocateOnboardingActive.spec.ts:76,88,126` pin advocate words and domain `data-status=waiting/signed`. Direct conversion breaks attributes: StatusChip writes its semantic state. Keep paragraph unchanged.
+C/DemoStateSwitcher.tsx:78,133; clinical/RecordTabs.tsx:2138; clinician/WorkspaceDashboard.tsx:24,96,106; scheduling/VisitActions.tsx:78,138,139; L/chartActions.ts:1419; ehr.ts:515,9550,9738,9739; i18n.tsx:93,174; library.ported.ts:2183.
 
-Amber input border in `MedicationDoseSection.test.tsx:55` and billability in `SupervisionBanner.test.tsx` are not badge contracts; unchanged.
+Staff “Missed visit” / “Mark missed visit”; patient “Let’s find a new time”. Keep no_show data, methods, billing rules and `visit-no-show` hook (:77). Authored lesson feedback :2183 (“treated as avoidance”) needs person-first editorial review, not an automatic word substitution.
 
-## 4. Shared Boundaries
+### Dismiss — 21 copy literals / 20 lines
 
-CarePlanCard: staff audience/helpers only. LateCancelBadge: staff default only. RecoveryStagePanel: actor/member isolation. AdvocateConsentStatus: preserve domain attributes. Staff previews and all patient/advocate chips unchanged; no global primitive/theme edits.
+C/PatientHome.tsx:97; careplan/AsamSuggestions.tsx:98,99 (two),106; careplan/CarePlanEditor.tsx:163,164,167; clinical/RecordTabs.tsx:591,594,2239; hie/OutsideRecords.tsx:65,75,76,79; identity/PatientMatchingQueue.tsx:76,77; L/asamCarePlan.ts:289; hie.ts:244; structuredCarePlan.ts:544; R/clinician.tsx:963.
 
-## 5. Recommendations / Validation
+Temporary close: “Not now”; weekly suggestion: “Not this week”. Permanent draft rejection needs “Don’t use this draft” / “Draft not used”: “Not now” must not imply it returns. Keep existing reason gates and behavior.
 
-Get missing tables; preserve words and actual owners. Avoid prose/taxonomy conversions and Part 2 teasers. Wait captions need real dates.
+### Person-first / streaks
 
-Later: units then all browsers/axe to completion; all failures reported. Settled light contrast, transitions off; long-label checks; every file reported. No assertions/permissions/workflow edits.
+Exact-word searches found no visible Action required, non-compliant/noncompliant, offender or person-label addict. “Understanding My Addiction” and “Medications for addiction treatment” are not person-label violations; do not rename them by substring. Technical failed delivery/request is not failed about a person. Authored passages still require editorial classification.
 
-## 3. Phase 3 — Safety-Only Red + MOUD Continuity (Review Only)
+Streak/member-narrative targets: C/patient/HomeDashboard.tsx:621,622; patient/DailyCheckInSummaryCard.tsx:74; patient/AdelGreetingCheckIn.tsx:43,56; L/adelBrief.ts:197; adelBriefCheck.ts:179; privateNudge.ts:105,113,121; recoveryStages.ts:167,170; library.ported.ts:2392,2404,2415 — 15 literals. Staff weekly “of 7”: R/caseload-review.tsx:135,137; weekly AI fact: L/weeklyRecap.ts:150.
 
-No application/test changes made. Detailed, counted file:line inventory: [Phase 3 red inventory](./phase3-red-inventory.md). Earlier phase-2 mappings remain unchanged.
+Member display: “4 check-ins this month” / “4 registros este mes”, deduplicating real dated dose/quick/mood check-ins in facility timezone; zero has no broken/reset streak. Read-only calculation, no new data. Preserve internal streak selection/IDs and weekly report/AI windows. Staff monitoring can say “4 check-in days this week” without denominator; do not rename weekly data monthly. Generic “a few days running” is not a scored streak.
 
-### Part A — Batches and treatments
+### Symbols
 
-Inventory: **305 unique source lines / 138 files**. Overlapping pattern counts: destructive variants **55**, destructive text **201**, fills **110**, borders/rings **62**, raw red/rose **1**, crisis tokens **13**, richColors **1**. Each location in the inventory is marked KEEP safety, CHANGE non-safety, conditional MIXED, or an explicit exception/definition. Indirect variants, urgent tokens and CSS aliases are listed separately. Counts are source locations, not rendered instances.
+Syntax scan: 75 candidates, including emotions/prose/technical strings, **not 75 icon violations**. Confirmed icon/status candidates: C/AssignClinicianButton.tsx:118; DemoStateSwitcher.tsx:445; ReferralProgressStrip.tsx:63 (two),70,75,80,85; consent/FormsToSign.tsx:95; voice/AdelVoice.tsx:58; UserNavigationDrawer.tsx:60; clinician/WorkspaceDashboard.tsx:106; L/i18n.tsx:245,246,659,660; R/admin-credentialing.tsx:601; auth.tsx:238; admin-claims.tsx:480,481.
 
-1. **Shared presentation:** neutral Sonner toasts; richColors off at the root; attention CircleAlert for errors/problems. Validation uses attention text + CircleAlert and a thicker neutral field border, never a red border; preserve ARIA, focus and existing error wording. Do not globally recolor destructive/urgent tokens or Badge/Button primitives: safety and denied claims still need them. Update Form presentation only where shared error styling owns the red.
-2. **Operations and actions:** overdue/Unassigned → owner-relative yourturn/team with existing words; Waiting N days only from an existing authoritative date, never from an aggregate or invented timestamp. Neutral count styling; values unchanged. Delete/revoke/write-off/deactivate/dismiss/deny → outline secondary treatment with explicit verbs; existing dialogs and reason gates untouched.
-3. **Restrictions, AI and simulation:** Part 2/access labels → restricted chips, without changing visibility; AI draft → existing modifier. Simulated/Prototype/Not built yet → simulated treatment; Coming later only where nothing is built. Calm simulated banner for whole screens; retain guardrail detail and literal Simulated for external sync and tested phrases.
-4. **Safety boundaries:** raspberry stays for Get help now/988, crisis escalations and safety banners, severe allergy, C-SSRS high, and the specified MOUD urgency. Generic stat priority, broad score/BP/BMI/lab bands, missing allergies, signing blocks, historical alerts and a metadata value “critical” alone do not establish safety. Mixed shared mappings must use existing safety predicates without altering data. Denied claims keep their current look; Draft-policy and KPI Met/Close/Below remain unchanged. Dormant facility ProtocolsTab is inventoried but excluded from implementation; outpatient-only remains enforced.
+Use Check, Flag, Volume2, X, ArrowRight plus words. Arrow/history candidates include C/CarePlanCard.tsx:467; admin/ContentAudit.tsx:18; careplan/CarePlanEditor.tsx:322; clinical/RecordTabs.tsx:528,1882; consent/ConsentRecordsPanel.tsx:284; L/i18n.tsx:215,629; R/admin-coordination.tsx:206; disclosure-log.tsx:98; reporting.tsx:648,767,768,840,845. Use “to” for history/time relations. Keep punctuation, mathematical multiplication and keyboard-key references; emotion assets wait for phase 6. Finish every-arrow/emoji classification before build.
 
-**No separate confirmation today:** direct frequency deletion, obligation/toolkit removal and AI-sentence deletion; refill denial and ASAM dismissal have inline reason controls but no separate dialog. Allergy override is a safety action with a reason gate, no separate dialog. Exact references are in the inventory. Do not add confirmations in this presentation-only batch.
+## 2. Spanish
 
-**Test impacts:** no direct red/destructive/richColors assertions found. MedicationDoseSection asserts an amber border, which stays. Preserve “Read aloud (Simulated voice)” and “Shared from Adel (summary, Simulated)”, simulation audits/confirmation words, Verified, form-status-* hooks, cfProxyMode, groupBillingStatus and RefusalRiskTextRecord contracts. Changing all simulation words to Coming later would break tests and standing rules. No test assertion/retry/threshold changes.
+### Confirmed ordinary formal-address conversion sites
 
-### Part B — Existing data and proposed staff controls
+- C/patient/AdelGreetingCheckIn.tsx:51,53,54,56,60,111,187,192,193: “¿Cómo te sientes hoy?”, “Solo tú ves esto”, “Pregúntale…”, “Cámbialo… envía”, “Escribe…”.
+- C/careplan/MyPlan.tsx:55,67,68,73; patient/NeedConnect.tsx:29,30,33; recovery/RecoveryCheckInNote.tsx:23,25,27,28: tu/te/contigo/quieres.
+- L/intakeWelcomeCopy.ts:19,20,22,24,26,51,55,56,58; intakeVoiceCopy.ts:46,47,48,49,52,53,54 (two),57,58,60,61,63,64,66,67,69: léeme/busca/cambia/escribe/toca/cuéntanos/elige/revisa.
+- L/adelIntakeScript.ts:71,74,81,83,90,142,153,163,171,202,242,272,299,317; intakeBackgroundCopy.ts:40; whatWouldHelp.ts:137,138,142,143,146,147,148,149.
+- L/consentForms.ts:27,28 notification wrappers: “Tienes…” / “Abre…”, separate from legal form bodies.
 
-- `src/lib/ehr.ts`: Patient (`:1634`, assignment IDs and releaseDate; releaseDateMeta holds provenance); MedOrder (`:1055`, startDate/daysSupply/prescriberStaffId/preReleaseEpisodeId); PreReleaseEpisode (`:4001`, anticipatedReleaseDate, actualReleaseDate, cfCareManagerStaffId, receivingEcmStaffId); ReentryCarePlan (`:4119`). Store arrays and getters already own episode/care-plan data. `markPreReleaseEpisodeReleased` persists actual release and the confirmed patient projection; `saveReentryCarePlan` audits section saves.
-- `src/lib/medAdherence.ts:116`: isMatOrder uses medication-name/ingredient regex plus isSuboxoneOrder. `:142`: refillRunway derives daysLeft from startDate + daysSupply; missing/invalid supply yields undefined. It estimates supply from the order, not pharmacy dispensing. `src/lib/medContinuity.ts` derives continuity alerts, assigns prescriberFor and currently uses a separate runway-critical draft threshold; those workflows/thresholds are not silently changed.
-- Add one **per-patient MOUD continuity record**, tied to the relevant release episode/date so a later release cannot inherit an old confirmation. Save through new AdelanteEHR store functions and registered runAction actions, with appendAudit in the existing stream. Require an audit reason; record actor, timestamp and before/after event metadata using existing Part 2-safe conventions.
-- Writers: existing assigned reentry guide (`cfCareManagerStaffId`) or assigned care coordinator via assignmentIdentityFor/isAssignedTo, plus isPrescriberRole (physician/pmhnp). Narrow with existing role, chart/site/restricted-record and Part 2 gates; assignment is not an access grant. No permission-matrix widening, proxy shortcut or role-name guessing. Other authorized staff read-only; staff lacking Part 2 access see no MOUD-specific record/title. AB133 coordination exemption does not authorize SUD access.
-- Put a compact status/control with a reasoned side drawer in the existing **pre-release episode detail** and **chart ReentryHandoffTab**, reading one shared record. No new route; no patient/advocate continuity UI. Demo examples only when needed, visibly Demo, seeded via real store functions.
+Do not replace third-person su (advocate contact :43, counselor calendar), or subjunctives “que lo revise contigo” / “te avise”. No global search-replace.
 
-#### Technical shape and display defaults
+**Exclude / list for sign-off:** consentForms.ts:132 onward uses English legal-body placeholders with draft ES suffixes; consent/FormsToSign.tsx:16 signatures, ConsentWithdrawSheet.tsx:31,36, SharedWithCard.tsx:18 and advocate legal authority descriptions remain counsel-controlled. cssrs.ts:20 approval=false; :33–38 await official Columbia ES. screeners.ts has English source questions; English textVerified does not prove approved Spanish; AUDIT :167, DAST :235, retired PCL :355 are unverified. safetyPlan.ts:37, safetyContent.ts:34 and crisisCopy.ts:16–19 remain pending clinical review; refusal.ts:68–74,167 ES risk text remains draft. Intake consent/sensitive instructions and validated needs questions stay excluded. No approval flag changes.
 
-```ts
-interface MoudContinuityRecord {
-  patientId: string;
-  episodeId?: string; // release-cycle linkage, not a new route
-  releaseDate?: string; // confirmed release basis, when available
-  planInPlace?: {
-    type: "bridge_prescription" | "moud_appointment";
-    at: string;
-    byStaffId: string;
-  };
-  confirmed?: {
-    type: "first_community_dose" | "moud_visit_kept";
-    at: string;
-    byStaffId: string;
-  };
-}
-```
+### Missing localization: candidate scope, not an exhaustive string count
 
-Staff-only, with MOUD on record and existing disclosure access; use lang="en" and the requested visible/accessibility labels. Add **“Default per published guidance; pending clinical review (Dr. Bagga)”** at each clinical branch; existing Draft-policy wording stays.
+Confirmed English-only copy includes PatientHome.tsx:85–88 install prompt; DailyCheckInSummaryCard headings/body/buttons; AdvocateAppointmentsPanel headings/empty state/RSVP; HomeDashboard.tsx:338 chooses English recommendation title/body.
 
-| Condition (confirmed takes precedence) | State / label |
-|---|---|
-| Confirmed for this release cycle | done · Confirmed |
-| Released 0–14 calendar days ago, not confirmed | urgent · Reach out today |
-| Released >14 days ago, not confirmed | yourturn · Confirm MOUD continuity |
-| Before release, no recorded plan | yourturn · Set MOUD plan |
-| Before release, plan recorded | upnext · Plan in place |
-| Existing runway daysLeft <=0, MOUD medication | urgent · Out of MAT — reach out |
-| Existing runway daysLeft <=0, other medication | yourturn · Ask for a refill |
+Candidate line counts from the broader scan: HomeDashboard 18; DailyCheckInSummaryCard 8; CravingFlow 11; ToolkitPage 7; WeeklyRecap/AdelChat 8; SlipSupportFlow 9; SignupFlow 28; AdvocateWorkspace 21; advocate.my-profile 10; LibraryBrowser/ExercisePlayer 9; start.reconnect/start.other-help/referral 14. **These are candidate lines, not verified missing-string totals**; remove existing bilingual branches, clinical/legal text and staff-only consumers, then enumerate exact keys/file:line before implementation.
 
-Use facility-timezone calendar dates for release-window comparison; do not infer actual release from an anticipated date. No runnable date/supply → no invented urgency or numbers. Continuity confirmation does not suppress a separate out-of-supply medication warning. Patient medication/runway rendering stays unchanged; staff slices must carry real order IDs/supply, not infer it from a plan summary.
+Also review shared voice ARIA (AdelVoice.tsx:42,48), shared Close/pagination/carousel labels, public ReferralSubmissionForm ordinary labels/errors and real-store reason labels displayed to members. Do not translate patient-authored data or mutate stores. StaffAdvocatesTab/AHCD validation are not member screens merely because of their directory.
 
-### Recommendations / differences
+Lovable drafts ordinary missing Spanish in tú, without a translation service. Existing AppShell.tsx:346 notice covers member drafts; WebsiteLayout owns public draft notice. Standalone entry/CMS previews need one local notice if no shell notice exists. Clinical/legal notices are separate, never collapsed into ordinary translation review.
 
-- Link continuity to a release cycle; otherwise a second release would falsely appear Confirmed.
-- Keep simulated wording when a capability exists but its integration is simulated; Coming later must not imply the working demo is absent.
-- Keep existing isMatOrder for this batch, but flag that its naltrexone/MAT classification is broader than strictly OUD-specific MOUD; do not invent indication data or change identification without clinical review.
-- Identify uncertain release dates and order-estimated supply explicitly. Missing data must not become “no plan”, “released” or “out of supply” by inference.
-- Do not merge existing four-day continuity-alert workflow thresholds into this new 14-day display rule; any routing/alert-policy change needs separate authorization.
+## 3. Review export — technical proposal
 
-### Later build validation / reporting
+Development-only script → docs/spanish-review.csv; exactly `key,english,spanish,screen,status`.
 
-No permission widening, routes, workflow changes (outside the authorized new continuity recording), or test assertion/retry/threshold changes. Full unit suite first; then **every browser spec to completion**, including axe and Back to top. Collect all failures together; no stop-at-first-failure or opportunistic fixes. Measure light-mode contrast after colors settle, review mixed safety branches and report every changed file. No validation claims are made for this review-only turn.
+Collect merged dictionaries, domain/local COPY pairs, authored ES overrides and publication metadata. Stable namespaced keys; preserve placeholders in template/function strings; empty Spanish gaps marked draft. Map every member/public consumer; exclude staff-only text and all patient records/messages. Include controlled source text unchanged for reviewers, not drafted. Approved only with explicit ES approval, never English textVerified. CSV escaping, spreadsheet-formula protection and deterministic ordering; report unresolved dynamic keys. No import, approval write, server endpoint or publication change.
+
+Current organization: i18n.tsx merges website/player/recovery/benefits dictionaries and local COPY modules use the same language; useRecoveryText falls back to English. Draft provenance differs: member/public notices, RECOVERY_ES_REVIEW=false, CMS esStatus, template esReviewed, refusal reviewed flags. Preserve those distinctions.
+
+## 4. Staff language
+
+Remove staff/admin header EN/ES in AppShell.tsx:188–210; keep members/public. Hiding buttons alone is insufficient: I18nProvider:870–938 adopts persisted language. Supply non-persistent English using existing surface classification, including html lang=en, without calling setLang or writing preferences.
+
+ContentPreviewLanguage:946–956 / RealContentPreview.tsx:22–30 stay local; use “Preview in Spanish” switch. Preserve patient-directed outreach language (chart/AdelDrafts.tsx:225–230) and clinical template output (RecordTabs.tsx:2579,2835,3032): output language is not staff-interface language.
+
+## 5. Tests — no assertion changes proposed
+
+Confirmed conflicts if corresponding source copy changes:
+- e2e/continuity.spec.ts:30 — “1 overdue reactivation”.
+- L/__tests__/myWorkStartOfDay.test.ts:10 — “3d overdue”.
+- L/__tests__/outpatientMeds.test.ts:10,16 — overdue literal/regex.
+- L/__tests__/recoveryStages.test.ts:111 — “You've checked in 7 days in a row”.
+- C/__tests__/goalStatusAudit.test.tsx:76 — literal arrow in status history.
+- e2e/adminContent.spec.ts:18 — resource link with arrow.
+
+Conditional: advocateOnboardingActive.spec.ts:56 and group2Pathways.spec.ts:109 support Finish/Terminar, not Send to my team; publicWebsite.spec.ts:133,138 already accept Send referral. weeklyRecap.test.ts:87 pins “1 of 7” in AI grounding; preserving grounding avoids conflict.
+
+Unchanged: advocateOnboardingActive:85,86 legal signature labels; group2Pathways:135 “Esperando su registro” is third-person advocate signup; consentWorkflow:47,55 counts completed forms, not streaks. Existing documents/public tú wording, Simulated phrases, clinical/template/risk-text contracts and enums remain.
+
+This verified list is not yet an exhaustive every-key test matrix. Finish it against the accepted localization inventory. Do not promise green tests while changing pinned words with assertions frozen; report those failures unless Mitch approves specific lines.
+
+## 6. Recommendations / later validation
+
+Finish exact localization/icon reachability before build; prefer display adapters over persisted-status/audit edits. Monthly member totals must not change weekly clinical reporting or AI grounding. Clinical/legal approval gaps remain a review backlog.
+
+Later: full units, then every browser spec including axe to completion; report all failures together. No assertion/retry/threshold changes without specific approval. Check every changed member screen at 390px in Spanish for no horizontal scroll. Report every changed file. No validation suites run during this read-only review.
