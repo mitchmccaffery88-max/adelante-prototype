@@ -643,6 +643,7 @@ key,english,spanish,screen,status
 "src/components/referral/ReferralSubmissionForm.tsx:ui.fc40449760a8","Our team will reach out to the person you referred with a warm welcome.","Nuestro equipo se comunicará con la persona que derivaste para darle la bienvenida.","/referral","draft"
 "src/components/scheduling/VisitActions.tsx:ui.5b633ccd6d95","Send cancel request","Enviar solicitud de cancelación","/advocate/appointments; /home; /patient","draft"
 "src/components/scheduling/VisitActions.tsx:ui.77dfd2135f4d","Cancel","Cancelar","/advocate/appointments; /home; /patient","draft"
+"src/components/scheduling/VisitActions.tsx:ui.90ce89ef349a","Cancel requested","","/advocate/appointments; /home; /patient","draft"
 "src/components/scheduling/VisitActions.tsx:ui.a5be37e0c3b9","— your care team will confirm.","Tu equipo de cuidado lo confirmará.","/advocate/appointments; /home; /patient","draft"
 "src/components/scheduling/VisitActions.tsx:ui.c25d1d2ac8a3","Keep visit","Mantener visita","/advocate/appointments; /home; /patient","draft"
 "src/components/scheduling/VisitActions.tsx:ui.e87982c65815","Draft label — no fee logic","","/advocate/appointments; /home; /patient","controlled"
