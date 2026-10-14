@@ -68,15 +68,14 @@ describe("MOUD continuity store + permissions", () => {
     expect(c.confirmed?.type).toBe("first_community_dose");
     expect(c.episodeId).toBe(ep.id);
     expect(getMoudContinuity(pid)?.releaseDate).toBe("2026-10-10");
-    AdelanteEHR.closePreReleaseEpisode?.({ episodeId: ep.id, reason: "test", closedBy: "s-cf2", actorRole: "cf_care_manager" } as never);
+    AdelanteEHR.closePreReleaseEpisode({ episodeId: ep.id, reason: "test", closedBy: "s-cf2", actorRole: "cf_care_manager" });
     const next = AdelanteEHR.openPreReleaseEpisode({
       patientId: pid, anticipatedReleaseDate: "2027-03-01", cfCareManagerStaffId: "s-cf2", cfCareManagerName: "Darnell Pope",
       openedBy: "s-cf2", actorRole: "cf_care_manager",
     });
-    if (next.id !== ep.id) {
-      expect(releaseCycleFor(pid)?.episodeId).toBe(next.id);
-      expect(getMoudContinuity(pid)?.confirmed).toBeUndefined();
-    }
+    expect(next.id).not.toBe(ep.id);
+    expect(releaseCycleFor(pid)?.episodeId).toBe(next.id);
+    expect(getMoudContinuity(pid)?.confirmed).toBeUndefined();
   });
 });
 
