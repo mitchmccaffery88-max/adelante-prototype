@@ -67,6 +67,21 @@ for (const [f,sf] of sources) {
  for(const statement of sf.statements)if(ts.isVariableStatement(statement))for(const d of statement.declarationList.declarations)if(d.initializer)catalog(d.initializer,d.name.getText());
 }
 
+// Shared staff JSX may repeat a member dictionary's English literal. The
+// bilingual source dictionary is authoritative for the stable screen key.
+for (const [f, sf] of sources) {
+ if (!audiences.has(f)) continue;
+ function screenCopy(n) {
+  if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'SCREEN_COPY') {
+   for (const [key, value] of props(n.initializer)) {
+    const pair = props(value), en = text(pair.get('en')), es = text(pair.get('es'));
+    if (en && es) add(f, key, en, es, pair.get('en'));
+   }
+  }
+  ts.forEachChild(n, screenCopy);
+ }
+ screenCopy(sf);
+}
 const sorted=[...rows.values()].sort((a,b)=>a.key.localeCompare(b.key,'en'));
 function safe(v){v=String(v);if(/^[\s]*[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
 fs.mkdirSync('docs',{recursive:true});fs.writeFileSync('docs/spanish-review.csv',['key,english,spanish,screen,status',...sorted.map(r=>[r.key,r.english,r.spanish,r.screen,r.status].map(safe).join(','))].join('\n')+'\n');
