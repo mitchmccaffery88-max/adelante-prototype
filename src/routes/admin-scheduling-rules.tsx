@@ -595,7 +595,7 @@ function RunHistoryCard() {
             <ul className="text-muted-foreground">
               {run.tasks.map((t) => (
                 <li key={t.taskId}>
-                  {t.ruleKey} → {t.taskId}
+                  {t.ruleKey} to {t.taskId}
                 </li>
               ))}
             </ul>

@@ -975,7 +975,7 @@ function ProviderSwitchAlerts({
                     {p ? `${p.firstName} ${p.lastName}` : s.patientId}
                   </div>
                   <div className="text-muted-foreground">
-                    {reasonLabel[s.reason] ?? s.reason} → {to?.name ?? s.toClinicianId}
+                    {reasonLabel[s.reason] ?? s.reason} to {to?.name ?? s.toClinicianId}
                     {s.serviceType ? ` · ${s.serviceType}` : ""}
                   </div>
                   {s.context ? <div className="mt-1 text-muted-foreground">{s.context}</div> : null}

@@ -63,7 +63,7 @@ export const POINT_IN_TIME_REASON: Partial<Record<MetricKey, string>> = {
   unsigned_notes_count:
     "Current backlog, not a period measure — every draft note is still open work today regardless of when it was written. Filtering it to a window would hide older unsigned notes, which is the opposite of what this row is for.",
   overdue_task_count:
-    "Current backlog, not a period measure — a task overdue today stays overdue whatever window you pick. Row age is shown per record in the drill-down instead.",
+    "Current backlog, not a period measure — a task follow-up needed today stays follow-up needed whatever window you pick. Row age is shown per record in the drill-down instead.",
 };
 
 /** Human sentence for the period chip next to a metric. */

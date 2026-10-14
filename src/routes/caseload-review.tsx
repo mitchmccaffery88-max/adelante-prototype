@@ -132,9 +132,9 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
           {row.attemptsThisWeek}
         </p>
         <div className="text-sm" data-testid="checkin-summary">
-          Check-ins this week: {s.daysThisWeek} of 7 days · Trend: {s.trend}
+          {s.daysThisWeek} check-in days this week · Trend: {s.trend}
           <span className="block" data-testid="mood-count">
-            Mood check-ins this week: {s.moodDaysThisWeek} of 7 days
+            {s.moodDaysThisWeek} mood check-in days this week
           </span>
           {s.followUpSuggested && (
             <Badge variant="outline" className="ml-2">
@@ -233,7 +233,7 @@ function Rollup() {
               <th className="p-2">Case manager</th>
               <th className="p-2">On track</th>
               <th className="p-2">Due</th>
-              <th className="p-2">Overdue</th>
+              <th className="p-2">Follow-up needed</th>
               <th className="p-2">Reviewed</th>
             </tr>
           </thead>

@@ -228,18 +228,18 @@ export function ReferralSubmissionForm({
       }
       AdelanteEHR.recordReferralWelcomeDelivery(result.id, outcome);
       if (outcome.status === "sent") {
-        toast.success("Referral submitted", {
+        toast.success("Referral sent", {
           description: "A welcome text has been sent to this person.",
         });
       } else {
-        toast.success("Referral submitted", {
+        toast.success("Referral sent", {
           description:
             "No text was sent — a care-team member will call within one business day.",
         });
       }
       return;
     }
-    toast.success("Referral submitted", {
+    toast.success("Referral sent", {
       description: "No text was sent — a care-team member will call within one business day.",
     });
   };
@@ -521,7 +521,7 @@ export function ReferralSubmissionForm({
           data-testid="referral-submit"
         >
           <Send className="h-4 w-4 mr-2" />
-          Submit referral
+          Send referral
         </Button>
       </div>
     </form>

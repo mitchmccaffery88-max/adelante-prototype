@@ -68,6 +68,10 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin Dashboard — Adelante" },
+      { property: "og:title", content: "Admin Dashboard — Adelante" },
+      { property: "og:description", content: "Enrollment, completion rate, intake velocity, and billing status." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content: "Enrollment, completion rate, intake velocity, and billing status.",
@@ -242,7 +246,7 @@ function AdminPage() {
           sub={
             intakeVelocity.belowMinimumCohort
               ? `Fewer than ${intakeVelocity.minimumCohortSize} referrals (${intakeVelocity.periodLabel})`
-              : `referral → 1st attended session · n=${intakeVelocity.n} · ${intakeVelocity.periodLabel}`
+              : `referral to 1st attended session · n=${intakeVelocity.n} · ${intakeVelocity.periodLabel}`
           }
           accent="gold"
         />
@@ -801,7 +805,7 @@ function GroupActivityKpi() {
           <h2 className="font-display text-lg text-navy">Group activity</h2>
         </div>
         <Link to="/group-sessions" className="text-xs text-teal underline-offset-2 hover:underline">
-          Manage groups →
+          Manage groups to
         </Link>
       </div>
       <div className="mt-3 grid gap-4 sm:grid-cols-3">

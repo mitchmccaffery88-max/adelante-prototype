@@ -15,7 +15,7 @@ test("coordinator starts with coordination work and verifies resources in the re
   const order = await page.locator('[data-testid="coverage-list"], [data-testid="unassigned-list"], [data-testid="post-enrollment-setup"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
   expect(order.slice(0, 2)).toEqual(["coverage-list", "unassigned-list"]);
   await page.screenshot({ path: "/tmp/browser/admin-content/coordination.png" });
-  await page.getByRole("link", { name: "Resource verification → Patient Content & Resources Center" }).click();
+  await page.getByRole("link", { name: "Resource verification to Patient Content & Resources Center" }).click();
   await expect(page).toHaveURL(/\/admin-content$/);
   await expect(page.getByRole("heading", { name: "Patient Content & Resources Center", exact: true })).toBeVisible();
   await expect(page.locator('a[data-nav-id="admin-content"]')).toHaveText("Patient Content & Resources Center");

@@ -1119,7 +1119,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <span className="ml-auto text-xs text-muted-foreground">
-                G given · R refused · H held · N not indicated · ←/→ move · Enter chart · Esc
+                G given · R refused · H held · N not indicated · ←/to move · Enter chart · Esc
                 clear
               </span>
             </div>

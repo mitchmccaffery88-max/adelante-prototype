@@ -369,3 +369,11 @@ Validation: build OK; 2,561 units and 79/79 browsers (axe/Back to top) passed; 2
 - [x] Release-cycle continuity record, two registry actions, shared panel + side drawer in pre-release episode detail and chart Reentry hand-off; 7 new unit tests
 - [ ] Part A red cleanup (next build)
 - [ ] Persistent Demo seed of a person with MOUD + release episode (not added; would change shared Luis demo flows)
+
+## Phase 5a — Copy, tú, review export and staff English (14 Oct)
+- [ ] Outcome verbs, deadline wording, missed visits, dismissal semantics and icon classification; preserve historical/clinical text
+- [ ] Monthly member check-in presentation and confirmed tú conversions only
+- [ ] Development Spanish review CSV and per-screen gap list; no missing Spanish drafts (5b)
+- [ ] English staff surfaces with local Spanish content previews
+- [ ] Authorized assertion-text edits, full units then all browsers/axe, warm reruns and 390px Spanish checks
+- [ ] Report changed files, pattern counts, gaps and editorial/clinical exceptions

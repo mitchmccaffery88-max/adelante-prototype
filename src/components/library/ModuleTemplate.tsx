@@ -616,7 +616,7 @@ export function RatingStep({
                         <Icon className="h-4 w-4" aria-hidden />
                         {diff === null
                           ? "—"
-                          : `${b} → ${a} (${diff > 0 ? "+" : ""}${diff})`}
+                          : `${b} to ${a} (${diff > 0 ? "+" : ""}${diff})`}
                       </p>
                       <p className="mt-0.5 text-xs">
                         {verdict === "better"

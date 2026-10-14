@@ -103,7 +103,7 @@ export function CrisisOverdueBadge({ escalation }: { escalation: CrisisEscalatio
       className="border-0 bg-amber-500 text-[10px] text-amber-950"
       title={`${CRISIS_POLICY_DRAFT_LABEL} — draft target ${state.thresholdLabel}`}
     >
-      <AlarmClock className="mr-1 h-3 w-3" /> Overdue · {overdueByLabel(state.overdueByMs)} (draft{" "}
+      <AlarmClock className="mr-1 h-3 w-3" /> Follow-up needed · {overdueByLabel(state.overdueByMs)} (draft{" "}
       {state.thresholdLabel})
     </Badge>
   );

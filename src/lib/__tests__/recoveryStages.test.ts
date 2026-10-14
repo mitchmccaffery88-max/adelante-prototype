@@ -108,7 +108,7 @@ describe("milestones come from real engagement data only", () => {
       exercisesDone: 0,
       toolkitSaved: 1,
     });
-    expect(m[0]!.title).toBe("You've checked in 7 days in a row");
+    expect(m[0]!.title).toBe("You've made time to check in");
     expect(m.map((x) => x.id)).toContain("lessons");
     expect(m.map((x) => x.id)).toContain("toolkit");
     // no points, badges or ranking anywhere in the copy

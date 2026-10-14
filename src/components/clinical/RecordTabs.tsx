@@ -525,7 +525,7 @@ export function ProviderHistoryTab({ patientId }: { patientId: string }) {
           <li key={s.id} className="rounded border p-3 text-sm">
             <div className="flex items-center justify-between gap-2">
               <div className="font-medium text-navy">
-                {nameFor(s.fromClinicianId)} → {nameFor(s.toClinicianId)}
+                {nameFor(s.fromClinicianId)} to {nameFor(s.toClinicianId)}
               </div>
               <StatusChip lang="en" state={s.status === "acknowledged" ? "done" : s.status === "pending_review" ? (isAddressee ? "yourturn" : "team") : "closed"} label={s.status.replace("_", " ")} />
             </div>
@@ -591,7 +591,7 @@ export function ProviderHistoryTab({ patientId }: { patientId: string }) {
                         toast("Alert dismissed");
                       }}
                     >
-                      Dismiss
+                      Don't use this draft
                     </Button>
                     {noteFor !== s.id && (
                       <Button
@@ -1879,7 +1879,7 @@ export function CoordinationTab({
           <div key={e.id} className="rounded border p-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-navy font-medium capitalize">
-                {e.direction === "out" ? "→" : "←"} {e.party} ({e.partyType.replace("_", " ")})
+                {e.direction === "out" ? "to" : "←"} {e.party} ({e.partyType.replace("_", " ")})
               </span>
               <span className="text-muted-foreground">
                 <ClientDate value={e.date} />
@@ -2135,7 +2135,7 @@ export function TaskList({
   if (items.length === 0) return null;
   const originLabels: Record<CaseTask["origin"], string> = {
     manual: "Manual",
-    missed_appt: "No-show",
+    missed_appt: "Missed visit",
     screener_flag: "Screener",
     asam_needed: "ASAM",
     referral_stale: "Stale referral",
@@ -2236,7 +2236,7 @@ function SuggestedGoalsPanel({ patientId, readOnly }: { patientId: string; readO
                   Accept
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => AdelanteEHR.dismissSuggestedGoal(patientId, g.id, { name: staffName, role })}>
-                  Dismiss
+                  Don't use this draft
                 </Button>
               </>
             )}
@@ -3299,7 +3299,7 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
           >
             <option value="all">Completed and missed</option>
             <option value="completed">Completed</option>
-            <option value="missed">Missed or overdue</option>
+            <option value="missed">Missed or follow-up needed</option>
           </select>
         </label>
         <label className="flex flex-col gap-1">
@@ -3346,7 +3346,7 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
                   <td className="py-1 pr-2 tabular-nums">{r.score ?? "—"}</td>
                   <td className="py-1 pr-2">{r.level ? `Level ${r.level}` : (r.severity ?? "—")}</td>
                   <td className="py-1">
-                    <StatusChip lang="en" state={r.status === "completed" ? "done" : "yourturn"} label={r.status === "completed" ? "Completed" : r.status === "missed" ? "Missed" : "Overdue"} />
+                    <StatusChip lang="en" state={r.status === "completed" ? "done" : "yourturn"} label={r.status === "completed" ? "Completed" : r.status === "missed" ? "Missed" : "Follow-up needed"} />
                   </td>
                 </tr>
               ))}

@@ -62,7 +62,7 @@ export const Route = createFileRoute("/my-work")({
       {
         name: "description",
         content:
-          "Your personal Adelante worklist: crisis escalations you claimed, your unsigned notes, your overdue case tasks, caseload re-screens due and patients going quiet.",
+          "Your personal Adelante worklist: crisis escalations you claimed, your unsigned notes, your follow-up needed case tasks, caseload re-screens due and patients going quiet.",
       },
       { property: "og:title", content: "My work — Adelante" },
       {
@@ -509,7 +509,7 @@ function MyWorkPage() {
                   badge={
                     <span className="flex items-center gap-2">
                       <OutreachDraftDialog patientId={r.patient.id} reason="contact_due" />
-                      <StatusChip lang="en" state="yourturn" label={r.status === "overdue" ? "Overdue" : "Due"} />
+                      <StatusChip lang="en" state="yourturn" label={r.status === "overdue" ? "Follow-up needed" : "Due"} />
                     </span>
                   }
                 />
@@ -624,7 +624,7 @@ function MyWorkPage() {
             {open.overdueTasks.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-navy">
-                  Your overdue case tasks ({open.overdueTasks.length})
+                  Your follow-up needed case tasks ({open.overdueTasks.length})
                 </p>
                 {open.overdueTasks.map((t) => (
                   <Row
@@ -670,7 +670,7 @@ function MyWorkPage() {
                   primary={`${t.title} — due ${t.dueDate}`}
                   secondary={t.reason}
                   badge={
-                    <StatusChip lang="en" data-testid={`asam-state-${t.state}`} state={t.state === "overdue" || t.state === "due" ? "yourturn" : "upnext"} label={t.state === "overdue" ? "Overdue" : t.state === "due" ? "Needed now" : `Due ${new Date(`${t.dueDate}T12:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}`} />
+                    <StatusChip lang="en" data-testid={`asam-state-${t.state}`} state={t.state === "overdue" || t.state === "due" ? "yourturn" : "upnext"} label={t.state === "overdue" ? "Follow-up needed" : t.state === "due" ? "Needed now" : `Due ${new Date(`${t.dueDate}T12:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}`} />
                   }
                 />
               ))}

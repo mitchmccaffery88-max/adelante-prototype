@@ -288,7 +288,7 @@ const sameLocalDay = (a: Date, b: Date) =>
 /** Due-date label: "Due today" instead of "0d overdue". */
 export function dueLabel(dueDate: string, now: Date = new Date()): string {
   const n = days(dueDate, now.getTime());
-  return n <= 0 || dueDate.slice(0, 10) === now.toISOString().slice(0, 10) ? "Due today" : `${n}d overdue`;
+  return n <= 0 || dueDate.slice(0, 10) === now.toISOString().slice(0, 10) ? "Due today" : `Due ${n} day${n === 1 ? "" : "s"} ago`;
 }
 
 export function myTodayVisits(actor: ActingIdentity, now: Date = new Date()) {

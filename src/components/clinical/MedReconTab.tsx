@@ -535,7 +535,7 @@ function HistoryRow({
               <div className="text-xs text-muted-foreground">
                 {[i.dose, i.frequency, i.route].filter(Boolean).join(" · ") || "—"}
                 {(i.newDose || i.newFrequency || i.newRoute) &&
-                  ` → ${[i.newDose, i.newFrequency, i.newRoute].filter(Boolean).join(" · ")}`}
+                  ` to ${[i.newDose, i.newFrequency, i.newRoute].filter(Boolean).join(" · ")}`}
               </div>
               {i.decisionNote && <div className="text-xs">{i.decisionNote}</div>}
             </li>

@@ -109,7 +109,7 @@ export function CssrsForm({
           }
         }}
       >
-        {es ? "Enviar" : "Submit"}
+        {es ? "Guardar respuestas" : "Save answers"}
       </Button>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEhr } from "@/lib/ehr";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { todaysActivity } from "@/lib/structuredCarePlan";
 // §E7 — Today's check-in folded into Adel's greeting on /home.
 // Same patient-private mood store (`recordDailyCheckIn`); nothing reaches
@@ -11,6 +11,7 @@ import { useAdelVoice } from "@/hooks/useAdelVoice";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { monthlyCheckInCount } from "@/lib/checkInStreak";
 import {
   CHECK_IN_EMOTIONS,
   dailyCheckInDayKeys,
@@ -39,8 +40,8 @@ const COPY = {
     skip: "Not now",
     thanks: (f: string) => `Thanks for telling me — you're feeling ${f} today.`,
     skipped: "No problem. I'm here whenever you want to talk.",
-    week: "My week",
-    days: (n: number) => `You checked in ${n} of 7 days this week.`,
+    week: "This month",
+    days: (n: number) => `${n} check-ins this month`,
     change: "Change today's check-in",
     recap: "See my week",
     ask2: "Ask Adel",
@@ -48,16 +49,16 @@ const COPY = {
   },
   es: {
     hi: "Hola, soy Adel.",
-    ask: "¿Cómo se siente hoy?",
+    ask: "¿Cómo te sientes hoy?",
     skip: "Ahora no",
-    thanks: (f: string) => `Gracias por contarme — hoy se siente ${f}.`,
-    skipped: "Está bien. Aquí estoy cuando quiera hablar.",
-    week: "Mi semana",
-    days: (n: number) => `Hizo su registro ${n} de 7 días esta semana.`,
+    thanks: (f: string) => `Gracias por contarme — hoy te sientes ${f}.`,
+    skipped: "Está bien. Aquí estoy cuando quieras hablar.",
+    week: "Este mes",
+    days: (n: number) => `${n} registros este mes`,
     change: "Cambiar el registro de hoy",
     recap: "Ver mi semana",
     ask2: "Preguntar a Adel",
-    privacy: "Solo usted ve esto.",
+    privacy: "Solo tú ves esto.",
   },
 };
 
@@ -67,6 +68,9 @@ const skipKey = (pid: string) => `adelante.adelCheckInSkipped.${pid}`;
 
 export function AdelGreetingCheckIn({ patientId }: { patientId: string }) {
   const { lang } = useI18n();
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const doseReports = useEhr(() => AdelanteEHR.listDoseSelfReports(patientId));
+  const quickCheckDates = useEhr(() => AdelanteEHR.quickCheckDates(patientId));
   const c = lang === "es" ? COPY.es : COPY.en;
   const key = useSyncExternalStore(
     subscribeSelfTracking,
@@ -75,12 +79,8 @@ export function AdelGreetingCheckIn({ patientId }: { patientId: string }) {
   );
   const today = useMemo(() => todaysCheckIn(patientId), [patientId, key]);
   const weekDays = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now);
-    start.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-    const from = dayKey(start);
-    return new Set(dailyCheckInDayKeys(patientId).filter((d) => d >= from && d <= dayKey(now))).size;
-  }, [patientId, key]);
+    return monthlyCheckInCount({ doseSelfReportDates: doseReports.map((r) => r.facilityDate), quickCheckCompletedAt: quickCheckDates, dailyCheckInDayKeys: dailyCheckInDayKeys(patientId) }, new Date(), patient?.facilityTimezone);
+  }, [patientId, key, doseReports, quickCheckDates, patient?.facilityTimezone]);
   // Read storage after hydration only.
   const [skipped, setSkipped] = useState(false);
   useEffect(() => {
@@ -108,7 +108,7 @@ export function AdelGreetingCheckIn({ patientId }: { patientId: string }) {
           <p className="font-display text-xl">{c.hi}</p>
           {todayAct && (
             <p className="mt-1 text-sm text-muted-foreground" data-testid="adel-today-activity">
-              {lang === "es" ? `Para hoy en su plan: ${todayAct.label.es}.` : `On your plan today: ${todayAct.label.en}.`}
+              {lang === "es" ? `Para hoy en tu plan: ${todayAct.label.es}.` : `On your plan today: ${todayAct.label.en}.`}
             </p>
           )}
           {!today && !skipped ? (
@@ -184,13 +184,13 @@ const ASK_COPY = {
     noMic: "Voice isn't available here. Please type instead.",
   },
   es: {
-    placeholder: "Pregúntele a Adel lo que quiera…",
+    placeholder: "Pregúntale a Adel lo que quieras…",
     send: "Enviar a Adel",
     mic: "Hablar con Adel",
     listening: "Escuchando…",
     useVoice: "Usar mi voz",
-    heard: "Esto es lo que escuché. Cámbielo si hace falta y luego envíe.",
-    noMic: "La voz no está disponible aquí. Escriba, por favor.",
+    heard: "Esto es lo que escuché. Cámbialo si hace falta y luego envía.",
+    noMic: "La voz no está disponible aquí. Escribe, por favor.",
   },
 };
 

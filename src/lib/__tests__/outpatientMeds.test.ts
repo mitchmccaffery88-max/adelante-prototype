@@ -7,13 +7,13 @@ describe("ASAM task due/overdue label", () => {
   const now = new Date("2026-09-25T12:00:00Z");
   it("labels a past-due task overdue, same rule as My Work", () => {
     expect(asamTaskState("2026-09-20", now)).toBe("overdue");
-    expect(asamTaskDueLabel("2026-09-20", now)).toBe("overdue by 5 days (was due 2026-09-20, draft)");
+    expect(asamTaskDueLabel("2026-09-20", now)).toBe("Due 5 days ago (was due 2026-09-20, draft)");
     expect(asamTaskDueLabel("2026-09-28", now)).toBe("due 2026-09-28 (draft)");
   });
   it("Marcus's seeded task reads overdue", () => {
     const t = AdelanteEHR.openAsamTask("p3");
     expect(t).toBeDefined();
-    expect(asamTaskDueLabel(t!.dueDate)).toMatch(/^overdue by \d+ days?/);
+    expect(asamTaskDueLabel(t!.dueDate)).toMatch(/^Due \d+ days? ago/);
   });
 });
 

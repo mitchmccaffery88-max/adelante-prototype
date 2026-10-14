@@ -251,7 +251,7 @@ function WorklistPage() {
             ["Open", stats.open],
             ["Unclaimed", stats.unclaimed],
             ["Mine (open)", stats.mine],
-            ["Overdue", stats.overdue],
+            ["Follow-up needed", stats.overdue],
             ["STAT", stats.stat],
           ] as const
         ).map(([label, value]) => (

@@ -7,6 +7,7 @@
 // gated data is read through exactly the same call the detail surface uses.
 import { latestInProgress, latestTodayAction } from "@/lib/playerEngagement";
 import { useI18n } from "@/lib/i18n";
+import { monthlyCheckInCount } from "@/lib/checkInStreak";
 import { categoryName, provenanceFor, URGENCY_LABEL } from "@/lib/whatWouldHelp";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
@@ -212,6 +213,8 @@ export function HomeDashboard({
       }),
     [doseReports, quickCheckDates, dailyKeys],
   );
+
+  const monthlyCount = monthlyCheckInCount({ doseSelfReportDates: doseReports.map((r) => r.facilityDate), quickCheckCompletedAt: quickCheckDates, dailyCheckInDayKeys: dailyKeys }, new Date(), patient?.facilityTimezone);
 
   const checkInDaysLast14 = useMemo(() => {
     const cutoff = Date.now() - 14 * 86_400_000;
@@ -617,9 +620,7 @@ export function HomeDashboard({
           {greeting(new Date())}, {firstName}.
         </h1>
         <p className="mt-1 text-base text-muted-foreground" data-testid="patient-streak-line">
-          {streak.days > 0
-            ? `${streak.days}-day check-in streak${streak.checkedInToday ? "" : " · today's still open"}`
-            : "No check-in streak going right now — today can start one."}
+          {lang === "es" ? `${monthlyCount} registros este mes` : `${monthlyCount} check-ins this month`}
         </p>
         <div className="mt-1">
           <DaysSoberLine patientId={patientId} />

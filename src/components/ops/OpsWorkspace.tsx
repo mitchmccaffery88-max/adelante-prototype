@@ -56,7 +56,7 @@ export function BillingWorkspaceTiles() {
     <section className="space-y-3" data-testid="billing-workspace">
       <div className="flex flex-wrap gap-2" data-testid="billing-today-strip">
         <StripCount testId="strip-blocked" label="Claims blocked" n={ws.blocked.length} onClick={() => set("action", true)} />
-        <StripCount testId="strip-ready" label="Ready to submit" n={ws.ready.length} onClick={() => set("pipeline", true)} />
+        <StripCount testId="strip-ready" label="Ready to send" n={ws.ready.length} onClick={() => set("pipeline", true)} />
         <StripCount testId="strip-eligibility" label="Eligibility checks due" n={ws.eligibilityDue.length} onClick={() => set("action", true)} />
         <StripCount testId="strip-payments" label="Payments to post" n={ws.paymentsToPost.length} onClick={() => set("payments", true)} />
         <StripCount testId="strip-holds" label="Duplicate holds" n={ws.holds.length} onClick={() => set("action", true)} />
@@ -98,7 +98,7 @@ export function BillingWorkspaceTiles() {
           {ws.eligibilityDue.length > 8 && <li className="py-1.5 text-xs"><Link to="/eligibility-worklist" className="text-teal underline">All {ws.eligibilityDue.length} on the eligibility worklist</Link></li>}
         </ul>
       </Tile>
-      <Tile id="pipeline" title="Claims pipeline" summary={`${ws.ready.length} ready to submit`} open={open.pipeline} onOpenChange={(v) => set("pipeline", v)}>
+      <Tile id="pipeline" title="Claims pipeline" summary={`${ws.ready.length} ready to send`} open={open.pipeline} onOpenChange={(v) => set("pipeline", v)}>
         <ul className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
           {BILLING_STATUS_ROWS.map((r) => <li key={r.status} className="flex justify-between rounded border px-2 py-1"><span>{r.label}</span><Badge variant="outline">{counts[r.status]}</Badge></li>)}
         </ul>

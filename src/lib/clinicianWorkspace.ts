@@ -131,7 +131,7 @@ export function workspaceActionRows(input: {
     if (!(owned || (coord && (pool || sla.overdue)) || (!e.ownerStaffId && mineIds.has(c.patient.id)))) continue;
     const left = Math.max(0, crisisSlaTarget(e).ms - sla.ageMs);
     const countdown = sla.overdue ? overdueByLabel(sla.overdueByMs) : `${Math.floor(left / 3600000)}h ${Math.round((left % 3600000) / 60000)}m left`;
-    const label = owned ? "Crisis follow-up — yours" : pool ? "Crisis follow-up — coordinator pool" : `Crisis overdue — owner ${e.ownerName ?? "assigned"}`;
+    const label = owned ? "Crisis follow-up — yours" : pool ? "Crisis follow-up — coordinator pool" : `Crisis follow-up needed — owner ${e.ownerName ?? "assigned"}`;
     rows.push({ id: `crisis:${e.id}`, kind: "crisis", patientId: c.patient.id, patientName: `${c.patient.firstName} ${c.patient.lastName}`, label, dueAt: e.lastTriggeredAt ?? e.triggeredAt, due: countdown, group: "now", action: coord && !owned ? "Reassign" : "Open crisis", sourceId: e.id });
   }
   for (const r of screenerDueRows(mine, { role: actor.role }))
@@ -168,7 +168,7 @@ export function workspaceActionRows(input: {
   }
   // §Batch B2 — referral chase tasks (owner, or coordinator pool). Neutral text only.
   for (const c of chaseRowsFor(actor, now))
-    push({ id: `chase:${c.referral.id}`, kind: "chase", patientId: c.referral.enrolledPatientId ?? "", patientName: `${c.referral.firstName} ${c.referral.lastName} (referral)`, label: `${c.lane === "pool" ? (c.task.owner ? "Overdue — reassign · " : "Unassigned · ") : ""}${c.text}`, dueAt: c.task.dueAt, action: c.lane === "pool" && !c.task.owner ? "Claim" : "Open referral", sourceId: c.referral.id });
+    push({ id: `chase:${c.referral.id}`, kind: "chase", patientId: c.referral.enrolledPatientId ?? "", patientName: `${c.referral.firstName} ${c.referral.lastName} (referral)`, label: `${c.lane === "pool" ? (c.task.owner ? "Follow-up needed — reassign · " : "Unassigned · ") : ""}${c.text}`, dueAt: c.task.dueAt, action: c.lane === "pool" && !c.task.owner ? "Claim" : "Open referral", sourceId: c.referral.id });
   // §C3 — re-screen severity flags go to the patient's assigned clinician. Neutral label.
   for (const p of patients) {
     const who = severityAssignee(p);
@@ -231,7 +231,7 @@ export function workspaceActionRows(input: {
   // §A3 — content waiting for a clinical reviewer.
   if (CONTENT_REVIEWER_ROLES.includes(actor.role)) for (const e of contentReviewQueue().filter((x) => contentVisibleToStaff(actor.role, x.typeId, x.body)))
     rows.push({ id: `content-waiting:${e.typeId}:${e.id}`, kind: "content_waiting", patientId: "", patientName: "Patient content", label: `Content review waiting — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Review", group: "week", action: "Review content", sourceId: e.id });
-  for (const e of staleContentFor(actor.staffId ?? "", actor.staffName, actor.role, now)) rows.push({ id: `content-review:${e.typeId}:${e.id}`, kind: "content_review", patientId: "", patientName: "Patient content", label: `Review overdue — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Past review date", group: "today", action: "Review content", sourceId: e.id });
+  for (const e of staleContentFor(actor.staffId ?? "", actor.staffName, actor.role, now)) rows.push({ id: `content-review:${e.typeId}:${e.id}`, kind: "content_review", patientId: "", patientName: "Patient content", label: `Review follow-up needed — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Past review date", group: "today", action: "Review content", sourceId: e.id });
   // Crisis always first, crisis notes pinned right after (top of Needs closing).
   const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "contact"] : ["crisis", "crisis_note", "severity", "escalation", "reply"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {

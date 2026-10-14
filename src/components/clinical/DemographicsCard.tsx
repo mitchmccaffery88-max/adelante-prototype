@@ -129,7 +129,7 @@ export function DemographicsCard({ patientId }: { patientId: string }) {
                 <ul className="mt-1">
                   {h.changes.map((c) => (
                     <li key={c.field} className="break-words">
-                      {DEMOGRAPHIC_LABEL[c.field]}: <span className="line-through">{c.before || "—"}</span> → {c.after || "—"}
+                      {DEMOGRAPHIC_LABEL[c.field]}: <span className="line-through">{c.before || "—"}</span> to {c.after || "—"}
                     </li>
                   ))}
                 </ul>

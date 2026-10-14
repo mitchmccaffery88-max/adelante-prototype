@@ -70,7 +70,7 @@ export function simulateEligibilityCheck(episodeId: string, actor: { name: strin
 
 export type ReleaseNextAction = "submit_application" | "follow_up_reactivation" | "confirm_active" | "none";
 export const NEXT_ACTION_LABEL: Record<ReleaseNextAction, string> = {
-  submit_application: "Submit application / reactivation",
+  submit_application: "Send application / reactivation",
   follow_up_reactivation: "Follow up — not Active after release",
   confirm_active: "Confirm coverage",
   none: "—",

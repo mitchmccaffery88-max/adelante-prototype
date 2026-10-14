@@ -1,4 +1,4 @@
-import { CircleAlert } from "lucide-react";
+import {Check,  CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatClinicianName } from "@/lib/coordination";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -49,6 +49,10 @@ export const Route = createFileRoute("/admin-credentialing")({
   head: () => ({
     meta: [
       { title: "Credentialing Dashboard — Adelante" },
+      { property: "og:title", content: "Credentialing Dashboard — Adelante" },
+      { property: "og:description", content: "Verify licenses, DEA, malpractice, and payer enrollments." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "description", content: "Verify licenses, DEA, malpractice, and payer enrollments." },
     ],
   }),
@@ -274,7 +278,7 @@ function EditCredentialDialog({ cred, by, onClose }: { cred: CredentialDoc; by: 
             <div className="text-muted-foreground sm:col-span-2 space-y-1 text-[11px]">
               {cred.expiryChanges!.map((h, i) => (
                 <p key={i}>
-                  {h.at.slice(0, 10)} · {h.from ?? "—"} → {h.to ?? "—"} · {h.by}: {h.reason}
+                  {h.at.slice(0, 10)} · {h.from ?? "—"} to {h.to ?? "—"} · {h.by}: {h.reason}
                 </p>
               ))}
             </div>
@@ -598,7 +602,7 @@ function CredentialingAdminPage() {
                         </span>
                       )}
                     </td>
-                    <td>{c.verifiedAt ? "✓" : "—"}</td>
+                    <td>{c.verifiedAt ? <Check className="size-4" aria-label="Verified" /> : "—"}</td>
                     <td className="space-x-1 text-right whitespace-nowrap">
                       <Button
                         size="sm"

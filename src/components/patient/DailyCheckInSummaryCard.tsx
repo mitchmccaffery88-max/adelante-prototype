@@ -12,7 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { checkInStreakFrom } from "@/lib/checkInStreak";
+import { monthlyCheckInCount } from "@/lib/checkInStreak";
+import { useI18n } from "@/lib/i18n";
 import {
   CHECK_IN_EMOTIONS,
   dailyCheckInDayKeys,
@@ -21,6 +22,8 @@ import {
 } from "@/lib/selfTracking";
 
 export function DailyCheckInSummaryCard({ patientId }: { patientId: string }) {
+  const { lang } = useI18n();
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const doseReports = useEhr(() => AdelanteEHR.listDoseSelfReports(patientId));
   const quickCheckDates = useEhr(() => AdelanteEHR.quickCheckDates(patientId));
 
@@ -34,12 +37,12 @@ export function DailyCheckInSummaryCard({ patientId }: { patientId: string }) {
 
   const streak = useMemo(
     () =>
-      checkInStreakFrom({
+      monthlyCheckInCount({
         doseSelfReportDates: doseReports.map((r) => r.facilityDate),
         quickCheckCompletedAt: quickCheckDates,
         dailyCheckInDayKeys: dailyKeys,
-      }),
-    [doseReports, quickCheckDates, dailyKeys],
+      }, new Date(), patient?.facilityTimezone),
+    [doseReports, quickCheckDates, dailyKeys, patient?.facilityTimezone],
   );
 
   const feelings = (today?.emotions ?? [])
@@ -65,14 +68,13 @@ export function DailyCheckInSummaryCard({ patientId }: { patientId: string }) {
           : "How are you doing today? It takes about a minute."}
       </p>
 
-      {streak.days > 0 && (
+      {streak > 0 && (
         <p
           className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"
           data-testid="daily-check-in-streak"
         >
           <Flame className="h-4 w-4 text-primary" aria-hidden="true" />
-          {streak.days}-day check-in streak
-          {streak.checkedInToday ? "" : " · today's still open"}
+          {lang === "es" ? `${streak} registros este mes` : `${streak} check-ins this month`}
         </p>
       )}
 

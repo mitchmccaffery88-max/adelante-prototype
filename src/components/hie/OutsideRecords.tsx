@@ -62,7 +62,7 @@ function DraftBox({ encounter }: { encounter: HieEncounter }) {
         <Textarea value={text} onChange={(e) => setText(e.target.value)} className="text-xs" aria-label="Edit follow-up task" />
       )}
       {dismissing && (
-        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for dismissing (required)" className="text-xs" />
+        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for not using this draft (required)" className="text-xs" />
       )}
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={() => run(() => acceptHieDraft(draft.id, who, text ?? undefined), "Task created")}>
@@ -72,11 +72,11 @@ function DraftBox({ encounter }: { encounter: HieEncounter }) {
           <Button size="sm" variant="outline" onClick={() => setText(draft.text)}>Edit</Button>
         )}
         {dismissing ? (
-          <Button size="sm" variant="ghost" onClick={() => run(() => dismissHieDraft(draft.id, reason, who), "Draft dismissed")}>
-            Confirm dismiss
+          <Button size="sm" variant="ghost" onClick={() => run(() => dismissHieDraft(draft.id, reason, who), "Draft not used")}>
+            Don't use this draft
           </Button>
         ) : (
-          <Button size="sm" variant="ghost" onClick={() => setDismissing(true)}>Dismiss</Button>
+          <Button size="sm" variant="ghost" onClick={() => setDismissing(true)}>Don't use this draft</Button>
         )}
       </div>
     </div>

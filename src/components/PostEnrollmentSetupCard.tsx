@@ -140,7 +140,7 @@ export function PostEnrollmentSetupCard({ limit }: { limit?: number }) {
       {limit && rows.length > shown.length && (
         <div className="pt-2 text-xs">
           <Link to="/admin-coordination" className="underline">
-            See all {rows.length} in clinical coordination →
+            See all {rows.length} in clinical coordination to
           </Link>
         </div>
       )}

@@ -102,7 +102,7 @@ export function privateNudge(input: PrivateNudgeInput): PrivateNudge | null {
     return {
       id: "streak-strong",
       tone: "steady",
-      text: `${streakDays} days in a row of checking in. That consistency is yours — nobody handed it to you.`,
+      text: "You made time to check in. That effort is yours — nobody handed it to you.",
     };
   }
 
@@ -110,7 +110,7 @@ export function privateNudge(input: PrivateNudgeInput): PrivateNudge | null {
     return {
       id: "streak-building",
       tone: "steady",
-      text: `Three or more days running now. Small and repeated beats big and once.`,
+      text: "You made time for yourself. Small steps count.",
     };
   }
 
@@ -118,7 +118,7 @@ export function privateNudge(input: PrivateNudgeInput): PrivateNudge | null {
     return {
       id: "returning",
       tone: "gentle",
-      text: "You've been back a few times in the last couple of weeks. Coming back is the part that counts, not the streak.",
+      text: "You've been back a few times in the last couple of weeks. Coming back is the part that counts.",
     };
   }
 

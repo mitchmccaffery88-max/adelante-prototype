@@ -45,7 +45,7 @@ export type LiveMetricMap = Record<MetricKey, LiveMetric>;
 export const METRIC_KEY_LABELS: Record<MetricKey, string> = {
   mar_compliance_pct: "MAR compliance (30 days)",
   unsigned_notes_count: "Unsigned notes",
-  overdue_task_count: "Overdue tasks",
+  overdue_task_count: "Follow-up needed tasks",
   group_attendance_rate_pct: "Group attendance rate (30 days)",
   controlled_count_discrepancies: "Controlled count discrepancies",
   open_kites_count: "Open kites",

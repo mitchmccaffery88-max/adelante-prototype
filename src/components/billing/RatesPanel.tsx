@@ -157,7 +157,7 @@ export function RatesPanel({ canWrite }: { canWrite: boolean }) {
               </div>
               <div className="text-muted-foreground">{PROGRAM_LABEL[r.program]}</div>
               <div>
-                {r.effectiveFrom} → {r.effectiveTo ?? "open"} {r.placeholder && <PlaceholderTag />}
+                {r.effectiveFrom} to {r.effectiveTo ?? "open"} {r.placeholder && <PlaceholderTag />}
               </div>
               {canWrite && !r.effectiveTo && <EndDateRate id={r.id} />}
             </div>
@@ -181,7 +181,7 @@ export function RatesPanel({ canWrite }: { canWrite: boolean }) {
                 <td className="px-3 py-2 text-xs">{PROGRAM_LABEL[r.program]}</td>
                 <td className="px-3 py-2 font-mono text-xs">{DOLLARS(r.amountCents)}</td>
                 <td className="px-3 py-2 text-xs">
-                  {r.effectiveFrom} → {r.effectiveTo ?? "open"}
+                  {r.effectiveFrom} to {r.effectiveTo ?? "open"}
                   {r.endReason && <div className="text-[10px] text-muted-foreground">Ended: {r.endReason}</div>}
                 </td>
                 <td className="px-3 py-2 text-xs">

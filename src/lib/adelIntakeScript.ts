@@ -68,26 +68,26 @@ export const ADEL_COPY = {
   es: {
     banner: "Prototipo · preguntas guiadas, no generadas por IA",
     bannerDetail:
-      "Adel sigue un guion fijo con las mismas preguntas del formulario. Nada se guarda hasta que usted lo confirme.",
+      "Adel sigue un guion fijo con las mismas preguntas del formulario. Nada se guarda hasta que tú lo confirmes.",
     pending: "Traducción pendiente de revisión bilingüe",
     intro:
-      "Hola, soy Adel. Le haré algunas preguntas sobre usted y cómo se paga su atención, una a la vez. Puede tocar una respuesta o escribirla.",
+      "Hola, soy Adel. Te haré algunas preguntas sobre ti y cómo se paga tu atención, una a la vez. Puedes tocar una respuesta o escribirla.",
     weHave: "Esto es lo que tenemos: {v}. ¿Sigue siendo correcto?",
-    youSaid: "Usted dijo: {v}. ¿Es correcto?",
+    youSaid: "Dijiste: {v}. ¿Es correcto?",
     yes: "Sí, es correcto",
     change: "No, cambiarlo",
     skip: "Omitir",
     skipped: "Está bien, omitimos esa.",
-    didntCatch: "No entendí bien. Puede tocar una de estas opciones:",
+    didntCatch: "No entendí bien. Puedes tocar una de estas opciones:",
     saved: "Guardado.",
-    cinInvalid: "El número de Medi-Cal tiene 9 letras o números. Intente de nuevo u omítalo.",
+    cinInvalid: "El número de Medi-Cal tiene 9 letras o números. Intenta de nuevo u omítelo.",
     handoff:
-      "Gracias, guardé esas respuestas. Lo siguiente es su consentimiento. Esa decisión es solo suya, así que se hace en el formulario normal, no conmigo. Toque abajo para ir allí.",
+      "Gracias, guardé esas respuestas. Lo siguiente es tu consentimiento. Esa decisión es solo tuya, así que se hace en el formulario normal, no conmigo. Toca abajo para ir allí.",
     handoffNoConsent:
-      "Gracias, guardé esas respuestas. Su consentimiento ya está registrado, así que continuará en el formulario normal.",
+      "Gracias, guardé esas respuestas. Tu consentimiento ya está registrado, así que continuarás en el formulario normal.",
     toForm: "Continuar en el formulario",
     backToForm: "Usar el formulario",
-    placeholder: "Escriba su respuesta…",
+    placeholder: "Escribe tu respuesta…",
     send: "Enviar",
     getHelp: "En crisis ahora",
   },
@@ -124,7 +124,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     kind: "choice",
     prompt: {
       en: "What language should we use with you?",
-      es: "¿En qué idioma debemos hablarle?",
+      es: "¿En qué idioma debemos hablarte?",
     },
     choices: () => [
       { value: "en", label: "English", words: ["ingles", "english"] },
@@ -139,7 +139,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     group: "profile",
     kind: "text",
     optional: true,
-    prompt: { en: "What should we call you?", es: "¿Cómo le gustaría que le llamemos?" },
+    prompt: { en: "What should we call you?", es: "¿Cómo te gustaría que te llamemos?" },
     get: (s) => s.profile.preferredName,
     set: (s, v) => P(s, { preferredName: v }),
   },
@@ -150,7 +150,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     optional: true,
     prompt: {
       en: "What pronouns do you use? (she/her, he/him, they/them…) You can skip this.",
-      es: "¿Qué pronombres usa? (ella, él, elle…) Puede omitir esta pregunta.",
+      es: "¿Qué pronombres usas? (ella, él, elle…) Puedes omitir esta pregunta.",
     },
     get: (s) => s.profile.pronouns,
     set: (s, v) => P(s, { pronouns: v }),
@@ -160,7 +160,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     group: "profile",
     kind: "text",
     optional: true,
-    prompt: { en: "What's the best phone number for you?", es: "¿Cuál es el mejor número de teléfono para usted?" },
+    prompt: { en: "What's the best phone number for you?", es: "¿Cuál es el mejor número de teléfono para ti?" },
     get: (s) => s.profile.phone,
     set: (s, v) => P(s, { phone: v }),
   },
@@ -168,7 +168,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     id: "contactChannel",
     group: "profile",
     kind: "choice",
-    prompt: { en: "What's the best way to reach you?", es: "¿Cuál es la mejor manera de comunicarnos con usted?" },
+    prompt: { en: "What's the best way to reach you?", es: "¿Cuál es la mejor manera de comunicarnos contigo?" },
     choices: (lang) => [
       { value: "text", label: lang === "es" ? "Mensaje de texto" : "Text", words: ["text", "texto", "sms", "mensaje"] },
       { value: "call", label: lang === "es" ? "Llamada" : "Phone call", words: ["call", "phone", "llamada", "llamar"] },
@@ -199,7 +199,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     optional: true,
     prompt: {
       en: "What's a mailing or temporary address for you? You can skip this.",
-      es: "¿Cuál es su dirección postal o temporal? Puede omitir esta pregunta.",
+      es: "¿Cuál es tu dirección postal o temporal? Puedes omitir esta pregunta.",
     },
     get: (s) => s.profile.address,
     set: (s, v) => P(s, { address: v }),
@@ -239,7 +239,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     optional: true,
     prompt: {
       en: "Now, how your care gets paid for. What kind of coverage do you have?",
-      es: "Ahora, cómo se paga su atención. ¿Qué tipo de cobertura tiene?",
+      es: "Ahora, cómo se paga tu atención. ¿Qué tipo de cobertura tienes?",
     },
     choices: (lang) =>
       BENEFITS_CHOICES.map((c) => ({
@@ -269,7 +269,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     show: (s) => isMediCalChoice(s.benefits.choice),
     prompt: {
       en: "Do you have your Medi-Cal ID (CIN)? It's 9 letters or numbers on the card. You can skip this.",
-      es: "¿Tiene su número de Medi-Cal (CIN)? Son 9 letras o números en la tarjeta. Puede omitir esta pregunta.",
+      es: "¿Tienes tu número de Medi-Cal (CIN)? Son 9 letras o números en la tarjeta. Puedes omitir esta pregunta.",
     },
     get: (s) => s.benefits.cin,
     set: (s, v) => B(s, { cin: normalizeCinValue(v) }),
@@ -281,7 +281,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     kind: "choice",
     optional: true,
     show: (s) => isMediCalChoice(s.benefits.choice),
-    prompt: { en: "Which Medi-Cal plan are you in?", es: "¿En qué plan de Medi-Cal está?" },
+    prompt: { en: "Which Medi-Cal plan are you in?", es: "¿En qué plan de Medi-Cal estás?" },
     choices: (lang, plans) =>
       plans.map((p) => ({
         value: p.id,
@@ -296,7 +296,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     group: "benefits",
     kind: "choice",
     show: (s) => isMediCalChoice(s.benefits.choice),
-    prompt: { en: "Is your Medi-Cal active right now?", es: "¿Su Medi-Cal está activo ahora?" },
+    prompt: { en: "Is your Medi-Cal active right now?", es: "¿Tu Medi-Cal está activo ahora?" },
     choices: (lang) => [
       { value: "active", label: ben(lang, "benStatus_active"), words: ["yes", "si", "active", "activo"] },
       { value: "suspended", label: ben(lang, "benStatus_suspended"), words: ["paused", "suspended", "pausado", "suspendido"] },
@@ -314,7 +314,7 @@ export const ADEL_QUESTIONS: AdelQuestion[] = [
     show: (s) => s.benefits.choice === "private_insurance" || s.benefits.choice === "medicare",
     prompt: {
       en: "What's the insurance company or plan name? You can skip this.",
-      es: "¿Cuál es el nombre de la aseguradora o del plan? Puede omitir esta pregunta.",
+      es: "¿Cuál es el nombre de la aseguradora o del plan? Puedes omitir esta pregunta.",
     },
     get: (s) => s.benefits.planName,
     set: (s, v) => B(s, { planName: v }),

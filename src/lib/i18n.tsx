@@ -90,7 +90,7 @@ const dict = {
     statusScheduled: "scheduled",
     statusCompleted: "completed",
     statusCancelled: "cancelled",
-    statusNoShow: "no show",
+    statusNoShow: "missed visit",
     goalNotStarted: "not started",
     goalInProgress: "in progress",
     goalDone: "done",
@@ -171,7 +171,7 @@ const dict = {
     clinBook: "Book",
     clinJoin: "Join",
     clinAttended: "Attended",
-    clinNoShow: "No-show",
+    clinNoShow: "Missed visit",
     clinNoAppts: "No appointments yet. Use the panel on the right to book one.",
     clinAvailHours: "Default hours from provider profile.",
     clinToday: "Today",
@@ -212,7 +212,7 @@ const dict = {
     adminEnrolled: "Enrolled patients",
     adminCompletion: "Session completion",
     adminVelocity: "Intake velocity",
-    adminVelocitySub: "referral → 1st session",
+    adminVelocitySub: "referral to 1st session",
     adminActiveReferrals: "Active referrals",
     adminVerified: "Medi-Cal verified",
     adminEcm: "ECM caseload",
@@ -229,7 +229,7 @@ const dict = {
     adminTableNote:
       "No names, diagnoses, or care-plan narrative shown here. Clinical detail lives only in Case Manager and Clinician workspaces.",
     adminBillDraft: "Draft",
-    adminBillSubmitted: "Submitted",
+    adminBillSubmitted: "With payer",
     adminBillPaid: "Paid",
     adminBillDenied: "Denied",
     adminBillNote:
@@ -242,8 +242,8 @@ const dict = {
     adminPurposeSms: "SMS reminders",
     adminPurposeHipaa: "HIPAA",
     adminMinNecessary: "De-identified · minimum-necessary",
-    adminSmsSent: "✓ Welcome SMS sent",
-    adminManualOutreach: "⚑ Manual outreach queued (no SMS)",
+    adminSmsSent: " Welcome SMS sent",
+    adminManualOutreach: "Manual outreach queued (no SMS)",
     adminCoverageActive: "Active",
     adminCoverageSuspended: "Suspended",
     adminCoverageAssist: "Assistance",
@@ -503,7 +503,7 @@ const dict = {
     statusScheduled: "programada",
     statusCompleted: "completada",
     statusCancelled: "cancelada",
-    statusNoShow: "sin asistencia",
+    statusNoShow: "cita perdida",
     goalNotStarted: "sin empezar",
     goalInProgress: "en progreso",
     goalDone: "completada",
@@ -584,7 +584,7 @@ const dict = {
     clinBook: "Reservar",
     clinJoin: "Unirse",
     clinAttended: "Asistió",
-    clinNoShow: "No asistió",
+    clinNoShow: "Cita perdida",
     clinNoAppts: "Aún no hay citas. Usa el panel de la derecha para reservar una.",
     clinAvailHours: "Horario predeterminado del perfil del proveedor.",
     clinToday: "Hoy",
@@ -626,7 +626,7 @@ const dict = {
     adminEnrolled: "Pacientes inscritos",
     adminCompletion: "Asistencia a sesiones",
     adminVelocity: "Velocidad de admisión",
-    adminVelocitySub: "referido → 1ª sesión",
+    adminVelocitySub: "referido to 1ª sesión",
     adminActiveReferrals: "Referidos activos",
     adminVerified: "Medi-Cal verificado",
     adminEcm: "Carga ECM",
@@ -643,7 +643,7 @@ const dict = {
     adminTableNote:
       "Aquí no se muestran nombres, diagnósticos ni narrativa del plan. El detalle clínico vive solo en los espacios de Coordinador y Clínico.",
     adminBillDraft: "Borrador",
-    adminBillSubmitted: "Enviado",
+    adminBillSubmitted: "Con la aseguradora",
     adminBillPaid: "Pagado",
     adminBillDenied: "Denegado",
     adminBillNote:
@@ -656,8 +656,8 @@ const dict = {
     adminPurposeSms: "Recordatorios SMS",
     adminPurposeHipaa: "HIPAA",
     adminMinNecessary: "Sin identificadores · mínimo necesario",
-    adminSmsSent: "✓ SMS de bienvenida enviado",
-    adminManualOutreach: "⚑ Contacto manual pendiente (sin SMS)",
+    adminSmsSent: " SMS de bienvenida enviado",
+    adminManualOutreach: "Contacto manual pendiente (sin SMS)",
     adminCoverageActive: "Activa",
     adminCoverageSuspended: "Pausada",
     adminCoverageAssist: "Asistencia",
@@ -881,7 +881,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   // pronounce content in the right locale.
   useEffect(() => {
     if (typeof document !== "undefined") {
-      document.documentElement.lang = lang;
+      document.documentElement.lang = document.querySelector('[data-staff-english="true"]') ? "en" : lang;
     }
   }, [lang]);
 
@@ -941,6 +941,12 @@ function StoredLanguageSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stored, patientId]);
   return null;
+}
+
+/** Staff interface language is local and never writes a member preference. */
+export function EnglishSurface({ children }: { children: ReactNode }) {
+  useEffect(() => { document.documentElement.lang = "en"; });
+  return <I18nCtx.Provider value={{ lang: "en", setLang: () => {}, t: (k) => dict.en[k] }}><div data-staff-english="true">{children}</div></I18nCtx.Provider>;
 }
 
 /** Preview language stays local: never changes a patient's preference. */

@@ -178,7 +178,7 @@ export function buildRefillSummary(r: RefillRequest, role: StaffRole, now = new 
       (!lastVisit || +now - +new Date(lastVisit) > 90 * DAY) && "no visit in 90 days",
       missed && "recent missed visit",
       abnormal && "abnormal lab",
-      overdueLab && "lab overdue",
+      overdueLab && "lab follow-up needed",
       effects.some((e) => !e.acknowledgedAt) && "open side-effect report",
       wanted.length && !labs.length && "monitoring lab missing",
     ].filter(Boolean).join(", ");
@@ -193,7 +193,7 @@ export type OutreachReason = "missed_visit" | "outside_event" | "contact_due";
 export const OUTREACH_REASON_LABEL: Record<OutreachReason, string> = {
   missed_visit: "Missed visit",
   outside_event: "Outside ED visit / hospital stay",
-  contact_due: "Overdue contact",
+  contact_due: "Follow-up needed contact",
 };
 /**
  * Plain-language (about 3rd–5th grade), Part 2-safe patient message. Uses only

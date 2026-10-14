@@ -64,7 +64,7 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
   const steps: Step[] = [
     {
       key: "submitted",
-      label: "Referral submitted",
+      label: "Referral sent",
       reachedAt: referral?.createdAt,
       note: referral ? referral.referringAgency || "Not provided" : undefined,
     },

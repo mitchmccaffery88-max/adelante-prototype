@@ -75,7 +75,7 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
   if (appt.status === "no_show")
     return (
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="visit-no-show">
-        <StatusChip lang="en" state={appt.clinicianId === actor.clinicianId || appt.clinicianId === actor.staffId ? "yourturn" : "team"} label="No-show" />
+        <StatusChip lang="en" state={appt.clinicianId === actor.clinicianId || appt.clinicianId === actor.staffId ? "yourturn" : "team"} label="Missed visit" />
         {appt.noShow && <span>marked by {appt.noShow.byName}</span>}
       </div>
     );
@@ -135,8 +135,8 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
           </Button>
         )}
         {past ? (
-          <Button size="sm" variant="outline" className="min-h-9" onClick={() => run(() => AdelanteEHR.markAppointmentNoShow(appt.id, who), "Marked no-show. Patient notified.")}>
-            <UserX className="mr-1.5 h-4 w-4" /> No-show
+          <Button size="sm" variant="outline" className="min-h-9" onClick={() => run(() => AdelanteEHR.markAppointmentNoShow(appt.id, who), "Marked Missed visit. Patient notified.")}>
+            <UserX className="mr-1.5 h-4 w-4" /> Mark missed visit
           </Button>
         ) : (
           !pending && (

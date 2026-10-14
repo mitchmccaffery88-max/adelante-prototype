@@ -464,7 +464,7 @@ function GoalHistoryTimeline({
               <span className="absolute -left-[15px] top-1.5 h-1.5 w-1.5 rounded-full bg-teal" />
               <div>{String(d.goalText ?? "Goal")}</div>
               <div className="text-[11px] text-muted-foreground">
-                {goalStatusLabel(String(d.from ?? "—"))} → {goalStatusLabel(String(d.to ?? "—"))} ·{" "}
+                {goalStatusLabel(String(d.from ?? "—"))} to {goalStatusLabel(String(d.to ?? "—"))} ·{" "}
                 <ClientDate value={e.at} />
                 {audience !== "patient" && (e.actorId || e.actorRole) && (
                   <> · {e.actorId ?? String(e.actorRole).replace("_", " ")}</>

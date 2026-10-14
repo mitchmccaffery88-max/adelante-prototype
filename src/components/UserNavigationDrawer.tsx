@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { HeartHandshake, LifeBuoy, Menu } from "lucide-react";
+import {X,  HeartHandshake, LifeBuoy, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -57,7 +57,7 @@ export function UserNavigationDrawer({ mode }: { mode: "patient" | "advocate" })
               {mode === "patient" ? t("appName") : "Advocate access"}
             </SheetTitle>
             <Button type="button" variant="ghost" size="icon" onClick={close} aria-label="Close navigation">
-              <span aria-hidden="true" className="text-xl leading-none">×</span>
+              <X className="size-5" aria-hidden="true" />
             </Button>
           </div>
 

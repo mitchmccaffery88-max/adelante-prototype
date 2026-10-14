@@ -119,7 +119,7 @@ function Held() {
   );
 }
 
-const FU_LABEL: Record<FollowUp, string> = { followed: "Followed up within 48h", overdue: "Overdue", open: "Open", "n/a": "—" };
+const FU_LABEL: Record<FollowUp, string> = { followed: "Followed up within 48h", overdue: "Follow-up needed", open: "Open", "n/a": "—" };
 
 function Events() {
   const { role } = useActingStaff();
@@ -142,7 +142,7 @@ function Events() {
           <option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="365">Last year</option>
         </select>
         <select aria-label="Follow-up" className={sel} value={fu} onChange={(e) => setFu(e.target.value)}>
-          <option value="all">Any follow-up</option><option value="followed">Followed up within 48h</option><option value="overdue">Overdue</option><option value="open">Open</option>
+          <option value="all">Any follow-up</option><option value="followed">Followed up within 48h</option><option value="overdue">Follow-up needed</option><option value="open">Open</option>
         </select>
       </div>
       <ul className="space-y-1 text-xs">

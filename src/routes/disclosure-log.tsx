@@ -95,7 +95,7 @@ function DisclosureLogPage() {
           <div key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 text-xs">
             <span className="text-muted-foreground">{new Date(r.at).toLocaleString()}</span>
             <span className="font-medium">{name(r.patientId)}</span>
-            <span>→ {r.recipient.name}{r.recipient.organization ? ` (${r.recipient.organization})` : ""} · {r.recipient.type}</span>
+            <span>to {r.recipient.name}{r.recipient.organization ? ` (${r.recipient.organization})` : ""} · {r.recipient.type}</span>
             <span>· {r.purpose}</span>
             <span className="text-muted-foreground">· {CHANNEL_LABEL[r.channel]} · {r.recordClasses.join(", ")} · {r.consentRef} · {r.actorName} ({r.actingRole.replace(/_/g, " ")}){r.viewedAs ? ` as ${r.viewedAs}` : ""}</span>
             {r.simulated && <Badge variant="outline">Simulated</Badge>}

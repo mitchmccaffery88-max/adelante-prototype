@@ -53,7 +53,7 @@ export function ReferralChasePanel() {
             <div key={t.id} className="flex items-center justify-between gap-3 py-2" data-testid="chase-row">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{r.firstName} {r.lastName}</p>
-                <p className="truncate text-xs text-muted-foreground">{chaseText(t.missing)} · {t.owner ? t.owner.name : "Coordinator pool"}{aging !== "fresh" ? ` · ${aging === "overdue" ? "Overdue" : "Due"}` : ""}</p>
+                <p className="truncate text-xs text-muted-foreground">{chaseText(t.missing)} · {t.owner ? t.owner.name : "Coordinator pool"}{aging !== "fresh" ? ` · ${aging === "overdue" ? "Follow-up needed" : "Due"}` : ""}</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => setOpenId(t.referralId)}>Open</Button>
             </div>

@@ -302,7 +302,7 @@ export const BUILDING_A_LIFE_THAT_WORKS_FIELDS: AuthoredLessonFields[] = [
       {
         label: "Book the ride while I'm still booking the appointment",
         feedback:
-          "Two minutes now, on the same call. This is the single change that turns most no-shows into shows.",
+          "Two minutes now, on the same call. This is the single change that turns most Missed visits into shows.",
       },
       {
         label: "Look up the bus and write down the departure time",

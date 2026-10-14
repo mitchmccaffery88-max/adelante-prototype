@@ -1,3 +1,4 @@
+import { Check, Flag } from "lucide-react";
 // §Referrals Rework Phase 4a — shared rendering for referral state.
 //
 // Three surfaces used to index the referral status into a three-item order
@@ -60,29 +61,29 @@ export function ReferralOutreachStatus({ referral }: { referral: Referral }) {
         className={`mt-1.5 text-[10px] ${last.outcome === "reached" ? "text-success" : "text-gold-foreground"}`}
         data-testid="queue-last-attempt"
       >
-        {last.outcome === "reached" ? "✓ " : "⚑ "}Last outreach: {outreachAttemptSummary(last)} ·{" "}
+        {last.outcome === "reached" ? <Check className="mr-1 inline size-4" aria-hidden="true" /> : <Flag className="mr-1 inline size-4" aria-hidden="true" />}Last outreach: {outreachAttemptSummary(last)} ·{" "}
         <ClientDate value={last.at} />
       </div>
     );
   }
   const sms = referral.welcomeSms;
   if (sms?.status === "sent") {
-    return <div className="mt-1.5 text-[10px] text-success">✓ Welcome text sent</div>;
+    return <div className="mt-1.5 text-[10px] text-success"><Check className="mr-1 inline size-4" aria-hidden="true" />Welcome text sent</div>;
   }
   if (sms?.status === "not_configured") {
     return (
       <div className="mt-1.5 text-[10px] text-gold-foreground">
-        ⚑ Welcome text not sent — text messaging isn't connected yet
+        <Flag className="mr-1 inline size-4" aria-hidden="true" /> Welcome text not sent — text messaging isn't connected yet
       </div>
     );
   }
   if (sms?.status === "failed") {
-    return <div className="mt-1.5 text-[10px] text-attention">⚑ Welcome text failed to send</div>;
+    return <div className="mt-1.5 text-[10px] text-attention"><Flag className="mr-1 inline size-4" aria-hidden="true" /> Welcome text failed to send</div>;
   }
   if (referral.outreachTask === "manual_call") {
     return (
       <div className="mt-1.5 text-[10px] text-gold-foreground">
-        ⚑ No welcome text — this referral needs a phone call
+        <Flag className="mr-1 inline size-4" aria-hidden="true" /> No welcome text — this referral needs a phone call
       </div>
     );
   }

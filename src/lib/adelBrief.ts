@@ -161,7 +161,7 @@ export function computeAdherence(p: Patient, role: StaffRole, now: Date): BriefB
   }
   const overdue = (seesScreenerScores(role, p) ? listScreenerRequests(p.id, role) : []).filter((r) => screenerRequestStatus(r, now) === "overdue");
   if (overdue.length)
-    out.push({ id: "rescreen-overdue", text: `Overdue re-screen: ${overdue.map((r) => r.key.toUpperCase()).join(", ")}.`, at: maxAt(overdue.map((r) => r.dueAt), nowIso), sectionId: "tracking", sources: src("screener_request", overdue.map((r) => r.id)) });
+    out.push({ id: "rescreen-overdue", text: `Follow-up needed re-screen: ${overdue.map((r) => r.key.toUpperCase()).join(", ")}.`, at: maxAt(overdue.map((r) => r.dueAt), nowIso), sectionId: "tracking", sources: src("screener_request", overdue.map((r) => r.id)) });
   return out.slice(0, BRIEF_SECTION_CAP);
 }
 

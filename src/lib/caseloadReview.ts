@@ -20,7 +20,7 @@ export type CaseloadStatus = "on_track" | "due" | "overdue";
 export const STATUS_LABEL: Record<CaseloadStatus, string> = {
   on_track: "On track",
   due: "Due",
-  overdue: "Overdue",
+  overdue: "Follow-up needed",
 };
 
 export type ContactType = "call" | "text" | "in_person" | "video" | "attempt";

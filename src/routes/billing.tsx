@@ -245,7 +245,7 @@ function BillingPage() {
           to="/admin-claims"
           className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary"
         >
-          Open claims worklist →
+          Open claims worklist to
         </Link>
       </header>
 
@@ -680,7 +680,7 @@ function ClaimActions({
       )}
       {s === "generated" && (
         <button className={btn} onClick={() => onAdvance(claim, "submitted")}>
-          <FileText className="h-3 w-3" /> Submit
+          <FileText className="h-3 w-3" /> Send claim
         </button>
       )}
       {s === "submitted" && (

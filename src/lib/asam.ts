@@ -243,7 +243,7 @@ export function asamTaskDueLabel(dueDate: string, now: Date = new Date()): strin
   if (asamTaskState(dueDate, now) === "overdue") {
     const today = new Date(now.toISOString().slice(0, 10)).getTime();
     const n = Math.round((today - new Date(day).getTime()) / ASAM_DAY);
-    return `overdue by ${n} day${n === 1 ? "" : "s"} (was due ${day}, draft)`;
+    return `Due ${n} day${n === 1 ? "" : "s"} ago (was due ${day}, draft)`;
   }
   return `due ${day} (draft)`;
 }

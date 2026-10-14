@@ -94,7 +94,7 @@ function HomeScreenNudge() {
           variant="ghost"
           size="icon"
           onClick={dismiss}
-          aria-label="Dismiss"
+          aria-label="Not now"
           className="min-h-[44px] min-w-[44px]"
         >
           <X className="h-4 w-4" />
