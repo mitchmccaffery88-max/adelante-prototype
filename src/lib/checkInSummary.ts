@@ -6,6 +6,7 @@
 // content — the caller resolves a real live lesson / real verified resource
 // from those category ids, and renders nothing if either is empty.
 import type { EmotionId } from "@/lib/selfTracking";
+import { CHECK_IN_COPY } from "@/lib/checkInCopy";
 
 export interface CheckInSummaryPlan {
   emotion: EmotionId;
@@ -14,9 +15,9 @@ export interface CheckInSummaryPlan {
   /** An id from LIBRARY_CATEGORIES. */
   libraryCategoryId: string;
   /** An id from RESOURCE_CATEGORIES. */
-  resourceCategoryId: string;
+  resourceCategoryId?: string;
   /** Why this resource category — shown so the suggestion isn't a mystery. */
-  resourceReason: string;
+  resourceReason?: string;
 }
 
 /**
@@ -33,77 +34,73 @@ const PRIORITY: EmotionId[] = [
   "exhausted",
   "lonely",
   "hopeful",
+  "calm",
+  "okay",
 ];
 
 const PLANS: Record<EmotionId, Omit<CheckInSummaryPlan, "emotion">> = {
+  calm: { reflection: CHECK_IN_COPY.en.reflections.calm, libraryCategoryId: "success-plan" },
+  okay: { reflection: CHECK_IN_COPY.en.reflections.okay, libraryCategoryId: "starting-strong" },
   craving: {
-    reflection:
-      "You named a craving. Naming it is already the hard part — cravings peak and pass, and you don't have to ride this one out on willpower alone.",
+    reflection: "",
     libraryCategoryId: "strengthen-recovery",
     resourceCategoryId: "recovery_meetings",
-    resourceReason: "A room full of people who know exactly this hour.",
+    resourceReason: "",
   },
   depressed: {
-    reflection:
-      "You said today feels heavy. That's worth taking seriously, and it isn't a failure of effort — it's something you can get real help with.",
+    reflection: "",
     libraryCategoryId: "understanding",
     resourceCategoryId: "healthcare",
-    resourceReason: "Somewhere to be seen by a person, not just an app.",
+    resourceReason: "",
   },
   angry: {
-    reflection:
-      "Anger showed up today. It usually has a reason behind it, and there are ways to let it move through you without it costing you something.",
+    reflection: "",
     libraryCategoryId: "big-emotions",
     resourceCategoryId: "support_groups",
-    resourceReason: "Somewhere to say it out loud with no consequences.",
+    resourceReason: "",
   },
   overwhelmed: {
-    reflection:
-      "Too much at once. You don't have to sort all of it — just the next one thing.",
+    reflection: "",
     libraryCategoryId: "starting-strong",
     resourceCategoryId: "life_skills",
-    resourceReason: "Practical help with the pile, not just the feeling.",
+    resourceReason: "",
   },
   anxious: {
-    reflection:
-      "Anxious today. Your body is running ahead of the facts — that's uncomfortable, not dangerous, and it settles faster with something to do.",
+    reflection: "",
     libraryCategoryId: "train-mind",
     resourceCategoryId: "healthcare",
-    resourceReason: "If it keeps up, someone local can help you work on it.",
+    resourceReason: "",
   },
   stressed: {
-    reflection:
-      "Stressed. Usually that means something real is pressing on you — worth looking at what's actually on the pile.",
+    reflection: "",
     libraryCategoryId: "train-mind",
     resourceCategoryId: "financial",
-    resourceReason: "A lot of stress is money-shaped. There's help for that.",
+    resourceReason: "",
   },
   exhausted: {
-    reflection:
-      "Running on empty. Rest isn't a reward you have to earn first.",
+    reflection: "",
     libraryCategoryId: "starting-strong",
     resourceCategoryId: "healthcare",
-    resourceReason: "Ongoing exhaustion is worth someone checking on.",
+    resourceReason: "",
   },
   lonely: {
-    reflection:
-      "Lonely is one of the hardest ones to say out loud, and you just did. Connection is a skill and a plan, not luck.",
+    reflection: "",
     libraryCategoryId: "support-team",
     resourceCategoryId: "support_groups",
-    resourceReason: "People nearby, in person, this week.",
+    resourceReason: "",
   },
   hopeful: {
-    reflection:
-      "Hopeful today. Worth noticing — the good days are data too, and they're easier to repeat when you know what made them.",
+    reflection: "",
     libraryCategoryId: "success-plan",
     resourceCategoryId: "employment",
-    resourceReason: "A good day is a good day to take a next step.",
+    resourceReason: "",
   },
 };
 
 /** The single plan for a set of selected emotions. Undefined when none given. */
-export function checkInSummaryPlan(emotions: EmotionId[]): CheckInSummaryPlan | undefined {
+export function checkInSummaryPlan(emotions: EmotionId[], lang: "en" | "es" = "en"): CheckInSummaryPlan | undefined {
   const picked = PRIORITY.find((e) => emotions.includes(e));
   if (!picked) return undefined;
-  return { emotion: picked, ...PLANS[picked] };
+  const plan = PLANS[picked];
+  return { ...plan, emotion: picked, reflection: CHECK_IN_COPY[lang].reflections[picked], resourceReason: picked === "calm" || picked === "okay" ? undefined : CHECK_IN_COPY[lang].resourceReasons[picked] };
 }

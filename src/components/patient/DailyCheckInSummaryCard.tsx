@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { monthlyCheckInCount } from "@/lib/checkInStreak";
 import { useI18n } from "@/lib/i18n";
+import { CHECK_IN_COPY } from "@/lib/checkInCopy";
 import {
   CHECK_IN_EMOTIONS,
   dailyCheckInDayKeys,
@@ -23,6 +24,7 @@ import {
 
 export function DailyCheckInSummaryCard({ patientId }: { patientId: string }) {
   const { lang } = useI18n();
+  const c = CHECK_IN_COPY[lang];
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const doseReports = useEhr(() => AdelanteEHR.listDoseSelfReports(patientId));
   const quickCheckDates = useEhr(() => AdelanteEHR.quickCheckDates(patientId));
@@ -45,27 +47,23 @@ export function DailyCheckInSummaryCard({ patientId }: { patientId: string }) {
     [doseReports, quickCheckDates, dailyKeys, patient?.facilityTimezone],
   );
 
-  const feelings = (today?.emotions ?? [])
-    .map((id) => CHECK_IN_EMOTIONS.find((e) => e.id === id))
-    .filter(Boolean)
-    .map((e) => `${e!.emoji} ${e!.label.toLowerCase()}`)
-    .join(", ");
+  const feelings = (today?.emotions ?? []).map(id => c.emotions[id]).filter(Boolean).join(", ");
 
   return (
     <Card className="p-5" data-testid="daily-check-in-summary-card">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary">
-          <HeartPulse className="h-4 w-4" aria-hidden="true" /> Daily check-in
+          <HeartPulse className="h-4 w-4" aria-hidden="true" /> {c.title}
         </div>
         <Badge variant="outline" data-testid="daily-check-in-status">
-          {today ? "Done today" : "Open"}
+          {today ? c.checked : c.open}
         </Badge>
       </div>
 
       <p className="mt-2 text-base">
         {today
-          ? `You checked in today — ${feelings || "no feelings picked"}.`
-          : "How are you doing today? It takes about a minute."}
+          ? `${c.checked} — ${feelings || c.noFeelings}.`
+          : c.ask}
       </p>
 
       {streak > 0 && (
@@ -85,7 +83,7 @@ export function DailyCheckInSummaryCard({ patientId }: { patientId: string }) {
         className="mt-3 min-h-11 w-full rounded-2xl"
       >
         <Link to="/checkin">
-          {today ? "Change today's check-in" : "Start today's check-in"}
+          {today ? c.change : c.title}
           <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
         </Link>
       </Button>

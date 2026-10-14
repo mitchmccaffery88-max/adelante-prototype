@@ -2,12 +2,19 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 6 — Emotion check-in (approved 14 Oct)
+- [ ] Shared eleven-emotion flow, private dismissal, real-record choices and timer
+- [x] Approved allowlist/snapshot and audiences-test setup corrections only
+- [ ] Blocked on Mitch: contentBackup.test.ts:97 author restore expectation; group1Profile.test.ts:162 assignment-active expectation after goal closure. See Phase 6 report.
+- [ ] Full units then every browser/axe, Spanish review exports and 390px screenshot
+- [ ] Phase 6 report, architecture rules and final results
+
 ## Content audiences + Part 2 for authors (14 Oct)
 - [x] Part A: content authors see Part 2 content (approved line staffContentCenter.test.ts:14)
 - [x] Part B: "Who it's for" audiences, any-match; migration of 4 lessons + 2 journeys; no pre_release content stage
 - [x] SUD triggers: care-plan SUD goal sets flag; AUDIT >= 8 / DAST >= 3 neutral staff task (Draft)
 - [x] Editor checkboxes, inventory column/filter, export re-run
-- [ ] Mitch approval: contentBackup.test.ts:87-88 and group1Profile.test.ts:162 (consequences of the approved rules); runAction snapshot (still pending)
+- [ ] Apply Mitch-approved contentBackup.test.ts:87-88 and group1Profile.test.ts:162 corrections; preserve other assertions
 
 ## Phase 5b — Draft member and public screen Spanish (14 Oct)
 - [x] Re-check cfProxyMode and consentWorkflow twice before edits; classify staff-only gaps
