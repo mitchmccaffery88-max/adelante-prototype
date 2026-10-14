@@ -15,7 +15,7 @@ export const Route = createFileRoute("/checkin")({
       { property: "og:title", content: "Today's check-in — Adelante" },
       {
         property: "og:description",
-        content: "One minute, nine feelings, no scoring — and one small next step afterwards.",
+        content: "Eleven feelings, no scoring, and next steps you choose. Private to you.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -8,6 +8,10 @@ export const Route = createFileRoute("/home")({
     typeof search["msg"] === "string" ? { msg: search["msg"] as string } : {},
   head: () => ({
     meta: [
+      { property: "og:title", content: "My care — Adelante" },
+      { property: "og:description", content: "Your appointments, care plan and private daily check-in." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "My care — Adelante" },
       {
         name: "description",
