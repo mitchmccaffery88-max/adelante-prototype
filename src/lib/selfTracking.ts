@@ -39,6 +39,7 @@
 // that is all. See mem://features/patient-private-self-tracking.
 
 import { dayKey } from "./checkInStreak";
+import { CHECK_IN_COPY } from "./checkInCopy";
 
 // ---------------------------------------------------------------------------
 // Vocabularies (ported from the source)
@@ -53,25 +54,19 @@ export type EmotionId =
   | "depressed"
   | "craving"
   | "stressed"
-  | "exhausted";
+  | "exhausted"
+  | "calm"
+  | "okay";
 
 export interface EmotionOption {
   id: EmotionId;
   label: string;
-  emoji: string;
+  image: string;
 }
 
-/** The nine emotions, in source order. */
+/** Emotion-list changes are a clinical decision: Christi, an SME and Dr. Bagga. */
 export const CHECK_IN_EMOTIONS: readonly EmotionOption[] = [
-  { id: "anxious", label: "Anxious", emoji: "😰" },
-  { id: "overwhelmed", label: "Overwhelmed", emoji: "🌊" },
-  { id: "lonely", label: "Lonely", emoji: "🫥" },
-  { id: "hopeful", label: "Hopeful", emoji: "🌱" },
-  { id: "angry", label: "Angry", emoji: "😤" },
-  { id: "depressed", label: "Depressed", emoji: "🌧️" },
-  { id: "craving", label: "Craving", emoji: "🌀" },
-  { id: "stressed", label: "Stressed", emoji: "😖" },
-  { id: "exhausted", label: "Exhausted", emoji: "🥱" },
+  ...(["anxious", "overwhelmed", "lonely", "hopeful", "angry", "depressed", "craving", "stressed", "exhausted", "calm", "okay"] as const).map((id) => ({ id, label: CHECK_IN_COPY.en.emotions[id], image: `/emotions/${id}.svg` })),
 ] as const;
 
 export type CheckInReasonId =
@@ -87,10 +82,7 @@ export interface CheckInReasonOption {
 
 /** The optional, skippable "why" — single select. */
 export const CHECK_IN_REASONS: readonly CheckInReasonOption[] = [
-  { id: "something_happened", label: "Something happened today" },
-  { id: "didnt_sleep", label: "I didn't sleep well" },
-  { id: "old_triggers", label: "I'm around old triggers" },
-  { id: "dont_know", label: "I don't know — just is" },
+  ...(["something_happened", "didnt_sleep", "old_triggers", "dont_know"] as const).map((id) => ({ id, label: CHECK_IN_COPY.en.reasons[id] })),
 ] as const;
 
 /** Lapse step 1 — reflective, not confessional. Multi-select. */
@@ -207,6 +199,25 @@ interface SelfTrackingRow {
 }
 
 const rows = new Map<string, SelfTrackingRow>();
+const deferredDays = new Map<string, string>();
+const skipKey = (id: string) => `adelante.adelCheckInSkipped.${id}`;
+/** Called after hydration only; browser presentation state, never a clinical record. */
+export function refreshCheckInPostponement(patientId: string): void {
+  try {
+    const saved = window.localStorage.getItem(skipKey(patientId));
+    if (saved) deferredDays.set(patientId, saved);
+  } catch { /* memory-only in private browsing */ }
+  notify();
+}
+export function checkInPostponed(patientId: string, now = new Date()): boolean {
+  return deferredDays.get(patientId) === dayKey(now);
+}
+export function postponeDailyCheckIn(patientId: string, now = new Date()): void {
+  const key = dayKey(now);
+  deferredDays.set(patientId, key);
+  try { window.localStorage.setItem(skipKey(patientId), key); } catch { /* memory-only */ }
+  notify();
+}
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -489,5 +500,7 @@ export function selfTrackingAggregate(
 
 export function __resetSelfTracking(): void {
   rows.clear();
+  for (const id of deferredDays.keys()) { try { window.localStorage.removeItem(skipKey(id)); } catch { /* test/server */ } }
+  deferredDays.clear();
   notify();
 }

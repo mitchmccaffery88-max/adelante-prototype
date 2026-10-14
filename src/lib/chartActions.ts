@@ -59,9 +59,10 @@ import { sendForms, resendCurrent, buildIntakePacket, createFormDraft, editForm,
 import { RESTRICT_ROLES, COMPLIANCE_ROLES, roleHasChartEntry, setRecordRestricted, openRestrictedChart, acknowledgeRestrictedOpen } from "@/lib/chartAccess";
 import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";
 import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/moudContinuity";
+import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-13.moud-continuity";
+export const REGISTRY_VERSION = "2026-10-14.private-update";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -143,6 +144,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   { id: "content_simulated_sample", label: { en: "Load Simulated sample metrics", es: "Load Simulated sample metrics" }, group: "admin", menu: false, needsPatient: false, simulated: true, check: "canBrowseContent", store: refs(["seedSimulatedContentSample", seedSimulatedContentSample]), allowed: ({ role }) => canBrowseContent(role) ? ok() : hide("Content library access required.") },
   { id: "content_mark_reviewed", label: { en: "Mark content reviewed", es: "Marcar contenido revisado" }, group: "admin", menu: false, needsPatient: false, check: "canAuthorContent", store: refs(["markContentReviewed", markContentReviewed]), allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("Content author access required.") },
   { id: "patient_lesson_response", label: { en: "Save lesson response", es: "Guardar respuesta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveLessonResponse", AdelanteEHR.saveLessonResponse]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
+  { id: "patient_private_update", label: { en: "Update private entry", es: "Actualizar entrada privada" }, group: "care", menu: false, check: "patient self only", store: refs(["updatePrivateSelfTracking", updatePrivateSelfTracking]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Not available for this person.") },
   { id: "patient_toolkit_save", label: { en: "Save toolkit", es: "Guardar herramienta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveToolkitItem", AdelanteEHR.saveToolkitItem]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
   { id: "patient_lesson_complete", label: { en: "Complete lesson", es: "Completar lección" }, group: "care", menu: false, check: "patient self only", store: refs(["completeExercise", AdelanteEHR.completeExercise], ["completeLibraryItem", AdelanteEHR.completeLibraryItem], ["completeRecoveryLesson", AdelanteEHR.completeRecoveryLesson]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
   { id: "content_create", label: { en: "Create content", es: "Create content" }, group: "admin", menu: false, needsPatient: false,
