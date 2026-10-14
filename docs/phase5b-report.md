@@ -3,8 +3,8 @@
 ## Scope and accounting
 Presentation only; local screen dictionaries use draft tú Spanish. No machine translation service, clinical rule, permission, route, workflow, stored data, test assertion, retry or threshold changes. Public English copy remains unchanged. Clinical/legal intake strings were retained in English; authored lessons/journeys remain for phase 7. Shared CarePlanCard/RecoveryStagePanel preserve audience/actor language boundaries. Website and member shells own their existing single draft notice; duplicate signup verification notice removed. Shared modal Close labels translate through the existing language context.
 
-- 607 previously empty screen keys drafted, including 47 crisis-adjacent priority keys. No Spanish approval claimed.
-- 73 staff-only keys dropped from the source export via reviewed source/branch manifest. Already-localized false positives are also excluded.
+- 608 previously empty screen keys drafted, including 47 crisis-adjacent priority keys. No Spanish approval claimed.
+- 72 staff-only keys dropped from the source export via reviewed source/branch manifest. Already-localized false positives are also excluded.
 - 908 remaining ordinary empty-Spanish keys: authored library/lesson/journey content only.
 - 1611 empty controlled review keys (1804 controlled rows total), unchanged for clinical/legal review.
 - 79 changed files including documentation and the manifest.
