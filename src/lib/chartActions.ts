@@ -60,7 +60,7 @@ import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type Ve
 import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/moudContinuity";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-08.content-player";
+export const REGISTRY_VERSION = "2026-10-13.moud-continuity";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
