@@ -81,6 +81,166 @@ import { ConnectMeButton } from "@/components/patient/NeedConnect";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
 import { patientBrowsableResources } from "@/lib/communityResources";
 import { recommendationsFor, recoveryJourneyVisible } from "@/lib/seeking";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.97fd047f93cb": {
+    "en": "A rough patch",
+    "es": "Un momento difícil"
+  },
+  "ui.c9ce21b58a52": {
+    "en": "Two tools for the hard hours. Neither is shared with anyone.",
+    "es": "Dos herramientas para momentos difíciles. Son privadas."
+  },
+  "ui.d4d6c2d136e4": {
+    "en": "I'm craving right now",
+    "es": "Tengo un antojo ahora mismo"
+  },
+  "ui.98afa0a05ca0": {
+    "en": "I used — help me pick it back up",
+    "es": "Recaí: ayúdenme a retomar el camino"
+  },
+  "ui.0ccbd9afc4bc": {
+    "en": "% of your lessons done",
+    "es": "% de tus lecciones completadas"
+  },
+  "ui.b11449a34df8": {
+    "en": "lesson",
+    "es": "lección"
+  },
+  "ui.1937c4c28f72": {
+    "en": "tool",
+    "es": "herramienta"
+  },
+  "ui.f957097d7a22": {
+    "en": "finished",
+    "es": "terminado"
+  },
+  "ui.3af45b3316d4": {
+    "en": "Back to the library",
+    "es": "Volver a la biblioteca"
+  },
+  "ui.2c41ef18f03d": {
+    "en": "Nothing started yet. The library is a good first stop.",
+    "es": "Nada empezado aún. La biblioteca es un buen lugar para comenzar."
+  },
+  "ui.c6cfcdb17347": {
+    "en": "Browse the library",
+    "es": "Explorar la biblioteca"
+  },
+  "ui.8151e15a11eb": {
+    "en": "Resources near you",
+    "es": "Recursos cerca de ti"
+  },
+  "ui.74800cc11ca1": {
+    "en": "Nothing verified in your area yet. Our team calls every listing before it shows up here.",
+    "es": "Todavía no hay lugares verificados en tu zona. Nuestro equipo llama a cada lugar antes de mostrarlo aquí."
+  },
+  "ui.18d97cbbf3d2": {
+    "en": "See all resources",
+    "es": "Ver todos los recursos"
+  },
+  "ui.4aa24ccbb379": {
+    "en": "Today's medication",
+    "es": "Medicamento de hoy"
+  },
+  "ui.c66c12b98882": {
+    "en": "Taken",
+    "es": "Tomado"
+  },
+  "ui.e746a71ebe0e": {
+    "en": "All my medicines",
+    "es": "Todos mis medicamentos"
+  },
+  "ui.8379d05871a7": {
+    "en": "Your journey",
+    "es": "Tu camino"
+  },
+  "ui.13dffec685ed": {
+    "en": "Open your care plan",
+    "es": "Abrir tu plan de cuidado"
+  },
+  "ui.80f820624247": {
+    "en": "Your support needs",
+    "es": "Tus necesidades de apoyo"
+  },
+  "ui.ca44ad6e58f1": {
+    "en": "What your care team is actively working on with you.",
+    "es": "En lo que tu equipo de cuidado trabaja contigo."
+  },
+  "ui.799fb288b213": {
+    "en": "See help that matches",
+    "es": "Ver ayuda sugerida"
+  },
+  "ui.631a29bb7d79": {
+    "en": "Your first days back",
+    "es": "Tus primeros días de regreso"
+  },
+  "ui.de04fa0e29f9": {
+    "en": "of",
+    "es": "de"
+  },
+  "ui.f99ea488babb": {
+    "en": "steps done",
+    "es": "pasos completados"
+  },
+  "ui.f16c4091712d": {
+    "en": "Pick up where you left off",
+    "es": "Retomar donde te quedaste"
+  },
+  "ui.0635b3df7561": {
+    "en": "My care team",
+    "es": "Mi equipo de cuidado"
+  },
+  "ui.a00a50a9ea38": {
+    "en": "Peer specialist, therapist, case manager",
+    "es": "Especialista de apoyo entre pares, terapeuta, gestor de casos"
+  },
+  "ui.0f70b35ffd0c": {
+    "en": "Find a meeting",
+    "es": "Buscar una reunión"
+  },
+  "ui.083188d78af7": {
+    "en": "Browse and join open group sessions",
+    "es": "Explora y únete a sesiones grupales"
+  },
+  "ui.7613d34cb22c": {
+    "en": "What Can I Help You With Today?",
+    "es": "¿En qué puedo ayudarte hoy?"
+  },
+  "ui.dcdfb5772c5e": {
+    "en": "Adel answers questions in your own words, any hour — and can hand you off to your care team when a person is what you need.",
+    "es": "Adel responde tus preguntas a cualquier hora y puede conectarte con tu equipo de cuidado cuando necesitas hablar con una persona."
+  },
+  "ui.0f01ed56a1e3": {
+    "en": "Example",
+    "es": "Ejemplo"
+  },
+  "ui.313fd626fc37": {
+    "en": "“I couldn't sleep last night and I'm worried about my appointment.”",
+    "es": "“No pude dormir anoche y me preocupa mi cita”."
+  },
+  "ui.359335211270": {
+    "en": "Ask Adel",
+    "es": "Pregúntale a Adel"
+  },
+  "ui.c4b9ac6dafb6": {
+    "en": "Suggested for you",
+    "es": "Sugerido para ti"
+  },
+  "ui.86aeabe2ec8b": {
+    "en": "You've finished every lesson open to you.",
+    "es": "Has terminado todas las lecciones disponibles."
+  },
+  "ui.a6aecc8ebaef": {
+    "en": "Your toolkit is yours to revisit any time.",
+    "es": "Tu caja de herramientas está disponible siempre."
+  },
+  "ui.647f18ff754c": {
+    "en": "Open the library",
+    "es": "Abrir la biblioteca"
+  }
+} as const;
+
 
 // ---------------------------------------------------------------------------
 // Small shared pieces
@@ -149,6 +309,8 @@ export function HomeDashboard({
   patientId: string;
   afterHeader?: React.ReactNode;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const { t: playerText, lang } = useI18n();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const population = usePopulation(patientId);
@@ -358,15 +520,14 @@ export function HomeDashboard({
     key: "rough-patch",
     priority: 60,
     node: (
-          <TileShell icon={Waves} title="A rough patch">
+          <TileShell icon={Waves} title={SCREEN_COPY["ui.97fd047f93cb"][screenLang]}>
             <p className="text-sm text-muted-foreground">
-              Two tools for the hard hours. Neither is shared with anyone.
-            </p>
+              {SCREEN_COPY["ui.c9ce21b58a52"][screenLang]} </p>
             <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-              <Link to="/craving">I&apos;m craving right now</Link>
+              <Link to="/craving">{SCREEN_COPY["ui.d4d6c2d136e4"][screenLang]}</Link>
             </Button>
             <Button asChild variant="outline" className="mt-2 min-h-11 w-full rounded-2xl">
-              <Link to="/slip">I used — help me pick it back up</Link>
+              <Link to="/slip">{SCREEN_COPY["ui.98afa0a05ca0"][screenLang]}</Link>
             </Button>
           </TileShell>
     ),
@@ -383,13 +544,11 @@ export function HomeDashboard({
               <>
                 <p className="text-base">{lastToolkit ? lastToolkit.label : "Keep going"}</p>
                 <p className="mt-1 text-sm font-medium text-foreground" data-testid="library-progress-percent">
-                  {libraryPercent}% of your lessons done
-                </p>
+                  {libraryPercent}{SCREEN_COPY["ui.0ccbd9afc4bc"][screenLang]} </p>
                 <Progress className="mt-2 h-2" value={libraryPercent} />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {lessonsDone.length} lesson{lessonsDone.length === 1 ? "" : "s"} ·{" "}
-                  {exercisesDone.length} tool{exercisesDone.length === 1 ? "" : "s"} finished
-                </p>
+                  {lessonsDone.length} {SCREEN_COPY["ui.b11449a34df8"][screenLang]}{lessonsDone.length === 1 ? "" : "s"} ·{" "}
+                  {exercisesDone.length} {SCREEN_COPY["ui.1937c4c28f72"][screenLang]}{exercisesDone.length === 1 ? "" : "s"} {SCREEN_COPY["ui.f957097d7a22"][screenLang]} </p>
                 <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
                   {lastToolkit ? (
                     <Link
@@ -403,17 +562,16 @@ export function HomeDashboard({
                     {liveLibraryItem(lastToolkit.id) ? "Open the lesson" : "Open the tool"}
                     </Link>
                   ) : (
-                    <Link to="/library">Back to the library</Link>
+                    <Link to="/library">{SCREEN_COPY["ui.3af45b3316d4"][screenLang]}</Link>
                   )}
                 </Button>
               </>
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Nothing started yet. The library is a good first stop.
-                </p>
+                  {SCREEN_COPY["ui.2c41ef18f03d"][screenLang]} </p>
                 <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                  <Link to="/library">Browse the library</Link>
+                  <Link to="/library">{SCREEN_COPY["ui.c6cfcdb17347"][screenLang]}</Link>
                 </Button>
               </>
             )}
@@ -425,7 +583,7 @@ export function HomeDashboard({
     key: "resources",
     priority: 30,
     node: (
-          <TileShell icon={MapPin} title="Resources near you">
+          <TileShell icon={MapPin} title={SCREEN_COPY["ui.8151e15a11eb"][screenLang]}>
             {liveCategories.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {liveCategories.slice(0, 6).map((c) => (
@@ -440,12 +598,10 @@ export function HomeDashboard({
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Nothing verified in your area yet. Our team calls every listing before it shows up
-                here.
-              </p>
+                {SCREEN_COPY["ui.74800cc11ca1"][screenLang]} </p>
             )}
             <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-              <Link to="/resources">See all resources</Link>
+              <Link to="/resources">{SCREEN_COPY["ui.18d97cbbf3d2"][screenLang]}</Link>
             </Button>
           </TileShell>
     ),
@@ -482,7 +638,7 @@ export function HomeDashboard({
     key: "medication",
     priority: 65,
     node: (
-          <TileShell icon={Pill} title="Today's medication">
+          <TileShell icon={Pill} title={SCREEN_COPY["ui.4aa24ccbb379"][screenLang]}>
               <ul className="space-y-2">
                 {doseRows.slice(0, 3).map((row) => {
                   const taken = row.selfReport?.status === "taken";
@@ -517,8 +673,7 @@ export function HomeDashboard({
                       >
                         {taken ? (
                           <>
-                            <Check className="mr-1 h-4 w-4" /> Taken
-                          </>
+                            <Check className="mr-1 h-4 w-4" /> {SCREEN_COPY["ui.c66c12b98882"][screenLang]} </>
                         ) : (
                           "Mark taken"
                         )}
@@ -529,8 +684,7 @@ export function HomeDashboard({
               </ul>
               <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
                 <Link to="/medications">
-                  All my medicines
-                </Link>
+                  {SCREEN_COPY["ui.e746a71ebe0e"][screenLang]} </Link>
               </Button>
           </TileShell>
     ),
@@ -541,7 +695,7 @@ export function HomeDashboard({
     key: "journey",
     priority: 20,
     node: (
-          <TileShell icon={RouteIcon} title="Your journey">
+          <TileShell icon={RouteIcon} title={SCREEN_COPY["ui.8379d05871a7"][screenLang]}>
             <RecoveryStagePanel
               patientId={patientId}
               actor="patient"
@@ -550,8 +704,7 @@ export function HomeDashboard({
             />
             <Button asChild variant="ghost" className="mt-2 min-h-11 w-full rounded-2xl">
               <Link to="/home" hash="your-care-plan-heading">
-                Open your care plan
-              </Link>
+                {SCREEN_COPY["ui.13dffec685ed"][screenLang]} </Link>
             </Button>
           </TileShell>
     ),
@@ -564,10 +717,9 @@ export function HomeDashboard({
       key: "support-needs",
       priority: 75,
       node: (
-        <TileShell icon={HandHeart} title="Your support needs">
+        <TileShell icon={HandHeart} title={SCREEN_COPY["ui.80f820624247"][screenLang]}>
           <p className="text-sm text-muted-foreground">
-            What your care team is actively working on with you.
-          </p>
+            {SCREEN_COPY["ui.ca44ad6e58f1"][screenLang]} </p>
           <ul className="mt-3 space-y-2" data-testid="sdoh-status-list">
             {sdohItems.slice(0, 3).map((i) => {
               const match = matchResourcesForNeed(i);
@@ -603,8 +755,7 @@ export function HomeDashboard({
           </ul>
           <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
             <Link to="/next-steps">
-              See help that matches
-            </Link>
+              {SCREEN_COPY["ui.799fb288b213"][screenLang]} </Link>
           </Button>
         </TileShell>
       ),
@@ -663,18 +814,16 @@ export function HomeDashboard({
       {dayZeroOpen.available && (
         <Card className="p-5" data-testid="reentry-progress-card">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary">
-            <RouteIcon className="h-4 w-4" aria-hidden="true" /> Your first days back
-          </div>
+            <RouteIcon className="h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.631a29bb7d79"][screenLang]} </div>
           <p className="mt-2 text-base">
-            {(dayZero?.completedSteps.length ?? 0)} of {DAY_ZERO_STEPS.length} steps done
-          </p>
+            {(dayZero?.completedSteps.length ?? 0)} {SCREEN_COPY["ui.de04fa0e29f9"][screenLang]} {DAY_ZERO_STEPS.length} {SCREEN_COPY["ui.f99ea488babb"][screenLang]} </p>
           <Progress
             className="mt-2 h-2"
             value={((dayZero?.completedSteps.length ?? 0) / DAY_ZERO_STEPS.length) * 100}
           />
           <Button asChild variant="outline" className="mt-3 min-h-11 rounded-2xl">
             <Link to="/home" hash="day-zero">
-              Pick up where you left off <ChevronRight className="ml-1 h-4 w-4" />
+              {SCREEN_COPY["ui.f16c4091712d"][screenLang]} <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
         </Card>
@@ -691,10 +840,8 @@ export function HomeDashboard({
         >
           <HandHeart className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
           <span>
-            My care team
-            <span className="block text-xs font-normal text-muted-foreground">
-              Peer specialist, therapist, case manager
-            </span>
+            {SCREEN_COPY["ui.0635b3df7561"][screenLang]} <span className="block text-xs font-normal text-muted-foreground">
+              {SCREEN_COPY["ui.a00a50a9ea38"][screenLang]} </span>
           </span>
         </Link>
 
@@ -706,10 +853,8 @@ export function HomeDashboard({
           >
             <Users className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <span>
-              Find a meeting
-              <span className="block text-xs font-normal text-muted-foreground">
-                Browse and join open group sessions
-              </span>
+              {SCREEN_COPY["ui.0f70b35ffd0c"][screenLang]} <span className="block text-xs font-normal text-muted-foreground">
+                {SCREEN_COPY["ui.083188d78af7"][screenLang]} </span>
             </span>
           </Link>
         )}
@@ -722,11 +867,9 @@ export function HomeDashboard({
             <MessageSquare className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="font-display text-xl">What Can I Help You With Today?</h2>
+            <h2 className="font-display text-xl">{SCREEN_COPY["ui.7613d34cb22c"][screenLang]}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Adel answers questions in your own words, any hour — and can hand you off to your
-              care team when a person is what you need.
-            </p>
+              {SCREEN_COPY["ui.dcdfb5772c5e"][screenLang]} </p>
             {/* §Small UI gaps batch item 2 — Adel conversations are held in
                 memory for the session only (transcript retention is an open
                 Part 2 decision), so there is no real "last message" to show.
@@ -734,14 +877,12 @@ export function HomeDashboard({
                 do not imply the patient said it. */}
             <div className="mt-3 space-y-1" data-testid="adel-example-bubble">
               <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                Example
-              </p>
+                {SCREEN_COPY["ui.0f01ed56a1e3"][screenLang]} </p>
               <p className="w-fit max-w-full rounded-2xl rounded-bl-sm bg-secondary px-3 py-2 text-sm">
-                &ldquo;I couldn&apos;t sleep last night and I&apos;m worried about my appointment.&rdquo;
-              </p>
+                {SCREEN_COPY["ui.313fd626fc37"][screenLang]} </p>
             </div>
             <Button asChild className="mt-3 min-h-11 rounded-2xl">
-              <Link to="/adel">Ask Adel</Link>
+              <Link to="/adel">{SCREEN_COPY["ui.359335211270"][screenLang]}</Link>
             </Button>
 
           </div>
@@ -754,8 +895,7 @@ export function HomeDashboard({
         className="border-border bg-surface p-6 text-foreground"
       >
         <div className="text-xs font-medium uppercase tracking-wider opacity-90">
-          Suggested for you
-        </div>
+          {SCREEN_COPY["ui.c4b9ac6dafb6"][screenLang]} </div>
         {suggestions.length > 0 ? (
           <ul className="mt-3 space-y-2">
             {suggestions.map((suggestion, index) => (
@@ -776,15 +916,14 @@ export function HomeDashboard({
           </ul>
         ) : (
           <>
-            <h2 className="mt-2 font-display text-2xl">You've finished every lesson open to you.</h2>
+            <h2 className="mt-2 font-display text-2xl">{SCREEN_COPY["ui.86aeabe2ec8b"][screenLang]}</h2>
             <p className="mt-1 text-sm opacity-90">
-              Your toolkit is yours to revisit any time.
-            </p>
+              {SCREEN_COPY["ui.a6aecc8ebaef"][screenLang]} </p>
             <Button
               asChild
               variant="outline" className="mt-4 min-h-12 rounded-md"
             >
-              <Link to="/library">Open the library</Link>
+              <Link to="/library">{SCREEN_COPY["ui.647f18ff754c"][screenLang]}</Link>
             </Button>
           </>
         )}

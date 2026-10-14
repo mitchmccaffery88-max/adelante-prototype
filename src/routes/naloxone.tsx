@@ -17,6 +17,56 @@ import {
 } from "@/lib/safetyContent";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { recoveryJourneyVisible } from "@/lib/seeking";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.e0857f666903": {
+    "en": "Confirmed by",
+    "es": "Confirmado por"
+  },
+  "ui.fc3baa6b87f6": {
+    "en": "Naloxone & overdose prevention",
+    "es": "Naloxona y prevención de sobredosis"
+  },
+  "ui.ce12d3a54821": {
+    "en": "Your tolerance",
+    "es": "Tu tolerancia"
+  },
+  "ui.e05b6497ee8e": {
+    "en": "Where to get naloxone",
+    "es": "Dónde obtener naloxona"
+  },
+  "ui.aed3b8c6a7c0": {
+    "en": "Verified",
+    "es": "Verificado"
+  },
+  "ui.eb27a190c073": {
+    "en": "Unverified",
+    "es": "Sin verificar"
+  },
+  "ui.922acd282cc0": {
+    "en": "Source:",
+    "es": "Fuente:"
+  },
+  "ui.ebe5f967c23f": {
+    "en": "If someone is overdosing",
+    "es": "Si alguien tiene una sobredosis"
+  },
+  "ui.86c6be7acc57": {
+    "en": "In crisis now",
+    "es": "En crisis ahora"
+  },
+  "ui.9eb24de071a3": {
+    "en": "I'm craving right now",
+    "es": "Tengo deseos de consumo ahora mismo"
+  },
+  "ui.1b21d8c77af2": {
+    "en": "I already used",
+    "es": "Ya lo usé"
+  }
+} as const;
+
 
 function ReviewPendingBanner() {
   if (!SAFETY_CONTENT_REVIEW.pending) return null;
@@ -42,9 +92,11 @@ function PendingChip() {
 }
 
 function VerifiedChip() {
+  const { lang: screenLang } = useI18n();
+
   return (
     <Badge className="border-0 bg-sage-soft text-sage-foreground">
-      Confirmed by {NALOXONE_ACCESS_REVIEW.verifiedBy}
+      {SCREEN_COPY["ui.e0857f666903"][screenLang]} {NALOXONE_ACCESS_REVIEW.verifiedBy}
     </Badge>
   );
 }
@@ -63,6 +115,8 @@ function AccessVerifiedBanner() {
 }
 
 function NaloxonePage() {
+  const { lang: screenLang } = useI18n();
+
   const showRecovery = useEhr(() =>
     recoveryJourneyVisible(AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId())),
   );
@@ -78,7 +132,7 @@ function NaloxonePage() {
     <PatientPage data-testid="naloxone-page">
       <PatientPageHeader
         icon={ShieldPlus}
-        title={<>Naloxone &amp; overdose prevention</>}
+        title={<>{SCREEN_COPY["ui.fc3baa6b87f6"][screenLang]}</>}
         lede="How to get naloxone, how to use it, and what to do while you wait for help."
       />
 
@@ -87,15 +141,14 @@ function NaloxonePage() {
 
       <Card className="soft-shadow space-y-3 border-line-strong bg-surface-sunk p-5">
         <h2 className="flex items-center gap-2 font-display text-xl text-ink-muted">
-          <TriangleAlert className="h-5 w-5" aria-hidden="true" /> Your tolerance
-        </h2>
+          <TriangleAlert className="h-5 w-5" aria-hidden="true" /> {SCREEN_COPY["ui.ce12d3a54821"][screenLang]} </h2>
         <p className="text-base leading-relaxed">{TOLERANCE_WARNING}</p>
         <PendingChip />
       </Card>
 
       <Card className="soft-shadow space-y-3 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-xl">Where to get naloxone</h2>
+          <h2 className="font-display text-xl">{SCREEN_COPY["ui.e05b6497ee8e"][screenLang]}</h2>
           <VerifiedChip />
         </div>
         <ul className="space-y-3" data-testid="naloxone-access-points">
@@ -105,12 +158,11 @@ function NaloxonePage() {
                 <span className="text-base font-semibold">{p.name}</span>
                 {p.verified ? (
                   <Badge variant="outline">
-                    Verified{p.verifiedBy ? ` — ${p.verifiedBy}` : ""}
+                    {SCREEN_COPY["ui.aed3b8c6a7c0"][screenLang]}{p.verifiedBy ? ` — ${p.verifiedBy}` : ""}
                   </Badge>
                 ) : (
                   <Badge variant="outline">
-                    Unverified
-                  </Badge>
+                    {SCREEN_COPY["ui.eb27a190c073"][screenLang]} </Badge>
                 )}
               </div>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{p.what}</p>
@@ -124,7 +176,7 @@ function NaloxonePage() {
                   </div>
                 )}
                 {p.website && <div className="text-muted-foreground">{p.website}</div>}
-                {p.source && <div className="text-xs text-muted-foreground">Source: {p.source}</div>}
+                {p.source && <div className="text-xs text-muted-foreground">{SCREEN_COPY["ui.922acd282cc0"][screenLang]} {p.source}</div>}
               </dl>
             </li>
           ))}
@@ -133,7 +185,7 @@ function NaloxonePage() {
 
       <Card className="soft-shadow space-y-3 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-xl">If someone is overdosing</h2>
+          <h2 className="font-display text-xl">{SCREEN_COPY["ui.ebe5f967c23f"][screenLang]}</h2>
           <PendingChip />
         </div>
         <ol className="space-y-3" data-testid="naloxone-steps">
@@ -151,7 +203,7 @@ function NaloxonePage() {
             </li>
           ))}
         </ol>
-        <p className="text-xs text-muted-foreground">Source: {NALOXONE_STEPS_SOURCE}</p>
+        <p className="text-xs text-muted-foreground">{SCREEN_COPY["ui.922acd282cc0"][screenLang]} {NALOXONE_STEPS_SOURCE}</p>
       </Card>
 
       <Card className="soft-shadow space-y-3 p-5">
@@ -179,20 +231,17 @@ function NaloxonePage() {
       <div className="grid gap-3 sm:grid-cols-3">
         <Button asChild variant="crisisSoft" size="patient" className="w-full">
           <Link to="/crisis">
-            <LifeBuoy className="h-5 w-5" aria-hidden="true" /> In crisis now
-          </Link>
+            <LifeBuoy className="h-5 w-5" aria-hidden="true" /> {SCREEN_COPY["ui.86c6be7acc57"][screenLang]} </Link>
         </Button>
         {showRecovery && (
           <>
             <Button asChild variant="outline" size="patient" className="w-full">
               <Link to="/craving" data-testid="naloxone-craving-link">
-                <Waves className="h-5 w-5" aria-hidden="true" /> I'm craving right now
-              </Link>
+                <Waves className="h-5 w-5" aria-hidden="true" /> {SCREEN_COPY["ui.9eb24de071a3"][screenLang]} </Link>
             </Button>
             <Button asChild variant="outline" size="patient" className="w-full">
               <Link to="/slip" data-testid="naloxone-slip-link">
-                <HeartHandshake className="h-5 w-5" aria-hidden="true" /> I already used
-              </Link>
+                <HeartHandshake className="h-5 w-5" aria-hidden="true" /> {SCREEN_COPY["ui.1b21d8c77af2"][screenLang]} </Link>
             </Button>
           </>
         )}

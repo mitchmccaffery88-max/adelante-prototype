@@ -1,6 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.0dcf3d65ea88": {
+    "en": "Add Adelante to home screen",
+    "es": "Añadir Adelante a la pantalla de inicio"
+  },
+  "ui.e5f79aa13bd5": {
+    "en": "Install app",
+    "es": "Instalar aplicación"
+  }
+} as const;
+
 
 interface InstallAppButtonProps {
   variant?: "default" | "ghost";
@@ -21,6 +35,8 @@ export function InstallAppButton({
   className,
   onInstalled,
 }: InstallAppButtonProps) {
+  const { lang: screenLang } = useI18n();
+
   const { prompt, dismiss } = usePwaInstallPrompt();
 
   const install = async () => {
@@ -39,10 +55,9 @@ export function InstallAppButton({
       size={size}
       className={className}
       onClick={install}
-      aria-label="Add Adelante to home screen"
+      aria-label={SCREEN_COPY["ui.0dcf3d65ea88"][screenLang]}
     >
       <Download className="h-4 w-4 mr-1.5" />
-      Install app
-    </Button>
+      {SCREEN_COPY["ui.e5f79aa13bd5"][screenLang]} </Button>
   );
 }

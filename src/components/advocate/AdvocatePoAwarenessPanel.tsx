@@ -17,8 +17,24 @@ import { PO_DISCLOSURE_ITEMS } from "@/lib/poDisclosure";
 import { PopulationGate } from "@/components/PopulationGate";
 import { Card } from "@/components/ui/card";
 import { Gavel, Lock } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.2d9918e85c0d": {
+    "en": "Voluntary sharing",
+    "es": "Uso compartido voluntario"
+  },
+  "ui.3a7d9767b123": {
+    "en": "item",
+    "es": "elemento"
+  }
+} as const;
+
 
 function Body({ linkId }: { linkId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const view = useEhr(() => AdelanteEHR.advocatePoDisclosure(linkId));
   if (!view.allowed) return null;
   const mandatory = PO_DISCLOSURE_ITEMS.filter((i) => i.tier === "mandatory");
@@ -33,13 +49,13 @@ function Body({ linkId }: { linkId: string }) {
         team can, and only with the person's say-so where it is their choice.
       </p>
       <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
-        <span className="font-medium text-navy">Voluntary sharing</span>
+        <span className="font-medium text-navy">{SCREEN_COPY["ui.2d9918e85c0d"][screenLang]}</span>
         <StatusChip state={view.voluntaryActive ? "done" : "closed"} label={view.voluntaryActive ? "Turned on" : "Not shared"} />
       </div>
       <div className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
         <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>
-          {mandatory.length} item{mandatory.length === 1 ? " is" : "s are"} shared because a court
+          {mandatory.length} {SCREEN_COPY["ui.3a7d9767b123"][screenLang]}{mandatory.length === 1 ? " is" : "s are"} shared because a court
           order or supervision condition requires it, whatever anyone here prefers.
         </span>
       </div>

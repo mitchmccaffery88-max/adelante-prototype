@@ -36,6 +36,154 @@ import {
   type SignupInput,
 } from "@/lib/signup";
 import { ArrowRight, Info, Phone, ShieldCheck, Ticket, UserCheck } from "lucide-react";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.b16c7ac6faff": {
+    "en": "(optional)",
+    "es": "(opcional)"
+  },
+  "ui.1ea156667c3d": {
+    "en": "Name or organization — optional",
+    "es": "Nombre u organización — opcional"
+  },
+  "ui.7105c6908765": {
+    "en": "It looks like",
+    "es": "Parece que"
+  },
+  "ui.c0c1e545c546": {
+    "en": "RE-4K7P-92XB",
+    "es": "RE-4K7P-92XB"
+  },
+  "ui.fa15eb95151c": {
+    "en": "and would have been given to you on paper or by message when your re-entry plan was finished.",
+    "es": "y se te habría entregado en papel o por mensaje cuando se terminó tu plan de reinserción."
+  },
+  "ui.67360c77312a": {
+    "en": "Yes, I have a code",
+    "es": "Sí, tengo un código"
+  },
+  "ui.7ecfed131e0f": {
+    "en": "We'll open the record that's already waiting for you.",
+    "es": "Abriremos el expediente que ya te está esperando."
+  },
+  "ui.39549952ced9": {
+    "en": "No — I'm new here",
+    "es": "No — soy nuevo/a aquí"
+  },
+  "ui.d24ca1134cb1": {
+    "en": "Takes about a minute to set up an account.",
+    "es": "Toma alrededor de un minuto crear una cuenta."
+  },
+  "ui.86b603304409": {
+    "en": "Connect with our team",
+    "es": "Conéctate con nuestro equipo"
+  },
+  "ui.458e8a0a6959": {
+    "en": "Give them your name and date of birth and they'll pull up your plan. If you don't have your case manager's number, call the main Adelante line and say you're trying to reconnect.",
+    "es": "Dales tu nombre y fecha de nacimiento y ellos buscarán tu plan. Si no tienes el número de tu gestor de casos, llama a la línea principal de Adelante y di que estás intentando reconectarte."
+  },
+  "ui.69b82d3770fa": {
+    "en": "Other ways to reach us",
+    "es": "Otras formas de contactarnos"
+  },
+  "ui.ea8c8ff054dd": {
+    "en": "Step 1 — your code",
+    "es": "Paso 1 — tu código"
+  },
+  "ui.96733a59c63e": {
+    "en": "Enter your code",
+    "es": "Ingresa tu código"
+  },
+  "ui.ffc4839c1d66": {
+    "en": "Your care team already started a plan in your name. This code confirms it's you — we won't make you fill any of it in again.",
+    "es": "Tu equipo de cuidado ya inició un plan a tu nombre. Este código confirma que eres tú — no te pediremos que vuelvas a completar nada."
+  },
+  "ui.adac69379a62": {
+    "en": "Code",
+    "es": "Código"
+  },
+  "ui.b2aa4590432d": {
+    "en": "How you'll get back in",
+    "es": "Cómo volverás a ingresar"
+  },
+  "ui.9bccf7c30b02": {
+    "en": "Use a",
+    "es": "Usar"
+  },
+  "ui.8be3c943b160": {
+    "en": "Password",
+    "es": "Contraseña"
+  },
+  "ui.809bd7550587": {
+    "en": "4–8 digit PIN",
+    "es": "PIN de 4 a 8 dígitos"
+  },
+  "ui.04a212215ef9": {
+    "en": "Confirm",
+    "es": "Confirmar"
+  },
+  "ui.2e02623966f9": {
+    "en": "Continue",
+    "es": "Continuar"
+  },
+  "ui.b52b36b7269f": {
+    "en": "Back",
+    "es": "Atrás"
+  },
+  "ui.a776fc05eea2": {
+    "en": "Step 1 — your account",
+    "es": "Paso 1 — tu cuenta"
+  },
+  "ui.4046b5818208": {
+    "en": "Create your account",
+    "es": "Crea tu cuenta"
+  },
+  "ui.77a1390f4f27": {
+    "en": "Just enough to open a record in your name. The questions about care come next, and nothing here is shared outside your care team.",
+    "es": "Solo lo necesario para abrir un expediente a tu nombre. Las preguntas sobre el cuidado vienen a continuación, y nada de lo que pongas aquí se comparte fuera de tu equipo de cuidado."
+  },
+  "ui.7e568a90221d": {
+    "en": "First name",
+    "es": "Nombre"
+  },
+  "ui.adec36a821f8": {
+    "en": "Last name",
+    "es": "Apellido"
+  },
+  "ui.9518425f4174": {
+    "en": "Date of birth",
+    "es": "Fecha de nacimiento"
+  },
+  "ui.77064d526523": {
+    "en": "Phone",
+    "es": "Teléfono"
+  },
+  "ui.84add5b29527": {
+    "en": "Email",
+    "es": "Correo electrónico"
+  },
+  "ui.50e2b46ef877": {
+    "en": "you@example.com",
+    "es": "tu@ejemplo.com"
+  },
+  "ui.c3cfdb17ef1e": {
+    "en": "One of the two is enough — whichever is easier for us to reach you on.",
+    "es": "Uno de los dos es suficiente — lo que sea más fácil para contactarte."
+  },
+  "ui.89b86ab0e66f": {
+    "en": "Language",
+    "es": "Idioma"
+  },
+  "ui.649df08a448e": {
+    "en": "English",
+    "es": "Inglés"
+  },
+  "ui.aaf374479756": {
+    "en": "Create account",
+    "es": "Crear cuenta"
+  }
+} as const;
+
 
 /**
  * §Front-door Phase 3 — the ONE implementation of the front-door sign-up
@@ -101,17 +249,19 @@ function HelperField({
   onChange: (v: string) => void;
   idPrefix: string;
 }) {
+  const { lang: screenLang } = useI18n();
+
   return (
     <div className="space-y-1.5 rounded-lg border bg-secondary/30 p-4">
       <Label htmlFor={`${idPrefix}-helper`} className="flex items-center gap-2">
         <UserCheck className="h-4 w-4 text-teal" /> {HELPER_QUESTION}
-        <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+        <span className="text-xs font-normal text-muted-foreground">{SCREEN_COPY["ui.b16c7ac6faff"][screenLang]}</span>
       </Label>
       <Textarea
         id={`${idPrefix}-helper`}
         rows={2}
         maxLength={120}
-        placeholder="Name or organization — optional"
+        placeholder={SCREEN_COPY["ui.1ea156667c3d"][screenLang]}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -143,6 +293,8 @@ function OperatorBanner({ operator }: { operator: SignupOperator }) {
  * built here; the branch state below is where it will hang off next.
  */
 export function SignupFlow({ operator, onComplete }: SignupFlowProps) {
+  const { lang: screenLang } = useI18n();
+
   const tier2 = Boolean(operator);
   const [branch, setBranch] = useState<null | "code" | "new">(null);
 
@@ -155,17 +307,15 @@ export function SignupFlow({ operator, onComplete }: SignupFlowProps) {
     <Card className="space-y-5 p-6">
       <div>
         <Badge variant="outline" className="border-teal/40 text-teal">
-          {tier2 ? "Assisted sign-up — step 1" : "Step 1 — getting started"}
+          {tier2 ? "Assisted sign-up — step 1" : screenLang === "es" ? "Paso 1 — para empezar" : "Step 1 — getting started"}
         </Badge>
         <h1 className="font-display mt-2 text-2xl text-navy">
           {tier2
             ? "Do they have a code from their CF Care Manager or care team?"
-            : "Do you have a code from your CF Care Manager or care team?"}
+            : screenLang === "es" ? "¿Tienes un código de tu gestor de cuidado CF o de tu equipo?" : "Do you have a code from your CF Care Manager or care team?"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          It looks like <span className="font-mono">RE-4K7P-92XB</span> and would have been given to
-          you on paper or by message when your re-entry plan was finished.
-        </p>
+          {SCREEN_COPY["ui.7105c6908765"][screenLang]} <span className="font-mono">{SCREEN_COPY["ui.c0c1e545c546"][screenLang]}</span> {SCREEN_COPY["ui.fa15eb95151c"][screenLang]} </p>
       </div>
       <div className="grid gap-2">
         <Button
@@ -174,10 +324,9 @@ export function SignupFlow({ operator, onComplete }: SignupFlowProps) {
           onClick={() => setBranch("code")}
         >
           <span>
-            <span className="block font-medium">Yes, I have a code</span>
+            <span className="block font-medium">{SCREEN_COPY["ui.67360c77312a"][screenLang]}</span>
             <span className="mt-0.5 block text-xs text-muted-foreground">
-              We'll open the record that's already waiting for you.
-            </span>
+              {SCREEN_COPY["ui.7ecfed131e0f"][screenLang]} </span>
           </span>
         </Button>
         <Button
@@ -186,10 +335,9 @@ export function SignupFlow({ operator, onComplete }: SignupFlowProps) {
           onClick={() => setBranch("new")}
         >
           <span>
-            <span className="block font-medium">No — I'm new here</span>
+            <span className="block font-medium">{SCREEN_COPY["ui.39549952ced9"][screenLang]}</span>
             <span className="mt-0.5 block text-xs text-muted-foreground">
-              Takes about a minute to set up an account.
-            </span>
+              {SCREEN_COPY["ui.d24ca1134cb1"][screenLang]} </span>
           </span>
         </Button>
       </div>
@@ -203,20 +351,19 @@ export function SignupFlow({ operator, onComplete }: SignupFlowProps) {
  * dead end. Reused verbatim rather than re-worded per failure.
  */
 function StaffFallback() {
+  const { lang: screenLang } = useI18n();
+
   return (
     <div className="rounded-lg border bg-secondary/40 p-4 text-sm">
       <div className="flex items-start gap-3">
         <Phone className="mt-0.5 h-5 w-5 shrink-0 text-navy" />
         <div>
-          <div className="font-medium text-navy">Connect with our team</div>
+          <div className="font-medium text-navy">{SCREEN_COPY["ui.86b603304409"][screenLang]}</div>
           <p className="mt-1 text-muted-foreground">
-            Give them your name and date of birth and they'll pull up your plan. If you don't have
-            your case manager's number, call the main Adelante line and say you're trying to
-            reconnect.
-          </p>
+            {SCREEN_COPY["ui.458e8a0a6959"][screenLang]} </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button asChild size="sm" variant="outline">
-              <Link to="/start/reconnect">Other ways to reach us</Link>
+              <Link to="/start/reconnect">{SCREEN_COPY["ui.69b82d3770fa"][screenLang]}</Link>
             </Button>
           </div>
         </div>
@@ -231,6 +378,8 @@ export function RedeemCodePanel({
   onComplete,
   onBack,
 }: SignupFlowProps & { onBack: () => void }) {
+  const { lang: screenLang } = useI18n();
+
   const [code, setCode] = useState("");
   const [kind, setKind] = useState<"password" | "pin">("password");
   const [credential, setCredential] = useState("");
@@ -281,25 +430,21 @@ export function RedeemCodePanel({
     <Card className="space-y-5 p-6">
       <div>
         <Badge variant="outline" className="border-teal/40 text-teal">
-          Step 1 — your code
-        </Badge>
+          {SCREEN_COPY["ui.ea8c8ff054dd"][screenLang]} </Badge>
         <h1 className="font-display mt-2 flex items-center gap-2 text-2xl text-navy">
-          <Ticket className="h-5 w-5 text-teal" /> Enter your code
-        </h1>
+          <Ticket className="h-5 w-5 text-teal" /> {SCREEN_COPY["ui.96733a59c63e"][screenLang]} </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Your care team already started a plan in your name. This code confirms it's you — we won't
-          make you fill any of it in again.
-        </p>
+          {SCREEN_COPY["ui.ffc4839c1d66"][screenLang]} </p>
       </div>
 
       <form onSubmit={submit} className="space-y-4" data-testid="redeem-form">
         <div className="space-y-1.5">
-          <Label htmlFor="rc-code">Code</Label>
+          <Label htmlFor="rc-code">{SCREEN_COPY["ui.adac69379a62"][screenLang]}</Label>
           <Input
             id="rc-code"
             value={code}
             autoComplete="one-time-code"
-            placeholder="RE-4K7P-92XB"
+            placeholder={SCREEN_COPY["ui.c0c1e545c546"][screenLang]}
             className="font-mono uppercase"
             onChange={(e) => setCode(e.target.value)}
           />
@@ -325,17 +470,16 @@ export function RedeemCodePanel({
 
         <div className="space-y-3 rounded-lg border bg-secondary/40 p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-navy">
-            <ShieldCheck className="h-4 w-4 text-teal" /> How you'll get back in
-          </div>
+            <ShieldCheck className="h-4 w-4 text-teal" /> {SCREEN_COPY["ui.b2aa4590432d"][screenLang]} </div>
           <div className="space-y-1.5">
-            <Label>Use a</Label>
+            <Label>{SCREEN_COPY["ui.9bccf7c30b02"][screenLang]}</Label>
             <Select value={kind} onValueChange={(v) => setKind(v as "password" | "pin")}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="password">Password</SelectItem>
-                <SelectItem value="pin">4–8 digit PIN</SelectItem>
+                <SelectItem value="password">{SCREEN_COPY["ui.8be3c943b160"][screenLang]}</SelectItem>
+                <SelectItem value="pin">{SCREEN_COPY["ui.809bd7550587"][screenLang]}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -353,7 +497,7 @@ export function RedeemCodePanel({
               {err("credential")}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="rc-cred2">Confirm</Label>
+              <Label htmlFor="rc-cred2">{SCREEN_COPY["ui.04a212215ef9"][screenLang]}</Label>
               <Input
                 id="rc-cred2"
                 type="password"
@@ -375,13 +519,12 @@ export function RedeemCodePanel({
           type="submit"
           className="min-h-11 w-full bg-teal text-teal-foreground hover:bg-teal/90"
         >
-          Continue <ArrowRight className="ml-1.5 h-4 w-4" />
+          {SCREEN_COPY["ui.2e02623966f9"][screenLang]} <ArrowRight className="ml-1.5 h-4 w-4" />
         </Button>
       </form>
 
       <Button variant="ghost" className="px-0" onClick={onBack}>
-        Back
-      </Button>
+        {SCREEN_COPY["ui.b52b36b7269f"][screenLang]} </Button>
     </Card>
   );
 }
@@ -406,6 +549,8 @@ function NewPatientForm({
   onComplete,
   onBack,
 }: SignupFlowProps & { onBack: () => void }) {
+  const { lang: screenLang } = useI18n();
+
   const { setLang } = useI18n();
   const [draft, setDraft] = useState<SignupInput>({
     firstName: "",
@@ -484,19 +629,16 @@ function NewPatientForm({
     <Card className="space-y-5 p-6">
       <div>
         <Badge variant="outline" className="border-teal/40 text-teal">
-          Step 1 — your account
-        </Badge>
-        <h1 className="font-display mt-2 text-2xl text-navy">Create your account</h1>
+          {SCREEN_COPY["ui.a776fc05eea2"][screenLang]} </Badge>
+        <h1 className="font-display mt-2 text-2xl text-navy">{SCREEN_COPY["ui.4046b5818208"][screenLang]}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Just enough to open a record in your name. The questions about care come next, and nothing
-          here is shared outside your care team.
-        </p>
+          {SCREEN_COPY["ui.77a1390f4f27"][screenLang]} </p>
       </div>
 
       <form onSubmit={submit} className="space-y-4" data-testid="signup-form">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="su-first">First name</Label>
+            <Label htmlFor="su-first">{SCREEN_COPY["ui.7e568a90221d"][screenLang]}</Label>
             <Input
               id="su-first"
               className={errors.firstName ? "border-2 border-input" : undefined}
@@ -507,7 +649,7 @@ function NewPatientForm({
             {err("firstName")}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="su-last">Last name</Label>
+            <Label htmlFor="su-last">{SCREEN_COPY["ui.adec36a821f8"][screenLang]}</Label>
             <Input
               id="su-last"
               className={errors.lastName ? "border-2 border-input" : undefined}
@@ -520,7 +662,7 @@ function NewPatientForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="su-dob">Date of birth</Label>
+          <Label htmlFor="su-dob">{SCREEN_COPY["ui.9518425f4174"][screenLang]}</Label>
           <Input
             id="su-dob"
             className={errors.dob ? "border-2 border-input" : undefined}
@@ -534,7 +676,7 @@ function NewPatientForm({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="su-phone">Phone</Label>
+            <Label htmlFor="su-phone">{SCREEN_COPY["ui.77064d526523"][screenLang]}</Label>
             <Input
               id="su-phone"
               className={errors.phone ? "border-2 border-input" : undefined}
@@ -547,13 +689,13 @@ function NewPatientForm({
             {err("phone")}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="su-email">Email</Label>
+            <Label htmlFor="su-email">{SCREEN_COPY["ui.84add5b29527"][screenLang]}</Label>
             <Input
               id="su-email"
               className={errors.email ? "border-2 border-input" : undefined}
               type="email"
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder={SCREEN_COPY["ui.50e2b46ef877"][screenLang]}
               value={draft.email}
               onChange={(e) => set("email", e.target.value)}
             />
@@ -561,8 +703,7 @@ function NewPatientForm({
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          One of the two is enough — whichever is easier for us to reach you on.
-        </p>
+          {SCREEN_COPY["ui.c3cfdb17ef1e"][screenLang]} </p>
 
         {!operator && (
           <HelperField
@@ -574,7 +715,7 @@ function NewPatientForm({
         {operator && <OperatorBanner operator={operator} />}
 
         <div className="space-y-1.5">
-          <Label>Language</Label>
+          <Label>{SCREEN_COPY["ui.89b86ab0e66f"][screenLang]}</Label>
           <Select
             value={draft.preferredLanguage}
             onValueChange={(v) => set("preferredLanguage", v as "en" | "es")}
@@ -583,7 +724,7 @@ function NewPatientForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="en">{SCREEN_COPY["ui.649df08a448e"][screenLang]}</SelectItem>
               <SelectItem value="es">Español</SelectItem>
             </SelectContent>
           </Select>
@@ -591,10 +732,9 @@ function NewPatientForm({
 
         <div className="space-y-3 rounded-lg border bg-secondary/40 p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-navy">
-            <ShieldCheck className="h-4 w-4 text-teal" /> How you'll get back in
-          </div>
+            <ShieldCheck className="h-4 w-4 text-teal" /> {SCREEN_COPY["ui.b2aa4590432d"][screenLang]} </div>
           <div className="space-y-1.5">
-            <Label>Use a</Label>
+            <Label>{SCREEN_COPY["ui.9bccf7c30b02"][screenLang]}</Label>
             <Select
               value={draft.credentialKind}
               onValueChange={(v) => set("credentialKind", v as "password" | "pin")}
@@ -603,8 +743,8 @@ function NewPatientForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="password">Password</SelectItem>
-                <SelectItem value="pin">4–8 digit PIN</SelectItem>
+                <SelectItem value="password">{SCREEN_COPY["ui.8be3c943b160"][screenLang]}</SelectItem>
+                <SelectItem value="pin">{SCREEN_COPY["ui.809bd7550587"][screenLang]}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -622,7 +762,7 @@ function NewPatientForm({
               {err("credential")}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="su-cred2">Confirm</Label>
+              <Label htmlFor="su-cred2">{SCREEN_COPY["ui.04a212215ef9"][screenLang]}</Label>
               <Input
                 id="su-cred2"
                 type="password"
@@ -645,13 +785,12 @@ function NewPatientForm({
           type="submit"
           className="min-h-11 w-full bg-teal text-teal-foreground hover:bg-teal/90"
         >
-          Create account <ArrowRight className="ml-1.5 h-4 w-4" />
+          {SCREEN_COPY["ui.aaf374479756"][screenLang]} <ArrowRight className="ml-1.5 h-4 w-4" />
         </Button>
       </form>
 
       <Button variant="ghost" className="px-0" onClick={onBack}>
-        Back
-      </Button>
+        {SCREEN_COPY["ui.b52b36b7269f"][screenLang]} </Button>
     </Card>
   );
 }

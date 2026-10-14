@@ -29,6 +29,50 @@ import { AdvocateSessionProvider } from "@/components/advocate/AdvocateSessionCo
 import { AdvocateClaimDocumentChecklist } from "@/components/advocate/AdvocateDocumentChecklist";
 import type { AdvocateDocRequirementKey } from "@/lib/advocateDocs";
 import { ShieldCheck } from "lucide-react";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.fd4616a06639": {
+    "en": "Advocate access",
+    "es": "Acceso para personas de apoyo"
+  },
+  "ui.839ce11cfe56": {
+    "en": "This connection no longer exists.",
+    "es": "Esta conexión ya no existe."
+  },
+  "ui.51dd91dc98a9": {
+    "en": "Start over",
+    "es": "Empezar de nuevo"
+  },
+  "ui.dc1649a16c14": {
+    "en": "Sign out",
+    "es": "Cerrar sesión"
+  },
+  "ui.206b7166496d": {
+    "en": "Invitation code",
+    "es": "Código de invitación"
+  },
+  "ui.ad2957f221eb": {
+    "en": "ADV-XXXX-XXXX-XXXX",
+    "es": "ADV-XXXX-XXXX-XXXX"
+  },
+  "ui.0468b083c4ee": {
+    "en": "This was sent directly to you. If you don't have one, ask the person you're supporting to invite you — there is no other way to connect.",
+    "es": "Te lo enviaron directamente. Si no lo tienes, pide a la persona que apoyas que te invite. No hay otra forma de conectarte."
+  },
+  "ui.2dffdc8c7090": {
+    "en": "Which authorization applies to you?",
+    "es": "¿Qué autorización te corresponde?"
+  },
+  "ui.5fb9bdf30ca5": {
+    "en": "Type your full name to attest this is accurate",
+    "es": "Escribe tu nombre completo para confirmar que esta información es correcta"
+  },
+  "ui.b65463cb6a42": {
+    "en": "Connect",
+    "es": "Conectar"
+  }
+} as const;
+
 
 export const Route = createFileRoute("/advocate")({
   // The advocate session (`adelante.advocateLinkId`) is client-only, so the
@@ -59,6 +103,8 @@ export const Route = createFileRoute("/advocate")({
 const SESSION_KEY = "adelante.advocateLinkId";
 
 function AdvocateLayout() {
+  const { lang: screenLang } = useI18n();
+
   // The "session" for this prototype: the claimed link id only. No patient id
   // is ever stored client-side, so a tampered value can at worst point at
   // another link — which still has to pass the live gate on every read.
@@ -93,8 +139,7 @@ function AdvocateLayout() {
         <>
           <header>
             <h1 className="font-display text-2xl text-navy flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-teal" /> Advocate access
-            </h1>
+              <ShieldCheck className="h-6 w-6 text-teal" /> {SCREEN_COPY["ui.fd4616a06639"][screenLang]} </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               You can see the upcoming schedule of the person who invited you, and help with
               coordination — what else you can see depends on the authorization you hold. Every
@@ -112,6 +157,8 @@ function AdvocateLayout() {
 }
 
 function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () => void }) {
+  const { lang: screenLang } = useI18n();
+
   // Live-evaluated on every render: a revocation, an expiry, or a withdrawn
   // ROI stops this view without anything needing to be told to stop.
   const link = useEhr(() => AdelanteEHR.getAdvocateLink(linkId));
@@ -123,10 +170,9 @@ function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () =>
   if (!link) {
     return (
       <Card className="space-y-3 p-5">
-        <p className="text-sm text-muted-foreground">This connection no longer exists.</p>
+        <p className="text-sm text-muted-foreground">{SCREEN_COPY["ui.839ce11cfe56"][screenLang]}</p>
         <Button variant="outline" onClick={onSignOut}>
-          Start over
-        </Button>
+          {SCREEN_COPY["ui.51dd91dc98a9"][screenLang]} </Button>
       </Card>
     );
   }
@@ -153,8 +199,7 @@ function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () =>
         <div className="flex items-center gap-2">
           <StatusChip state={view.allowed ? "done" : "restricted"} label={view.allowed ? "Active" : "No access"} />
           <Button size="sm" variant="ghost" onClick={onSignOut}>
-            Sign out
-          </Button>
+            {SCREEN_COPY["ui.dc1649a16c14"][screenLang]} </Button>
         </div>
       </Card>
 
@@ -164,6 +209,8 @@ function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () =>
 }
 
 function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
+  const { lang: screenLang } = useI18n();
+
   const [code, setCode] = useState("");
   const [authType, setAuthType] = useState<AdvocateAuthorizationType | "">("");
   const [attested, setAttested] = useState("");
@@ -210,22 +257,20 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
   return (
     <Card className="space-y-5 p-5">
       <div className="space-y-1">
-        <Label htmlFor="adv-code">Invitation code</Label>
+        <Label htmlFor="adv-code">{SCREEN_COPY["ui.206b7166496d"][screenLang]}</Label>
         <Input
           id="adv-code"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="ADV-XXXX-XXXX-XXXX"
+          placeholder={SCREEN_COPY["ui.ad2957f221eb"][screenLang]}
           className="font-mono"
         />
         <p className="text-xs text-muted-foreground">
-          This was sent directly to you. If you don't have one, ask the person you're supporting to
-          invite you — there is no other way to connect.
-        </p>
+          {SCREEN_COPY["ui.0468b083c4ee"][screenLang]} </p>
       </div>
 
       <div className="space-y-2">
-        <Label>Which authorization applies to you?</Label>
+        <Label>{SCREEN_COPY["ui.2dffdc8c7090"][screenLang]}</Label>
         <RadioGroup
           value={authType}
           onValueChange={(v) => {
@@ -265,11 +310,11 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
       )}
 
       <div className="space-y-1">
-        <Label htmlFor="adv-attest">Type your full name to attest this is accurate</Label>
+        <Label htmlFor="adv-attest">{SCREEN_COPY["ui.5fb9bdf30ca5"][screenLang]}</Label>
         <Input id="adv-attest" value={attested} onChange={(e) => setAttested(e.target.value)} />
       </div>
 
-      <Button onClick={claim}>Connect</Button>
+      <Button onClick={claim}>{SCREEN_COPY["ui.b65463cb6a42"][screenLang]}</Button>
     </Card>
   );
 }

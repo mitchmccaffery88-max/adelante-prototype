@@ -17,12 +17,40 @@ import {
   usePublishedContentVersion,
 } from "@/lib/contentCatalog";
 import { resolveContentIcon } from "@/lib/contentIcons";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.b8100f5ba8bd": {
+    "en": "Library",
+    "es": "Biblioteca"
+  },
+  "ui.58ca94ddf834": {
+    "en": "Content pending authoring",
+    "es": "Contenido pendiente de preparación"
+  },
+  "ui.c72ded3737f8": {
+    "en": "Nothing has been published here yet. The advocate library is being written by the clinical team, and this page will fill in as those pieces are approved — we'd rather show you nothing than placeholder text.",
+    "es": "Todavía no se ha publicado contenido aquí. El equipo clínico está preparando la biblioteca para personas de apoyo. Mostraremos cada material cuando se apruebe, en lugar de mostrar texto provisional."
+  }
+} as const;
+
 
 export const Route = createFileRoute("/advocate/library")({
+  head: () => ({ meta: [
+    { title: "Library \u2014 Adelante advocate" },
+    { name: "description", content: "Your library in the Adelante advocate portal." },
+    { property: "og:title", content: "Library \u2014 Adelante advocate" },
+    { property: "og:description", content: "Your library in the Adelante advocate portal." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdvocateLibraryView,
 });
 
 function AdvocateLibraryView() {
+  const { lang: screenLang } = useI18n();
+
   // Re-render when something is actually published into the bucket.
   usePublishedContentVersion();
   const categories = liveAdvocateLibraryCategories();
@@ -31,7 +59,7 @@ function AdvocateLibraryView() {
     <div className="space-y-4">
       <AdvocateViewHeader
         icon={BookOpen}
-        title="Library"
+        title={SCREEN_COPY["ui.b8100f5ba8bd"][screenLang]}
         lede="Reading and guidance written for people supporting someone in care."
       />
 
@@ -75,19 +103,17 @@ function AdvocateLibraryView() {
 }
 
 function PendingCard({ compact }: { compact?: boolean }) {
+  const { lang: screenLang } = useI18n();
+
   return (
     <Card
       data-testid="advocate-library-pending"
       className={`space-y-2 border-attention bg-attention-soft ${compact ? "p-4" : "p-5"}`}
     >
       <Badge variant="outline" className="border-attention text-on-attention-soft">
-        Content pending authoring
-      </Badge>
+        {SCREEN_COPY["ui.58ca94ddf834"][screenLang]} </Badge>
       <p className="text-sm text-on-attention-soft">
-        Nothing has been published here yet. The advocate library is being written by the clinical
-        team, and this page will fill in as those pieces are approved — we'd rather show you nothing
-        than placeholder text.
-      </p>
+        {SCREEN_COPY["ui.c72ded3737f8"][screenLang]} </p>
     </Card>
   );
 }

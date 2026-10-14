@@ -14,6 +14,36 @@ import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.b4cee43de8d4": {
+    "en": "We don't have a record for you yet",
+    "es": "Aún no tenemos un registro tuyo"
+  },
+  "ui.22c9de289155": {
+    "en": "My profile & privacy",
+    "es": "Mi perfil y privacidad"
+  },
+  "ui.f5b8ed165f42": {
+    "en": "Back to My care",
+    "es": "Volver a Mi cuidado"
+  },
+  "ui.8485be9e7b3e": {
+    "en": "Your documents",
+    "es": "Tus documentos"
+  },
+  "ui.bdf67342b4bc": {
+    "en": "ID, paperwork and anything you've sent your care team.",
+    "es": "Identificación, documentos y cualquier cosa que hayas enviado a tu equipo."
+  },
+  "ui.4fab3f051369": {
+    "en": "Open documents",
+    "es": "Abrir documentos"
+  }
+} as const;
+
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -37,6 +67,8 @@ export const Route = createFileRoute("/profile")({
 });
 
 function ProfilePage() {
+  const { lang: screenLang } = useI18n();
+
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
@@ -45,7 +77,7 @@ function ProfilePage() {
     return (
       <PatientPage width="browse">
         <EmptyState
-          title="We don't have a record for you yet"
+          title={SCREEN_COPY["ui.b4cee43de8d4"][screenLang]}
           description="Once your care is set up, your profile and privacy choices live here."
           action={{ label: "Get started", onClick: () => void navigate({ to: "/start" }) }}
         />
@@ -57,11 +89,11 @@ function ProfilePage() {
     <PatientPage width="browse">
       <PatientPageHeader
         icon={UserCog}
-        title="My profile & privacy"
+        title={SCREEN_COPY["ui.22c9de289155"][screenLang]}
         lede="Your details, what you've agreed to share, and who can see what."
         action={
           <Button asChild variant="ghost" size="sm">
-            <Link to="/home">Back to My care</Link>
+            <Link to="/home">{SCREEN_COPY["ui.f5b8ed165f42"][screenLang]}</Link>
           </Button>
         }
       />
@@ -76,14 +108,12 @@ function ProfilePage() {
       <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div>
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-            <FileText className="h-4 w-4" /> Your documents
-          </div>
+            <FileText className="h-4 w-4" /> {SCREEN_COPY["ui.8485be9e7b3e"][screenLang]} </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            ID, paperwork and anything you've sent your care team.
-          </p>
+            {SCREEN_COPY["ui.bdf67342b4bc"][screenLang]} </p>
         </div>
         <Button asChild variant="outline">
-          <Link to="/documents">Open documents</Link>
+          <Link to="/documents">{SCREEN_COPY["ui.4fab3f051369"][screenLang]}</Link>
         </Button>
       </Card>
       <SignOutCard />

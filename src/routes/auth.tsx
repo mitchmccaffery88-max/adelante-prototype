@@ -20,6 +20,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.50e2b46ef877": {
+    "en": "you@example.com",
+    "es": "tu@ejemplo.com"
+  },
+  "ui.a0039c226804": {
+    "en": "intake",
+    "es": "admisión"
+  },
+  "ui.3e6826a9a95a": {
+    "en": "Remember me on this device",
+    "es": "Recordarme en este dispositivo"
+  },
+  "ui.649df08a448e": {
+    "en": "English",
+    "es": "Inglés"
+  },
+  "ui.a198f59c532d": {
+    "en": "you@adelante.org",
+    "es": "tu@adelante.org"
+  },
+  "ui.2e02623966f9": {
+    "en": "Continue",
+    "es": "Continuar"
+  }
+} as const;
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -39,6 +67,8 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
+  const { lang: screenLang } = useI18n();
+
   const { t, setLang } = useI18n();
   const navigate = useNavigate();
   const patients = useEhr(() => AdelanteEHR.listPatients());
@@ -196,7 +226,7 @@ function AuthPage() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={SCREEN_COPY["ui.50e2b46ef877"][screenLang]}
               />
             </div>
             <div className="space-y-1.5">
@@ -239,7 +269,7 @@ function AuthPage() {
                           : "border-gold/50 text-navy")
                       }
                     >
-                      {p.intakeCompletedAt ? <>intake <Check className="inline size-4" aria-hidden="true" /></> : "new"}
+                      {p.intakeCompletedAt ? <>{SCREEN_COPY["ui.a0039c226804"][screenLang]} <Check className="inline size-4" aria-hidden="true" /></> : "new"}
                     </Badge>
                   </label>
                 ))}
@@ -248,8 +278,7 @@ function AuthPage() {
 
             <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
               <Checkbox checked={remember} onCheckedChange={(v) => setRemember(Boolean(v))} />
-              Remember me on this device
-            </label>
+              {SCREEN_COPY["ui.3e6826a9a95a"][screenLang]} </label>
 
             <Button
               type="submit"
@@ -304,7 +333,7 @@ function AuthPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="en">{SCREEN_COPY["ui.649df08a448e"][screenLang]}</SelectItem>
                   <SelectItem value="es">Español</SelectItem>
                 </SelectContent>
               </Select>
@@ -369,7 +398,7 @@ function AuthPage() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@adelante.org"
+                placeholder={SCREEN_COPY["ui.a198f59c532d"][screenLang]}
               />
             </div>
             <div className="space-y-1.5">
@@ -385,14 +414,13 @@ function AuthPage() {
 
             <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
               <Checkbox checked={remember} onCheckedChange={(v) => setRemember(Boolean(v))} />
-              Remember me on this device
-            </label>
+              {SCREEN_COPY["ui.3e6826a9a95a"][screenLang]} </label>
 
             <Button
               type="submit"
               className="w-full min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
             >
-              Continue <ArrowRight className="h-4 w-4 ml-1.5" />
+              {SCREEN_COPY["ui.2e02623966f9"][screenLang]} <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
             <p className="text-[10px] text-muted-foreground text-center">
               Demo staff sign-in — no password check. Role and identity are persisted locally.

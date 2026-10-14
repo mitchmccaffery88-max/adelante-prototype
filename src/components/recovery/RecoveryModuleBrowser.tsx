@@ -42,8 +42,22 @@ export function reentryJourneyModules() {
   return ids.map((id) => mods.find((m) => m.id === id)).filter((m): m is (typeof mods)[number] => !!m);
 }
 import { DaysSoberLine } from "@/components/patient/RecoveryDateCard";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.a0c39ab06f61": {
+    "en": "My toolkit",
+    "es": "Mi caja de herramientas"
+  },
+  "ui.1798b3ba42ee": {
+    "en": "Completed",
+    "es": "Completado"
+  }
+} as const;
+
 
 export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: string } = {}) {
+  const { lang: screenLang } = useI18n();
+
   usePublishedContentVersion();
   const { t } = useI18n();
   const { rt, esPending } = useRecoveryText();
@@ -96,8 +110,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
             aggregates the Part B picks these lessons write. */}
         <Button asChild variant="outline" className="min-h-11 rounded-2xl">
           <Link to="/toolkit">
-            <Backpack className="mr-1 h-4 w-4" aria-hidden="true" /> My toolkit
-          </Link>
+            <Backpack className="mr-1 h-4 w-4" aria-hidden="true" /> {SCREEN_COPY["ui.a0c39ab06f61"][screenLang]} </Link>
         </Button>
       </PatientPageHeader>
 
@@ -170,7 +183,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                           <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
                             {rt(`rec.${l.id}.title`, l.title)}
                             {done && (
-                              <CheckCircle2 className="h-4 w-4 text-primary" aria-label="Completed" />
+                              <CheckCircle2 className="h-4 w-4 text-primary" aria-label={SCREEN_COPY["ui.1798b3ba42ee"][screenLang]} />
                             )}
                           </div>
                           <div className="text-xs text-foreground">

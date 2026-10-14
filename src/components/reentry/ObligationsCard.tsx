@@ -29,6 +29,52 @@ import {
   subscribeObligations,
   type ObligationKind,
 } from "@/lib/obligations";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.1b8d9cc48017": {
+    "en": "My obligations",
+    "es": "Mis obligaciones"
+  },
+  "ui.441c0554345e": {
+    "en": "Check-ins, court dates, tests and required classes you're keeping track of. This is your own list — it isn't connected to probation, parole or the court, and nothing here is reported to them.",
+    "es": "Registros, fechas de audiencia, pruebas y clases obligatorias que estás siguiendo. Esta es tu propia lista — no está conectada con libertad condicional ni con el tribunal, y nada de lo que pongas aquí se les informará."
+  },
+  "ui.599c20e43a35": {
+    "en": "Nothing on your list yet.",
+    "es": "Aún no hay nada en tu lista."
+  },
+  "ui.e963907dac5c": {
+    "en": "Remove",
+    "es": "Eliminar"
+  },
+  "ui.89511a76c8cb": {
+    "en": "What is it?",
+    "es": "¿Qué es esto?"
+  },
+  "ui.525f61b67292": {
+    "en": "Where",
+    "es": "Dónde"
+  },
+  "ui.70440046a3dc": {
+    "en": "Notes",
+    "es": "Notas"
+  },
+  "ui.61cc55aa0453": {
+    "en": "Add",
+    "es": "Añadir"
+  },
+  "ui.77dfd2135f4d": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  },
+  "ui.0ecfcc026734": {
+    "en": "Add an obligation",
+    "es": "Añadir una obligación"
+  }
+} as const;
+
 
 export function ObligationsCard({ patientId }: { patientId: string }) {
   return (
@@ -39,6 +85,8 @@ export function ObligationsCard({ patientId }: { patientId: string }) {
 }
 
 function ObligationsBody({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const snapshot = useSyncExternalStore(
     subscribeObligations,
     () => JSON.stringify(listObligations(patientId)),
@@ -65,19 +113,14 @@ function ObligationsBody({ patientId }: { patientId: string }) {
   return (
     <Card className="p-5" id="obligations" data-testid="obligations-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <Gavel className="h-4 w-4" /> My obligations
-      </div>
+        <Gavel className="h-4 w-4" /> {SCREEN_COPY["ui.1b8d9cc48017"][screenLang]} </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Check-ins, court dates, tests and required classes you're keeping track of. This is your own
-        list — it isn't connected to probation, parole or the court, and nothing here is reported to
-        them.
-      </p>
+        {SCREEN_COPY["ui.441c0554345e"][screenLang]} </p>
 
       <ul className="mt-4 space-y-2">
         {obligations.length === 0 && (
           <li className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-            Nothing on your list yet.
-          </li>
+            {SCREEN_COPY["ui.599c20e43a35"][screenLang]} </li>
         )}
         {obligations.map((o) => (
           <li
@@ -114,7 +157,7 @@ function ObligationsBody({ patientId }: { patientId: string }) {
               size="sm"
               variant="ghost"
               onClick={() => removeObligation(patientId, o.id)}
-              aria-label="Remove"
+              aria-label={SCREEN_COPY["ui.e963907dac5c"][screenLang]}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -136,23 +179,20 @@ function ObligationsBody({ patientId }: { patientId: string }) {
               ))}
             </SelectContent>
           </Select>
-          <Input placeholder="What is it?" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input placeholder={SCREEN_COPY["ui.89511a76c8cb"][screenLang]} value={title} onChange={(e) => setTitle(e.target.value)} />
           <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
-          <Input placeholder="Where" value={location} onChange={(e) => setLocation(e.target.value)} />
-          <Textarea placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Input placeholder={SCREEN_COPY["ui.525f61b67292"][screenLang]} value={location} onChange={(e) => setLocation(e.target.value)} />
+          <Textarea placeholder={SCREEN_COPY["ui.70440046a3dc"][screenLang]} value={notes} onChange={(e) => setNotes(e.target.value)} />
           <div className="flex gap-2">
             <Button type="button" onClick={submit} disabled={!title.trim() || !when}>
-              Add
-            </Button>
+              {SCREEN_COPY["ui.61cc55aa0453"][screenLang]} </Button>
             <Button type="button" variant="ghost" onClick={() => setAdding(false)}>
-              Cancel
-            </Button>
+              {SCREEN_COPY["ui.77dfd2135f4d"][screenLang]} </Button>
           </div>
         </div>
       ) : (
         <Button type="button" variant="outline" className="mt-4" onClick={() => setAdding(true)}>
-          Add an obligation
-        </Button>
+          {SCREEN_COPY["ui.0ecfcc026734"][screenLang]} </Button>
       )}
     </Card>
   );

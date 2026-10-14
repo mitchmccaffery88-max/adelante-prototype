@@ -27,6 +27,100 @@ import {
 } from "@/lib/ehr";
 import { toast } from "sonner";
 import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.987b9ced08d4": {
+    "en": "Day",
+    "es": "Día"
+  },
+  "ui.fb0d041b6206": {
+    "en": "of 90",
+    "es": "de 90"
+  },
+  "ui.649df08a448e": {
+    "en": "English",
+    "es": "Inglés"
+  },
+  "ui.c3328c39b0e2": {
+    "en": "Text",
+    "es": "Texto"
+  },
+  "ui.cac056598c76": {
+    "en": "Phone call",
+    "es": "Llamada telefónica"
+  },
+  "ui.bc17c1f0179a": {
+    "en": "Video",
+    "es": "Video"
+  },
+  "ui.a0cf42473466": {
+    "en": "Morning",
+    "es": "Mañana"
+  },
+  "ui.d682699b928c": {
+    "en": "Afternoon",
+    "es": "Tarde"
+  },
+  "ui.6734e19790f1": {
+    "en": "Evening",
+    "es": "Tarde"
+  },
+  "ui.cd5b0224ac4b": {
+    "en": "9 characters",
+    "es": "9 caracteres"
+  },
+  "ui.0ef38c23caa6": {
+    "en": "Helps disambiguate people with similar names.",
+    "es": "Ayuda a distinguir a personas con nombres similares."
+  },
+  "ui.9349f6a8c889": {
+    "en": "Emergency contact",
+    "es": "Contacto de emergencia"
+  },
+  "ui.709a23220f2c": {
+    "en": "Name",
+    "es": "Nombre"
+  },
+  "ui.9b4a86cba424": {
+    "en": "Relationship",
+    "es": "Parentesco"
+  },
+  "ui.77064d526523": {
+    "en": "Phone",
+    "es": "Teléfono"
+  },
+  "ui.d059376b7a75": {
+    "en": "Consents",
+    "es": "Consentimientos"
+  },
+  "ui.b8a08bcacf48": {
+    "en": "ECM share:",
+    "es": "Compartir ECM:"
+  },
+  "ui.d0a79c78aca0": {
+    "en": "SMS:",
+    "es": "SMS:"
+  },
+  "ui.3e03f76c12b5": {
+    "en": "Recent consent changes",
+    "es": "Cambios recientes en el consentimiento"
+  },
+  "ui.bb37dabe3e19": {
+    "en": "· by",
+    "es": "· por"
+  },
+  "ui.77dfd2135f4d": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  },
+  "ui.f597c0e8201d": {
+    "en": "Save profile",
+    "es": "Guardar perfil"
+  }
+} as const;
+
 
 interface Props {
   patientId: string | null;
@@ -37,6 +131,8 @@ interface Props {
 }
 
 export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminMeta }: Props) {
+  const { lang: screenLang } = useI18n();
+
   const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
   const consentEvents = useEhr(() => AdelanteEHR.listAllConsentEvents());
 
@@ -124,7 +220,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
           <DialogDescription className="flex items-center gap-2 text-xs">
             <span className="font-mono">{patient.programId}</span>
             <span>·</span>
-            <span>Day {patient.episodeDay} of 90</span>
+            <span>{SCREEN_COPY["ui.987b9ced08d4"][screenLang]} {patient.episodeDay} {SCREEN_COPY["ui.fb0d041b6206"][screenLang]}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -198,7 +294,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="en">{SCREEN_COPY["ui.649df08a448e"][screenLang]}</SelectItem>
                   <SelectItem value="es">Español</SelectItem>
                 </SelectContent>
               </Select>
@@ -212,9 +308,9 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="text">Text</SelectItem>
-                  <SelectItem value="call">Phone call</SelectItem>
-                  <SelectItem value="video">Video</SelectItem>
+                  <SelectItem value="text">{SCREEN_COPY["ui.c3328c39b0e2"][screenLang]}</SelectItem>
+                  <SelectItem value="call">{SCREEN_COPY["ui.cac056598c76"][screenLang]}</SelectItem>
+                  <SelectItem value="video">{SCREEN_COPY["ui.bc17c1f0179a"][screenLang]}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -227,9 +323,9 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="morning">Morning</SelectItem>
-                  <SelectItem value="afternoon">Afternoon</SelectItem>
-                  <SelectItem value="evening">Evening</SelectItem>
+                  <SelectItem value="morning">{SCREEN_COPY["ui.a0cf42473466"][screenLang]}</SelectItem>
+                  <SelectItem value="afternoon">{SCREEN_COPY["ui.d682699b928c"][screenLang]}</SelectItem>
+                  <SelectItem value="evening">{SCREEN_COPY["ui.6734e19790f1"][screenLang]}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -244,35 +340,34 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
             <div className="sm:col-span-2">
               <Field label="CIN / Medi-Cal ID">
                 <Input
-                  placeholder="9 characters"
+                  placeholder={SCREEN_COPY["ui.cd5b0224ac4b"][screenLang]}
                   value={form.cin}
                   onChange={(e) =>
                     setForm({ ...form, cin: e.target.value.replace(/\s+/g, "").toUpperCase() })
                   }
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Helps disambiguate people with similar names.
-                </p>
+                  {SCREEN_COPY["ui.0ef38c23caa6"][screenLang]} </p>
               </Field>
             </div>
           </section>
 
           <section className="rounded-lg border bg-secondary/30 p-4 space-y-2">
-            <div className="text-sm font-medium text-navy">Emergency contact</div>
+            <div className="text-sm font-medium text-navy">{SCREEN_COPY["ui.9349f6a8c889"][screenLang]}</div>
             <div className="grid sm:grid-cols-3 gap-3">
               <Input
-                placeholder="Name"
+                placeholder={SCREEN_COPY["ui.709a23220f2c"][screenLang]}
                 value={form.emergencyName}
                 onChange={(e) => setForm({ ...form, emergencyName: e.target.value })}
               />
               <Input
-                placeholder="Relationship"
+                placeholder={SCREEN_COPY["ui.9b4a86cba424"][screenLang]}
                 value={form.emergencyRelationship}
                 onChange={(e) => setForm({ ...form, emergencyRelationship: e.target.value })}
               />
               <Input
                 type="tel"
-                placeholder="Phone"
+                placeholder={SCREEN_COPY["ui.77064d526523"][screenLang]}
                 value={form.emergencyPhone}
                 onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value })}
               />
@@ -282,7 +377,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
           {showAdminMeta && (
             <section className="rounded-lg border p-4 space-y-3 text-xs">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-navy">Consents</span>
+                <span className="font-medium text-navy">{SCREEN_COPY["ui.d059376b7a75"][screenLang]}</span>
                 <Badge
                   variant="outline"
                   className={consent.part2Sud ? "border-teal/40 text-teal" : ""}
@@ -293,20 +388,20 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                   variant="outline"
                   className={consent.ecmShare ? "border-teal/40 text-teal" : ""}
                 >
-                  ECM share: {consent.ecmShare ? "On" : "Off"}
+                  {SCREEN_COPY["ui.b8a08bcacf48"][screenLang]} {consent.ecmShare ? "On" : "Off"}
                 </Badge>
                 <Badge variant="outline" className={consent.sms ? "border-teal/40 text-teal" : ""}>
-                  SMS: {consent.sms ? "On" : "Off"}
+                  {SCREEN_COPY["ui.d0a79c78aca0"][screenLang]} {consent.sms ? "On" : "Off"}
                 </Badge>
               </div>
               {eventsForPatient.length > 0 && (
                 <div>
-                  <div className="font-medium text-navy mb-1">Recent consent changes</div>
+                  <div className="font-medium text-navy mb-1">{SCREEN_COPY["ui.3e03f76c12b5"][screenLang]}</div>
                   <ul className="space-y-1">
                     {eventsForPatient.map((e) => (
                       <li key={e.id} className="flex justify-between text-muted-foreground">
                         <span>
-                          {e.purpose} · {e.action} · by {e.actor}
+                          {e.purpose} · {e.action} {SCREEN_COPY["ui.bb37dabe3e19"][screenLang]} {e.actor}
                         </span>
                         <span>{new Date(e.at).toLocaleDateString()}</span>
                       </li>
@@ -320,11 +415,9 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
+            {SCREEN_COPY["ui.77dfd2135f4d"][screenLang]} </Button>
           <Button className="bg-navy text-navy-foreground hover:bg-navy/90" onClick={save}>
-            Save profile
-          </Button>
+            {SCREEN_COPY["ui.f597c0e8201d"][screenLang]} </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

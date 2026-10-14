@@ -10,8 +10,24 @@ import { StatusChip } from "@/components/ui/status-chip";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.4ca7d4b7e5f5": {
+    "en": "You're viewing",
+    "es": "Estás viendo"
+  },
+  "ui.966723b3e3ac": {
+    "en": "'s information",
+    "es": "información de "
+  }
+} as const;
+
 
 export function AdvocateIdentityBanner({ linkId }: { linkId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const identity = useEhr(() => AdelanteEHR.advocatePatientIdentity(linkId));
 
   if (!identity.allowed) {
@@ -41,8 +57,7 @@ export function AdvocateIdentityBanner({ linkId }: { linkId: string }) {
       <span className="flex items-center gap-2">
         <ShieldCheck className="h-4 w-4 text-teal" />
         <span className="font-medium text-navy">
-          You're viewing {identity.firstName}'s information
-        </span>
+          {SCREEN_COPY["ui.4ca7d4b7e5f5"][screenLang]} {identity.firstName}{SCREEN_COPY["ui.966723b3e3ac"][screenLang]} </span>
       </span>
       <StatusChip state="done" label="Access verified" />
     </Card>

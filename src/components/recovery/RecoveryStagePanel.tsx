@@ -29,6 +29,38 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.8052ea2f7ab8": {
+    "en": "Right now:",
+    "es": "Ahora mismo:"
+  },
+  "ui.ba97aa5a5e72": {
+    "en": "Set by",
+    "es": "Establecido por"
+  },
+  "ui.6f3b7d175949": {
+    "en": "Where are you right now?",
+    "es": "¿Dónde te encuentras ahora mismo?"
+  },
+  "ui.4162cea21968": {
+    "en": "Nobody scores this and nothing decides it for you. Pick the stage that sounds most like your life this week — you can change it whenever it changes.",
+    "es": "Nadie califica esto y nada lo decide por ti. Elige la etapa que más se parezca a tu vida esta semana — puedes cambiarla cuando cambie tu situación."
+  },
+  "ui.8c8ffdbde5b8": {
+    "en": "Anything you want to remember about why (optional)",
+    "es": "Cualquier cosa que quieras recordar sobre el porqué (opcional)"
+  },
+  "ui.77dfd2135f4d": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  },
+  "ui.efc007a393f6": {
+    "en": "Save",
+    "es": "Guardar"
+  }
+} as const;
+
 
 /** The visible, non-blocking pending-review notice. */
 export function RecoveryStageReviewNotice({ className }: { className?: string }) {
@@ -96,6 +128,9 @@ export function RecoveryStagePanel({
   /** Home-tile density: current stage's signals only, others behind the dialog. */
   compact?: boolean;
 }) {
+  const { lang: memberScreenLang } = useI18n();
+  const screenLang = actor === "patient" ? memberScreenLang : "en";
+
   const entry = useEhr(() => AdelanteEHR.getRecoveryStage(patientId));
   const history = useEhr(() => AdelanteEHR.recoveryStageHistory(patientId));
   const current = entry?.stage;
@@ -131,7 +166,7 @@ export function RecoveryStagePanel({
       {stage ? (
         <div>
           <p className="text-sm font-semibold text-foreground" data-testid="recovery-stage-current">
-            Right now: {stage.label}
+            {SCREEN_COPY["ui.8052ea2f7ab8"][screenLang]} {stage.label}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">{stage.blurb}</p>
           <ul className="mt-2 space-y-1" data-testid="recovery-stage-signals">
@@ -143,7 +178,7 @@ export function RecoveryStagePanel({
             ))}
           </ul>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            Set by {entry?.setByActor === "patient" ? "you" : entry?.setByName}
+            {SCREEN_COPY["ui.ba97aa5a5e72"][screenLang]} {entry?.setByActor === "patient" ? "you" : entry?.setByName}
             {entry?.setByActor === "staff" && entry?.setByRole ? ` (${entry.setByRole})` : ""} ·{" "}
             {new Date(entry?.at ?? "").toLocaleDateString()}
             {history.length > 1 ? ` · ${history.length} updates` : ""}
@@ -190,11 +225,9 @@ export function RecoveryStagePanel({
           </DialogTrigger>
           <DialogContent className={`${actor === "patient" ? "member-overlay " : ""}max-h-[85vh] overflow-y-auto sm:max-w-lg`}>
             <DialogHeader>
-              <DialogTitle>Where are you right now?</DialogTitle>
+              <DialogTitle>{SCREEN_COPY["ui.6f3b7d175949"][screenLang]}</DialogTitle>
               <DialogDescription>
-                Nobody scores this and nothing decides it for you. Pick the stage that sounds most
-                like your life this week — you can change it whenever it changes.
-              </DialogDescription>
+                {SCREEN_COPY["ui.4162cea21968"][screenLang]} </DialogDescription>
             </DialogHeader>
             <RecoveryStageReviewNotice />
             <div className="space-y-2">
@@ -227,16 +260,14 @@ export function RecoveryStagePanel({
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Anything you want to remember about why (optional)"
+              placeholder={SCREEN_COPY["ui.8c8ffdbde5b8"][screenLang]}
               className="min-h-[70px]"
             />
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+                {SCREEN_COPY["ui.77dfd2135f4d"][screenLang]} </Button>
               <Button type="button" onClick={save} disabled={!picked} data-testid="recovery-stage-save">
-                Save
-              </Button>
+                {SCREEN_COPY["ui.efc007a393f6"][screenLang]} </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

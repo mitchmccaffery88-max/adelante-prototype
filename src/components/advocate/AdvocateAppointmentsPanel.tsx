@@ -22,6 +22,52 @@ import { ClientDate } from "@/components/ClientDate";
 import { PART2_DISCLOSED_BADGE_LABEL, PART2_DISCLOSED_MESSAGE } from "@/lib/documents";
 
 import { CancelRequestControl } from "@/components/scheduling/VisitActions";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.34b2dc9be9dd": {
+    "en": "Reschedule",
+    "es": "Reprogramar"
+  },
+  "ui.77dfd2135f4d": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  },
+  "ui.969a2df3d305": {
+    "en": "Attending",
+    "es": "Asistiendo"
+  },
+  "ui.7d06dcaa4875": {
+    "en": "Can't make it",
+    "es": "No podré asistir"
+  },
+  "ui.1f3f4957c553": {
+    "en": "Appointments",
+    "es": "Citas"
+  },
+  "ui.523baab918ef": {
+    "en": "Upcoming",
+    "es": "Próximas"
+  },
+  "ui.aa4a66b0597b": {
+    "en": "Nothing scheduled right now.",
+    "es": "No hay nada programado por ahora."
+  },
+  "ui.b6c935d4f3c7": {
+    "en": "min",
+    "es": "min"
+  },
+  "ui.90ccd6497400": {
+    "en": "History",
+    "es": "Historial"
+  },
+  "ui.34f432fe6379": {
+    "en": "No past visits yet.",
+    "es": "Aún no hay visitas anteriores."
+  }
+} as const;
+
 
 function Part2Notice() {
   return (
@@ -38,6 +84,8 @@ function Part2Notice() {
 }
 
 function RescheduleControl({ linkId, apptId }: { linkId: string; apptId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const [open, setOpen] = useState(false);
   const options = useEhr(() =>
     open ? advocateRescheduleSlots(linkId, apptId) : undefined,
@@ -46,8 +94,7 @@ function RescheduleControl({ linkId, apptId }: { linkId: string; apptId: string 
   if (!open) {
     return (
       <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-        <CalendarClock className="mr-1.5 h-4 w-4" /> Reschedule
-      </Button>
+        <CalendarClock className="mr-1.5 h-4 w-4" /> {SCREEN_COPY["ui.34b2dc9be9dd"][screenLang]} </Button>
     );
   }
 
@@ -91,13 +138,14 @@ function RescheduleControl({ linkId, apptId }: { linkId: string; apptId: string 
         </div>
       )}
       <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
-        Cancel
-      </Button>
+        {SCREEN_COPY["ui.77dfd2135f4d"][screenLang]} </Button>
     </div>
   );
 }
 
 function RsvpControl({ linkId, apptId }: { linkId: string; apptId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const rsvp = useEhr(() => AdelanteEHR.advocateRsvpFor(linkId, apptId));
   const send = (response: "yes" | "no") => {
     try {
@@ -114,20 +162,20 @@ function RsvpControl({ linkId, apptId }: { linkId: string; apptId: string }) {
         variant={rsvp?.response === "yes" ? "default" : "outline"}
         onClick={() => send("yes")}
       >
-        <Check className="mr-1 h-3.5 w-3.5" /> Attending
-      </Button>
+        <Check className="mr-1 h-3.5 w-3.5" /> {SCREEN_COPY["ui.969a2df3d305"][screenLang]} </Button>
       <Button
         size="sm"
         variant={rsvp?.response === "no" ? "default" : "outline"}
         onClick={() => send("no")}
       >
-        <X className="mr-1 h-3.5 w-3.5" /> Can't make it
-      </Button>
+        <X className="mr-1 h-3.5 w-3.5" /> {SCREEN_COPY["ui.7d06dcaa4875"][screenLang]} </Button>
     </div>
   );
 }
 
 export function AdvocateAppointmentsPanel({ linkId }: { linkId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const upcoming = useEhr(() => AdelanteEHR.advocateSchedule(linkId));
   const history = useEhr(() => AdelanteEHR.advocateScheduleHistory(linkId));
   const canAct = useEhr(() => AdelanteEHR.advocateCanActOnSchedule(linkId));
@@ -143,15 +191,13 @@ export function AdvocateAppointmentsPanel({ linkId }: { linkId: string }) {
   return (
     <Card className="p-5" data-testid="advocate-upcoming">
       <h2 className="flex items-center gap-2 font-display text-lg text-navy">
-        <CalendarClock className="h-5 w-5 text-teal" /> Appointments
-      </h2>
+        <CalendarClock className="h-5 w-5 text-teal" /> {SCREEN_COPY["ui.1f3f4957c553"][screenLang]} </h2>
       {upcoming.part2Disclosed && <Part2Notice />}
 
       <h3 className="mt-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        Upcoming
-      </h3>
+        {SCREEN_COPY["ui.523baab918ef"][screenLang]} </h3>
       {upcoming.items.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Nothing scheduled right now.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{SCREEN_COPY["ui.aa4a66b0597b"][screenLang]}</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {upcoming.items.map((item) => (
@@ -168,8 +214,7 @@ export function AdvocateAppointmentsPanel({ linkId }: { linkId: string }) {
                 <span>
                   <span className="font-medium text-navy">{item.label}</span>
                   <span className="block text-xs text-muted-foreground">
-                    {item.durationMin} min
-                    {item.modality ? ` · ${item.modality}` : ""}
+                    {item.durationMin} {SCREEN_COPY["ui.b6c935d4f3c7"][screenLang]} {item.modality ? ` · ${item.modality}` : ""}
                     {item.locationName ? ` · ${item.locationName}` : ""}
                   </span>
                 </span>
@@ -196,10 +241,9 @@ export function AdvocateAppointmentsPanel({ linkId }: { linkId: string }) {
       )}
 
       <h3 className="mt-6 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        <History className="h-3.5 w-3.5" /> History
-      </h3>
+        <History className="h-3.5 w-3.5" /> {SCREEN_COPY["ui.90ccd6497400"][screenLang]} </h3>
       {history.items.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">No past visits yet.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{SCREEN_COPY["ui.34f432fe6379"][screenLang]}</p>
       ) : (
         <ul className="mt-2 space-y-2" data-testid="advocate-history">
           {history.items.map((item) => (
@@ -210,8 +254,7 @@ export function AdvocateAppointmentsPanel({ linkId }: { linkId: string }) {
               <span>
                 <span className="font-medium text-navy">{item.label}</span>
                 <span className="block text-xs text-muted-foreground">
-                  {item.durationMin} min
-                  {item.modality ? ` · ${item.modality}` : ""}
+                  {item.durationMin} {SCREEN_COPY["ui.b6c935d4f3c7"][screenLang]} {item.modality ? ` · ${item.modality}` : ""}
                   {item.locationName ? ` · ${item.locationName}` : ""}
                 </span>
               </span>

@@ -8,6 +8,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAdelVoice } from "@/hooks/useAdelVoice";
 import type { VoiceLang } from "@/lib/adelVoice";
 import { INTAKE_VOICE_COPY, VOICE_DRAFT_LABEL } from "@/lib/intakeVoiceCopy";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.562107b866b5": {
+    "en": "Read aloud",
+    "es": "Leer en voz alta"
+  },
+  "ui.2d2cb022bc3d": {
+    "en": "Speed",
+    "es": "Adel está pensando…"
+  }
+} as const;
+
 
 type Voice = ReturnType<typeof useAdelVoice>;
 
@@ -28,6 +42,8 @@ export function VoiceOptIn({ voice, lang }: { voice: Voice; lang: VoiceLang }) {
 
 /** Controls + visible transcript. Auto-reads `text` when it changes and voice is on. */
 export function VoiceBar({ voice, lang, text, tapOnly, draft = true }: { voice: Voice; lang: VoiceLang; text: string; tapOnly?: boolean; draft?: boolean }) {
+  const { lang: screenLang } = useI18n();
+
   const c = INTAKE_VOICE_COPY[lang];
   const { enabled, speak } = voice;
   useEffect(() => { if (enabled && text) speak(text); }, [enabled, text, speak]);
@@ -39,13 +55,13 @@ export function VoiceBar({ voice, lang, text, tapOnly, draft = true }: { voice: 
     );
   }
   return (
-    <div className="rounded-lg border border-teal/40 bg-card p-3 space-y-2" data-testid="voice-bar" aria-label="Read aloud">
+    <div className="rounded-lg border border-teal/40 bg-card p-3 space-y-2" data-testid="voice-bar" aria-label={SCREEN_COPY["ui.562107b866b5"][screenLang]}>
       <p className="text-[11px] text-muted-foreground" data-testid="voice-simulated">{simulatedSurfaceLabel("voice_intake")}</p>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline" onClick={() => speak(text, { force: true })} aria-label={c.play}><Play className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.play}</span></Button>
         <Button size="sm" variant="outline" onClick={voice.replay} aria-label={c.replay}><RotateCcw className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.replay}</span></Button>
         <Button size="sm" variant="outline" onClick={voice.stop} aria-label={c.stop}><Pause className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.stop}</span></Button>
-        <div className="flex rounded-md border" role="group" aria-label="Speed">
+        <div className="flex rounded-md border" role="group" aria-label={SCREEN_COPY["ui.2d2cb022bc3d"][screenLang]}>
           {(["slow", "normal"] as const).map((r) => (
             <button key={r} type="button" onClick={() => voice.setRate(r)} aria-pressed={voice.rate === r}
               className={`px-2 py-1 text-xs ${voice.rate === r ? "bg-teal text-primary-foreground" : ""}`}>{r === "slow" ? c.slow : c.normal}</button>

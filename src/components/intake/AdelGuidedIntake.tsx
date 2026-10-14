@@ -33,6 +33,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.99a47158f754": {
+    "en": "Call 988",
+    "es": "Llamar al 988"
+  },
+  "ui.9eb79844db58": {
+    "en": "Text 988",
+    "es": "Enviar mensaje al 988"
+  }
+} as const;
+
 
 type Msg = { from: "adel" | "me"; text: string; crisis?: boolean };
 type Phase =
@@ -60,6 +72,8 @@ export function AdelGuidedIntake({
   onHandoff: () => void;
   onExit: () => void;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const { lang: appLang } = useI18n();
   const lang: AdelLang = appLang === "es" ? "es" : "en";
   const c = ADEL_COPY[lang];
@@ -235,10 +249,10 @@ export function AdelGuidedIntake({
               {m.crisis && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Button asChild size="sm" variant="destructive">
-                    <a href="tel:988">Call 988</a>
+                    <a href="tel:988">{SCREEN_COPY["ui.99a47158f754"][screenLang]}</a>
                   </Button>
                   <Button asChild size="sm" variant="outline">
-                    <a href="sms:988">Text 988</a>
+                    <a href="sms:988">{SCREEN_COPY["ui.9eb79844db58"][screenLang]}</a>
                   </Button>
                   <Button asChild size="sm" variant="outline">
                     <Link to="/crisis">

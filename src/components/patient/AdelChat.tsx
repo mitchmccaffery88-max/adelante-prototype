@@ -67,6 +67,30 @@ import { cn } from "@/lib/utils";
 import { CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
 import { recoveryJourneyVisible } from "@/lib/seeking";
 import { ADEL_HISTORY_COPY, adelHistoryContext, adelRecallLine, getAdelThread, saveAdelTurn, type AdelOwner } from "@/lib/adelHistory";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.edd1e3f113de": {
+    "en": "Adel",
+    "es": "Adel"
+  },
+  "ui.0068cefdb16f": {
+    "en": "Adel is thinking…",
+    "es": "Adel está pensando…"
+  },
+  "ui.b700eb902eca": {
+    "en": "Message Adel",
+    "es": "Escríbele a Adel"
+  },
+  "ui.ed6e8697ebac": {
+    "en": "Say what's on your mind…",
+    "es": "Cuéntanos qué tienes en mente…"
+  },
+  "ui.9bc2575c3930": {
+    "en": "Send",
+    "es": "Enviar"
+  }
+} as const;
+
 
 // §Small UI gaps batch item 4 — chip rendering is differentiated BY KIND only.
 // Destinations still come from the real `resolveAdelAction` resolver; nothing
@@ -94,6 +118,8 @@ const GREETING =
   "Hi — I'm Adel. I'm here to listen and help you find your way around the app. What's going on today?";
 
 export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: { topic?: string; resourceId?: string; initialAsk?: string; threadId?: string } = {}) {
+  const { lang: screenLang } = useI18n();
+
   const { lang: uiLang } = useI18n();
   const hl = uiLang === "es" ? "es" : "en";
   const hc = ADEL_HISTORY_COPY[hl];
@@ -317,7 +343,7 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
     <div className="patient-theme mx-auto flex min-h-[70vh] max-w-2xl flex-col gap-3 px-4 py-6 sm:px-6">
       {topic && <p className="rounded-xl bg-accent p-3">{topic}</p>}
       <header className="space-y-2">
-        <h1 className="font-display text-3xl text-foreground">Adel</h1>
+        <h1 className="font-display text-3xl text-foreground">{SCREEN_COPY["ui.edd1e3f113de"][screenLang]}</h1>
         <p className="text-base text-muted-foreground">
           A guide, not a clinician. Adel can&apos;t give medical advice. If you need someone now,
           call or text <span className="font-semibold">988</span>.
@@ -382,8 +408,7 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
           ))}
           {busy && (
             <li className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Adel is thinking…
-            </li>
+              <Loader2 className="h-4 w-4 animate-spin" /> {SCREEN_COPY["ui.0068cefdb16f"][screenLang]} </li>
           )}
         </ul>
         <div ref={endRef} />
@@ -427,15 +452,15 @@ export function AdelChat({ topic, resourceId, initialAsk, threadId: resumeId }: 
             }
           }}
           rows={2}
-          aria-label="Message Adel"
-          placeholder="Say what's on your mind…"
+          aria-label={SCREEN_COPY["ui.b700eb902eca"][screenLang]}
+          placeholder={SCREEN_COPY["ui.ed6e8697ebac"][screenLang]}
           className="min-h-[56px] rounded-2xl text-base"
         />
         <Button
           onClick={() => void send()}
           disabled={busy || draft.trim().length === 0}
           className="h-[56px] w-[56px] rounded-2xl p-0"
-          aria-label="Send"
+          aria-label={SCREEN_COPY["ui.9bc2575c3930"][screenLang]}
         >
           <Send className="h-5 w-5" />
         </Button>

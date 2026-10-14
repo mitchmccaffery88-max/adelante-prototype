@@ -20,6 +20,38 @@ import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useI18n } from "@/lib/i18n";
 import { writePreferredLanguage } from "@/lib/languagePreference";
 import { ConsentWithdrawSheet, type WithdrawPurpose } from "@/components/patient/ConsentWithdrawSheet";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.2f3df0a939fd": {
+    "en": "My profile",
+    "es": "Mi perfil"
+  },
+  "ui.5301648dcf6b": {
+    "en": "Edit",
+    "es": "Editar"
+  },
+  "ui.9ae62c1cb5e1": {
+    "en": "Not on file",
+    "es": "No registrado"
+  },
+  "ui.0cf67da02191": {
+    "en": "Privacy & consent",
+    "es": "Privacidad y consentimiento"
+  },
+  "ui.024254a72958": {
+    "en": "You can change these at any time. Changes apply right away.",
+    "es": "Puedes cambiar esto cuando quieras. Se aplica de inmediato."
+  },
+  "ui.dc1649a16c14": {
+    "en": "Sign out",
+    "es": "Cerrar sesión"
+  },
+  "ui.041a73ce0c19": {
+    "en": "Signs you out on this device. Good idea on a shared or borrowed phone.",
+    "es": "Cierra sesión aquí. Recomendado en teléfonos compartidos."
+  }
+} as const;
+
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -31,6 +63,8 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 export function MyProfileCard({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [open, setOpen] = useState(false);
   if (!patient) return null;
@@ -48,11 +82,9 @@ export function MyProfileCard({ patientId }: { patientId: string }) {
     <Card className="p-5" id="my-profile" data-testid="my-profile-card">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-          <UserCog className="h-4 w-4" /> My profile
-        </div>
+          <UserCog className="h-4 w-4" /> {SCREEN_COPY["ui.2f3df0a939fd"][screenLang]} </div>
         <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-          Edit
-        </Button>
+          {SCREEN_COPY["ui.5301648dcf6b"][screenLang]} </Button>
       </div>
       <dl className="mt-3 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
         <Row label="Name">
@@ -68,7 +100,7 @@ export function MyProfileCard({ patientId }: { patientId: string }) {
               <PhoneIcon className="h-3.5 w-3.5 text-muted-foreground" /> {patient.phone}
             </span>
           ) : (
-            <span className="text-muted-foreground">Not on file</span>
+            <span className="text-muted-foreground">{SCREEN_COPY["ui.9ae62c1cb5e1"][screenLang]}</span>
           )}
         </Row>
         <Row label="Language">
@@ -142,6 +174,8 @@ function LanguageChoice({ patientId }: { patientId: string }) {
 }
 
 export function PrivacyConsentCard({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const consent = useEhr(() => AdelanteEHR.getConsentState(patientId));
   const { lang } = useI18n();
   const [pending, setPending] = useState<WithdrawPurpose | null>(null);
@@ -165,11 +199,9 @@ export function PrivacyConsentCard({ patientId }: { patientId: string }) {
   return (
     <Card className="p-5" id="privacy-consent" data-testid="privacy-consent-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <Lock className="h-4 w-4" /> Privacy & consent
-      </div>
+        <Lock className="h-4 w-4" /> {SCREEN_COPY["ui.0cf67da02191"][screenLang]} </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        You can change these at any time. Changes apply right away.
-      </p>
+        {SCREEN_COPY["ui.024254a72958"][screenLang]} </p>
       <ul className="mt-3 space-y-3">
         {rows.map((r) => (
           <li key={r.key} className="flex items-start gap-3 rounded-md border p-3">
@@ -225,16 +257,16 @@ export function PrivacyConsentCard({ patientId }: { patientId: string }) {
  * setting is the rule.
  */
 export function SignOutCard() {
+  const { lang: screenLang } = useI18n();
+
   const navigate = useNavigate();
   return (
     <Card className="flex flex-wrap items-center justify-between gap-3 p-5" data-testid="sign-out-card">
       <div>
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-          <LogOut className="h-4 w-4" /> Sign out
-        </div>
+          <LogOut className="h-4 w-4" /> {SCREEN_COPY["ui.dc1649a16c14"][screenLang]} </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Signs you out on this device. Good idea on a shared or borrowed phone.
-        </p>
+          {SCREEN_COPY["ui.041a73ce0c19"][screenLang]} </p>
       </div>
       <Button
         variant="outline"
@@ -245,8 +277,7 @@ export function SignOutCard() {
           void navigate({ to: "/" });
         }}
       >
-        Sign out
-      </Button>
+        {SCREEN_COPY["ui.dc1649a16c14"][screenLang]} </Button>
     </Card>
   );
 }

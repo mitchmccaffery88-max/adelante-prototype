@@ -21,6 +21,33 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientDate } from "@/components/ClientDate";
 import { StatusChip } from "@/components/ui/status-chip";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.90ce89ef349a": { "en": "Cancel requested", "es": "Cancelación solicitada" },
+  "ui.a5be37e0c3b9": {
+    "en": "— your care team will confirm.",
+    "es": "Tu equipo de cuidado lo confirmará."
+  },
+  "ui.f6826f8fc9b4": {
+    "en": "Reason (optional)",
+    "es": "Motivo (opcional)"
+  },
+  "ui.5b633ccd6d95": {
+    "en": "Send cancel request",
+    "es": "Enviar solicitud de cancelación"
+  },
+  "ui.c25d1d2ac8a3": {
+    "en": "Keep visit",
+    "es": "Mantener visita"
+  },
+  "ui.77dfd2135f4d": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  }
+} as const;
+
 
 export function LateCancelBadge({ appt, member = false }: { appt: Appointment; member?: boolean }) {
   if (!appt.cancellation?.lateCancel) return null;
@@ -246,31 +273,29 @@ export function CancelRequestControl({
   appt: Appointment;
   onRequest: (reason?: string) => void;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   if (appt.cancelRequest?.status === "pending")
     return (
       <p className="text-xs font-medium text-navy" data-testid="cancel-requested-notice">
-        <StatusChip state="team" label="Cancel requested" />{" "}
-        — your care team will confirm.
-      </p>
+        <StatusChip state="team" label={SCREEN_COPY["ui.90ce89ef349a"][screenLang]} />{" "}
+        {SCREEN_COPY["ui.a5be37e0c3b9"][screenLang]} </p>
     );
   if (appt.status !== "scheduled" || +new Date(appt.start) <= Date.now()) return null;
   return open ? (
     <div className="w-full space-y-2" data-testid="cancel-request-form">
-      <Textarea aria-label="Reason (optional)" placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
+      <Textarea aria-label={SCREEN_COPY["ui.f6826f8fc9b4"][screenLang]} placeholder={SCREEN_COPY["ui.f6826f8fc9b4"][screenLang]} value={reason} onChange={(e) => setReason(e.target.value)} />
       <div className="flex gap-2">
         <Button size="sm" className="min-h-11" onClick={() => run(() => { onRequest(reason); setOpen(false); }, "Cancel requested — your care team will confirm.")}>
-          Send cancel request
-        </Button>
+          {SCREEN_COPY["ui.5b633ccd6d95"][screenLang]} </Button>
         <Button size="sm" variant="ghost" className="min-h-11" onClick={() => setOpen(false)}>
-          Keep visit
-        </Button>
+          {SCREEN_COPY["ui.c25d1d2ac8a3"][screenLang]} </Button>
       </div>
     </div>
   ) : (
     <Button size="sm" variant="outline" className="min-h-11" onClick={() => setOpen(true)}>
-      <CalendarX className="mr-1.5 h-4 w-4" /> Cancel
-    </Button>
+      <CalendarX className="mr-1.5 h-4 w-4" /> {SCREEN_COPY["ui.77dfd2135f4d"][screenLang]} </Button>
   );
 }

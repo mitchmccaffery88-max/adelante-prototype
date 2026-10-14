@@ -24,6 +24,36 @@ import {
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
 import { ConnectMeButton } from "@/components/patient/NeedConnect";
 import { NeedThreadList } from "@/components/patient/NeedThreadList";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.a32321258bbc": {
+    "en": "We don't have a directory category that matches this one. Your care team will follow up with you directly.",
+    "es": "No tenemos una categoría que coincida. Tu equipo de cuidado se comunicará contigo."
+  },
+  "ui.1359e1a30e4d": {
+    "en": "See everything in the directory",
+    "es": "Ver todo en el directorio"
+  },
+  "ui.9a009b498d0e": {
+    "en": "Help that matches what you told us",
+    "es": "Ayuda que coincide con lo que nos contaste"
+  },
+  "ui.56a0dc670085": {
+    "en": "You didn't flag any everyday needs",
+    "es": "No marcaste ninguna necesidad cotidiana"
+  },
+  "ui.b4e2f3929c8d": {
+    "en": "That's fine — nothing was marked, so there's nothing to match here. If something changes, tell your care team, or browse the full community directory whenever you like.",
+    "es": "Está bien. No marcaste nada, así que no hay opciones que buscar aquí. Si algo cambia, cuéntaselo a tu equipo o consulta el directorio cuando quieras."
+  },
+  "ui.80f46173c5c9": {
+    "en": "Browse all community resources",
+    "es": "Explorar recursos comunitarios"
+  }
+} as const;
+
 
 const MAX_ORGS_PER_NEED = 3;
 
@@ -49,14 +79,14 @@ function NeedMatch({
   patientId: string;
   directory: ReturnType<typeof patientBrowsableResources>;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const match = matchResourcesForNeed(need);
   const connect = <ConnectMeButton patientId={patientId} itemId={need.id} />;
   if (!match)
     return (
       <p className="mt-2 text-sm text-muted-foreground" data-testid="need-no-match">
-        We don&apos;t have a directory category that matches this one. Your care team will follow
-        up with you directly.
-        {connect}
+        {SCREEN_COPY["ui.a32321258bbc"][screenLang]} {connect}
       </p>
     );
   if (!match.showOrgs)
@@ -94,13 +124,15 @@ function NeedMatch({
         );
       })}
       <Button asChild size="sm" variant="outline">
-        <Link to="/resources">See everything in the directory</Link>
+        <Link to="/resources">{SCREEN_COPY["ui.1359e1a30e4d"][screenLang]}</Link>
       </Button>
     </div>
   );
 }
 
 export function PostIntakeResources() {
+  const { lang: screenLang } = useI18n();
+
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const needsJson = useEhr(() => JSON.stringify(openVisibleNeeds(patientId)));
   const needs = JSON.parse(needsJson) as SdohPlanItem[];
@@ -116,7 +148,7 @@ export function PostIntakeResources() {
       <PatientPageHeader
         icon={HeartPulse}
         eyebrow="Next steps"
-        title="Help that matches what you told us"
+        title={SCREEN_COPY["ui.9a009b498d0e"][screenLang]}
         lede="These are local organisations from our community directory. Nothing has been sent on your behalf — looking at a place is not the same as being referred to it. Tell your care team if you want them to make the connection."
       />
 
@@ -130,15 +162,11 @@ export function PostIntakeResources() {
       {needs.length === 0 && (
         <Card className="p-5" data-testid="post-intake-empty">
           <div className="text-sm font-medium text-navy">
-            You didn&apos;t flag any everyday needs
-          </div>
+            {SCREEN_COPY["ui.56a0dc670085"][screenLang]} </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            That&apos;s fine — nothing was marked, so there&apos;s nothing to match here. If
-            something changes, tell your care team, or browse the full community directory
-            whenever you like.
-          </p>
+            {SCREEN_COPY["ui.b4e2f3929c8d"][screenLang]} </p>
           <Button asChild size="sm" className="mt-3">
-            <Link to="/resources">Browse all community resources</Link>
+            <Link to="/resources">{SCREEN_COPY["ui.80f46173c5c9"][screenLang]}</Link>
           </Button>
         </Card>
       )}

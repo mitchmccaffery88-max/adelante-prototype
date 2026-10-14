@@ -13,12 +13,40 @@ import {
   AdvocateSupportGate,
   useSupportingName,
 } from "@/components/advocate/AdvocateViewParts";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.143f7ba1fed6": {
+    "en": "My documents",
+    "es": "Mis documentos"
+  },
+  "ui.8ad2ae4cbd0d": {
+    "en": "Your own authorization paperwork is kept separately.",
+    "es": "Tus documentos de autorización se guardan por separado."
+  },
+  "ui.e94de7d6dc0f": {
+    "en": "Open my documents",
+    "es": "Abrir mis documentos"
+  }
+} as const;
+
 
 export const Route = createFileRoute("/advocate/documents")({
+  head: () => ({ meta: [
+    { title: "Documents \u2014 Adelante advocate" },
+    { name: "description", content: "Your documents in the Adelante advocate portal." },
+    { property: "og:title", content: "Documents \u2014 Adelante advocate" },
+    { property: "og:description", content: "Your documents in the Adelante advocate portal." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdvocateSharedDocumentsView,
 });
 
 function AdvocateSharedDocumentsView() {
+  const { lang: screenLang } = useI18n();
+
   const { linkId } = useAdvocateSession();
   const name = useSupportingName(linkId);
   return (
@@ -34,14 +62,12 @@ function AdvocateSharedDocumentsView() {
       <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div>
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-            <FileStack className="h-4 w-4" /> My documents
-          </div>
+            <FileStack className="h-4 w-4" /> {SCREEN_COPY["ui.143f7ba1fed6"][screenLang]} </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your own authorization paperwork is kept separately.
-          </p>
+            {SCREEN_COPY["ui.8ad2ae4cbd0d"][screenLang]} </p>
         </div>
         <Button asChild variant="outline">
-          <Link to="/advocate/my-documents">Open my documents</Link>
+          <Link to="/advocate/my-documents">{SCREEN_COPY["ui.e94de7d6dc0f"][screenLang]}</Link>
         </Button>
       </Card>
     </div>

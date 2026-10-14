@@ -1,5 +1,12 @@
 # Roadmap
 
+## Phase 5b — Draft member and public screen Spanish (14 Oct)
+- [ ] Re-check cfProxyMode and consentWorkflow twice before edits; classify staff-only gaps
+- [ ] Draft ordinary screen Spanish in tú; preserve authored and controlled content
+- [ ] Regenerate priority-marked review CSV and remaining gap inventory
+- [ ] Full units then all browsers/axe, one warm timeout rerun; 15 Spanish mobile checks
+- [ ] Report keys, exclusions, files and all validation results
+
 ## Phase 3 Part A — Safety-only red (14 Oct)
 
 Report: `docs/phase3-red-cleanup-report.md` — build green; 2,568 units; final browsers 78/79 (English public language control duplicate-selector failure), previous complete run 79/79; settled contrast minimum 5.51:1.

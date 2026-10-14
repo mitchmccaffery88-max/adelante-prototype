@@ -22,6 +22,80 @@ import {
   recordLapse,
   type LapseNextStepId,
 } from "@/lib/selfTracking";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.4d726c8c4eee": {
+    "en": "You came back. That's the part that counts.",
+    "es": "Regresaste. Eso es lo que importa."
+  },
+  "ui.952f375412e8": {
+    "en": "Start",
+    "es": "Empezar"
+  },
+  "ui.ec486b11ec06": {
+    "en": "What led up to it?",
+    "es": "¿Qué pasó antes?"
+  },
+  "ui.fbab8c9eeba4": {
+    "en": "Not a confession — you're looking for the pattern, same as anybody would.",
+    "es": "No es una confesión: estás buscando un patrón, como cualquier otra persona."
+  },
+  "ui.bc981983e7f5": {
+    "en": "Next",
+    "es": "Siguiente"
+  },
+  "ui.427a8f21aa9d": {
+    "en": "What's helped before?",
+    "es": "¿Qué te ha ayudado antes?"
+  },
+  "ui.2a1124f5e1b6": {
+    "en": "Things that have actually worked for you, not things that should work.",
+    "es": "Cosas que realmente te han funcionado."
+  },
+  "ui.579a754dedbf": {
+    "en": "One thing for the next 24 hours.",
+    "es": "Una sola cosa para las próximas 24 horas."
+  },
+  "ui.532bdf94ce66": {
+    "en": "One. Not a plan — a next move.",
+    "es": "Uno. No un plan, sino un próximo paso."
+  },
+  "ui.b52b36b7269f": {
+    "en": "Back",
+    "es": "Atrás"
+  },
+  "ui.4ec71e380752": {
+    "en": "Your recovery start date is up to you.",
+    "es": "Tu fecha de inicio depende de ti."
+  },
+  "ui.962903b5ecbe": {
+    "en": "It currently reads",
+    "es": "Actualmente dice"
+  },
+  "ui.508822d22b78": {
+    "en": "Keep my date",
+    "es": "Mantener mi fecha"
+  },
+  "ui.4741ae8169bc": {
+    "en": "Start the count from today",
+    "es": "Empezar la cuenta desde hoy"
+  },
+  "ui.3da474537ac3": {
+    "en": "Skip",
+    "es": "Saltar"
+  },
+  "ui.d303044aa3ec": {
+    "en": "If you're in danger right now,",
+    "es": "Si estás en peligro ahora,"
+  },
+  "ui.d68a0c8f2230": {
+    "en": "get help here",
+    "es": "busca ayuda aquí"
+  }
+} as const;
+
 
 /** Every option routes somewhere real — verified in `slipFlowDestinations`. */
 export const NEXT_STEP_DESTINATIONS: Record<
@@ -70,6 +144,8 @@ function Chips({
 }
 
 export function SlipSupportFlow() {
+  const { lang: screenLang } = useI18n();
+
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -109,7 +185,7 @@ export function SlipSupportFlow() {
     <PatientPage data-testid="slip-flow">
       <PatientPageHeader
         icon={RotateCcw}
-        title={<>You came back. That&apos;s the part that counts.</>}
+        title={<>{SCREEN_COPY["ui.4d726c8c4eee"][screenLang]}</>}
         lede="A slip is information, not a verdict. Four short screens, then one thing for the next 24 hours."
       >
         <p
@@ -135,17 +211,16 @@ export function SlipSupportFlow() {
             className="w-full"
             onClick={() => setStep(1)}
           >
-            Start <ArrowRight className="ml-1 h-4 w-4" />
+            {SCREEN_COPY["ui.952f375412e8"][screenLang]} <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </Card>
       )}
 
       {step === 1 && (
         <Card className="space-y-3 p-5">
-          <p className="text-base font-medium">What led up to it?</p>
+          <p className="text-base font-medium">{SCREEN_COPY["ui.ec486b11ec06"][screenLang]}</p>
           <p className="text-sm text-muted-foreground">
-            Not a confession — you&apos;re looking for the pattern, same as anybody would.
-          </p>
+            {SCREEN_COPY["ui.fbab8c9eeba4"][screenLang]} </p>
           <Chips
             options={LAPSE_CONTRIBUTORS}
             value={contributors}
@@ -159,17 +234,16 @@ export function SlipSupportFlow() {
             className="w-full"
             onClick={() => setStep(2)}
           >
-            Next <ArrowRight className="ml-1 h-4 w-4" />
+            {SCREEN_COPY["ui.bc981983e7f5"][screenLang]} <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </Card>
       )}
 
       {step === 2 && (
         <Card className="space-y-3 p-5">
-          <p className="text-base font-medium">What&apos;s helped before?</p>
+          <p className="text-base font-medium">{SCREEN_COPY["ui.427a8f21aa9d"][screenLang]}</p>
           <p className="text-sm text-muted-foreground">
-            Things that have actually worked for you, not things that should work.
-          </p>
+            {SCREEN_COPY["ui.2a1124f5e1b6"][screenLang]} </p>
           <Chips
             options={LAPSE_HELPED_BEFORE}
             value={helped}
@@ -183,15 +257,15 @@ export function SlipSupportFlow() {
             className="w-full"
             onClick={() => setStep(3)}
           >
-            Next <ArrowRight className="ml-1 h-4 w-4" />
+            {SCREEN_COPY["ui.bc981983e7f5"][screenLang]} <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </Card>
       )}
 
       {step === 3 && (
         <Card className="space-y-3 p-5">
-          <p className="text-base font-medium">One thing for the next 24 hours.</p>
-          <p className="text-sm text-muted-foreground">One. Not a plan — a next move.</p>
+          <p className="text-base font-medium">{SCREEN_COPY["ui.579a754dedbf"][screenLang]}</p>
+          <p className="text-sm text-muted-foreground">{SCREEN_COPY["ui.532bdf94ce66"][screenLang]}</p>
           <div className="space-y-2">
             {LAPSE_NEXT_STEPS.map((s) => (
               <button
@@ -213,16 +287,15 @@ export function SlipSupportFlow() {
             className="w-full"
             onClick={() => setStep(2)}
           >
-            Back
-          </Button>
+            {SCREEN_COPY["ui.b52b36b7269f"][screenLang]} </Button>
         </Card>
       )}
 
       {step === 4 && pendingStep && (
         <Card className="space-y-3 p-5" data-testid="slip-date-prompt">
-          <p className="text-base font-medium">Your recovery start date is up to you.</p>
+          <p className="text-base font-medium">{SCREEN_COPY["ui.4ec71e380752"][screenLang]}</p>
           <p className="text-sm text-muted-foreground">
-            It currently reads {daysSoberLabel(daysSober(recoveryDate))}. Some people restart the
+            {SCREEN_COPY["ui.962903b5ecbe"][screenLang]} {daysSoberLabel(daysSober(recoveryDate))}. Some people restart the
             count after a slip, some don&apos;t — both are real recovery. Nothing changes unless
             you say so.
           </p>
@@ -236,8 +309,7 @@ export function SlipSupportFlow() {
             className="w-full"
             onClick={() => goNext(pendingStep)}
           >
-            Keep my date
-          </Button>
+            {SCREEN_COPY["ui.508822d22b78"][screenLang]} </Button>
           <Button
             type="button"
             variant="outline"
@@ -250,8 +322,7 @@ export function SlipSupportFlow() {
               goNext(pendingStep);
             }}
           >
-            Start the count from today
-          </Button>
+            {SCREEN_COPY["ui.4741ae8169bc"][screenLang]} </Button>
           <Button
             type="button"
             variant="ghost"
@@ -259,13 +330,12 @@ export function SlipSupportFlow() {
             className="w-full"
             onClick={() => goNext(pendingStep)}
           >
-            Skip
-          </Button>
+            {SCREEN_COPY["ui.3da474537ac3"][screenLang]} </Button>
         </Card>
       )}
 
       <p className="px-1 text-sm text-muted-foreground">
-        If you&apos;re in danger right now, <Link to="/crisis" className="underline">get help here</Link>.
+        {SCREEN_COPY["ui.d303044aa3ec"][screenLang]} <Link to="/crisis" className="underline">{SCREEN_COPY["ui.d68a0c8f2230"][screenLang]}</Link>.
       </p>
     </PatientPage>
   );

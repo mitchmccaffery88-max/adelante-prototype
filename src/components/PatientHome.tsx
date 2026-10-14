@@ -52,10 +52,84 @@ import { HomeDashboard } from "@/components/patient/HomeDashboard";
 import { AdvocateNoPatientPrompt } from "@/components/advocate/AdvocateNoPatientPrompt";
 import { AdelGreetingCheckIn } from "@/components/patient/AdelGreetingCheckIn";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.b6ea2d66d7d8": {
+    "en": "Keep Adelante one tap away",
+    "es": "Mantén Adelante a un toque de distancia"
+  },
+  "ui.1e5e34b0c33e": {
+    "en": "Add this app to your home screen for quick access to your care.",
+    "es": "Añade esta aplicación a tu pantalla de inicio para acceder rápidamente a tu cuidado."
+  },
+  "ui.e45714907316": {
+    "en": "Not now",
+    "es": "Ahora no"
+  },
+  "ui.b4cee43de8d4": {
+    "en": "We don't have a record for you yet",
+    "es": "Aún no tenemos un expediente para ti"
+  },
+  "ui.2ebc32fb9692": {
+    "en": "Your Care Plan",
+    "es": "Tu plan de cuidado"
+  },
+  "ui.ac9890e3db15": {
+    "en": "Things to do",
+    "es": "Cosas por hacer"
+  },
+  "ui.952f375412e8": {
+    "en": "Start",
+    "es": "Empezar"
+  },
+  "ui.e9b450d14bc2": {
+    "en": "Done",
+    "es": "Listo"
+  },
+  "ui.7d20fa6cd8de": {
+    "en": "Your groups",
+    "es": "Tus grupos"
+  },
+  "ui.e66c87a0bba4": {
+    "en": "Groups you take part in, and when they next meet.",
+    "es": "Groups you take part in, and when they next meet."
+  },
+  "ui.63679c723d13": {
+    "en": "No groups scheduled right now. If a group would be a good fit, your care team will talk it through with you first.",
+    "es": "No hay grupos programados en este momento. Si un grupo fuera adecuado para ti, tu equipo de cuidado lo hablará contigo primero."
+  },
+  "ui.69a52c6de668": {
+    "en": "Next:",
+    "es": "Próximo:"
+  },
+  "ui.2b686413da42": {
+    "en": "Next meeting time to be confirmed.",
+    "es": "Próxima reunión por confirmar."
+  },
+  "ui.42841040870f": {
+    "en": "Join by video or phone:",
+    "es": "Únete por video o teléfono:"
+  },
+  "ui.a518071df2f6": {
+    "en": "Your support plan",
+    "es": "Tu plan de apoyo"
+  },
+  "ui.d25a5687ba79": {
+    "en": "Everyday needs your team is helping with.",
+    "es": "Necesidades cotidianas con las que tu equipo te está ayudando."
+  },
+  "ui.d333bb04edbd": {
+    "en": "Your care team completed a treatment planning assessment with you and will check in on it regularly.",
+    "es": "Tu equipo de cuidado completó una evaluación de planificación de tratamiento contigo y la revisará regularmente."
+  }
+} as const;
+
 
 const HOME_SCREEN_NUDGE_KEY = "adelante.homeScreenNudgeDismissed";
 
 function HomeScreenNudge() {
+  const { lang: screenLang } = useI18n();
+
   const [dismissed, setDismissed] = useState(true);
   const { prompt } = usePwaInstallPrompt();
 
@@ -82,10 +156,9 @@ function HomeScreenNudge() {
   return (
     <Card className="p-4 border-teal/40 bg-teal/5 flex flex-wrap items-center justify-between gap-3">
       <div className="flex-1 min-w-[220px]">
-        <p className="text-sm font-medium text-navy">Keep Adelante one tap away</p>
+        <p className="text-sm font-medium text-navy">{SCREEN_COPY["ui.b6ea2d66d7d8"][screenLang]}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Add this app to your home screen for quick access to your care.
-        </p>
+          {SCREEN_COPY["ui.1e5e34b0c33e"][screenLang]} </p>
       </div>
       <div className="flex items-center gap-2">
         <InstallAppButton onInstalled={dismiss} />
@@ -94,7 +167,7 @@ function HomeScreenNudge() {
           variant="ghost"
           size="icon"
           onClick={dismiss}
-          aria-label="Not now"
+          aria-label={SCREEN_COPY["ui.e45714907316"][screenLang]}
           className="min-h-[44px] min-w-[44px]"
         >
           <X className="h-4 w-4" />
@@ -105,6 +178,8 @@ function HomeScreenNudge() {
 }
 
 export function PatientHome() {
+  const { lang: screenLang } = useI18n();
+
   const { t } = useI18n();
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
@@ -126,7 +201,7 @@ export function PatientHome() {
         <AdvocateNoPatientPrompt
           fallback={
             <EmptyState
-              title="We don't have a record for you yet"
+              title={SCREEN_COPY["ui.b4cee43de8d4"][screenLang]}
               description="Start with a few questions and we'll set up your care. If you already signed up, sign in again to pick up where you left off."
               action={{ label: "Get started", onClick: () => void navigate({ to: "/start" }) }}
             />
@@ -208,8 +283,7 @@ export function PatientHome() {
           id="your-care-plan-heading"
           className="font-display text-lg text-navy flex items-center gap-2"
         >
-          <HeartPulse className="h-5 w-5 text-teal" /> Your Care Plan
-        </h2>
+          <HeartPulse className="h-5 w-5 text-teal" /> {SCREEN_COPY["ui.2ebc32fb9692"][screenLang]} </h2>
         <p className="text-xs text-muted-foreground mt-1">{t("homeGoalsHelp")}</p>
         <div className="mt-4 divide-y divide-border/60 space-y-4 [&>*+*]:pt-4">
           <CarePlanCard patientId={patient.id} audience="patient" className="bg-card" />
@@ -308,14 +382,15 @@ function FirstTimeWelcome({ firstName, patientId }: { firstName: string; patient
 }
 
 function TasksCard({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const tasks = useEhr(() => AdelanteEHR.getPatient(patientId)?.tasks ?? []);
   const open = tasks.filter((t) => !t.completedAt);
   if (open.length === 0) return null;
   return (
     <Card className="p-5 border-teal/40 bg-teal/5">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <Bell className="h-4 w-4" /> Things to do
-      </div>
+        <Bell className="h-4 w-4" /> {SCREEN_COPY["ui.ac9890e3db15"][screenLang]} </div>
       <ul className="mt-3 space-y-2">
         {open.map((t) => (
           <li
@@ -327,10 +402,9 @@ function TasksCard({ patientId }: { patientId: string }) {
               <Button asChild size="sm" variant="outline">
                 {t.screenerKey ? (
                   <Link to="/rescreen/$key" params={{ key: t.screenerKey }} data-testid="task-rescreen-start">
-                    Start
-                  </Link>
+                    {SCREEN_COPY["ui.952f375412e8"][screenLang]} </Link>
                 ) : (
-                  <Link to="/intake">Start</Link>
+                  <Link to="/intake">{SCREEN_COPY["ui.952f375412e8"][screenLang]}</Link>
                 )}
               </Button>
             ) : (
@@ -342,8 +416,7 @@ function TasksCard({ patientId }: { patientId: string }) {
                   toast.success("Marked done");
                 }}
               >
-                Done
-              </Button>
+                {SCREEN_COPY["ui.e9b450d14bc2"][screenLang]} </Button>
             )}
           </li>
         ))}
@@ -460,6 +533,8 @@ function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: str
 // attendance history, no roster of other members, no note content. Reuses
 // groupsForPatient / nextGroupOccurrenceForPatient rather than recomputing.
 function YourGroupsSection({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const groups = useEhr(() => AdelanteEHR.groupsForPatient(patientId));
   return (
     <section
@@ -471,19 +546,15 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
         id="your-groups-heading"
         className="font-display text-lg text-navy flex items-center gap-2"
       >
-        <Users className="h-5 w-5 text-teal" /> Your groups
-      </h2>
+        <Users className="h-5 w-5 text-teal" /> {SCREEN_COPY["ui.7d20fa6cd8de"][screenLang]} </h2>
       <p className="text-xs text-muted-foreground mt-1">
-        Groups you take part in, and when they next meet.
-      </p>
+        {SCREEN_COPY["ui.e66c87a0bba4"][screenLang]} </p>
       {groups.length === 0 && (
         <p
           className="mt-4 rounded-lg border bg-card p-3 text-sm text-muted-foreground"
           data-testid="patient-your-groups-empty"
         >
-          No groups scheduled right now. If a group would be a good fit, your care team will talk it
-          through with you first.
-        </p>
+          {SCREEN_COPY["ui.63679c723d13"][screenLang]} </p>
       )}
       <ul className="mt-4 space-y-3">
         {groups.map((g) => {
@@ -505,17 +576,17 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
                 <CalIcon className="h-3.5 w-3.5 text-teal" />
                 {nextForThis ? (
                   <>
-                    Next: <ClientDate value={nextForThis} />
+                    {SCREEN_COPY["ui.69a52c6de668"][screenLang]} <ClientDate value={nextForThis} />
                   </>
                 ) : (
-                  <>Next meeting time to be confirmed.</>
+                  <>{SCREEN_COPY["ui.2b686413da42"][screenLang]}</>
                 )}
               </div>
               {virtual && (
                 <p className="mt-1.5 break-all text-xs text-muted-foreground">
                   {room ? (
                     <>
-                      Join by video or phone:{" "}
+                      {SCREEN_COPY["ui.42841040870f"][screenLang]}{" "}
                       <a
                         className="text-teal underline"
                         href={room.joinUrl}
@@ -540,6 +611,8 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
 }
 
 function SupportPlanCard({ patientId }: { patientId: string }) {
+  const { lang: screenLang } = useI18n();
+
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const items = (p?.sdohPlan?.items ?? []).filter((i) => i.visibleToPatient !== false);
   if (items.length === 0) return null;
@@ -557,16 +630,12 @@ function SupportPlanCard({ patientId }: { patientId: string }) {
   return (
     <Card className="p-5">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <HeartPulse className="h-4 w-4" /> Your support plan
-      </div>
+        <HeartPulse className="h-4 w-4" /> {SCREEN_COPY["ui.a518071df2f6"][screenLang]} </div>
       <p className="text-xs text-muted-foreground mt-1">
-        Everyday needs your team is helping with.
-      </p>
+        {SCREEN_COPY["ui.d25a5687ba79"][screenLang]} </p>
       {signedAsam && (
         <p className="mt-2 text-xs text-muted-foreground" data-testid="asam-patient-line">
-          Your care team completed a treatment planning assessment with you and will check in on it
-          regularly.
-        </p>
+          {SCREEN_COPY["ui.d333bb04edbd"][screenLang]} </p>
       )}
       <ul className="mt-3 space-y-2 text-sm">
         {items.map((i) => (

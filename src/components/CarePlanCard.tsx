@@ -23,6 +23,54 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MyPlan } from "@/components/careplan/MyPlan";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.b815bddc8d65": {
+    "en": "Care plan",
+    "es": "Plan de cuidado"
+  },
+  "ui.f2f8570ddd7b": {
+    "en": "Updated",
+    "es": "Actualizado"
+  },
+  "ui.48d8c627be3c": {
+    "en": "Goals",
+    "es": "Metas"
+  },
+  "ui.e5fd9cfe0e80": {
+    "en": "done",
+    "es": "listo"
+  },
+  "ui.d39f0617ae7c": {
+    "en": "No goals yet.",
+    "es": "Aún no hay metas."
+  },
+  "ui.11fc14203dd0": {
+    "en": "Next steps",
+    "es": "Próximos pasos"
+  },
+  "ui.c7d9e6f56b57": {
+    "en": "Nothing pending — great work.",
+    "es": "Nada pendiente — ¡buen trabajo!"
+  },
+  "ui.d917c7b20d8c": {
+    "en": "Medications",
+    "es": "Medicamentos"
+  },
+  "ui.6843ac69bde2": {
+    "en": "· release",
+    "es": "· salida"
+  },
+  "ui.8fcd25a39d20": {
+    "en": "with",
+    "es": "con"
+  },
+  "ui.4374aaee247f": {
+    "en": "to",
+    "es": "a"
+  }
+} as const;
+
 
 type Audience = "patient" | "clinician" | "ecm_provider";
 
@@ -44,6 +92,9 @@ export function CarePlanCard({
   className?: string;
   compact?: boolean;
 }) {
+  const { lang: memberScreenLang } = useI18n();
+  const screenLang = audience === "patient" ? memberScreenLang : "en";
+
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const plan = useEhr(() => AdelanteEHR.getCarePlan(patientId));
   const goalHistory = useEhr(() =>
@@ -77,8 +128,7 @@ export function CarePlanCard({
     return (
       <Card className={cn("p-5", className)}>
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-          <HeartPulse className="h-4 w-4" /> Care plan
-        </div>
+          <HeartPulse className="h-4 w-4" /> {SCREEN_COPY["ui.b815bddc8d65"][screenLang]} </div>
         <p className="mt-2 text-sm text-muted-foreground">
           {patient.intakeCompletedAt
             ? "Care plan will appear here shortly."
@@ -133,15 +183,14 @@ export function CarePlanCard({
     <Card className={cn("p-5", className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-          <HeartPulse className="h-4 w-4" /> Care plan
-          {audience !== "patient" && (
+          <HeartPulse className="h-4 w-4" /> {SCREEN_COPY["ui.b815bddc8d65"][screenLang]} {audience !== "patient" && (
             <Badge variant="outline" className="ml-1 text-[10px] gap-1">
               <Sparkles className="h-3 w-3" /> auto-updated
             </Badge>
           )}
         </div>
         <div className="text-[10px] text-muted-foreground">
-          Updated <ClientDate value={plan.updatedAt} /> · {plan.updatedBy.replace("_", " ")}
+          {SCREEN_COPY["ui.f2f8570ddd7b"][screenLang]} <ClientDate value={plan.updatedAt} /> · {plan.updatedBy.replace("_", " ")}
         </div>
       </div>
 
@@ -241,11 +290,9 @@ export function CarePlanCard({
           <div className={(audience as Audience) === "patient" ? "sm:col-span-2" : undefined}>
             <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider text-navy">
               <span className="inline-flex items-center gap-1.5">
-                <Target className="h-3.5 w-3.5" /> Goals
-              </span>
+                <Target className="h-3.5 w-3.5" /> {SCREEN_COPY["ui.48d8c627be3c"][screenLang]} </span>
               <span className="text-[10px] text-muted-foreground">
-                {plan.metrics.goalsDone}/{plan.metrics.goalsDone + plan.metrics.goalsOpen} done
-              </span>
+                {plan.metrics.goalsDone}/{plan.metrics.goalsDone + plan.metrics.goalsOpen} {SCREEN_COPY["ui.e5fd9cfe0e80"][screenLang]} </span>
             </div>
             <Progress value={goalsPct} className="mt-2 h-1.5" />
             {(audience as Audience) === "patient" ? (
@@ -285,7 +332,7 @@ export function CarePlanCard({
                     </li>
                   ))}
                   {patientGoals.length === 0 && (
-                    <li className="text-xs text-muted-foreground">No goals yet.</li>
+                    <li className="text-xs text-muted-foreground">{SCREEN_COPY["ui.d39f0617ae7c"][screenLang]}</li>
                   )}
                 </ul>
               </>
@@ -306,8 +353,7 @@ export function CarePlanCard({
 
           <div className={audience === "patient" ? "sm:col-span-2" : undefined}>
             <div className="text-xs font-medium uppercase tracking-wider text-navy inline-flex items-center gap-1.5">
-              <ArrowRight className="h-3.5 w-3.5" /> Next steps
-            </div>
+              <ArrowRight className="h-3.5 w-3.5" /> {SCREEN_COPY["ui.11fc14203dd0"][screenLang]} </div>
             <ul className="mt-2 space-y-1">
               {filteredNext.slice(0, 4).map((s, i) => (
                 <li key={i} className="text-xs text-foreground">
@@ -321,7 +367,7 @@ export function CarePlanCard({
                 </li>
               ))}
               {filteredNext.length === 0 && (
-                <li className="text-xs text-muted-foreground">Nothing pending — great work.</li>
+                <li className="text-xs text-muted-foreground">{SCREEN_COPY["ui.c7d9e6f56b57"][screenLang]}</li>
               )}
             </ul>
           </div>
@@ -344,8 +390,7 @@ export function CarePlanCard({
           {audience !== "patient" && filteredMeds.length > 0 && (
             <div className="sm:col-span-2">
               <div className="text-xs font-medium uppercase tracking-wider text-navy">
-                Medications
-              </div>
+                {SCREEN_COPY["ui.d917c7b20d8c"][screenLang]} </div>
               <ul className="mt-2 space-y-1">
                 {filteredMeds.map((m, i) => (
                   <li key={i} className="text-xs text-foreground inline-flex items-center gap-2">
@@ -389,6 +434,9 @@ function PreReleaseContinuity({
   audience: Audience;
   sudUnlocked: boolean;
 }) {
+  const { lang: memberScreenLang } = useI18n();
+  const screenLang = audience === "patient" ? memberScreenLang : "en";
+
   const matVisible = sudUnlocked ? pre.matMedications : [];
   return (
     <div className="sm:col-span-2 rounded-md border border-dashed p-3">
@@ -397,7 +445,7 @@ function PreReleaseContinuity({
           {audience === "patient" ? "Your release plan" : "Reentry (pre-release) continuity"}
         </div>
         <Badge variant="outline" className="text-[10px] capitalize">
-          {pre.status.replace("_", " ")} · release <ClientDate value={pre.anticipatedReleaseDate} />
+          {pre.status.replace("_", " ")} {SCREEN_COPY["ui.6843ac69bde2"][screenLang]} <ClientDate value={pre.anticipatedReleaseDate} />
         </Badge>
       </div>
       <ul className="mt-2 space-y-1 text-xs text-foreground">
@@ -412,7 +460,7 @@ function PreReleaseContinuity({
         ))}
         {pre.appointments.map((a, i) => (
           <li key={`a-${i}`}>
-            • {a.kind.replace(/_/g, " ")} with {a.providerName} · <ClientDate value={a.start} />
+            • {a.kind.replace(/_/g, " ")} {SCREEN_COPY["ui.8fcd25a39d20"][screenLang]} {a.providerName} · <ClientDate value={a.start} />
           </li>
         ))}
         {matVisible.map((m, i) => (
@@ -449,6 +497,9 @@ function GoalHistoryTimeline({
   events: { id: string; at: string; actorRole?: string; actorId?: string; detail?: Record<string, unknown> }[];
   audience: Audience;
 }) {
+  const { lang: memberScreenLang } = useI18n();
+  const screenLang = audience === "patient" ? memberScreenLang : "en";
+
   if (events.length === 0) return null;
   return (
     <div className="sm:col-span-2">
@@ -464,7 +515,7 @@ function GoalHistoryTimeline({
               <span className="absolute -left-[15px] top-1.5 h-1.5 w-1.5 rounded-full bg-teal" />
               <div>{String(d.goalText ?? "Goal")}</div>
               <div className="text-[11px] text-muted-foreground">
-                {goalStatusLabel(String(d.from ?? "—"))} to {goalStatusLabel(String(d.to ?? "—"))} ·{" "}
+                {goalStatusLabel(String(d.from ?? "—"))} {SCREEN_COPY["ui.4374aaee247f"][screenLang]} {goalStatusLabel(String(d.to ?? "—"))} ·{" "}
                 <ClientDate value={e.at} />
                 {audience !== "patient" && (e.actorId || e.actorRole) && (
                   <> · {e.actorId ?? String(e.actorRole).replace("_", " ")}</>

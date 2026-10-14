@@ -22,6 +22,48 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileCheck2, UserPlus } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.2994733f2b51": {
+    "en": "Their name",
+    "es": "Su nombre"
+  },
+  "ui.41c95ba69ee6": {
+    "en": "Relationship (optional)",
+    "es": "Parentesco (opcional)"
+  },
+  "ui.a3e8c9720e38": {
+    "en": "Their email or mobile number",
+    "es": "Su correo o número celular"
+  },
+  "ui.c77339beac81": {
+    "en": "Sent here, directly to them",
+    "es": "Enviado aquí, directamente a la persona"
+  },
+  "ui.1cd9e1d09f78": {
+    "en": "Send by",
+    "es": "Enviar por"
+  },
+  "ui.84add5b29527": {
+    "en": "Email",
+    "es": "Correo electrónico"
+  },
+  "ui.7cfcf842d6e7": {
+    "en": "Text message",
+    "es": "Mensaje de texto"
+  },
+  "ui.055b9f6494e7": {
+    "en": "What kind of advocate are they?",
+    "es": "¿Qué tipo de persona de apoyo es?"
+  },
+  "ui.cd8e7826b75c": {
+    "en": "What they'll be asked for",
+    "es": "Lo que se le pedirá"
+  }
+} as const;
+
 
 export type AdvocateInviteDraft = {
   advocateName: string;
@@ -54,6 +96,8 @@ export function AdvocateInviteForm({
   onSubmit?: (draft: AdvocateInviteDraft) => AdvocateLink;
   onInvited?: (link: AdvocateLink) => void;
 }) {
+  const { lang: screenLang } = useI18n();
+
   const types = ADVOCATE_AUTHORIZATION_TYPES.filter(
     (t) => !allowedTypes || allowedTypes.includes(t.key),
   );
@@ -119,7 +163,7 @@ export function AdvocateInviteForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
-          <Label htmlFor="adv-name">Their name</Label>
+          <Label htmlFor="adv-name">{SCREEN_COPY["ui.2994733f2b51"][screenLang]}</Label>
           <Input
             id="adv-name"
             data-testid="advocate-name"
@@ -128,7 +172,7 @@ export function AdvocateInviteForm({
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="adv-rel">Relationship (optional)</Label>
+          <Label htmlFor="adv-rel">{SCREEN_COPY["ui.41c95ba69ee6"][screenLang]}</Label>
           <Input
             id="adv-rel"
             value={relationship}
@@ -136,31 +180,31 @@ export function AdvocateInviteForm({
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="adv-contact">Their email or mobile number</Label>
+          <Label htmlFor="adv-contact">{SCREEN_COPY["ui.a3e8c9720e38"][screenLang]}</Label>
           <Input
             id="adv-contact"
             data-testid="advocate-contact"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
-            placeholder="Sent here, directly to them"
+            placeholder={SCREEN_COPY["ui.c77339beac81"][screenLang]}
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="adv-channel">Send by</Label>
+          <Label htmlFor="adv-channel">{SCREEN_COPY["ui.1cd9e1d09f78"][screenLang]}</Label>
           <select
             id="adv-channel"
             className="h-10 w-full rounded-md border bg-background px-3 text-sm"
             value={channel}
             onChange={(e) => setChannel(e.target.value as "email" | "sms")}
           >
-            <option value="email">Email</option>
-            <option value="sms">Text message</option>
+            <option value="email">{SCREEN_COPY["ui.84add5b29527"][screenLang]}</option>
+            <option value="sms">{SCREEN_COPY["ui.7cfcf842d6e7"][screenLang]}</option>
           </select>
         </div>
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="adv-type">What kind of advocate are they?</Label>
+        <Label htmlFor="adv-type">{SCREEN_COPY["ui.055b9f6494e7"][screenLang]}</Label>
         <select
           id="adv-type"
           data-testid="advocate-instrument"
@@ -179,8 +223,7 @@ export function AdvocateInviteForm({
 
       <div className="rounded-md bg-muted/50 p-3 text-xs" data-testid="advocate-doc-preview">
         <p className="flex items-center gap-2 font-medium text-navy">
-          <FileCheck2 className="h-3.5 w-3.5" /> What they'll be asked for
-        </p>
+          <FileCheck2 className="h-3.5 w-3.5" /> {SCREEN_COPY["ui.cd8e7826b75c"][screenLang]} </p>
         <ul className="mt-2 space-y-2">
           {requirements.map((r) => (
             <li key={r.key}>

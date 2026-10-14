@@ -6,13 +6,23 @@
 import { Phone } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+/** Ordinary screen copy — Spanish draft pending translation review. */
+const SCREEN_COPY = {
+  "ui.277450387478": {
+    "en": "Crisis support",
+    "es": "Apoyo en crisis"
+  }
+} as const;
+
 
 export function CrisisNotice({ className }: { className?: string }) {
+  const { lang: screenLang } = useI18n();
+
   const { t } = useI18n();
   return (
     <div
       role="region"
-      aria-label="Crisis support"
+      aria-label={SCREEN_COPY["ui.277450387478"][screenLang]}
       className={cn(
         "flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs",
         className,
