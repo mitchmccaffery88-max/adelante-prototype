@@ -6,7 +6,7 @@
 - [x] Regenerate priority-marked review CSV and remaining gap inventory
 - [x] Full units then all browsers/axe, one warm timeout rerun; 15 Spanish mobile checks
 - [x] Report keys, exclusions, files and all validation results
-- [ ] Green browser contract: blocked on Mitch approving English-only selectors in advocateOnboardingActive:40, group2Pathways:90 and publicWebsite:70 for Spanish. Performance/navigation failures remain documented; no threshold/retry changes authorized.
+- [x] Green browser contract: 5c approved Spanish selector lines; 79/79 browsers (Oct 14)
 
 Report: `docs/phase5b-report.md` — 608 gap keys drafted, 72 staff-only keys dropped, 908 authored-content gaps, 1,611 controlled gaps; 79 files. Units 2,570 passed; browsers 74/79; cfProxy warm rerun 0/2; Spanish 15/15 at 390px. Dynamic expression English outside the original gap export is disclosed in the report.
 
