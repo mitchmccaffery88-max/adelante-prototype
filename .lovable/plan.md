@@ -1,151 +1,106 @@
-# Phase 8c-1 — Staff fields and content/calendar confirmations
+# Phase 8 — Batch 8a-2
 
-**Plan only; application code and tests unchanged. Approve this batch and the two exact existing-test edits below before building.**
+**Plan only. No application or test changes until Mitch approves.**
 
-## Scope and rollback
+## Scope, rollback and gates
 
-Latest current commit verified during planning: **`1dff401c815861356d8ea6f5e12654246817f8a1`**; `git status --short` was empty. The earlier inspection saw `930af524e53ae4f2be2f4bc55ebb56d7de25a36f`; managed plan saves advanced history without application edits. Re-read and report HEAD immediately before the first approved application edit as the build rollback point. The previous 8a-1 rollback is not the rollback for this batch.
+Planning rollback point: **`e231f0dd8e26acd460acee64ee0f1535480d687c`** (verified with `git rev-parse HEAD`). Reconfirm HEAD before the first approved application edit; report any managed-history advance, never reset the working branch.
 
-Only shared staff FormField/ConfirmDialog, CMS browser-dialog replacements, location-calendar browser-dialog replacement, and required consent-publication reason. No 8c-2, table migration, staff delete confirmations, patient/advocate/public restyle, dashboard changes, new permission gates, or StatusChip mapping changes. `/consent` ledger revocation stays in 8c-2.
+Only the six requested items. No 8c-2 pop-up replacements, table migration, Phase 9 dashboard restyle, new clinical rules, integrations or permission/status changes. Follow the Adelante tokens, Atkinson fonts, compact density, 14px floor and safety-only urgent color. Member signing retains comfortable density and EN/ES; controlled legal/clinical copy and Draft labels remain unchanged.
 
-## A. Verified browser-pop-up inventory
+**Evidence gates:** consent overlap and homepage missed taps are unconfirmed runtime defects. Capture reproducible evidence before their layout/interaction fixes. If either does not reproduce, document that result and leave that layout/behavior unchanged. Consent-shell migration has a separate member-access prerequisite below.
 
-Current source still contains **17 call sites: 13 prompts, 4 confirms; no browser alert calls**. Paths below are relative to project root. One source call may serve several actions. Consent publication currently has no browser pop-up: its new confirmation is additional, not one of the 17.
+## A. Work by item
 
-| # | File:line | Purpose | Batch |
-|---|---|---|---|
-| 1 | `src/components/admin/ContentAdminWorkspace.tsx:33` | Missing content-change reason fallback | **8c-1** |
-| 2 | `src/components/admin/ContentAdminWorkspace.tsx:308` | Withdraw published item / discard draft reason | **8c-1** |
-| 3 | `src/routes/location-calendars.tsx:85` | Remove closed day reason | **8c-1** |
-| 4 | `src/components/advocate/AdvocateDesignationPanel.tsx:72` | Remove advocate access reason | 8c-2 |
-| 5 | `src/components/advocate/StaffAdvocatesTab.tsx:92` | Optional verification reference | 8c-2 |
-| 6 | `src/components/billing/PatientBalance.tsx:163` | Void payment reason | 8c-2 |
-| 7 | `src/components/careplan/CarePlanEditor.tsx:163` | Dismiss suggestion reason | 8c-2 |
-| 8 | `src/components/careplan/CarePlanEditor.tsx:252` | Close goal reason | 8c-2 |
-| 9 | `src/components/careplan/CarePlanEditor.tsx:253` | Goal met versus closed binary choice | 8c-2 |
-| 10 | `src/components/clinical/GroupEligibilityEditor.tsx:56` | Remove group eligibility reason | 8c-2 |
-| 11 | `src/components/clinical/RecordTabs.tsx:2308` | Clear care-plan summary note | 8c-2 |
-| 12 | `src/components/consent/ConsentRecordsPanel.tsx:109` | Revoke consent record reason | 8c-2 |
-| 13 | `src/lib/drawer-drafts.ts:19` | Discard unsaved drawer edits | 8c-2 |
-| 14 | `src/routes/admin-claims.tsx:489` | Claim denial reason | 8c-2 |
-| 15 | `src/routes/admin-note-templates.tsx:476` | Confirm version-changing template save | 8c-2 |
-| 16 | `src/routes/billing.tsx:205` | Reason-required claim transition | 8c-2 |
-| 17 | `src/routes/group-sessions.tsx:510` | End enrollment reason | 8c-2 |
+### 1. Consent signing overlap — regression test FIRST
 
-**New 8c-1 confirmation:** `src/components/admin/ConsentFormLibrary.tsx:51`, approved-version Publish.
+**Files:** new `e2e/consentSigningClearance8a2.spec.ts`; conditional application changes in `src/components/consent/ConsentFormsPanel.tsx`, `FormsToSign.tsx`, and `src/components/AppShell.tsx` / `src/styles.css` only if measurements identify those hosts as responsible.
 
-Calendar scan includes `/my-calendar`, `/team-calendar`, `/location-calendars`, clinician availability and `components/calendar/*`; only the location-calendar removal prompt is present there. Group enrollment/eligibility are not calendar pop-ups and remain 8c-2 under this narrower request. PWA install prompts and local functions named `confirm` are not browser dialogs.
+**Evidence first:** before any application edit in this batch, write and run the new browser regression at widths **390, 768 and 1280**, with explicit representative heights (844, 1024 and 900). Use the existing UI and real store functions to create/enroll a synthetic patient, send Telehealth from the chart, enter Sign in person, sign through the actual controls, and read back the signed version/status. Do not inject a signed-looking DOM or mutate signature records directly. Also inspect the self-service signing host on `/patient`.
 
-## B. What to build
+Measure `forms-sign` before signing and **“I'm done” after a real successful signature**, at intermediate scroll positions and the maximum scroll of the signing container. Record bounding boxes, scroll limits, all actually mounted bottom fixed/sticky layers and `elementFromPoint` at the center and inset corners. Use ordinary pointer clicks (no force) and verify the resulting locked state and signed-copy readback. Save baseline screenshots and failure evidence before layout changes; the test asserts unobscured usable controls, so a reproduced bug fails at baseline.
 
-### 1. Shared staff FormField
+**Confirmed source, not runtime diagnosis:** in-person mode is `fixed inset-0 z-50 overflow-y-auto p-4` (`ConsentFormsPanel.tsx:135`), with the completion button at :139. Staff crisis support is `sticky bottom-0 z-50` (`AppShell.tsx:390–398`). `MobileNav` exists but is not mounted by AppShell (explicitly covered by `patientNavShellParity.test.tsx:23`); do not assume it causes the overlap.
 
-Create `src/components/staff/form-field.tsx`, exporting `FormField` without changing or colliding with the react-hook-form Controller export in `src/components/ui/form.tsx`.
+**Conditional fix:** provide clearance on the actual scrolling host, including safe-area and the measured bottom layer height; adjust stacking only if needed to keep both signing controls and crisis support usable. Do not hide 988, move safety behind the full-screen overlay, change signing/locking behavior, or use an arbitrary large spacer. If only some widths fail, fix that mechanism and rerun all three. If none fail, retain the passing coverage and make no consent-layout change.
 
-- Label above; connected 14px ink-muted help below. Label/control linkage, `aria-describedby`, and `aria-invalid` when an invalid field has been touched or confirmation attempted.
-- No validation message on initial display. Show corrective guidance on blur; after the first blur, update it as the person fixes the value. A confirmation attempt also reveals required-field guidance and never submits invalid input.
-- Gold validation fill, on-gold words, attention line and CircleAlert; never urgent/red. Do not change StatusChip mappings or global error primitives.
-- Radius-sm, 1.5px line-strong control edge; 14px floor; compact controls 36px minimum on mouse, 48px on touch, including the reason textarea. Use existing semantic tokens and StaffDensity context; no global member overrides.
-- Optional reason variant: visible label **“Reason (saved to the audit log)”**. Required where the caller requests it; preserve existing minimum-length rules rather than inventing one. Help asks for the decision rationale, not patient details.
-- Keep the existing CMS edit field's accessible name **“Content change reason”** so its existing exact selector remains valid; the visible reason label gains the audit explanation.
+### 2. Staff workspace order and persistent My work crisis banner
 
-### 2. Shared ConfirmDialog
+**Files:** `src/routes/my-work.tsx`, `src/components/clinician/WorkspaceDashboard.tsx`, `src/routes/clinician.tsx`, `src/routes/case-manager.tsx`, `src/routes/admin-coordination.tsx`, `src/routes/nurse.tsx`; `src/components/ops/OpsWorkspace.tsx` only where its opening Today strip needs moving. A small presentation-only module under `src/components/staff/` may share section ordering and banner presentation. No changes to store selectors, role matrices, action execution or StatusChip mappings.
 
-Create `src/components/staff/confirm-dialog.tsx` using the existing Radix AlertDialog and Button variants.
+**Evidence first:** inventory each role's existing entry workspace and every currently rendered section, row identity, owner, count, status and action. Capture Cathy **clinical_coordinator / s-cc2** on My work, clinician workspace and coordination center. Include clinician/prescriber, care-role, RN/LVN and operations variants through their existing destinations; preserve in-facility-disabled behavior.
 
-- Controlled open state, question title naming the action, connected consequence description, explicit safe focus on **“Keep <thing>”**, keyboard focus trap and focus return to the trigger.
-- Primary path-action button repeats the actual verb, e.g. “Withdraw lesson”, “Discard draft”, “Remove closed day”, “Publish consent form”. No destructive variant.
-- Optional required FormField reason. An attempted confirmation with a blank/whitespace reason shows guidance and cannot call the action. Do not auto-close on an invalid attempt or store refusal; retain the entered reason for correction.
-- Call the supplied action once; guard double clicks. The component does not write audits or decide permissions. Cancel/Escape writes nothing and changes nothing.
-- Responsive width, scrolling body/footer clearance, wrapped text; 14px minimum in light/dark, mouse/touch targets. Use scoped styling if required, not a rewrite of shared AlertDialog defaults.
+**Confirmed source:** My work currently opens with Today's visits (:251), with its crisis section later (:439). WorkspaceDashboard opens with `today-strip` (:67); role tile order is in `clinicianWorkspace.ts:52–58`. Nursing's Today summary precedes its action section (`nurse.tsx:63–69`). The existing bottom “Crisis support” bar is a 988 safety link, not a record-driven crisis-alert banner.
 
-### 3. Content center adapters
+**Approach:** arrange unframed section groups **Needs you → Waiting on others → Today**, placing the existing Today strip/schedule after the work groups. Preserve every existing row/component, link, filter, due-date sub-group and within-group priority. Group from existing structured ownership/status presentation, never wording such as “waiting” or a due-date bucket. A clinical-review task waiting for *Cathy to review* remains Needs you. If a source cannot establish whose turn it is, retain its current presentation in a neutral supporting section; document the ambiguity rather than inventing ownership. Empty waiting groups use a neutral empty state, not fabricated items. Supporting caseload/history/create controls remain reachable after these groups. Existing saved collapse/filter preferences remain intact; no duplicated action rows.
 
-Replace both browser prompt sites without changing the action registry or content store.
+On My work add a **non-dismissible, record-driven safety banner above the work groups**, present while an authorized open crisis exists and updating from the real store. It must survive toast dismissal and navigation back to My work. Use the same acting-person/role-filtered escalation projection as the StaffShell header (`filterEscalations(listEscalations(actor), actor, …)`), neutral summary plus ShieldAlert and an existing queue link. Do not add global crisis counts or patient/SUD details. Keep the header count, existing detailed crisis rows and reachable 988. Zero authorized rows means no banner; changing actor cannot leave another actor's banner behind.
 
-- Keep the synchronous execution helper for inputs that already contain a reason; move missing-reason collection to controlled UI state, then resume the original operation once with that reason. Never introduce Promise returns into callers expecting `ContentResult`.
-- CMS editor save/create/submit/publish already checks its inline reason. Upgrade that reason field to FormField; keep existing action ordering, validations, toasts, clinical-review routing and outcomes. No extra confirmation on these already explicit edit-form steps.
-- Review Publish/Send back with no note opens an action-specific ConfirmDialog with required reason. Existing nonblank reviewer notes remain usable; do not force a second reason or add a duplicate review step.
-- Withdraw and Discard always use ConfirmDialog with required reason; preserve `content_withdraw`/`retireContent` and `content_discard`/`discardContentDraft`, disabled controls and integrity guards.
-- Consequences must match the store: withdrawal keeps history and stops the managed version being served, **but a shipped baseline may reappear** (`contentPublishing.ts:430–440`). Do not promise disappearance in that case. Draft discard permanently removes the never-published entry/history; no automatic undo or invented notifications. Review returns the draft to the author; publishing changes the version served, not past completions.
-- Preserve all eight content types, author/browse boundaries, existing publisher checks, independent clinical-review and Spanish gates, Part 2 CONTENT visibility and gated revision reasons. No new second approver for editorial content; no role widening or narrowing for Cathy.
+### 3. `/consent` into StaffShell — access proof before migration
 
-### 4. Location-calendar adapter
+**Files if prerequisite passes:** `src/components/AppShell.tsx`, `src/routes/consent.tsx`; existing shared staff presentation may supply density. No new staff nav entry or permission grant is required.
 
-Replace removal at `location-calendars.tsx:85` with “Remove this closed day?”, “Keep closed day”, “Remove closed day” and required reason. Keep `act` → `runAction("calendar_site_closed_remove")` → `removeSiteClosedDay`, the existing sys_admin edit boundary, soft-removal history and toast. Describe the calendar-date effect and that this removal does not automatically cancel/reschedule visits or send a new notification. Keep focus return inside the existing closed-days sheet; leave closure creation, time off and external Simulated sync unchanged.
+**Verified guards:** `/consent` already appears in `STAFF_NAV` with `record_class: consent_ledger` (`navSections.ts:548–554`); `STAFF_ROUTES` derives from that registry (:888). `RouteAccessGuard` uses `resolveNavAccess` (:20), which checks `canSeeNavEntry` (`navGuard.ts:56–65`). However AppShell explicitly classifies `/consent` as member content in **both** checks (:49 and :111), preventing StaffShell/EnglishSurface.
 
-### 5. Required consent-publication reason — Mitch decision 7
+**Important unproven prerequisite:** these guards consume `useActingStaff`, not a patient/advocate session. `StaffRole` contains only staff roles; patient sign-in persists `adelante.session` (`auth.tsx:91–96`), advocates use a separate link session, and RouteAccessGuard does not inspect either. Thus staff-role matrix tests alone do **not** prove members cannot reach the ledger. PatientSidebar does not contain a ledger entry; `AdvocateDesignationPanel.tsx:113` has a ledger link whose actual audience reachability must be traced.
 
-Current `publishForm(vid, actor)` requires sys_admin and approved status, retires the earlier published version, and writes `consent_form.published` without a reason (`consentForms.ts:200–206`).
+**Evidence/tests before moving:** add a unit test naming the registry/route guard and allowed/denied staff cases, plus browser deep-link tests after actual patient and advocate sign-in, with both persistent and session-only member states where supported, and stale privileged acting-role state from a previous staff visit. Verify no ledger data, patient picker, staff shell or actions render before redirect; cover reload, back navigation and existing link paths. Do not merely cast “patient” to StaffRole.
 
-Add a required third reason argument; reject empty/whitespace **before any state mutation**. Append the trimmed reason to the existing publication audit detail; keep its event name, version rules and Draft/counsel labels. Do not add a generic registry event or change approval behavior. The existing seed-library publication call receives an explicit neutral seed reason through the real store function; no bypass or UI default reason.
+**Stop this item if any member can reach it.** Report exact evidence and request Mitch's approval for a separately scoped access fix; do not silently add session/auth logic or claim a shell change provides security. Other independent 8a-2 work may continue unless the global test stop rule is triggered.
 
-Open ConfirmDialog from ConsentFormLibrary Publish: **“Publish this consent form?”**, **“Keep consent form”**, **“Publish consent form”**. Description explains that the new version becomes available to send, the previous version retires, existing signed copies remain unchanged, and publishing itself sends no patient notice. Reversal is not an automatic undo; another version follows the existing workflow. Required reason goes through the existing `consent_form_publish` action, `via: "publishForm"`, args `[versionId, storeActor, reason]`.
+If proof passes, remove only the two `/consent` member exceptions, letting the existing staff registry select StaffShell and EnglishSurface. Keep ledger contents, staff read/write boundaries, query parameters, signed-copy retention and member signing routes unchanged. Verify Cathy remains **read-only** under `roles.ts:357–358`, with no new Manage/Revoke rights. Preserve controlled Part 2 visibility; do not expose a newly hidden section via the shell. Add missing `og:type` and `twitter:card` to this touched leaf's existing metadata; retain its app-specific title/description.
 
-## C. Exact existing test edits requiring approval
+### 4. Finish 8a-1 checks
 
-Only **two existing lines** need replacement based on current callers. No assertion changes proposed; all existing expectations remain.
+**Files:** new `e2e/staffShell8a2.spec.ts` and focused unit coverage; conditional fixes in `StaffShell.tsx`, `StaffNavSidebar.tsx`, `DemoControlsBar.tsx`, `src/styles.css`. Launcher files (`chart/ChartActionLauncher`, `clinician/DashboardActionLauncher`, `ops/OpsActionLauncher`) change only if the audit check proves an application defect.
 
-**1. `src/lib/__tests__/consentWorkflow.test.ts:65`**
+**Evidence first:** exercise shell + New for chart, clinician and operations, complete real permitted actions and read back records/events. Opening/canceling a launcher writes no mutation audit; one confirmed registry action emits **exactly one standard `action.*` event**, retaining established lifecycle events. Multi-action workflows report one per action, not one total audit row by deleting domain history. Cover repeated click protection, blocked attempts and actor attribution, including Cathy.
 
-Current:
-```ts
-    publishForm(v2.id, admin);
-```
-Proposed:
-```ts
-    publishForm(v2.id, admin, "Reviewed consent version for publication — Draft");
-```
-Why: supply the newly required store argument; keep all version/signature assertions unchanged.
+At **768px** check expanded/collapsed sidebar, header, + New, overlays, breadcrumbs and crisis/988 visibility, including scrolling below demo controls. On real coarse-pointer emulation at 390 and 768 check actual hit rectangles **at least 48×48**, not computed height alone: header controls, logo/home link, sidebar links/group headers, collapse/search/clear controls, + New and mobile navigation sheet. Preserve 36px mouse controls and the 14px floor. Current coarse CSS targets buttons and `a[role=button]` but not ordinary sidebar anchors (`styles.css:415–417`); confirm runtime before targeted staff-only changes. The current header uses `top-12`; coarse demo-bar height may require measured clearance rather than another hardcoded offset.
 
-**2. `e2e/consentWorkflow.spec.ts:104`**
+### 5. `/admin-content` at 390px — locate overflow, then fix narrowly
 
-Current:
-```ts
-  await row.getByRole("button", { name: "Publish" }).click();
-```
-Proposed replacement block:
-```ts
-  await row.getByRole("button", { name: "Publish", exact: true }).click();
-  const publishDialog = page.getByRole("alertdialog", { name: "Publish this consent form?", exact: true });
-  await publishDialog.getByRole("textbox", { name: "Reason (saved to the audit log)", exact: true }).fill("Reviewed consent version for publication — Draft");
-  await publishDialog.getByRole("button", { name: "Publish consent form", exact: true }).click();
-```
-Why: complete the new required confirmation instead of merely opening it. Keep :105 and :108 unchanged.
+**Files:** `ContentAdminWorkspace.tsx`, `ContentInventoryTable.tsx`, `ResourceVerificationQueue.tsx`, `src/routes/admin-content.tsx` and staff sizing CSS only where the offending DOM proves responsibility.
 
-No CMS/calendar existing tests were found mocking these browser prompts; store tests stay unchanged. Preserve `staffContent.spec.ts:26`'s “Content change reason” selector and calendar field IDs. No snapshot updates anticipated: registry IDs/gates are unchanged.
+**Evidence first:** actual 390px mobile emulation, not only a resized desktop viewport. Capture `innerWidth`, document/body scrollWidth, `visualViewport.width/scale`, ancestor widths and rectangles extending beyond the viewport. Compare Cathy/admin and Browse/Manage/Review/Audit/Legal tabs, editor sheets and publish confirmation. Trace the first overflowing ancestor and distinguish intentionally contained table scrolling from document overflow.
 
-**Stop rule:** if any other existing assertion fails, stop and list file:line, current and proposed exact line for Mitch. No deleted/skipped tests; no retry, timeout or threshold changes.
+Candidates—not confirmed causes—include the five-tab TabsList (`ContentAdminWorkspace.tsx:884–890`), heading/flex children and the twelve-column inventory within local `overflow-x-auto` (`ContentInventoryTable.tsx:52–54`). Fix only the actual min-width/wrapping/scroll containment defect. Keep table semantics, tabs, filters, History RemoveControl and all permissions; no mobile-card redesign or global `overflow-x:hidden` to mask clipping. Regression asserts document width ≤390 and true 48px coarse hit targets, including the previously reported dialog buttons.
 
-## D. Files
+### 6. Public homepage early taps — investigate, conditional fix only
 
-**Create:**
-- `src/components/staff/form-field.tsx`, `confirm-dialog.tsx`
-- `src/components/__tests__/staffFormField.test.tsx`, `staffConfirmDialog.test.tsx`, `staffDialogs8c1.test.tsx`
-- `src/lib/__tests__/consentPublishReason.test.ts`
-- `e2e/staffDialogs8c1.spec.ts`
-- `docs/phase8c1-forms-dialogs-report.md` and dialog screenshot files
+**Files if proven:** `WebsiteLayout.tsx`, `WebsiteNavigation.tsx`; homepage/start or i18n files only if evidence locates the defect there. New `e2e/publicHydration8a2.spec.ts`.
 
-**Change:** `ContentAdminWorkspace.tsx`, `ConsentFormLibrary.tsx`, `src/routes/location-calendars.tsx`, `src/lib/consentForms.ts`, the two approved test locations above, `AGENTS.md` and `roadmap.md`. `src/styles.css` only for narrowly scoped staff field/dialog styling if utilities cannot express it. No changes planned to ContentForm schemas, contentPublishing, workingCalendar, runAction, chartActions, member components, or global form/alert-dialog/Button primitives.
+**Evidence first:** fresh loads at 390 and 1280, ordinary network and deliberately delayed client scripts, capture from the first visible controls through hydration. Record console warnings/errors, uncaught errors, failed requests, timestamps, DOM state and click results for EN/ES, mobile menu, Get started and visible Help/988. Compare early taps to post-hydration taps; separately block JS to verify native destinations. A blocked-JS language/menu test alone is not evidence of the previously missed normal-load tap. Check event replay and loading/intercepting layers, not just the absence of an immediate response.
 
-## E. Tests and final validation
+**Confirmed source:** language and Radix menu use React handlers; Get started renders a router link; 988 is already a plain `a href="tel:988"` (`WebsiteLayout.tsx:74`). Keep that anchor active from server-rendered HTML, never disabled, inert, handler-dependent or hidden behind a hydration gate. Verify native protocol activation without initiating a real call.
 
-- Rendered FormField units: untouched/blur/confirmation-attempt validation, correction clears feedback, gold/attention not urgent, reason label, help relationships, aria-invalid and density styling.
-- Rendered ConfirmDialog units: safe initial focus, verb-labelled primary, blank/whitespace reason blocks callback, valid reason, Escape/cancel, focus return, double-click guard and refusal retains reason.
-- Real-store adapter units: exactly one registry success per action and no audit on cancel; reason readback, existing lifecycle audit parity, Cathy author/publisher behavior, denied roles, Part 2 masking, integrity refusal, never-published discard, shipped-baseline withdrawal and unchanged save→submit/publish ordering.
-- Consent store units: required reason, whitespace rejected without retiring/publishing, exact saved neutral reason, only sys_admin, one publication lifecycle event plus one registry success, signed-copy/version invariants and seeds retained.
-- Source census: no browser prompt/confirm remains in CMS, calendar or consent-publication code; explicitly allow the 14 deferred call sites. Do not mistake install prompts/local callbacks for browser dialogs.
-- Browser tests through real screens: CMS missing-review-reason, withdraw/discard cancel and confirm; calendar removal with reason and sys_admin versus Cathy's read-only access; consent publish blank/cancel/valid, audit readback and earlier signed version preserved. Axe on all three dialogs, including validation state, using existing accessibility standards without weakening thresholds.
-- At build completion: inspect automated build result; `vitest list` total alongside the **full** unit pass count; run **every browser spec including axe** to completion, subject to the stop rule.
-- Capture one content-center dialog, one calendar dialog and consent publish dialog at **390/768/1280**, **light/dark**: 18 screenshots. Verify no clipping, safe focus and readable validation; touch target checks as well as mouse sizing.
-- Short report: totals, failures if any, rollback SHA, changed files, audited reason/event readback, screenshot locations and plan deviations.
+If reproducible, apply the smallest progressive/native fallback or event-readiness correction preserving existing names, destinations, EN/ES/Draft copy and Radix behavior where possible. Do not replace the menu/language architecture merely because it uses JavaScript; no suppressHydrationWarning workaround. If a fix necessarily changes an existing button/link selector or assertion, STOP and present its exact line for Mitch's approval first. No unrelated Date/random, inbox-link or footer cleanup.
 
-## F. Risks and deliberate differences
+## B. Exact existing-test edits
 
-**Audit-count clarification:** existing CMS and calendar mutations can write a domain/lifecycle event **and** a registry `action.succeeded`; consent publish does too. CMS editor publish may first save then publish (two actions). “One audit entry” will mean no duplicate event for each existing action/event type, **not deleting established lifecycle records to force one total row**. ConfirmDialog adds no audit sink.
+**None proposed; zero existing test-line changes requested.** Keep all existing tests, retries, timeouts, thresholds and snapshots unchanged.
 
-**Highest risk:** async dialog state replaying an operation against a changed actor/item. Resolve current actor, record and gates at confirmation; prevent stale-target/double-submit execution and keep store rechecks. Cancellation must never resume a mutation. Nested calendar sheet focus and CMS member-preview density need regression coverage.
+- `src/components/__tests__/staffShell8a1.test.ts:60` currently reads `expect(app).not.toMatch(/["']\/consent["']\s*[,\]].*isStaff/);`. It forbids a particular hardcoded list shape, not an explicit behavioral consent-shell contract. The proposed removal of member exceptions uses the existing registry, so retain this line; add new behavioral coverage rather than reversing it.
+- `src/lib/__tests__/clinicianWorkspace.test.ts:16–19` asserts current `workspaceTileOrder` arrays. Keep that model helper unchanged; apply the new overall section grouping in presentation, preserving its existing within-group order. New tests assert actual DOM order and membership parity.
+- Existing `e2e/group2Pathways.spec.ts:63–65` read-only ledger checks and `e2e/consentWorkflow.spec.ts:129–138` signing/locking checks remain unchanged.
 
-**Cathy:** do not change `canAuthorContent`, `canPublishContent`, clinical sign-off/Spanish blockers or Part 2 patient-data boundaries. She retains current editorial author/publish/withdraw abilities and calendar read-only access; consent-form publishing remains sys_admin only. Controlled draft content and privacy-neutral audit text rules remain unchanged.
+If implementation cannot preserve these contracts, or **any other existing assertion fails**, stop and list **file, line, exact current line, exact proposed replacement, why** for Mitch before any edit. Never delete/skip tests or modify retries/timeouts/thresholds. The consent-access prerequisite finding is reported, not worked around by changing a test.
 
-**Narrower than the old Phase 8 outline:** group-sessions and GroupEligibilityEditor move to 8c-2 as requested; existing content schemas/general calendar forms are not migrated wholesale. Three staff delete confirmations, remaining prompts, consent-ledger revocation, undo infrastructure and Phase 9 dashboards stay for later. No backend connection, external integration or broader persistence work.
+## C. New coverage and final validation
+
+**Units:** presentation partition/order conserves existing row identities, counts, statuses and actions across roles; ownership uses structured sources; Cathy parity and Part 2-hidden content remain hidden; crisis banner zero/authorized/actor-switch states; consent guard and shell boundaries; real-store + New event parity and attribution. Test extracted clearance/sizing helpers only if introduced—jsdom is not proof of visual occlusion.
+
+**Browser + axe:** first consent reproduction/readback spec; workspace ordering and crisis persistence after toast disappearance; Cathy and denied-role parity; actual patient/advocate ledger denial; staff + New record/audit readback; 768 layout and scrolled-header checks; coarse targets; 390 admin-content overflow; early-tap diagnostics/regression. Axe on My work, staff consent ledger (if moved), signing/locked states, staff navigation overlays, admin-content and public control/menu states, using existing standards without weaker exclusions/thresholds.
+
+At build end:
+1. Check automated build results, then `vitest list` total next to the **full unit pass count**, with zero unreported skips.
+2. Run **every browser spec including axe**, sequentially after units—never concurrently. Use exhaustive, non-overlapping halves if needed; record each half's file list/totals and combined results, with no omitted specs. Existing-test stop rule applies.
+3. Capture **My work, `/consent`, consent signing** at **390/768/1280 × light/dark**: 18 screenshots under `docs/screenshots/phase8a2/`. Use Cathy for My work/ledger and a real signed synthetic form for completion; include pre-sign evidence separately. If migration is blocked, show and label current ledger shell and member-denial evidence, never imply completion. Visually inspect all captures for clipping, overlaps, 14px floor and crisis visibility. Keep unrelated tracked e2e screenshots unchanged unless normally regenerated by their suite.
+4. Write `docs/phase8a2-report.md`: rollback, changes, baseline defects/non-reproductions, member-access proof/blocker, Cathy row/action parity, audit readback, full totals, screenshot index, failures and deviations. Maintain a lean 8a-2 roadmap; document structural rules in root AGENTS only when actually introduced.
+
+## D. Risks and safeguards
+
+- **Cathy:** grouping can mislabel a clinical-review responsibility as waiting or accidentally widen crisis/consent access. Compare exact records and actionable controls before/after; keep acting versus viewed-workspace identities separate. Consent ledger remains read-only for her; content author/reviewer permissions unchanged.
+- **Safety:** fixed signing overlays, coarse demo-bar growth and sticky headers can obscure either actions or 988. Prove hit testing and ordinary pointer/keyboard access at every width; crisis banner derives only authorized records and persists independently of toasts.
+- **Privacy:** no new Part 2 placeholder, raw note, SUD label or patient detail in banner/audit/notification text. Existing masking runs before presentation grouping. No new disclosures; existing outbound paths continue through `disclose()`.
+- **Scope/security:** prototype staff-role filters are not member-session proof. A failed prerequisite blocks the ledger migration, not permission rewrites disguised as styling. No backend/security redesign in this batch.
