@@ -20,7 +20,7 @@ import { listMatchReviews } from "@/lib/patientMatching";
 import { chaseRowsFor } from "@/lib/referralChase";
 import { openSeverityFlags, severityAssignee, SEVERITY_ROW_LABEL } from "@/lib/severityFlags";
 import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
-import { myOpenEscalations } from "@/lib/escalations";
+import { myOpenEscalations, hoursMinutesLeft } from "@/lib/escalations";
 import { listRescheduleItems } from "@/lib/workingCalendar";
 import { listThreadsFor, openMentionsFor } from "@/lib/staffThreads";
 import { continuityTasks, continuityTaskLabel } from "@/lib/medContinuity";
@@ -130,7 +130,7 @@ export function workspaceActionRows(input: {
     const coord = isCoordinatorRole(actor.role);
     if (!(owned || (coord && (pool || sla.overdue)) || (!e.ownerStaffId && mineIds.has(c.patient.id)))) continue;
     const left = Math.max(0, crisisSlaTarget(e).ms - sla.ageMs);
-    const countdown = sla.overdue ? overdueByLabel(sla.overdueByMs) : `${Math.floor(left / 3600000)}h ${Math.round((left % 3600000) / 60000)}m left`;
+    const countdown = sla.overdue ? overdueByLabel(sla.overdueByMs) : (({ h, m }) => `${h}h ${m}m left`)(hoursMinutesLeft(left));
     const label = owned ? "Crisis follow-up — yours" : pool ? "Crisis follow-up — coordinator pool" : `Crisis follow-up needed — owner ${e.ownerName ?? "assigned"}`;
     rows.push({ id: `crisis:${e.id}`, kind: "crisis", patientId: c.patient.id, patientName: `${c.patient.firstName} ${c.patient.lastName}`, label, dueAt: e.lastTriggeredAt ?? e.triggeredAt, due: countdown, group: "now", action: coord && !owned ? "Reassign" : "Open crisis", sourceId: e.id });
   }

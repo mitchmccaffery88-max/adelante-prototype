@@ -118,11 +118,16 @@ function staffFor(idOrClinician?: string): StaffMember | undefined {
 }
 const pname = (p: Patient) => `${p.firstName} ${p.lastName}`;
 
+/** Rounds to whole minutes first so 59.5+ minutes rolls into the next hour (never "60m"). */
+export function hoursMinutesLeft(ms: number): { h: number; m: number } {
+  const total = Math.round(Math.max(0, ms) / 60000);
+  return { h: Math.floor(total / 60), m: total % 60 };
+}
+
 function countdownLabel(dueAt: string, now: number): { overdue: boolean; text: string } {
   const left = +new Date(dueAt) - now;
   if (left <= 0) return { overdue: true, text: overdueByLabel(-left) };
-  const h = Math.floor(left / HOUR);
-  const m = Math.round((left % HOUR) / 60000);
+  const { h, m } = hoursMinutesLeft(left);
   return { overdue: false, text: h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h left` : `${h}h ${m}m left` };
 }
 const SUD_TEXT = (t?: string) => !!t && part2SafeText(t) !== t;
