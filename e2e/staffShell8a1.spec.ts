@@ -50,8 +50,7 @@ test.describe("8a-1 staff shell", () => {
   test("quick jump opens with the keyboard and lists permitted surfaces", async ({ page }) => {
     await page.goto("/my-work");
     await ready(page);
-    await page.getByRole("button", { name: "Quick jump" }).focus();
-    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "Quick jump" }).press("Enter");
     const input = page.getByLabel("Search staff surfaces");
     await expect(input).toBeVisible();
     await input.fill("zzzz-no-match");
