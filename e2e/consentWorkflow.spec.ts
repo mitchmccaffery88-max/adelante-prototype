@@ -101,7 +101,10 @@ test("intake packet → sign 5, decline group → group gate → sign from promp
   await page.getByRole("button", { name: "Save as draft" }).click();
   await row.getByRole("button", { name: "Send to legal review" }).click();
   await row.getByRole("button", { name: "Approve (Counsel: pending)" }).click();
-  await row.getByRole("button", { name: "Publish" }).click();
+  await row.getByRole("button", { name: "Publish", exact: true }).click();
+  const publishDialog = page.getByRole("alertdialog", { name: "Publish this consent form?", exact: true });
+  await publishDialog.getByRole("textbox", { name: "Reason (saved to the audit log)", exact: true }).fill("Reviewed consent version for publication — Draft");
+  await publishDialog.getByRole("button", { name: "Publish consent form", exact: true }).click();
   await expect(row).toContainText("published v2");
   await as(page, "s-cc1", "clinical_coordinator");
   await go(page, `/record/${pid}?section=consents`);

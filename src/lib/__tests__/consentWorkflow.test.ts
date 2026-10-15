@@ -62,7 +62,7 @@ describe("W1 form library", () => {
     expect(() => approveForm(v2.id, coord)).toThrow(/sys_admin/);
     approveForm(v2.id, admin);
     expect(listFormVersions("hipaa").find((x) => x.id === v2.id)!.approvedBy).toMatch(/Counsel: pending/);
-    publishForm(v2.id, admin);
+    publishForm(v2.id, admin, "Reviewed consent version for publication — Draft");
     expect(publishedForm("hipaa")!.version).toBe(2);
     expect(listSignedCopies(p.id)[0]!.copy.version).toBe(1);
   });

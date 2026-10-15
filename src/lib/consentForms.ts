@@ -150,7 +150,7 @@ function seedLibrary() {
     const v = createFormDraft({ ...s }, { role: "sys_admin", name: "Seed" }, at);
     submitForLegalReview(v.id, { role: "sys_admin", name: "Seed" });
     approveForm(v.id, { role: "sys_admin", name: "Seed" });
-    publishForm(v.id, { role: "sys_admin", name: "Seed" });
+    publishForm(v.id, { role: "sys_admin", name: "Seed" }, "Initial placeholder library — Draft pending counsel review");
   }
 }
 
@@ -197,12 +197,13 @@ export function approveForm(vid: string, actor: Actor) {
   audit("consent_form.approved", actor, { formKey: v.key, version: v.version, counsel: "pending" });
   return v;
 }
-export function publishForm(vid: string, actor: Actor) {
+export function publishForm(vid: string, actor: Actor, reason: string) {
   if (actor.role !== "sys_admin") throw new Error("Only sys_admin can publish a form.");
+  if (!reason?.trim()) throw new Error("Add a reason for publishing this consent form.");
   const v = step(vid, "approved", "published", actor);
   for (const o of versions) if (o.key === v.key && o.id !== v.id && o.status === "published") o.status = "retired";
   v.publishedAt = new Date().toISOString();
-  audit("consent_form.published", actor, { formKey: v.key, version: v.version });
+  audit("consent_form.published", actor, { formKey: v.key, version: v.version, reason: reason.trim() });
   return v;
 }
 
