@@ -1,6 +1,26 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("shell New creates a real Cathy task with one standard action event", async ({ page }) => {
+  await page.goto("/clinician");
+  await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
+  await page.evaluate(() => (window as unknown as { __adelante: { setActingStaff: (id: string, role: string) => void } }).__adelante.setActingStaff("s-cc2", "clinical_coordinator"));
+  await page.getByTestId("staff-new-slot").getByTestId("dashboard-new-button").click();
+  await page.getByTestId("dashboard-add-menu").getByRole("button", { name: "Task for me / my team", exact: true }).click();
+  const drawer = page.getByTestId("dashboard-action-drawer");
+  await drawer.getByPlaceholder("What needs to be done?").fill("8a2 audit parity task");
+  await drawer.getByTestId("dashboard-patient-picker").getByRole("button").first().click();
+  const before = await page.evaluate(() => (window as unknown as { __adelante: { AdelanteEHR: typeof import("../src/lib/ehr").AdelanteEHR } }).__adelante.AdelanteEHR.listAuditEvents({ category: "action" }).length);
+  await drawer.getByRole("button", { name: "Create task", exact: true }).click();
+  await expect(drawer).toHaveCount(0);
+  const result = await page.evaluate((before) => {
+    const ehr = (window as unknown as { __adelante: { AdelanteEHR: typeof import("../src/lib/ehr").AdelanteEHR } }).__adelante.AdelanteEHR;
+    return { tasks: ehr.listCaseTasks().filter(t => t.title === "8a2 audit parity task").map(t => t.assignedTo), events: ehr.listAuditEvents({ category: "action" }).slice(before).map(e => ({ action: e.action, id: e.detail?.actionId, actor: e.actorId })) };
+  }, before);
+  expect(result.tasks).toEqual(["s-cc2"]);
+  expect(result.events).toEqual([{ action: "action.succeeded", id: "dashboard_task", actor: "s-cc2" }]);
+});
+
 test("Cathy's My work order and crisis banner agree with authorized header count", async ({ page }) => {
   await page.goto("/my-work");
   await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
