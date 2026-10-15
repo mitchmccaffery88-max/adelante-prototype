@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { act, actFor, setViewingStaff } from "@/lib/actions/act";
 import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";

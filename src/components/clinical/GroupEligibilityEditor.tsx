@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 // §Group sessions — care-plan group eligibility gate (staff-facing).
 //
 // PLACEHOLDER CRITERIA: the reason is free text and the curriculum-need tag is
@@ -21,6 +23,7 @@ export function GroupEligibilityEditor({
   patientId: string;
   actor: string;
 }) {
+  const confirmation = useConfirmDialog();
   const { role } = useActingStaff();
   const eligibility = useEhr(() => AdelanteEHR.getGroupEligibility(patientId));
   const [reason, setReason] = useState("");
@@ -29,6 +32,7 @@ export function GroupEligibilityEditor({
 
   return (
     <Card className="p-3 space-y-2 bg-muted/30">
+      {confirmation.dialog}
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-xs font-medium text-navy">Group eligibility (care plan)</h4>
         {eligibility ? (
@@ -52,15 +56,7 @@ export function GroupEligibilityEditor({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => {
-                const why = window.prompt("Reason for removing group eligibility?") ?? "";
-                try {
-                  AdelanteEHR.clearGroupEligibility(patientId, why, actor);
-                  toast.success("Group eligibility removed");
-                } catch (err) {
-                  toast.error(err instanceof Error ? err.message : "Could not update.");
-                }
-              }}
+              onClick={() => confirmation.ask({ title: "Remove group eligibility?", description: "Eligibility is removed from the care plan; existing enrollment records are kept. A future eligibility decision can be recorded again. No new notification is sent.", confirmLabel: "Remove eligibility", keepLabel: "Keep eligibility", requireReason: true, onConfirm: why => { confirmedAction("group_eligibility_remove", "clearGroupEligibility", patientId, why, patientId, why, actor); toast.success("Group eligibility removed"); return true; } })}
             >
               Remove eligibility
             </Button>

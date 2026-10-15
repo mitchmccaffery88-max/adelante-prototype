@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Group sessions — staff-facing group care delivery.

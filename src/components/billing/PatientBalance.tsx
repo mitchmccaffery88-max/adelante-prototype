@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 // §Phase 7d — who owes what on a claim, the unrecorded-arrangement flag, and
 // manual patient payment recording. Every write goes through ehr-ext, which
 // enforces billing write itself; the page guard is feedback only.
@@ -155,18 +158,10 @@ function RecordPayment({ claim }: { claim: Claim }) {
 }
 
 function VoidPayment({ claimId, paymentId }: { claimId: string; paymentId: string }) {
-  return (
-    <button
-      type="button"
-      className="ml-1 underline"
-      onClick={() => {
-        const reason = window.prompt("Reason for voiding this payment?") ?? "";
-        const r = actResult<ReturnType<typeof AdelanteEHRExt.voidPatientPayment>>("payment_void", "voidPatientPayment", undefined, claimId, paymentId, reason);
-        if (!r.ok) toast.error(r.error);
-        else toast.success("Payment voided");
-      }}
-    >
-      Void
-    </button>
-  );
+  const confirmation = useConfirmDialog();
+  return <><Button type="button" variant="ghost" onClick={() => confirmation.ask({
+    title: "Void this payment?", description: "The payment is marked void and the balance is recalculated. The original record stays kept; this does not refund money or notify the patient.",
+    confirmLabel: "Void payment", keepLabel: "Keep payment", requireReason: true,
+    onConfirm: reason => { confirmedAction("payment_void", "voidPatientPayment", undefined, reason, claimId, paymentId, reason); toast.success("Payment voided"); return true; },
+  })}>Void</Button>{confirmation.dialog}</>;
 }

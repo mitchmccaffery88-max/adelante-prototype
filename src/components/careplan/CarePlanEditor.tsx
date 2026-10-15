@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 import { StatusChip } from "@/components/ui/status-chip";
 import { PathwayChip } from "@/components/clinical/PathwayChip";
 import { ContentAssignmentPreview } from "@/components/admin/ContentAssignmentPreview";
@@ -7,7 +9,8 @@ import { act, actFor } from "@/lib/actions/act";
 import "@/lib/contentTags";
 import "@/lib/flagJourneys";
 import { flagReviewLabel } from "@/lib/structuredCarePlan";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
@@ -55,6 +58,9 @@ function run(fn: () => void, ok: string) {
 }
 
 export function CarePlanEditor({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
+  const confirmation = useConfirmDialog();
+  const goalOutcome = useRef(false);
+  function GoalOutcome() { const [met, setMet] = useState(false); return <label className="flex items-center gap-2 text-sm"><Checkbox checked={met} onCheckedChange={v => { setMet(v === true); goalOutcome.current = v === true; }} />Goal was met</label>; }
   const actor = useActingStaff();
   const role = actor.role;
   const me = { name: actor.staffName, role };
@@ -77,6 +83,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
 
   return (
     <Card className="space-y-5 p-4" data-testid="care-plan-editor">
+      {confirmation.dialog}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h4 className="flex items-center gap-2 font-display text-base text-navy">
@@ -159,10 +166,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    const reason = window.prompt("Why dismiss this suggestion? (required)") ?? "";
-                    run(() => dismissSuggestion(patientId, s.id, reason, me), "Suggestion not used");
-                  }}
+                  onClick={() => confirmation.ask({ title: "Do not use this suggestion?", description: "The suggestion is not used and the decision stays in history. Existing goals stay unchanged; no notification is sent.", confirmLabel: "Do not use suggestion", keepLabel: "Keep suggestion", requireReason: true, onConfirm: reason => { confirmedAction("plan_suggestion_dismiss", "dismissSuggestion", patientId, reason, patientId, s.id, reason, me); toast.success("Suggestion not used"); return true; } })}
                 >
                   Don't use this draft
                 </Button>
@@ -248,11 +252,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => {
-                      const reason = window.prompt("Reason for closing this goal (required)") ?? "";
-                      const met = window.confirm("Was the goal met? OK = met, Cancel = closed without meeting it.");
-                      run(() => closeStructuredGoal(patientId, g.id, met ? "met" : "closed", reason, me), "Goal closed");
-                    }}
+                    onClick={() => { goalOutcome.current = false; confirmation.ask({ title: "Close this goal?", description: "The goal leaves the active plan and its assignments stop. History stays kept; no new notification is sent. A future goal is a separate change.", confirmLabel: "Close goal", keepLabel: "Keep goal", requireReason: true, children: <GoalOutcome />, onConfirm: reason => { confirmedAction("plan_goal_close", "closeStructuredGoal", patientId, reason, patientId, g.id, goalOutcome.current ? "met" : "closed", reason, me); toast.success("Goal closed"); return true; } }); }}
                   >
                     Close goal
                   </Button>

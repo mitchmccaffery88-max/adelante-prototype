@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 // §Clinical documentation Phase 3a — note template authoring.
 //
 // A real visual section/field builder (not a JSON textarea): sections are

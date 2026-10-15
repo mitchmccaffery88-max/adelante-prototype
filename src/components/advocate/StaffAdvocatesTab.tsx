@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 // §Advocate build 1 — the staff surface for managing advocate connections.
 //
 // This is the ECM Provider / Administrator invite call site (the CF Care
@@ -74,6 +76,7 @@ function StaffAdvocateCard({
   staffName: string;
   readOnly: boolean;
 }) {
+  const confirmation = useConfirmDialog();
   const rows = useEhr(() => AdelanteEHR.advocateDocumentRequirements(link.id));
   const type = link.authorizationType ?? link.expectedAuthorizationType;
   const defs = type ? requirementsForType(type) : [];
@@ -89,22 +92,12 @@ function StaffAdvocateCard({
   }
 
   function verify(key: (typeof keys)[number]) {
-    const ref = window.prompt("Reference for the document you checked (optional)") ?? "";
-    try {
-      AdelanteEHR.verifyAdvocateDocumentRequirement({
-        linkId: link.id,
-        key,
-        verifiedBy: staffName,
-        ...(ref.trim() ? { verificationRef: ref.trim() } : {}),
-      });
-      toast.success("Marked as verified.");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not verify that.");
-    }
+    confirmation.ask({ title: "Verify this document?", description: "The document requirement is marked verified, which may enable the connection's existing rights. This is a recorded verification, not an upload; no new notification is sent.", confirmLabel: "Verify document", keepLabel: "Keep unverified", reasonLabel: "Document reference (optional)", reasonHelp: "Enter the reference for the document you checked, not its contents.", onConfirm: ref => { confirmedAction("advocate_document_verify", "verifyAdvocateDocumentRequirement", link.patientId, "Document checked", { linkId: link.id, key, verifiedBy: staffName, ...(ref ? { verificationRef: ref } : {}) }); toast.success("Marked as verified."); return true; } });
   }
 
   return (
     <div className="space-y-2 rounded-lg border p-4 text-sm">
+      {confirmation.dialog}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-2 font-medium text-navy">
           <ShieldCheck className="h-4 w-4 text-teal" />

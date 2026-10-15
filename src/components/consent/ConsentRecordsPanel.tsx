@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 import { StatusChip } from "@/components/ui/status-chip";
 // §ASCMI consent infrastructure — staff-facing capture + revocation UI.
 //
@@ -62,6 +64,7 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
       .reduce((n, m) => n + heldItemsFor(m.id).length, 0),
   );
 
+  const confirmation = useConfirmDialog();
   const [open, setOpen] = useState(false);
   const [formType, setFormType] = useState<ConsentFormType>("AB133");
   const [source, setSource] = useState("in person — consent tab");
@@ -105,19 +108,15 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
     }
   };
 
-  const revoke = (id: string) => {
-    const reason = window.prompt("Reason for revocation (required)");
-    if (reason === null) return;
-    try {
-      AdelanteEHR.revokeConsentRecord(id, { reason, revokedBy: staffName, role });
-      toast.success("Consent revoked — original record retained");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not revoke");
-    }
-  };
+  const revoke = (id: string) => confirmation.ask({
+    title: "Revoke this consent record?", description: "The authorization stops being active. The signed original stays on file; a new consent is needed to authorize again. No new notification is sent.",
+    confirmLabel: "Revoke consent", keepLabel: "Keep consent", requireReason: true,
+    onConfirm: reason => { confirmedAction("consent_capture", "revokeConsentRecord", patient.id, reason, id, { reason, revokedBy: staffName, role }); toast.success("Consent revoked — original record retained"); return true; },
+  });
 
   return (
     <section className="space-y-3">
+      {confirmation.dialog}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="font-display text-lg text-navy">Structured consent records</h2>
