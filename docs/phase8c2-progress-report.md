@@ -221,3 +221,7 @@ Role × action (Yes = allowed):
 +     "plan_suggestion_dismiss": "allowed",
 +     "plan_summary_clear": "allowed",
 ```
+
+## Oct 15 follow-up
+- Permission snapshot updated via `vitest -u`: the diff is exactly the 136 approved additions; nothing changed or removed (checked line by line against this report before keeping it).
+- Units 2,653/2,653. Browser 101/102 (only the 8a-2 "+ New" spec, see the 8a-2 report). Lesson archive/withdrawal not started.
