@@ -31,7 +31,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
 
   return <StaffDensityProvider><TooltipProvider delayDuration={300}><StaffNewProvider target={newTarget}>
     <div data-density="compact" data-testid="staff-shell" className="flex min-h-dvh flex-col bg-canvas text-ink">
-      <header data-testid="staff-shell-header" className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:gap-3 sm:px-4">
+      <header data-testid="staff-shell-header" className="sticky top-12 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:gap-3 sm:px-4">
         <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open staff navigation" onClick={() => setMobileOpen(true)}><Menu /></Button>
         <Link to="/" aria-label="Adelante home" className="shrink-0">
           <img src="/brand/adelante-compact.svg" alt="Adelante" className="h-8 w-auto dark:hidden" />
