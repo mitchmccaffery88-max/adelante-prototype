@@ -141,3 +141,9 @@ Fix: `src/lib/earlyTap.ts` + one inline head script (`src/routes/__root.tsx`) re
 - M	src/routes/my-work.tsx
 - M	src/routes/nurse.tsx
 - M	src/styles.css
+
+## Oct 15 follow-up (approved items)
+- e2e/staffShell8a2.spec.ts: approved search line inserted before the click line (unchanged).
+- ASAM draft awaiting co-signature: fixture created only inside `src/lib/__tests__/asamCosignSection8a2.test.ts` through the real store functions (`saveAsamDraft` + `signAsamAssessment`), as SUD counselor s-sudc1 on the in-memory Part 2–consented demo patient (`sud_consented`). The shared demo seed was not edited. Result: author → "ASAM drafts awaiting co-signature" (`my-work-asam-waiting`) = **Waiting on others**; co-signer (cosign owner) → `my-work-asam` = **Needs you**. Roles that see it = roles that already saw that patient's named ASAM rows (Cathy and ECM provider still excluded). The ASAM visibility files are unchanged since rollback.
+- Units: **2,653 passed / 2,653 listed**.
+- Browser (dev server, two halves, not concurrent): 32/32 and 69/70 → **101/102**. Blocked: `e2e/staffShell8a2.spec.ts:22` fails because line 19 reads `.slice(before)`, but the audit log stores newest first, so the slice returns the oldest entry (`profile.tag_added`, system). The task itself is created for s-cc2. Proposed line change awaits Mitch; 8a-2 is NOT marked verified.
