@@ -421,7 +421,9 @@ Rollback: 1a622225b55f2e2425e4cc843d54696715f3e86f
 - [ ] STOPPED: userNavigationShell.test.ts:24 needs Mitch's decision; 2,606 passed / 2,607 listed, build OK. No browser suite or new foundation tests after stop. See docs/phase8a1-staff-shell-report.md.
 
 ## Phase 8c-1 — Approved staff fields and dialogs (15 Oct)
-- [ ] Staff FormField and ConfirmDialog; CMS/calendar adapters; required consent-publish reason
-- [ ] Only two approved existing test edits; new unit/browser/axe coverage
-- [ ] Full unit/list totals, every browser, 18 light/dark screenshots and report
+- [x] Staff FormField and ConfirmDialog; CMS/calendar adapters; required consent-publish reason
+- [x] Only two approved existing test edits; 13 new unit tests and 3 browser/axe tests pass
+- [x] Full units 2,638/2,638 listed; 18 light/dark screenshots and checkpoint report
+- [ ] STOPPED awaiting Mitch: existing cfProxyMode.spec.ts:37 timed out; full browsers 9 pass, 1 fail, 2 interrupted, 80 unstarted. Candidate line in report; no edit applied.
+- [ ] Remaining plan verification: all browsers, touch/focus-return and additional adapter edge cases after checkpoint approval
 Rollback: 97668bd969a632fe3706613359bb1d448f4ead27. No 8c-2 work.
