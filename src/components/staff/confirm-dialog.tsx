@@ -11,12 +11,15 @@ export interface ConfirmDialogProps {
   confirmLabel: string;
   keepLabel: string;
   requireReason?: boolean;
+  reasonLabel?: string;
+  reasonHelp?: string;
+  children?: ReactNode;
   onConfirm: (reason: string) => boolean | Promise<boolean>;
   trigger?: ReactNode;
 }
 
 /** Presentation only: callers retain their registry, permission and audit ownership. */
-export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, keepLabel, requireReason, onConfirm, trigger }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, keepLabel, requireReason, reasonLabel, reasonHelp, children, onConfirm, trigger }: ConfirmDialogProps) {
   const [reason, setReason] = useState("");
   const [attempted, setAttempted] = useState(false);
   const [pending, setPending] = useState(false);
@@ -47,7 +50,8 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
       onOpenAutoFocus={(event) => { event.preventDefault(); previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; safe.current?.focus(); }}
       onCloseAutoFocus={(event) => { event.preventDefault(); previousFocus.current?.focus(); }}>
       <AlertDialogHeader><AlertDialogTitle>{title}</AlertDialogTitle><AlertDialogDescription className="text-sm leading-5 text-ink-muted">{description}</AlertDialogDescription></AlertDialogHeader>
-      {requireReason && <FormField reason required multiline value={reason} onChange={setReason} attempted={attempted} />}
+      {children}
+      {(requireReason || reasonLabel) && <FormField reason={!reasonLabel} label={reasonLabel} help={reasonHelp} required={requireReason} multiline value={reason} onChange={setReason} attempted={attempted} />}
       {failure && <p role="alert" className="rounded-sm border border-attention bg-gold p-2 text-sm text-on-gold">{failure}</p>}
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <Button ref={safe} type="button" variant="outline" className={controlClass} disabled={pending} onClick={() => changeOpen(false)}>{keepLabel}</Button>

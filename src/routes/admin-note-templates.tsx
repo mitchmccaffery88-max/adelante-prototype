@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 // §Clinical documentation Phase 3a — note template authoring.
 //
 // A real visual section/field builder (not a JSON textarea): sections are
@@ -410,6 +412,7 @@ function TemplateBuilderDialog({
   // §Phase 2b — scope of the row being authored. A new template defaults to
   // the widest tier the author may publish to: shared authors get Global,
   // everyone else can only ever create a Personal template.
+  const confirmation = useConfirmDialog();
   const [scope, setScope] = useState<TemplateScope>(
     template?.scope ?? (canAuthorShared ? "global" : "personal"),
   );
@@ -469,17 +472,10 @@ function TemplateBuilderDialog({
       ),
     );
 
-  const save = () => {
+  const save = (reason = "") => {
     try {
       if (template) {
-        if (schemaChanged) {
-          const ok = window.confirm(
-            `Saving will create version ${nextVersion} of "${template.title}". ` +
-              `Existing notes stay on version ${template.version} and are unchanged.`,
-          );
-          if (!ok) return;
-        }
-        actFor("note_template_update", "updateNoteTemplate", undefined,
+        confirmedAction("note_template_update", "updateNoteTemplate", undefined, reason,
           template.id,
           { title, description, encounterType, schema },
           staffName,
@@ -502,13 +498,16 @@ function TemplateBuilderDialog({
         toast.success("Template created");
       }
       onClose();
+      return true;
     } catch (e) {
       toast.error((e as Error).message);
+      throw e;
     }
   };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
+      {confirmation.dialog}
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -1035,7 +1034,7 @@ function TemplateBuilderDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button className="bg-navy text-navy-foreground hover:bg-navy/90" onClick={save}>
+          <Button className="bg-navy text-navy-foreground hover:bg-navy/90" onClick={() => { if (schemaChanged && template) confirmation.ask({ title: "Publish this template version?", description: `Saving creates version ${nextVersion}. Existing notes stay on version ${template.version} unchanged. This version cannot rewrite signed notes; no notification is sent.`, confirmLabel: "Publish version", keepLabel: "Keep editing", requireReason: true, onConfirm: reason => save(reason) }); else { try { save(); } catch { /* Existing toast owns feedback. */ } } }}>
             Save template
           </Button>
         </DialogFooter>

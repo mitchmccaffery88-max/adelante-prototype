@@ -24,6 +24,8 @@ export interface RunInput {
   args?: unknown[];
   /** Which store function of the action to call (defaults to the first). */
   via?: string;
+  /** Staff confirmation reason only; never answer/note bodies. Scrubbed before audit. */
+  auditReason?: string;
 }
 export type RunResult<T = unknown> =
   | { ok: true; value: T; outcome: "succeeded" | "cosign_routed"; event: AuditEvent }
@@ -173,8 +175,8 @@ export function runAction<T = unknown>(
     return { ok: true, value: value as T, outcome: "cosign_routed", event };
   }
   const event = sim
-    ? write("action.succeeded", actionId, actor, patient, "simulated", "Simulated — no live connection.", flags, store.name, true)
-    : write("action.succeeded", actionId, actor, patient, "succeeded", undefined, flags, store.name);
+    ? write("action.succeeded", actionId, actor, patient, "simulated", input.auditReason || "Simulated — no live connection.", flags, store.name, true)
+    : write("action.succeeded", actionId, actor, patient, "succeeded", input.auditReason, flags, store.name);
   return { ok: true, value: value as T, outcome: "succeeded", event };
 }
 

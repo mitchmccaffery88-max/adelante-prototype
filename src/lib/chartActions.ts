@@ -7,7 +7,7 @@ import { bookingRightFor, canScheduleRole } from "./bookingRights";
 // §Chart redesign — single action registry. Source of truth for every chart
 // "create / act" action. Each `allowed()` calls the SAME function-level check
 // the store enforces; it never re-types a role list of its own.
-import { AdelanteEHR, APPT_REQUEST_BOOKING_ROLES, REFILL_PRESCRIBER_ROLES, type Patient } from "@/lib/ehr";
+import { AdelanteEHR, APPT_REQUEST_BOOKING_ROLES, GROUP_ELIGIBILITY_ROLES, REFILL_PRESCRIBER_ROLES, type Patient } from "@/lib/ehr";
 import { canAccess, canFlagCrisis, getStaffMember, isPrescriberRole, type RecordClass, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { ASAM_AUTHOR_ROLES, asamNeedsCosign } from "@/lib/asam";
@@ -20,7 +20,7 @@ import { EPISODE_ROLES, HLOC_REFERRAL_ROLES } from "@/lib/outpatientCare";
 import { canUseCaseloadReview } from "@/lib/caseloadRoles";
 import { placeLabOrder, requestScreener, recordMetabolic } from "@/lib/chartOrders";
 import { saveScreenerDraft } from "@/lib/screenerDrafts";
-import { addStructuredGoal, assignToGoal, resolveFlagReview } from "@/lib/structuredCarePlan";
+import { addStructuredGoal, assignToGoal, closeStructuredGoal, dismissSuggestion, resolveFlagReview } from "@/lib/structuredCarePlan";
 import { addCareTag, canEditTagList, renameCareTag, retireCareTag, saveStaffProfile, setBookingsFrozen, setSiteServices } from "@/lib/staffProfile";
 import { acceptAsamSuggestion, dismissAsamSuggestion, editAsamSuggestion, markAsamGoalReviewed } from "@/lib/asamCarePlan";
 import { canReviewSeverity, reviewSeverityFlag } from "@/lib/severityFlags";
@@ -62,7 +62,7 @@ import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/mo
 import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-14.private-update";
+export const REGISTRY_VERSION = "2026-10-15.staff-confirmations";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -741,7 +741,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     label: { en: "Capture consent", es: "Registrar consentimiento" },
     group: "document",
     sectionId: "advocates",
-    store: refs(["consentLedger", () => undefined]),
+    store: refs(["consentLedger", () => undefined], ["revokeConsentRecord", AdelanteEHR.revokeConsentRecord]),
     allowed: ({ role }, p) => (writes(role, "consent_ledger", p) ? ok() : hide("Your role can't capture consents.")),
   },
   {
@@ -1103,6 +1103,41 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "canRunAssistedSignup(role)",
     store: refs(["createPatient", (...a: any[]) => (AdelanteEHR.createPatient as any)(...a)]),
     allowed: ({ role }) => (canRunAssistedSignup(role) ? ok() : hide("Your role can't create patient records.")),
+  },
+  // Confirmed staff mutations that previously bypassed the registry.
+  ...([
+    ["plan_goal_close", "Close care-plan goal", "closeStructuredGoal", closeStructuredGoal],
+    ["plan_suggestion_dismiss", "Do not use care-plan suggestion", "dismissSuggestion", dismissSuggestion],
+    ["plan_summary_clear", "Clear care-plan note", "updateCarePlanSummary", AdelanteEHR.updateCarePlanSummary],
+  ] as const).map(([id, en, name, fn]): ChartAction => ({
+    id, label: { en, es: en }, group: "care", menu: false, sectionId: "care-plan",
+    check: "canEditPlan (existing structured plan gate)", store: refs([name, fn as StoreFn]),
+    allowed: ({ role }) => canEditPlan(role) ? ok() : hide("Your role can't change the care plan."),
+  })),
+  {
+    id: "group_eligibility_remove", label: { en: "Remove group eligibility", es: "Remove group eligibility" }, group: "care", menu: false,
+    check: "GROUP_ELIGIBILITY_ROLES (existing editor gate)", store: refs(["clearGroupEligibility", AdelanteEHR.clearGroupEligibility]),
+    allowed: ({ role }) => inList(GROUP_ELIGIBILITY_ROLES, role) ? ok() : hide("Your role can't change group eligibility."),
+  },
+  {
+    id: "group_enrollment_end", label: { en: "End group enrollment", es: "End group enrollment" }, group: "care", menu: false,
+    check: "group_sessions write (existing page gate)", flags: ["notifications_simulated"], store: refs(["endGroupEnrollment", AdelanteEHR.endGroupEnrollment]),
+    allowed: ({ role }, p) => writes(role, "group_sessions", p) ? ok() : hide("Your role can't end group enrollments."),
+  },
+  {
+    id: "frequency_delete", label: { en: "Delete frequency", es: "Delete frequency" }, group: "admin", menu: false, needsPatient: false,
+    check: "catalog_governance write (existing page gate)", store: refs(["deleteFrequency", AdelanteEHR.deleteFrequency]),
+    allowed: ({ role }) => writes(role, "catalog_governance") ? ok() : hide("Your role can't delete frequencies."),
+  },
+  {
+    id: "advocate_document_verify", label: { en: "Verify advocate document", es: "Verify advocate document" }, group: "document", menu: false,
+    check: "existing StaffAdvocatesTab inviter gate", store: refs(["verifyAdvocateDocumentRequirement", AdelanteEHR.verifyAdvocateDocumentRequirement]),
+    allowed: ({ role }) => inList(["ecm_provider", "sys_admin", "cf_care_manager"], role) ? ok() : hide("Your role can't verify advocate documents."),
+  },
+  {
+    id: "advocate_access_remove", label: { en: "Remove advocate access", es: "Remove advocate access" }, group: "document", menu: false,
+    check: "existing designation actor boundary", store: refs(["revokeAdvocateLink", AdelanteEHR.revokeAdvocateLink]),
+    allowed: ({ role }) => inList(["ecm_provider", "sys_admin", "cf_care_manager"], role) ? ok() : hide("Your role can't remove advocate access."),
   },
   // ---- §Turn 6 — billing / admin / coordinator "+ New" ----
   {

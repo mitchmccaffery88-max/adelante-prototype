@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 import { StatusChip } from "@/components/ui/status-chip";
 import { CircleAlert } from "lucide-react";
 // §Scribe Phase 1 — capture (consent gate → simulated live transcript → end)
@@ -201,6 +203,7 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
 }
 
 export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; compact?: boolean }) {
+  const confirmation = useConfirmDialog();
   const staff = useActingStaff();
   const actor = { name: staff.staffName, role: staff.role, staffId: staff.staffId, clinicianId: staff.clinicianId };
   const view = useEhr(() => scribeView(sessionId, staff.role, [staff.staffId, staff.clinicianId]));
@@ -232,6 +235,7 @@ export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; c
   const setAf = (k: string, v: unknown) => run(() => { actFor("scribe_visit_field", "setAiDraftVisitField", pid || undefined, sessionId, k, v, actor); setReviewed(false); });
   return (
     <Card className="p-4 space-y-3" data-testid="scribe-draft">
+      {confirmation.dialog}
       <div className="flex flex-wrap items-center gap-2">
         <StatusChip lang="en" state={signed ? "done" : "upnext"} label={signed ? "Signed" : AI_DRAFT_LABEL} aiDraft={!signed} />
         <Badge variant="outline">{isAfbi ? "AFBI contact" : SCRIBE_FORMAT_LABEL[s.format]}</Badge>
@@ -308,7 +312,7 @@ export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; c
                         <div className="mt-1 flex gap-1">
                           <Button size="sm" variant="ghost" onClick={() => setEditing({ id: x.id, text: x.text, mode: "edit" })}>Edit</Button>
                           {x.unsupported && !x.identifying && !x.resolution && <Button size="sm" variant="ghost" onClick={() => setEditing({ id: x.id, text: "", mode: "keep" })}>Keep with reason</Button>}
-                          <Button size="sm" variant="ghost" onClick={() => run(() => actFor("scribe_sentence_delete", "deleteAiSentence", pid || undefined, sessionId, x.id, actor))} data-testid="sentence-delete">Delete</Button>
+                          <Button size="sm" variant="ghost" onClick={() => confirmation.ask({ title: "Delete this draft sentence?", description: "The sentence is excluded from this AI generated draft. Its deletion marker stays in provenance; signed notes stay unchanged. No notification is sent. Simulated AI service.", confirmLabel: "Delete sentence", keepLabel: "Keep sentence", requireReason: true, onConfirm: reason => { confirmedAction("scribe_sentence_delete", "deleteAiSentence", pid || undefined, reason, sessionId, x.id, actor); return true; } })} data-testid="sentence-delete">Delete</Button>
                         </div>
                       ))}
                     </li>

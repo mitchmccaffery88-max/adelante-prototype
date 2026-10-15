@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 import { StatusChip } from "@/components/ui/status-chip";
 import { OpsActionLauncher } from "@/components/ops/OpsActionLauncher";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -211,6 +213,7 @@ function SortHeader({
 }
 
 function ClaimsPage() {
+  const confirmation = useConfirmDialog();
   const { role } = useActingStaff();
   const canWrite = canAccess(role, "billing").level === "write";
   const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
@@ -311,6 +314,7 @@ function ClaimsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
+      {confirmation.dialog}
       <OpsActionLauncher />
       <header className="flex items-center justify-between">
         <div>
@@ -486,7 +490,7 @@ function ClaimsPage() {
                               </Button>
                             )}
                             {c.state === "submitted" && (
-                              <Button size="sm" variant="ghost" onClick={() => { const reason = window.prompt("Denial reason (required):"); if (!reason?.trim()) return; const r = AdelanteEHRExt.transitionClaim(c.id, "denied", { denialReason: reason }); if (r.ok) toast.error("Marked denied"); else toast.error(r.error); }}>
+                              <Button size="sm" variant="ghost" onClick={() => confirmation.ask({ title: "Deny this claim?", description: "The claim is marked denied and its history stays kept. Later corrections use the billing workflow; no new patient notification is sent.", confirmLabel: "Deny claim", keepLabel: "Keep claim", requireReason: true, onConfirm: reason => { confirmedAction("claim_status", "transitionClaim", c.patientId, reason, c.id, "denied", { denialReason: reason }); toast.success("Marked denied"); return true; } })}>
                                 Deny
                               </Button>
                             )}

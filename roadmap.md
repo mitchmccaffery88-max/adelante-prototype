@@ -437,3 +437,10 @@ Rollback before implementation: fa952a0ad756bd3601f70e2fe6fb2e69685a68e6 (planni
 - [ ] Locate and fix 390 admin-content document overflow
 - [ ] Investigate public early taps; fix only with evidence; 988 remains native
 - [ ] Sequential full units/list and exhaustive browsers/axe; screenshots and phase8a2 report
+
+## Phase 8c-2 — Explicitly requested implementation
+Starting point: c3a7fb5d39b7290c94f67f80fc4d708152765ba7. Existing 8a-2 changes remain untouched.
+- [ ] Replace remaining native staff prompts with shared confirmation; preserve member boundaries
+- [ ] Confirm staff deletions; archive uses existing lesson withdrawal, not a new lifecycle
+- [ ] Preserve store refusals, reasons, registry audit parity and role/Part 2 gates
+- [ ] New unit/browser/axe coverage; run suites without existing-test edits; report any stop-rule blocker
