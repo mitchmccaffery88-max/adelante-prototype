@@ -1,4 +1,5 @@
 import { StatusChip } from "@/components/ui/status-chip";
+import { ConfirmDialog } from "@/components/staff/confirm-dialog";
 // §Consent W1 — Legal & consent: versioned form templates.
 // Draft → Legal review → Approved (Counsel: pending) → Published. Editing a
 // published form creates a new version. Every change via runAction.
@@ -25,6 +26,7 @@ export function ConsentFormLibrary() {
   const [edit, setEdit] = useState<FormKey | null>(null);
   const [summary, setSummary] = useState("");
   const [body, setBody] = useState("");
+  const [publishId, setPublishId] = useState<string | null>(null);
   const run = (id: string, via: string, args: unknown[], ok: string) => {
     const r = runAction(id, actor, undefined, { via, args });
     if (r.ok) toast.success(ok); else toast.error(r.reason);
@@ -48,12 +50,21 @@ export function ConsentFormLibrary() {
                 {latest.status === "published" && <Button size="sm" variant="outline" onClick={() => { setEdit(k); setSummary(latest.summary.en); setBody(latest.body.en); }}>New version</Button>}
                 {latest.status === "draft" && <Button size="sm" variant="outline" onClick={() => run("consent_form_author", "submitForLegalReview", [latest.id, storeActor], "Sent to legal review")}>Send to legal review</Button>}
                 {latest.status === "legal_review" && <Button size="sm" variant="outline" onClick={() => run("consent_form_publish", "approveForm", [latest.id, storeActor], "Approved (Counsel: pending)")}>Approve (Counsel: pending)</Button>}
-                {latest.status === "approved" && <Button size="sm" onClick={() => run("consent_form_publish", "publishForm", [latest.id, storeActor], "Published")}>Publish</Button>}
+                {latest.status === "approved" && <Button size="sm" onClick={() => setPublishId(latest.id)}>Publish</Button>}
               </span>
             </li>
           );
         })}
       </ul>
+      <ConfirmDialog open={publishId !== null} onOpenChange={(open) => { if (!open) setPublishId(null); }}
+        title="Publish this consent form?" confirmLabel="Publish consent form" keepLabel="Keep consent form" requireReason
+        description="The new version becomes available to send and the previous version retires. Existing signed copies stay unchanged. Publishing sends no patient notice; another change needs a new version through the same review process."
+        onConfirm={(reason) => {
+          if (!publishId) return false;
+          const r = runAction("consent_form_publish", actor, undefined, { via: "publishForm", args: [publishId, storeActor, reason] });
+          if (r.ok) toast.success("Published"); else toast.error(r.reason);
+          return r.ok;
+        }} />
       <Sheet open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader><SheetTitle>New version</SheetTitle></SheetHeader>

@@ -1,4 +1,6 @@
 import { StatusChip } from "@/components/ui/status-chip";
+import { ConfirmDialog } from "@/components/staff/confirm-dialog";
+import { FormField } from "@/components/staff/form-field";
 import { CircleAlert } from "lucide-react";
 import { ConsentFormLibrary } from "./ConsentFormLibrary";
 import { ContentInventoryTable } from "./ContentInventoryTable";
@@ -30,9 +32,7 @@ import type { ContentActor, ContentResult } from "@/lib/contentPublishing";
 
 function contentAction(actionId: string, input: { actor: ContentActor; [key: string]: unknown }): ContentResult {
   if (!(typeof input.note === "string" && input.note.trim())) {
-    const note = window.prompt("Reason for this content change:");
-    if (!note?.trim()) return { ok: false, reason: "A reason is required." };
-    input = { ...input, note: note.trim() };
+    return { ok: false, reason: "A reason is required." };
   }
   const result = runAction<ContentResult>(actionId, { role: input.actor.role, staffId: input.actor.staffId, staffName: input.actor.name }, undefined, { args: [input] });
   return result.ok ? result.value : { ok: false, reason: result.reason };
@@ -300,17 +300,14 @@ function RemoveControl({
   mayAuthor: boolean;
   mayPublish: boolean;
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const live = isContentLive(entry);
   const blocked = contentRemovalBlockReason(entry.typeId, entry.id);
   const label = live ? "Withdraw" : "Discard draft";
   const allowed = live ? mayPublish : mayAuthor;
-  const run = () => {
-    const note = window.prompt(
-      live
-        ? "Why is this being withdrawn from patients?"
-        : "Why is this draft being discarded?",
-    );
-    if (!note?.trim()) return;
+  const run = (note: string) => {
+    const current = getContentEntry(entry.typeId, entry.id);
+    if (!current || isContentLive(current) !== live) return false;
     const res = live
       ? contentAction("content_withdraw", { typeId: entry.typeId, id: entry.id, actor, note })
       : contentAction("content_discard", { typeId: entry.typeId, id: entry.id, actor, note });
@@ -318,11 +315,13 @@ function RemoveControl({
     else
       toast.success(
         live
-          ? "Withdrawn. Patients no longer see this; its history is kept."
+          ? "Managed version withdrawn; history kept. A shipped version may reappear."
           : "Draft discarded.",
       );
+    return res.ok;
   };
   return (
+    <>
     <Button
       type="button"
       size="sm"
@@ -330,11 +329,17 @@ function RemoveControl({
       className="text-foreground"
       title={blocked ?? undefined}
       disabled={!allowed || !!blocked || entry.status === "pending_review"}
-      onClick={run}
+      onClick={() => setConfirmOpen(true)}
       data-testid={`remove-${entry.id}`}
     >
       {label}
     </Button>
+    <ConfirmDialog open={confirmOpen} onOpenChange={setConfirmOpen} requireReason
+      title={live ? "Withdraw this content?" : "Discard this draft?"}
+      confirmLabel={live ? "Withdraw content" : "Discard draft"} keepLabel={live ? "Keep content" : "Keep draft"}
+      description={live ? "The managed version stops being served and its history is kept. A shipped baseline may reappear instead. A future change needs publishing again; no new notification is sent." : "This never-published draft and its revision history will be permanently removed. It cannot be undone and no notification is sent."}
+      onConfirm={run} />
+    </>
   );
 }
 
@@ -562,15 +567,7 @@ function ManageTab({ version }: { version: number }) {
                 ))}
               </ul>
             )}
-            <div className="space-y-1">
-              <Label className="text-xs">Reason (required)</Label>
-              <Textarea
-                rows={2}
-                aria-label="Content change reason"
-                value={submitNote}
-                onChange={(e) => setSubmitNote(e.target.value)}
-              />
-            </div>
+            <FormField reason required multiline accessibleName="Content change reason" value={submitNote} onChange={setSubmitNote} />
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={save} disabled={!mayAuthor}>
                 Save draft
@@ -639,7 +636,17 @@ function ReviewTab({ version }: { version: number }) {
   const mayPublish = canPublishContent(role);
   const queue = useMemo(() => contentReviewQueue().filter((e) => contentVisibleToStaff(role, e.typeId, e.body)), [version, role]);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState<{ typeId: ContentTypeId; id: string; action: "content_approve" | "content_return" } | null>(null);
   const actor = { staffId: staffId ?? undefined, name: staffName, role };
+  const review = (action: "content_approve" | "content_return", typeId: ContentTypeId, id: string, note: string) => {
+    const current = getContentEntry(typeId, id);
+    if (!current || !contentVisibleToStaff(role, typeId, current.body)) return false;
+    const d = contentType(typeId);
+    const res = contentAction(action, { typeId, id, actor, note: note.trim(), validate: d.validate });
+    if (!res.ok) toast.error(res.reason);
+    else toast.success(action === "content_approve" ? `Published — patients can see "${displayTitle(d, id, current.body)}" now.` : "Sent back to the author.");
+    return res.ok;
+  };
 
   return (
     <Card className="p-5" data-testid="content-review-queue">
@@ -687,15 +694,8 @@ function ReviewTab({ version }: { version: number }) {
                   disabled={!mayPublish}
                   data-testid={`approve-${e.id}`}
                   onClick={() => {
-                    const res = contentAction("content_approve", {
-                      typeId: e.typeId,
-                      id: e.id,
-                      actor,
-                      note: note.trim() || undefined,
-                      validate: d.validate,
-                    });
-                    if (!res.ok) toast.error(res.reason);
-                    else toast.success(`Published — patients can see "${displayTitle(d, e.id, e.body)}" now.`);
+                    if (!note.trim()) setPending({ typeId: e.typeId, id: e.id, action: "content_approve" });
+                    else review("content_approve", e.typeId, e.id, note);
                   }}
                 >
                   Publish
@@ -706,14 +706,8 @@ function ReviewTab({ version }: { version: number }) {
                   variant="outline"
                   disabled={!mayPublish}
                   onClick={() => {
-                    const res = contentAction("content_return", {
-                      typeId: e.typeId,
-                      id: e.id,
-                      actor,
-                      note,
-                    });
-                    if (!res.ok) toast.error(res.reason);
-                    else toast.success("Sent back to the author.");
+                    if (!note.trim()) setPending({ typeId: e.typeId, id: e.id, action: "content_return" });
+                    else review("content_return", e.typeId, e.id, note);
                   }}
                 >
                   Send back for changes
@@ -726,6 +720,11 @@ function ReviewTab({ version }: { version: number }) {
           <li className="text-sm text-muted-foreground">Nothing is waiting for review.</li>
         )}
       </ul>
+      <ConfirmDialog open={pending !== null} onOpenChange={(open) => { if (!open) setPending(null); }} requireReason
+        title={pending?.action === "content_return" ? "Send this content back?" : "Publish this content?"}
+        confirmLabel={pending?.action === "content_return" ? "Send back for changes" : "Publish content"} keepLabel="Keep content"
+        description={pending?.action === "content_return" ? "The draft returns to its author for changes. It remains unpublished and can be sent for review again; no new notification is sent." : "This version becomes available to patients while its revision history stays kept. Existing completions do not change. Withdrawal is a separate action; publishing sends no new notification."}
+        onConfirm={(reason) => pending ? review(pending.action, pending.typeId, pending.id, reason) : false} />
     </Card>
   );
 }

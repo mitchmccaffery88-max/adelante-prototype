@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ConfirmDialog } from "@/components/staff/confirm-dialog";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -33,6 +34,7 @@ function LocationCalendarsPage() {
   const rows = useEhrExt(() => listSiteCalendars());
   const [openSite, setOpenSite] = useState<string | null>(null);
   const [form, setForm] = useState({ date: "", name: "", reason: "" });
+  const [removeId, setRemoveId] = useState<string | null>(null);
   if (!canReadSiteCalendar(me.role)) return <div className="p-6 text-sm text-muted-foreground">Location calendars aren't available for your role.</div>;
   const edit = canEditSiteCalendar(me.role);
   const current = rows.find((r) => r.site.id === openSite);
@@ -82,10 +84,17 @@ function LocationCalendarsPage() {
             {current?.calendar?.closedDays.filter((d) => !d.removedAt && d.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date)).map((d) => (
               <li key={d.id} className="flex items-center justify-between py-2" data-testid="closed-day-row">
                 <span>{d.date} · {d.name} {d.kind === "closure" && <Badge variant="outline" className="ml-1">Closure</Badge>}</span>
-                {edit && <Button size="sm" variant="ghost" onClick={() => { const reason = window.prompt("Reason for removing this closed day?"); if (reason) run("calendar_site_closed_remove", "removeSiteClosedDay", { siteId: current.site.id, closedDayId: d.id, reason }, "Closed day removed"); }}>Remove</Button>}
+                {edit && <Button size="sm" variant="ghost" onClick={() => setRemoveId(d.id)}>Remove</Button>}
               </li>
             ))}
           </ul>
+          <ConfirmDialog open={removeId !== null} onOpenChange={(open) => { if (!open) setRemoveId(null); }}
+            title="Remove this closed day?" confirmLabel="Remove closed day" keepLabel="Keep closed day" requireReason
+            description="This date will follow the location's usual open hours again. The removal stays in calendar history; restoring a closure needs a new entry. Visits are not automatically cancelled or rescheduled, and no new notification is sent."
+            onConfirm={(reason) => {
+              if (!current || !removeId || !edit) return false;
+              return run("calendar_site_closed_remove", "removeSiteClosedDay", { siteId: current.site.id, closedDayId: removeId, reason }, "Closed day removed");
+            }} />
         </SheetContent>
       </Sheet>
     </div>
