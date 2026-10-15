@@ -427,3 +427,13 @@ Rollback: 1a622225b55f2e2425e4cc843d54696715f3e86f
 - [ ] STOPPED awaiting Mitch: existing cfProxyMode.spec.ts:37 timed out; full browsers 9 pass, 1 fail, 2 interrupted, 80 unstarted. Candidate line in report; no edit applied.
 - [ ] Remaining plan verification: all browsers, touch/focus-return and additional adapter edge cases after checkpoint approval
 Rollback: 97668bd969a632fe3706613359bb1d448f4ead27. No 8c-2 work.
+
+## Phase 8a-2 — Approved evidence-first checks
+Rollback before implementation: fa952a0ad756bd3601f70e2fe6fb2e69685a68e6 (planning: e231f0dd8e26acd460acee64ee0f1535480d687c).
+- [ ] Consent overlap regression FIRST at 390/768/1280; fix only if reproduced
+- [ ] Staff Needs you / Waiting on others / Today order and persistent scoped crisis banner
+- [ ] Prove patient/advocate ledger denial before moving /consent; stop migration on access failure
+- [ ] Shell + New audit parity, 768 layout and true coarse 48px targets
+- [ ] Locate and fix 390 admin-content document overflow
+- [ ] Investigate public early taps; fix only with evidence; 988 remains native
+- [ ] Sequential full units/list and exhaustive browsers/axe; screenshots and phase8a2 report
