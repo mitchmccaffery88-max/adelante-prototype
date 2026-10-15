@@ -220,8 +220,12 @@ export function getStructuredPlan(patientId: string): StructuredPlan {
   }
   const p = AdelanteEHR.getPatient(patientId);
   for (const g of p?.goals ?? []) {
+    // Draft — pending clinical sign-off: an accepted asam_signed suggestion is a clinician's SUD goal.
+    const asamAccepted = (p?.suggestedGoals ?? []).some((sg) => sg.goalId === g.id && sg.reason === "asam_signed");
     const existing = plan.goals.find((x) => x.legacyGoalId === g.id);
     if (existing) {
+      // acceptSuggestedGoal links the suggestion after the goal is first migrated.
+      if (asamAccepted) Object.assign(existing, { sud: true, origin: "clinician" as const });
       // Old goal list stays the source of truth for migrated goal status.
       if (existing.status !== "closed") existing.status = g.status === "done" ? "met" : "active";
       continue;
@@ -237,10 +241,11 @@ export function getStructuredPlan(patientId: string): StructuredPlan {
       patientText: { en: g.text, es: g.text },
       status: g.status === "done" ? "met" : "active",
       // A goal accepted from an ASAM-signed suggestion is Part 2 content.
-      sud: (p?.suggestedGoals ?? []).some((sg) => sg.goalId === g.id && sg.reason === "asam_signed"),
+      sud: asamAccepted,
       createdAt: g.createdAt,
       createdBy: g.createdBy ?? "Migrated goal",
       legacyGoalId: g.id,
+      ...(asamAccepted ? { origin: "clinician" as const } : {}),
     });
   }
   return plan;

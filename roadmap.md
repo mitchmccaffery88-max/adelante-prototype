@@ -409,3 +409,4 @@ Validation report: docs/phase5a-report.md. Build green; 308 unit files / 2,570 t
 - [ ] Build 5b missing Spanish drafting is not started; await Mitch's separate approval, source gap list includes audience/dynamic-review caveats.
 
 - [x] Phase 6 emotion check-in complete (SUD goal origin fix, tests, exports, ES 390px screenshot)
+- [x] Phase 6 follow-up: origin "clinician" on accepted ASAM goals and asam_signed legacy goals (Draft — pending clinical sign-off); NTP goal SUD link open for Dr. Bagga
