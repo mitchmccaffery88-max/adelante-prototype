@@ -21,7 +21,7 @@ describe("patient and advocate navigation correction", () => {
   });
 
   it("keeps demo controls sticky and prompts before scenario selection", () => {
-    expect(demoBar).toContain('className="sticky top-0');
+    expect(demoBar).toContain('className={cn("sticky top-0');
     expect(switcher).toContain('"choose a scenario"');
   });
 });
