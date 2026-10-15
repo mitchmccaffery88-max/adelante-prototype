@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { AdelanteEHR, asamCosignOwnership, demoScenarioPatientId } from "@/lib/ehr";
 import { ASAM_DIMENSIONS } from "@/lib/asam";
 import { signAsamAssessment } from "@/lib/asamFlow";
-import { asamCosignRows, myAsamWork, roleSeesAsamRow } from "@/lib/asamReporting";
+import { asamAccessMode, asamCosignRows, myAsamWork, roleSeesAsamRow } from "@/lib/asamReporting";
 import { STAFF_ROLES, getStaffMember, type StaffRole } from "@/lib/roles";
 
 const AUTHOR = { staffId: "s-sudc1", name: "Renee Castillo", role: "sud_counselor" as StaffRole };
@@ -21,7 +21,7 @@ let rolesBefore: StaffRole[] = [];
 beforeAll(() => {
   patientId = demoScenarioPatientId("sud_consented")!;
   const p = AdelanteEHR.getPatient(patientId)!;
-  rolesBefore = STAFF_ROLES.map(r => r.key).filter(r => roleSeesAsamRow(r, p));
+  rolesBefore = STAFF_ROLES.map(r => r.key).filter(r => asamAccessMode(r) === "full" && roleSeesAsamRow(r, p));
   const draft = AdelanteEHR.saveAsamDraft(patientId, {
     dimensions: ASAM_DIMENSIONS.map(d => ({ key: d.key, documentation: "Fixture documentation.", rating: 1 as const })),
     recommendedLevel: "outpatient",
@@ -60,7 +60,7 @@ describe("8a-2 ASAM draft awaiting co-signature", () => {
     expect(waitingIds).not.toContain("my-work-asam");
   });
 
-  it("is visible to exactly the roles that already saw this patient's ASAM rows", () => {
+  it("is visible to exactly the roles that already saw this patient's named ASAM rows", () => {
     const rolesSeeing = STAFF_ROLES.map(r => r.key).filter(r => (asamCosignRows(r) ?? []).some(c => c.asamId === asamId));
     expect(rolesSeeing).toEqual(rolesBefore);
     expect(rolesSeeing).not.toContain("clinical_coordinator");
