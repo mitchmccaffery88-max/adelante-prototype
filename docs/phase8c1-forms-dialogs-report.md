@@ -61,3 +61,37 @@ Tests: new `src/components/__tests__/staffFormField.test.tsx`, `staffConfirmDial
 Documentation: `AGENTS.md`, `roadmap.md`, this report and 18 screenshots. Existing browser runs also regenerated eight tracked `e2e/screenshots/*` files (access bell/compliance/peer chart, Adel history shared/staff, advocate active EN, calendar coordinator/Luis ES); these are test artifacts, not intentional application edits.
 
 No changes to canAuthorContent/canPublishContent, clinical/Spanish gates, Part 2 rules, StatusChip mappings, contentPublishing, workingCalendar, runAction, chartActions, public/member UI or global form/dialog primitives.
+
+## Continuation (15 October 2026, 15:35 UTC) — stopped again at an existing-test checkpoint
+
+### cfProxyMode.spec.ts:37 investigation (no test line changed)
+- Current HEAD (5066dbc), spec run alone, 1 worker: run 1 pass (2/2), run 2 pass (2/2), run 3 pass (2/2).
+- Rollback 97668bd in a temporary detached worktree on port 8090 (working branch untouched; worktree removed after): run 1 pass, run 2 pass, run 3 pass.
+- No "element intercepts pointer events" line in any run; the original failure log only reported the 30 s click timeout, and no line naming an intercepting element was preserved. No leftover dialog/portal was observed.
+- Conclusion: not reproducible at either commit; the earlier timeout appeared only under full-suite load. Per rule 2(d) no application fix was made. It passed in the full run below (both tests).
+
+### RemoveControl
+Stays mounted in History/Audit (Mitch approved). Permissions unchanged.
+
+### New coverage finished
+- `src/components/__tests__/staffDialogs8c1Coverage.test.tsx` (4 tests): Escape closes with no action and focus returns to the trigger; real integrity refusal (lesson used in a live Journey) keeps the dialog open, content live and no success event; withdrawing an edited shipped lesson removes the published edit so the shipped baseline reappears, with the reason in revision history; valid review publish via `content_publish` with one success event and the reviewer's reason.
+- `e2e/staffDialogs8c1.spec.ts` coarse-pointer test: on an emulated touch phone (pointer: coarse) the Keep/Publish buttons and the reason box compute to at least 48px. Note: the on-screen box measured 46px because the emulated mobile page renders slightly zoomed out at 390px on /admin-content — a possible width overflow on that page, not investigated (outside 8c-1).
+
+### Totals
+- Units: **2,642 passed / 2,642 vitest-listed**, 319 files, none skipped.
+- Full browser suite (24 files, run to completion): **82 passed, 11 failed, 93 listed**. All 4 new dialog tests passed; both consentWorkflow tests passed (:32 and :114); both cfProxyMode tests passed.
+
+### STOP — existing failures (all public website; 8c-1 changed no public file)
+Re-run alone: same 11 fail, so not load-related.
+- `e2e/publicWebsite.spec.ts:17` (en, es) — language switch button click times out (30 s).
+- `e2e/publicWebsite.spec.ts:78` (about, team, partners, who-its-for) — `/#about` is not redirected to its page; URL stays `http://localhost:8080/#about`.
+- `e2e/publicWebsite.spec.ts:86`/`:89` (from /, /about, /team) — homepage anchors: click/alignment predicate times out.
+- `e2e/publicWebsite.spec.ts:102` — mobile menu click times out.
+- `e2e/websitePolish.spec.ts:12` (/) — axe "No elements found for include".
+These passed in the 8a-1 run. `git diff 97668bd -- src` touches no public file. Pattern suggests the public homepage is not hydrating its interactive parts in the test browser. No proposed test-line change: these look like an application/environment problem to diagnose, which Mitch must approve.
+
+### e2e/screenshots
+The eight regenerated files are written by existing specs on every run and have been committed by earlier runs, so they were left as normal suite output.
+
+### Still unverified
+Public website failures above; 768px tablet layout of the dialogs beyond screenshots; possible 390px overflow on /admin-content on mobile emulation.
