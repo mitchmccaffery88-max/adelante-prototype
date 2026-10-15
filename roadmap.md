@@ -410,3 +410,11 @@ Validation report: docs/phase5a-report.md. Build green; 308 unit files / 2,570 t
 
 - [x] Phase 6 emotion check-in complete (SUD goal origin fix, tests, exports, ES 390px screenshot)
 - [x] Phase 6 follow-up: origin "clinician" on accepted ASAM goals and asam_signed legacy goals (Draft — pending clinical sign-off); NTP goal SUD link open for Dr. Bagga
+
+## Phase 8a-1 — Staff shell foundation (approved Oct 15)
+Rollback: 1a622225b55f2e2425e4cc843d54696715f3e86f
+- [ ] Staff-only shell, compact density, 240/56px sidebar, mobile sheet, safe Quick jump and crisis count
+- [ ] Existing New launcher parity with one shell trigger; staff-only neutral demo controls and overlays
+- [ ] Only three approved assertion replacements; add foundation tests
+- [ ] Full units/list count, all browser specs/axe, requested screenshots and report
+- [ ] Preserve consent/member/public/dashboards; do not start 8a-2/8b/8c
