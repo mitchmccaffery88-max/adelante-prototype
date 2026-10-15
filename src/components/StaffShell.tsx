@@ -38,7 +38,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
           <img src="/brand/adelante-compact-dark.svg" alt="Adelante" className="hidden h-8 w-auto dark:block" />
         </Link>
         <Popover open={quickOpen} onOpenChange={setQuickOpen}><PopoverTrigger asChild><Button variant="outline" size="icon" aria-label="Quick jump"><Search /></Button></PopoverTrigger>
-          <PopoverContent className="w-[min(24rem,90vw)] p-2"><Input aria-label="Quick jump to a surface" placeholder="Quick jump…" value={query} onChange={e => setQuery(e.target.value)} />
+          <PopoverContent className="w-[min(24rem,90vw)] p-2"><Input aria-label="Search staff surfaces" placeholder="Quick jump…" value={query} onChange={e => setQuery(e.target.value)} />
             <nav aria-label="Quick jump results" className="mt-2 max-h-80 overflow-y-auto">{matches.map(e => <Button key={e.id} variant="ghost" asChild className="h-auto w-full justify-start whitespace-normal text-left"><Link to={e.to} search={(e.search ?? {}) as never} onClick={() => { setQuickOpen(false); setQuery(""); }}>{e.label}</Link></Button>)}{!matches.length && <p className="p-2 text-sm text-ink-muted">No matching surfaces.</p>}</nav>
           </PopoverContent>
         </Popover>

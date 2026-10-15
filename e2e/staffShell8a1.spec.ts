@@ -52,7 +52,7 @@ test.describe("8a-1 staff shell", () => {
     await ready(page);
     await page.getByRole("button", { name: "Quick jump" }).focus();
     await page.keyboard.press("Enter");
-    const input = page.getByLabel("Quick jump to a surface");
+    const input = page.getByLabel("Search staff surfaces");
     await expect(input).toBeVisible();
     await input.fill("zzzz-no-match");
     await expect(page.getByText("No matching surfaces.")).toBeVisible();
