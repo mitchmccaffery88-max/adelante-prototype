@@ -95,3 +95,10 @@ The eight regenerated files are written by existing specs on every run and have 
 
 ### Still unverified
 Public website failures above; 768px tablet layout of the dialogs beyond screenshots; possible 390px overflow on /admin-content on mobile emulation.
+
+## Public-website failure investigation (Oct 15)
+- Reproduction at current HEAD (c54921c): `publicWebsite.spec.ts` + `websitePolish.spec.ts` passed 14/14 with 1 worker and 14/14 with the normal 3 workers. Because HEAD could not reproduce the failure, the older-commit comparison (97668bd, 0cc7ce73) was not run.
+- Homepage evidence (Playwright on `/`): no hydration-mismatch errors, no uncaught page errors, no failed network requests; only a dev-only TanStack code-split warning for `/shift-count`. EN/ES toggle and mobile menu respond. In one scratch run a click made right after load didn't register (not reproduced), which fits a click arriving before the page was interactive under load, not a time-dependent mismatch.
+- Conclusion: the earlier 11 failures did not reproduce. No public-website application change was made.
+- "1h 60m left" fix: new `hoursMinutesLeft()` in `src/lib/escalations.ts` rounds to whole minutes before splitting hours/minutes; used by the escalation countdown and the clinician workspace crisis countdown (`src/lib/clinicianWorkspace.ts`). Tests: `src/lib/__tests__/hoursMinutesLeft.test.ts` (2). No homepage hydration browser test was added because no hydration error exists to guard against yet.
+- Totals after the fix: units 2,644/2,644 passed (`vitest list` 2,644); browsers including axe 93/93 (24 spec files, run in two halves to fit the 10-minute limit). No existing test was changed, skipped or retimed.
