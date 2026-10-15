@@ -419,3 +419,9 @@ Rollback: 1a622225b55f2e2425e4cc843d54696715f3e86f
 - [ ] Full units/list count, all browser specs/axe, requested screenshots and report
 - [ ] Preserve consent/member/public/dashboards; do not start 8a-2/8b/8c
 - [ ] STOPPED: userNavigationShell.test.ts:24 needs Mitch's decision; 2,606 passed / 2,607 listed, build OK. No browser suite or new foundation tests after stop. See docs/phase8a1-staff-shell-report.md.
+
+## Phase 8c-1 — Approved staff fields and dialogs (15 Oct)
+- [ ] Staff FormField and ConfirmDialog; CMS/calendar adapters; required consent-publish reason
+- [ ] Only two approved existing test edits; new unit/browser/axe coverage
+- [ ] Full unit/list totals, every browser, 18 light/dark screenshots and report
+Rollback: 97668bd969a632fe3706613359bb1d448f4ead27. No 8c-2 work.
