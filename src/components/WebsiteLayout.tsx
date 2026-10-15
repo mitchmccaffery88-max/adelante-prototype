@@ -1,3 +1,4 @@
+import { useEarlyTapReplay } from "@/lib/earlyTap";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ArrowUp, Phone, ShieldCheck, User } from "lucide-react";
@@ -11,6 +12,7 @@ import "./website.css";
 /** One public shell; application branding and navigation remain separate. */
 export function WebsiteLayout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useI18n();
+  useEarlyTapReplay();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const shellRef = useRef<HTMLDivElement>(null);
   const crisisRef = useRef<HTMLDivElement>(null);
@@ -58,8 +60,8 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
           <WebsiteNavigation mobile activeSection={activeSection} />
           <div className="hidden xl:flex items-center gap-1 text-sm text-muted-foreground"><ShieldCheck aria-hidden="true" className="h-4 w-4 text-primary" />HIPAA · 42 CFR Part 2</div>
           <div className="hidden sm:flex rounded-full bg-secondary p-0.5">
-            <Button variant={lang === "en" ? "default" : "ghost"} onClick={() => setLang("en")} aria-label="Switch language to English" aria-pressed={lang === "en"} className="min-h-12 min-w-12 rounded-full px-2">EN</Button>
-            <Button variant={lang === "es" ? "default" : "ghost"} onClick={() => setLang("es")} aria-label="Cambiar idioma a español" aria-pressed={lang === "es"} className="min-h-12 min-w-12 rounded-full px-2">ES</Button>
+            <Button variant={lang === "en" ? "default" : "ghost"} data-early-tap="lang-en" onClick={() => setLang("en")} aria-label="Switch language to English" aria-pressed={lang === "en"} className="min-h-12 min-w-12 rounded-full px-2">EN</Button>
+            <Button variant={lang === "es" ? "default" : "ghost"} data-early-tap="lang-es" onClick={() => setLang("es")} aria-label="Cambiar idioma a español" aria-pressed={lang === "es"} className="min-h-12 min-w-12 rounded-full px-2">ES</Button>
           </div>
           <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex min-h-12 min-w-12"><Link to="/auth" aria-label={t("navSignIn")}><User aria-hidden="true" className="h-5 w-5" /></Link></Button>
           <Link to="/auth" className="hidden md:inline-flex text-sm text-primary">{t("navSignIn")}</Link>
