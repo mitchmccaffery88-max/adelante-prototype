@@ -9,6 +9,10 @@ async function actAs(page: Page, role: string, id: string) {
   }, [role, id] as const);
 }
 
+async function ready(page: Page) {
+  await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante, null, { timeout: 60_000 });
+}
+
 const STAFF_PATHS = ["/my-work", "/clinician", "/record/p1", "/admin-content"];
 
 test.describe("8a-1 staff shell", () => {
@@ -45,6 +49,7 @@ test.describe("8a-1 staff shell", () => {
 
   test("quick jump opens with the keyboard and lists permitted surfaces", async ({ page }) => {
     await page.goto("/my-work");
+    await ready(page);
     await page.getByRole("button", { name: "Quick jump" }).focus();
     await page.keyboard.press("Enter");
     const input = page.getByLabel("Quick jump to a surface");
@@ -65,6 +70,7 @@ test.describe("8a-1 staff shell", () => {
   test("phone: navigation opens as a sheet from the header menu", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/my-work");
+    await ready(page);
     await page.getByRole("button", { name: "Open staff navigation" }).click();
     await expect(page.getByTestId("staff-navigation-sheet")).toBeVisible();
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -73,6 +79,7 @@ test.describe("8a-1 staff shell", () => {
 
   test("chart + New opens the existing launcher from the shell slot", async ({ page }) => {
     await page.goto("/record/p1");
+    await ready(page);
     const slot = page.getByTestId("staff-new-slot");
     await expect(slot.getByRole("button").first()).toBeVisible();
     await slot.getByRole("button").first().click();
