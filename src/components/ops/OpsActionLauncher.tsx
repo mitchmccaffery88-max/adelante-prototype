@@ -1,3 +1,4 @@
+import { StaffNewTrigger } from "@/components/StaffDensity";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Turn 6 — "+ New" for billing, claims coordinator and sys_admin. Built only
 // from CHART_ACTIONS entries marked `opsMenu`; every action runs through
@@ -88,9 +89,9 @@ export function OpsActionLauncher() {
   return (
     <>
       <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-        <PopoverTrigger asChild>
-          <Button data-testid="ops-new-button" className="fixed bottom-24 right-4 z-50 h-12 rounded-full px-5 shadow-lg sm:right-6"><Plus className="h-5 w-5" /> New</Button>
-        </PopoverTrigger>
+        <StaffNewTrigger><PopoverTrigger asChild>
+          <Button data-testid="ops-new-button" className="staff-new-button w-full justify-start"><Plus className="h-5 w-5" /><span>New</span></Button>
+        </PopoverTrigger></StaffNewTrigger>
         <PopoverContent align="end" side="top" className="max-h-[70vh] w-80 overflow-y-auto p-2" data-testid="ops-add-menu">
           {groups.filter(([, l]) => l.length).map(([title, list]) => (
             <div key={title} className="mb-2">

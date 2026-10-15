@@ -3,9 +3,11 @@
 // Renders whatever `navSections.ts` says the acting role may see. There is no
 // role logic in this file on purpose: a role with `none` on a gate never gets
 // the entry, exactly like the record drawer omits chart sections.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useStaffNavGroups } from "@/lib/navSections";
 import { useActingStaff } from "@/lib/roles";
@@ -33,7 +35,7 @@ function writeStored(key: string, value: string) {
   }
 }
 
-export function StaffNavSidebar() {
+export function StaffNavSidebar({ mobile = false, onNavigate, newSlot }: { mobile?: boolean; onNavigate?: () => void; newSlot?: ReactNode }) {
   const groups = useStaffNavGroups();
   const { role } = useActingStaff();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -46,13 +48,7 @@ export function StaffNavSidebar() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(COLLAPSE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
+  const [collapsed, setCollapsed] = useState(false);
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -107,6 +103,7 @@ export function StaffNavSidebar() {
   // during render would make the server-rendered sidebar disagree with the
   // first client render (hydration mismatch).
   useEffect(() => {
+    setCollapsed(!mobile && readStored(COLLAPSE_KEY) === "1");
     const storedQuery = readStored(QUERY_KEY);
     if (storedQuery) setQuery(storedQuery);
     const storedGroups = readStored(GROUPS_KEY);
@@ -141,7 +138,8 @@ export function StaffNavSidebar() {
     if (ev.key === "Enter" && firstMatch) {
       ev.preventDefault();
       updateQuery("");
-      navigate({ to: firstMatch.to });
+      navigate({ to: firstMatch.to, search: (firstMatch.search ?? {}) as never });
+      onNavigate?.();
     }
   };
 
@@ -219,13 +217,14 @@ export function StaffNavSidebar() {
       aria-label="Staff navigation"
       data-collapsed={collapsed ? "true" : "false"}
       className={cn(
-        "hidden md:flex shrink-0 flex-col border-r bg-secondary/30 transition-all",
-        collapsed ? "w-14" : "w-60",
+        "staff-sidebar shrink-0 flex-col border-r border-line bg-surface-sunk transition-all",
+        mobile ? "flex w-full" : "hidden md:flex",
+        !mobile && (collapsed ? "w-14" : "w-60"),
       )}
     >
       <div className="flex items-center gap-2 border-b px-2 py-2">
-        <button
-          type="button"
+        {!mobile && <Button
+          type="button" variant="ghost" size="icon"
           onClick={toggle}
           aria-label={collapsed ? "Expand staff navigation" : "Collapse staff navigation"}
           aria-expanded={!collapsed}
@@ -236,14 +235,15 @@ export function StaffNavSidebar() {
           ) : (
             <PanelLeftClose className="h-4 w-4" />
           )}
-        </button>
+        </Button>}
         {!collapsed && (
-          <span className="truncate text-[11px] uppercase tracking-wider text-muted-foreground">
+          <span className="truncate text-sm uppercase tracking-wider text-muted-foreground">
             {roleLabel}
           </span>
         )}
       </div>
 
+      <div className="staff-new-slot px-2 py-2">{newSlot}</div>
       {!collapsed && (
         <div className="border-b px-2 py-2">
           <div className="relative">
@@ -289,19 +289,19 @@ export function StaffNavSidebar() {
           return (
           <div key={g.group} className="mb-4 last:mb-0" data-group={g.group} data-open={open ? "true" : "false"}>
             {!collapsed && (
-              <button
+              <Button variant="ghost"
                 type="button"
                 onClick={() => toggleGroup(g.group, defaultOpen)}
                 aria-expanded={open}
                 data-nav-focusable="true"
                 data-group-header={g.group}
-                className="flex w-full items-center justify-between gap-2 rounded px-2 pb-1 pt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                className="flex w-full items-center justify-between gap-2 rounded px-2 pb-1 pt-1 text-sm font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
                 <span className="truncate">{g.label}</span>
                 <ChevronDown
                   className={cn("h-3 w-3 shrink-0 transition-transform", !open && "-rotate-90")}
                 />
-              </button>
+              </Button>
             )}
             {open && (
             <ul className="space-y-0.5">
@@ -310,24 +310,26 @@ export function StaffNavSidebar() {
                 const Icon = e.icon;
                 return (
                   <li key={e.id}>
-                    <Link
+                    <Tooltip><TooltipTrigger asChild><Link
                       to={e.to}
                       search={(e.search ?? {}) as never}
+                      onClick={onNavigate}
+                      aria-label={collapsed ? e.label : undefined}
                       title={collapsed ? `${e.label} — ${e.desc}` : e.desc}
                       data-nav-id={e.id}
                       data-nav-focusable="true"
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
+                        "relative flex min-h-10 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
                         collapsed && "justify-center px-0",
                         active
-                          ? "bg-navy text-navy-foreground"
-                          : "text-foreground/75 hover:bg-secondary hover:text-foreground",
+                          ? "bg-path-soft text-path staff-nav-active"
+                          : "text-ink-muted hover:bg-path-faint hover:text-ink",
                       )}
                     >
                       <Icon className={cn("h-4 w-4 shrink-0", !active && "text-teal")} />
                       {!collapsed && <span className="truncate">{e.label}</span>}
-                    </Link>
+                    </Link></TooltipTrigger>{collapsed && <TooltipContent side="right">{e.label}</TooltipContent>}</Tooltip>
                   </li>
                 );
               })}

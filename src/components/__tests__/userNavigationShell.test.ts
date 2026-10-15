@@ -16,8 +16,8 @@ describe("patient and advocate navigation correction", () => {
   });
 
   it("keeps staff navigation off patient and advocate pages", () => {
-    expect(shell).toContain("{isStaffSurface && <DropdownMenu>");
-    expect(shell).toContain("{isStaffSurface && (");
+    expect(shell).toContain(") : showStaffShell ? (");
+    expect(shell).toContain("<StaffShell>");
   });
 
   it("keeps demo controls sticky and prompts before scenario selection", () => {

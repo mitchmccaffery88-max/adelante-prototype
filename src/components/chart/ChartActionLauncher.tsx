@@ -1,3 +1,4 @@
+import { StaffNewTrigger } from "@/components/StaffDensity";
 import { ClinicMedOrderForm, SpecimenForm, TriageForm, NtpReferralForm, ExternalNtpForm } from "@/components/nursing/NursingSection";
 import { CarePartnersSection } from "@/components/carePartners/CarePartnersSection";
 import { openBookVisit } from "@/lib/bookingFlow";
@@ -230,15 +231,15 @@ export function ChartActionLauncher({
   return (
     <>
       <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-        <PopoverTrigger asChild>
+        <StaffNewTrigger><PopoverTrigger asChild>
           <Button
             data-testid="chart-new-button"
-            className="fixed bottom-16 right-4 z-50 sm:right-6 h-12 rounded-full px-5 shadow-lg print:hidden"
+            className="staff-new-button w-full justify-start print:hidden"
             aria-label="New — add to this chart"
           >
-            <Plus className="h-5 w-5" /> New
+            <Plus className="h-5 w-5" /><span>New</span>
           </Button>
-        </PopoverTrigger>
+        </PopoverTrigger></StaffNewTrigger>
         <PopoverContent align="end" side="top" className="w-80 max-h-[70vh] overflow-y-auto p-2" data-testid="chart-add-menu">
           <p className="px-2 pb-1 text-sm font-medium text-navy">Add to this chart</p>
           <button
