@@ -14,6 +14,7 @@ import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StaffDensityProvider, StaffNewProvider } from "@/components/StaffDensity";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function StaffShell({ children }: { children: ReactNode }) {
   const actor = useActingStaff();
@@ -28,7 +29,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
   const hasLauncher = pathname.startsWith("/record/") || ["/clinician", "/admin", "/admin-claims", "/billing"].includes(pathname);
   const matches = groups.flatMap(g => g.entries).filter(e => `${e.label} ${e.desc}`.toLowerCase().includes(query.trim().toLowerCase()));
 
-  return <StaffDensityProvider><StaffNewProvider target={newTarget}>
+  return <StaffDensityProvider><TooltipProvider delayDuration={300}><StaffNewProvider target={newTarget}>
     <div data-density="compact" data-testid="staff-shell" className="flex min-h-dvh flex-col bg-canvas text-ink">
       <header data-testid="staff-shell-header" className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:gap-3 sm:px-4">
         <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open staff navigation" onClick={() => setMobileOpen(true)}><Menu /></Button>
@@ -56,5 +57,5 @@ export function StaffShell({ children }: { children: ReactNode }) {
       </div>
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}><SheetContent side="left" className="w-[min(20rem,90vw)] bg-surface-sunk p-0 pt-12" data-testid="staff-navigation-sheet"><SheetTitle className="sr-only">Staff navigation</SheetTitle><StaffNavSidebar mobile onNavigate={() => setMobileOpen(false)} newSlot={hasLauncher ? <Button className="w-full" onClick={() => { setMobileOpen(false); newTarget?.querySelector<HTMLButtonElement>("button")?.click(); }}>+ New</Button> : undefined} /></SheetContent></Sheet>
     </div>
-  </StaffNewProvider></StaffDensityProvider>;
+  </StaffNewProvider></TooltipProvider></StaffDensityProvider>;
 }
