@@ -734,7 +734,8 @@ function ReviewTab({ version }: { version: number }) {
 // ---------------------------------------------------------------------------
 
 function HistoryTab({ version }: { version: number }) {
-  const { role } = useActingStaff();
+  const { role, staffId, staffName } = useActingStaff();
+  const actor = { role, staffId: staffId ?? undefined, name: staffName };
   const all = useMemo(() => listContent().filter((e) => contentVisibleToStaff(role, e.typeId, e.body)), [version, role]);
   return (
     <Card className="p-5">
@@ -753,6 +754,7 @@ function HistoryTab({ version }: { version: number }) {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium text-foreground">{displayTitle(d, e.id, e.body)}</span>
                 <StatusBadge entry={e} />
+                <RemoveControl entry={e} actor={actor} mayAuthor={canAuthorContent(role)} mayPublish={canPublishContent(role)} />
               </div>
               <ol className="mt-2 space-y-1 text-xs text-muted-foreground">
                 {[...e.revisions].reverse().map((r) => (
