@@ -81,6 +81,7 @@ function parseHours(text: string): number[] {
 }
 
 function CatalogGovernancePage() {
+  const confirmation = useConfirmDialog();
   const { role, staffName } = useActingStaff();
   const access = canAccess(role, "catalog_governance");
   const canWrite = access.level === "write";
@@ -158,20 +159,11 @@ function CatalogGovernancePage() {
     }
   };
 
-  const remove = (f: MedFrequency) => {
-    try {
-      AdelanteEHR.deleteFrequency(f.code, staffName);
-      toast.success(`${f.code} deleted`);
-    } catch (e) {
-      // In-use protection: steer straight into deactivate-with-reason.
-      toast.error((e as Error).message);
-      setReason("");
-      setDeactivating(f);
-    }
-  };
+  const remove = (f: MedFrequency) => confirmation.ask({ title: "Delete this frequency?", description: "An unused frequency is permanently removed. Frequencies used by signed or held orders cannot be deleted; deactivate those instead. No notification is sent.", confirmLabel: "Delete frequency", keepLabel: "Keep frequency", requireReason: true, onConfirm: reason => { confirmedAction("frequency_delete", "deleteFrequency", undefined, reason, f.code, staffName); toast.success(`${f.code} deleted`); return true; } });
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+      {confirmation.dialog}
       <Link to="/admin" className="inline-flex items-center gap-1 text-xs text-teal">
         <ArrowLeft className="h-3 w-3" /> Back to admin
       </Link>

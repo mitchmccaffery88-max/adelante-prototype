@@ -418,6 +418,7 @@ function GroupDetail({
   const location = useEhr(() => AdelanteEHR.getLocation(group.locationId));
   const enrollments = useEhr(() => AdelanteEHR.listGroupEnrollments(group.id));
   const starts = useEhr(() => AdelanteEHR.groupOccurrenceStarts(group.id, 6));
+  const confirmation = useConfirmDialog();
   const [occurrence, setOccurrence] = useState<string>("");
   const activeStart = occurrence || starts[0] || "";
   const record = useEhr(() =>
@@ -457,6 +458,7 @@ function GroupDetail({
 
   return (
     <div className="space-y-4">
+      {confirmation.dialog}
       <Card className="p-4 space-y-2">
         <h2 className="font-display text-navy">{group.topic}</h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -508,15 +510,7 @@ function GroupDetail({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => {
-                    const reason = window.prompt("Reason for ending this enrollment?") ?? "";
-                    try {
-                      AdelanteEHR.endGroupEnrollment(enrollment.id, reason, actor);
-                      toast.success("Enrollment ended");
-                    } catch (err) {
-                      toast.error(err instanceof Error ? err.message : "Could not end enrollment.");
-                    }
-                  }}
+                  onClick={() => confirmation.ask({ title: "End this enrollment?", description: "The enrollment ends and its history stays kept. Rejoining needs a new enrollment. Existing group-change notifications are sent through the Simulated delivery service.", confirmLabel: "End enrollment", keepLabel: "Keep enrollment", requireReason: true, onConfirm: reason => { confirmedAction("group_enrollment_end", "endGroupEnrollment", enrollment.patientId, reason, enrollment.id, reason, actor); toast.success("Simulated — enrollment ended"); return true; } })}
                 >
                   Remove
                 </Button>

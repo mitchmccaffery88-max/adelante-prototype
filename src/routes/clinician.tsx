@@ -68,7 +68,7 @@ import { myCaseload, myOpenItems } from "@/lib/myWork";
 import { openBookVisit } from "@/lib/bookingFlow";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
-import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
+import { hasUnsavedDrawerEdits } from "@/lib/drawer-drafts";
 import { listUnsignedWork } from "@/lib/unsignedWork";
 import { WorkspaceDashboard } from "@/components/clinician/WorkspaceDashboard";
 import { DashboardActionLauncher } from "@/components/clinician/DashboardActionLauncher";
@@ -209,11 +209,14 @@ function ClinicianPage() {
   // operational view (schedule + queue counts + clinical alerts); "chart" is a
   // single patient's record. Patient-specific context only renders in chart
   // mode so the dashboard never mixes provider and patient identity.
+  const confirmation = useConfirmDialog();
+  const switchPatient = (id: string, after: () => void) => {
+    if (id !== selectedPatientId && hasUnsavedDrawerEdits()) confirmation.ask({ title: "Discard these unsaved edits?", description: "Unsaved patient-record edits are lost when switching patients. Saved records stay unchanged. This cannot recover unsaved text; nobody is notified.", confirmLabel: "Discard edits", keepLabel: "Keep editing", onConfirm: () => { after(); return true; } });
+    else after();
+  };
   const [mode, setMode] = useState<"dashboard" | "chart">("dashboard");
   const openChart = (patientId: string) => {
-    if (patientId !== selectedPatientId && !confirmDiscardDrawerEdits()) return;
-    setSelectedPatientId(patientId);
-    setMode("chart");
+    switchPatient(patientId, () => { setSelectedPatientId(patientId); setMode("chart"); });
   };
 
   // §Dashboard Cleanup Phase 6a — tasks are assigned to a case manager. A
@@ -242,6 +245,7 @@ function ClinicianPage() {
 
   return (
     <WorkspaceActorContext.Provider value={ws}>
+      {confirmation.dialog}
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
       {ws.viewingAs && (
         <div role="status" data-testid="view-as-banner" className="mb-4 rounded-md border border-gold/50 bg-gold/15 p-3 text-sm text-navy">
@@ -353,8 +357,7 @@ function ClinicianPage() {
               <PatientPicker
                 onChange={(id) => {
                   if (id === selectedPatientId) return;
-                  if (!confirmDiscardDrawerEdits()) return;
-                  setSelectedPatientId(id);
+                  switchPatient(id, () => setSelectedPatientId(id));
                 }}
               />
             }

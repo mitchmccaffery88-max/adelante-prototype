@@ -44,6 +44,8 @@ export const Route = createFileRoute("/billing")({
           "Claims worklist, ISL non-Medi-Cal reportable encounters, code & rate table, and credentialing tracker.",
       },
       { property: "og:title", content: "Billing coordinator — Adelante" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content: "Claims worklist, ISL reportable encounters, code & rate table, credentialing.",
@@ -100,6 +102,7 @@ const STATUS_STYLE: Record<BillingStatus, string> = {
 };
 
 function BillingPage() {
+  const confirmation = useConfirmDialog();
   const [tab, setTab] = useState<Tab>("claims");
   const [entity, setEntity] = useState<"bagga_npi" | "adelante">("adelante");
   const appointments = useEhr(() => AdelanteEHR.listAppointments());
@@ -196,23 +199,14 @@ function BillingPage() {
       toast.error("View only — billing staff change billing status.");
       return;
     }
-    let reason: string | undefined;
     if (to === "denied" || to === "written_off" || claim.state === "written_off") {
-      const prompt =
-        to === "denied"
-          ? "Denial reason (required):"
-          : claim.state === "written_off"
-            ? "Why is this write-off being reversed? (required)"
-            : "Write-off reason (required):";
-      reason = window.prompt(prompt) ?? undefined;
-      if (!reason?.trim()) return;
-    }
-    const res = actResult<ReturnType<typeof AdelanteEHRExt.transitionClaim>>("claim_status", "transitionClaim", claim.patientId, claim.id, to, reason ? { denialReason: reason } : undefined);
-    if (!res.ok) {
-      toast.error(res.error);
+      const verb = to === "denied" ? "Deny claim" : to === "written_off" ? "Write off claim" : "Reverse write-off";
+      confirmation.ask({ title: `${verb}?`, description: "The claim status changes and its history is kept. A later correction follows the existing billing workflow; no new patient notification is sent.", confirmLabel: verb, keepLabel: "Keep claim", requireReason: true, onConfirm: reason => { confirmedAction("claim_status", "transitionClaim", claim.patientId, reason, claim.id, to, { denialReason: reason }); toast.success(`Claim moved to ${to.replaceAll("_", " ")}.`); return true; } });
       return;
     }
-    toast.success(`Claim moved to ${to.replace("_", " ")}.`);
+    const res = actResult<ReturnType<typeof AdelanteEHRExt.transitionClaim>>("claim_status", "transitionClaim", claim.patientId, claim.id, to);
+    if (!res.ok) { toast.error(res.error); return; }
+    toast.success(`Claim moved to ${to.replaceAll("_", " ")}.`);
   }
 
   function downloadIsl() {
@@ -251,6 +245,7 @@ function BillingPage() {
         </Link>
       </header>
 
+      {confirmation.dialog}
       {canWrite && <BillingWorkspaceTiles />}
       <OpsActionLauncher />
 

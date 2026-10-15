@@ -2251,6 +2251,7 @@ function SuggestedGoalsPanel({ patientId, readOnly }: { patientId: string; readO
 }
 
 export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
+  const confirmation = useConfirmDialog();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { staffName } = useActingStaff();
   const [planDraft, setPlanDraft] = useState(patient?.carePlanOverride?.text ?? "");
@@ -2268,6 +2269,7 @@ export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOn
   const unchanged = !dirty && trimmed === existing.trim();
   return (
     <div className="space-y-4">
+      {confirmation.dialog}
       <CarePlanCard patientId={patient.id} audience="clinician" />
       <CarePlanEditor patientId={patient.id} readOnly={readOnly} />
       <SuggestedGoalsPanel patientId={patient.id} readOnly={readOnly} />
@@ -2307,8 +2309,8 @@ export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOn
             disabled={unchanged}
             onClick={() => {
               if (isClearing) {
-                const ok = window.confirm("Clear the existing care-plan note for this patient?");
-                if (!ok) return;
+                confirmation.ask({ title: "Clear this care-plan note?", description: "The optional summary note is removed. Goals and signed notes stay unchanged. The text is not recoverable from this field; no notification is sent.", confirmLabel: "Clear note", keepLabel: "Keep note", requireReason: true, onConfirm: reason => { confirmedAction("plan_summary_clear", "updateCarePlanSummary", patient.id, reason, patient.id, "", staffName); setDirty(false); toast.success("Care plan note cleared"); return true; } });
+                return;
               }
               AdelanteEHR.updateCarePlanSummary(patient.id, planDraft, staffName);
               setDirty(false);
