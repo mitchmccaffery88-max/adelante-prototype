@@ -428,19 +428,18 @@ Rollback: 1a622225b55f2e2425e4cc843d54696715f3e86f
 - [ ] Remaining plan verification: all browsers, touch/focus-return and additional adapter edge cases after checkpoint approval
 Rollback: 97668bd969a632fe3706613359bb1d448f4ead27. No 8c-2 work.
 
-## Phase 8a-2 — Built before approval, kept by Mitch on Oct 15, pending verification
+## Phase 8a-2 — Kept by Mitch on Oct 15; verified (report: docs/phase8a2-report.md)
 Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
-- [ ] Consent overlap regression FIRST at 390/768/1280; fix only if reproduced
-- [ ] Staff Needs you / Waiting on others / Today order and persistent scoped crisis banner
-- [ ] Keep /consent in its current shell; document member-access finding for the real-auth phase
-- [ ] Shell + New audit parity, 768 layout and true coarse 48px targets
-- [ ] Locate and fix 390 admin-content document overflow
-- [ ] Investigate public early taps; fix only with evidence; 988 remains native
-- [ ] Sequential full units/list and exhaustive browsers/axe; screenshots and phase8a2 report
+- [x] Consent overlap regression at 390/768/1280 — not reproduced, no layout change
+- [x] Staff Needs you / Waiting on others / Today order and persistent scoped crisis banner — rollback parity proven
+- [x] Keep /consent in its current shell; member-access finding recorded for the real-auth phase
+- [ ] Shell + New audit test — blocked: e2e/staffShell8a2.spec.ts:12 needs an approved line change (Mitch)
+- [x] 768 layout and coarse 48px targets; 390 admin-content width
+- [x] Public early taps reproduced and fixed (replayed after load); 988 stays a plain link
+- [x] Sequential full units and browsers/axe; screenshots and report
 
-## Phase 8c-2 — Explicitly requested implementation
-Starting point: c3a7fb5d39b7290c94f67f80fc4d708152765ba7. Existing 8a-2 changes remain untouched.
-- [ ] Replace remaining native staff prompts with shared confirmation; preserve member boundaries
-- [ ] Confirm staff deletions; archive uses existing lesson withdrawal, not a new lifecycle
-- [ ] Preserve store refusals, reasons, registry audit parity and role/Part 2 gates
-- [ ] New unit/browser/axe coverage; run suites without existing-test edits; report any stop-rule blocker
+## Phase 8c-2 — Kept by Mitch on Oct 15 (progress: docs/phase8c2-progress-report.md)
+- [x] Registry gates equal to rollback UI gates for the 8 new actions + consent revoke (unit-proven)
+- [x] Audit reasons scrubbed (Part 2 terms, diagnosis codes, patient name); blank never written
+- [ ] Permission snapshot update — waiting on Mitch's sign-off (proposed lines in report)
+- [ ] Lesson archive / lesson withdrawal confirmations and any remaining pop-ups — not started this turn
