@@ -226,6 +226,8 @@ export function getStructuredPlan(patientId: string): StructuredPlan {
       if (existing.status !== "closed") existing.status = g.status === "done" ? "met" : "active";
       continue;
     }
+    // Draft — pending clinical sign-off: an accepted asam_signed suggestion is a clinician's SUD goal.
+    const asamAccepted = (p?.suggestedGoals ?? []).some((sg) => sg.goalId === g.id && sg.reason === "asam_signed");
     plan.goals.push({
       id: `lg-${g.id}`,
       patientId,
@@ -237,10 +239,11 @@ export function getStructuredPlan(patientId: string): StructuredPlan {
       patientText: { en: g.text, es: g.text },
       status: g.status === "done" ? "met" : "active",
       // A goal accepted from an ASAM-signed suggestion is Part 2 content.
-      sud: (p?.suggestedGoals ?? []).some((sg) => sg.goalId === g.id && sg.reason === "asam_signed"),
+      sud: asamAccepted,
       createdAt: g.createdAt,
       createdBy: g.createdBy ?? "Migrated goal",
       legacyGoalId: g.id,
+      ...(asamAccepted ? { origin: "clinician" as const } : {}),
     });
   }
   return plan;

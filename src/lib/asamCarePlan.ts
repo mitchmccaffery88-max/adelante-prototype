@@ -266,6 +266,8 @@ export function acceptAsamSuggestion(patientId: string, id: string, actor: Actor
     sud: true,
     createdAt: new Date().toISOString(),
     createdBy: actor.name,
+    // Draft — pending clinical sign-off: a clinician accepted it, so it counts for the SUD signal.
+    origin: "clinician",
     source: { kind: "asam", suggestionId: s.id, asamId: s.asamId, asamVersion: s.asamVersion, dimensionKey: s.dimensionKey, dimensionName: s.dimensionName, rating: s.rating },
     problemStatement: s.problem,
     interventions: s.interventions.map((i) => i.text),
