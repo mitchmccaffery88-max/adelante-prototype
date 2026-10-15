@@ -8,7 +8,7 @@ import { bookingRightFor, canScheduleRole } from "./bookingRights";
 // "create / act" action. Each `allowed()` calls the SAME function-level check
 // the store enforces; it never re-types a role list of its own.
 import { AdelanteEHR, APPT_REQUEST_BOOKING_ROLES, GROUP_ELIGIBILITY_ROLES, REFILL_PRESCRIBER_ROLES, type Patient } from "@/lib/ehr";
-import { canAccess, canFlagCrisis, getStaffMember, isPrescriberRole, type RecordClass, type StaffRole } from "@/lib/roles";
+import { canAccess, canFlagCrisis, canReadPreRelease, getStaffMember, isPrescriberRole, type RecordClass, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { ASAM_AUTHOR_ROLES, asamNeedsCosign } from "@/lib/asam";
 import { canSignNotes } from "@/lib/notes";
@@ -62,7 +62,7 @@ import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/mo
 import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-15.staff-confirmations";
+export const REGISTRY_VERSION = "2026-10-15.staff-dialogs";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -1111,8 +1111,8 @@ export const CHART_ACTIONS: ChartAction[] = [
     ["plan_summary_clear", "Clear care-plan note", "updateCarePlanSummary", AdelanteEHR.updateCarePlanSummary],
   ] as const).map(([id, en, name, fn]): ChartAction => ({
     id, label: { en, es: en }, group: "care", menu: false, sectionId: "care-plan",
-    check: "canEditPlan (existing structured plan gate)", store: refs([name, fn as StoreFn]),
-    allowed: ({ role }) => canEditPlan(role) ? ok() : hide("Your role can't change the care plan."),
+    check: id === "plan_summary_clear" ? "care_plan section write (rollback CarePlanTab readOnly gate)" : "canEditPlan + care_plan section write (rollback CarePlanEditor gate)", store: refs([name, fn as StoreFn]),
+    allowed: ({ role }, p) => (id === "plan_summary_clear" || canEditPlan(role)) && canAccess(role, "care_plan", p).level === "write" ? ok() : hide("Your role can't change the care plan."),
   })),
   {
     id: "group_eligibility_remove", label: { en: "Remove group eligibility", es: "Remove group eligibility" }, group: "care", menu: false,
@@ -1122,22 +1122,22 @@ export const CHART_ACTIONS: ChartAction[] = [
   {
     id: "group_enrollment_end", label: { en: "End group enrollment", es: "End group enrollment" }, group: "care", menu: false,
     check: "group_sessions write (existing page gate)", flags: ["notifications_simulated"], store: refs(["endGroupEnrollment", AdelanteEHR.endGroupEnrollment]),
-    allowed: ({ role }, p) => writes(role, "group_sessions", p) ? ok() : hide("Your role can't end group enrollments."),
+    allowed: ({ role }) => canAccess(role, "group_sessions").level === "write" ? ok() : hide("Your role can't end group enrollments."),
   },
   {
     id: "frequency_delete", label: { en: "Delete frequency", es: "Delete frequency" }, group: "admin", menu: false, needsPatient: false,
     check: "catalog_governance write (existing page gate)", store: refs(["deleteFrequency", AdelanteEHR.deleteFrequency]),
-    allowed: ({ role }) => writes(role, "catalog_governance") ? ok() : hide("Your role can't delete frequencies."),
+    allowed: ({ role }) => canAccess(role, "catalog_governance").level === "write" ? ok() : hide("Your role can't delete frequencies."),
   },
   {
     id: "advocate_document_verify", label: { en: "Verify advocate document", es: "Verify advocate document" }, group: "document", menu: false,
-    check: "existing StaffAdvocatesTab inviter gate", store: refs(["verifyAdvocateDocumentRequirement", AdelanteEHR.verifyAdvocateDocumentRequirement]),
-    allowed: ({ role }) => inList(["ecm_provider", "sys_admin", "cf_care_manager"], role) ? ok() : hide("Your role can't verify advocate documents."),
+    check: "rollback StaffAdvocatesTab gate: inviter role + consent_ledger section write", store: refs(["verifyAdvocateDocumentRequirement", AdelanteEHR.verifyAdvocateDocumentRequirement]),
+    allowed: ({ role }, p) => inList(["ecm_provider", "sys_admin", "cf_care_manager"], role) && canAccess(role, "consent_ledger", p).level === "write" ? ok() : hide("Your role can't verify advocate documents."),
   },
   {
     id: "advocate_access_remove", label: { en: "Remove advocate access", es: "Remove advocate access" }, group: "document", menu: false,
-    check: "existing designation actor boundary", store: refs(["revokeAdvocateLink", AdelanteEHR.revokeAdvocateLink]),
-    allowed: ({ role }) => inList(["ecm_provider", "sys_admin", "cf_care_manager"], role) ? ok() : hide("Your role can't remove advocate access."),
+    check: "rollback /pre-release page gate (canReadPreRelease); episode attribution still gates rendering", store: refs(["revokeAdvocateLink", AdelanteEHR.revokeAdvocateLink]),
+    allowed: ({ role }) => canReadPreRelease(role) ? ok() : hide("Your role can't remove advocate access."),
   },
   // ---- §Turn 6 — billing / admin / coordinator "+ New" ----
   {

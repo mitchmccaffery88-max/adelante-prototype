@@ -21,7 +21,7 @@ export function WebsiteNavigation({ mobile = false, activeSection }: { mobile?: 
   if (!mobile) return <nav aria-label={t("websiteNavigation")} className="hidden lg:flex items-center justify-center border-t">{links}</nav>;
   return <div className="lg:hidden">
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild><Button variant="ghost" size="icon" aria-label={t("websiteMenu")} className="min-h-12 min-w-12">{open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</Button></PopoverTrigger>
+      <PopoverTrigger asChild><Button data-early-tap="menu" variant="ghost" size="icon" aria-label={t("websiteMenu")} className="min-h-12 min-w-12">{open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</Button></PopoverTrigger>
       <PopoverContent id="website-mobile-nav" align="end" className="patient-theme website-mobile-menu w-[min(24rem,calc(100vw-2rem))] max-h-[70dvh] overflow-y-auto">
         <div className="sm:hidden border-b pb-3 mb-2">
           <div className="flex items-center justify-between gap-2">

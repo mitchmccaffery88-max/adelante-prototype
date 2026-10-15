@@ -56,6 +56,23 @@ export function part2SafeText(text: string): string {
   return text.replace(PART2_RE, "[restricted]");
 }
 
+const ICD10_RE = /\b[A-TV-Z]\d{2}(?:\.[0-9A-Z]{1,4})?\b/g;
+const escapeRe = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Staff-typed confirmation reasons: Part 2 terms, diagnosis codes and the
+ * patient's own name are removed before the text reaches the audit log.
+ */
+export function auditSafeReason(text: string | undefined, patient?: Patient): string | undefined {
+  const trimmed = text?.trim();
+  if (!trimmed) return undefined;
+  let out = part2SafeText(trimmed).replace(ICD10_RE, "[code]");
+  for (const n of [patient?.firstName, patient?.lastName]) {
+    if (n && n.trim().length > 1) out = out.replace(new RegExp(`(?<![\\p{L}\\d])${escapeRe(n.trim())}(?![\\p{L}\\d])`, "giu"), "[patient]");
+  }
+  return out;
+}
+
 function reasonFromError(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
@@ -174,9 +191,10 @@ export function runAction<T = unknown>(
     const event = write("action.cosign_routed", actionId, actor, patient, "cosign_routed", answer.reason, flags, store.name, sim);
     return { ok: true, value: value as T, outcome: "cosign_routed", event };
   }
+  const auditReason = auditSafeReason(input.auditReason, patient);
   const event = sim
-    ? write("action.succeeded", actionId, actor, patient, "simulated", input.auditReason || "Simulated — no live connection.", flags, store.name, true)
-    : write("action.succeeded", actionId, actor, patient, "succeeded", input.auditReason, flags, store.name);
+    ? write("action.succeeded", actionId, actor, patient, "simulated", auditReason ?? "Simulated — no live connection.", flags, store.name, true)
+    : write("action.succeeded", actionId, actor, patient, "succeeded", auditReason, flags, store.name);
   return { ok: true, value: value as T, outcome: "succeeded", event };
 }
 

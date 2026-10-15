@@ -1,3 +1,4 @@
+import { EARLY_TAP_SCRIPT } from "@/lib/earlyTap";
 import { websiteEn } from "@/lib/i18n.website";
 import { WEBSITE_SHARE_IMAGE } from "@/lib/websiteMetadata";
 import type { ErrorComponentProps } from "@tanstack/react-router";
@@ -193,6 +194,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
+    scripts: [{ children: EARLY_TAP_SCRIPT }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
