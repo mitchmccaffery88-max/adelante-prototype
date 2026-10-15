@@ -94,7 +94,7 @@ The read-only browser inspection reached the real demo chart but did not success
 
 ### Text under 14px
 
-Appendix C gives **every file and count** for the syntactic census. Standard scan: 2,676 occurrences / 315 files. Broader scan adds three `text-[0.8rem]` occurrences (`ui/calendar.tsx:79,85`, `ui/form.tsx:133`) and one print `text-[8px]` (`print.patient-records.$patientId.tsx:166`). Including the CSS selector occurrence in `styles.css`, the broad non-test census is **2,681 / 317 files**. These are source occurrences, not rendered elements: member CSS already raises several classes, and duplicated selectors/branches do not equal visible violations.
+Appendix C gives **every matching file and count** for the syntactic census. Standard TS/TSX scan: 2,676 occurrences / 315 files. Broader scan adds three `text-[0.8rem]` occurrences (`ui/calendar.tsx:79,85`, `ui/form.tsx:133`) and one print `text-[8px]` (`print.patient-records.$patientId.tsx:166`). Including the CSS selector occurrence in `styles.css`, the broad non-test census is **2,681 / 317 files**. These are source occurrences, not rendered elements: member CSS already raises several classes, and duplicated selectors/branches do not equal visible violations.
 
 Seven additional explicit chart font-size declarations: `chart/LabsAndMeasures.tsx:294–295`; `clinical/RecordTabs.tsx:3320–3321,3465–3466,3475`. They belong to charts and are listed but deferred to Phase 9. Do not globally override charts, member previews, print or hidden facility views.
 
@@ -187,6 +187,8 @@ Mitch must approve these lines and the associated consent-publication reason sup
 **Build stop rule:** if any other existing assertion fails, stop and report file:line, current assertion and proposed exact line before editing it. No deleted/skipped tests, retry/threshold changes or blanket snapshots. Each batch gets focused tests and complete units/browser specs including axe; quote vitest-list total next to pass count. Harness checks builds; no manually requested production build in this plan.
 
 ## 4. What differs / what waits
+
+**Inventory limitation:** the native-table and dialog census and per-file utility counts are complete source scans; semantic non-table list and audited-form inventories are not yet exhaustive. They are identified domain checklists, not verified totals. This plan does not claim the requested every-list/every-form inventory is finished. Before approving 8b or 8c, complete those domain inventories and present exact counts and any further test-line proposals. Shell approval can be considered independently.
 
 - Prefer smaller 8a-1/8a-2 and 8b-1/2/3 rollouts over a sweeping shell/table/form rewrite.
 - Fixed 40px rows mean a minimum for short rows, not clipping at 40px. Touch controls stay 48px.
