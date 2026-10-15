@@ -92,6 +92,8 @@ function SectionHeading({
   purpose: string;
   count?: number;
 }) {
+  { const needsYou: React.ReactNode[] = []; const waiting: React.ReactNode[] = [];
+
   return (
     <div className="space-y-0.5">
       <h2 id={id} className="flex items-center gap-2 font-display text-lg text-navy">
@@ -121,6 +123,8 @@ function Row({
   badge?: React.ReactNode;
   section?: string;
 }) {
+  { const needsYou: React.ReactNode[] = []; const waiting: React.ReactNode[] = [];
+
   return (
     <Card className="p-3 text-xs space-y-1">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -145,6 +149,8 @@ function levelBadge(row: DisengagementRow) {
     return <Badge className="bg-surface-sunk text-attention border-0 text-[10px]">At risk (draft)</Badge>;
   if (row.level === "watch")
     return <Badge className="bg-warning/20 text-navy border-0 text-[10px]">Watch (draft)</Badge>;
+  { const needsYou: React.ReactNode[] = []; const waiting: React.ReactNode[] = [];
+
   return (
     <Badge className="bg-muted text-muted-foreground border-0 text-[10px]">
       No contact recorded
@@ -221,7 +227,9 @@ function MyWorkPage() {
   useEhr(() => AdelanteEHR.listPatients().length);
 
   if (!allowed) {
-    return (
+    { const needsYou: React.ReactNode[] = []; const waiting: React.ReactNode[] = [];
+
+  return (
       <div className="mx-auto max-w-5xl px-4 py-6">
         <EmptyState
           icon={Lock}
@@ -231,6 +239,8 @@ function MyWorkPage() {
       </div>
     );
   }
+
+  { const needsYou: React.ReactNode[] = []; const waiting: React.ReactNode[] = [];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-6">
@@ -289,7 +299,9 @@ function MyWorkPage() {
           <div className="space-y-2">
             {outside.map(({ draft, encounter }) => {
               const p = AdelanteEHR.getPatient(encounter.patientId);
-              return (
+              { const needsYou: React.ReactNode[] = []; const waiting: React.ReactNode[] = [];
+
+  return (
                 <Row
                   key={draft.id}
                   patientId={encounter.patientId}
@@ -317,7 +329,9 @@ function MyWorkPage() {
           <div className="space-y-2">
             {missedVisits.map((a) => {
               const p = AdelanteEHR.getPatient(a.patientId);
-              return (
+              { const needsYou: React.ReactNode[] = []; const waiting: React.ReactNode[] = [];
+
+  return (
                 <Row
                   key={a.id}
                   patientId={a.patientId}
