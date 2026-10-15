@@ -366,6 +366,7 @@ function ManageTab({ version }: { version: number }) {
   const [newId, setNewId] = useState("");
   const [body, setBody] = useState<ContentBody | null>(null);
   const [submitNote, setSubmitNote] = useState("");
+  const [reasonAttempted, setReasonAttempted] = useState(false);
 
   const allRows = useMemo(() => staffContentInventory(role).filter((e) => e.typeId === typeId), [typeId, version, role]);
 
@@ -375,6 +376,7 @@ function ManageTab({ version }: { version: number }) {
     setOpenId(id);
     setBody(initial);
     setSubmitNote("");
+    setReasonAttempted(false);
   };
 
   const openManaged = (id: string) => {
@@ -398,6 +400,7 @@ function ManageTab({ version }: { version: number }) {
 
   const save = () => {
     if (!openId || !body) return;
+    setReasonAttempted(true);
     if (!submitNote.trim()) return toast.error("A reason is required for this content change.");
     const res = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
@@ -414,6 +417,7 @@ function ManageTab({ version }: { version: number }) {
 
   const submit = () => {
     if (!openId || !body) return;
+    setReasonAttempted(true);
     if (!submitNote.trim()) return toast.error("A reason is required for this content change.");
     const saved = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
@@ -442,6 +446,7 @@ function ManageTab({ version }: { version: number }) {
    */
   const publish = () => {
     if (!openId || !body) return;
+    setReasonAttempted(true);
     if (!submitNote.trim()) return toast.error("A reason is required for this content change.");
     const saved = contentAction(getContentEntry(typeId, openId) ? "content_edit" : "content_create", {
       typeId,
@@ -567,7 +572,7 @@ function ManageTab({ version }: { version: number }) {
                 ))}
               </ul>
             )}
-            <FormField reason required multiline accessibleName="Content change reason" value={submitNote} onChange={setSubmitNote} />
+            <FormField reason required multiline attempted={reasonAttempted} accessibleName="Content change reason" value={submitNote} onChange={setSubmitNote} />
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={save} disabled={!mayAuthor}>
                 Save draft
