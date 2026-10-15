@@ -418,3 +418,4 @@ Rollback: 1a622225b55f2e2425e4cc843d54696715f3e86f
 - [ ] Only three approved assertion replacements; add foundation tests
 - [ ] Full units/list count, all browser specs/axe, requested screenshots and report
 - [ ] Preserve consent/member/public/dashboards; do not start 8a-2/8b/8c
+- [ ] STOPPED: userNavigationShell.test.ts:24 needs Mitch's decision; 2,606 passed / 2,607 listed, build OK. No browser suite or new foundation tests after stop. See docs/phase8a1-staff-shell-report.md.
