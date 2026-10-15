@@ -26,3 +26,5 @@ Full per-module rules: `src/lib/AGENTS.md` — read before changing app logic.
 - Clinician tiles and merged action rows derive through `clinicianWorkspace.ts`; dashboard “+ New” uses `CHART_ACTIONS` plus `dashboardActionBus.ts`. Why: one acting-person scope, one permission registry, no duplicate queues.
 <!-- LOVABLE:END -->
 - Staff FormField and ConfirmDialog live in components/staff and own only validation/focus/confirmation presentation; callers retain synchronous registry execution, store gates and existing lifecycle audit sinks. Why: asynchronous reason collection must not duplicate mutations or change member forms and permissions.
+- StaffShell measures the demo bar for sticky clearance; compact coarse-pointer header and sidebar anchors retain real touch bounds. Why: growing demo controls and safety counts must not obscure staff actions or expand the phone document.
+- Staff workspace section ordering consumes caller-gated React children; the My work crisis banner uses the header's role-scoped escalation projection. Why: presentation cannot create new records, widen permissions or expose masked crisis details.

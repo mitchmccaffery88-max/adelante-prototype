@@ -411,8 +411,13 @@
 .staff-sidebar[data-collapsed="true"] .staff-new-button span { display: none; }
 .staff-demo-controls :is([data-testid="demo-state-switcher"], [data-testid="staff-role-switcher"]) { background: var(--surface); color: var(--ink); border-color: var(--line-strong); box-shadow: none; border-radius: var(--radius-sm); }
 .staff-demo-controls svg { color: var(--ink-muted); }
+.staff-shell-header { top: max(48px, var(--staff-demo-height, 48px)); }
 @media (max-width: 767px) { [data-testid="staff-navigation-sheet"] .staff-sidebar { width: 100%; } }
 @media (pointer: coarse) {
   [data-density="compact"] :is(button, a[role="button"], input:not([type="checkbox"]):not([type="radio"]), select, [role="combobox"]):not(:where(.member-comfortable *, .member-overlay *, .patient-player *, .recharts-wrapper *, [data-phase9] *)) { min-height: 48px; }
   [data-density="compact"] :is(button, a[role="button"]):not(:where(.member-comfortable *, .member-overlay *, .patient-player *, .recharts-wrapper *, [data-phase9] *)) { min-width: 48px; }
+  [data-testid="staff-shell-header"] > a, .staff-sidebar a { min-height: 48px; min-width: 48px; display: flex; align-items: center; }
+}
+@media (pointer: coarse) and (max-width: 767px) {
+  .staff-shell-header { gap: 0; padding-inline: 8px; }
 }

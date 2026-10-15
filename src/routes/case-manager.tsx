@@ -1,4 +1,5 @@
 import { CircleAlert } from "lucide-react";
+import { WorkspaceSectionOrder } from "@/components/staff/WorkspaceSectionOrder";
 import { StatusChip } from "@/components/ui/status-chip";
 import { coverageTypeLabel } from "@/lib/coverageStatus";
 import { VerificationSourceBadge } from "@/components/coverage/VerificationSourceBadge";
@@ -216,6 +217,9 @@ function CaseManagerPage() {
         </div>
       </header>
 
+      <WorkspaceSectionOrder>
+        {cmId && <TaskQueueCard source={{ kind: "case_manager", cmId }} onOpenPatient={setActiveId} />}
+      </WorkspaceSectionOrder>
       <section className="mb-6 flex flex-col gap-4">
         <Card className="p-4" data-testid="caseload-scope-card">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -271,11 +275,6 @@ function CaseManagerPage() {
       </section>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-3">
-          {cmId && (
-            <TaskQueueCard source={{ kind: "case_manager", cmId }} onOpenPatient={setActiveId} />
-          )}
-        </div>
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-lg text-navy flex items-center gap-2">

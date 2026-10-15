@@ -1,4 +1,6 @@
 import { SchedulingTile } from "@/components/scheduling/SchedulingTile";
+import { WorkspaceSectionOrder } from "@/components/staff/WorkspaceSectionOrder";
+import { waitingOnOthers } from "@/components/staff/workspaceOwnership";
 import { listMatchReviews } from "@/lib/patientMatching";
 import { useEffect, useState, type ReactNode } from "react";
 import { act as runAct, actFor } from "@/lib/actions/act";
@@ -62,21 +64,26 @@ export function WorkspaceDashboard({ actor, appointments, needsClosing, weekAppo
   ];
   const openFromStrip = (item: typeof strip[number]) => { toggle(item.tile, true); if (item.tile === "schedule" && "segment" in item && item.segment) setScheduleSegment(item.segment); if (item.tile === "actions") { setFocusGroup("all"); setFocusKind("kind" in item ? item.kind ?? null : null); } document.getElementById(`workspace-tile-${item.tile}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   const order = workspaceTileOrder(actor.role);
+  const waiting = rows.filter(row => waitingOnOthers(row, actor));
+  const needs = rows.filter(row => !waitingOnOthers(row, actor));
 
   return <div className="space-y-4" data-testid="workspace-dashboard-tiles">
+    <WorkspaceSectionOrder waitingIds={["workspace-waiting"]} todayIds={["today-strip", "workspace-schedule", "workspace-scheduling"]}>
+    {waiting.length > 0 && <div data-testid="workspace-waiting"><ActionTile rows={waiting} focus={focusGroup} setFocus={setFocusGroup} focusKind={focusKind} setFocusKind={setFocusKind} openChart={openChart} actor={acting} /></div>}
     <div className="flex gap-1 overflow-x-auto border-y bg-card py-2" aria-label="Today" data-testid="today-strip">
       <span className="sticky left-0 flex shrink-0 items-center bg-card px-2 text-xs font-semibold uppercase text-teal">Today</span>
       {strip.map((item) => <Button key={item.id} variant="ghost" className={`h-auto shrink-0 flex-col items-start gap-0 rounded px-3 py-1 text-left ${item.zero ? "opacity-45" : ""}`} onClick={() => openFromStrip(item)}><span className="text-[10px] text-muted-foreground">{item.label}</span><span className="text-sm font-semibold tabular-nums">{item.value}</span></Button>)}
     </div>
     {order.map((id) => {
-      if (id === "schedule") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Schedule" summary={`${segments.up_next.length} upcoming · ${segments.in_progress.length} checked in · ${segments.done.length} done`}><ScheduleTile segments={segments} week={weekAppointments} selected={scheduleSegment} setSelected={setScheduleSegment} showWeek={showWeek} setShowWeek={setShowWeek} patients={patients} launch={launch} openChart={openChart} actor={acting} /></WorkspaceTile>;
-       if (id === "actions") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Needs my action" summary={`${rows.length} open · ${rows.filter((r) => r.group === "now").length} now`}><ActionTile rows={rows} focus={focusGroup} setFocus={setFocusGroup} focusKind={focusKind} setFocusKind={setFocusKind} openChart={openChart} actor={acting} /></WorkspaceTile>;
+      if (id === "schedule") return <div key={id} data-testid="workspace-schedule"><WorkspaceTile id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Schedule" summary={`${segments.up_next.length} upcoming · ${segments.in_progress.length} checked in · ${segments.done.length} done`}><ScheduleTile segments={segments} week={weekAppointments} selected={scheduleSegment} setSelected={setScheduleSegment} showWeek={showWeek} setShowWeek={setShowWeek} patients={patients} launch={launch} openChart={openChart} actor={acting} /></WorkspaceTile></div>;
+       if (id === "actions") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Needs my action" summary={`${rows.length} open · ${rows.filter((r) => r.group === "now").length} now`}><ActionTile rows={needs} focus={focusGroup} setFocus={setFocusGroup} focusKind={focusKind} setFocusKind={setFocusKind} openChart={openChart} actor={acting} /></WorkspaceTile>;
       if (id === "caseload") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="My caseload" summary={`${caseload.length} patients · ${caseload.filter((x) => x.reasons.length).length} need attention`}><CaseloadTile rows={caseload} /></WorkspaceTile>;
       if (id === "requests") { const waiting = AdelanteEHR.listOpenAppointmentRequests().filter((r) => roleSeesApptRequest(actor.role, r.patient, r.request)).length; return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Requests & booking" summary={`${waiting} appointment request${waiting === 1 ? "" : "s"} waiting`}>{requestsAndBooking}</WorkspaceTile>; }
-      if (id === "scheduling") return <WorkspaceTile key={id} id={id} open={openTiles[id] ?? true} onOpenChange={(v) => toggle(id, v)} title="Scheduling" summary="Upcoming visits · appointment requests · Book a visit"><SchedulingTile actor={{ staffId: actor.staffId, staffName: actor.staffName, clinicianId: actor.clinicianId, role: actor.role }} /></WorkspaceTile>;
+      if (id === "scheduling") return <div key={id} data-testid="workspace-scheduling"><WorkspaceTile id={id} open={openTiles[id] ?? true} onOpenChange={(v) => toggle(id, v)} title="Scheduling" summary="Upcoming visits · appointment requests · Book a visit"><SchedulingTile actor={{ staffId: actor.staffId, staffName: actor.staffName, clinicianId: actor.clinicianId, role: actor.role }} /></WorkspaceTile></div>;
       if (id === "coordinator" && isCoordinatorRole(actor.role)) return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Coordinator queue" summary="Void approvals · unassigned patients · crisis · cosign reassignments"><CoordinatorTile actor={acting} /></WorkspaceTile>;
       return null;
     })}
+    </WorkspaceSectionOrder>
   </div>;
 }
 

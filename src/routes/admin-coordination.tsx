@@ -1,4 +1,5 @@
 import { StatusChip } from "@/components/ui/status-chip";
+import { WorkspaceSectionOrder } from "@/components/staff/WorkspaceSectionOrder";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -84,6 +85,7 @@ function CoordinationPage() {
         <Link to="/admin" className="text-sm underline">← Admin</Link>
       </header>
 
+      <WorkspaceSectionOrder>
       {canAct && reassignNeeded.length > 0 && (
         <section data-testid="reassign-needed" className="space-y-2">
           <h2 className="font-semibold">Reassign needed</h2>
@@ -201,6 +203,7 @@ function CoordinationPage() {
         )}
       </Card>
       )}
+      </WorkspaceSectionOrder>
       {canAct && (
         <p className="text-sm text-muted-foreground">
           Related: <Link to="/admin-content" className="underline">Resource verification to Patient Content &amp; Resources Center</Link>

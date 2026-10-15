@@ -1,4 +1,6 @@
 import { StatusChip } from "@/components/ui/status-chip";
+import { StaffCrisisBanner } from "@/components/staff/StaffCrisisBanner";
+import { WorkspaceSectionOrder } from "@/components/staff/WorkspaceSectionOrder";
 // §Reporting Redesign Tier 3 — "My work": the reflexive-need reports.
 //
 // Everything on this page is scoped to the ACTING staff member. It is a view,
@@ -247,6 +249,8 @@ function MyWorkPage() {
         </p>
       </header>
 
+      <StaffCrisisBanner />
+      <WorkspaceSectionOrder waitingIds={["my-work-labs-pending", "my-work-asam-waiting"]} todayIds={["my-work-today"]}>
       {/* ---------- Start of day ---------- */}
       <section aria-labelledby="today-heading" className="space-y-3" data-testid="my-work-today">
         <SectionHeading
@@ -674,17 +678,6 @@ function MyWorkPage() {
                   }
                 />
               ))}
-              {asam.myDraftsAwaitingCosign.map((c) => (
-                <Row
-                  key={c.asamId}
-                  patientId={c.patientId}
-                  name={c.patientName}
-                  section="asam"
-                  primary="Your ASAM draft — awaiting LPHA co-signature"
-                  secondary={`Waiting ${c.ageDays} day${c.ageDays === 1 ? "" : "s"}. No outputs fire until co-signed.`}
-                  badge={<Badge className="bg-muted text-muted-foreground border-0 text-[10px]">Cosign pending</Badge>}
-                />
-              ))}
               {asam.cosignsForMe.map((c) => (
                 <Row
                   key={`cs-${c.asamId}`}
@@ -701,6 +694,10 @@ function MyWorkPage() {
         </section>
       )}
 
+      {asam && asam.myDraftsAwaitingCosign.length > 0 && <section aria-label="ASAM drafts awaiting co-signature" className="space-y-3" data-testid="my-work-asam-waiting">
+        <h3 className="font-semibold text-ink">Your ASAM drafts awaiting co-signature</h3>
+        {asam.myDraftsAwaitingCosign.map(c => <Row key={c.asamId} patientId={c.patientId} name={c.patientName} section="asam" primary="Your ASAM draft — awaiting LPHA co-signature" secondary={`Waiting ${c.ageDays} day${c.ageDays === 1 ? "" : "s"}. No outputs fire until co-signed.`} badge={<Badge className="bg-muted text-muted-foreground border-0 text-[10px]">Cosign pending</Badge>} />)}
+      </section>}
       {/* ---------- 2. Screeners due ---------- */}
       <section aria-labelledby="rescreen-heading" className="space-y-3">
         <SectionHeading
@@ -799,6 +796,7 @@ function MyWorkPage() {
         )}
       </section>
 
+      </WorkspaceSectionOrder>
       <p className="text-xs text-muted-foreground">
         <FileText className="mr-1 inline h-3 w-3" />
         Re-screen cadence and disengagement thresholds are draft assumptions pending real

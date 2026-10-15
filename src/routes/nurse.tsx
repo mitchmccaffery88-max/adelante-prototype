@@ -1,6 +1,7 @@
 // §Batch E1 — nurse (RN) / LVN workspace. Mobile-first: Today, Needs my
 // action, "+ New" (vitals, specimen, triage). Draft — pending clinical sign-off.
 import { useState } from "react";
+import { WorkspaceSectionOrder } from "@/components/staff/WorkspaceSectionOrder";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Lock, Plus } from "lucide-react";
@@ -60,6 +61,7 @@ function NursePage() {
         <p className="text-sm text-muted-foreground">{me.staffName} · {me.role === "lvn" ? "LVN" : "RN"}</p>
         <Badge variant="outline">{NURSING_DRAFT_LABEL}</Badge>
       </header>
+      <WorkspaceSectionOrder todayIds={["nurse-today"]}>
       <Card className="grid grid-cols-2 gap-3 p-4 text-center" data-testid="nurse-today">
         <div><div className="text-2xl font-semibold text-navy">{rows.length}</div><div className="text-xs text-muted-foreground">Waiting on you</div></div>
         <div><div className="text-2xl font-semibold text-navy">{givenToday}</div><div className="text-xs text-muted-foreground">Doses given today</div></div>
@@ -85,6 +87,7 @@ function NursePage() {
         </div>
         {patientId && <Link to="/record/$patientId" params={{ patientId }} className="text-xs underline">Open chart</Link>}
       </section>
+      </WorkspaceSectionOrder>
       <Sheet open={!!open} onOpenChange={(v) => !v && setOpen(null)}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-md">
           <SheetTitle className="text-navy">{CHART_ACTIONS.find((a) => a.id === open)?.label.en}</SheetTitle>
