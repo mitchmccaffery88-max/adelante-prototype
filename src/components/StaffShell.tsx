@@ -14,6 +14,7 @@ import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StaffDensityProvider, StaffNewProvider } from "@/components/StaffDensity";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function StaffShell({ children }: { children: ReactNode }) {
   const actor = useActingStaff();
@@ -28,7 +29,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
   const hasLauncher = pathname.startsWith("/record/") || ["/clinician", "/admin", "/admin-claims", "/billing"].includes(pathname);
   const matches = groups.flatMap(g => g.entries).filter(e => `${e.label} ${e.desc}`.toLowerCase().includes(query.trim().toLowerCase()));
 
-  return <StaffDensityProvider><StaffNewProvider target={newTarget}>
+  return <StaffDensityProvider><TooltipProvider delayDuration={300}><StaffNewProvider target={newTarget}>
     <div data-density="compact" data-testid="staff-shell" className="flex min-h-dvh flex-col bg-canvas text-ink">
       <header data-testid="staff-shell-header" className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:gap-3 sm:px-4">
         <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open staff navigation" onClick={() => setMobileOpen(true)}><Menu /></Button>
@@ -37,7 +38,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
           <img src="/brand/adelante-compact-dark.svg" alt="Adelante" className="hidden h-8 w-auto dark:block" />
         </Link>
         <Popover open={quickOpen} onOpenChange={setQuickOpen}><PopoverTrigger asChild><Button variant="outline" size="icon" aria-label="Quick jump"><Search /></Button></PopoverTrigger>
-          <PopoverContent className="w-[min(24rem,90vw)] p-2"><Input aria-label="Quick jump to a surface" placeholder="Quick jump…" value={query} onChange={e => setQuery(e.target.value)} />
+          <PopoverContent className="w-[min(24rem,90vw)] p-2"><Input aria-label="Search staff surfaces" placeholder="Quick jump…" value={query} onChange={e => setQuery(e.target.value)} />
             <nav aria-label="Quick jump results" className="mt-2 max-h-80 overflow-y-auto">{matches.map(e => <Button key={e.id} variant="ghost" asChild className="h-auto w-full justify-start whitespace-normal text-left"><Link to={e.to} search={(e.search ?? {}) as never} onClick={() => { setQuickOpen(false); setQuery(""); }}>{e.label}</Link></Button>)}{!matches.length && <p className="p-2 text-sm text-ink-muted">No matching surfaces.</p>}</nav>
           </PopoverContent>
         </Popover>
@@ -56,5 +57,5 @@ export function StaffShell({ children }: { children: ReactNode }) {
       </div>
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}><SheetContent side="left" className="w-[min(20rem,90vw)] bg-surface-sunk p-0 pt-12" data-testid="staff-navigation-sheet"><SheetTitle className="sr-only">Staff navigation</SheetTitle><StaffNavSidebar mobile onNavigate={() => setMobileOpen(false)} newSlot={hasLauncher ? <Button className="w-full" onClick={() => { setMobileOpen(false); newTarget?.querySelector<HTMLButtonElement>("button")?.click(); }}>+ New</Button> : undefined} /></SheetContent></Sheet>
     </div>
-  </StaffNewProvider></StaffDensityProvider>;
+  </StaffNewProvider></TooltipProvider></StaffDensityProvider>;
 }
