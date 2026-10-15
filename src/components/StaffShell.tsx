@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu, Search, ShieldAlert, UserRound } from "lucide-react";
 import { STAFF_ROLES, useActingStaff } from "@/lib/roles";
@@ -28,10 +28,19 @@ export function StaffShell({ children }: { children: ReactNode }) {
   const count = useEhr(() => filterEscalations(listEscalations(actor), actor, { view: canSeeAllEscalations(actor) ? "all" : "mine" }).filter(r => r.type === "crisis" && r.status !== "resolved").length);
   const hasLauncher = pathname.startsWith("/record/") || ["/clinician", "/admin", "/admin-claims", "/billing"].includes(pathname);
   const matches = groups.flatMap(g => g.entries).filter(e => `${e.label} ${e.desc}`.toLowerCase().includes(query.trim().toLowerCase()));
+  useEffect(() => {
+    const demo = document.querySelector<HTMLElement>('[data-testid="demo-controls-bar"]');
+    if (!demo) return;
+    const measure = () => document.documentElement.style.setProperty("--staff-demo-height", `${demo.getBoundingClientRect().height}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(demo);
+    return () => { observer.disconnect(); document.documentElement.style.removeProperty("--staff-demo-height"); };
+  }, []);
 
   return <StaffDensityProvider><TooltipProvider delayDuration={300}><StaffNewProvider target={newTarget}>
     <div data-density="compact" data-testid="staff-shell" className="flex min-h-dvh flex-col bg-canvas text-ink">
-      <header data-testid="staff-shell-header" className="sticky top-12 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:gap-3 sm:px-4">
+      <header data-testid="staff-shell-header" className="staff-shell-header sticky top-12 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:gap-3 sm:px-4">
         <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open staff navigation" onClick={() => setMobileOpen(true)}><Menu /></Button>
         <Link to="/" aria-label="Adelante home" className="shrink-0">
           <img src="/brand/adelante-compact.svg" alt="Adelante" className="h-8 w-auto dark:hidden" />
