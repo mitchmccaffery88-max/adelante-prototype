@@ -57,7 +57,7 @@ describe("8c-1 pending coverage", () => {
     seedPublishedContent({ typeId: "library_lesson", id, body: { ...baseline, title: "Edited live title" }, actor, atISO: "2026-10-01T00:00:00Z" });
     expect(publishedContent("library_lesson", id)?.title).toBe("Edited live title");
     const r = runAction("content_withdraw", who, undefined, { args: [{ typeId: "library_lesson", id, actor, note: "Editorial revision needed" }] });
-    expect(r.ok).toBe(true);
+    expect(r.ok, JSON.stringify(r)).toBe(true);
     expect(publishedContent("library_lesson", id)).toBeUndefined();
     expect(desc.baselineBody(id)?.title).toBe(baseline.title);
     expect(getContentEntry("library_lesson", id)?.revisions.at(-1)?.note).toBe("Editorial revision needed");
@@ -69,7 +69,7 @@ describe("8c-1 pending coverage", () => {
     submitContentForReview({ typeId: "library_lesson", id, actor, note: "Ready" });
     const before = AdelanteEHR.listAuditEvents({}).map((x) => x.id);
     const r = runAction("content_publish", who, undefined, { args: [{ typeId: "library_lesson", id, actor, note: "Reviewed wording" }] });
-    expect(r.ok).toBe(true);
+    expect(r.ok, JSON.stringify(r)).toBe(true);
     expect(publishedContent("library_lesson", id)).toBeDefined();
     expect(getContentEntry("library_lesson", id)?.revisions.at(-1)?.note).toBe("Reviewed wording");
     expect(AdelanteEHR.listAuditEvents({}).filter((x) => !before.includes(x.id) && x.action === "action.succeeded" && x.detail?.actionId === "content_publish")).toHaveLength(1);
