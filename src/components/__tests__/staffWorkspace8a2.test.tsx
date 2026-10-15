@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { WorkspaceSectionOrder } from "../staff/WorkspaceSectionOrder";
 
 describe("staff section ordering without new data", () => {
+  afterEach(cleanup);
   it("orders gated children, preserving record labels and actions exactly once", () => {
     render(<WorkspaceSectionOrder waitingIds={["waiting"]} todayIds={["today"]}>
       <div data-testid="today">Existing visit</div>

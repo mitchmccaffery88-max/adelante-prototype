@@ -105,15 +105,15 @@ export function workspaceActionRows(input: {
     if (u.kind === "draft_note" && u.note) {
       // §Batch C3 — business-day / crisis clocks (Draft — pending clinical sign-off).
       const c = noteClock(u.note, now);
-      if (isCrisisNote(u.note)) { rows.push({ id: `crisis_note:${u.id}`, kind: "crisis_note", patientId: u.patient.id, patientName: name, label: "Crisis note to sign", dueAt: c.dueAt, due: c.label, group: "now", action: "Review note", sourceId: u.id }); continue; }
-      rows.push({ id: `unsigned:${u.id}`, kind: "unsigned", patientId: u.patient.id, patientName: name, label: "Unsigned note", dueAt: c.dueAt, due: c.label, group: c.state === "due_later" ? groupFor(c.dueAt, now) : c.state === "overdue" ? "now" : "today", action: "Review note", sourceId: u.id });
+      if (isCrisisNote(u.note)) { rows.push({ partition: "needs_you", id: `crisis_note:${u.id}`, kind: "crisis_note", patientId: u.patient.id, patientName: name, label: "Crisis note to sign", dueAt: c.dueAt, due: c.label, group: "now", action: "Review note", sourceId: u.id }); continue; }
+      rows.push({ partition: "needs_you", id: `unsigned:${u.id}`, kind: "unsigned", patientId: u.patient.id, patientName: name, label: "Unsigned note", dueAt: c.dueAt, due: c.label, group: c.state === "due_later" ? groupFor(c.dueAt, now) : c.state === "overdue" ? "now" : "today", action: "Review note", sourceId: u.id });
       continue;
     }
     push({ id: `unsigned:${u.id}`, kind: "unsigned", patientId: u.patient.id, patientName: name, label: "Visit needs a note", dueAt: u.date, action: "Write note" });
   }
   // §Batch C3 — overdue crisis notes escalate to the clinical coordinator pool.
   if (isCoordinatorRole(actor.role)) for (const { patient, note, clock } of overdueCrisisNotes(patients, now))
-    rows.push({ id: `crisis_note:${note.id}`, kind: "crisis_note", patientId: patient.id, patientName: `${patient.firstName} ${patient.lastName}`, label: "Crisis note overdue — escalated", dueAt: clock.dueAt, due: clock.label, group: "now", action: "Open chart", sourceId: note.id });
+    rows.push({ partition: "needs_you", id: `crisis_note:${note.id}`, kind: "crisis_note", patientId: patient.id, patientName: `${patient.firstName} ${patient.lastName}`, label: "Crisis note overdue — escalated", dueAt: clock.dueAt, due: clock.label, group: "now", action: "Open chart", sourceId: note.id });
   for (const { patient, note } of AdelanteEHR.listNotesAwaitingCosign().filter(({ note }) => !note.cosignOwnerOverrideId || aliases.has(note.cosignOwnerOverrideId)))
     if (mineIds.has(patient.id) || (!!note.cosignOwnerOverrideId && aliases.has(note.cosignOwnerOverrideId))) push({ id: `cosign:${note.id}`, kind: "cosign", patientId: patient.id, patientName: `${patient.firstName} ${patient.lastName}`, label: "Cosign note", dueAt: note.signedAt ?? note.date, action: "Review" });
   for (const r of myPendingRefills(actor)) {
@@ -133,16 +133,16 @@ export function workspaceActionRows(input: {
     const left = Math.max(0, crisisSlaTarget(e).ms - sla.ageMs);
     const countdown = sla.overdue ? overdueByLabel(sla.overdueByMs) : (({ h, m }) => `${h}h ${m}m left`)(hoursMinutesLeft(left));
     const label = owned ? "Crisis follow-up — yours" : pool ? "Crisis follow-up — coordinator pool" : `Crisis follow-up needed — owner ${e.ownerName ?? "assigned"}`;
-    rows.push({ id: `crisis:${e.id}`, kind: "crisis", patientId: c.patient.id, patientName: `${c.patient.firstName} ${c.patient.lastName}`, label, dueAt: e.lastTriggeredAt ?? e.triggeredAt, due: countdown, group: "now", action: coord && !owned ? "Reassign" : "Open crisis", sourceId: e.id });
+    rows.push({ id: `crisis:${e.id}`, kind: "crisis", partition: (owned || pool || !e.ownerStaffId) ? "needs_you" : "waiting", patientId: c.patient.id, patientName: `${c.patient.firstName} ${c.patient.lastName}`, label, dueAt: e.lastTriggeredAt ?? e.triggeredAt, due: countdown, group: "now", action: coord && !owned ? "Reassign" : "Open crisis", sourceId: e.id });
   }
   for (const r of screenerDueRows(mine, { role: actor.role }))
-    push({ id: `screener:${r.patientId}:${r.screenerKey}`, kind: "screener", patientId: r.patientId, patientName: r.patientName, label: `${r.screenerKey.toUpperCase()} re-screen`, dueAt: now.toISOString(), action: r.taskAlreadySent ? "Open chart" : "Send re-screen", sourceId: r.screenerKey });
+    push({ id: `screener:${r.patientId}:${r.screenerKey}`, kind: "screener", partition: r.taskAlreadySent ? "waiting" : "needs_you", patientId: r.patientId, patientName: r.patientName, label: `${r.screenerKey.toUpperCase()} re-screen`, dueAt: now.toISOString(), action: r.taskAlreadySent ? "Open chart" : "Send re-screen", sourceId: r.screenerKey });
   for (const r of asamTaskRows(actor.role, now) ?? []) {
     if (!mineIds.has(r.patientId)) continue;
     push({ id: `asam:${r.taskId}`, kind: "asam", patientId: r.patientId, patientName: r.patientName, label: "ASAM assessment", dueAt: r.dueDate, action: "Open ASAM", sourceId: r.taskId });
   }
   for (const r of myPendingLabs(actor, actor.role))
-    push({ id: `lab:${r.id}`, kind: "lab", patientId: r.patientId, patientName: r.patientName, label: `${r.label} result`, dueAt: r.dueAt, action: "Review lab" });
+    push({ id: `lab:${r.id}`, kind: "lab", partition: "waiting", patientId: r.patientId, patientName: r.patientName, label: `${r.label} result`, dueAt: r.dueAt, action: "Review lab" });
   for (const r of myPlanReviewsDue(actor, now))
     push({ id: `plan:${r.patientId}`, kind: "plan", patientId: r.patientId, patientName: r.patientName, label: "Care plan review", dueAt: r.dueAt, action: "Review plan" });
   for (const r of hieFollowUps([...mineIds], actor.role)) {
@@ -165,7 +165,7 @@ export function workspaceActionRows(input: {
     const p = AdelanteEHR.getPatient(t.patientId);
     if (/asam|caloms|sud/i.test(t.taskType ?? "") && (!p || !roleSeesAsamSection(actor.role, p))) continue;
     if (t.allowedRoles?.length && !t.allowedRoles.includes(actor.role)) continue;
-    push({ id: `task:${t.id}`, kind: "task", patientId: t.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: t.title, dueAt: t.dueDate, action: "Open task", sourceId: t.id });
+    push({ id: `task:${t.id}`, kind: "task", partition: (aliases.has(t.assignedTo) || aliases.has(t.claimedBy)) ? "needs_you" : "waiting", patientId: t.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: t.title, dueAt: t.dueDate, action: "Open task", sourceId: t.id });
   }
   // §Batch B2 — referral chase tasks (owner, or coordinator pool). Neutral text only.
   for (const c of chaseRowsFor(actor, now))
@@ -175,22 +175,22 @@ export function workspaceActionRows(input: {
     const who = severityAssignee(p);
     if (!who || !aliases.has(who)) continue;
     for (const f of openSeverityFlags(p, actor.role))
-      rows.push({ id: `severity:${f.id}`, kind: "severity", patientId: p.id, patientName: `${p.firstName} ${p.lastName}`, label: `${SEVERITY_ROW_LABEL} — ${f.text}`, dueAt: f.createdAt, due: "Review", group: "now", action: "Review", sourceId: f.id });
+      rows.push({ partition: "needs_you", id: `severity:${f.id}`, kind: "severity", patientId: p.id, patientName: `${p.firstName} ${p.lastName}`, label: `${SEVERITY_ROW_LABEL} — ${f.text}`, dueAt: f.createdAt, due: "Review", group: "now", action: "Review", sourceId: f.id });
   }
   // §U1 — my other escalations (handed to me, missed handoffs, social needs) not already listed above.
   const listed = new Set(rows.map((r) => r.sourceId).filter(Boolean));
   for (const e of myOpenEscalations({ role: actor.role, staffId: actor.staffId }, +now)) {
     if (listed.has(e.sourceId)) continue;
-    rows.push({ id: `escalation:${e.key}`, kind: "escalation", patientId: e.patientId, patientName: e.patientName, label: `${e.typeLabel} — escalation`, dueAt: e.dueAt, due: e.countdown, group: "now", action: "Open escalations", sourceId: e.key });
+    rows.push({ partition: "needs_you", id: `escalation:${e.key}`, kind: "escalation", patientId: e.patientId, patientName: e.patientName, label: `${e.typeLabel} — escalation`, dueAt: e.dueAt, due: e.countdown, group: "now", action: "Open escalations", sourceId: e.key });
   }
   // §Calendars L4/L5 — coordinator items: authors out with notes waiting, and
   // booked visits hit by a new closed day / time off. Neutral text, no type.
   if (isCoordinatorRole(actor.role)) {
     for (const a of authorOutItems(patients, now))
-      rows.push({ id: `author_out:${a.authorId}`, kind: "author_out", patientId: "", patientName: a.authorName, label: `${AUTHOR_OUT_LABEL} (${a.openNotes}) · out ${a.outFrom}${a.outTo !== a.outFrom ? ` – ${a.outTo}` : ""}`, dueAt: now.toISOString(), due: "Reassign or arrange a cosigner", group: "today", action: "Open team calendar", sourceId: a.authorId });
+      rows.push({ partition: "needs_you", id: `author_out:${a.authorId}`, kind: "author_out", patientId: "", patientName: a.authorName, label: `${AUTHOR_OUT_LABEL} (${a.openNotes}) · out ${a.outFrom}${a.outTo !== a.outFrom ? ` – ${a.outTo}` : ""}`, dueAt: now.toISOString(), due: "Reassign or arrange a cosigner", group: "today", action: "Open team calendar", sourceId: a.authorId });
     for (const r of listRescheduleItems("open")) {
       const p = patients.find((x) => x.id === r.patientId);
-      rows.push({ id: `reschedule:${r.id}`, kind: "reschedule", patientId: r.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: `Reschedule needed — ${r.cause === "site_closed" ? "clinic closed" : "clinician out"}`, dueAt: r.start, due: new Date(r.start).toLocaleDateString("en-US", { month: "short", day: "numeric" }), group: "today", action: "Mark handled", sourceId: r.id });
+      rows.push({ partition: "needs_you", id: `reschedule:${r.id}`, kind: "reschedule", patientId: r.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: `Reschedule needed — ${r.cause === "site_closed" ? "clinic closed" : "clinician out"}`, dueAt: r.start, due: new Date(r.start).toLocaleDateString("en-US", { month: "short", day: "numeric" }), group: "today", action: "Mark handled", sourceId: r.id });
     }
   }
   // §B1 — MAT refill needed / missed dose → prescriber (pool → coordinator). Part 2-masked label.
@@ -199,18 +199,18 @@ export function workspaceActionRows(input: {
     if (!mineRow) continue;
     const p = patients.find((x) => x.id === a.patientId);
     const label = p && roleSeesAsamSection(actor.role, p) ? continuityTaskLabel(a) : NEUTRAL_TYPE_LABEL;
-    rows.push({ id: `continuity:${a.key}`, kind: "continuity", patientId: a.patientId, patientName: a.patientName, label, dueAt: a.dueAt, due: "Same business day (Draft)", group: "today", action: "Open chart", sourceId: a.key });
+    rows.push({ partition: "needs_you", id: `continuity:${a.key}`, kind: "continuity", patientId: a.patientId, patientName: a.patientName, label, dueAt: a.dueAt, due: "Same business day (Draft)", group: "today", action: "Open chart", sourceId: a.key });
   }
   // §B2 — 30 days before release, nothing submitted → CF care manager / ECM (pool → coordinator).
   for (const r of releaseCoverageRows(now)) {
     if (!r.task) continue;
     if (!(r.ownerStaffId ? aliases.has(r.ownerStaffId) : isCoordinatorRole(actor.role))) continue;
-    rows.push({ id: `coverage:${r.episodeId}`, kind: "coverage", patientId: r.patientId, patientName: r.patientName, label: `Medi-Cal not submitted — ${dayOffsetLabel(r.dayOffset)}`, dueAt: releaseCoverageDueAt(r, now), due: "Draft", group: "week", action: "Open coverage", sourceId: r.episodeId });
+    rows.push({ partition: "needs_you", id: `coverage:${r.episodeId}`, kind: "coverage", patientId: r.patientId, patientName: r.patientName, label: `Medi-Cal not submitted — ${dayOffsetLabel(r.dayOffset)}`, dueAt: releaseCoverageDueAt(r, now), due: "Draft", group: "week", action: "Open coverage", sourceId: r.episodeId });
   }
   // §B6 — deactivated staff still owning open items: one item each, counts only.
   if (isCoordinatorRole(actor.role)) for (const r of reassignNeededItems()) {
     const c = r.counts;
-    rows.push({ id: `reassign_needed:${r.staffId}`, kind: "reassign_needed", patientId: "", patientName: r.name, label: `Reassign needed — ${c.notesToSign} notes to sign · ${c.tasks} tasks · ${c.escalations} escalations · ${c.caseload} caseload`, dueAt: now.toISOString(), due: "Nothing reassigned automatically", group: "today", action: "Open staff", sourceId: r.staffId });
+    rows.push({ partition: "needs_you", id: `reassign_needed:${r.staffId}`, kind: "reassign_needed", patientId: "", patientName: r.name, label: `Reassign needed — ${c.notesToSign} notes to sign · ${c.tasks} tasks · ${c.escalations} escalations · ${c.caseload} caseload`, dueAt: now.toISOString(), due: "Nothing reassigned automatically", group: "today", action: "Open staff", sourceId: r.staffId });
   }
   // §U2 — @mentions in team threads: "Reply needed" until replied or marked done.
   const myThreads = listThreadsFor({ staffId: actor.staffId, role: actor.role });
@@ -218,21 +218,21 @@ export function workspaceActionRows(input: {
     const t = myThreads.find((x) => x.id === m.threadId);
     if (!t) continue;
     const p = t.patientId ? patients.find((x) => x.id === t.patientId) : undefined;
-    rows.push({ id: `reply:${m.id}`, kind: "reply", patientId: t.patientId ?? "", patientName: p ? `${p.firstName} ${p.lastName}` : "Team thread", label: "Reply needed — team thread", dueAt: m.createdAt, due: "Reply", group: "now", action: "Reply", sourceId: m.id });
+    rows.push({ partition: "needs_you", id: `reply:${m.id}`, kind: "reply", patientId: t.patientId ?? "", patientName: p ? `${p.firstName} ${p.lastName}` : "Team thread", label: "Reply needed — team thread", dueAt: m.createdAt, due: "Reply", group: "now", action: "Reply", sourceId: m.id });
   }
   // §Access A3 — restricted-record opens → compliance stand-in (credentialing coordinator).
   if (actor.role === "credentialing_coordinator") for (const i of listRestrictedOpenItems())
-    rows.push({ id: `restricted_open:${i.id}`, kind: "restricted_open", patientId: "", patientName: i.actorName, label: "Restricted record opened", dueAt: i.at, due: "Review", group: "today", action: "Open Quality & compliance", sourceId: i.id });
+    rows.push({ partition: "needs_you", id: `restricted_open:${i.id}`, kind: "restricted_open", patientId: "", patientName: i.actorName, label: "Restricted record opened", dueAt: i.at, due: "Review", group: "today", action: "Open Quality & compliance", sourceId: i.id });
   // §A3 — county report reminders (Draft owner: billing coordinator).
   for (const r of countyReminders(actor.role, now))
-    rows.push({ id: `county:${r.id}`, kind: "county_reminder", patientId: "", patientName: "County reporting", label: r.label, dueAt: r.due, due: r.kind === "1_day" ? "1 day" : "5 days", group: "week", action: "Open county reporting", sourceId: r.id });
+    rows.push({ partition: "needs_you", id: `county:${r.id}`, kind: "county_reminder", patientId: "", patientName: "County reporting", label: r.label, dueAt: r.due, due: r.kind === "1_day" ? "1 day" : "5 days", group: "week", action: "Open county reporting", sourceId: r.id });
   // §Group 1 C2 / B4 — a care-plan flag with no live journey → its content owner (named content_authoring owner, else owner pool). Neutral, counts only.
   for (const g of listContentGaps()) if (isContentGapOwner(g, actor))
-    rows.push({ id: contentGapKey(g.id), kind: "content_gap", patientId: "", patientName: "Patient content", label: `${CONTENT_GAP_LABEL} (${g.patients < 11 ? "fewer than 11" : g.patients} patients)`, dueAt: g.at, due: "Draft", group: "week", action: "Open content center", sourceId: g.id });
+    rows.push({ partition: "needs_you", id: contentGapKey(g.id), kind: "content_gap", patientId: "", patientName: "Patient content", label: `${CONTENT_GAP_LABEL} (${g.patients < 11 ? "fewer than 11" : g.patients} patients)`, dueAt: g.at, due: "Draft", group: "week", action: "Open content center", sourceId: g.id });
   // §A3 — content waiting for a clinical reviewer.
   if (CONTENT_REVIEWER_ROLES.includes(actor.role)) for (const e of contentReviewQueue().filter((x) => contentVisibleToStaff(actor.role, x.typeId, x.body)))
-    rows.push({ id: `content-waiting:${e.typeId}:${e.id}`, kind: "content_waiting", patientId: "", patientName: "Patient content", label: `Content review waiting — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Review", group: "week", action: "Review content", sourceId: e.id });
-  for (const e of staleContentFor(actor.staffId ?? "", actor.staffName, actor.role, now)) rows.push({ id: `content-review:${e.typeId}:${e.id}`, kind: "content_review", patientId: "", patientName: "Patient content", label: `Review follow-up needed — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Past review date", group: "today", action: "Review content", sourceId: e.id });
+    rows.push({ partition: "needs_you", id: `content-waiting:${e.typeId}:${e.id}`, kind: "content_waiting", patientId: "", patientName: "Patient content", label: `Content review waiting — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Review", group: "week", action: "Review content", sourceId: e.id });
+  for (const e of staleContentFor(actor.staffId ?? "", actor.staffName, actor.role, now)) rows.push({ partition: "needs_you", id: `content-review:${e.typeId}:${e.id}`, kind: "content_review", patientId: "", patientName: "Patient content", label: `Review follow-up needed — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Past review date", group: "today", action: "Review content", sourceId: e.id });
   // Crisis always first, crisis notes pinned right after (top of Needs closing).
   const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "contact"] : ["crisis", "crisis_note", "severity", "escalation", "reply"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {
