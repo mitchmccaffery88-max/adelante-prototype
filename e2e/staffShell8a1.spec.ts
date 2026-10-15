@@ -56,7 +56,7 @@ test.describe("8a-1 staff shell", () => {
   });
 
   test("crisis count never appears without visible open crisis rows", async ({ page }) => {
-    await actAs(page, "billing", "s-bill");
+    await actAs(page, "billing", "s-bill1");
     await page.goto("/billing");
     await expect(page.getByTestId("staff-shell")).toBeVisible();
     await expect(page.getByRole("link", { name: /open crisis escalations/ })).toHaveCount(0);
