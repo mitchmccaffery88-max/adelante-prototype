@@ -9,6 +9,7 @@ test("shell New creates a real Cathy task with one standard action event", async
   await page.getByTestId("dashboard-add-menu").getByRole("button", { name: "Task for me / my team", exact: true }).click();
   const drawer = page.getByTestId("dashboard-action-drawer");
   await drawer.getByPlaceholder("What needs to be done?").fill("8a2 audit parity task");
+  await drawer.getByPlaceholder("Search name, DOB or program ID").fill("Luis");
   await drawer.getByTestId("dashboard-patient-picker").getByRole("button").first().click();
   const before = await page.evaluate(() => (window as unknown as { __adelante: { AdelanteEHR: typeof import("../src/lib/ehr").AdelanteEHR } }).__adelante.AdelanteEHR.listAuditEvents({ category: "action" }).length);
   await drawer.getByRole("button", { name: "Create task", exact: true }).click();
