@@ -8,7 +8,7 @@ import { runAction } from "@/lib/actions/runAction";
 import { AdelanteEHR } from "@/lib/ehr";
 import { contentType } from "@/lib/contentTypes";
 import {
-  getContentEntry, publishedContent, saveContentDraft, seedPublishedContent, submitContentForReview,
+  contentRemovalBlockReason, getContentEntry, publishedContent, saveContentDraft, seedPublishedContent, submitContentForReview,
 } from "@/lib/contentPublishing";
 
 const actor = { role: "clinical_coordinator" as const, staffId: "s-cc2", name: "Cathy" };
@@ -52,7 +52,7 @@ describe("8c-1 pending coverage", () => {
 
   it("withdrawing an edited shipped item lets the shipped baseline reappear", () => {
     const desc = contentType("library_lesson");
-    const id = desc.baselineIds()[0]!;
+    const id = desc.baselineIds().find((x) => !contentRemovalBlockReason("library_lesson", x))!;
     const baseline = desc.baselineBody(id)!;
     seedPublishedContent({ typeId: "library_lesson", id, body: { ...baseline, title: "Edited live title" }, actor, atISO: "2026-10-01T00:00:00Z" });
     expect(publishedContent("library_lesson", id)?.title).toBe("Edited live title");
@@ -65,7 +65,7 @@ describe("8c-1 pending coverage", () => {
 
   it("valid publish-review path publishes once with the reviewer's reason", () => {
     const id = "8c1-publish-review";
-    saveContentDraft({ typeId: "library_lesson", id, body: { ...contentType("library_lesson").emptyBody(), id, title: id }, actor, note: "Draft fixture" });
+    saveContentDraft({ typeId: "library_lesson", id, body: { ...contentType("library_lesson").emptyBody(), id, title: id, meta: { spanishOverrideReason: "Spanish to follow — Draft" } }, actor, note: "Draft fixture" });
     submitContentForReview({ typeId: "library_lesson", id, actor, note: "Ready" });
     const before = AdelanteEHR.listAuditEvents({}).map((x) => x.id);
     const r = runAction("content_publish", who, undefined, { args: [{ typeId: "library_lesson", id, actor, note: "Reviewed wording" }] });
