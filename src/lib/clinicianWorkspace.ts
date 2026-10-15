@@ -40,6 +40,7 @@ export interface WorkspaceActionRow {
   label: string;
   due: string;
   dueAt: string;
+  partition: "needs_you" | "waiting";
   group: ActionGroup;
   action: string;
   sourceId?: string;
@@ -93,7 +94,7 @@ export function workspaceActionRows(input: {
   const mineIds = new Set(mine.map((p) => p.id));
   const aliases = staffAliases(actor);
   const rows: WorkspaceActionRow[] = [];
-  const push = (row: Omit<WorkspaceActionRow, "group" | "due">) => rows.push({ ...row, group: groupFor(row.dueAt, now), due: dueText(row.dueAt, now) });
+  const push = (row: Omit<WorkspaceActionRow, "group" | "due" | "partition">, partition: "needs_you" | "waiting" = "needs_you") => rows.push({ ...row, group: groupFor(row.dueAt, now), due: dueText(row.dueAt, now), partition });
   for (const a of needsClosing) {
     const p = patients.find((x) => x.id === a.patientId);
     push({ id: `closing:${a.id}`, kind: "closing", patientId: a.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: a.status === "attended" ? "Visit needs a note" : "Past visit needs closing", dueAt: new Date(+new Date(a.start) + a.durationMin * 60000).toISOString(), action: a.status === "attended" ? "Write note" : "Mark attended" });
