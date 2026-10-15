@@ -393,3 +393,26 @@
 .member-comfortable .patient-player .member-completion p { color: var(--foreground); }
 .member-comfortable .shadow-card { box-shadow: var(--shadow-card); }
 .member-comfortable [data-next-step] :is(p, h2) { color: var(--on-gold); }
+
+/* Phase 8a-1: staff hosts and their context-owned portals only. Nested member
+   previews keep their own typography; charts/StatTiles are Phase 9. */
+:root { --staff-sidebar-width: 240px; --staff-sidebar-collapsed: 56px; --staff-header-height: 56px; }
+[data-density="compact"] { font-size: 16px; line-height: 24px; }
+[data-density="compact"] :is(.text-xs, .text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\], .text-\[12px\], .text-\[13px\], .text-\[0\.8rem\]):not(:where(.member-comfortable *, .member-overlay *, .patient-player *, .recharts-wrapper *, [data-phase9] *)) { font-size: 14px; line-height: 20px; }
+[data-density="compact"] :is(h1):not(:where(.member-comfortable *, .member-overlay *, .patient-player *)) { font-size: 24px; line-height: 30px; }
+[data-density="compact"] :is(table):not(:where(.member-comfortable *, .member-overlay *)) { font-size: 14px; line-height: 20px; }
+[data-density="compact"] :is(button, a[role="button"], input:not([type="checkbox"]):not([type="radio"]), select, [role="combobox"]):not(:where(.member-comfortable *, .member-overlay *, .patient-player *, .recharts-wrapper *, [data-phase9] *)) { min-height: 36px; }
+[data-density="compact"] :is(button, a[role="button"]):not(:where(.member-comfortable *, .member-overlay *, .patient-player *, .recharts-wrapper *, [data-phase9] *)) { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.staff-sidebar[data-collapsed="false"] { width: var(--staff-sidebar-width); }
+.staff-sidebar[data-collapsed="true"] { width: var(--staff-sidebar-collapsed); }
+.staff-nav-active::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--path); border-radius: var(--radius-sm); }
+.staff-new-slot:empty, .staff-new-slot:has(> div:empty) { display: none; }
+.staff-sidebar[data-collapsed="true"] .staff-new-button { justify-content: center; padding-inline: 0; }
+.staff-sidebar[data-collapsed="true"] .staff-new-button span { display: none; }
+.staff-demo-controls :is([data-testid="demo-state-switcher"], [data-testid="staff-role-switcher"]) { background: var(--surface); color: var(--ink); border-color: var(--line-strong); box-shadow: none; border-radius: var(--radius-sm); }
+.staff-demo-controls svg { color: var(--ink-muted); }
+@media (max-width: 767px) { [data-testid="staff-navigation-sheet"] .staff-sidebar { width: 100%; } }
+@media (pointer: coarse) {
+  [data-density="compact"] :is(button, a[role="button"], input:not([type="checkbox"]):not([type="radio"]), select, [role="combobox"]):not(:where(.member-comfortable *, .member-overlay *, .patient-player *, .recharts-wrapper *, [data-phase9] *)) { min-height: 48px; }
+  [data-density="compact"] :is(button, a[role="button"]):not(:where(.member-comfortable *, .member-overlay *, .patient-player *, .recharts-wrapper *, [data-phase9] *)) { min-width: 48px; }
+}

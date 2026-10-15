@@ -3,7 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu, Search, ShieldAlert, UserRound } from "lucide-react";
 import { STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import { useStaffNavGroups } from "@/lib/navSections";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { useEhr } from "@/lib/ehr";
 import { canSeeAllEscalations, filterEscalations, listEscalations } from "@/lib/escalations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
           </PopoverContent>
         </Popover>
         <div data-testid="acting-role-indicator" title={`Acting as: ${roleLabel} · ${actor.staffName}`} className="ml-auto hidden min-w-0 rounded-sm border border-line bg-surface-sunk px-2 py-1 text-sm sm:block"><span className="text-ink-muted">Acting as: </span><span className="font-semibold">{roleLabel}</span><span className="hidden lg:inline"> · {actor.staffName}</span></div>
-        {count > 0 && <Button asChild variant="ghost" className="shrink-0 bg-urgent text-on-urgent hover:bg-urgent"><Link to="/escalations" aria-label={`${count} open crisis escalations`}><ShieldAlert /><span>{count}</span><span className="hidden xl:inline">Crisis</span></Link></Button>}
+        {count > 0 && <Button asChild variant="ghost" className="shrink-0 bg-urgent text-on-urgent hover:bg-urgent"><Link to="/escalations" search={{ view: undefined, type: undefined, owner: undefined, overdue: undefined }} aria-label={`${count} open crisis escalations`}><ShieldAlert /><span>{count}</span><span className="hidden xl:inline">Crisis</span></Link></Button>}
         <NotificationBell audience="staff" className="ml-auto sm:ml-0" />
         <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="Staff account"><UserRound /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>{actor.staffName} · {roleLabel}</DropdownMenuLabel><DropdownMenuItem asChild><Link to="/auth">Sign in / out</Link></DropdownMenuItem></DropdownMenuContent></DropdownMenu>
       </header>

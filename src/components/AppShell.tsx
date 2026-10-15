@@ -152,7 +152,9 @@ function AppShellContent() {
       {isPatientSurface && <OnboardingGuard />}
       {/* Demo scenario control — sticky at the viewport top so it is reachable at
           any height, not buried in the footer. */}
-      <DemoControlsBar staff={showStaffShell} />
+      {showStaffShell ? <DemoControlsBar staff /> : (
+      <DemoControlsBar />
+      )}
       {isPatientSurface && (
         <div className="sticky top-10 z-50 flex items-center border-b bg-surface-elevated/95 px-3 backdrop-blur md:block md:border-b-0 md:bg-transparent md:px-0">
           {!onboarding && <UserNavigationDrawer mode="patient" />}
