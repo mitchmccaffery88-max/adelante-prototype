@@ -27,6 +27,6 @@ test("coarse pointer gives dialog controls and the reason field at least 48px",a
  const ctx=await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:390,height:844}});const page=await ctx.newPage();
  expect(await page.evaluate(()=>matchMedia("(pointer: coarse)").matches)).toBe(true);
  await start(page);await page.evaluate(async()=>{const{cf}=await(window as any).__adelante.avail();const actor={role:"sys_admin",staffId:"s-admin1",name:"Admin"};const v=cf.editForm("hipaa",{},actor);cf.submitForLegalReview(v.id,actor);cf.approveForm(v.id,actor);});await go(page,"/admin-content");await page.getByRole("tab",{name:"Legal & consent"}).click();await page.getByTestId("consent-form-hipaa").getByRole("button",{name:"Publish",exact:true}).click();
- for(const loc of [dialog(page).getByRole("button",{name:"Keep consent form"}),dialog(page).getByRole("button",{name:"Publish consent form",exact:true}),dialog(page).getByRole("textbox")]){const box=await loc.boundingBox();expect(box!.height).toBeGreaterThanOrEqual(48);}
+ for(const loc of [dialog(page).getByRole("button",{name:"Keep consent form"}),dialog(page).getByRole("button",{name:"Publish consent form",exact:true}),dialog(page).getByRole("textbox")]){const h=await loc.evaluate(el=>parseFloat(getComputedStyle(el).height));expect(h).toBeGreaterThanOrEqual(48);}
  await ctx.close();
 });
