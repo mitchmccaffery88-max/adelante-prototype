@@ -15,7 +15,7 @@ describe("public referral shell", () => {
     expect(appShell).toContain("{(!isPublicSurface || STAFF_ROUTES.includes(pathname)) && <RouteAccessGuard />}");
     expect(appShell).toContain("{(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && (");
     expect(appShell).toContain('audience={isPatientSurface ? "patient" : isAdvocateSurface ? "advocate" : "staff"}');
-    expect(appShell).toContain("{isStaffSurface && <DropdownMenu>");
+    expect(appShell).toContain(") : showStaffShell ? (");
   });
 
   it("mounts the demo controls bar on every page type, public included (Part C)", () => {

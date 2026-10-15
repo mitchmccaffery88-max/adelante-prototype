@@ -17,7 +17,8 @@ import {
   isPublicRoute,
   isAdvocateRoute,
 } from "@/lib/navSections";
-import { StaffNavSidebar } from "@/components/StaffNavSidebar";
+import { StaffShell } from "@/components/StaffShell";
+import { canReadProviderRef } from "@/lib/providerReference";
 import { PatientSidebar } from "@/components/PatientSidebar";
 import { AdvocateSidebar } from "@/components/AdvocateSidebar";
 import { UserNavigationDrawer } from "@/components/UserNavigationDrawer";
@@ -44,8 +45,9 @@ import {
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { role } = useActingStaff();
   const member = PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]) || pathname.startsWith("/rescreen/") || pathname.startsWith("/resources/") || ["/next-steps", "/consent", "/safety-check"].includes(pathname);
-  const staff = !member && !isPublicRoute(pathname) && !isAdvocateRoute(pathname) && (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/") || pathname === "/pre-release-import" || pathname.startsWith("/agentic/"));
+  const staff = !member && !isPublicRoute(pathname) && !isAdvocateRoute(pathname) && (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/") || pathname === "/pre-release-import" || pathname.startsWith("/agentic/") || (pathname === "/provider-reference" && canReadProviderRef(role)));
   return staff ? <EnglishSurface><AppShellContent /></EnglishSurface> : <AppShellContent />;
 }
 
@@ -136,11 +138,11 @@ function AppShellContent() {
       // it has to be named here or the shell falls through to patient nav.
       pathname === "/pre-release-import" ||
       // §Agentic Roadmap prototype screens are staff-owned clinical demos.
-      pathname.startsWith("/agentic/"));
+      pathname.startsWith("/agentic/") || (pathname === "/provider-reference" && canReadProviderRef(actingRole)));
 
   // Staff shell = persistent sidebar on any staff-owned route (plus the
   // full-page chart, which is staff-only too).
-  const showStaffShell = isStaffSurface && staffNav.length > 0;
+  const showStaffShell = isStaffSurface;
 
   if (isPublicSurface) return <WebsiteLayout>{STAFF_ROUTES.includes(pathname) && <RouteAccessGuard />}<Outlet /></WebsiteLayout>;
 
@@ -150,14 +152,16 @@ function AppShellContent() {
       {isPatientSurface && <OnboardingGuard />}
       {/* Demo scenario control — sticky at the viewport top so it is reachable at
           any height, not buried in the footer. */}
+      {showStaffShell ? <DemoControlsBar staff /> : (
       <DemoControlsBar />
+      )}
       {isPatientSurface && (
         <div className="sticky top-10 z-50 flex items-center border-b bg-surface-elevated/95 px-3 backdrop-blur md:block md:border-b-0 md:bg-transparent md:px-0">
           {!onboarding && <UserNavigationDrawer mode="patient" />}
           <div className="min-w-0 flex-1"><CrisisHeader /></div>
         </div>
       )}
-      <header
+      {!showStaffShell && <header
         className={cn(
           "z-30 border-b bg-background/85 backdrop-blur",
           !isPatientSurface && "sticky top-10",
@@ -348,7 +352,7 @@ function AppShellContent() {
             <span className="font-semibold">{actingRoleLabel}</span> · {actingStaffName}
           </div>
         )}
-      </header>
+      </header>}
 
       {(isPatientSurface || isAdvocateSurface) && lang === "es" && <p data-testid="member-translation-draft" className="mx-auto w-full max-w-7xl px-4 py-2 text-sm text-ink-muted sm:px-6">Borrador — pendiente de revisión de traducción</p>}
       <main className="flex-1">
@@ -374,13 +378,9 @@ function AppShellContent() {
             </div>
           </div>
         ) : showStaffShell ? (
-          <div className="flex min-h-full">
-            <StaffNavSidebar />
-            <div className="min-w-0 flex-1">
-              <StaffBreadcrumbs />
-              <Outlet />
-            </div>
-          </div>
+          <StaffShell>
+            <Outlet />
+          </StaffShell>
         ) : (
           <Outlet />
         )}

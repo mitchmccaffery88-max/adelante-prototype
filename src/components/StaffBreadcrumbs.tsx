@@ -55,12 +55,12 @@ export function StaffBreadcrumbs() {
 
   return (
     <div
-      className="border-b bg-background/60 px-4 py-3 sm:px-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+      className="border-b border-line bg-surface px-4 py-2 sm:px-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
       data-testid="staff-top-bar"
     >
       <div className="min-w-0">
       <nav aria-label="Breadcrumb" data-testid="staff-breadcrumbs">
-        <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <ol className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
           <li className="flex items-center gap-1">
             <Link to="/" className="inline-flex items-center gap-1 hover:text-foreground">
               <Home className="h-3 w-3" />
@@ -87,7 +87,7 @@ export function StaffBreadcrumbs() {
         {Icon && <Icon className="h-4 w-4 shrink-0 text-teal" />}
         <span className="truncate font-display text-base text-navy">{pageLabel}</span>
         {desc && (
-          <span className="hidden truncate text-xs text-muted-foreground sm:inline">
+          <span className="hidden truncate text-sm text-muted-foreground sm:inline">
             · {desc}
           </span>
         )}
@@ -104,11 +104,11 @@ export function StaffBreadcrumbs() {
           <Link
             to="/my-work"
             data-testid="top-bar-my-work"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 transition-colors hover:bg-secondary"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary"
           >
             <ListChecks className="h-3.5 w-3.5 text-teal" aria-hidden="true" />
             My work
-            <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+            <span className="rounded-full bg-secondary px-1.5 py-0.5 text-sm font-semibold text-foreground">
               <HydratedCount value={myWorkCount} />
             </span>
           </Link>
