@@ -26,11 +26,11 @@ There is **no `StaffShell.tsx` or compact-density attribute** in the current sou
 
 `ui/table.tsx` is a presentational primitive, not a DataTable. There is no reusable DataTable with the requested view/sort/selection/pagination behavior. Existing claim sort/filter exports are already tested; preserve them. Do not replace report data, clinical algorithms or store ownership rules.
 
-Additional non-table lists include the six `inbox/*Queue` components, `TaskQueueCard`, `PatientOpenItemsCard`, `TaskWorkRow`, `GroupJoinRequestsQueue`, `DocumentVerifyQueue`, `ResourceVerificationQueue`, `ReferralTrackerCard`, `ReferralsTab`, `TaskList`, `NotesTab`, `CareEpisodesPanel`, `OrdersTab`, `NoteOrdersSection`, `MedReconTab`, `ConsentFormsPanel`, `ConsentRecordsPanel`, `ChartDocumentsList`, `EligibilityHistoryCard`, `CoveragePlansCard`, `OutsideRecords`, `ScribeWorkspace`, `TeamThreads`, `WorkspaceDashboard` and `OpsWorkspace`. Appendix D includes a reproducible broad file-level checklist of repeated-list hosts; **106 import-reachable component candidates is not an exact count of distinct data-list components**: wrappers, menus, content previews and shared member renderers must be separated before conversion. No “approximately 84 lists” claim is used.
+Additional non-table lists include the six `inbox/*Queue` components, `TaskQueueCard`, `PatientOpenItemsCard`, `TaskWorkRow`, `GroupJoinRequestsQueue`, `DocumentVerifyQueue`, `ResourceVerificationQueue`, `ReferralTrackerCard`, `ReferralsTab`, `TaskList`, `NotesTab`, `CareEpisodesPanel`, `OrdersTab`, `NoteOrdersSection`, `MedReconTab`, `ConsentFormsPanel`, `ConsentRecordsPanel`, `ChartDocumentsList`, `EligibilityHistoryCard`, `CoveragePlansCard`, `OutsideRecords`, `ScribeWorkspace`, `TeamThreads`, `WorkspaceDashboard` and `OpsWorkspace`. The source scan also found repeated-list hosts; **106 import-reachable component candidates is not an exact count of distinct data-list components**: wrappers, menus, content previews and shared member renderers must be separated before conversion. No “approximately 84 lists” claim is used.
 
 ### Audited forms
 
-Appendix E inventories source hosts with fields and mutation handlers; field occurrences are not a count of distinct forms. Particular audited workflows to migrate:
+The source scan inventories hosts with fields and mutation handlers; field occurrences are not a count of distinct forms. Particular audited workflows to migrate:
 
 | Domain | Files / forms | Reason / confirmation today |
 |---|---|---|
@@ -155,7 +155,7 @@ Labels above, 14px ink-muted help, radius-sm/1.5px line-strong input edges; touc
 
 ### 8c-2 — Remaining prompts, staff confirmations and clinical/admin forms
 
-**Files:** every remaining call site in the native-dialog table; `clinician.tsx` with `lib/drawer-drafts.ts`; staff `ClinicalRecordTabs`, `OrdersTab`, `NoteRevisionPanel`, `OrderSafetyPanel`; admin configuration/lifecycle forms and other staff form hosts in Appendix E, in domain-sized sub-batches.
+**Files:** every remaining call site in the native-dialog table; `clinician.tsx` with `lib/drawer-drafts.ts`; staff `ClinicalRecordTabs`, `OrdersTab`, `NoteRevisionPanel`, `OrderSafetyPanel`; admin configuration/lifecycle forms and the other staff form hosts in the domain matrix, in domain-sized sub-batches.
 
 Replace goal-met confirm with a proper binary field; optional verification reference remains optional. Shared `PatientBalance`/advocate designation host branches require explicit staff scoping—do not force a member restyle. Three staff unconfirmed actions get confirmation or a proven equivalent undo; obligation/toolkit removals remain out of scope. Prefer undo only when an existing reversal really restores the record; never manufacture one.
 
@@ -331,321 +331,321 @@ Broad source census, not computed/rendered violations. Includes shared/member/pu
 
 | File (under src) | Occurrences |
 |---|---|
-| `components/AdvocateSidebar.tsx` | 1 |
-| `components/AppShell.tsx` | 16 |
-| `components/AskAdelPanel.tsx` | 13 |
-| `components/AssignClinicianButton.tsx` | 5 |
-| `components/CarePlanCard.tsx` | 41 |
-| `components/CaseloadUploadDialog.tsx` | 4 |
-| `components/ClientRecordDrawer.tsx` | 2 |
-| `components/CrisisNotice.tsx` | 1 |
-| `components/DemoControlsBar.tsx` | 1 |
-| `components/DemoStateSwitcher.tsx` | 6 |
-| `components/GatedCard.tsx` | 1 |
-| `components/Landing.tsx` | 1 |
-| `components/MobileNav.tsx` | 2 |
-| `components/NotificationBell.tsx` | 7 |
-| `components/PatientGroupScheduling.tsx` | 8 |
-| `components/PatientHelpLink.tsx` | 1 |
-| `components/PatientHome.tsx` | 27 |
-| `components/PatientProfileDialog.tsx` | 4 |
-| `components/PostEnrollmentSetupCard.tsx` | 5 |
-| `components/ProvenanceBadge.tsx` | 1 |
-| `components/ReferralProgressStrip.tsx` | 6 |
-| `components/ReferralStatusTimeline.tsx` | 9 |
-| `components/ReferralTimelineDrawer.tsx` | 26 |
-| `components/ReleaseDateProvenance.tsx` | 1 |
-| `components/StaffBreadcrumbs.tsx` | 4 |
-| `components/StaffNavSidebar.tsx` | 3 |
-| `components/StaffPatientSearch.tsx` | 3 |
-| `components/StaffRoleSwitcher.tsx` | 3 |
-| `components/TimePicker.tsx` | 1 |
-| `components/UserNavigationDrawer.tsx` | 1 |
-| `components/admin/CalaimCodesSection.tsx` | 7 |
-| `components/admin/CaseloadTable.tsx` | 14 |
-| `components/admin/CatalogResolutionMetricsCard.tsx` | 8 |
-| `components/admin/ClinicalContentReviewCard.tsx` | 4 |
-| `components/admin/ConsentFormLibrary.tsx` | 4 |
-| `components/admin/ContentAdminWorkspace.tsx` | 48 |
-| `components/admin/ContentAudit.tsx` | 1 |
-| `components/admin/ContentBrowse.tsx` | 1 |
-| `components/admin/ContentForm.tsx` | 13 |
-| `components/admin/ContentPreview.tsx` | 3 |
-| `components/admin/ReferralTrackerCard.tsx` | 15 |
-| `components/admin/ResourceVerificationQueue.tsx` | 7 |
-| `components/admin/RiskTextReviewPanel.tsx` | 8 |
-| `components/admin/SafetyReference.tsx` | 3 |
-| `components/admin/StructuredPracticeEditor.tsx` | 5 |
-| `components/advocate/AdvocateAppointmentsPanel.tsx` | 10 |
-| `components/advocate/AdvocateDesignationPanel.tsx` | 5 |
-| `components/advocate/AdvocateDocumentChecklist.tsx` | 5 |
-| `components/advocate/AdvocateIdentityBanner.tsx` | 1 |
-| `components/advocate/AdvocateInviteForm.tsx` | 2 |
-| `components/advocate/AdvocateMessagesPanel.tsx` | 2 |
-| `components/advocate/AdvocateNextStepsPanel.tsx` | 6 |
-| `components/advocate/AdvocatePoAwarenessPanel.tsx` | 2 |
-| `components/advocate/AdvocateSection.tsx` | 4 |
-| `components/advocate/AdvocateStatusList.tsx` | 2 |
-| `components/advocate/AdvocateViewParts.tsx` | 1 |
-| `components/advocate/AdvocateWorkspace.tsx` | 15 |
-| `components/advocate/AhcdValidationChecklist.tsx` | 8 |
-| `components/advocate/StaffAdvocatesTab.tsx` | 5 |
-| `components/afbi/AfbiContactForm.tsx` | 7 |
-| `components/agentic/NotePeekSheet.tsx` | 2 |
-| `components/agentic/PrototypeChrome.tsx` | 5 |
-| `components/billing/BillingStatusSummary.tsx` | 3 |
-| `components/billing/ClaimSignatureLine.tsx` | 2 |
-| `components/billing/ManagedCarePlansPanel.tsx` | 4 |
-| `components/billing/PatientBalance.tsx` | 3 |
-| `components/billing/PaymentArrangementCard.tsx` | 4 |
-| `components/billing/RatesPanel.tsx` | 25 |
-| `components/calendar/CalendarSyncCard.tsx` | 1 |
-| `components/carePartners/CarePartnersSection.tsx` | 3 |
-| `components/careplan/AsamSuggestions.tsx` | 15 |
-| `components/careplan/CarePlanEditor.tsx` | 25 |
-| `components/careplan/MyPlan.tsx` | 3 |
-| `components/chart/AdelBriefSections.tsx` | 13 |
-| `components/chart/AdelDrafts.tsx` | 15 |
-| `components/chart/BriefTab.tsx` | 17 |
-| `components/chart/ChartActionLauncher.tsx` | 11 |
-| `components/chart/ChartDocumentsList.tsx` | 4 |
-| `components/chart/ChartExtraSections.tsx` | 8 |
-| `components/chart/ChartHeader.tsx` | 11 |
-| `components/chart/ChartTabView.tsx` | 3 |
-| `components/chart/CoverageExtras.tsx` | 7 |
-| `components/chart/DrawerForms.tsx` | 1 |
-| `components/chart/LabsAndMeasures.tsx` | 12 |
-| `components/chart/RestrictedChartGate.tsx` | 1 |
-| `components/chart/SeverityFlagsPanel.tsx` | 2 |
-| `components/chart/TimelyAccessLine.tsx` | 4 |
-| `components/clinical/AsamPanel.tsx` | 17 |
-| `components/clinical/AsamTaskWorkItem.tsx` | 3 |
-| `components/clinical/AutomationTrace.tsx` | 3 |
-| `components/clinical/CalomsProfileCard.tsx` | 16 |
-| `components/clinical/CareEpisodesPanel.tsx` | 18 |
-| `components/clinical/ClinicalRecordTabs.tsx` | 23 |
-| `components/clinical/CrisisPanel.tsx` | 15 |
-| `components/clinical/CustodyTabs.tsx` | 11 |
-| `components/clinical/DemographicsCard.tsx` | 5 |
-| `components/clinical/DiagnosisPicker.tsx` | 8 |
-| `components/clinical/FacilityCombobox.tsx` | 4 |
-| `components/clinical/FacilityContactCell.tsx` | 6 |
-| `components/clinical/GroupEligibilityEditor.tsx` | 5 |
-| `components/clinical/IssueSignInCodeButton.tsx` | 1 |
-| `components/clinical/MarTab.tsx` | 27 |
-| `components/clinical/MedCheckInCard.tsx` | 13 |
-| `components/clinical/MedReconTab.tsx` | 25 |
-| `components/clinical/NoteAutofillCard.tsx` | 4 |
-| `components/clinical/NoteOrdersSection.tsx` | 12 |
-| `components/clinical/NoteRevisionPanel.tsx` | 2 |
-| `components/clinical/NoteTemplatePicker.tsx` | 7 |
-| `components/clinical/OrderSafetyPanel.tsx` | 8 |
-| `components/clinical/OrdersTab.tsx` | 35 |
-| `components/clinical/PathwayChip.tsx` | 1 |
-| `components/clinical/ProtocolsTab.tsx` | 12 |
-| `components/clinical/QuickCheckCard.tsx` | 9 |
-| `components/clinical/RecordSafetyBadges.tsx` | 8 |
-| `components/clinical/RecordTabs.tsx` | 140 |
-| `components/clinical/ReentryHandoffTab.tsx` | 9 |
-| `components/clinical/ReferForNeedDialog.tsx` | 6 |
-| `components/clinical/RefillCuresStep.tsx` | 4 |
-| `components/clinical/SafetyPlanPanel.tsx` | 11 |
-| `components/clinical/SdohActivityLog.tsx` | 25 |
-| `components/clinical/StaffContactsEditor.tsx` | 5 |
-| `components/clinical/SupervisionBanner.tsx` | 1 |
-| `components/clinical/TemplateForm.tsx` | 8 |
-| `components/clinical/refusal/NurseRefusalWorklist.tsx` | 2 |
-| `components/clinical/refusal/RefusalEscalationDialog.tsx` | 4 |
-| `components/clinical/refusal/RefusalFormDialog.tsx` | 12 |
-| `components/clinical/refusal/RefusalRiskTextRecord.tsx` | 5 |
-| `components/clinical/refusal/SignaturePad.tsx` | 6 |
-| `components/clinician/DashboardActionLauncher.tsx` | 7 |
-| `components/clinician/WorkspaceDashboard.tsx` | 10 |
-| `components/consent/AdvocateConsentStatus.tsx` | 1 |
-| `components/consent/ConsentFormsPanel.tsx` | 14 |
-| `components/consent/ConsentRecordsPanel.tsx` | 9 |
-| `components/consent/FormsToSign.tsx` | 3 |
-| `components/consent/PatientConsentStatusCard.tsx` | 7 |
-| `components/consent/PoDisclosureCard.tsx` | 9 |
-| `components/coverage/CalaimEligibilityComparison.tsx` | 2 |
-| `components/coverage/CoverageAtReleasePanel.tsx` | 2 |
-| `components/coverage/CoverageCheckDialog.tsx` | 3 |
-| `components/coverage/CoveragePlansCard.tsx` | 16 |
-| `components/coverage/EligibilityHistoryCard.tsx` | 4 |
-| `components/coverage/VerificationSourceBadge.tsx` | 1 |
-| `components/dashboards/CalAimSection.tsx` | 6 |
-| `components/dashboards/EngagementSection.tsx` | 8 |
-| `components/dashboards/FacilityCustodySection.tsx` | 4 |
-| `components/dashboards/GroupUtilizationSection.tsx` | 12 |
-| `components/dashboards/KpiVsTargetSection.tsx` | 6 |
-| `components/dashboards/PeriodSelector.tsx` | 2 |
-| `components/documents/DocumentUploadForm.tsx` | 3 |
-| `components/documents/DocumentVerifyQueue.tsx` | 3 |
-| `components/documents/PatientDocumentsCard.tsx` | 2 |
-| `components/escalations/CrisisQueueDetails.tsx` | 6 |
-| `components/frontdoor/QuestionCard.tsx` | 2 |
-| `components/frontdoor/SignupFlow.tsx` | 10 |
-| `components/groups/GroupJoinRequestsQueue.tsx` | 6 |
-| `components/hie/OutsideRecords.tsx` | 21 |
-| `components/identity/PatientMatchingQueue.tsx` | 13 |
-| `components/inbox/AdvocateReviewQueue.tsx` | 7 |
-| `components/inbox/CommunityInquiryQueue.tsx` | 4 |
-| `components/inbox/InboxActionQueue.tsx` | 5 |
-| `components/inbox/ProviderRequestQueue.tsx` | 4 |
-| `components/inbox/UnsignedNotesQueue.tsx` | 4 |
-| `components/inbox/VoidRequestQueue.tsx` | 4 |
-| `components/intake/AdelGuidedIntake.tsx` | 3 |
-| `components/intake/BenefitsStep.tsx` | 6 |
-| `components/intake/ReportedBenefitsCard.tsx` | 2 |
-| `components/library/ExercisePlayer.tsx` | 2 |
-| `components/library/LibraryBrowser.tsx` | 10 |
-| `components/library/ModuleTemplate.tsx` | 27 |
-| `components/messages/CareMessageThread.tsx` | 4 |
-| `components/messages/StaffMessagesTab.tsx` | 2 |
-| `components/nursing/NursingSection.tsx` | 3 |
-| `components/ops/OpsActionLauncher.tsx` | 8 |
-| `components/ops/OpsWorkspace.tsx` | 11 |
-| `components/orders/CatalogPicker.tsx` | 6 |
-| `components/orders/MedicationDoseSection.tsx` | 21 |
-| `components/patient/AdelChat.tsx` | 4 |
-| `components/patient/AdelHistoryPanel.tsx` | 4 |
-| `components/patient/AppointmentsSummary.tsx` | 6 |
-| `components/patient/ApptRequestStates.tsx` | 1 |
-| `components/patient/AskAdelHelp.tsx` | 2 |
-| `components/patient/DailyCheckInSummaryCard.tsx` | 1 |
-| `components/patient/GetHelpNowModal.tsx` | 1 |
-| `components/patient/HomeDashboard.tsx` | 11 |
-| `components/patient/MyCareTiles.tsx` | 7 |
-| `components/patient/MyMedicationsCard.tsx` | 11 |
-| `components/patient/NeedConnect.tsx` | 3 |
-| `components/patient/NeedThreadList.tsx` | 5 |
-| `components/patient/NotifyCareTeamCard.tsx` | 2 |
-| `components/patient/PatientPage.tsx` | 1 |
-| `components/patient/PostIntakeResources.tsx` | 1 |
-| `components/patient/ProfilePanels.tsx` | 8 |
-| `components/patient/RecoveryDateCard.tsx` | 3 |
-| `components/patient/RefillRunwayCard.tsx` | 4 |
-| `components/patient/SafetyPlanSummaryTile.tsx` | 1 |
-| `components/patient/SharedWithCard.tsx` | 1 |
-| `components/patient/SlipSupportFlow.tsx` | 1 |
-| `components/patient/ToolkitPage.tsx` | 6 |
-| `components/patient/WeeklyRecap.tsx` | 4 |
-| `components/prerelease/CapacityAuthorityStep.tsx` | 9 |
-| `components/prerelease/MatOrderCard.tsx` | 5 |
-| `components/prerelease/PreReleaseAppointmentCard.tsx` | 8 |
-| `components/prerelease/PreReleaseScreenerDialog.tsx` | 3 |
-| `components/prerelease/PreReleaseTimelineCard.tsx` | 5 |
-| `components/reassessment/RescreenForm.tsx` | 1 |
-| `components/recovery/GuidedToolFlow.tsx` | 5 |
-| `components/recovery/RecoveryCheckInNote.tsx` | 2 |
-| `components/recovery/RecoveryLessonView.tsx` | 3 |
-| `components/recovery/RecoveryModuleBrowser.tsx` | 6 |
-| `components/recovery/RecoveryStagePanel.tsx` | 9 |
-| `components/reentry/CommunityResourceCenter.tsx` | 2 |
-| `components/reentry/ObligationsCard.tsx` | 5 |
-| `components/reentry/ReentryDayZeroModule.tsx` | 6 |
-| `components/reentry/ResourceCard.tsx` | 4 |
-| `components/reentry/ResourceDetail.tsx` | 3 |
-| `components/referral/ReferralChasePanel.tsx` | 2 |
-| `components/referral/ReferralSubmissionForm.tsx` | 5 |
-| `components/reporting/PopulationHealthSection.tsx` | 24 |
-| `components/reporting/TimelyAccessReport.tsx` | 6 |
-| `components/scheduling/AppointmentRequestsCard.tsx` | 4 |
-| `components/scheduling/BookVisitDrawer.tsx` | 5 |
-| `components/scheduling/SchedulingTile.tsx` | 2 |
-| `components/scheduling/VisitActions.tsx` | 10 |
-| `components/screeners/CssrsForm.tsx` | 2 |
-| `components/screeners/ScreenerItems.tsx` | 1 |
-| `components/scribe/AiConsentCard.tsx` | 5 |
-| `components/scribe/ScribeWorkspace.tsx` | 28 |
-| `components/signature/AttestationSignatureBlock.tsx` | 2 |
-| `components/signature/SignBlockerList.tsx` | 1 |
-| `components/tasks/PatientOpenItemsCard.tsx` | 3 |
-| `components/tasks/TaskQueueCard.tsx` | 3 |
-| `components/tasks/TaskWorkRow.tsx` | 22 |
-| `components/team/TeamThreads.tsx` | 13 |
-| `components/ui/badge.tsx` | 1 |
-| `components/ui/button.tsx` | 1 |
-| `components/ui/calendar.tsx` | 3 |
-| `components/ui/chart.tsx` | 2 |
-| `components/ui/command.tsx` | 2 |
-| `components/ui/context-menu.tsx` | 1 |
-| `components/ui/dropdown-menu.tsx` | 1 |
-| `components/ui/form.tsx` | 1 |
-| `components/ui/menubar.tsx` | 1 |
-| `components/ui/sidebar.tsx` | 4 |
-| `components/ui/tooltip.tsx` | 1 |
-| `components/voice/AdelVoice.tsx` | 9 |
-| `components/voice/VoiceGuardrailNotice.tsx` | 1 |
-| `routes/__root.tsx` | 1 |
-| `routes/admin-audit.tsx` | 13 |
-| `routes/admin-catalog-governance.tsx` | 21 |
-| `routes/admin-claims.tsx` | 18 |
-| `routes/admin-coordination.tsx` | 8 |
-| `routes/admin-credentialing.tsx` | 22 |
-| `routes/admin-documents-audit.tsx` | 10 |
-| `routes/admin-facilities.tsx` | 10 |
-| `routes/admin-kpi-targets.tsx` | 13 |
-| `routes/admin-note-templates.tsx` | 72 |
-| `routes/admin-permissions.tsx` | 17 |
-| `routes/admin-scheduling-rules.tsx` | 13 |
-| `routes/admin-staff.tsx` | 3 |
-| `routes/admin-supervision.tsx` | 4 |
-| `routes/admin-vendors.tsx` | 18 |
-| `routes/admin.tsx` | 55 |
-| `routes/advocate.documents.tsx` | 1 |
-| `routes/advocate.index.tsx` | 1 |
-| `routes/advocate.my-documents.tsx` | 1 |
-| `routes/advocate.my-profile.tsx` | 3 |
-| `routes/advocate.tsx` | 3 |
-| `routes/agentic.chart-review.$patientId.tsx` | 7 |
-| `routes/agentic.index.tsx` | 1 |
-| `routes/agentic.scribe.$patientId.tsx` | 2 |
-| `routes/auth.tsx` | 14 |
-| `routes/billing-calaim-codes.tsx` | 1 |
-| `routes/billing.tsx` | 41 |
-| `routes/care-partners.tsx` | 1 |
-| `routes/case-manager.tsx` | 33 |
-| `routes/caseload-review.tsx` | 2 |
-| `routes/clinical-referrals.tsx` | 2 |
-| `routes/clinician-credentials.tsx` | 9 |
-| `routes/clinician-profile.tsx` | 4 |
-| `routes/clinician.tsx` | 38 |
-| `routes/consent-audit.tsx` | 15 |
-| `routes/consent.tsx` | 14 |
-| `routes/cosign-inbox.tsx` | 23 |
-| `routes/county-reporting.tsx` | 16 |
-| `routes/dashboards.tsx` | 2 |
-| `routes/data-exchange.tsx` | 8 |
-| `routes/disclosure-log.tsx` | 3 |
-| `routes/dmc-ods-readiness.tsx` | 8 |
-| `routes/eligibility-worklist.tsx` | 12 |
-| `routes/escalations.tsx` | 4 |
-| `routes/group-audit.tsx` | 14 |
-| `routes/group-sessions.tsx` | 67 |
-| `routes/inbox.tsx` | 1 |
-| `routes/intake.tsx` | 28 |
-| `routes/location-calendars.tsx` | 2 |
-| `routes/message-queue.tsx` | 3 |
-| `routes/my-calendar.tsx` | 7 |
-| `routes/my-work.tsx` | 32 |
-| `routes/naloxone.tsx` | 3 |
-| `routes/notes-queue.tsx` | 4 |
-| `routes/nurse.tsx` | 3 |
-| `routes/pre-release-import.tsx` | 4 |
-| `routes/pre-release.tsx` | 13 |
-| `routes/print.patient-records.$patientId.tsx` | 18 |
-| `routes/profile.tsx` | 2 |
-| `routes/provider-reference.tsx` | 13 |
-| `routes/quality-compliance.tsx` | 3 |
-| `routes/record.$patientId.tsx` | 2 |
-| `routes/refusal-queue.tsx` | 1 |
-| `routes/released-search.tsx` | 8 |
-| `routes/reporting.tsx` | 38 |
-| `routes/schedule.tsx` | 13 |
-| `routes/shift-count.tsx` | 10 |
-| `routes/start.other-help.tsx` | 2 |
-| `routes/team-calendar.tsx` | 1 |
-| `routes/worklist.tsx` | 6 |
-| `styles.css` | 1 |
+components/AdvocateSidebar.tsx: 1
+components/AppShell.tsx: 16
+components/AskAdelPanel.tsx: 13
+components/AssignClinicianButton.tsx: 5
+components/CarePlanCard.tsx: 41
+components/CaseloadUploadDialog.tsx: 4
+components/ClientRecordDrawer.tsx: 2
+components/CrisisNotice.tsx: 1
+components/DemoControlsBar.tsx: 1
+components/DemoStateSwitcher.tsx: 6
+components/GatedCard.tsx: 1
+components/Landing.tsx: 1
+components/MobileNav.tsx: 2
+components/NotificationBell.tsx: 7
+components/PatientGroupScheduling.tsx: 8
+components/PatientHelpLink.tsx: 1
+components/PatientHome.tsx: 27
+components/PatientProfileDialog.tsx: 4
+components/PostEnrollmentSetupCard.tsx: 5
+components/ProvenanceBadge.tsx: 1
+components/ReferralProgressStrip.tsx: 6
+components/ReferralStatusTimeline.tsx: 9
+components/ReferralTimelineDrawer.tsx: 26
+components/ReleaseDateProvenance.tsx: 1
+components/StaffBreadcrumbs.tsx: 4
+components/StaffNavSidebar.tsx: 3
+components/StaffPatientSearch.tsx: 3
+components/StaffRoleSwitcher.tsx: 3
+components/TimePicker.tsx: 1
+components/UserNavigationDrawer.tsx: 1
+components/admin/CalaimCodesSection.tsx: 7
+components/admin/CaseloadTable.tsx: 14
+components/admin/CatalogResolutionMetricsCard.tsx: 8
+components/admin/ClinicalContentReviewCard.tsx: 4
+components/admin/ConsentFormLibrary.tsx: 4
+components/admin/ContentAdminWorkspace.tsx: 48
+components/admin/ContentAudit.tsx: 1
+components/admin/ContentBrowse.tsx: 1
+components/admin/ContentForm.tsx: 13
+components/admin/ContentPreview.tsx: 3
+components/admin/ReferralTrackerCard.tsx: 15
+components/admin/ResourceVerificationQueue.tsx: 7
+components/admin/RiskTextReviewPanel.tsx: 8
+components/admin/SafetyReference.tsx: 3
+components/admin/StructuredPracticeEditor.tsx: 5
+components/advocate/AdvocateAppointmentsPanel.tsx: 10
+components/advocate/AdvocateDesignationPanel.tsx: 5
+components/advocate/AdvocateDocumentChecklist.tsx: 5
+components/advocate/AdvocateIdentityBanner.tsx: 1
+components/advocate/AdvocateInviteForm.tsx: 2
+components/advocate/AdvocateMessagesPanel.tsx: 2
+components/advocate/AdvocateNextStepsPanel.tsx: 6
+components/advocate/AdvocatePoAwarenessPanel.tsx: 2
+components/advocate/AdvocateSection.tsx: 4
+components/advocate/AdvocateStatusList.tsx: 2
+components/advocate/AdvocateViewParts.tsx: 1
+components/advocate/AdvocateWorkspace.tsx: 15
+components/advocate/AhcdValidationChecklist.tsx: 8
+components/advocate/StaffAdvocatesTab.tsx: 5
+components/afbi/AfbiContactForm.tsx: 7
+components/agentic/NotePeekSheet.tsx: 2
+components/agentic/PrototypeChrome.tsx: 5
+components/billing/BillingStatusSummary.tsx: 3
+components/billing/ClaimSignatureLine.tsx: 2
+components/billing/ManagedCarePlansPanel.tsx: 4
+components/billing/PatientBalance.tsx: 3
+components/billing/PaymentArrangementCard.tsx: 4
+components/billing/RatesPanel.tsx: 25
+components/calendar/CalendarSyncCard.tsx: 1
+components/carePartners/CarePartnersSection.tsx: 3
+components/careplan/AsamSuggestions.tsx: 15
+components/careplan/CarePlanEditor.tsx: 25
+components/careplan/MyPlan.tsx: 3
+components/chart/AdelBriefSections.tsx: 13
+components/chart/AdelDrafts.tsx: 15
+components/chart/BriefTab.tsx: 17
+components/chart/ChartActionLauncher.tsx: 11
+components/chart/ChartDocumentsList.tsx: 4
+components/chart/ChartExtraSections.tsx: 8
+components/chart/ChartHeader.tsx: 11
+components/chart/ChartTabView.tsx: 3
+components/chart/CoverageExtras.tsx: 7
+components/chart/DrawerForms.tsx: 1
+components/chart/LabsAndMeasures.tsx: 12
+components/chart/RestrictedChartGate.tsx: 1
+components/chart/SeverityFlagsPanel.tsx: 2
+components/chart/TimelyAccessLine.tsx: 4
+components/clinical/AsamPanel.tsx: 17
+components/clinical/AsamTaskWorkItem.tsx: 3
+components/clinical/AutomationTrace.tsx: 3
+components/clinical/CalomsProfileCard.tsx: 16
+components/clinical/CareEpisodesPanel.tsx: 18
+components/clinical/ClinicalRecordTabs.tsx: 23
+components/clinical/CrisisPanel.tsx: 15
+components/clinical/CustodyTabs.tsx: 11
+components/clinical/DemographicsCard.tsx: 5
+components/clinical/DiagnosisPicker.tsx: 8
+components/clinical/FacilityCombobox.tsx: 4
+components/clinical/FacilityContactCell.tsx: 6
+components/clinical/GroupEligibilityEditor.tsx: 5
+components/clinical/IssueSignInCodeButton.tsx: 1
+components/clinical/MarTab.tsx: 27
+components/clinical/MedCheckInCard.tsx: 13
+components/clinical/MedReconTab.tsx: 25
+components/clinical/NoteAutofillCard.tsx: 4
+components/clinical/NoteOrdersSection.tsx: 12
+components/clinical/NoteRevisionPanel.tsx: 2
+components/clinical/NoteTemplatePicker.tsx: 7
+components/clinical/OrderSafetyPanel.tsx: 8
+components/clinical/OrdersTab.tsx: 35
+components/clinical/PathwayChip.tsx: 1
+components/clinical/ProtocolsTab.tsx: 12
+components/clinical/QuickCheckCard.tsx: 9
+components/clinical/RecordSafetyBadges.tsx: 8
+components/clinical/RecordTabs.tsx: 140
+components/clinical/ReentryHandoffTab.tsx: 9
+components/clinical/ReferForNeedDialog.tsx: 6
+components/clinical/RefillCuresStep.tsx: 4
+components/clinical/SafetyPlanPanel.tsx: 11
+components/clinical/SdohActivityLog.tsx: 25
+components/clinical/StaffContactsEditor.tsx: 5
+components/clinical/SupervisionBanner.tsx: 1
+components/clinical/TemplateForm.tsx: 8
+components/clinical/refusal/NurseRefusalWorklist.tsx: 2
+components/clinical/refusal/RefusalEscalationDialog.tsx: 4
+components/clinical/refusal/RefusalFormDialog.tsx: 12
+components/clinical/refusal/RefusalRiskTextRecord.tsx: 5
+components/clinical/refusal/SignaturePad.tsx: 6
+components/clinician/DashboardActionLauncher.tsx: 7
+components/clinician/WorkspaceDashboard.tsx: 10
+components/consent/AdvocateConsentStatus.tsx: 1
+components/consent/ConsentFormsPanel.tsx: 14
+components/consent/ConsentRecordsPanel.tsx: 9
+components/consent/FormsToSign.tsx: 3
+components/consent/PatientConsentStatusCard.tsx: 7
+components/consent/PoDisclosureCard.tsx: 9
+components/coverage/CalaimEligibilityComparison.tsx: 2
+components/coverage/CoverageAtReleasePanel.tsx: 2
+components/coverage/CoverageCheckDialog.tsx: 3
+components/coverage/CoveragePlansCard.tsx: 16
+components/coverage/EligibilityHistoryCard.tsx: 4
+components/coverage/VerificationSourceBadge.tsx: 1
+components/dashboards/CalAimSection.tsx: 6
+components/dashboards/EngagementSection.tsx: 8
+components/dashboards/FacilityCustodySection.tsx: 4
+components/dashboards/GroupUtilizationSection.tsx: 12
+components/dashboards/KpiVsTargetSection.tsx: 6
+components/dashboards/PeriodSelector.tsx: 2
+components/documents/DocumentUploadForm.tsx: 3
+components/documents/DocumentVerifyQueue.tsx: 3
+components/documents/PatientDocumentsCard.tsx: 2
+components/escalations/CrisisQueueDetails.tsx: 6
+components/frontdoor/QuestionCard.tsx: 2
+components/frontdoor/SignupFlow.tsx: 10
+components/groups/GroupJoinRequestsQueue.tsx: 6
+components/hie/OutsideRecords.tsx: 21
+components/identity/PatientMatchingQueue.tsx: 13
+components/inbox/AdvocateReviewQueue.tsx: 7
+components/inbox/CommunityInquiryQueue.tsx: 4
+components/inbox/InboxActionQueue.tsx: 5
+components/inbox/ProviderRequestQueue.tsx: 4
+components/inbox/UnsignedNotesQueue.tsx: 4
+components/inbox/VoidRequestQueue.tsx: 4
+components/intake/AdelGuidedIntake.tsx: 3
+components/intake/BenefitsStep.tsx: 6
+components/intake/ReportedBenefitsCard.tsx: 2
+components/library/ExercisePlayer.tsx: 2
+components/library/LibraryBrowser.tsx: 10
+components/library/ModuleTemplate.tsx: 27
+components/messages/CareMessageThread.tsx: 4
+components/messages/StaffMessagesTab.tsx: 2
+components/nursing/NursingSection.tsx: 3
+components/ops/OpsActionLauncher.tsx: 8
+components/ops/OpsWorkspace.tsx: 11
+components/orders/CatalogPicker.tsx: 6
+components/orders/MedicationDoseSection.tsx: 21
+components/patient/AdelChat.tsx: 4
+components/patient/AdelHistoryPanel.tsx: 4
+components/patient/AppointmentsSummary.tsx: 6
+components/patient/ApptRequestStates.tsx: 1
+components/patient/AskAdelHelp.tsx: 2
+components/patient/DailyCheckInSummaryCard.tsx: 1
+components/patient/GetHelpNowModal.tsx: 1
+components/patient/HomeDashboard.tsx: 11
+components/patient/MyCareTiles.tsx: 7
+components/patient/MyMedicationsCard.tsx: 11
+components/patient/NeedConnect.tsx: 3
+components/patient/NeedThreadList.tsx: 5
+components/patient/NotifyCareTeamCard.tsx: 2
+components/patient/PatientPage.tsx: 1
+components/patient/PostIntakeResources.tsx: 1
+components/patient/ProfilePanels.tsx: 8
+components/patient/RecoveryDateCard.tsx: 3
+components/patient/RefillRunwayCard.tsx: 4
+components/patient/SafetyPlanSummaryTile.tsx: 1
+components/patient/SharedWithCard.tsx: 1
+components/patient/SlipSupportFlow.tsx: 1
+components/patient/ToolkitPage.tsx: 6
+components/patient/WeeklyRecap.tsx: 4
+components/prerelease/CapacityAuthorityStep.tsx: 9
+components/prerelease/MatOrderCard.tsx: 5
+components/prerelease/PreReleaseAppointmentCard.tsx: 8
+components/prerelease/PreReleaseScreenerDialog.tsx: 3
+components/prerelease/PreReleaseTimelineCard.tsx: 5
+components/reassessment/RescreenForm.tsx: 1
+components/recovery/GuidedToolFlow.tsx: 5
+components/recovery/RecoveryCheckInNote.tsx: 2
+components/recovery/RecoveryLessonView.tsx: 3
+components/recovery/RecoveryModuleBrowser.tsx: 6
+components/recovery/RecoveryStagePanel.tsx: 9
+components/reentry/CommunityResourceCenter.tsx: 2
+components/reentry/ObligationsCard.tsx: 5
+components/reentry/ReentryDayZeroModule.tsx: 6
+components/reentry/ResourceCard.tsx: 4
+components/reentry/ResourceDetail.tsx: 3
+components/referral/ReferralChasePanel.tsx: 2
+components/referral/ReferralSubmissionForm.tsx: 5
+components/reporting/PopulationHealthSection.tsx: 24
+components/reporting/TimelyAccessReport.tsx: 6
+components/scheduling/AppointmentRequestsCard.tsx: 4
+components/scheduling/BookVisitDrawer.tsx: 5
+components/scheduling/SchedulingTile.tsx: 2
+components/scheduling/VisitActions.tsx: 10
+components/screeners/CssrsForm.tsx: 2
+components/screeners/ScreenerItems.tsx: 1
+components/scribe/AiConsentCard.tsx: 5
+components/scribe/ScribeWorkspace.tsx: 28
+components/signature/AttestationSignatureBlock.tsx: 2
+components/signature/SignBlockerList.tsx: 1
+components/tasks/PatientOpenItemsCard.tsx: 3
+components/tasks/TaskQueueCard.tsx: 3
+components/tasks/TaskWorkRow.tsx: 22
+components/team/TeamThreads.tsx: 13
+components/ui/badge.tsx: 1
+components/ui/button.tsx: 1
+components/ui/calendar.tsx: 3
+components/ui/chart.tsx: 2
+components/ui/command.tsx: 2
+components/ui/context-menu.tsx: 1
+components/ui/dropdown-menu.tsx: 1
+components/ui/form.tsx: 1
+components/ui/menubar.tsx: 1
+components/ui/sidebar.tsx: 4
+components/ui/tooltip.tsx: 1
+components/voice/AdelVoice.tsx: 9
+components/voice/VoiceGuardrailNotice.tsx: 1
+routes/__root.tsx: 1
+routes/admin-audit.tsx: 13
+routes/admin-catalog-governance.tsx: 21
+routes/admin-claims.tsx: 18
+routes/admin-coordination.tsx: 8
+routes/admin-credentialing.tsx: 22
+routes/admin-documents-audit.tsx: 10
+routes/admin-facilities.tsx: 10
+routes/admin-kpi-targets.tsx: 13
+routes/admin-note-templates.tsx: 72
+routes/admin-permissions.tsx: 17
+routes/admin-scheduling-rules.tsx: 13
+routes/admin-staff.tsx: 3
+routes/admin-supervision.tsx: 4
+routes/admin-vendors.tsx: 18
+routes/admin.tsx: 55
+routes/advocate.documents.tsx: 1
+routes/advocate.index.tsx: 1
+routes/advocate.my-documents.tsx: 1
+routes/advocate.my-profile.tsx: 3
+routes/advocate.tsx: 3
+routes/agentic.chart-review.$patientId.tsx: 7
+routes/agentic.index.tsx: 1
+routes/agentic.scribe.$patientId.tsx: 2
+routes/auth.tsx: 14
+routes/billing-calaim-codes.tsx: 1
+routes/billing.tsx: 41
+routes/care-partners.tsx: 1
+routes/case-manager.tsx: 33
+routes/caseload-review.tsx: 2
+routes/clinical-referrals.tsx: 2
+routes/clinician-credentials.tsx: 9
+routes/clinician-profile.tsx: 4
+routes/clinician.tsx: 38
+routes/consent-audit.tsx: 15
+routes/consent.tsx: 14
+routes/cosign-inbox.tsx: 23
+routes/county-reporting.tsx: 16
+routes/dashboards.tsx: 2
+routes/data-exchange.tsx: 8
+routes/disclosure-log.tsx: 3
+routes/dmc-ods-readiness.tsx: 8
+routes/eligibility-worklist.tsx: 12
+routes/escalations.tsx: 4
+routes/group-audit.tsx: 14
+routes/group-sessions.tsx: 67
+routes/inbox.tsx: 1
+routes/intake.tsx: 28
+routes/location-calendars.tsx: 2
+routes/message-queue.tsx: 3
+routes/my-calendar.tsx: 7
+routes/my-work.tsx: 32
+routes/naloxone.tsx: 3
+routes/notes-queue.tsx: 4
+routes/nurse.tsx: 3
+routes/pre-release-import.tsx: 4
+routes/pre-release.tsx: 13
+routes/print.patient-records.$patientId.tsx: 18
+routes/profile.tsx: 2
+routes/provider-reference.tsx: 13
+routes/quality-compliance.tsx: 3
+routes/record.$patientId.tsx: 2
+routes/refusal-queue.tsx: 1
+routes/released-search.tsx: 8
+routes/reporting.tsx: 38
+routes/schedule.tsx: 13
+routes/shift-count.tsx: 10
+routes/start.other-help.tsx: 2
+routes/team-calendar.tsx: 1
+routes/worklist.tsx: 6
+styles.css: 1
 
