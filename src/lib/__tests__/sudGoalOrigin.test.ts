@@ -14,7 +14,7 @@ const GOAL = "substance-use goal on the care plan";
 const BAGGA = { staffId: "s-np1", name: "Dr. M. Bagga", role: "physician" as StaffRole, clinicianId: "c5" };
 const ATT = { attested: true, signatureDataUrl: "data:image/png;base64,c2VlZA==" };
 // Only the care-plan source: strip the patient's other SUD signals from the view.
-const goalOnly = (p: Patient) => sudSignalReason({ ...p, problems: [], episodes: [], needs: {} } as Patient);
+const goalOnly = (p: Patient) => sudSignalReason({ ...p, problems: [], episodes: [], needs: { ...p.needs, substanceUse: false } } as Patient);
 
 function legacyGoal(last: string, reason?: "asam_signed") {
   const p = AdelanteEHR.createPatient({ firstName: "Origin", lastName: last });

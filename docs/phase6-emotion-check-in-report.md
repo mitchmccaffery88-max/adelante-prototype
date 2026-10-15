@@ -18,3 +18,11 @@ Complete. Build OK; full unit suite **312 files / 2,603 tests passed**; every br
 - Browser specs ran against the dev server (`E2E_BASE_URL=http://localhost:8080`); the preview-server path could not start in this sandbox (missing Worker entry). No spec, retry or threshold changed.
 - Unit total is 2,603 versus 2,614 last reported; all files pass. The difference was not investigated further.
 - No other existing assertion changed.
+
+## Follow-up (15 Oct): SUD goal origin. Draft — pending clinical sign-off
+- Unit total check: the build before Phase 6 had 2,594 tests (`vitest list`) and Phase 6 had 2,603 (+9 new). No tests were removed or skipped. The earlier "2,614" figure did not match the code.
+- `acceptAsamSuggestion` (asamCarePlan.ts) now sets `origin: "clinician"`.
+- Legacy migration in `getStructuredPlan`: a goal accepted from an `asam_signed` suggestion gets `sud: true` and `origin: "clinician"`. This also applies to goals already migrated, because `acceptSuggestedGoal` links the suggestion only after the goal is first migrated. The new test found this gap. Free-text legacy goals are unchanged.
+- NTP referral goal unchanged. It passes no SUD problem, so `sud` is false and it does not count. Open question for Dr. Bagga: should it link to the active SUD problem?
+- New `sudGoalOrigin.test.ts` (4): accepted ASAM suggestion sets the signal; accepted asam_signed legacy goal sets it; free-text legacy goal does not; auto-added journey goal does not.
+- Results: 313 files, 2,607 of 2,607 passed (`vitest list` total 2,607); browsers 79 of 79 passed including axe (dev server). No existing assertion, retry or threshold changed.
