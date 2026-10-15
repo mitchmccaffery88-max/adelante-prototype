@@ -4,7 +4,7 @@
 
 ## Scope and rollback
 
-Rollback commit verified this turn: **`930af524e53ae4f2be2f4bc55ebb56d7de25a36f`**. The working tree also has a pre-existing `bun.lock` modification; leave it untouched and identify it separately in the build report. The previous 8a-1 rollback is not the rollback for this batch.
+Latest current commit verified during planning: **`1dff401c815861356d8ea6f5e12654246817f8a1`**; `git status --short` was empty. The earlier inspection saw `930af524e53ae4f2be2f4bc55ebb56d7de25a36f`; managed plan saves advanced history without application edits. Re-read and report HEAD immediately before the first approved application edit as the build rollback point. The previous 8a-1 rollback is not the rollback for this batch.
 
 Only shared staff FormField/ConfirmDialog, CMS browser-dialog replacements, location-calendar browser-dialog replacement, and required consent-publication reason. No 8c-2, table migration, staff delete confirmations, patient/advocate/public restyle, dashboard changes, new permission gates, or StatusChip mapping changes. `/consent` ledger revocation stays in 8c-2.
 
