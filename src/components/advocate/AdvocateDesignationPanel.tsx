@@ -1,3 +1,5 @@
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 // §v3.0 Phase 4 — designation surface for advocates / family members.
@@ -65,10 +67,15 @@ export function AdvocateDesignationPanel({
   className?: string;
 }) {
   const { lang: screenLang } = useI18n();
+  const confirmation = useConfirmDialog();
 
   const links = useEhr(() => AdelanteEHR.listAdvocateLinks(patientId));
 
   function revoke(link: AdvocateLink) {
+    if (designatedBy.actor !== "patient") {
+      confirmation.ask({ title: "Remove this advocate's access?", description: "The connection is revoked and its history stays kept. Restoring access needs a new invitation and consent. No new notification is sent.", confirmLabel: "Remove access", keepLabel: "Keep access", requireReason: true, onConfirm: reason => { confirmedAction("advocate_access_remove", "revokeAdvocateLink", patientId, reason, link.id, designatedBy.name, reason); toast.success("Access removed."); return true; } });
+      return;
+    }
     const reason = window.prompt("Why is this access being removed?")?.trim();
     if (!reason) return;
     try {
@@ -81,6 +88,7 @@ export function AdvocateDesignationPanel({
 
   return (
     <Card className={`p-5 space-y-4 ${className ?? ""}`}>
+      {designatedBy.actor !== "patient" && confirmation.dialog}
       <div>
         <h2 className="font-display text-lg text-navy flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-teal" /> {SCREEN_COPY["ui.336c81cdb6b2"][screenLang]} </h2>

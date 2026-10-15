@@ -10,15 +10,6 @@ export function hasUnsavedDrawerEdits(): boolean {
   return dirtyDrafts.size > 0;
 }
 
-/** Confirm before an action that would discard in-progress drawer edits. */
-export function confirmDiscardDrawerEdits(
-  message = "You have unsaved changes in the patient record. Switch patients and discard them?",
-): boolean {
-  if (!hasUnsavedDrawerEdits()) return true;
-  if (typeof window === "undefined") return true;
-  return window.confirm(message);
-}
-
 export function useDraftDirty(key: string, dirty: boolean) {
   useEffect(() => {
     if (dirty) dirtyDrafts.add(key);

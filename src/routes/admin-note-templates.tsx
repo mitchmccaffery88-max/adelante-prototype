@@ -498,8 +498,10 @@ function TemplateBuilderDialog({
         toast.success("Template created");
       }
       onClose();
+      return true;
     } catch (e) {
       toast.error((e as Error).message);
+      throw e;
     }
   };
 
@@ -1032,7 +1034,7 @@ function TemplateBuilderDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button className="bg-navy text-navy-foreground hover:bg-navy/90" onClick={() => { if (schemaChanged && template) confirmation.ask({ title: "Publish this template version?", description: `Saving creates version ${nextVersion}. Existing notes stay on version ${template.version} unchanged. This version cannot rewrite signed notes; no notification is sent.`, confirmLabel: "Publish version", keepLabel: "Keep editing", requireReason: true, onConfirm: reason => { save(reason); return true; } }); else save(); }}>
+          <Button className="bg-navy text-navy-foreground hover:bg-navy/90" onClick={() => { if (schemaChanged && template) confirmation.ask({ title: "Publish this template version?", description: `Saving creates version ${nextVersion}. Existing notes stay on version ${template.version} unchanged. This version cannot rewrite signed notes; no notification is sent.`, confirmLabel: "Publish version", keepLabel: "Keep editing", requireReason: true, onConfirm: reason => save(reason) }); else { try { save(); } catch { /* Existing toast owns feedback. */ } } }}>
             Save template
           </Button>
         </DialogFooter>
