@@ -82,13 +82,13 @@ export function NewActionMenu({
   return (
     <div ref={listRef} onKeyDown={onKeyDown} data-testid="new-action-menu">
       {header}
-      {shownQuick.length > 0 && (
+      {(q ? shownQuick.length > 0 : quick.length > 0) && (
         <div className="mb-2">
           <p className="px-2 text-sm font-medium text-ink-muted">Quick actions</p>
           {shownQuick.map(item)}
         </div>
       )}
-      {shown.length > 0 && <p className="px-2 text-sm font-medium text-ink-muted">All actions</p>}
+      {(!q || shown.length > 0) && <p className="px-2 text-sm font-medium text-ink-muted">All actions</p>}
       <div className="px-1 pb-1">
         <Input
           aria-label="Search actions"
@@ -101,7 +101,9 @@ export function NewActionMenu({
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {resultCount} {resultCount === 1 ? "action" : "actions"} available
       </p>
-      {resultCount === 0 ? (
+      {!q && shown.length === 0 && resultCount > 0 ? (
+        <p className="px-2 py-3 text-sm text-ink-muted">Everything for your role is listed above.</p>
+      ) : resultCount === 0 ? (
         <p className="px-2 py-3 text-sm text-ink-muted">{q ? "No matching actions." : "No actions for your role"}</p>
       ) : (
         shown.map(item)
