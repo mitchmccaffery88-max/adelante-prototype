@@ -128,7 +128,7 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
   return <>
     <Popover open={menuOpen} onOpenChange={setMenuOpen}>
        <StaffNewTrigger><PopoverTrigger asChild><Button data-testid="dashboard-new-button" className="staff-new-button w-full justify-start"><Plus className="h-5 w-5" /><span>New</span></Button></PopoverTrigger></StaffNewTrigger>
-      <PopoverContent align="end" side="top" className="w-80 max-h-[70vh] overflow-y-auto p-2" data-testid="dashboard-add-menu">
+      <PopoverContent aria-label="New action" align="end" side="top" className="w-80 max-h-[70vh] overflow-y-auto p-2" data-testid="dashboard-add-menu">
         <NewActionMenu actor={actor} patient={patient} available={available} onPick={(id) => open(id)}
           header={<Button variant="outline" onClick={() => { setMenuOpen(false); setCmdOpen(true); }} className="mb-2 flex w-full items-center justify-start gap-2"><Search className="h-4 w-4" /><span className="flex-1 text-left">Search or add anything…</span><kbd className="rounded border px-1 text-[10px]">⌘K</kbd></Button>}
           footer={records.length > 0 ? <><p className="mt-2 px-2 text-sm font-medium text-ink-muted">Records & matching</p>

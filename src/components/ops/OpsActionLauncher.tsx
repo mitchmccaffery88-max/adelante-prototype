@@ -89,7 +89,7 @@ export function OpsActionLauncher() {
         <StaffNewTrigger><PopoverTrigger asChild>
           <Button data-testid="ops-new-button" className="staff-new-button w-full justify-start"><Plus className="h-5 w-5" /><span>New</span></Button>
         </PopoverTrigger></StaffNewTrigger>
-        <PopoverContent align="end" side="top" className="max-h-[70vh] w-80 overflow-y-auto p-2" data-testid="ops-add-menu">
+        <PopoverContent aria-label="New action" align="end" side="top" className="max-h-[70vh] w-80 overflow-y-auto p-2" data-testid="ops-add-menu">
           <NewActionMenu
             actor={actor}
             available={items.filter((a) => !a.pending).map((action) => ({ action, answer: action.allowed(actor, undefined) }))}

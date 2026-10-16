@@ -443,3 +443,11 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] Audit reasons scrubbed (Part 2 terms, diagnosis codes, patient name); blank never written
 - [x] Permission snapshot update — approved 136 lines applied
 - [x] Lesson archive = existing withdrawal (8c-1); refill decline, frequency delete refusal, hydration and loading gates done; 2,658/2,658 units, 123/123 browsers (--workers=1, :8080)
+
+## Quick-actions batch 2 — COMPLETE Oct 16
+- [x] Shared + New menu on the three existing launchers only; approved role defaults and registry labels; duplicates removed
+- [x] Whole-menu search, correct search/no-search headings, filtered keyboard navigation and live result count; all three popovers named New action
+- [x] Pending nurse actions remain hidden; permissions and existing test assertions preserved
+- [x] Full units 2,671 passed / 2,671 listed, then full browsers 128 passed / 128 listed with --workers=1 against :8080, including axe
+- [x] Close-out report: docs/quickactions-batch2-report.md
+- Batches 3 and 4 not started; no publishing.

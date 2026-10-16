@@ -233,7 +233,7 @@ export function ChartActionLauncher({
             <Plus className="h-5 w-5" /><span>New</span>
           </Button>
         </PopoverTrigger></StaffNewTrigger>
-        <PopoverContent align="end" side="top" className="w-80 max-h-[70vh] overflow-y-auto p-2" data-testid="chart-add-menu">
+        <PopoverContent aria-label="New action" align="end" side="top" className="w-80 max-h-[70vh] overflow-y-auto p-2" data-testid="chart-add-menu">
           <NewActionMenu
             actor={{ role, staffId, clinicianId }}
             patient={patient}
