@@ -81,11 +81,7 @@ export function OpsActionLauncher() {
     setSelected(a);
   };
   const close = () => setSelected(null);
-  const groups: [string, ChartAction[]][] = [
-    ["Billing & claims", items.filter((a) => a.group === "billing" && !a.pending)],
-    ["Administration", items.filter((a) => a.group === "admin" && !a.pending)],
-    ["Not available yet", items.filter((a) => a.pending)],
-  ];
+  const pendingItems = items.filter((a) => a.pending);
 
   return (
     <>
