@@ -15,8 +15,14 @@ export function RouteAccessGuard() {
   const { role, staffId } = useActingStaff();
   const navigate = useNavigate();
   const lastWarned = useRef<string | null>(null);
+  // §Staff hydration gate — the acting role lives in browser storage, so the
+  // server render and first browser render cannot know it. No route-access
+  // decision, redirect or audit entry runs until hydration has restored the
+  // real role; the check itself is unchanged.
+  const hydrated = useHydrated();
 
   useEffect(() => {
+    if (!hydrated) return;
     const access = resolveChartRouteAccess(role, staffId, pathname) ?? resolveNavAccess(role, pathname);
     if (access.status !== "denied") {
       lastWarned.current = null;
