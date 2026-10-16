@@ -26,7 +26,18 @@ export function StaffShell({ children }: { children: ReactNode }) {
   const [newTarget, setNewTarget] = useState<HTMLElement | null>(null);
   const roleLabel = STAFF_ROLES.find(r => r.key === actor.role)?.label ?? actor.role;
   const count = useEhr(() => filterEscalations(listEscalations(actor), actor, { view: canSeeAllEscalations(actor) ? "all" : "mine" }).filter(r => r.type === "crisis" && r.status !== "resolved").length);
-  const hasLauncher = pathname.startsWith("/record/") || ["/clinician", "/admin", "/admin-claims", "/billing"].includes(pathname);
+  const launcherRoute = pathname.startsWith("/record/") || ["/clinician", "/admin", "/admin-claims", "/billing", "/my-work", "/worklist", "/case-manager", "/inbox", "/admin-content"].includes(pathname);
+  // Mobile "+ New" mirrors the portalled launcher: a role with nothing permitted gets none.
+  const [slotFilled, setSlotFilled] = useState(false);
+  useEffect(() => {
+    if (!newTarget) return;
+    const check = () => setSlotFilled(!!newTarget.querySelector("button"));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(newTarget, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [newTarget]);
+  const hasLauncher = launcherRoute && slotFilled;
   const matches = groups.flatMap(g => g.entries).filter(e => `${e.label} ${e.desc}`.toLowerCase().includes(query.trim().toLowerCase()));
   useEffect(() => {
     const demo = document.querySelector<HTMLElement>('[data-testid="demo-controls-bar"]');

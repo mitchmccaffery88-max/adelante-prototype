@@ -3,6 +3,7 @@ import { ConfirmDialog } from "@/components/staff/confirm-dialog";
 import { FormField } from "@/components/staff/form-field";
 import { CircleAlert } from "lucide-react";
 import { ConsentFormLibrary } from "./ConsentFormLibrary";
+import { ContentNewLauncher } from "./ContentNewLauncher";
 import { ContentInventoryTable } from "./ContentInventoryTable";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { contentVisibleToStaff, staffContentInventory, defaultContentMode } from "@/lib/contentStaff";
@@ -868,6 +869,11 @@ export function ContentAdminWorkspace({ browseOnly = false }: { browseOnly?: boo
   const version = useContentStore();
   const { role } = useActingStaff();
   const queueCount = contentReviewQueue().filter((e) => contentVisibleToStaff(role, e.typeId, e.body)).length;
+  const initialTab = browseOnly ? "browse" : defaultContentMode(role, queueCount, canAuthorContent(role));
+  // Controlled so "+ New" can open Manage / Legal; resets per acting role as before.
+  const [tab, setTab] = useState<string>(initialTab);
+  const [tabRole, setTabRole] = useState(role);
+  if (tabRole !== role) { setTabRole(role); setTab(initialTab); }
   return (
     <div className="space-y-4">
       <div>
@@ -880,7 +886,8 @@ export function ContentAdminWorkspace({ browseOnly = false }: { browseOnly?: boo
       </div>
       {!browseOnly && <ContentBackupBar version={version} />}
       <HomeDigest version={version} />
-      <Tabs key={role} defaultValue={browseOnly ? "browse" : defaultContentMode(role, queueCount, canAuthorContent(role))}>
+      {!browseOnly && <ContentNewLauncher onOpenTab={setTab} />}
+      <Tabs key={role} value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="browse">Browse</TabsTrigger>
           {!browseOnly && <TabsTrigger value="manage">Manage</TabsTrigger>}

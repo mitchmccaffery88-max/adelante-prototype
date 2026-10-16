@@ -126,10 +126,10 @@ test("clinical_coordinator: admin center + New hides admin-only options", async 
 });
 
 for (const [staffId, role] of [["s-cc2", "clinical_coordinator"], ["s-admin1", "sys_admin"]] as const) {
-  test(`${role}: content center shows no + New`, async ({ page }) => {
+  test(`${role}: content center shows one + New`, async ({ page }) => {
     await actAs(page, staffId, role, "/admin-content");
     await expect(page).toHaveURL(/\/admin-content/);
     await expect(page.getByTestId("staff-shell")).toBeVisible();
-    await expect(page.getByTestId("staff-new-slot").locator("button")).toHaveCount(0);
+    await expect(page.getByTestId("staff-new-slot").locator("button")).toHaveCount(1);
   });
 }
