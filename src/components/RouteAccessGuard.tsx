@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useRouterState, useHydrated } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useActingStaff } from "@/lib/roles";
 import { resolveNavAccess, resolveChartRouteAccess } from "@/lib/navGuard";
@@ -15,14 +15,13 @@ export function RouteAccessGuard() {
   const { role, staffId } = useActingStaff();
   const navigate = useNavigate();
   const lastWarned = useRef<string | null>(null);
-  // §Staff hydration gate — the acting role lives in browser storage, so the
-  // server render and first browser render cannot know it. No route-access
-  // decision, redirect or audit entry runs until hydration has restored the
-  // real role; the check itself is unchanged.
-  const hydrated = useHydrated();
 
+  // §Staff hydration gate — this effect only runs in the browser, where the
+  // acting role has already been restored from storage at module init, so the
+  // access decision always sees the real role. The server render never
+  // reaches it, and the staff loading gate keeps role-dependent UI from
+  // rendering before hydration.
   useEffect(() => {
-    if (!hydrated) return;
     const access = resolveChartRouteAccess(role, staffId, pathname) ?? resolveNavAccess(role, pathname);
     if (access.status !== "denied") {
       lastWarned.current = null;
@@ -60,7 +59,7 @@ export function RouteAccessGuard() {
       setTimeout(emit, 0);
     }
     navigate({ to: access.redirectTo, replace: true });
-  }, [hydrated, role, staffId, pathname, navigate]);
+  }, [role, staffId, pathname, navigate]);
 
   return null;
 }
