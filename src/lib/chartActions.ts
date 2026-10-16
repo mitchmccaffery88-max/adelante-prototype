@@ -748,6 +748,9 @@ export const CHART_ACTIONS: ChartAction[] = [
     id: "contact_log",
     label: { en: "Log contact", es: "Registrar contacto" },
     group: "coordination",
+    // Quick-actions batch 2 — duplicate of dashboard_contact ("Log contact");
+    // stays in the registry but is no longer listed in "+ New" menus.
+    menu: false,
     store: refs(["logContact", (...a: any[]) => (logContact as any)(...a)]),
     allowed: ({ role }) =>
       canUseCaseloadReview(role) ? ok() : hide("Only case managers and ECM providers can log contacts."),
