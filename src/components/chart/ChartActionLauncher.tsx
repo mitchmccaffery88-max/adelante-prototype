@@ -221,8 +221,6 @@ export function ChartActionLauncher({
     );
   };
 
-  const shortcutFor = (id: string) => Object.entries(CHART_SHORTCUTS).find(([, v]) => v === id)?.[0]?.toUpperCase();
-
   return (
     <>
       <Popover open={menuOpen} onOpenChange={setMenuOpen}>

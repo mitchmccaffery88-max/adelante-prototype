@@ -94,17 +94,23 @@ export function OpsActionLauncher() {
           <Button data-testid="ops-new-button" className="staff-new-button w-full justify-start"><Plus className="h-5 w-5" /><span>New</span></Button>
         </PopoverTrigger></StaffNewTrigger>
         <PopoverContent align="end" side="top" className="max-h-[70vh] w-80 overflow-y-auto p-2" data-testid="ops-add-menu">
-          {groups.filter(([, l]) => l.length).map(([title, list]) => (
-            <div key={title} className="mb-2">
-              <p className="px-2 text-[10px] font-medium uppercase text-muted-foreground">{title}</p>
-              {list.map((a) => (
-                <Button key={a.id} variant="ghost" disabled={a.pending} data-testid={`ops-item-${a.id}`} className="h-auto w-full flex-col items-start justify-start py-2 text-left" onClick={() => start(a)}>
-                  <span>{label(a)}</span>
-                  {a.comingSoon && <span className="text-[11px] text-muted-foreground">{a.comingSoon}</span>}
-                </Button>
-              ))}
-            </div>
-          ))}
+          <NewActionMenu
+            actor={actor}
+            available={items.filter((a) => !a.pending).map((action) => ({ action, answer: action.allowed(actor, undefined) }))}
+            onPick={(id) => { const a = items.find((x) => x.id === id); if (a) start(a); }}
+            itemTestId={(id) => `ops-item-${id}`}
+            footer={pendingItems.length > 0 ? (
+              <div className="mt-2">
+                <p className="px-2 text-sm font-medium text-ink-muted">Not available yet</p>
+                {pendingItems.map((a) => (
+                  <Button key={a.id} variant="ghost" disabled data-testid={`ops-item-${a.id}`} className="h-auto w-full flex-col items-start justify-start py-2 text-left">
+                    <span>{label(a)}</span>
+                    {a.comingSoon && <span className="text-sm text-ink-muted">{a.comingSoon}</span>}
+                  </Button>
+                ))}
+              </div>
+            ) : undefined}
+          />
         </PopoverContent>
       </Popover>
       <Sheet open={!!selected} onOpenChange={(v) => { if (!v) close(); }}>
