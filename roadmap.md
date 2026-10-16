@@ -438,8 +438,8 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] Public early taps reproduced and fixed (replayed after load); 988 stays a plain link
 - [x] Sequential full units and browsers/axe; screenshots and report
 
-## Phase 8c-2 — Kept by Mitch on Oct 15 (progress: docs/phase8c2-progress-report.md)
+## Phase 8c-2 — COMPLETE Oct 16 (progress: docs/phase8c2-progress-report.md; real sign-in will later remove the staff/demo loading gates)
 - [x] Registry gates equal to rollback UI gates for the 8 new actions + consent revoke (unit-proven)
 - [x] Audit reasons scrubbed (Part 2 terms, diagnosis codes, patient name); blank never written
-- [ ] Permission snapshot update — waiting on Mitch's sign-off (proposed lines in report)
-- [ ] Lesson archive / lesson withdrawal confirmations and any remaining pop-ups — not started this turn
+- [x] Permission snapshot update — approved 136 lines applied
+- [x] Lesson archive = existing withdrawal (8c-1); refill decline, frequency delete refusal, hydration and loading gates done; 2,658/2,658 units, 123/123 browsers (--workers=1, :8080)
