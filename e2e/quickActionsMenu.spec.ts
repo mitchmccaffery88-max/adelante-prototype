@@ -31,7 +31,7 @@ test("therapist on /clinician: quick actions on top, prescriber actions hidden, 
 });
 
 test("billing on /billing: claims quick actions, no clinical actions", async ({ page }) => {
-  await actAs(page, "s-b1", "billing", "/billing");
+  await actAs(page, "s-bill1", "billing", "/billing");
   await slotButton(page).click();
   const menu = page.getByTestId("ops-add-menu");
   await expect(menu.getByText("Quick actions")).toBeVisible();
