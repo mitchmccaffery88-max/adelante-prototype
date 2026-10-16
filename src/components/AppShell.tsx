@@ -159,7 +159,7 @@ function AppShellContent() {
 
   return (
     <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface || isPublicSurface) && "patient-theme member-comfortable")}>
-      {!staffLoading && (!isPublicSurface || STAFF_ROUTES.includes(pathname)) && <RouteAccessGuard />}
+      {(!isPublicSurface || STAFF_ROUTES.includes(pathname)) && <RouteAccessGuard />}
       {isPatientSurface && <OnboardingGuard />}
       {/* Demo scenario control — sticky at the viewport top so it is reachable at
           any height, not buried in the footer. */}

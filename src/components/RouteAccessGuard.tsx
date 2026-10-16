@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState, useHydrated } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useActingStaff } from "@/lib/roles";
 import { resolveNavAccess, resolveChartRouteAccess } from "@/lib/navGuard";
