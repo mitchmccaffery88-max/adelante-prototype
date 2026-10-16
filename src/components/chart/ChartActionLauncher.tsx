@@ -242,61 +242,39 @@ export function ChartActionLauncher({
           </Button>
         </PopoverTrigger></StaffNewTrigger>
         <PopoverContent align="end" side="top" className="w-80 max-h-[70vh] overflow-y-auto p-2" data-testid="chart-add-menu">
-          <p className="px-2 pb-1 text-sm font-medium text-navy">Add to this chart</p>
-          <button
-            type="button"
-            onClick={() => {
-              setMenuOpen(false);
-              setCmdOpen(true);
-            }}
-            className="mb-2 flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-muted"
-          >
-            <Search className="h-4 w-4" />
-            <span className="flex-1">Search or add anything…</span>
-            <kbd className="rounded border px-1 text-[10px]">⌘K</kbd>
-          </button>
-          {available.length === 0 ? (
-            <p className="px-2 py-3 text-sm text-muted-foreground">No actions for your role</p>
-          ) : (
-            GROUPS.map((g) => {
-              const items = available.filter((x) => x.action.group === g.id);
-              if (!items.length) return null;
-              return (
-                <div key={g.id} className="mb-2">
-                  <p className="px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{g.label}</p>
-                  <ul>
-                    {items.map((x) => (
-                      <li key={x.action.id}>
-                        <button
-                          type="button"
-                          data-testid={`chart-add-${x.action.id}`}
-                          onClick={() => open(x.action.id)}
-                          className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
-                        >
-                          <span className="flex w-full items-center gap-2">
-                            <span className="flex-1 text-navy">{x.action.label.en}</span>
-                            {shortcutFor(x.action.id) && (
-                              <kbd className="rounded border px-1 text-[10px] text-muted-foreground">{shortcutFor(x.action.id)}</kbd>
-                            )}
-                          </span>
-                          {x.answer.state === "cosign" && (
-                            <span className="text-[11px] text-muted-foreground">{x.answer.reason}</span>
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })
-          )}
-          <button
-            type="button"
-            onClick={() => setHelpOpen(true)}
-            className="flex w-full items-center gap-2 px-2 pt-1 text-[11px] text-muted-foreground hover:underline"
-          >
-            <Keyboard className="h-3 w-3" /> Keyboard shortcuts (?)
-          </button>
+          <NewActionMenu
+            actor={{ role, staffId, clinicianId }}
+            patient={patient}
+            available={available}
+            onPick={(id) => open(id)}
+            itemTestId={(id) => `chart-add-${id}`}
+            header={
+              <>
+                <p className="px-2 pb-1 text-sm font-medium text-ink">Add to this chart</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setCmdOpen(true);
+                  }}
+                  className="mb-2 flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-sm text-ink-muted hover:bg-surface-sunk"
+                >
+                  <Search className="h-4 w-4" />
+                  <span className="flex-1">Search or add anything…</span>
+                  <kbd className="rounded border px-1 text-[10px]">⌘K</kbd>
+                </button>
+              </>
+            }
+            footer={
+              <button
+                type="button"
+                onClick={() => setHelpOpen(true)}
+                className="flex w-full items-center gap-2 px-2 pt-1 text-sm text-ink-muted hover:underline"
+              >
+                <Keyboard className="h-3 w-3" /> Keyboard shortcuts (?)
+              </button>
+            }
+          />
         </PopoverContent>
       </Popover>
 
