@@ -243,3 +243,13 @@ Rollback point before first edit: `12c7371e6247dad87ec374b993e23db1b39f560d`.
 - **Cause 2 (open, not fixed):** on a full page reload with a non-default demo role saved (e.g. Cathy), the server renders the default role (ECM Provider) while the browser reads the saved role at module load (`src/lib/roles.ts:1550–1568`; `useActingRole`/`useActingStaff` return it as the server snapshot too, `roles.ts:1622–1647`). First difference: the demo role switcher label. Every role-dependent part of the staff shell differs the same way. New test `e2e/hydrationStaff8c2.spec.ts` (two load tests) fails on this; its early-click test passes.
 - Units 2,658/2,658 listed. Browser half 1 39/39; half 2 76/78 (only the two new load tests).
 - 8c-2 not marked complete.
+
+## Oct 16 — slow-load landing investigation and close-out
+Rollback point before first edit: `e0a0d8705383a3748512d980e139bd8f10dc812b`.
+
+- **Finding (not an app bug):** `e2e/staffNav.rbac.spec.ts:96` showing `/case-manager` meant the page was still on the *denied* deep link (`/case-manager` is denied for clinical_coordinator and sys_admin, whose landing is `/worklist`). It was not a redirect to the wrong place. RouteAccessGuard (`src/components/RouteAccessGuard.tsx:24-62`) runs only in a browser effect after the staff loading gate (`src/components/AppShell.tsx:155-156`). The saved role is read from storage when the role module loads (`src/lib/roles.ts:1550-1568`), before any effect runs. With 3 parallel browsers, hydration took longer than the test's 10s redirect wait.
+- **Deliberate reproduction (scratch script, CPU throttling):** Cathy on `/case-manager`. Normal speed: redirect to `/worklist` after 6.3s. 8x throttle: redirect to `/worklist` after 32.9s. In both runs the target was correct and the URL stayed `/case-manager` until hydration, with no intermediate wrong-role landing.
+- New test `e2e/staffSlowLoadLanding8c2.spec.ts` (6x CPU throttle): Cathy lands on `/worklist`, with exactly one `nav_access_denied` audit, attributed to clinical_coordinator / s-cc2. No app code changed.
+- Standard run mode: `--workers=1` against the dev server `E2E_BASE_URL=http://localhost:8080` (CLI flag; playwright.config.ts unchanged).
+- Units: 2,658 passed of 2,658 listed. Browser: 123/123 passed, one worker, single run on :8080 (25.9 min), axe included.
+- **8c-2 complete.** Real sign-in with a server-known role will later remove the staff and demo-bar loading gates.
