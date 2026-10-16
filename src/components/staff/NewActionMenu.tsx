@@ -49,7 +49,10 @@ export function NewActionMenu({
 
   const q = query.trim().toLowerCase();
   const rest = available.filter((x) => !quickIds.has(x.action.id));
-  const shown = q ? available.filter((x) => x.action.label.en.toLowerCase().includes(q)) : rest;
+  const matches = (x: NewActionItem) => !q || x.action.label.en.toLowerCase().includes(q);
+  const shownQuick = quick.filter(matches);
+  const shown = rest.filter(matches);
+  const resultCount = shownQuick.length + shown.length;
 
   // Arrow keys move between items; Escape closes via the Popover itself.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -79,13 +82,13 @@ export function NewActionMenu({
   return (
     <div ref={listRef} onKeyDown={onKeyDown} data-testid="new-action-menu">
       {header}
-      {quick.length > 0 && (
+      {shownQuick.length > 0 && (
         <div className="mb-2">
           <p className="px-2 text-sm font-medium text-ink-muted">Quick actions</p>
-          {quick.map(item)}
+          {shownQuick.map(item)}
         </div>
       )}
-      <p className="px-2 text-sm font-medium text-ink-muted">All actions</p>
+      {shown.length > 0 && <p className="px-2 text-sm font-medium text-ink-muted">All actions</p>}
       <div className="px-1 pb-1">
         <Input
           aria-label="Search actions"
@@ -95,7 +98,10 @@ export function NewActionMenu({
           className="mb-1"
         />
       </div>
-      {shown.length === 0 ? (
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {resultCount} {resultCount === 1 ? "action" : "actions"} available
+      </p>
+      {resultCount === 0 ? (
         <p className="px-2 py-3 text-sm text-ink-muted">{q ? "No matching actions." : "No actions for your role"}</p>
       ) : (
         shown.map(item)
