@@ -25,8 +25,8 @@ Full per-module rules: `src/lib/AGENTS.md` — read before changing app logic.
 <!-- LOVABLE:BEGIN -->
 - Clinician tiles and merged action rows derive through `clinicianWorkspace.ts`; dashboard “+ New” uses `CHART_ACTIONS` plus `dashboardActionBus.ts`. Why: one acting-person scope, one permission registry, no duplicate queues.
 <!-- LOVABLE:END -->
-- Staff FormField, ConfirmDialog and useConfirmDialog own presentation only; confirmedAction runs the registry once with a scrubbed audit reason while stores keep lifecycle audit ownership. Shared member branches keep their existing boundary. Why: collecting intent must not duplicate mutations, disclose answer bodies or change member permissions.
+- Staff FormField/ConfirmDialog own presentation only; confirmedAction runs the registry once with a scrubbed reason; stores own lifecycle audits. Why: no duplicate mutations or disclosed answers.
 - StaffShell measures the demo bar for sticky clearance; compact coarse-pointer header and sidebar anchors retain real touch bounds. Why: growing demo controls and safety counts must not obscure staff actions or expand the phone document.
 - Staff workspace section ordering consumes caller-gated React children; the My work crisis banner uses the header's role-scoped escalation projection. Why: presentation cannot create new records, widen permissions or expose masked crisis details.
-- Staff shell and demo controls render role-dependent content only after the acting role is known; no access decision, redirect or audit may run before it; never compute role- or clock-dependent output during server render. Why: the demo role lives in browser storage until real sign-in.
-- Browser suite: run with --workers=1 against the dev server :8080. Why: parallel browsers outpace dev-server hydration and cause false redirect timeouts.
+- Staff shell and demo controls render role-dependent content only after the acting role is known; no access decision, redirect or audit runs before it; no role/clock output in server render. Why: demo role lives in browser storage.
+- Browser suite: --workers=1 against dev server :8080. Why: parallel runs cause false timeouts.
