@@ -1,4 +1,5 @@
 import { StaffNewTrigger } from "@/components/StaffDensity";
+import { NewActionMenu } from "@/components/staff/NewActionMenu";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Turn 6 — "+ New" for billing, claims coordinator and sys_admin. Built only
 // from CHART_ACTIONS entries marked `opsMenu`; every action runs through

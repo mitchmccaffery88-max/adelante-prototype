@@ -1,4 +1,5 @@
 import { StaffNewTrigger } from "@/components/StaffDensity";
+import { NewActionMenu } from "@/components/staff/NewActionMenu";
 import { NewThreadForm } from "@/components/team/TeamThreads";
 import { openBookVisit } from "@/lib/bookingFlow";
 import { AfbiContactForm } from "@/components/afbi/AfbiContactForm";

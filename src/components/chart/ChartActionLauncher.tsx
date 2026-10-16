@@ -1,4 +1,5 @@
 import { StaffNewTrigger } from "@/components/StaffDensity";
+import { NewActionMenu } from "@/components/staff/NewActionMenu";
 import { ClinicMedOrderForm, SpecimenForm, TriageForm, NtpReferralForm, ExternalNtpForm } from "@/components/nursing/NursingSection";
 import { CarePartnersSection } from "@/components/carePartners/CarePartnersSection";
 import { openBookVisit } from "@/lib/bookingFlow";
