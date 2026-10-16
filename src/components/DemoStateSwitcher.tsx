@@ -10,7 +10,7 @@
 // `claimAdvocateInvitation`) — nothing here writes store internals or invents
 // a parallel session mechanism.
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useHydrated, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ensureAdvocateMessagingDemo } from "@/lib/demoInboxSeed";
 import {
@@ -250,6 +250,8 @@ function ensureCollateralRoi(patientId: string): void {
 
 export function DemoStateSwitcher() {
   const navigate = useNavigate();
+  // Saved patient/scenario come from browser storage: neutral label until hydrated.
+  const hydrated = useHydrated();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const [advocateLinkId, setAdvocateLinkId] = useState<string | null>(null);
@@ -390,7 +392,7 @@ export function DemoStateSwitcher() {
           <FlaskConical className="h-3.5 w-3.5 shrink-0 text-teal" />
           <span className="min-w-0 flex-1 truncate text-left sm:max-w-[14rem]">
             <span className="text-muted-foreground">QA: </span>
-            {active ? STATE_LABEL[active].label.split(" — ")[0] : "choose a scenario"}
+            {!hydrated ? "loading…" : active ? STATE_LABEL[active].label.split(" — ")[0] : "choose a scenario"}
           </span>
           <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
         </DropdownMenuTrigger>
