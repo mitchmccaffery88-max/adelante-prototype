@@ -451,3 +451,10 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] Full units 2,671 passed / 2,671 listed, then full browsers 128 passed / 128 listed with --workers=1 against :8080, including axe
 - [x] Close-out report: docs/quickactions-batch2-report.md
 - Batches 3 and 4 not started; no publishing.
+
+## Quick-actions batch 3 — approved Oct 16, in progress
+- [ ] Reuse shared New menu on My work, Worklist, Case manager, Inbox and content center; preserve registry gates and existing action paths
+- [ ] Remove only replaced legacy add controls; document patient selection or omission per page
+- [ ] New unit/browser files; full units then all browsers with --workers=1 on :8080; restore regenerated screenshots
+- [ ] Write docs/quickactions-batch3-report.md and mark complete only after all checks pass
+- Batch 4 not started; do not publish.
