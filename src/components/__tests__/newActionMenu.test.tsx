@@ -1,14 +1,18 @@
 // @vitest-environment jsdom
 // Quick-actions batch 2 — shared "+ New" menu: quick section on top, search
 // filters All actions, permissions come from the registry, arrow keys move.
-import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { NewActionMenu, type NewActionItem } from "@/components/staff/NewActionMenu";
 import { CHART_ACTIONS } from "@/lib/chartActions";
 import type { ChartActor } from "@/lib/chartActions";
 
+afterEach(cleanup);
+
+// Mirrors the launchers: chart/dashboard filter menu !== false; the ops
+// launcher lists opsMenu entries. Union so both surfaces are covered.
 const availableFor = (actor: ChartActor): NewActionItem[] =>
-  CHART_ACTIONS.filter((a) => !a.pending && a.menu !== false)
+  CHART_ACTIONS.filter((a) => !a.pending && (a.menu !== false || a.opsMenu))
     .map((action) => ({ action, answer: action.allowed(actor, undefined) }))
     .filter((x) => x.answer.state !== "hidden");
 
