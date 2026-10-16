@@ -2,7 +2,7 @@
 // existing `setActingStaff` — no permissions change. After switching, stay on
 // the current staff page if the new role can see it, otherwise go to the
 // first page that role's own menu offers.
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useHydrated, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ChevronDown, UserCog } from "lucide-react";
 import { STAFF_ROLES, STAFF_ROSTER, roleAssignmentsOf, setActingStaff, useActingStaff, type StaffRole } from "@/lib/roles";
@@ -22,6 +22,8 @@ export function StaffRoleSwitcher() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { staffId, role, staffName } = useActingStaff();
+  // Saved acting role comes from browser storage: neutral label until hydrated.
+  const hydrated = useHydrated();
 
   function choose(value: string) {
     // §Batch E — value is "staffId|role": one identity, pick the active role.
@@ -60,7 +62,7 @@ export function StaffRoleSwitcher() {
         <UserCog className="h-3.5 w-3.5 shrink-0 text-teal" />
         <span className="min-w-0 flex-1 truncate text-left sm:max-w-[16rem]">
           <span className="text-muted-foreground">Role: </span>
-          {roleLabel(role)} · {STAFF_ROSTER.find((x) => x.id === staffId)?.fullName ?? staffName}
+          {hydrated ? <>{roleLabel(role)} · {STAFF_ROSTER.find((x) => x.id === staffId)?.fullName ?? staffName}</> : "loading…"}
         </span>
         <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
       </DropdownMenuTrigger>
@@ -68,7 +70,7 @@ export function StaffRoleSwitcher() {
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Demo control · act as staff
         </DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={`${staffId}|${role}`} onValueChange={choose}>
+        <DropdownMenuRadioGroup value={hydrated ? `${staffId}|${role}` : ""} onValueChange={choose}>
           {STAFF_ROSTER.filter((s) => s.active !== false).flatMap((s) =>
             roleAssignmentsOf(s).map((a) => (
               <DropdownMenuRadioItem key={`${s.id}|${a.role}`} value={`${s.id}|${a.role}`} className="text-xs" data-testid={`switch-${s.id}-${a.role}`}>
