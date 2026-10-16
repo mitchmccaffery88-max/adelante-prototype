@@ -27,8 +27,8 @@ it("search filters both groups without duplicating actions and clearing restores
   expect((document.activeElement as HTMLElement).dataset.actionId).toBe(ids()[0]);
   fireEvent.keyDown(document.activeElement ?? input, { key: "ArrowUp" });
   expect((document.activeElement as HTMLElement).dataset.actionId).toBe(ids().at(-1));
-  fireEvent.click(screen.getByTestId("search-task"));
-  expect(onPick).toHaveBeenCalledWith("task");
+  fireEvent.click(screen.getByTestId(`search-${expected[0]}`));
+  expect(onPick).toHaveBeenCalledWith(expected[0]);
   fireEvent.change(input, { target: { value: "zz-no-match" } });
   expect(ids()).toEqual([]);
   fireEvent.change(input, { target: { value: "" } });
