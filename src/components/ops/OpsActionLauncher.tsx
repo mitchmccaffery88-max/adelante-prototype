@@ -34,8 +34,8 @@ export function openOpsAction(actionId: string, claimId?: string) {
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(OPS_EVENT, { detail: { actionId, claimId } }));
 }
 
-const FIX_LABEL: Record<string, string> = { claim_correct: "Fix a claim", claim_status: "Move claim status / resubmit", eligibility_check: "Run eligibility check", note_template_create: "Note template (create)", note_template_clone: "Note template (clone)", scheduling_rule_save: "Scheduling rule" };
-const label = (a: ChartAction) => FIX_LABEL[a.id] ?? a.label.en;
+// Quick-actions batch 2 — the menu shows the registry's own labels (Mitch, Oct 16).
+const label = (a: ChartAction) => a.label.en;
 
 function download(name: string, csv: string) {
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));

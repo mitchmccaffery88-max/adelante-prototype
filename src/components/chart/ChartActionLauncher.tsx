@@ -38,12 +38,6 @@ import { ContactLogForm, DocumentUploadForm } from "@/components/chart/DrawerFor
 import { CHART_ACTION_EVENT } from "@/lib/chartActionBus";
 import { NoteDraftPanel, OutreachDraftPanel, RefillDecisionPanel } from "@/components/chart/AdelDrafts";
 
-const GROUPS: { id: ChartActionGroup; label: string }[] = [
-  { id: "document", label: "Document" },
-  { id: "clinical", label: "Clinical" },
-  { id: "care", label: "Care" },
-  { id: "coordination", label: "Coordination" },
-];
 /** Roles that never see the button (no chart actions by design). */
 const NO_BUTTON_ROLES = ["billing", "billing_coordinator"];
 /** Single-key shortcuts → action id. */
