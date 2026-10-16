@@ -39,8 +39,9 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
     setPending(true);
     try {
       if (await onConfirm(reason.trim())) onOpenChange(false);
-    } catch {
-      setFailure("The change was not completed. Check the details and try again.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message.trim() : "";
+      setFailure(message || "The change was not completed. Check the details and try again.");
     } finally { busy.current = false; setPending(false); }
   };
   const controlClass = "h-auto min-h-9 whitespace-normal text-sm leading-5 [@media(pointer:coarse)]:min-h-12";
