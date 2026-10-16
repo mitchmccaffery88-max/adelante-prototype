@@ -16,6 +16,11 @@ export function RouteAccessGuard() {
   const navigate = useNavigate();
   const lastWarned = useRef<string | null>(null);
 
+  // §Staff hydration gate — this effect only runs in the browser, where the
+  // acting role has already been restored from storage at module init, so the
+  // access decision always sees the real role. The server render never
+  // reaches it, and the staff loading gate keeps role-dependent UI from
+  // rendering before hydration.
   useEffect(() => {
     const access = resolveChartRouteAccess(role, staffId, pathname) ?? resolveNavAccess(role, pathname);
     if (access.status !== "denied") {
