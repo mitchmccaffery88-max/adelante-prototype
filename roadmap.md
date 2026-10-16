@@ -428,7 +428,7 @@ Rollback: 1a622225b55f2e2425e4cc843d54696715f3e86f
 - [ ] Remaining plan verification: all browsers, touch/focus-return and additional adapter edge cases after checkpoint approval
 Rollback: 97668bd969a632fe3706613359bb1d448f4ead27. No 8c-2 work.
 
-## Phase 8a-2 — Kept by Mitch on Oct 15; verified (report: docs/phase8a2-report.md)
+## Phase 8a-2 — Kept by Mitch on Oct 15; verified Oct 15 (report: docs/phase8a2-report.md)
 Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] Consent overlap regression at 390/768/1280 — not reproduced, no layout change
 - [x] Staff Needs you / Waiting on others / Today order and persistent scoped crisis banner — rollback parity proven

@@ -147,3 +147,18 @@ Fix: `src/lib/earlyTap.ts` + one inline head script (`src/routes/__root.tsx`) re
 - ASAM draft awaiting co-signature: fixture created only inside `src/lib/__tests__/asamCosignSection8a2.test.ts` through the real store functions (`saveAsamDraft` + `signAsamAssessment`), as SUD counselor s-sudc1 on the in-memory Part 2–consented demo patient (`sud_consented`). The shared demo seed was not edited. Result: author → "ASAM drafts awaiting co-signature" (`my-work-asam-waiting`) = **Waiting on others**; co-signer (cosign owner) → `my-work-asam` = **Needs you**. Roles that see it = roles that already saw that patient's named ASAM rows (Cathy and ECM provider still excluded). The ASAM visibility files are unchanged since rollback.
 - Units: **2,653 passed / 2,653 listed**.
 - Browser (dev server, two halves, not concurrent): 32/32 and 69/70 → **101/102**. Blocked: `e2e/staffShell8a2.spec.ts:22` fails because line 19 reads `.slice(before)`, but the audit log stores newest first, so the slice returns the oldest entry (`profile.tag_added`, system). The task itself is created for s-cc2. Proposed line change awaits Mitch; 8a-2 is NOT marked verified.
+
+## Oct 15 final verification (approved items)
+- `e2e/staffShell8a2.spec.ts:19`: `.slice(before)` replaced by `.slice(0, ehr.listAuditEvents({ category: "action" }).length - before)` as approved; nothing else changed.
+- New `e2e/staffNewAudit8a2.spec.ts` (10 tests; no existing lines changed), "+ New" everywhere the shell shows it:
+  - /clinician as Cathy (s-cc2) and therapist (s-th1): every add-menu option opens with zero audit entries, except "Review patient matching" (navigation-only), which writes exactly one `action.succeeded`/`review_matching` by the actor. "Medication order" hidden for both; "Progress note" hidden for Cathy.
+  - /clinician task creation (both roles): task exists, assigned to the actor, exactly one `dashboard_task` entry by the actor.
+  - /record/<id> (both roles): "Message team" creates a care team thread authored by the actor (threads store the display name), exactly one `message_team` entry with the actor's staff id; "Medication order" hidden.
+  - /admin as sys_admin (s-admin1): feature flag toggle shows the new state, exactly one `feature_flag_set` entry; "Open Permissions & features" writes one `open_permissions` entry. As Cathy: flag, permissions and claim options hidden; "Review patient matching" writes one entry.
+  - /admin-content (Cathy, sys_admin): no + New shown — asserted absent.
+  - No route/option wrote zero (for a created item) or more than one entry. No app code changed.
+- Read-only inventory: `docs/phase8-new-button-inventory.md` (every staff role × staff route).
+- Units: **2,653 passed / 2,653 listed**.
+- Browser (dev server, two halves, not concurrent, incl. axe): 32/32 and 80/80 → **112/112**.
+- 8a-2 marked "verified Oct 15" in roadmap.md.
+- Not verified: options that open a full form other than task/thread/flag were opened but not submitted.
