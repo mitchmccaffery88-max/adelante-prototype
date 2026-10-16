@@ -1,4 +1,5 @@
 import { StaffNewTrigger } from "@/components/StaffDensity";
+import { NewActionMenu } from "@/components/staff/NewActionMenu";
 import { NewThreadForm } from "@/components/team/TeamThreads";
 import { openBookVisit } from "@/lib/bookingFlow";
 import { AfbiContactForm } from "@/components/afbi/AfbiContactForm";
@@ -128,13 +129,10 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
     <Popover open={menuOpen} onOpenChange={setMenuOpen}>
        <StaffNewTrigger><PopoverTrigger asChild><Button data-testid="dashboard-new-button" className="staff-new-button w-full justify-start"><Plus className="h-5 w-5" /><span>New</span></Button></PopoverTrigger></StaffNewTrigger>
       <PopoverContent align="end" side="top" className="w-80 max-h-[70vh] overflow-y-auto p-2" data-testid="dashboard-add-menu">
-        <Button variant="outline" onClick={() => { setMenuOpen(false); setCmdOpen(true); }} className="mb-2 flex w-full items-center justify-start gap-2"><Search className="h-4 w-4" /><span className="flex-1 text-left">Search or add anything…</span><kbd className="rounded border px-1 text-[10px]">⌘K</kbd></Button>
-        <p className="px-2 text-[10px] font-medium uppercase text-muted-foreground">Patient actions</p>
-        {patientActions.map((x) => <Button key={x.action.id} variant="ghost" className="h-auto w-full justify-start py-2" onClick={() => open(x.action.id)}>{x.action.label.en}</Button>)}
-        <p className="mt-2 px-2 text-[10px] font-medium uppercase text-muted-foreground">Without a patient selected</p>
-        {patientFree.map((x) => <Button key={x.action.id} variant="ghost" className="h-auto w-full justify-start py-2" onClick={() => open(x.action.id)}>{x.action.label.en}</Button>)}
-        {records.length > 0 && <><p className="mt-2 px-2 text-[10px] font-medium uppercase text-muted-foreground">Records & matching</p>
-        {records.map((a) => <Button key={a.id} variant="ghost" data-testid={`dashboard-item-${a.id}`} className="h-auto w-full justify-start py-2" onClick={() => openRecord(a.id)}>{a.label.en}</Button>)}</>}
+        <NewActionMenu actor={actor} patient={patient} available={available} onPick={(id) => open(id)}
+          header={<Button variant="outline" onClick={() => { setMenuOpen(false); setCmdOpen(true); }} className="mb-2 flex w-full items-center justify-start gap-2"><Search className="h-4 w-4" /><span className="flex-1 text-left">Search or add anything…</span><kbd className="rounded border px-1 text-[10px]">⌘K</kbd></Button>}
+          footer={records.length > 0 ? <><p className="mt-2 px-2 text-sm font-medium text-ink-muted">Records & matching</p>
+            {records.map((a) => <Button key={a.id} variant="ghost" data-testid={`dashboard-item-${a.id}`} className="h-auto w-full justify-start py-2" onClick={() => openRecord(a.id)}>{a.label.en}</Button>)}</> : undefined} />
       </PopoverContent>
     </Popover>
     <CommandDialog open={cmdOpen} onOpenChange={(v) => { setCmdOpen(v); if (!v) setCmdQuery(""); }}><CommandInput placeholder="Search or add anything…" value={cmdQuery} onValueChange={setCmdQuery} /><CommandList><CommandEmpty>No matches.</CommandEmpty>{cmdQuery.trim().length >= 3 && unavailable.length > 0 && <CommandGroup heading="Not available for your role">{unavailable.map((a) => <CommandItem key={a.id} value={`${a.label.en} unavailable`} className="text-muted-foreground" data-testid={`dashboard-unavailable-${a.id}`} onSelect={() => open(a.id)}><span className="flex-1">{a.label.en}</span><span className="text-[10px]">not available</span></CommandItem>)}</CommandGroup>}<CommandGroup heading="Patient actions">{patientActions.map((x) => <CommandItem key={x.action.id} onSelect={() => open(x.action.id)}><Plus className="h-4 w-4" />{x.action.label.en}</CommandItem>)}</CommandGroup><CommandGroup heading="Without a patient selected">{patientFree.map((x) => <CommandItem key={x.action.id} onSelect={() => open(x.action.id)}><Plus className="h-4 w-4" />{x.action.label.en}</CommandItem>)}</CommandGroup></CommandList></CommandDialog>

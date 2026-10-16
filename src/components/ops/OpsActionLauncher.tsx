@@ -1,4 +1,5 @@
 import { StaffNewTrigger } from "@/components/StaffDensity";
+import { NewActionMenu } from "@/components/staff/NewActionMenu";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Turn 6 — "+ New" for billing, claims coordinator and sys_admin. Built only
 // from CHART_ACTIONS entries marked `opsMenu`; every action runs through
@@ -33,8 +34,8 @@ export function openOpsAction(actionId: string, claimId?: string) {
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(OPS_EVENT, { detail: { actionId, claimId } }));
 }
 
-const FIX_LABEL: Record<string, string> = { claim_correct: "Fix a claim", claim_status: "Move claim status / resubmit", eligibility_check: "Run eligibility check", note_template_create: "Note template (create)", note_template_clone: "Note template (clone)", scheduling_rule_save: "Scheduling rule" };
-const label = (a: ChartAction) => FIX_LABEL[a.id] ?? a.label.en;
+// Quick-actions batch 2 — the menu shows the registry's own labels (Mitch, Oct 16).
+const label = (a: ChartAction) => a.label.en;
 
 function download(name: string, csv: string) {
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -80,11 +81,7 @@ export function OpsActionLauncher() {
     setSelected(a);
   };
   const close = () => setSelected(null);
-  const groups: [string, ChartAction[]][] = [
-    ["Billing & claims", items.filter((a) => a.group === "billing" && !a.pending)],
-    ["Administration", items.filter((a) => a.group === "admin" && !a.pending)],
-    ["Not available yet", items.filter((a) => a.pending)],
-  ];
+  const pendingItems = items.filter((a) => a.pending);
 
   return (
     <>
@@ -93,17 +90,23 @@ export function OpsActionLauncher() {
           <Button data-testid="ops-new-button" className="staff-new-button w-full justify-start"><Plus className="h-5 w-5" /><span>New</span></Button>
         </PopoverTrigger></StaffNewTrigger>
         <PopoverContent align="end" side="top" className="max-h-[70vh] w-80 overflow-y-auto p-2" data-testid="ops-add-menu">
-          {groups.filter(([, l]) => l.length).map(([title, list]) => (
-            <div key={title} className="mb-2">
-              <p className="px-2 text-[10px] font-medium uppercase text-muted-foreground">{title}</p>
-              {list.map((a) => (
-                <Button key={a.id} variant="ghost" disabled={a.pending} data-testid={`ops-item-${a.id}`} className="h-auto w-full flex-col items-start justify-start py-2 text-left" onClick={() => start(a)}>
-                  <span>{label(a)}</span>
-                  {a.comingSoon && <span className="text-[11px] text-muted-foreground">{a.comingSoon}</span>}
-                </Button>
-              ))}
-            </div>
-          ))}
+          <NewActionMenu
+            actor={actor}
+            available={items.filter((a) => !a.pending).map((action) => ({ action, answer: action.allowed(actor, undefined) }))}
+            onPick={(id) => { const a = items.find((x) => x.id === id); if (a) start(a); }}
+            itemTestId={(id) => `ops-item-${id}`}
+            footer={pendingItems.length > 0 ? (
+              <div className="mt-2">
+                <p className="px-2 text-sm font-medium text-ink-muted">Not available yet</p>
+                {pendingItems.map((a) => (
+                  <Button key={a.id} variant="ghost" disabled data-testid={`ops-item-${a.id}`} className="h-auto w-full flex-col items-start justify-start py-2 text-left">
+                    <span>{label(a)}</span>
+                    {a.comingSoon && <span className="text-sm text-ink-muted">{a.comingSoon}</span>}
+                  </Button>
+                ))}
+              </div>
+            ) : undefined}
+          />
         </PopoverContent>
       </Popover>
       <Sheet open={!!selected} onOpenChange={(v) => { if (!v) close(); }}>
