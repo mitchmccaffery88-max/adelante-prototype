@@ -4,7 +4,7 @@ import { waitingOnOthers } from "@/components/staff/workspaceOwnership";
 import { listMatchReviews } from "@/lib/patientMatching";
 import { useEffect, useState, type ReactNode } from "react";
 import { act as runAct, actFor } from "@/lib/actions/act";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useHydrated, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ChevronDown, Clock3, FileText, MoreHorizontal, Pill } from "lucide-react";
 import { toast } from "sonner";
 import { AdelanteEHR, VISIT_STATUS_LABEL, useEhr, type Appointment, type Patient } from "@/lib/ehr";
@@ -27,7 +27,19 @@ const SEGMENT_LABEL: Record<ScheduleSegment, string> = { up_next: "Up next", in_
 const GROUP_LABEL: Record<ActionGroup, string> = { now: "Now", today: "Today", week: "This week" };
 const iconFor = (kind: WorkspaceActionRow["kind"]) => kind === "crisis" || kind === "crisis_note" || kind === "severity" || kind === "escalation" ? AlertTriangle : kind === "refill" ? Pill : kind === "closing" || kind === "unsigned" || kind === "cosign" ? FileText : Clock3;
 
-export function WorkspaceDashboard({ actor, appointments, needsClosing, weekAppointments, patients, launch, openChart, requestsAndBooking }: { actor: WorkspaceActor; appointments: Appointment[]; needsClosing: Appointment[]; weekAppointments: Appointment[]; patients: Patient[]; launch: (id: string) => void; openChart: (patientId: string) => void; requestsAndBooking: ReactNode }) {
+/**
+ * Live rows, counts and summaries read the in-memory store and the clock, which
+ * differ between the server render and the browser. The server and the first
+ * browser render show the same neutral placeholder; live content mounts after
+ * hydration so React never regenerates the tree (and never drops an early click).
+ */
+export function WorkspaceDashboard(props: Parameters<typeof WorkspaceDashboardLive>[0]) {
+  const hydrated = useHydrated();
+  if (!hydrated) return <div className="space-y-4" data-testid="workspace-dashboard-loading" aria-busy="true"><p className="text-sm text-muted-foreground">Loading your workspace…</p></div>;
+  return <WorkspaceDashboardLive {...props} />;
+}
+
+function WorkspaceDashboardLive({ actor, appointments, needsClosing, weekAppointments, patients, launch, openChart, requestsAndBooking }: { actor: WorkspaceActor; appointments: Appointment[]; needsClosing: Appointment[]; weekAppointments: Appointment[]; patients: Patient[]; launch: (id: string) => void; openChart: (patientId: string) => void; requestsAndBooking: ReactNode }) {
   const acting = useActingStaff();
   const actorKey = actor.staffId;
   const storageKey = `adelante:workspace-tiles:${actorKey}`;
