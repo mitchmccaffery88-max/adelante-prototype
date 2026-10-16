@@ -60,7 +60,7 @@ export function RouteAccessGuard() {
       setTimeout(emit, 0);
     }
     navigate({ to: access.redirectTo, replace: true });
-  }, [role, staffId, pathname, navigate]);
+  }, [hydrated, role, staffId, pathname, navigate]);
 
   return null;
 }
