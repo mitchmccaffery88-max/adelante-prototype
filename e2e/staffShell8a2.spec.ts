@@ -16,7 +16,7 @@ test("shell New creates a real Cathy task with one standard action event", async
   await expect(drawer).toHaveCount(0);
   const result = await page.evaluate((before) => {
     const ehr = (window as unknown as { __adelante: { AdelanteEHR: typeof import("../src/lib/ehr").AdelanteEHR } }).__adelante.AdelanteEHR;
-    return { tasks: ehr.listCaseTasks().filter(t => t.title === "8a2 audit parity task").map(t => t.assignedTo), events: ehr.listAuditEvents({ category: "action" }).slice(before).map(e => ({ action: e.action, id: e.detail?.actionId, actor: e.actorId })) };
+    return { tasks: ehr.listCaseTasks().filter(t => t.title === "8a2 audit parity task").map(t => t.assignedTo), events: ehr.listAuditEvents({ category: "action" }).slice(0, ehr.listAuditEvents({ category: "action" }).length - before).map(e => ({ action: e.action, id: e.detail?.actionId, actor: e.actorId })) };
   }, before);
   expect(result.tasks).toEqual(["s-cc2"]);
   expect(result.events).toEqual([{ action: "action.succeeded", id: "dashboard_task", actor: "s-cc2" }]);
