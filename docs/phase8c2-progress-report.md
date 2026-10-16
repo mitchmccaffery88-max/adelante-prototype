@@ -235,3 +235,11 @@ Rollback point before first edit: `a3094c6e565e97ba553a0108fd603721510a1000` (QA
 - Units: 2,658 passed of 2,658 listed.
 - Browser: half 1 39/39; half 2 74/75. **Stopped:** `e2e/staffNewAudit8a2.spec.ts:120` (Cathy, admin center) — the "+ New" menu was not open when the assertion ran. Opening it manually as Cathy shows "Review patient matching"; the registry and launcher for it are unchanged. A React hydration mismatch on /clinician (WorkspaceTile "Needs my action") was logged in the same flow. Not fixed; awaiting Mitch.
 - 8c-2 not marked complete until this passes.
+
+## Oct 16 — page-loading (hydration) investigation
+Rollback point before first edit: `12c7371e6247dad87ec374b993e23db1b39f560d`.
+
+- **Cause 1 (fixed):** `src/components/clinician/WorkspaceDashboard.tsx` rendered live counts and countdowns during server render ("Needs my action" summary `32 open · 29 now` on the server vs `30 open · 27 now` in the browser; row countdown `1h 37m left` vs `2h 0m left`). The server's in-memory store and clock differ from the browser's. React regenerated the tree, which dropped the early "+ New" click in `e2e/staffNewAudit8a2.spec.ts:118–120`. Fix: the exported `WorkspaceDashboard` shows a neutral "Loading your workspace…" until hydration, then mounts the live dashboard (same pattern as `HydratedCount`). `staffNewAudit8a2.spec.ts:120` now passes unchanged.
+- **Cause 2 (open, not fixed):** on a full page reload with a non-default demo role saved (e.g. Cathy), the server renders the default role (ECM Provider) while the browser reads the saved role at module load (`src/lib/roles.ts:1550–1568`; `useActingRole`/`useActingStaff` return it as the server snapshot too, `roles.ts:1622–1647`). First difference: the demo role switcher label. Every role-dependent part of the staff shell differs the same way. New test `e2e/hydrationStaff8c2.spec.ts` (two load tests) fails on this; its early-click test passes.
+- Units 2,658/2,658 listed. Browser half 1 39/39; half 2 76/78 (only the two new load tests).
+- 8c-2 not marked complete.
