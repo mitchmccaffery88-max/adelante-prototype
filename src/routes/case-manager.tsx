@@ -1,3 +1,4 @@
+import { PageNewLauncher } from "@/components/staff/PageNewLauncher";
 import { CircleAlert } from "lucide-react";
 import { WorkspaceSectionOrder } from "@/components/staff/WorkspaceSectionOrder";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -179,6 +180,7 @@ function CaseManagerPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+      <PageNewLauncher />
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-teal">

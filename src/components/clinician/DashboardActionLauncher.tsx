@@ -33,7 +33,7 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 const HIDDEN_ROLES = ["billing", "billing_coordinator", "credentialing_coordinator"];
 type Available = { action: ChartAction; answer: ChartActionAnswer };
 
-export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds = [] }: { onBook: (patientId?: string) => void; onOpenChart: (patientId: string, section?: string) => void; todayPatientIds?: string[] }) {
+export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds = [], shortcuts = true }: { onBook: (patientId?: string) => void; onOpenChart: (patientId: string, section?: string) => void; todayPatientIds?: string[]; /** Single-key and ⌘K shortcuts stay on the clinician workspace only. */ shortcuts?: boolean }) {
   const actor = useActingStaff();
   const navigate = useNavigate();
   const patients = useEhr(() => AdelanteEHR.listPatients());
@@ -78,7 +78,7 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
     return () => window.removeEventListener(DASHBOARD_ACTION_EVENT, listener);
   });
   useEffect(() => {
-    if (hide) return;
+    if (hide || !shortcuts) return;
     const listener = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setCmdOpen((v) => !v); return; }
       if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target) || selected || cmdOpen) return;
@@ -88,8 +88,9 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
   });
-  if (hide) return null;
   const records = CHART_ACTIONS.filter((a) => ["review_matching", "reconfirm_consent_merged"].includes(a.id) && a.allowed(actor, undefined).state !== "hidden");
+  // A role with nothing permitted gets no "+ New" at all.
+  if (hide || (available.length === 0 && records.length === 0)) return null;
   const openRecord = (id: string) => {
     setMenuOpen(false);
     // Review matching is audited as an opened screen; re-confirm happens per consent (Recent merges → Open consents).

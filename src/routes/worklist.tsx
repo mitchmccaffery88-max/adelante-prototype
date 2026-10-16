@@ -1,3 +1,4 @@
+import { PageNewLauncher } from "@/components/staff/PageNewLauncher";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Worklist Phase A — cross-facility operational task table.
 //
@@ -216,6 +217,7 @@ function WorklistPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-6">
+      <PageNewLauncher />
       <Button asChild variant="ghost" size="sm" className="w-fit">
         <Link to="/clinician">
           <ArrowLeft className="h-3.5 w-3.5" /> Back to clinician

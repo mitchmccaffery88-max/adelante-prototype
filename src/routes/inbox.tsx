@@ -10,6 +10,7 @@
 // this build, and a dead tab is worse than an absent one. See the RESERVED
 // target schema in `src/lib/labsVitalsScaffold.ts` for the handoff starting
 // point (NOT IMPLEMENTED — no runtime consumers).
+import { PageNewLauncher } from "@/components/staff/PageNewLauncher";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { canAccess, useActingStaff } from "@/lib/roles";
@@ -60,6 +61,7 @@ function InboxPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+      <PageNewLauncher />
       <Button asChild variant="ghost" size="sm" className="w-fit">
         <Link to="/clinician">
           <ArrowLeft className="h-3.5 w-3.5" /> Back to clinician

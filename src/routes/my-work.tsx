@@ -1,3 +1,4 @@
+import { PageNewLauncher } from "@/components/staff/PageNewLauncher";
 import { StatusChip } from "@/components/ui/status-chip";
 import { StaffCrisisBanner } from "@/components/staff/StaffCrisisBanner";
 import { WorkspaceSectionOrder } from "@/components/staff/WorkspaceSectionOrder";
@@ -234,6 +235,7 @@ function MyWorkPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      <PageNewLauncher />
       <Button asChild variant="ghost" size="sm" className="w-fit">
         <Link to="/reporting">
           <ArrowLeft className="h-3.5 w-3.5" /> Reporting home
