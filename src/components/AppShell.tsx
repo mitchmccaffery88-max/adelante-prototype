@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { WebsiteLayout } from "@/components/WebsiteLayout";
-import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState, useNavigate, useHydrated } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { EnglishSurface, useI18n } from "@/lib/i18n";
 import { PatientHelpLink } from "@/components/PatientHelpLink";
@@ -18,6 +18,7 @@ import {
   isAdvocateRoute,
 } from "@/lib/navSections";
 import { StaffShell } from "@/components/StaffShell";
+import { StaffLoadingScreen } from "@/components/StaffLoadingScreen";
 import { canReadProviderRef } from "@/lib/providerReference";
 import { PatientSidebar } from "@/components/PatientSidebar";
 import { AdvocateSidebar } from "@/components/AdvocateSidebar";
@@ -144,11 +145,21 @@ function AppShellContent() {
   // full-page chart, which is staff-only too).
   const showStaffShell = isStaffSurface;
 
+  // §Staff hydration gate — the acting role/staff lives in browser storage,
+  // so the server render and the first browser render cannot know it. Until
+  // hydration, staff routes show a neutral loading screen and NOTHING
+  // role-dependent renders, runs or audits: no route-access decision, no
+  // role-gated menus, no "+ New", no crisis count. In-app navigation never
+  // re-enters this state because hydration happens once per app lifetime.
+  // Real sign-in (server-known role) will later remove the need for this.
+  const hydrated = useHydrated();
+  const staffLoading = showStaffShell && !hydrated;
+
   if (isPublicSurface) return <WebsiteLayout>{STAFF_ROUTES.includes(pathname) && <RouteAccessGuard />}<Outlet /></WebsiteLayout>;
 
   return (
     <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface || isPublicSurface) && "patient-theme member-comfortable")}>
-      {(!isPublicSurface || STAFF_ROUTES.includes(pathname)) && <RouteAccessGuard />}
+      {!staffLoading && (!isPublicSurface || STAFF_ROUTES.includes(pathname)) && <RouteAccessGuard />}
       {isPatientSurface && <OnboardingGuard />}
       {/* Demo scenario control — sticky at the viewport top so it is reachable at
           any height, not buried in the footer. */}
@@ -377,6 +388,8 @@ function AppShellContent() {
               <Outlet />
             </div>
           </div>
+        ) : staffLoading ? (
+          <StaffLoadingScreen />
         ) : showStaffShell ? (
           <StaffShell>
             <Outlet />
