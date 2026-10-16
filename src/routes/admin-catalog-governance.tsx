@@ -159,7 +159,11 @@ function CatalogGovernancePage() {
     }
   };
 
-  const remove = (f: MedFrequency) => confirmation.ask({ title: "Delete this frequency?", description: "An unused frequency is permanently removed. Frequencies used by signed or held orders cannot be deleted; deactivate those instead. No notification is sent.", confirmLabel: "Delete frequency", keepLabel: "Keep frequency", requireReason: true, onConfirm: reason => { confirmedAction("frequency_delete", "deleteFrequency", undefined, reason, f.code, staffName); toast.success(`${f.code} deleted`); return true; } });
+  const remove = (f: MedFrequency) => confirmation.ask({ title: "Delete this frequency?", description: "An unused frequency is permanently removed. Frequencies used by signed or held orders cannot be deleted; deactivate those instead. No notification is sent.", confirmLabel: "Delete frequency", keepLabel: "Keep frequency", requireReason: true, onConfirm: reason => {
+    try { confirmedAction("frequency_delete", "deleteFrequency", undefined, reason, f.code, staffName); toast.success(`${f.code} deleted`); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "The frequency was not deleted."); setReason(""); setDeactivating(f); }
+    return true;
+  } });
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
