@@ -225,3 +225,13 @@ Role × action (Yes = allowed):
 ## Oct 15 follow-up
 - Permission snapshot updated via `vitest -u`: the diff is exactly the 136 approved additions; nothing changed or removed (checked line by line against this report before keeping it).
 - Units 2,653/2,653. Browser 101/102 (only the 8a-2 "+ New" spec, see the 8a-2 report). Lesson archive/withdrawal not started.
+
+## Oct 16 — Batch 1: refill decline confirmation (+ QA refusal-reason fix)
+Rollback point before first edit: `a3094c6e565e97ba553a0108fd603721510a1000` (QA fix commit; the QA change itself started from `e49d1b33`).
+
+- Refill decline (`src/components/chart/AdelDrafts.tsx`) now uses the shared ConfirmDialog: "Decline this refill?", "Keep pending" focused first, "Decline refill", reason required (moved from the inline field into the dialog), one `runAction("refill_decision")` via `confirmedAction`. Who can decline is unchanged (same registry entry). The pre-existing Adel draft outcome entry is still written by the card, as before.
+- QA fix: ConfirmDialog shows the store's own refusal reason (generic line only if none); deleting an in-use frequency shows the "in use" reason and opens the Deactivate step.
+- New tests: `src/components/__tests__/refillDecline8c2.test.tsx` (3), `src/components/__tests__/confirmDialogRefusal.test.tsx` (2), `e2e/refillDeclineFrequency8c2.spec.ts` (2, axe on the dialog).
+- Units: 2,658 passed of 2,658 listed.
+- Browser: half 1 39/39; half 2 74/75. **Stopped:** `e2e/staffNewAudit8a2.spec.ts:120` (Cathy, admin center) — the "+ New" menu was not open when the assertion ran. Opening it manually as Cathy shows "Review patient matching"; the registry and launcher for it are unchanged. A React hydration mismatch on /clinician (WorkspaceTile "Needs my action") was logged in the same flow. Not fixed; awaiting Mitch.
+- 8c-2 not marked complete until this passes.

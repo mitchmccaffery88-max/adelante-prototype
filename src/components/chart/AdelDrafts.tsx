@@ -8,6 +8,8 @@ import { act, actFor } from "@/lib/actions/act";
 import { useEffect, useState } from "react";
 const loggedRefills = new Set<string>();
 import { toast } from "sonner";
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { confirmedAction } from "@/components/staff/confirmed-action";
 import { Sparkles } from "lucide-react";
 import { AdelanteEHR, useEhr, type RefillRequest } from "@/lib/ehr";
 import { useActingStaff, type StaffRole } from "@/lib/roles";
@@ -36,7 +38,6 @@ import { filterSudMedsForRole } from "@/lib/asamReporting";
 import type { HlocReferral } from "@/lib/outpatientCare";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
@@ -137,7 +138,7 @@ function RefillCard({ refill }: { refill: RefillRequest }) {
   const { role, actor } = useActor();
   const s = useEhr(() => JSON.stringify(buildRefillSummary(refill, role as StaffRole)));
   const sum = JSON.parse(s) as ReturnType<typeof buildRefillSummary>;
-  const [reason, setReason] = useState("");
+  const confirmation = useConfirmDialog();
   useEffect(() => {
     const k = `${actor.name}:${refill.id}`;
     if (loggedRefills.has(k)) return;
@@ -145,18 +146,35 @@ function RefillCard({ refill }: { refill: RefillRequest }) {
     adelDraftAudit("refill", "drafted", refill.patientId, actor, { refillId: refill.id, suggestion: sum.suggestion });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refill.id]);
-  const decide = (decision: "approved" | "needs_appointment" | "denied") => {
+  const recordOutcome = (decision: "approved" | "needs_appointment" | "denied") => {
+    const chosen = decision === "approved" ? "approve" : decision === "needs_appointment" ? "approve_with_visit" : "deny";
+    adelDraftAudit("refill", chosen === sum.suggestion ? "accepted" : "edited", refill.patientId, actor, { refillId: refill.id, suggestion: sum.suggestion, decision });
+    toast.success(`Refill ${decision === "needs_appointment" ? "approved — visit needed" : decision}`);
+  };
+  const decide = (decision: "approved" | "needs_appointment") => {
     try {
-      actFor("refill_decision", "reviewRefill", refill.patientId, { id: refill.id, decision, ...(decision === "denied" ? { denyReason: reason } : {}), clinicianId: actor.clinicianId ?? actor.name, actorRole: role });
-      const chosen = decision === "approved" ? "approve" : decision === "needs_appointment" ? "approve_with_visit" : "deny";
-      adelDraftAudit("refill", chosen === sum.suggestion ? "accepted" : "edited", refill.patientId, actor, { refillId: refill.id, suggestion: sum.suggestion, decision });
-      toast.success(`Refill ${decision === "needs_appointment" ? "approved — visit needed" : decision}`);
+      actFor("refill_decision", "reviewRefill", refill.patientId, { id: refill.id, decision, clinicianId: actor.clinicianId ?? actor.name, actorRole: role });
+      recordOutcome(decision);
     } catch (e) {
       toast.error((e as Error).message);
     }
   };
+  const decline = () => confirmation.ask({
+    title: "Decline this refill?",
+    description: `${refill.medicationName} will not be refilled. The reason is saved with the refill decision.`,
+    confirmLabel: "Decline refill",
+    keepLabel: "Keep pending",
+    requireReason: true,
+    reasonLabel: "Reason for declining",
+    onConfirm: (reason) => {
+      confirmedAction("refill_decision", "reviewRefill", refill.patientId, reason, { id: refill.id, decision: "denied", denyReason: reason, clinicianId: actor.clinicianId ?? actor.name, actorRole: role });
+      recordOutcome("denied");
+      return true;
+    },
+  });
   return (
     <div className="space-y-2 rounded-lg border p-3 text-sm" data-testid="adel-refill-card">
+      {confirmation.dialog}
       <p className="font-medium text-navy">{refill.medicationName}</p>
       <StatusChip lang="en" state={refill.status === "approved" || refill.status === "sent_to_pharmacy" ? "done" : refill.status === "denied" ? "closed" : refill.status === "needs_appointment" || isPrescriberRole(role) ? "yourturn" : "team"} label={refill.status === "approved" || refill.status === "sent_to_pharmacy" ? "Sent to pharmacy" : refill.status === "denied" ? `Not refilled${refill.denyReason ? ` — ${refill.denyReason}` : ""}` : refill.status === "needs_appointment" ? "Book a visit first" : "Pending"} />
       <AdelDraftLabel />
@@ -176,8 +194,7 @@ function RefillCard({ refill }: { refill: RefillRequest }) {
       <div className="flex flex-wrap items-end gap-2">
         <Button size="sm" onClick={() => decide("approved")}>Approve</Button>
         <Button size="sm" variant="outline" onClick={() => decide("needs_appointment")}>Approve with visit</Button>
-        <Input className="h-8 w-48" placeholder="Reason (required to deny)" aria-label="Deny reason" value={reason} onChange={(e) => setReason(e.target.value)} />
-        <Button size="sm" variant="outline" onClick={() => decide("denied")}>Deny</Button>
+        <Button size="sm" variant="outline" onClick={decline}>Deny</Button>
       </div>
     </div>
   );
