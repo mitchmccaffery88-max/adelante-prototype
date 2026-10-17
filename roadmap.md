@@ -5,13 +5,14 @@
 ## Phase 8b-1 — Shared staff table pilots (approved Oct 17)
 Rollback: e822105ffca551809487f2403bc60f728bfe8d9b
 - [x] Record each pilot's source, existing hidden-data rules and rollback row parity before replacing presentation
-- [ ] One shared compact table: caseloads, eligibility worklist, notes queue and task queues; unchanged caller gates/handlers; review empty saved views, unsaved task drafts across paging and selected-view stat parity before close-out
+- [x] One shared compact table: caseloads, eligibility worklist, notes queue and task queues; unchanged caller gates/handlers; empty saved views, unsaved task drafts across paging and selected-view stat parity verified
 - [x] New sorting/paging/views/lock/keyboard units and pilot browser/axe coverage; existing tests untouched
-- [x] Full units/listed total: 2,691/2,691; full background browser suite --workers=1 on :8080 completed: 144/145; 14 regenerated tracked screenshots restored, 108/108 hashes match baseline
-- [ ] 390/768/1280 light/dark screenshots, parity report and completion only if green
+- [x] Final full units: 2,693 passed / 2,693 listed (333 files); full background browser suite --workers=1 on :8080: 145 passed / 145 listed (36 files, 32.7 minutes); 14 regenerated screenshots restored, all 20 tracked screenshot hashes matched this turn's pre-run baseline
+- [x] 390/768/1280 light/dark screenshot matrix: 24 captures reviewed; table widths fit all viewports; existing non-table case-manager overflow at 768 remains documented
 - [x] Coordinator comparison: unchanged contentWiring spec passed 3/3 current and 3/3 rollback; app-only rollback restored afterward. No table-triggered role navigation found; original failure not reproduced.
-- [ ] Follow-up presentation implemented: view empty states, actor-scoped session-only task drafts across paging, selected-worklist statistics; two new focused units passed. Complete suite and end-to-end parity still required.
-- STOPPED Oct 17 follow-up: existing pilot assertions fail while :8080 serves stale rollback split-route modules despite restored source (HTTP response confirmed). Pilot run 3/9 passed, six failures at e2e/staffTables8b1.spec.ts:26/27/50; existing tests unchanged, no proposed assertion replacement. Screenshot matrix/parity and full validation incomplete; not marked done. See docs/phase8b1-diagnostic-stop.md.
+- [x] Follow-up presentation: empty-state fallback, actor-scoped session-only task drafts across paging, selected-worklist statistics; both focused units passed in the full suite; UI row IDs and counts match unchanged rollback projections
+- [x] Environment recovered: current source confirmed, no stash ref, supervised server restarted once; fresh notes table verified; standalone pilots 9/9. Previous diagnostic stop retained as history in docs/phase8b1-diagnostic-stop.md.
+- [x] Phase 8b-1 done Oct 17: docs/phase8b1-report.md records parity, pre-existing flake, unchanged privacy gaps, validation totals and screenshot limitations
 - Scope stop: no publishing, no 8b-2 or 8b-3; unrelated older roadmap items remain outside this approval.
 
 ## Phase 6 — Emotion check-in (approved 14 Oct)

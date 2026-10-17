@@ -1,5 +1,7 @@
 # Phase 8b-1 coordinator follow-up — stopped
 
+Historical stop record. Resolved by the Oct 17 coordinator-approved environment recovery: standalone pilots 9/9, full units 2,693/2,693 and full browsers 145/145. See `phase8b1-report.md` for the final closeout; the historical findings below are preserved.
+
 Rollback: `e822105ffca551809487f2403bc60f728bfe8d9b`.
 
 ## Content-wiring diagnosis
