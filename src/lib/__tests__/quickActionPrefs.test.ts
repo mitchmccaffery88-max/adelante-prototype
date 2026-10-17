@@ -28,7 +28,7 @@ it("reset removes the personal setting and restores the approved role defaults",
   expect(readPersonalActions(member.id)).toEqual(["consent_form_author"]);
   writePersonalActions(member.id, null);
   expect(readPersonalActions(member.id)).toBeNull();
-  expect(quickActionsFor({ role: "therapist", staffId: "s-th1" }).map((a) => a.id)).toEqual(["progress_note", "dashboard_book", "message_patient", "screener_request", "task"]);
+  expect(quickActionsFor({ role: "therapist", staffId: "s-th1" }).map((a) => a.id)).toEqual(["progress_note", "dashboard_book", "message_patient", "screener_request", "dashboard_task"]);
 });
 it("cross-role selections are disabled until the actor uses their permitted role", () => {
   const therapist: ChartActor = { role: "therapist", staffId: member.id };

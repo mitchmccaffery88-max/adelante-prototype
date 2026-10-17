@@ -53,7 +53,10 @@ export function quickActionsFor(actor: ChartActor, patient?: Patient): ChartActi
   const ids = QUICK_ACTION_DEFAULTS[actor.role] ?? [];
   const seen = new Set<string>();
   const out: ChartAction[] = [];
-  for (const id of ids) {
+  for (const defaultId of ids) {
+    // Select the existing Task launcher for this context before checking
+    // its unchanged registry permission gate; never offer both twins.
+    const id = defaultId === "task" && !patient ? "dashboard_task" : defaultId;
     if (seen.has(id) || PENDING_SIGNOFF_IDS.includes(id)) continue;
     const action = CHART_ACTIONS.find((a) => a.id === id);
     if (!action || action.pending) continue;
