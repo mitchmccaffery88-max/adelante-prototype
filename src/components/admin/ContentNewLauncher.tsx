@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CHART_ACTIONS, type ChartActor } from "@/lib/chartActions";
 import { useActingStaff } from "@/lib/roles";
+import { CONTENT_NEW_ACTION_IDS } from "@/lib/quickActions";
 
-export const CONTENT_NEW_ACTION_IDS = ["content_create", "consent_form_author"] as const;
+export { CONTENT_NEW_ACTION_IDS } from "@/lib/quickActions";
 const TAB_FOR: Record<string, string> = { content_create: "manage", consent_form_author: "legal" };
 
 export function contentNewItems(actor: ChartActor): NewActionItem[] {

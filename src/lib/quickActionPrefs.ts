@@ -1,7 +1,7 @@
 // Presentation-only device preferences. No clinical writes or audit sink.
 import { CHART_ACTIONS, type ChartAction, type ChartActor } from "@/lib/chartActions";
 import { hasRoleAssignment, roleAssignmentsOf, type StaffMember, type StaffRole } from "@/lib/roles";
-import { PENDING_SIGNOFF_IDS } from "@/lib/quickActions";
+import { CONTENT_NEW_ACTION_IDS, PENDING_SIGNOFF_IDS } from "@/lib/quickActions";
 import type { Patient } from "@/lib/ehr";
 
 export const MAX_QUICK_ACTIONS = 8;
@@ -11,7 +11,7 @@ export interface PersonalAction { action: ChartAction; roles: StaffRole[] }
 
 export function personalActionOptions(member: StaffMember | undefined, patient?: Patient): PersonalAction[] {
   if (!member || member.active === false) return [];
-  return CHART_ACTIONS.filter((a) => !a.pending && !PENDING_SIGNOFF_IDS.includes(a.id) && (a.menu !== false || a.opsMenu))
+  return CHART_ACTIONS.filter((a) => !a.pending && !PENDING_SIGNOFF_IDS.includes(a.id) && (a.menu !== false || a.opsMenu || CONTENT_NEW_ACTION_IDS.some((id) => id === a.id)))
     .map((action) => ({ action, roles: roleAssignmentsOf(member).filter(({ role }) => action.allowed({ role, staffId: member.id, clinicianId: member.clinicianId }, patient).state !== "hidden").map(({ role }) => role) }))
     .filter((x) => x.roles.length > 0);
 }

@@ -40,6 +40,9 @@ export const QUICK_ACTION_DEFAULTS: Partial<Record<StaffRole, readonly string[]>
  */
 export const PENDING_SIGNOFF_IDS: readonly string[] = ["clinic_dose_give", "refill_coordinate"];
 
+// Actions opened exclusively by the content-center launcher, not chart drawers.
+export const CONTENT_NEW_ACTION_IDS = ["content_create", "consent_form_author"] as const;
+
 /**
  * The role's quick actions, filtered through the registry's permission check
  * for this actor (and patient, when one is in context). Deduped, registry
