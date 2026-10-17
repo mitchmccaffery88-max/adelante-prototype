@@ -4,12 +4,12 @@
 
 ## Phase 8b-2 — Remaining staff tables (approved Oct 17)
 Rollback: 064533e3ba01fd425d1a66959495ef49a7f27406
-- [ ] Record all active target row sources, filters, hidden-data rules and rollback projections before presentation edits
-- [ ] Convert remaining queues, content inventory, staff and credentialing tables; preserve gates, actions, dialogs, testids and inventory export
-- [ ] New unit and area browser parity/role-exclusion/axe coverage; existing tests untouched
-- [ ] Full unit listed/pass totals, then full background browser suite --workers=1 on :8080; restore tracked screenshots
-- [ ] Each converted table 390/768/1280 light/dark matrix; review and record unchanged privacy gaps
-- [ ] docs/phase8b2-report.md and closeout only when green under the approved contentWiring flake exception
+- [x] Record all active target row sources, filters, hidden-data rules and rollback projections before presentation edits
+- [x] Convert 26 table surfaces across remaining queues, content inventory, staff and credentialing; preserve gates, actions, dialogs, testids and byte-identical inventory export
+- [x] New unit file (3 tests) and 4 area browser files (10 tests) with parity/role-exclusion/axe; existing tests untouched
+- [x] Full units 2,696 passed / 2,696 listed (334 files); full background browsers 155 passed / 155 listed (40 files, 30.7 minutes), --workers=1 on :8080; 16 regenerated images restored, all 20 tracked hashes matched
+- [x] Each converted table 390/768/1280 light/dark matrix: 156 captures reviewed; no table/document overflow or runtime errors; unchanged privacy gaps recorded
+- [x] Phase 8b-2 complete Oct 17: docs/phase8b2-report.md; full suite green without using the contentWiring flake exception
 - Scope stop: no publishing or 8b-3; unrelated open tasks remain outside this approval.
 
 ## Phase 8b-1 — Shared staff table pilots (approved Oct 17)
