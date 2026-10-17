@@ -1,5 +1,7 @@
 # Architecture rules (src/lib and the screens that call it)
 
+- Quick-action Task defaults select the dashboard twin without a patient and chart entry with one, before the unchanged registry gate. Why: retain the approved action without duplicate twins.
+
 - The 24-hour late-cancel check lives only in `src/lib/lateCancel.ts`; `SchedulingConstraints.isLateCancel` and the store both call it — one rule, no store↔scheduling import cycle.
 - Visit cancel / no-show go through `staffCancelAppointment`, `markAppointmentNoShow`, `patientRequestCancel` / `advocateRequestCancel` + `resolveCancelRequest` in `ehr.ts` — never set `status` directly from UI; a cancelled or no-show visit can never open a claim.
 - Group join goes through `requestJoinGroup` / `approveGroupJoinRequest` / `declineGroupJoinRequest` in `ehr.ts`; patients never self-enroll from the UI. Why: every join is reviewed, telehealth-consent-checked and audited.
