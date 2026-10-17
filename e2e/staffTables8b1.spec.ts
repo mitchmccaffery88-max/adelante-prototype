@@ -48,9 +48,9 @@ for (const width of [1280, 390]) for (const pilot of pilots) {
     }
     const sort = table.getByRole("button", { name: pilot.sort, exact: true });
     await sort.focus(); await page.keyboard.press("Enter");
-    await expect(table.getByRole("columnheader").filter({ has: sort })).toHaveAttribute("aria-sort", "ascending");
+    await expect(table.getByRole("columnheader", { name: pilot.sort, exact: true })).toHaveAttribute("aria-sort", "ascending");
     await page.keyboard.press("Enter");
-    await expect(table.getByRole("columnheader").filter({ has: sort })).toHaveAttribute("aria-sort", "descending");
+    await expect(table.getByRole("columnheader", { name: pilot.sort, exact: true })).toHaveAttribute("aria-sort", "descending");
     const axe = await new AxeBuilder({ page }).include(`[data-testid="${pilot.table}"]`).analyze();
     expect(axe.violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
