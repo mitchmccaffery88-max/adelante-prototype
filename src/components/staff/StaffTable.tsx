@@ -11,7 +11,7 @@ export interface StaffColumn<T> {
   sortValue?: (row: T) => string | number;
   mono?: boolean;
 }
-export interface StaffView<T> { id: string; label: string; matches: (row: T) => boolean }
+export interface StaffView<T> { id: string; label: string; matches: (row: T) => boolean; emptyState?: ReactNode }
 export interface StaffRowAction { label: string; onSelect: () => void; disabled?: boolean }
 const copy = { views: "Saved views", previous: "Previous page", next: "Next page", more: "More", actions: "Actions", restricted: "Restricted", page: "Page" };
 
@@ -20,16 +20,18 @@ export function RestrictedCell({ label = copy.restricted }: { label?: string }) 
   return <span className="inline-flex items-center gap-2 text-ink-muted"><Lock aria-label={label} role="img" className="size-4 shrink-0" /><span>{label}</span></span>;
 }
 
-export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId, views = [], defaultView, primaryAction, moreActions, moreContent, emptyState }: {
+export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId, views = [], defaultView, viewId, onViewChange, primaryAction, moreActions, moreContent, emptyState }: {
   rows: readonly T[]; columns: StaffColumn<T>[]; rowKey: (row: T) => string; label: string;
   testId?: string; rowTestId?: (row: T) => string; views?: StaffView<T>[]; defaultView?: string;
+  viewId?: string; onViewChange?: (id: string) => void;
   primaryAction?: (row: T) => ReactNode; moreActions?: (row: T) => StaffRowAction[];
   moreContent?: (row: T) => ReactNode; emptyState?: ReactNode;
 }) {
   const [view, setView] = useState(defaultView ?? views[0]?.id ?? "all");
   const [sort, setSort] = useState<{ id: string; descending: boolean } | null>(null);
   const [page, setPage] = useState(0);
-  const selected = views.find((v) => v.id === view);
+  const activeView = viewId ?? view;
+  const selected = views.find((v) => v.id === activeView);
   const filtered = selected ? rows.filter(selected.matches) : [...rows];
   const column = columns.find((c) => c.id === sort?.id);
   const sorted = column?.sortValue ? [...filtered].sort((a, b) => {
@@ -43,9 +45,9 @@ export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId,
   const hasActions = Boolean(primaryAction || moreActions || moreContent);
   return <div data-density="compact" className="staff-table min-w-0 space-y-3 text-sm text-ink">
     {views.length > 0 && <div role="group" aria-label={copy.views} className="flex flex-wrap gap-2">
-      {views.map((v) => <Button key={v.id} variant={v.id === view ? "secondary" : "ghost"} aria-pressed={v.id === view} className="text-sm" onClick={() => { setView(v.id); setPage(0); }}>{v.label} ({rows.filter(v.matches).length})</Button>)}
+      {views.map((v) => <Button key={v.id} variant={v.id === activeView ? "secondary" : "ghost"} aria-pressed={v.id === activeView} className="text-sm" onClick={() => { setView(v.id); onViewChange?.(v.id); setPage(0); }}>{v.label} ({rows.filter(v.matches).length})</Button>)}
     </div>}
-    {visible.length === 0 ? emptyState : <table aria-label={label} data-testid={testId} className="w-full border-collapse text-left">
+    {visible.length === 0 ? <div role="status" data-testid={testId} className="py-6 text-sm text-ink-muted">{selected?.emptyState ?? emptyState ?? "Nothing in this view."}</div> : <table aria-label={label} data-testid={testId} className="w-full border-collapse text-left">
       <thead className="bg-surface-sunk text-ink-muted"><tr>{columns.map((c) => <th key={c.id} scope="col" aria-sort={sort?.id === c.id ? sort.descending ? "descending" : "ascending" : "none"} className="px-3 py-1 font-medium">
         {c.sortValue ? <Button variant="ghost" className="h-9 px-0 text-sm whitespace-normal text-left" onClick={() => { setSort({ id: c.id, descending: sort?.id === c.id ? !sort.descending : false }); setPage(0); }}>{c.label}{sort?.id === c.id ? sort.descending ? <ArrowDown /> : <ArrowUp /> : <ChevronsUpDown />}</Button> : c.label}
       </th>)}{hasActions && <th scope="col" className="px-3 py-2 font-medium">{copy.actions}</th>}</tr></thead>

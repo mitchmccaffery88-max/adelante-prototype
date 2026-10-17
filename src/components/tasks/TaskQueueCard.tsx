@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
 import { TaskWorkRow } from "@/components/tasks/TaskWorkRow";
+import { type TaskWorkDraftCache } from "@/components/tasks/taskWorkDraft";
+import { useActingStaff } from "@/lib/roles";
 
 export type TaskQueueSource =
   /** Tasks assigned to this case manager — the real `assignedTo` field. */
@@ -50,6 +52,16 @@ function tasksFor(source: TaskQueueSource): CaseTask[] {
 }
 
 export function TaskQueueCard({
+  ...props
+}: {
+  source: TaskQueueSource;
+  onOpenPatient: (id: string) => void;
+}) {
+  const { staffId, role } = useActingStaff();
+  return <TaskQueueContent key={`${staffId}:${role}`} {...props} />;
+}
+
+function TaskQueueContent({
   source,
   onOpenPatient,
 }: {
@@ -67,6 +79,7 @@ export function TaskQueueCard({
   );
 
   const [showDone, setShowDone] = useState(false);
+  const [draftCache] = useState<TaskWorkDraftCache>(() => new Map());
   // §Needs step 2 — same-day (stat/urgent) work sits at the top.
   const rank = (t: CaseTask) => (t.priority === "stat" ? 0 : t.priority === "urgent" ? 1 : 2);
   const list = [...(showDone ? tasks : open)].sort((a, b) => rank(a) - rank(b));
@@ -114,7 +127,7 @@ export function TaskQueueCard({
           views={[{ id: "current", label: showDone ? "All tasks" : "Needs you", matches: () => true }]}
           columns={[{ id: "task", label: "Task", sortValue: (t) => t.title, cell: (t) => {
             const p = patients.find((x) => x.id === t.patientId);
-            return <ul><TaskWorkRow tablePresentation task={t} patientSlot={p ? <Button size="sm" variant="link" onClick={() => onOpenPatient(p.id)}>{p.firstName} {p.lastName}</Button> : null} /></ul>;
+            return <ul><TaskWorkRow tablePresentation draftCache={draftCache} task={t} patientSlot={p ? <Button size="sm" variant="link" onClick={() => onOpenPatient(p.id)}>{p.firstName} {p.lastName}</Button> : null} /></ul>;
           } }]}
         />
       )}

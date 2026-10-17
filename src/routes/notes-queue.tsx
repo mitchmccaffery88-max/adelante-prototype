@@ -162,6 +162,7 @@ function NotesQueuePage() {
           <StaffTable rows={rows} rowKey={(row) => row.id} label="Unsigned notes" testId="notes-queue-rows"
             views={[{ id: "needs", label: "Needs you", matches: (row) => row.authorId === (actor.clinicianId ?? actor.staffId) || Boolean(row.note && noteSignAuthorization(row.note, actor).allowed) }, { id: "all", label: "Everyone", matches: () => true }]}
             defaultView="needs"
+            emptyState="No unfinished documentation in this view."
             columns={[
               { id: "patient", label: "Patient", sortValue: (row) => `${row.patient.firstName} ${row.patient.lastName}`, cell: (row) => <span className="font-medium">{row.patient.firstName} {row.patient.lastName}</span> },
               { id: "date", label: "Date / owner", sortValue: (row) => row.date, cell: (row) => <><ClientDate value={row.date} /> · {clinicians.find((c) => c.id === row.authorId)?.name ?? row.authorId}{row.appointment?.serviceType ? ` · ${row.appointment.serviceType}` : ""}</> },

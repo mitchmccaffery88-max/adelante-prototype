@@ -10,7 +10,8 @@ import { StatusChip } from "@/components/ui/status-chip";
 // decision handled by the real assignment path, which writes provider-switch
 // and audit records. This row shows the assignee and claim state instead.
 import { act, actFor } from "@/lib/actions/act";
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { useTaskDraftField, type TaskWorkDraftCache } from "@/components/tasks/taskWorkDraft";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
@@ -68,6 +69,7 @@ export function TaskWorkRow({
   patientSlot,
   className,
   tablePresentation = false,
+  draftCache,
 }: {
   task: CaseTask;
   canWrite?: boolean;
@@ -75,14 +77,16 @@ export function TaskWorkRow({
   patientSlot?: ReactNode;
   className?: string;
   tablePresentation?: boolean;
+  draftCache?: TaskWorkDraftCache;
 }) {
-  const { role, staffName } = useActingStaff();
-  const [open, setOpen] = useState(false);
-  const [due, setDue] = useState(task.dueDate.slice(0, 10));
-  const [priority, setPriority] = useState<TaskPriority>(taskPriority(task));
-  const [note, setNote] = useState("");
-  const [followUp, setFollowUp] = useState<string | null>(null);
-  const [followUpDue, setFollowUpDue] = useState(() => new Date().toISOString().slice(0, 10));
+  const { role, staffName, staffId } = useActingStaff();
+  const draftKey = `${staffId}:${role}:${task.id}`;
+  const [open, setOpen] = useTaskDraftField(draftCache, draftKey, "open", false);
+  const [due, setDue] = useTaskDraftField(draftCache, draftKey, "due", task.dueDate.slice(0, 10));
+  const [priority, setPriority] = useTaskDraftField(draftCache, draftKey, "priority", taskPriority(task));
+  const [note, setNote] = useTaskDraftField(draftCache, draftKey, "note", "");
+  const [followUp, setFollowUp] = useTaskDraftField(draftCache, draftKey, "followUp", null);
+  const [followUpDue, setFollowUpDue] = useTaskDraftField(draftCache, draftKey, "followUpDue", new Date().toISOString().slice(0, 10));
 
   const status = worklistStatusFor(task);
   const today = new Date().toISOString().slice(0, 10);

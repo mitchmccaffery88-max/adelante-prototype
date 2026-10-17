@@ -131,6 +131,7 @@ function WorklistPage() {
   const [dueFrom, setDueFrom] = useState("");
   const [dueTo, setDueTo] = useState("");
   const [mineOnly, setMineOnly] = useState(false);
+  const [tableView, setTableView] = useState("needs");
   // Driven by the URL so the nav entry, deep links, and the toggle stay in sync.
   const facilityRoundsOnly = view === "facility-protocols";
   const setFacilityRoundsOnly = (on: boolean) =>
@@ -185,21 +186,23 @@ function WorklistPage() {
     staffName,
   ]);
 
-  // Every card counts the SCOPED set, never raw totals.
+  const needsYou = (t: CaseTask) => (worklistStatusFor(t) === "pending" || worklistStatusFor(t) === "in_progress") && (!t.claimedBy || t.claimedBy === staffName) && matchesDiscipline(t, role);
+  const selectedRows = tableView === "needs" ? scoped.filter(needsYou) : scoped;
+  // Every card counts the selected subset of the existing SCOPED set.
   const stats = useMemo(() => {
-    const open = scoped.filter((t) => {
+    const open = selectedRows.filter((t) => {
       const s = worklistStatusFor(t);
       return s === "pending" || s === "in_progress";
     });
     return {
-      total: scoped.length,
+      total: selectedRows.length,
       open: open.length,
       unclaimed: open.filter((t) => !t.claimedBy).length,
       mine: open.filter((t) => t.claimedBy === staffName || t.assignedTo === staffName).length,
-      overdue: scoped.filter((t) => isOverdue(t)).length,
-      stat: scoped.filter((t) => taskPriority(t) === "stat").length,
+      overdue: selectedRows.filter((t) => isOverdue(t)).length,
+      stat: selectedRows.filter((t) => taskPriority(t) === "stat").length,
     };
-  }, [scoped, staffName]);
+  }, [selectedRows, staffName]);
 
   if (access.level === "none") {
     return (
@@ -353,7 +356,9 @@ function WorklistPage() {
         <StaffTable
           rows={scoped} rowKey={(t) => t.id} label="Task worklist" testId="task-worklist-table"
           defaultView="needs"
-          views={[{ id: "all", label: "Current view", matches: () => true }, { id: "needs", label: "Needs you", matches: (t) => (worklistStatusFor(t) === "pending" || worklistStatusFor(t) === "in_progress") && (!t.claimedBy || t.claimedBy === staffName) && matchesDiscipline(t, role) }]}
+          viewId={tableView} onViewChange={setTableView}
+          emptyState="No tasks in this view."
+          views={[{ id: "all", label: "Current view", matches: () => true }, { id: "needs", label: "Needs you", matches: needsYou }]}
           columns={[
           { id: "c0", label: "Priority", sortValue: (t) => taskPriority(t), cell: (t) => <>
 
