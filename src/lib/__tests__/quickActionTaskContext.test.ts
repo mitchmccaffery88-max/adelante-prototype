@@ -2,12 +2,12 @@ import { expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { quickActionsFor } from "@/lib/quickActions";
 
-it("therapist chart defaults include only the chart Task twin", () => {
+it("therapist chart defaults never show the patientless Task twin; chart Task follows the case_notes write gate", () => {
   const patient = AdelanteEHR.listPatients()[0];
   expect(patient).toBeDefined();
   if (!patient) throw new Error("Expected a real demo patient");
   const ids = quickActionsFor({ role: "therapist", staffId: "s-th1" }, patient).map((a) => a.id);
-  expect(ids).toContain("task");
+  expect(ids).not.toContain("task");
   expect(ids).not.toContain("dashboard_task");
 });
 
