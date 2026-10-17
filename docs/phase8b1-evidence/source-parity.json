@@ -1,0 +1,22 @@
+{
+  "src/lib/unsignedWork.ts": {
+    "identical": true,
+    "sha256": "c68a2fa8cbf699ea722934c9a2bc61a32442310cdfb38c0a0109fcd8597b1c11"
+  },
+  "src/lib/coverageWorklist.ts": {
+    "identical": true,
+    "sha256": "ac6e97a84faca79dd34d4f79cc1a9aed38913395cbb174c6441dd58a18bd5776"
+  },
+  "src/lib/caseloadScope.ts": {
+    "identical": true,
+    "sha256": "a95193d53c703913b4c2bace30ca17f7a07ac361840c2624328e7198a4083bc6"
+  },
+  "src/lib/inFacility.ts": {
+    "identical": true,
+    "sha256": "75f3a6fda369364fe0f7377185febe430caad5cbc35520fd4380f7df77b78de7"
+  },
+  "src/routes/worklist.tsx": {
+    "rollback_scoped_filter_identical": true,
+    "stats_change": "Same rollback formulas applied to selected subset; Current view retains rollback full scoped set."
+  }
+}

@@ -1,0 +1,666 @@
+[
+  {
+    "path": "/case-manager",
+    "expected": {
+      "all": [
+        "p1",
+        "p2",
+        "p-demo-refusal",
+        "p-demo-mar-seed",
+        "p-demo-mar-seed-es",
+        "qllf2oml",
+        "nq4qptvf"
+      ],
+      "programIds": [
+        "ADL-2026-001",
+        "ADL-2026-002",
+        "ADL-2026-900",
+        "ADL-2026-901",
+        "ADL-2026-902",
+        "ADL-2026-010",
+        "ADL-2026-013"
+      ]
+    },
+    "views": [
+      {
+        "view": "all",
+        "count": 7,
+        "visibleIds": [
+          "p1",
+          "p2",
+          "p-demo-refusal",
+          "p-demo-mar-seed",
+          "p-demo-mar-seed-es",
+          "qllf2oml",
+          "nq4qptvf"
+        ],
+        "stats": {},
+        "buttons": [
+          "Needs you (9)",
+          "Current caseload (7)"
+        ]
+      }
+    ],
+    "screenshots": [
+      {
+        "file": "case-manager-390-light.png",
+        "viewport": 390,
+        "documentWidth": 390,
+        "table": {
+          "width": 316,
+          "scrollWidth": 316,
+          "display": "block"
+        }
+      },
+      {
+        "file": "case-manager-390-dark.png",
+        "viewport": 390,
+        "documentWidth": 390,
+        "table": {
+          "width": 316,
+          "scrollWidth": 316,
+          "display": "block"
+        }
+      },
+      {
+        "file": "case-manager-768-light.png",
+        "viewport": 768,
+        "documentWidth": 1104,
+        "table": {
+          "width": 438,
+          "scrollWidth": 438,
+          "display": "block"
+        }
+      },
+      {
+        "file": "case-manager-768-dark.png",
+        "viewport": 768,
+        "documentWidth": 1104,
+        "table": {
+          "width": 438,
+          "scrollWidth": 438,
+          "display": "block"
+        }
+      },
+      {
+        "file": "case-manager-1280-light.png",
+        "viewport": 1280,
+        "documentWidth": 1280,
+        "table": {
+          "width": 950,
+          "scrollWidth": 950,
+          "display": "table-row"
+        }
+      },
+      {
+        "file": "case-manager-1280-dark.png",
+        "viewport": 1280,
+        "documentWidth": 1280,
+        "table": {
+          "width": 950,
+          "scrollWidth": 950,
+          "display": "table-row"
+        }
+      }
+    ],
+    "errors": []
+  },
+  {
+    "path": "/eligibility-worklist",
+    "expected": {
+      "all": [
+        "p-demo-refusal",
+        "p4",
+        "cd18xywp",
+        "p1",
+        "rkw356eq",
+        "gjwwb582",
+        "rsr7z0rt",
+        "fltxiy5g",
+        "gx3elbpo",
+        "p-demo-mar-seed-es",
+        "ga8z6j9f",
+        "baqz0vsl",
+        "p3",
+        "p-demo-mar-seed",
+        "x8yps7vv",
+        "cgefiq33",
+        "p2",
+        "3n2i3b3g",
+        "mdp1yclc",
+        "2cb4wovj"
+      ]
+    },
+    "views": [
+      {
+        "view": "all",
+        "count": 20,
+        "visibleIds": [
+          "p-demo-refusal",
+          "p4",
+          "cd18xywp",
+          "p1",
+          "rkw356eq",
+          "gjwwb582",
+          "rsr7z0rt",
+          "fltxiy5g",
+          "gx3elbpo",
+          "p-demo-mar-seed-es",
+          "ga8z6j9f",
+          "baqz0vsl",
+          "p3",
+          "p-demo-mar-seed",
+          "x8yps7vv",
+          "cgefiq33",
+          "p2",
+          "3n2i3b3g",
+          "mdp1yclc",
+          "2cb4wovj"
+        ],
+        "stats": {},
+        "buttons": [
+          "Needs you (20)"
+        ]
+      }
+    ],
+    "screenshots": [
+      {
+        "file": "eligibility-worklist-390-light.png",
+        "viewport": 390,
+        "documentWidth": 390,
+        "table": {
+          "width": 358,
+          "scrollWidth": 358,
+          "display": "block"
+        }
+      },
+      {
+        "file": "eligibility-worklist-390-dark.png",
+        "viewport": 390,
+        "documentWidth": 390,
+        "table": {
+          "width": 358,
+          "scrollWidth": 358,
+          "display": "block"
+        }
+      },
+      {
+        "file": "eligibility-worklist-768-light.png",
+        "viewport": 768,
+        "documentWidth": 768,
+        "table": {
+          "width": 480,
+          "scrollWidth": 480,
+          "display": "block"
+        }
+      },
+      {
+        "file": "eligibility-worklist-768-dark.png",
+        "viewport": 768,
+        "documentWidth": 768,
+        "table": {
+          "width": 480,
+          "scrollWidth": 480,
+          "display": "block"
+        }
+      },
+      {
+        "file": "eligibility-worklist-1280-light.png",
+        "viewport": 1280,
+        "documentWidth": 1280,
+        "table": {
+          "width": 992,
+          "scrollWidth": 992,
+          "display": "table-row"
+        }
+      },
+      {
+        "file": "eligibility-worklist-1280-dark.png",
+        "viewport": 1280,
+        "documentWidth": 1280,
+        "table": {
+          "width": 992,
+          "scrollWidth": 992,
+          "display": "table-row"
+        }
+      }
+    ],
+    "errors": []
+  },
+  {
+    "path": "/notes-queue",
+    "expected": {
+      "all": [
+        "a5",
+        "a6",
+        "a2",
+        "0yqx39vc",
+        "1jhvk7u6",
+        "nmp8v0nf",
+        "mii5e3l6"
+      ],
+      "needs": [
+        "a5",
+        "a2",
+        "1jhvk7u6",
+        "nmp8v0nf",
+        "mii5e3l6"
+      ]
+    },
+    "views": [
+      {
+        "view": "needs",
+        "count": 5,
+        "visibleIds": [
+          "a5",
+          "a2",
+          "1jhvk7u6",
+          "nmp8v0nf",
+          "mii5e3l6"
+        ],
+        "stats": {},
+        "buttons": [
+          "Needs you (5)",
+          "Everyone (7)"
+        ]
+      },
+      {
+        "view": "all",
+        "count": 7,
+        "visibleIds": [
+          "a5",
+          "a6",
+          "a2",
+          "0yqx39vc",
+          "1jhvk7u6",
+          "nmp8v0nf",
+          "mii5e3l6"
+        ],
+        "stats": {},
+        "buttons": [
+          "Needs you (5)",
+          "Everyone (7)"
+        ]
+      }
+    ],
+    "screenshots": [
+      {
+        "file": "notes-queue-390-light.png",
+        "viewport": 390,
+        "documentWidth": 390,
+        "table": {
+          "width": 324,
+          "scrollWidth": 324,
+          "display": "block"
+        }
+      },
+      {
+        "file": "notes-queue-390-dark.png",
+        "viewport": 390,
+        "documentWidth": 390,
+        "table": {
+          "width": 324,
+          "scrollWidth": 324,
+          "display": "block"
+        }
+      },
+      {
+        "file": "notes-queue-768-light.png",
+        "viewport": 768,
+        "documentWidth": 768,
+        "table": {
+          "width": 462,
+          "scrollWidth": 462,
+          "display": "block"
+        }
+      },
+      {
+        "file": "notes-queue-768-dark.png",
+        "viewport": 768,
+        "documentWidth": 768,
+        "table": {
+          "width": 462,
+          "scrollWidth": 462,
+          "display": "block"
+        }
+      },
+      {
+        "file": "notes-queue-1280-light.png",
+        "viewport": 1280,
+        "documentWidth": 1280,
+        "table": {
+          "width": 830,
+          "scrollWidth": 830,
+          "display": "table-row"
+        }
+      },
+      {
+        "file": "notes-queue-1280-dark.png",
+        "viewport": 1280,
+        "documentWidth": 1280,
+        "table": {
+          "width": 830,
+          "scrollWidth": 830,
+          "display": "table-row"
+        }
+      }
+    ],
+    "errors": []
+  },
+  {
+    "path": "/worklist",
+    "expected": {
+      "all": [
+        "msusqrus",
+        "be506mbt",
+        "erssaouk",
+        "m83c0wzk",
+        "f9jt3ctg",
+        "adac157i",
+        "dtt7bka2",
+        "438f6a1b",
+        "l25h189l",
+        "okgcgdps",
+        "gwwk92cg",
+        "3g6dr9gt",
+        "bghxeafu",
+        "iytbml9d",
+        "v1b5hg5m",
+        "onoyl2pd",
+        "48hxim2d",
+        "i9uamdd0",
+        "b5epdqkg",
+        "ewgicavz",
+        "fv2d4kom",
+        "ewpv3ok7",
+        "pvd1lyq0",
+        "cwx30su2",
+        "og2fqk3s",
+        "x6w1c7ev",
+        "atdb12fj",
+        "ijrg5v63",
+        "tsxgo8js",
+        "we31ae5p",
+        "3rlan2fz",
+        "igmxv0u7",
+        "gmpfehc5",
+        "84rsef06",
+        "6ddrkjji",
+        "pzy1bpx4",
+        "w5er8bz7",
+        "uzozsw3d",
+        "zkh5r3p6",
+        "eievdpu1",
+        "lxdeicwd"
+      ],
+      "needs": [
+        "msusqrus",
+        "be506mbt",
+        "erssaouk",
+        "m83c0wzk",
+        "f9jt3ctg",
+        "adac157i",
+        "dtt7bka2",
+        "438f6a1b",
+        "l25h189l",
+        "okgcgdps",
+        "gwwk92cg",
+        "3g6dr9gt",
+        "bghxeafu",
+        "iytbml9d",
+        "v1b5hg5m",
+        "onoyl2pd",
+        "48hxim2d",
+        "i9uamdd0",
+        "b5epdqkg",
+        "ewgicavz",
+        "fv2d4kom",
+        "ewpv3ok7",
+        "pvd1lyq0",
+        "cwx30su2",
+        "og2fqk3s",
+        "x6w1c7ev",
+        "atdb12fj",
+        "ijrg5v63",
+        "tsxgo8js",
+        "we31ae5p",
+        "3rlan2fz",
+        "igmxv0u7",
+        "84rsef06",
+        "6ddrkjji",
+        "pzy1bpx4",
+        "w5er8bz7",
+        "uzozsw3d",
+        "zkh5r3p6",
+        "lxdeicwd"
+      ],
+      "statsAll": {
+        "Total": 41,
+        "Open": 39,
+        "Unclaimed": 39,
+        "Mine (open)": 0,
+        "Follow-up needed": 1,
+        "STAT": 0
+      },
+      "statsNeeds": {
+        "Total": 39,
+        "Open": 39,
+        "Unclaimed": 39,
+        "Mine (open)": 0,
+        "Follow-up needed": 1,
+        "STAT": 0
+      },
+      "excluded": [
+        "4ze9r1r3",
+        "cuvopjfm",
+        "aqyoplwb",
+        "klz0f639",
+        "qzergqi0",
+        "egt4qmvw",
+        "heqlltew",
+        "cc2v0o9y",
+        "a4b3tzy1",
+        "95tpfq3h",
+        "qto0tuay",
+        "dzv3jaxt",
+        "oufxhmsv",
+        "sxupnfbu",
+        "7eemde4i",
+        "97rc71xa",
+        "qzna2q8f",
+        "q93w0pwl",
+        "kpe3gla3",
+        "unqfk2fg",
+        "s5604b2v",
+        "xlyzn7b1",
+        "majdod4c",
+        "j9tytnez",
+        "ziy7e9vk",
+        "bc0jh6ch",
+        "7cfouw62",
+        "0om8u5fq"
+      ]
+    },
+    "views": [
+      {
+        "view": "needs",
+        "count": 39,
+        "visibleIds": [
+          "msusqrus",
+          "be506mbt",
+          "erssaouk",
+          "m83c0wzk",
+          "f9jt3ctg",
+          "adac157i",
+          "dtt7bka2",
+          "438f6a1b",
+          "l25h189l",
+          "okgcgdps",
+          "gwwk92cg",
+          "3g6dr9gt",
+          "bghxeafu",
+          "iytbml9d",
+          "v1b5hg5m",
+          "onoyl2pd",
+          "48hxim2d",
+          "i9uamdd0",
+          "b5epdqkg",
+          "ewgicavz",
+          "fv2d4kom",
+          "ewpv3ok7",
+          "pvd1lyq0",
+          "cwx30su2",
+          "og2fqk3s",
+          "x6w1c7ev",
+          "atdb12fj",
+          "ijrg5v63",
+          "tsxgo8js",
+          "we31ae5p",
+          "3rlan2fz",
+          "igmxv0u7",
+          "84rsef06",
+          "6ddrkjji",
+          "pzy1bpx4",
+          "w5er8bz7",
+          "uzozsw3d",
+          "zkh5r3p6",
+          "lxdeicwd"
+        ],
+        "stats": {
+          "Total": 39,
+          "Open": 39,
+          "Unclaimed": 39,
+          "Mine (open)": 0,
+          "Follow-up needed": 1,
+          "STAT": 0
+        },
+        "buttons": [
+          "Current view (41)",
+          "Needs you (39)"
+        ]
+      },
+      {
+        "view": "all",
+        "count": 41,
+        "visibleIds": [
+          "msusqrus",
+          "be506mbt",
+          "erssaouk",
+          "m83c0wzk",
+          "f9jt3ctg",
+          "adac157i",
+          "dtt7bka2",
+          "438f6a1b",
+          "l25h189l",
+          "okgcgdps",
+          "gwwk92cg",
+          "3g6dr9gt",
+          "bghxeafu",
+          "iytbml9d",
+          "v1b5hg5m",
+          "onoyl2pd",
+          "48hxim2d",
+          "i9uamdd0",
+          "b5epdqkg",
+          "ewgicavz",
+          "fv2d4kom",
+          "ewpv3ok7",
+          "pvd1lyq0",
+          "cwx30su2",
+          "og2fqk3s",
+          "x6w1c7ev",
+          "atdb12fj",
+          "ijrg5v63",
+          "tsxgo8js",
+          "we31ae5p",
+          "3rlan2fz",
+          "igmxv0u7",
+          "gmpfehc5",
+          "84rsef06",
+          "6ddrkjji",
+          "pzy1bpx4",
+          "w5er8bz7",
+          "uzozsw3d",
+          "zkh5r3p6",
+          "eievdpu1",
+          "lxdeicwd"
+        ],
+        "stats": {
+          "Total": 41,
+          "Open": 39,
+          "Unclaimed": 39,
+          "Mine (open)": 0,
+          "Follow-up needed": 1,
+          "STAT": 0
+        },
+        "buttons": [
+          "Current view (41)",
+          "Needs you (39)"
+        ]
+      }
+    ],
+    "screenshots": [
+      {
+        "file": "worklist-390-light.png",
+        "viewport": 390,
+        "documentWidth": 390,
+        "table": {
+          "width": 358,
+          "scrollWidth": 358,
+          "display": "block"
+        }
+      },
+      {
+        "file": "worklist-390-dark.png",
+        "viewport": 390,
+        "documentWidth": 390,
+        "table": {
+          "width": 358,
+          "scrollWidth": 358,
+          "display": "block"
+        }
+      },
+      {
+        "file": "worklist-768-light.png",
+        "viewport": 768,
+        "documentWidth": 768,
+        "table": {
+          "width": 496,
+          "scrollWidth": 496,
+          "display": "block"
+        }
+      },
+      {
+        "file": "worklist-768-dark.png",
+        "viewport": 768,
+        "documentWidth": 768,
+        "table": {
+          "width": 496,
+          "scrollWidth": 496,
+          "display": "block"
+        }
+      },
+      {
+        "file": "worklist-1280-light.png",
+        "viewport": 1280,
+        "documentWidth": 1280,
+        "table": {
+          "width": 1008,
+          "scrollWidth": 1008,
+          "display": "table-row"
+        }
+      },
+      {
+        "file": "worklist-1280-dark.png",
+        "viewport": 1280,
+        "documentWidth": 1280,
+        "table": {
+          "width": 1008,
+          "scrollWidth": 1008,
+          "display": "table-row"
+        }
+      }
+    ],
+    "errors": []
+  }
+]
