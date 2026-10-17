@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 // §Referrals Rework Phase 4f — the cross-patient "needs setup" view.
 //
 // The four post-enrollment steps used to appear together only inside one
@@ -75,7 +76,7 @@ function AssignCaseManagerControl({ patientId }: { patientId: string }) {
   );
 }
 
-export function PostEnrollmentSetupCard({ limit }: { limit?: number }) {
+export function PostEnrollmentSetupCard({ limit, tablePresentation = false }: { limit?: number; tablePresentation?: boolean }) {
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const rows = patientsNeedingSetup(patients)
     .map((p) => ({ p, gaps: postEnrollmentGaps(p), stale: postEnrollmentStaleness(p) }))
@@ -94,7 +95,16 @@ export function PostEnrollmentSetupCard({ limit }: { limit?: number }) {
         </span>
       </div>
 
-      {shown.length === 0 ? (
+      {tablePresentation ? <StaffTable rows={shown} rowKey={(r)=>r.p.id} label="Needs setup after enrollment" testId="enrollment-setup-table"
+        views={[{id:"current",label:"Current view",matches:()=>true}]} defaultView="current"
+        emptyState="Everyone enrolled has a care team, a completed intake and an attended session."
+        columns={[
+          {id:"patient",label:"Patient",sortValue:(r)=>`${r.p.firstName} ${r.p.lastName}`,cell:(r)=><Link to="/record/$patientId" params={{patientId:r.p.id}} className="underline">{r.p.firstName} {r.p.lastName}</Link>},
+          {id:"gaps",label:"Next steps",cell:(r)=><>{r.gaps.map((g)=><Badge key={g} variant="outline">{POST_ENROLLMENT_STEP_LABEL[g]}</Badge>)}{r.stale && r.stale.state !== "fresh" && <p title={POST_ENROLLMENT_STALENESS_NOTE}>{postEnrollmentStalenessLabel(r.stale)}</p>}</>},
+        ]}
+        primaryAction={(r)=>!r.p.primaryClinicianId ? <AssignClinicianButton patientId={r.p.id} size="sm" /> : null}
+        moreContent={(r)=>!r.p.caseManagerId ? <AssignCaseManagerControl patientId={r.p.id} /> : null}
+      /> : <>      {shown.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Everyone enrolled has a care team, a completed intake and an attended session.
         </p>
@@ -137,6 +147,7 @@ export function PostEnrollmentSetupCard({ limit }: { limit?: number }) {
         </ul>
       )}
 
+      </>}
       {limit && rows.length > shown.length && (
         <div className="pt-2 text-xs">
           <Link to="/admin-coordination" className="underline">

@@ -10,6 +10,7 @@ export interface StaffColumn<T> {
   cell: (row: T) => ReactNode;
   sortValue?: (row: T) => string | number;
   mono?: boolean;
+  testId?: string;
 }
 export interface StaffView<T> { id: string; label: string; matches: (row: T) => boolean; emptyState?: ReactNode }
 export interface StaffRowAction { label: string; onSelect: () => void; disabled?: boolean }
@@ -20,12 +21,13 @@ export function RestrictedCell({ label = copy.restricted }: { label?: string }) 
   return <span className="inline-flex items-center gap-2 text-ink-muted"><Lock aria-label={label} role="img" className="size-4 shrink-0" /><span>{label}</span></span>;
 }
 
-export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId, views = [], defaultView, viewId, onViewChange, primaryAction, moreActions, moreContent, emptyState }: {
+export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId, views = [], defaultView, viewId, onViewChange, primaryAction, moreActions, moreContent, moreLabel, rowDetails, emptyState }: {
   rows: readonly T[]; columns: StaffColumn<T>[]; rowKey: (row: T) => string; label: string;
   testId?: string; rowTestId?: (row: T) => string; views?: StaffView<T>[]; defaultView?: string;
   viewId?: string; onViewChange?: (id: string) => void;
   primaryAction?: (row: T) => ReactNode; moreActions?: (row: T) => StaffRowAction[];
   moreContent?: (row: T) => ReactNode; emptyState?: ReactNode;
+  moreLabel?: (row: T) => string; rowDetails?: (row: T) => ReactNode;
 }) {
   const [view, setView] = useState(defaultView ?? views[0]?.id ?? "all");
   const [sort, setSort] = useState<{ id: string; descending: boolean } | null>(null);
@@ -50,12 +52,12 @@ export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId,
     {visible.length === 0 ? <div role="status" data-testid={testId} className="py-6 text-sm text-ink-muted">{selected?.emptyState ?? emptyState ?? "Nothing in this view."}</div> : <table aria-label={label} data-testid={testId} className="w-full border-collapse text-left">
       <thead className="bg-surface-sunk text-ink-muted"><tr>{columns.map((c) => <th key={c.id} scope="col" aria-sort={sort?.id === c.id ? sort.descending ? "descending" : "ascending" : "none"} className="px-3 py-1 font-medium">
         {c.sortValue ? <Button variant="ghost" className="h-9 px-0 text-sm whitespace-normal text-left" onClick={() => { setSort({ id: c.id, descending: sort?.id === c.id ? !sort.descending : false }); setPage(0); }}>{c.label}{sort?.id === c.id ? sort.descending ? <ArrowDown /> : <ArrowUp /> : <ChevronsUpDown />}</Button> : c.label}
-      </th>)}{hasActions && <th scope="col" className="px-3 py-2 font-medium">{copy.actions}</th>}</tr></thead>
+      </th>)}{hasActions && <th scope="col" className="min-w-32 px-3 py-2 font-medium">{copy.actions}</th>}</tr></thead>
       <tbody>{visible.map((row) => <tr key={rowKey(row)} data-row-key={rowKey(row)} data-testid={rowTestId?.(row)} className="h-10 border-b border-line align-top">
-        {columns.map((c) => <td key={c.id} data-label={c.label} className={`px-3 py-2 break-words ${c.mono ? "font-mono" : ""}`}>{c.cell(row)}</td>)}
-        {hasActions && <td data-label={copy.actions} className="px-3 py-1"><div className="flex flex-wrap items-center gap-2">{primaryAction?.(row)}{(() => {
+        {columns.map((c) => <td key={c.id} data-testid={c.testId} data-label={c.label} className={`px-3 py-2 break-words ${c.mono ? "font-mono" : ""}`}>{c.cell(row)}{c === columns[0] && rowDetails && <div className="col-span-2 min-w-0">{rowDetails(row)}</div>}</td>)}
+        {hasActions && <td data-label={copy.actions} className="min-w-32 px-3 py-1"><div className="flex flex-wrap items-center gap-2">{primaryAction?.(row)}{(() => {
           const actions = moreActions?.(row) ?? [];
-          return actions.length > 0 || moreContent ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`${copy.more}: ${rowKey(row)}`} title={copy.more}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map((a) => <DropdownMenuItem key={a.label} disabled={a.disabled} onSelect={a.onSelect}>{a.label}</DropdownMenuItem>)}{moreContent?.(row)}</DropdownMenuContent></DropdownMenu> : null;
+          return actions.length > 0 || moreContent ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={moreLabel?.(row) ?? `${copy.more}: ${rowKey(row)}`} title={copy.more}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map((a) => <DropdownMenuItem key={a.label} disabled={a.disabled} onSelect={a.onSelect}>{a.label}</DropdownMenuItem>)}{moreContent?.(row)}</DropdownMenuContent></DropdownMenu> : null;
         })()}</div></td>}
       </tr>)}</tbody>
     </table>}

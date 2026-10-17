@@ -2,6 +2,16 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 8b-2 — Remaining staff tables (approved Oct 17)
+Rollback: 064533e3ba01fd425d1a66959495ef49a7f27406
+- [ ] Record all active target row sources, filters, hidden-data rules and rollback projections before presentation edits
+- [ ] Convert remaining queues, content inventory, staff and credentialing tables; preserve gates, actions, dialogs, testids and inventory export
+- [ ] New unit and area browser parity/role-exclusion/axe coverage; existing tests untouched
+- [ ] Full unit listed/pass totals, then full background browser suite --workers=1 on :8080; restore tracked screenshots
+- [ ] Each converted table 390/768/1280 light/dark matrix; review and record unchanged privacy gaps
+- [ ] docs/phase8b2-report.md and closeout only when green under the approved contentWiring flake exception
+- Scope stop: no publishing or 8b-3; unrelated open tasks remain outside this approval.
+
 ## Phase 8b-1 — Shared staff table pilots (approved Oct 17)
 Rollback: e822105ffca551809487f2403bc60f728bfe8d9b
 - [x] Record each pilot's source, existing hidden-data rules and rollback row parity before replacing presentation
@@ -13,7 +23,7 @@ Rollback: e822105ffca551809487f2403bc60f728bfe8d9b
 - [x] Follow-up presentation: empty-state fallback, actor-scoped session-only task drafts across paging, selected-worklist statistics; both focused units passed in the full suite; UI row IDs and counts match unchanged rollback projections
 - [x] Environment recovered: current source confirmed, no stash ref, supervised server restarted once; fresh notes table verified; standalone pilots 9/9. Previous diagnostic stop retained as history in docs/phase8b1-diagnostic-stop.md.
 - [x] Phase 8b-1 done Oct 17: docs/phase8b1-report.md records parity, pre-existing flake, unchanged privacy gaps, validation totals and screenshot limitations
-- Scope stop: no publishing, no 8b-2 or 8b-3; unrelated older roadmap items remain outside this approval.
+- Phase 8b-1 scope closed; Phase 8b-2 separately approved below, no publishing or 8b-3.
 
 ## Phase 6 — Emotion check-in (approved 14 Oct)
 - [ ] Shared eleven-emotion flow, private dismissal, real-record choices and timer

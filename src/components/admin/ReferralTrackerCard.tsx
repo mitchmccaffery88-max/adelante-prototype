@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { useActingRole } from "@/lib/roles";
 import { canPerformReferralAction } from "@/lib/referralActions";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -56,12 +57,14 @@ export function ReferralTrackerCard({
   title = "Referral status",
   limit = 5,
   showViewAll = false,
+  tablePresentation = false,
 }: {
   referrals: ReturnType<typeof AdelanteEHR.listReferrals>;
   title?: string;
   limit?: number;
   /** §Phase 4d — dashboards keep the card and link through to the real queue. */
   showViewAll?: boolean;
+  tablePresentation?: boolean;
 }) {
   const [role] = useActingRole();
   const sourceLabels: Record<string, string> = REFERRAL_SOURCE_LABELS;
@@ -183,7 +186,18 @@ export function ReferralTrackerCard({
           </Button>
         )}
       </div>
-      {shown.length === 0 ? (
+      {tablePresentation ? <StaffTable rows={shown} rowKey={(r)=>r.id} label={title} testId="referral-queue-table" defaultView="current"
+        views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(r)=>hasOpenOutreachTask(r) || r.status === "submitted" && canPerformReferralAction(role,"enroll")}]}
+        emptyState={activeFilters ? "No referrals match these filters." : "No referrals in the pipeline."}
+        columns={[
+          {id:"patient",label:"Person",sortValue:(r)=>`${r.firstName} ${r.lastName}`,cell:(r)=><>{r.firstName} {r.lastName}{r.cin && <p className="font-mono text-ink-muted">CIN ••••{r.cin.slice(-4)}</p>}</>},
+          {id:"source",label:"Source",sortValue:(r)=>sourceLabels[r.referralSource] ?? r.referralSource,cell:(r)=><>{sourceLabels[r.referralSource] ?? r.referralSource}<p data-testid="queue-referred-by">Referred by {r.referringAgency || "Not provided"}{r.referrerName ? ` · ${r.referrerName}` : ""}{!referrerHasContact(r) && <Badge variant="outline">No referrer contact</Badge>}</p></>},
+          {id:"date",label:"Sent",sortValue:(r)=>r.createdAt,cell:(r)=><ClientDate value={r.createdAt} />},
+          {id:"status",label:"Status",sortValue:(r)=>r.status,cell:(r)=><><StatusChip lang="en" state={r.status === "enrolled" ? "done" : r.status === "declined" ? "closed" : r.status === "submitted" && canPerformReferralAction(role,"enroll") ? "yourturn" : "team"} label={r.status} /><ReferralStalenessBadge referral={r} />{hasOpenOutreachTask(r) && <Badge variant="outline">Call needed</Badge>}</>},
+          {id:"progress",label:"Progress",cell:(r)=>{const patient=r.enrolledPatientId ? AdelanteEHR.getPatient(r.enrolledPatientId) : undefined; const outreachAt=latestOutreachAttempt(r)?.at ?? r.smsSentAt ?? (r.outreachTask === "manual_call" ? r.createdAt : undefined);const enrolledAt=patient?.enrolledAt ?? (r.status === "enrolled" ? r.createdAt : undefined);return <><ReferralProgressStrip status={r.status} tablePresentation /><p>Outreach: {outreachAt ? <ClientDate value={outreachAt} /> : "Pending"}</p><p>Enrolled: {enrolledAt ? <ClientDate value={enrolledAt} /> : "Pending"}</p>{r.status === "declined" && <p>Declined{r.declinedBy ? ` by ${r.declinedBy.name}` : ""} · {referralDeclineReasonLabel(r.declineReason ?? "")}</p>}<ReferralOutreachStatus referral={r} />{patient && <p>Enrolled as <span className="font-mono">{patient.programId}</span></p>}</>; }},
+        ]}
+        primaryAction={(r)=><Button size="sm" variant="outline" onClick={()=>setOpenRefId(r.id)}>Open referral</Button>}
+      /> : <>      {shown.length === 0 ? (
         <p className="text-xs text-muted-foreground">
           {activeFilters ? "No referrals match these filters." : "No referrals in the pipeline."}
         </p>
@@ -278,6 +292,7 @@ export function ReferralTrackerCard({
           })}
         </div>
       )}
+      </>}
       <p className="mt-3 text-[10px] text-muted-foreground">
         Aging badge — {REFERRAL_AGING_DRAFT.note}
       </p>

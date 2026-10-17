@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Front door — staff queue for NON-clinical community inquiries.
 //
@@ -48,63 +49,19 @@ export function CommunityInquiryQueue() {
         </Button>
       </div>
 
-      {visible.length === 0 ? (
-        <EmptyState icon={MessageSquare} title="No open inquiries" />
-      ) : (
-        visible.map((r) => (
-          <Card key={r.id} className="space-y-3 p-4" data-testid="community-inquiry-row">
-            <div className="flex flex-wrap items-center gap-2">
-              {r.crisisFlagged ? (
-                <StatusChip lang="en" state="urgent" label="Crisis language" />
-              ) : null}
-              <StatusChip lang="en" state={r.status === "resolved" ? "done" : r.status === "new" && canWrite ? "yourturn" : "team"} label={r.status} />
-              <span className="text-xs text-muted-foreground">
-                <ClientDate value={r.createdAt} options={{ dateStyle: "medium", timeStyle: "short" }} />
-              </span>
-            </div>
-            <p className="whitespace-pre-wrap text-sm text-navy">{r.body}</p>
-            <div className="flex items-center gap-2 text-sm">
-              {r.contactKind === "email" ? (
-                <Mail className="h-4 w-4 text-teal" />
-              ) : (
-                <Phone className="h-4 w-4 text-teal" />
-              )}
-              <a
-                className="font-medium underline"
-                href={r.contactKind === "email" ? `mailto:${r.contact}` : `tel:${r.contact}`}
-              >
-                {r.contact}
-              </a>
-            </div>
-            {r.dispositionBy ? (
-              <p className="text-xs text-muted-foreground">
-                {r.status} by {r.dispositionBy} · <ClientDate value={r.dispositionAt!} options={{ dateStyle: "medium", timeStyle: "short" }} />
-              </p>
-            ) : null}
-            {canWrite ? (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={r.status !== "new"}
-                  onClick={() => disposition(r, "contacted")}
-                >
-                  Mark contacted
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={r.status === "resolved"}
-                  onClick={() => disposition(r, "resolved")}
-                >
-                  Mark resolved
-                </Button>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">Read-only for your role.</p>
-            )}
-          </Card>
-        ))
-      )}
+      <StaffTable rows={visible} rowKey={(r)=>r.id} label="Community inquiries" testId="community-inquiries-table" rowTestId={()=>"community-inquiry-row"}
+        views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(r)=>canWrite && r.status === "new"}]} defaultView="current"
+        emptyState={<EmptyState icon={MessageSquare} title="No open inquiries" />}
+        columns={[
+          {id:"body",label:"Inquiry",cell:(r)=><p className="whitespace-pre-wrap">{r.body}</p>},
+          {id:"contact",label:"Contact",sortValue:(r)=>r.contact,cell:(r)=><a className="font-medium underline" href={r.contactKind === "email" ? `mailto:${r.contact}` : `tel:${r.contact}`}>{r.contactKind === "email" ? <Mail className="inline size-4" /> : <Phone className="inline size-4" />} {r.contact}</a>},
+          {id:"date",label:"Received",sortValue:(r)=>r.createdAt,cell:(r)=><ClientDate value={r.createdAt} options={{dateStyle:"medium",timeStyle:"short"}} />},
+          {id:"status",label:"Status",sortValue:(r)=>r.status,cell:(r)=><>{r.crisisFlagged && <StatusChip lang="en" state="urgent" label="Crisis language" />}<StatusChip lang="en" state={r.status === "resolved" ? "done" : r.status === "new" && canWrite ? "yourturn" : "team"} label={r.status} /></>},
+          {id:"owner",label:"Disposition",sortValue:(r)=>r.dispositionBy ?? "",cell:(r)=>r.dispositionBy ? <>{r.status} by {r.dispositionBy}{r.dispositionAt && <> · <ClientDate value={r.dispositionAt} options={{dateStyle:"medium",timeStyle:"short"}} /></>}</> : "—"},
+        ]}
+        primaryAction={canWrite ? (r)=><Button size="sm" variant="outline" disabled={r.status !== "new"} onClick={()=>disposition(r,"contacted")}>Mark contacted</Button> : undefined}
+        moreContent={canWrite ? (r)=><Button size="sm" variant="outline" disabled={r.status === "resolved"} onClick={()=>disposition(r,"resolved")}>Mark resolved</Button> : undefined}
+      />
     </div>
   );
 }

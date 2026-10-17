@@ -1,3 +1,6 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Inbox actions — claim / assign / done / reopen / make-a-task on staff
 // inbox items. All rules live in `inboxActions.ts`; this is display only.
@@ -45,6 +48,17 @@ export function InboxActionQueue({ billing = false }: { billing?: boolean }) {
   const rows = useEhr(() => listInboxRows(actor, { billingOnly: billing }));
   void v;
   const shown = rows.filter((r) => r.state.status === filter);
+  if (!billing) return <div className="space-y-3" data-testid="inbox-actions">
+    <StaffTable rows={rows} rowKey={(r)=>r.key} label="Inbox items" testId="inbox-items-table" rowTestId={()=>"inbox-item"} defaultView="open"
+      views={[{id:"open",label:"Open",matches:(r)=>r.state.status === "open"},{id:"done",label:"Done",matches:(r)=>r.state.status === "done"}]}
+      emptyState="Nothing here."
+      columns={[
+        {id:"title",label:"Item",sortValue:(r)=>inboxItemLabel(r.key).title,cell:(r)=><span className="flex items-center gap-2">{isProtectedItem(r.key) && <Lock className="size-4" aria-label="Restricted" />}{inboxItemLabel(r.key).title}</span>},
+        {id:"date",label:"Created",sortValue:(r)=>r.createdAt,cell:(r)=><ClientDate value={r.createdAt} options={{month:"short",day:"numeric"}} />},
+      ]}
+      rowDetails={(r)=><ItemRow row={r} actor={actor} tablePresentation />}
+    />
+  </div>;
   return (
     <div className="space-y-3" data-testid={billing ? "billing-feed" : "inbox-actions"}>
       <div className="flex gap-2">
@@ -68,7 +82,7 @@ export function InboxActionQueue({ billing = false }: { billing?: boolean }) {
   );
 }
 
-function ItemRow({ row, actor }: { row: InboxRow; actor: InboxActor }) {
+function ItemRow({ row, actor, tablePresentation = false }: { row: InboxRow; actor: InboxActor; tablePresentation?: boolean }) {
   const [mode, setMode] = useState<"none" | "assign" | "done" | "task">("none");
   const [note, setNote] = useState("");
   const [staffId, setStaffId] = useState("");
@@ -82,15 +96,15 @@ function ItemRow({ row, actor }: { row: InboxRow; actor: InboxActor }) {
     setNote("");
   };
   return (
-    <Card className="space-y-2 p-3 text-sm" data-testid="inbox-item">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-2 text-sm" data-testid={tablePresentation ? undefined : "inbox-item"}>
+      {!tablePresentation && <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 font-medium text-navy">
           {prot && <Lock className="h-3.5 w-3.5" />} {label.title}
         </span>
         <span className="text-xs text-muted-foreground">
           <ClientDate value={row.createdAt} options={{ month: "short", day: "numeric" }} />
         </span>
-      </div>
+      </div>}
       {label.body && <p className="text-xs text-muted-foreground">{label.body}</p>}
       <div className="flex flex-wrap gap-1.5 text-xs">
         {s.ownerName ? (
@@ -135,7 +149,13 @@ function ItemRow({ row, actor }: { row: InboxRow; actor: InboxActor }) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      {tablePresentation ? <div className="flex flex-wrap gap-2">
+        {s.status === "open" ? <Button size="sm" variant="outline" onClick={()=>run(()=>claimInboxItem(row.key,actor),"Claimed.")}>Claim</Button> : <Button size="sm" variant="outline" onClick={()=>run(()=>reopenInboxItem(row.key,actor),"Reopened.")}>Reopen</Button>}
+        <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={`More: ${row.key}`}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><div className="flex flex-col gap-1 p-1">
+          {s.status === "open" && <><Button size="sm" variant="ghost" onClick={()=>setMode(mode === "assign" ? "none" : "assign")}>Assign to…</Button><Button size="sm" variant="ghost" onClick={()=>setMode(mode === "done" ? "none" : "done")}>Mark done</Button>{!s.taskId && <Button size="sm" variant="ghost" onClick={()=>setMode(mode === "task" ? "none" : "task")}>Make a task</Button>}</>}
+          {row.kind === "message" && row.patientId ? <Button asChild size="sm" variant="ghost"><Link to="/record/$patientId" params={{patientId:row.patientId}} search={{section:"messages"}}>Open</Link></Button> : row.linkRoute && !row.linkRoute.includes("$") ? <Button asChild size="sm" variant="ghost"><a href={row.linkRoute}>Open</a></Button> : null}
+        </div></DropdownMenuContent></DropdownMenu>
+      </div> : <>      <div className="flex flex-wrap gap-2">
         {s.status === "open" ? (
           <>
             <Button size="sm" variant="outline" className="min-h-11" onClick={() => run(() => claimInboxItem(row.key, actor), "Claimed.")}>Claim</Button>
@@ -157,7 +177,8 @@ function ItemRow({ row, actor }: { row: InboxRow; actor: InboxActor }) {
             <a href={row.linkRoute}>Open</a>
           </Button>
         ) : null}
-      </div>
-    </Card>
+      </div></>}
+
+    </div>
   );
 }

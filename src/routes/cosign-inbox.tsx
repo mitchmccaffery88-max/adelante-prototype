@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Cosign inbox — cross-patient queue of signed notes awaiting a cosignature.
 //
@@ -123,7 +124,7 @@ function CosignInboxPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 px-4 py-6">
-      <Link to="/clinician" className="inline-flex items-center gap-1 text-xs text-teal">
+      <Link to="/clinician" className="inline-flex items-center gap-1 text-sm text-teal">
         <ArrowLeft className="h-3 w-3" /> Back to clinician
       </Link>
       <header>
@@ -179,33 +180,22 @@ function AsamCosignSection() {
         ASAM assessments awaiting LPHA co-signature{" "}
         <span className="text-muted-foreground">({visible.length})</span>
       </h2>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         {ASAM_DRAFT_NOTE}. Episode, claim, CalOMS prompt and care-plan outputs fire only when you co-sign.
       </p>
-      {visible.length === 0 && (
-        <Card className="p-3 text-xs text-muted-foreground">No ASAM assessments are waiting.</Card>
-      )}
-      {visible.map(({ patient, asam }) => (
-        <Card key={asam.id} className="p-3" data-testid={`asam-cosign-${asam.id}`}>
-          <button
-            type="button"
-            className="flex w-full items-center justify-between gap-2 text-left"
-            onClick={() => setOpenId(openId === asam.id ? null : asam.id)}
-          >
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium text-navy">
-                {patient.firstName} {patient.lastName}
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                ASAM by {asam.authoredBy.name} ({asam.authoredBy.role}) ·{" "}
-                {asam.signedAt ? <ClientDate value={asam.signedAt} /> : "—"}
-              </div>
-            </div>
-            <StatusChip lang="en" state={canSignNotes(role) ? "yourturn" : "team"} label="Awaiting LPHA cosign" />
-          </button>
-          {openId === asam.id && (
+      <StaffTable rows={visible} rowKey={(r)=>r.asam.id} label="ASAM assessments awaiting LPHA co-signature" testId="asam-cosigns-table" rowTestId={(r)=>`asam-cosign-${r.asam.id}`}
+        views={[{id:"current",label:"Needs you",matches:()=>true}]} defaultView="current" emptyState="No ASAM assessments are waiting."
+        columns={[
+          {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+          {id:"author",label:"Authored by",sortValue:(r)=>r.asam.authoredBy.name,cell:(r)=>`${r.asam.authoredBy.name} (${r.asam.authoredBy.role})`},
+          {id:"date",label:"Signed",sortValue:(r)=>r.asam.signedAt ?? "",cell:(r)=>r.asam.signedAt ? <ClientDate value={r.asam.signedAt} /> : "—"},
+          {id:"status",label:"Status",cell:()=> <StatusChip lang="en" state={canSignNotes(role) ? "yourturn" : "team"} label="Awaiting LPHA cosign" />},
+        ]}
+        primaryAction={(r)=><Button size="sm" variant="outline" onClick={()=>setOpenId(openId === r.asam.id ? null : r.asam.id)}>{openId === r.asam.id ? "Close" : "Review"}</Button>}
+      />
+      {visible.map(({patient,asam})=><div key={asam.id}>          {openId === asam.id && (
             <div className="mt-2 space-y-2 border-t border-border pt-2">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Actual level (clinician-selected): {dmcOdsLevelLabel(asam.actualLevel)} · Diagnoses:{" "}
                 {asam.diagnosisCodes.join(", ") || "—"}
               </p>
@@ -235,7 +225,7 @@ function AsamCosignSection() {
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="Decline reason (required to decline)"
-                  className="min-h-8 text-xs"
+                  className="min-h-8 text-sm"
                 />
                 <Button
                   size="sm"
@@ -254,9 +244,7 @@ function AsamCosignSection() {
                 </Button>
               </div>
             </div>
-          )}
-        </Card>
-      ))}
+          )}</div>)}
     </section>
   );
 }
@@ -283,44 +271,17 @@ function Section({
       <h2 className="font-display text-sm text-navy">
         {title} <span className="text-muted-foreground">({rows.length})</span>
       </h2>
-      {rows.length === 0 && <Card className="p-3 text-xs text-muted-foreground">{empty}</Card>}
-      {rows.map(({ patient, note }) => (
-        <Card key={note.id} className="p-3">
-          <button
-            type="button"
-            className="flex w-full items-center justify-between gap-2 text-left"
-            onClick={() => setOpenId(openId === note.id ? null : note.id)}
-          >
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium text-navy">
-                {patient.firstName} {patient.lastName}
-                <span className="ml-2 text-[11px] font-normal text-muted-foreground capitalize">
-                  {note.sessionType.replace("_", " ")}
-                </span>
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                Signed by {note.signedBy} ·{" "}
-                {note.signedAt ? <ClientDate value={note.signedAt} /> : "—"}
-                {note.cosignRole?.length ? ` · needs ${note.cosignRole.join(" / ")}` : ""}
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              {isNoteSudSensitive(note) && (
-                <StatusChip lang="en" state="restricted" label="42 CFR 2" />
-              )}
-              {note.authorSource === "ai_draft" && (
-                <Badge className="bg-muted text-muted-foreground border-0 text-[10px]">
-                  Machine draft
-                </Badge>
-              )}
-              <StatusChip lang="en" state={actionable ? "yourturn" : "team"} label="Awaiting cosign" />
-            </div>
-          </button>
-          {openId === note.id && (
-            <CosignDetail patientId={patient.id} note={note} actionable={actionable} />
-          )}
-        </Card>
-      ))}
+      <StaffTable rows={rows} rowKey={(r)=>r.note.id} label={title} testId={actionable ? "my-cosigns-table" : "pool-cosigns-table"}
+        views={[{id:"current",label:actionable ? "Needs you" : "Current view",matches:()=>true}]} defaultView="current" emptyState={empty}
+        columns={[
+          {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+          {id:"type",label:"Session",sortValue:(r)=>r.note.sessionType,cell:(r)=>r.note.sessionType.replace("_"," ")},
+          {id:"author",label:"Signed by",sortValue:(r)=>r.note.signedBy ?? "",cell:(r)=><>{r.note.signedBy}{r.note.signedAt && <> · <ClientDate value={r.note.signedAt} /></>}{r.note.cosignRole?.length ? ` · needs ${r.note.cosignRole.join(" / ")}` : ""}</>},
+          {id:"status",label:"Status",cell:(r)=><>{isNoteSudSensitive(r.note) && <StatusChip lang="en" state="restricted" label="42 CFR 2" />}{r.note.authorSource === "ai_draft" && <Badge variant="secondary">Machine draft</Badge>}<StatusChip lang="en" state={actionable ? "yourturn" : "team"} label="Awaiting cosign" /></>},
+        ]}
+        primaryAction={(r)=><Button size="sm" variant="outline" onClick={()=>setOpenId(openId === r.note.id ? null : r.note.id)}>{openId === r.note.id ? "Close" : "Review"}</Button>}
+      />
+      {rows.map(({patient,note})=>openId === note.id ? <CosignDetail key={note.id} patientId={patient.id} note={note} actionable={actionable} /> : null)}
     </section>
   );
 }
@@ -379,7 +340,7 @@ function CosignDetail({
   };
 
   return (
-    <div className="mt-3 space-y-3 border-t border-border pt-3 text-xs">
+    <div className="mt-3 space-y-3 border-t border-border pt-3 text-sm">
       <dl className="space-y-1.5">
         {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
           note[k] ? (
@@ -390,13 +351,13 @@ function CosignDetail({
           ) : null,
         )}
       </dl>
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Read-only. Cosigning does not edit the note; a decline sends it back to the author.
       </p>
       {actionable ? (
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-[11px]" htmlFor={`c-${note.id}`}>
+            <Label className="text-sm" htmlFor={`c-${note.id}`}>
               Cosign comment (optional)
             </Label>
             <Textarea
@@ -413,7 +374,7 @@ function CosignDetail({
             signatureLabel="Supervisor signature"
           />
           {blockers.length > 0 && (
-            <ul className="space-y-0.5 text-[11px] text-muted-foreground" data-testid="cosign-blockers">
+            <ul className="space-y-0.5 text-sm text-muted-foreground" data-testid="cosign-blockers">
               {blockers.map((b) => (
                 <li key={b.code}>• {b.message}</li>
               ))}
@@ -428,7 +389,7 @@ function CosignDetail({
             Cosign note
           </Button>
           <div className="space-y-1.5 rounded-md border border-border p-2">
-            <Label className="text-[11px]" htmlFor={`d-${note.id}`}>
+            <Label className="text-sm" htmlFor={`d-${note.id}`}>
               Decline reason (required)
             </Label>
             <Textarea
@@ -447,14 +408,14 @@ function CosignDetail({
             >
               Decline & return to draft
             </Button>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Declining removes draft orders created from this visit and flags any active ones
               for prescriber review.
             </p>
           </div>
         </div>
       ) : (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Visible for coordination only — your role or the requested cosign role doesn’t match.
         </p>
       )}
@@ -495,20 +456,30 @@ function CosignRoutingSection() {
     })),
   ].sort((a, b) => Number(b.own.kind === "needs_supervisor") - Number(a.own.kind === "needs_supervisor"));
   const needs = rows.filter((r) => r.own.kind === "needs_supervisor").length;
+  const [openId,setOpenId] = useState<string | null>(null);
   return (
     <section className="space-y-2" data-testid="cosign-routing">
       <h2 className="font-display text-sm text-navy">
         Pending cosigns <span className="text-muted-foreground">({rows.length})</span>
         {needs > 0 && (
-          <Badge variant="outline" className="ml-2 text-[10px]">
+          <Badge variant="outline" className="ml-2 text-sm">
             {needs} need a supervisor
           </Badge>
         )}
       </h2>
-      {rows.length === 0 && <Card className="p-3 text-xs text-muted-foreground">Nothing pending.</Card>}
-      {rows.map((r) => (
-        <RoutingRow key={r.key} row={r} />
-      ))}
+      <StaffTable rows={rows} rowKey={(r)=>r.key} label="Pending cosign routing" testId="cosign-routing-table" rowTestId={(r)=>`routing-row-${r.id}`}
+        defaultView="current" views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs a supervisor",matches:(r)=>r.own.kind === "needs_supervisor"}]}
+        emptyState="Nothing pending."
+        columns={[
+          {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+          {id:"type",label:"Document",sortValue:(r)=>r.label,cell:(r)=>r.label},
+          {id:"author",label:"Author",sortValue:(r)=>r.author,cell:(r)=>r.author},
+          {id:"owner",label:"Owner",sortValue:(r)=>ownerLabel(r.own),cell:(r)=>ownerLabel(r.own)},
+          {id:"status",label:"Status",cell:(r)=>r.own.kind === "needs_supervisor" ? <StatusChip lang="en" state="yourturn" label="Needs a supervisor · not billable" /> : <StatusChip lang="en" state="team" label="Pending cosign" />},
+        ]}
+        primaryAction={(r)=><Button size="sm" variant="outline" onClick={()=>setOpenId(openId === r.id ? null : r.id)}>Reassign</Button>}
+      />
+      {rows.map((r)=>openId === r.id ? <RoutingRow key={r.key} row={r} /> : null)}
     </section>
   );
 }
@@ -548,9 +519,9 @@ function RoutingRow({
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-navy">
             {row.patient.firstName} {row.patient.lastName}
-            <span className="ml-2 text-[11px] font-normal text-muted-foreground">{row.label}</span>
+            <span className="ml-2 text-sm font-normal text-muted-foreground">{row.label}</span>
           </div>
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-sm text-muted-foreground">
             Author: {row.author} · Owner: {ownerLabel(row.own)}
           </div>
         </div>
@@ -559,7 +530,7 @@ function RoutingRow({
         ) : null}
       </div>
       {needs && row.own.kind === "needs_supervisor" && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {row.own.reason}{" "}
           <Link to="/admin-supervision" className="text-teal underline">
             Supervision admin
@@ -581,7 +552,7 @@ function RoutingRow({
         </Select>
         <Textarea
           rows={1}
-          className="min-h-9 text-xs"
+          className="min-h-9 text-sm"
           placeholder="Reason (required)"
           aria-label="Reassign reason"
           value={reason}

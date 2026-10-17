@@ -86,11 +86,11 @@ function ReferralQueuePage() {
 
       <ReferralChasePanel />
 
-      <ReferralTrackerCard referrals={referrals} title="Referral queue" limit={100} />
+      <ReferralTrackerCard referrals={referrals} title="Referral queue" limit={100} tablePresentation />
 
       {/* §Phase 4f — follow-through after enrollment, in the same place the
           enrollment happened. Full list lives on clinical coordination. */}
-      <PostEnrollmentSetupCard limit={5} />
+      <PostEnrollmentSetupCard limit={5} tablePresentation />
 
       <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">

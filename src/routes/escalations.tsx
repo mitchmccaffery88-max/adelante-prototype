@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §U1 — unified Escalations queue. One view model (src/lib/escalations.ts)
 // over the existing pathways; their stores and rules are unchanged.
@@ -67,7 +68,7 @@ function EscalationsPage() {
   const shown = filterEscalations(rows, viewer, { view, type: search.type, ownerStaffId: search.owner, overdueOnly: search.overdue });
   const [move, setMove] = useState<{ row: EscalationRow; kind: "handoff" | "reassign" } | null>(null);
   const setSearch = (patch: Partial<typeof search>) => navigate({ to: "/escalations", search: { ...search, ...patch } });
-  const owners = [...new Map(rows.filter((r) => r.ownerStaffId).map((r) => [r.ownerStaffId!, r.ownerName])).entries()];
+  const owners = [...new Map(rows.filter((r) => r.ownerStaffId).map((r) => [r.ownerStaffId ?? "", r.ownerName])).entries()];
   const actor = { staffId: s.staffId, name: s.staffName, role: s.role };
 
   if (!canUseEscalations(s.role)) return <div className="mx-auto max-w-5xl p-4"><EmptyState icon={Siren} title="Escalations are for the care team" /></div>;
@@ -112,39 +113,25 @@ function EscalationsPage() {
         </div>
       </header>
 
-      {shown.length === 0 ? (
-        <EmptyState icon={Siren} title={view === "mine" ? "No escalations assigned to you" : "No escalations"} />
-      ) : (
-        <ul className="space-y-2" data-testid="escalation-list">
-          {shown.map((r) => (
-            <Card key={r.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 text-sm" data-testid={`escalation-row-${r.type}`}>
-              <div className="min-w-0 space-y-0.5">
-                <p className="flex flex-wrap items-center gap-1.5">
-                  {r.type === "crisis" ? <StatusChip lang="en" state="urgent" label={r.typeLabel} /> : <Badge variant="secondary">{r.typeLabel}</Badge>}
-                  <Link to="/record/$patientId" params={{ patientId: r.patientId }} search={{}} className="font-medium underline-offset-2 hover:underline">{r.patientName}</Link>
-                  <StatusChip lang="en" state={r.status === "resolved" ? "done" : r.type === "crisis" || r.type === "crisis_note" ? "urgent" : r.overdue ? "yourturn" : r.status === "handed_off" ? "team" : r.ownerStaffId === s.staffId || r.pool && isCoordinator(s.role) ? "yourturn" : "team"} label={STATUS_LABEL[r.status]} waitingDays={r.overdue && r.type !== "crisis" && r.dueAt ? Math.floor((Date.now() - Date.parse(r.dueAt)) / 86400000) : undefined} />
-                </p>
-                <p className="text-xs text-muted-foreground">Owner: <span data-testid="escalation-owner">{r.ownerName}</span> · <span className={r.overdue ? "text-attention" : ""}>{r.countdown}</span></p>
-                {r.detail && <p className="truncate text-xs text-muted-foreground">{r.detail}</p>}
-              </div>
-              <div className="flex items-center gap-1">
-                {r.status !== "resolved" && <Button size="sm" variant={r.type === "crisis" ? "destructive" : "outline"} onClick={() => primary(r)}>{r.primaryAction}</Button>}
-                <Button size="sm" variant="ghost" onClick={() => discuss(r)}><MessageSquare className="h-4 w-4" /> Discuss</Button>
-                {r.status !== "resolved" && canWork(r) && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label="More escalation actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onSelect={() => setMove({ row: r, kind: "handoff" })}>Hand off</DropdownMenuItem>
-                      {isCoordinator(s.role) && <DropdownMenuItem onSelect={() => setMove({ row: r, kind: "reassign" })}>Reassign</DropdownMenuItem>}
-                      <DropdownMenuItem onSelect={() => primary({ ...r, primaryAction: "open" })}>Open chart</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </Card>
-          ))}
-        </ul>
-      )}
+      <StaffTable rows={shown} rowKey={(r)=>r.key} label="Escalations" testId="escalation-list" rowTestId={(r)=>`escalation-row-${r.type}`}
+        views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(r)=>r.ownerStaffId === s.staffId || r.pool && isCoordinator(s.role)}]} defaultView="current"
+        emptyState={<EmptyState icon={Siren} title={view === "mine" ? "No escalations assigned to you" : "No escalations"} />}
+        columns={[
+          {id:"patient",label:"Patient",sortValue:(r)=>r.patientName,cell:(r)=><Link to="/record/$patientId" params={{patientId:r.patientId}} search={{}} className="font-medium underline-offset-2 hover:underline">{r.patientName}</Link>},
+          {id:"type",label:"Type",sortValue:(r)=>r.typeLabel,cell:(r)=>r.type === "crisis" ? <StatusChip lang="en" state="urgent" label={r.typeLabel} /> : <Badge variant="secondary">{r.typeLabel}</Badge>},
+          {id:"status",label:"Status",sortValue:(r)=>r.status,cell:(r)=><StatusChip lang="en" state={r.status === "resolved" ? "done" : r.type === "crisis" || r.type === "crisis_note" ? "urgent" : r.overdue ? "yourturn" : r.status === "handed_off" ? "team" : r.ownerStaffId === s.staffId || r.pool && isCoordinator(s.role) ? "yourturn" : "team"} label={STATUS_LABEL[r.status]} waitingDays={r.overdue && r.type !== "crisis" && r.dueAt ? Math.floor((Date.now()-Date.parse(r.dueAt))/86400000) : undefined} />},
+          {id:"owner",label:"Owner",sortValue:(r)=>r.ownerName,cell:(r)=><span data-testid="escalation-owner">{r.ownerName}</span>},
+          {id:"due",label:"Due",sortValue:(r)=>r.dueAt ?? "",cell:(r)=><span className={r.overdue ? "text-attention" : ""}>{r.countdown}</span>},
+          {id:"detail",label:"Detail",cell:(r)=>r.detail || "—"},
+        ]}
+        primaryAction={(r)=>r.status === "handed_off" || r.status === "resolved" ? <Button size="sm" variant="ghost" onClick={()=>discuss(r)}><MessageSquare className="size-4" /> Discuss</Button> : <Button size="sm" variant={r.type === "crisis" ? "destructive" : "outline"} onClick={()=>primary(r)}>{r.primaryAction}</Button>}
+        moreLabel={()=>"More escalation actions"}
+        moreActions={(r)=>[
+          ...(r.status === "handed_off" || r.status === "resolved" ? [] : [{label:"Discuss",onSelect:()=>discuss(r)}]),
+          ...(r.status !== "resolved" && canWork(r) ? [{label:"Hand off",onSelect:()=>setMove({row:r,kind:"handoff"})},...(isCoordinator(s.role) ? [{label:"Reassign",onSelect:()=>setMove({row:r,kind:"reassign"})}] : []),{label:"Open chart",onSelect:()=>primary({...r,primaryAction:"open"})}] : []),
+          ...(r.status === "handed_off" ? [{label:r.primaryAction,onSelect:()=>primary(r)}] : []),
+        ]}
+      />
 
       {(search.type === "crisis" || search.type === "urgent_social_need") && <CrisisQueueDetails lane={search.type === "urgent_social_need" ? "sdoh" : "clinical"} />}
       <MoveDialog move={move} onClose={() => setMove(null)} actor={actor} />

@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Group D items 1 + 2 — the plan owner's advocate review queue.
 //
@@ -93,64 +94,19 @@ export function AdvocateReviewQueue() {
           Accepting records that you took this into the plan. It does not change any plan field —
           you still write the plan yourself.
         </p>
-        {contributions.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">Nothing waiting for review.</p>
-        ) : (
-          <ul className="mt-3 space-y-3">
-            {contributions.map((c) => (
-              <li
-                key={c.id}
-                className="rounded-lg border p-3 text-sm"
-                data-testid={`advocate-contribution-${c.id}`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span>
-                    {c.patientName} · <span className="uppercase tracking-wide">{c.section}</span> ·{" "}
-                    {c.authorName}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Badge variant="outline">{OWNER_LABEL[c.ownerRole] ?? c.ownerRole}</Badge>
-                    <ClientDate value={c.createdAt} />
-                  </span>
-                </div>
-                <p className="mt-2">{c.text}</p>
-                {c.review.status === "pending" ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Input
-                      aria-label="Review note"
-                      placeholder="Optional note"
-                      className="max-w-xs"
-                      value={notes[c.id] ?? ""}
-                      onChange={(e) => setNotes((n) => ({ ...n, [c.id]: e.target.value }))}
-                    />
-                    <Button
-                      size="sm"
-                      data-testid={`accept-${c.id}`}
-                      onClick={() => reviewContribution(c.id, "accepted")}
-                    >
-                      Accept into plan
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      data-testid={`decline-${c.id}`}
-                      onClick={() => reviewContribution(c.id, "declined")}
-                    >
-                      Decline
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {c.review.status === "accepted" ? "Accepted" : "Declined"} by{" "}
-                    {c.review.reviewedBy} ({OWNER_LABEL[c.review.reviewedByRole ?? ""] ?? ""}) ·{" "}
-                    <ClientDate value={c.review.reviewedAt ?? c.createdAt} />
-                    {c.review.note ? ` · ${c.review.note}` : ""}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <StaffTable rows={contributions} rowKey={(c)=>c.id} label="Care-plan input from advocates" testId="advocate-contributions-table" rowTestId={(c)=>`advocate-contribution-${c.id}`}
+          views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(c)=>c.review.status === "pending"}]} defaultView="current" emptyState="Nothing waiting for review."
+          columns={[
+            {id:"patient",label:"Patient",sortValue:(c)=>c.patientName,cell:(c)=>c.patientName},
+            {id:"input",label:"Input",cell:(c)=><>{c.section} · {c.authorName}<p>{c.text}</p></>},
+            {id:"owner",label:"Owner",sortValue:(c)=>c.ownerRole,cell:(c)=><Badge variant="outline">{OWNER_LABEL[c.ownerRole] ?? c.ownerRole}</Badge>},
+            {id:"date",label:"Received",sortValue:(c)=>c.createdAt,cell:(c)=><ClientDate value={c.createdAt} />},
+            {id:"status",label:"Review",sortValue:(c)=>c.review.status,cell:(c)=>c.review.status === "pending" ? <StatusChip lang="en" state={c.ownerRole === role ? "yourturn" : "team"} label="Pending review" /> : <>{c.review.status === "accepted" ? "Accepted" : "Declined"} by {c.review.reviewedBy} ({OWNER_LABEL[c.review.reviewedByRole ?? ""] ?? ""}) · <ClientDate value={c.review.reviewedAt ?? c.createdAt} />{c.review.note ? ` · ${c.review.note}` : ""}</>},
+            {id:"note",label:"Review note",cell:(c)=>c.review.status === "pending" ? <Input aria-label="Review note" placeholder="Optional note" value={notes[c.id] ?? ""} onChange={(e)=>setNotes((n)=>({...n,[c.id]:e.target.value}))} /> : "—"},
+          ]}
+          primaryAction={(c)=>c.review.status === "pending" ? <Button size="sm" variant="outline" data-testid={`accept-${c.id}`} onClick={()=>reviewContribution(c.id,"accepted")}>Accept into plan</Button> : null}
+          moreContent={(c)=>c.review.status === "pending" ? <Button size="sm" variant="outline" data-testid={`decline-${c.id}`} onClick={()=>reviewContribution(c.id,"declined")}>Decline</Button> : null}
+        />
       </Card>
 
       <Card className="p-5">
@@ -161,55 +117,18 @@ export function AdvocateReviewQueue() {
           <strong>Placeholder:</strong> nothing was submitted to DHCS — an advocate attested that
           they are helping with the member&apos;s application. Review confirms you have seen it.
         </p>
-        {attestations.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">Nothing waiting for review.</p>
-        ) : (
-          <ul className="mt-3 space-y-3">
-            {attestations.map((a) => (
-              <li
-                key={a.id}
-                className="rounded-lg border p-3 text-sm"
-                data-testid={`advocate-attestation-${a.id}`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span>
-                    {a.patientName} · attested by {a.attestedName} ({a.advocateName})
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Badge variant="outline">{OWNER_LABEL[a.ownerRole] ?? a.ownerRole}</Badge>
-                    <ClientDate value={a.createdAt} />
-                  </span>
-                </div>
-                {a.note && <p className="mt-2">{a.note}</p>}
-                {a.review.status === "pending" ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <StatusChip lang="en" state={a.ownerRole === role ? "yourturn" : "team"} label="Pending review" />
-                    <Input
-                      aria-label="Review note"
-                      placeholder="Optional note"
-                      className="max-w-xs"
-                      value={notes[a.id] ?? ""}
-                      onChange={(e) => setNotes((n) => ({ ...n, [a.id]: e.target.value }))}
-                    />
-                    <Button
-                      size="sm"
-                      data-testid={`review-${a.id}`}
-                      onClick={() => reviewAttestation(a.id)}
-                    >
-                      Mark reviewed
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Reviewed by {a.review.reviewedBy} ·{" "}
-                    <ClientDate value={a.review.reviewedAt ?? a.createdAt} />
-                    {a.review.note ? ` · ${a.review.note}` : ""}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <StaffTable rows={attestations} rowKey={(a)=>a.id} label="Eligibility-assist attestations" testId="advocate-attestations-table" rowTestId={(a)=>`advocate-attestation-${a.id}`}
+          views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(a)=>a.review.status === "pending"}]} defaultView="current" emptyState="Nothing waiting for review."
+          columns={[
+            {id:"patient",label:"Patient",sortValue:(a)=>a.patientName,cell:(a)=>a.patientName},
+            {id:"attested",label:"Attested by",sortValue:(a)=>a.attestedName,cell:(a)=><>{a.attestedName} ({a.advocateName}){a.note && <p>{a.note}</p>}</>},
+            {id:"owner",label:"Owner",sortValue:(a)=>a.ownerRole,cell:(a)=><Badge variant="outline">{OWNER_LABEL[a.ownerRole] ?? a.ownerRole}</Badge>},
+            {id:"date",label:"Received",sortValue:(a)=>a.createdAt,cell:(a)=><ClientDate value={a.createdAt} />},
+            {id:"status",label:"Review",sortValue:(a)=>a.review.status,cell:(a)=>a.review.status === "pending" ? <StatusChip lang="en" state={a.ownerRole === role ? "yourturn" : "team"} label="Pending review" /> : <>Reviewed by {a.review.reviewedBy} · <ClientDate value={a.review.reviewedAt ?? a.createdAt} />{a.review.note ? ` · ${a.review.note}` : ""}</>},
+            {id:"note",label:"Review note",cell:(a)=>a.review.status === "pending" ? <Input aria-label="Review note" placeholder="Optional note" value={notes[a.id] ?? ""} onChange={(e)=>setNotes((n)=>({...n,[a.id]:e.target.value}))} /> : "—"},
+          ]}
+          primaryAction={(a)=>a.review.status === "pending" ? <Button size="sm" variant="outline" data-testid={`review-${a.id}`} onClick={()=>reviewAttestation(a.id)}>Mark reviewed</Button> : null}
+        />
       </Card>
     </div>
   );

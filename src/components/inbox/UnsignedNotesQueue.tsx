@@ -1,3 +1,6 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+import { StatusChip } from "@/components/ui/status-chip";
+import { Button } from "@/components/ui/button";
 // §Inbox — cross-patient list of MY unsigned drafts, oldest-first.
 //
 // Aging reuses `timeOpenLabel` from CrisisPanel (the pattern already used by
@@ -35,32 +38,16 @@ export function UnsignedNotesQueue() {
   }
 
   return (
-    <ul className="space-y-2">
-      {rows.map((row) => (
-        <Card key={row.id} className="p-3 text-xs space-y-1.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <Link
-              to="/record/$patientId"
-              params={{ patientId: row.patient.id }}
-              search={{ section: "notes" }}
-              className="font-display text-base text-navy underline-offset-2 hover:underline"
-            >
-              {row.patient.firstName} {row.patient.lastName}
-            </Link>
-            <Badge className={queueAgeTone(row.date)}>{timeOpenLabel(row.date)}</Badge>
-          </div>
-          <p className="text-navy">
-            {row.kind === "undocumented_encounter"
-              ? "Attended visit — no note written yet"
-              : (row.note?.templateTitle ?? `${row.note?.sessionType.replace("_", " ")} note`)}
-          </p>
-          <p className="text-muted-foreground">
-            {row.kind === "undocumented_encounter" ? "Visit " : "Drafted "}
-            <ClientDate value={row.date} />
-          </p>
-        </Card>
-      ))}
-    </ul>
+    <StaffTable rows={rows} rowKey={(r)=>r.id} label="Your unsigned notes" testId="inbox-unsigned-table"
+      views={[{id:"needs",label:"Needs you",matches:()=>true}]} defaultView="needs"
+      columns={[
+        {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+        {id:"note",label:"Note",sortValue:(r)=>r.kind === "undocumented_encounter" ? "Attended visit — no note written yet" : r.note?.templateTitle ?? "note",cell:(r)=>r.kind === "undocumented_encounter" ? "Attended visit — no note written yet" : (r.note?.templateTitle ?? `${r.note?.sessionType.replace("_", " ")} note`)},
+        {id:"date",label:"Date",sortValue:(r)=>r.date,cell:(r)=><>{r.kind === "undocumented_encounter" ? "Visit " : "Drafted "}<ClientDate value={r.date} /></>},
+        {id:"age",label:"Waiting",sortValue:(r)=>r.date,cell:(r)=><StatusChip lang="en" state="yourturn" label={timeOpenLabel(r.date)} />},
+      ]}
+      primaryAction={(r)=><Button asChild size="sm" variant="outline"><Link to="/record/$patientId" params={{patientId:r.patient.id}} search={{section:"notes"}}>Open note</Link></Button>}
+    />
   );
 }
 
