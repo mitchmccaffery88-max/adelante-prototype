@@ -11,10 +11,14 @@ import { Input } from "@/components/ui/input";
 import type { ChartAction, ChartActionAnswer, ChartActor } from "@/lib/chartActions";
 import type { Patient } from "@/lib/ehr";
 import { quickActionsFor } from "@/lib/quickActions";
+import { getStaffMember, STAFF_ROLES, type StaffRole } from "@/lib/roles";
+import { personalMenuActions } from "@/lib/quickActionPrefs";
+import { useQuickActionPrefs } from "@/hooks/useQuickActionPrefs";
 
 export interface NewActionItem {
   action: ChartAction;
   answer: ChartActionAnswer;
+  switchRole?: StaffRole;
 }
 
 export function NewActionMenu({
@@ -38,13 +42,15 @@ export function NewActionMenu({
 }) {
   const [query, setQuery] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+  const prefs = useQuickActionPrefs(actor.staffId);
 
   const quick = useMemo(() => {
+    if (prefs.ids !== null) return personalMenuActions(prefs.ids, getStaffMember(actor.staffId), actor, available.map((x) => x.action.id), patient);
     const byId = new Map(available.map((x) => [x.action.id, x]));
     return quickActionsFor(actor, patient)
       .map((a) => byId.get(a.id))
       .filter((x): x is NewActionItem => !!x);
-  }, [actor, patient, available]);
+  }, [actor, patient, available, prefs.ids]);
   const quickIds = new Set(quick.map((x) => x.action.id));
 
   const q = query.trim().toLowerCase();
@@ -57,7 +63,7 @@ export function NewActionMenu({
   // Arrow keys move between items; Escape closes via the Popover itself.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    const buttons = Array.from(listRef.current?.querySelectorAll<HTMLButtonElement>("button[data-action-id]") ?? []);
+    const buttons = Array.from(listRef.current?.querySelectorAll<HTMLButtonElement>("button[data-action-id]:not(:disabled)") ?? []);
     if (!buttons.length) return;
     e.preventDefault();
     const i = buttons.indexOf(document.activeElement as HTMLButtonElement);
@@ -69,12 +75,14 @@ export function NewActionMenu({
     <Button
       key={x.action.id}
       variant="ghost"
+      disabled={!!x.switchRole}
       data-action-id={x.action.id}
       data-testid={itemTestId?.(x.action.id)}
       className="h-auto min-h-9 w-full flex-col items-start justify-start py-2 text-left text-sm"
-      onClick={() => onPick(x.action.id)}
+      onClick={() => { if (!x.switchRole && x.answer.state !== "hidden") onPick(x.action.id); }}
     >
       <span className="text-ink">{x.action.label.en}</span>
+      {x.switchRole && <span className="text-sm text-ink-muted">Switch to {STAFF_ROLES.find((r) => r.key === x.switchRole)?.label ?? x.switchRole} to use this</span>}
       {x.answer.state === "cosign" && <span className="text-sm text-ink-muted">{x.answer.reason}</span>}
     </Button>
   );
