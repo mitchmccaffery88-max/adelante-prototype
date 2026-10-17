@@ -40,7 +40,7 @@ test("personal quick actions stay disabled under another assigned role, switch s
   await page.keyboard.press("Escape");
   await page.getByTestId("staff-role-switcher").click();
   await page.getByTestId("switch-s-batch4-clinical_coordinator").click();
-  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Clinical Coordinator · Batch four test staff");
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Clinical coordinator · Batch four test staff");
   await page.getByTestId("staff-new-slot").getByRole("button").click();
   await expect(menu.getByRole("button", { name: "Edit consent form", exact: true })).toBeEnabled();
   await menu.getByRole("button", { name: "Edit consent form", exact: true }).click();
