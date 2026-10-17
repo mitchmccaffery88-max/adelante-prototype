@@ -454,7 +454,7 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 
 ## Quick-actions batch 3 — done Oct 16
 - [x] Shared "+ New" on My work, Worklist, Case manager, Inbox and the content center (approved 8a-2 lines applied; 2,677/2,677 units, 135/135 browsers). See docs/quickactions-batch3-report.md.
-- [ ] Batch 4 (personal quick-action settings) — approved Oct 17; own-profile settings, permission-safe personal menu, new tests and full validation in progress.
+- [ ] Batch 4 (personal quick-action settings) — approved Oct 17; apply only coordinator-approved Task test lines, full unit/list count then full one-worker :8080 browsers, restore screenshots and close-out report if green; chart Task permissions remain unchanged, question for Mitch.
 - [ ] Reuse shared New menu on My work, Worklist, Case manager, Inbox and content center; preserve registry gates and existing action paths
 - [ ] Remove only replaced legacy add controls; document patient selection or omission per page
 - [ ] New unit/browser files; full units then all browsers with --workers=1 on :8080; restore regenerated screenshots
