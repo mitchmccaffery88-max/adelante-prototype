@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import {Check,  CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatClinicianName } from "@/lib/coordination";
@@ -552,140 +553,39 @@ function CredentialingAdminPage() {
         </Card>
       )}
 
-      <Card className="p-4">
-        <h2 className="mb-2 font-semibold">All credentials</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-muted-foreground text-left text-xs">
-              <tr>
-                <th className="py-1">Clinician</th>
-                <th>Kind</th>
-                <th>#</th>
-                <th>State</th>
-                <th>Expires</th>
-                <th>Status</th>
-                <th>Document</th>
-                <th>Verified</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {creds.map((c) => {
-                const cl = clinicians.find((x) => x.id === c.clinicianId);
-                const pending = c.followUp && !c.followUp.resolvedAt;
-                return (
-                  <tr key={c.id} className="py-1">
-                    <td className="py-2">{cl?.name}</td>
-                    <td>{c.kind}</td>
-                    <td>{c.number ?? "—"}</td>
-                    <td>{c.issuingState ?? "—"}</td>
-                    <td>{c.expiresAt ?? "—"}</td>
-                    <td>
-                      <div className="flex flex-wrap items-center gap-1">
-                        <StatusChip lang="en" state={c.status === "current" ? "done" : c.status === "under_review" ? "team" : canManageCredentials ? "yourturn" : "team"} label={c.status === "expiring" ? (c.expiresAt ? `Expires ${c.expiresAt}` : "expiring") : c.status === "expired" ? "Expired" : c.status === "missing" ? "Missing — upload" : c.status === "under_review" ? "In review" : c.status} />
-                        {pending && (
-                          <StatusChip lang="en" state="team" label="follow-up sent" data-testid={`followup-badge-${c.id}`} />
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      {c.fileDataUrl ? (
-                        <CredentialDocumentViewer
-                          fileName={c.fileName}
-                          fileType={c.fileType}
-                          fileSize={c.fileSize}
-                          fileDataUrl={c.fileDataUrl}
-                        />
-                      ) : (
-                        <span className="text-muted-foreground text-xs">
-                          {c.fileName ? "name only" : "none"}
-                        </span>
-                      )}
-                    </td>
-                    <td>{c.verifiedAt ? <Check className="size-4" aria-label="Verified" /> : "—"}</td>
-                    <td className="space-x-1 text-right whitespace-nowrap">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        data-testid={`edit-credential-${c.id}`}
-                        onClick={() => setEditing(c)}
-                      >
-                        Edit
-                      </Button>
-                      {pending ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            AdelanteEHRExt.clearCredentialFollowUp(c.id);
-                            toast.success("Follow-up cleared");
-                          }}
-                        >
-                          Clear
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          data-testid={`followup-open-${c.id}`}
-                          onClick={() => setFollowingUp(c)}
-                        >
-                          Follow up
-                        </Button>
-                      )}
-                      {!c.verifiedAt && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            AdelanteEHRExt.verifyCredential(c.id, staffName);
-                            toast.success("Verified via primary source");
-                          }}
-                        >
-                          Verify
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Card className="p-4">
-        <h2 className="mb-2 font-semibold">Payer enrollments</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-muted-foreground text-left text-xs">
-              <tr>
-                <th className="py-1">Clinician</th>
-                <th>Payer</th>
-                <th>TIN</th>
-                <th>Status</th>
-                <th>Effective</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {enrollments.map((e) => {
-                const cl = clinicians.find((x) => x.id === e.clinicianId);
-                return (
-                  <tr key={e.id}>
-                    <td className="py-2">{cl?.name}</td>
-                    <td>{e.payer}</td>
-                    <td>{e.billingTin}</td>
-                    <td>
-                      <StatusChip lang="en" state={e.status === "enrolled" ? "done" : e.status === "pending" ? "team" : e.status === "terminated" ? "closed" : canManageCredentials ? "yourturn" : "team"} label={e.status === "terminated" ? "Ended" : e.status} />
-                    </td>
-                    <td>{e.effectiveFrom ?? "—"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <section className="space-y-3">
+        <h2 className="font-semibold">All credentials</h2>
+        <StaffTable rows={creds} rowKey={(c) => c.id} label="All credentials" testId="credentials-table"
+          views={[{id:"all",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(c)=>canManageCredentials && (c.status === "expiring" || c.status === "expired" || c.status === "missing")}]}
+          defaultView="all" emptyState="No credentials in this view."
+          columns={[
+            {id:"clinician",label:"Clinician",sortValue:(c)=>clinicians.find((x)=>x.id===c.clinicianId)?.name ?? "",cell:(c)=>clinicians.find((x)=>x.id===c.clinicianId)?.name},
+            {id:"kind",label:"Kind",sortValue:(c)=>c.kind,cell:(c)=>c.kind},
+            {id:"number",label:"#",mono:true,sortValue:(c)=>c.number ?? "",cell:(c)=>c.number ?? "—"},
+            {id:"state",label:"State",sortValue:(c)=>c.issuingState ?? "",cell:(c)=>c.issuingState ?? "—"},
+            {id:"expires",label:"Expires",sortValue:(c)=>c.expiresAt ?? "",cell:(c)=>c.expiresAt ?? "—"},
+            {id:"status",label:"Status",sortValue:(c)=>c.status,cell:(c)=><div className="flex flex-wrap gap-1"><StatusChip lang="en" state={c.status === "current" ? "done" : c.status === "under_review" ? "team" : canManageCredentials ? "yourturn" : "team"} label={c.status === "expiring" ? (c.expiresAt ? `Expires ${c.expiresAt}` : "expiring") : c.status === "expired" ? "Expired" : c.status === "missing" ? "Missing — upload" : c.status === "under_review" ? "In review" : c.status} />{c.followUp && !c.followUp.resolvedAt && <StatusChip lang="en" state="team" label="follow-up sent" data-testid={`followup-badge-${c.id}`} />}</div>},
+            {id:"document",label:"Document",cell:(c)=>c.fileDataUrl ? <CredentialDocumentViewer fileName={c.fileName} fileType={c.fileType} fileSize={c.fileSize} fileDataUrl={c.fileDataUrl} /> : <span className="text-ink-muted">{c.fileName ? "name only" : "none"}</span>},
+            {id:"verified",label:"Verified",sortValue:(c)=>c.verifiedAt ?? "",cell:(c)=>c.verifiedAt ? <Check className="size-4" aria-label="Verified" /> : "—"},
+          ]}
+          primaryAction={(c)=><Button size="sm" variant="outline" data-testid={`edit-credential-${c.id}`} onClick={()=>setEditing(c)}>Edit</Button>}
+          moreContent={(c)=><div className="flex flex-col gap-1 p-1">{c.followUp && !c.followUp.resolvedAt ? <Button size="sm" variant="ghost" onClick={()=>{AdelanteEHRExt.clearCredentialFollowUp(c.id);toast.success("Follow-up cleared");}}>Clear</Button> : <Button size="sm" variant="ghost" data-testid={`followup-open-${c.id}`} onClick={()=>setFollowingUp(c)}>Follow up</Button>}{!c.verifiedAt && <Button size="sm" variant="outline" onClick={()=>{AdelanteEHRExt.verifyCredential(c.id, staffName);toast.success("Verified via primary source");}}>Verify</Button>}</div>}
+        />
+      </section>
+      <section className="space-y-3">
+        <h2 className="font-semibold">Payer enrollments</h2>
+        <StaffTable rows={enrollments} rowKey={(e)=>e.id} label="Payer enrollments" testId="payer-enrollments-table" defaultView="all"
+          views={[{id:"all",label:"Current view",matches:()=>true},{id:"pending",label:"Pending",matches:(e)=>e.status === "pending"}]}
+          emptyState="No payer enrollments in this view."
+          columns={[
+            {id:"clinician",label:"Clinician",sortValue:(e)=>clinicians.find((c)=>c.id===e.clinicianId)?.name ?? "",cell:(e)=>clinicians.find((c)=>c.id===e.clinicianId)?.name},
+            {id:"payer",label:"Payer",sortValue:(e)=>e.payer,cell:(e)=>e.payer},
+            {id:"tin",label:"TIN",mono:true,sortValue:(e)=>e.billingTin,cell:(e)=>e.billingTin},
+            {id:"status",label:"Status",sortValue:(e)=>e.status,cell:(e)=><StatusChip lang="en" state={e.status === "enrolled" ? "done" : e.status === "pending" ? "team" : e.status === "terminated" ? "closed" : canManageCredentials ? "yourturn" : "team"} label={e.status === "terminated" ? "Ended" : e.status} />},
+            {id:"effective",label:"Effective",sortValue:(e)=>e.effectiveFrom ?? "",cell:(e)=>e.effectiveFrom ?? "—"},
+          ]}
+        />
+      </section>
 
       {adding && (
         <AddCredentialDialog clinicians={clinicians} onClose={() => setAdding(false)} />

@@ -1,0 +1,18 @@
+{
+  "rollback": "064533e3ba01fd425d1a66959495ef49a7f27406",
+  "codeCheckpoint": "68c467cc03725fe5c9c2520c9a2837473ffd00a2",
+  "unitFiles": 334,
+  "unitListed": 2696,
+  "unitPassed": 2696,
+  "browserListed": 155,
+  "browserPassed": 155,
+  "browserMinutes": 30.7,
+  "focusedNewBrowserPassed": 10,
+  "matrixCaptures": 156,
+  "allMatrixTablesPresent": true,
+  "matrixOverflow": [],
+  "matrixRuntimeErrors": [],
+  "trackedScreenshotHashesMatched": 20,
+  "restoredFinalTrackedScreenshots": 16,
+  "unchangedExistingTests": true
+}

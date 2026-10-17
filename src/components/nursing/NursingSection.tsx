@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Batch E1 — nursing UI: chain badges on orders, the chart "Nursing"
 // section, the nurse "Needs my action" list and the "+ New" drawer forms.
@@ -62,7 +63,7 @@ export function ClinicChainBadges({ orderId, orderedBy }: { orderId: string; ord
 }
 
 /** One row of the chain with the step the acting person can take. */
-export function NurseQueueList({ rows, showPatient = true }: { rows: NurseQueueRow[]; showPatient?: boolean }) {
+export function NurseQueueList({ rows, showPatient = true, tablePresentation = false }: { rows: NurseQueueRow[]; showPatient?: boolean; tablePresentation?: boolean }) {
   const actor = useActor();
   const me = getStaffMember(actor.staffId);
   const [note, setNote] = useState<Record<string, string>>({});
@@ -75,6 +76,15 @@ export function NurseQueueList({ rows, showPatient = true }: { rows: NurseQueueR
       fail(e);
     }
   };
+  if (tablePresentation) return <StaffTable rows={rows} rowKey={(r)=>r.id} label="Nursing work" testId="nurse-queue" rowTestId={(r)=>`nurse-row-${r.kind}`}
+    views={[{id:"needs",label:"Needs you",matches:()=>true}]} defaultView="needs"
+    columns={[
+      {id:"work",label:"Work",sortValue:(r)=>r.label,cell:(r)=>showPatient ? r.label : r.label.split(" — ").slice(1).join(" — ")},
+      {id:"step",label:"Step",sortValue:(r)=>r.kind,cell:(r)=><StatusChip lang="en" state="yourturn" label={r.kind} />},
+    ]}
+    primaryAction={(r)=>r.kind === "review" ? <Button size="sm" variant="outline" data-testid="nurse-verify" onClick={()=>run(()=>act("nurse_review","nurseReviewOrder",{patientId:r.patientId,orderId:r.orderId,decision:"verified",actor}),"Order verified — ready to give")}>Verify</Button> : r.kind === "administer" ? <Button size="sm" variant="outline" data-testid="nurse-give" onClick={()=>run(()=>act("clinic_dose_give","administerClinicDose",{patientId:r.patientId,orderId:r.orderId,supervisorStaffId:me?.supervisedBy,actor}),actor.role === "lvn" ? `Dose recorded — routed to ${getStaffMember(me?.supervisedBy)?.name ?? "supervisor"} for cosign` : "Dose recorded")}>Give dose{actor.role === "lvn" ? " (routes for cosign)" : ""}</Button> : <Button size="sm" variant="outline" data-testid="nurse-cosign" onClick={()=>run(()=>act("clinic_dose_cosign","cosignClinicDose",{doseId:r.doseId,actor}),"Dose cosigned")}>Cosign</Button>}
+    moreContent={(r)=><div className="space-y-2 p-2"><Link to="/record/$patientId" params={{patientId:r.patientId}} className="underline">Open chart</Link>{r.kind === "review" && <><Input aria-label="Reason to return" placeholder="Reason to return" value={note[r.id] ?? ""} onChange={(e)=>setNote({...note,[r.id]:e.target.value})} /><Button size="sm" variant="outline" onClick={()=>run(()=>act("nurse_review","nurseReviewOrder",{patientId:r.patientId,orderId:r.orderId,decision:"returned",note:note[r.id],actor}),"Order returned to prescriber")}>Return</Button></>}</div>}
+  />;
   return (
     <ul className="space-y-2" data-testid="nurse-queue">
       {rows.map((r) => (

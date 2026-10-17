@@ -70,7 +70,7 @@ function NursePage() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-navy">Needs my action</h2>
         </div>
-        <NurseQueueList rows={rows} />
+        <NurseQueueList rows={rows} tablePresentation />
       </section>
       <section className="space-y-2">
         <h2 className="text-lg font-semibold text-navy">+ New</h2>

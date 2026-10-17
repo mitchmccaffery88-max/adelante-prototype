@@ -1,3 +1,5 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+import { StatusChip } from "@/components/ui/status-chip";
 import { CircleAlert } from "lucide-react";
 // §EHR audit Phase 2a — "My credentials".
 //
@@ -43,6 +45,8 @@ export const Route = createFileRoute("/clinician-credentials")({
     meta: [
       { title: "My Credentials — Adelante" },
       { name: "description", content: "Upload and track your license, DEA, malpractice, and CV." },
+      { property: "og:title", content: "My Credentials — Adelante" }, { property: "og:description", content: "Your own credential file and verification follow-up." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
     ],
   }),
   component: CredentialsPage,
@@ -158,58 +162,21 @@ function CredentialsPage() {
       {access.canView && (
         <Card className="p-4 space-y-3">
           <h2 className="font-semibold">On file</h2>
-          <ul className="divide-y">
-            {creds.length === 0 && <li className="py-2 text-sm text-muted-foreground">Nothing uploaded yet.</li>}
-            {creds.map((c) => (
-              <li key={c.id} className="py-2 text-sm flex items-center justify-between gap-2">
-                <div>
-                  <div className="font-medium">{KINDS.find((k) => k.key === c.kind)?.label ?? c.kind}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {c.number ? `#${c.number}` : ""} {c.expiresAt ? `· expires ${c.expiresAt}` : ""}{" "}
-                    {c.verifiedAt ? "· verified" : "· not verified"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {c.fileDataUrl
-                      ? `${c.fileName ?? "document"} · ${formatBytes(c.fileSize ?? 0)}`
-                      : c.fileName
-                        ? `${c.fileName} — name only, no document stored`
-                        : "No document attached"}
-                  </div>
-                  {/* §Phase 2b — what credentialing has asked this person to do. */}
-                  {c.followUp && !c.followUp.resolvedAt && (
-                    <p
-                      className="mt-1 rounded bg-gold/15 px-2 py-1 text-xs text-gold-foreground"
-                      data-testid={`credential-followup-${c.id}`}
-                    >
-                      Credentialing asked: {c.followUp.note}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={statusStyle[c.status]}>{c.status}</Badge>
-                  <CredentialDocumentViewer
-                    fileName={c.fileName}
-                    fileType={c.fileType}
-                    fileSize={c.fileSize}
-                    fileDataUrl={c.fileDataUrl}
-                  />
-                  {access.canDelete && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label="Remove credential"
-                      onClick={() => {
-                        AdelanteEHRExt.removeCredential(c.id);
-                        toast.success("Removed");
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <StaffTable key={targetId} rows={creds} rowKey={(c)=>c.id} label="On file" testId="own-credentials-table" defaultView="all"
+            views={[{id:"all",label:"Current view",matches:()=>true},{id:"followup",label:"Needs you",matches:(c)=>access.mode === "own" && !!c.followUp && !c.followUp.resolvedAt}]}
+            emptyState="Nothing uploaded yet."
+            columns={[
+              {id:"kind",label:"Kind",sortValue:(c)=>KINDS.find((k)=>k.key===c.kind)?.label ?? c.kind,cell:(c)=>KINDS.find((k)=>k.key===c.kind)?.label ?? c.kind},
+              {id:"number",label:"Number",mono:true,sortValue:(c)=>c.number ?? "",cell:(c)=>c.number ? `#${c.number}` : "—"},
+              {id:"expires",label:"Expires",sortValue:(c)=>c.expiresAt ?? "",cell:(c)=>c.expiresAt ?? "—"},
+              {id:"verified",label:"Verified",sortValue:(c)=>c.verifiedAt ?? "",cell:(c)=>c.verifiedAt ? "verified" : "not verified"},
+              {id:"file",label:"Document",cell:(c)=>c.fileDataUrl ? `${c.fileName ?? "document"} · ${formatBytes(c.fileSize ?? 0)}` : c.fileName ? `${c.fileName} — name only, no document stored` : "No document attached"},
+              {id:"status",label:"Status",sortValue:(c)=>c.status,cell:(c)=><StatusChip lang="en" state={c.status === "current" ? "done" : c.status === "under_review" ? "team" : access.mode === "own" ? "yourturn" : "team"} label={c.status} />},
+              {id:"followup",label:"Follow-up",cell:(c)=>c.followUp && !c.followUp.resolvedAt ? <p data-testid={`credential-followup-${c.id}`}>Credentialing asked: {c.followUp.note}</p> : "—"},
+            ]}
+            primaryAction={(c)=><CredentialDocumentViewer fileName={c.fileName} fileType={c.fileType} fileSize={c.fileSize} fileDataUrl={c.fileDataUrl} />}
+            moreContent={access.canDelete ? (c)=><Button size="icon" variant="ghost" aria-label="Remove credential" onClick={()=>{AdelanteEHRExt.removeCredential(c.id);toast.success("Removed");}}><Trash2 className="size-4" /></Button> : undefined}
+          />
 
           {access.canUpload && (
             <div className="border-t pt-3 space-y-3" data-testid="credential-upload-form">

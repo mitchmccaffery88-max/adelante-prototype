@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §B6 — same-day staff add / change / deactivate. sys_admin only, reason
 // required on every write, all via runAction → staffLifecycle.ts.
@@ -21,6 +22,9 @@ export const Route = createFileRoute("/admin-staff")({
     meta: [
       { title: "Staff members — Adelante Admin" },
       { name: "description", content: "Add, change roles/sites and deactivate staff. Prototype identity — reason required and audited." },
+      { property: "og:title", content: "Staff members — Adelante Admin" },
+      { property: "og:description", content: "Manage staff roles, sites and active status with audited reasons." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AdminStaffPage,
@@ -46,7 +50,7 @@ function AdminStaffPage() {
         <h1 className="font-display text-2xl text-navy">Staff members</h1>
         <Button size="sm" onClick={() => setDrawer({ kind: "add" })}>Add staff member</Button>
       </div>
-      <Badge variant="outline" className="text-[10px]" data-testid="prototype-identity-banner">{PROTOTYPE_IDENTITY_LABEL}</Badge>
+      <Badge variant="outline" className="text-sm" data-testid="prototype-identity-banner">{PROTOTYPE_IDENTITY_LABEL}</Badge>
 
       {needsReassign.length > 0 && (
         <Card className="p-4 space-y-2" data-testid="reassign-needed-card">
@@ -62,30 +66,19 @@ function AdminStaffPage() {
         </Card>
       )}
 
-      <Card className="p-4">
-        <table className="w-full text-sm">
-          <thead className="text-xs text-muted-foreground"><tr className="text-left"><th className="py-1 pr-2">Name</th><th className="py-1 pr-2">Role</th><th className="py-1 pr-2">Status</th><th className="py-1 pr-2">Actions</th></tr></thead>
-          <tbody>
-            {roster.map((m) => (
-              <tr key={m.id} className="border-t">
-                <td className="py-1.5 pr-2">{m.fullName ?? m.name}</td>
-                <td className="py-1.5 pr-2">{STAFF_ROLES.find((r) => r.key === m.role)?.label ?? m.role}</td>
-                <td className="py-1.5 pr-2">
-                  <StatusChip lang="en" state={m.active === false ? "closed" : "done"} label={m.active === false ? "Deactivated" : "Active"} />
-                </td>
-                <td className="py-1.5 pr-2 space-x-2">
-                  <Button size="sm" variant="outline" onClick={() => setDrawer({ kind: "edit", id: m.id })}>Change roles/sites</Button>
-                  {m.active === false ? (
-                    <Button size="sm" variant="outline" aria-label={`Reactivate ${m.name}`} onClick={() => setDrawer({ kind: "reactivate", id: m.id })}>Reactivate</Button>
-                  ) : (
-                    <Button size="sm" variant="outline" aria-label={`Deactivate ${m.name}`} onClick={() => setDrawer({ kind: "deactivate", id: m.id })}>Deactivate</Button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+      <section>
+        <StaffTable rows={roster} rowKey={(m) => m.id} label="Staff members" testId="staff-members-table"
+          views={[{ id: "all", label: "Current view", matches: () => true }, { id: "active", label: "Active", matches: (m) => m.active !== false }, { id: "closed", label: "Deactivated", matches: (m) => m.active === false }]} defaultView="all"
+          columns={[
+            { id: "name", label: "Name", sortValue: (m) => m.fullName ?? m.name, cell: (m) => m.fullName ?? m.name },
+            { id: "role", label: "Role", sortValue: (m) => STAFF_ROLES.find((r) => r.key === m.role)?.label ?? m.role, cell: (m) => STAFF_ROLES.find((r) => r.key === m.role)?.label ?? m.role },
+            { id: "status", label: "Status", sortValue: (m) => m.active === false ? "Deactivated" : "Active", cell: (m) => <StatusChip lang="en" state={m.active === false ? "closed" : "done"} label={m.active === false ? "Deactivated" : "Active"} /> },
+          ]}
+          primaryAction={(m) => <Button size="sm" variant="outline" aria-label={`${m.active === false ? "Reactivate" : "Deactivate"} ${m.name}`} onClick={() => setDrawer({ kind: m.active === false ? "reactivate" : "deactivate", id: m.id })}>{m.active === false ? "Reactivate" : "Deactivate"}</Button>}
+          moreActions={(m) => [{ label: "Change roles/sites", onSelect: () => setDrawer({ kind: "edit", id: m.id }) }]}
+          emptyState="No staff members in this view."
+        />
+      </section>
 
       <AddDrawer open={drawer?.kind === "add"} onClose={() => setDrawer(null)} actor={actor} />
       <EditDrawer open={drawer?.kind === "edit"} id={drawer?.kind === "edit" ? drawer.id : undefined} onClose={() => setDrawer(null)} actor={actor} />

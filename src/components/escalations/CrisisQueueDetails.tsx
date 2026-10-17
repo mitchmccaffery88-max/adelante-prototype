@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Crisis escalation queue details — moved from /crisis-queue (U1), which now
 // redirects to /escalations with a crisis filter. Claim/resolve/front-door
@@ -134,82 +135,27 @@ export function CrisisQueueDetails({ lane }: { lane?: "sdoh" | "clinical" }) {
               Crisis language from someone who is not a patient yet. There is no chart to open and
               no escalation to resolve — acknowledge once someone has picked this up.
             </p>
-            <ul className="space-y-2">
-              {anonymous.map((a) => (
-                <Card key={a.id} className="space-y-1.5 border-destructive/40 p-3 text-xs">
-                  <p className="text-navy">
-                    Crisis language detected in {a.surface}. Unvalidated screen — clinician review
-                    required.
-                  </p>
-                  <p className="text-muted-foreground">
-                    Patterns: {a.patternIds.join(", ")} · <ClientDate value={a.createdAt} />
-                    {a.contact ? ` · contact: ${a.contact}` : " · no contact details given"}
-                  </p>
-                  {access.level === "write" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => AdelanteEHR.acknowledgeAnonymousCrisisAlert(a.id, staffName)}
-                    >
-                      Acknowledge
-                    </Button>
-                  )}
-                </Card>
-              ))}
-            </ul>
+            <StaffTable rows={anonymous} rowKey={(a)=>a.id} label="Front door crisis alerts" testId="anonymous-crises-table" defaultView="current" views={[{id:"current",label:"Current view",matches:()=>true}]}
+              columns={[
+                {id:"surface",label:"Surface",sortValue:(a)=>a.surface,cell:(a)=> <>Crisis language detected in {a.surface}. Unvalidated screen — clinician review required.</>},
+                {id:"patterns",label:"Patterns",cell:(a)=>a.patternIds.join(", ")},
+                {id:"date",label:"Received",sortValue:(a)=>a.createdAt,cell:(a)=><ClientDate value={a.createdAt} />},
+                {id:"contact",label:"Contact",cell:(a)=>a.contact || "no contact details given"},
+              ]}
+              primaryAction={access.level === "write" ? (a)=><Button size="sm" variant="outline" onClick={()=>AdelanteEHR.acknowledgeAnonymousCrisisAlert(a.id,staffName)}>Acknowledge</Button> : undefined}
+            />
           </section>
         )}
-        <ul className="space-y-2">
-          {rows.map(({ patient, escalation }) => (
-            <Card key={escalation.id} className="p-3 text-xs space-y-1.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link
-                  to="/record/$patientId"
-                  params={{ patientId: patient.id }}
-                  search={{ section: "alerts" }}
-                  className="font-display text-base text-navy underline-offset-2 hover:underline"
-                >
-                  {patient.firstName} {patient.lastName}
-                </Link>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <CrisisRetriggerBadge escalation={escalation} />
-                  <CrisisOverdueBadge escalation={escalation} />
-                  {!canWorkRow(escalation) && <CssrsRiskBadge risk={escalation.cssrsRisk} />}
-                  <StatusChip lang="en" state="urgent" label={timeOpenLabel(escalation.triggeredAt)} />
-                </div>
-              </div>
-              <CrisisClassification escalation={escalation} />
-              <p className="text-navy">{escalation.triggerDetail}</p>
-              <p className="text-muted-foreground">
-                <span className="capitalize">{escalation.triggerSource.replace("_", " ")}</span> ·
-                flagged by {escalation.triggeredBy} ·{" "}
-                <ClientDate value={escalation.triggeredAt} />
-              </p>
-              {(escalation.retriggers?.length ?? 0) > 0 && (
-                <ul className={`space-y-0.5 border-l-2 pl-2 text-muted-foreground ${escalation.category === "sdoh" ? "border-line-strong" : "border-destructive/40"}`}>
-                  {escalation.retriggers!.map((r, i) => (
-                    <li key={i}>
-                      Further signal <ClientDate value={r.at} /> — {r.detail}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {canWorkRow(escalation) && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <CrisisClaimControl patientId={patient.id} escalation={escalation} />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setResolving({ patientId: patient.id, escalation })}
-                  >
-                    Resolve
-                  </Button>
-                  <CssrsStaffControl patientId={patient.id} risk={escalation.cssrsRisk} />
-                </div>
-              )}
-            </Card>
-          ))}
-        </ul>
+        <StaffTable rows={rows} rowKey={(r)=>r.escalation.id} label="Open crisis details" testId="crisis-resolution-table" defaultView="current" views={[{id:"current",label:"Current view",matches:()=>true}]}
+          columns={[
+            {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=><Link to="/record/$patientId" params={{patientId:r.patient.id}} search={{section:"alerts"}}>{r.patient.firstName} {r.patient.lastName}</Link>},
+            {id:"status",label:"Status",cell:({escalation})=><><CrisisRetriggerBadge escalation={escalation} /><CrisisOverdueBadge escalation={escalation} />{!canWorkRow(escalation) && <CssrsRiskBadge risk={escalation.cssrsRisk} />}<StatusChip lang="en" state="urgent" label={timeOpenLabel(escalation.triggeredAt)} /></>},
+            {id:"detail",label:"Detail",cell:({escalation})=><><CrisisClassification escalation={escalation} /><p>{escalation.triggerDetail}</p>{escalation.retriggers?.map((r,i)=><p key={i}>Further signal <ClientDate value={r.at} /> — {r.detail}</p>)}</>},
+            {id:"owner",label:"Flagged by",sortValue:(r)=>r.escalation.triggeredBy,cell:({escalation})=><>{escalation.triggerSource.replace("_"," ")} · flagged by {escalation.triggeredBy} · <ClientDate value={escalation.triggeredAt} /></>},
+          ]}
+          primaryAction={({patient,escalation})=>canWorkRow(escalation) ? <CrisisClaimControl patientId={patient.id} escalation={escalation} /> : null}
+          moreContent={({patient,escalation})=>canWorkRow(escalation) ? <div className="space-y-2 p-2"><Button size="sm" variant="outline" onClick={()=>setResolving({patientId:patient.id,escalation})}>Resolve</Button><CssrsStaffControl patientId={patient.id} risk={escalation.cssrsRisk} /></div> : null}
+        />
         </>
       )}
 
@@ -241,36 +187,14 @@ function MyFlaggedEscalations() {
       {mine.length === 0 ? (
         <EmptyState icon={Siren} title="You have not flagged any crises" />
       ) : (
-        <ul className="space-y-2">
-          {mine.map(({ patient, escalation }) => (
-            <Card key={escalation.id} className="space-y-1.5 p-3 text-xs">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-display text-base text-navy">
-                  {patient.firstName} {patient.lastName}
-                </span>
-                <StatusChip lang="en" state={escalation.status === "open" ? "urgent" : "done"} label={escalation.status === "open" ? "Open" : "Resolved"} />
-              </div>
-              <p className="text-muted-foreground">
-                Flagged <ClientDate value={escalation.triggeredAt} />
-              </p>
-              {escalation.status === "resolved" ? (
-                <p className="text-navy">
-                  Disposition: {escalation.disposition} — resolved by {escalation.resolvedBy}
-                  {escalation.resolvedAt && (
-                    <>
-                      {" "}
-                      <ClientDate value={escalation.resolvedAt} />
-                    </>
-                  )}
-                </p>
-              ) : (
-                <p className="text-muted-foreground">
-                  Still open · {timeOpenLabel(escalation.triggeredAt)}
-                </p>
-              )}
-            </Card>
-          ))}
-        </ul>
+        <StaffTable rows={mine} rowKey={(r)=>r.escalation.id} label="Crises you flagged" testId="my-flagged-crises-table" views={[{id:"current",label:"Current view",matches:()=>true}]} defaultView="current"
+          columns={[
+            {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+            {id:"status",label:"Status",sortValue:(r)=>r.escalation.status,cell:({escalation})=><StatusChip lang="en" state={escalation.status === "open" ? "urgent" : "done"} label={escalation.status === "open" ? "Open" : "Resolved"} />},
+            {id:"date",label:"Flagged",sortValue:(r)=>r.escalation.triggeredAt,cell:({escalation})=><ClientDate value={escalation.triggeredAt} />},
+            {id:"disposition",label:"Disposition",cell:({escalation})=>escalation.status === "resolved" ? <>Disposition: {escalation.disposition} — resolved by {escalation.resolvedBy}{escalation.resolvedAt && <ClientDate value={escalation.resolvedAt} />}</> : <>Still open · {timeOpenLabel(escalation.triggeredAt)}</>},
+          ]}
+        />
       )}
     </section>
   );

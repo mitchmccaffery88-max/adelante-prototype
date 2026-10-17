@@ -25,13 +25,13 @@ export const REFERRAL_STATUS_STYLES: Record<ReferralStatus, string> = {
  * Progress across the three real stages. A declined referral stops at the
  * stage it actually reached and is drawn as an ended state, never as blank.
  */
-export function ReferralProgressStrip({ status }: { status: ReferralStatus }) {
+export function ReferralProgressStrip({ status, tablePresentation = false }: { status: ReferralStatus; tablePresentation?: boolean }) {
   const declined = status === "declined";
   const reachedIdx = declined
     ? 0
     : REFERRAL_PROGRESS_STAGES.indexOf(status as (typeof REFERRAL_PROGRESS_STAGES)[number]);
   return (
-    <div className="mt-2 flex gap-1" aria-label={declined ? "Referral closed" : "Referral progress"}>
+    <div className="mt-2 flex gap-1" role={tablePresentation ? "img" : undefined} aria-label={declined ? "Referral closed" : "Referral progress"}>
       {REFERRAL_PROGRESS_STAGES.map((s, i) => {
         const reached = i <= reachedIdx;
         const tone = declined

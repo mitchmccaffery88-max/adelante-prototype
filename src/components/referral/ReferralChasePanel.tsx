@@ -1,3 +1,5 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+import { StatusChip } from "@/components/ui/status-chip";
 // §Batch B2 — "Missing details" follow-ups on the referral queue. Peers / CHW
 // can record a missing value (clears that item); only the coordinator claims
 // or assigns. Nobody closes a follow-up by hand — it closes itself.
@@ -44,22 +46,16 @@ export function ReferralChasePanel() {
         <h2 className="font-display text-lg text-navy">Missing details · {tasks.length}</h2>
         <Badge variant="outline">{CHASE_DRAFT_LABEL}</Badge>
       </div>
-      <div className="divide-y">
-        {tasks.slice(0, 12).map((t) => {
-          const r = referrals.find((x) => x.id === t.referralId);
-          if (!r) return null;
-          const aging = chaseAging(t);
-          return (
-            <div key={t.id} className="flex items-center justify-between gap-3 py-2" data-testid="chase-row">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{r.firstName} {r.lastName}</p>
-                <p className="truncate text-xs text-muted-foreground">{chaseText(t.missing)} · {t.owner ? t.owner.name : "Coordinator pool"}{aging !== "fresh" ? ` · ${aging === "overdue" ? "Follow-up needed" : "Due"}` : ""}</p>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => setOpenId(t.referralId)}>Open</Button>
-            </div>
-          );
-        })}
-      </div>
+      <StaffTable rows={tasks.slice(0,12).flatMap((t)=>{const r=referrals.find((x)=>x.id===t.referralId);return r ? [{task:t,referral:r}] : [];})} rowKey={(r)=>r.task.id} label="Missing referral details" testId="referral-chase-table" rowTestId={()=>"chase-row"}
+        views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(r)=>r.task.owner?.staffId === staff.staffId}]} defaultView="current"
+        columns={[
+          {id:"person",label:"Person",sortValue:(r)=>`${r.referral.firstName} ${r.referral.lastName}`,cell:(r)=>`${r.referral.firstName} ${r.referral.lastName}`},
+          {id:"details",label:"Missing details",cell:(r)=>chaseText(r.task.missing)},
+          {id:"owner",label:"Owner",sortValue:(r)=>r.task.owner?.name ?? "Coordinator pool",cell:(r)=>r.task.owner?.name ?? "Coordinator pool"},
+          {id:"status",label:"Status",cell:(r)=>{const aging=chaseAging(r.task);return <StatusChip lang="en" state="yourturn" label={aging === "fresh" ? "Open" : aging === "overdue" ? "Follow-up needed" : "Due"} />;}},
+        ]}
+        primaryAction={(r)=><Button size="sm" variant="outline" onClick={()=>setOpenId(r.task.referralId)}>Open</Button>}
+      />
       <Sheet open={!!open} onOpenChange={(v) => !v && setOpenId(null)}>
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
           {open && <ChaseDrawer task={open} onDone={() => setOpenId(null)} />}

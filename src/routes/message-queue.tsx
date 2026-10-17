@@ -1,3 +1,5 @@
+import { StaffTable, RestrictedCell } from "@/components/staff/StaffTable";
+import { StatusChip } from "@/components/ui/status-chip";
 // §Messaging Phase 2 — cross-patient message queue.
 //
 // Same shape as the cosign inbox and crisis queue: patients with unread
@@ -68,42 +70,18 @@ function MessageQueuePage() {
       ) : rows.length === 0 ? (
         <EmptyState icon={MessageSquare} title="No unanswered patient messages" />
       ) : (
-        <ul className="space-y-2">
-          {rows.map(({ patient, unread, oldestUnreadAt, latest }) => (
-            <Card key={patient.id} className="space-y-1.5 p-3 text-xs">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link
-                  to="/record/$patientId"
-                  params={{ patientId: patient.id }}
-                  search={{ section: "messages" }}
-                  className="font-display text-base text-navy underline-offset-2 hover:underline"
-                >
-                  {patient.firstName} {patient.lastName}
-                </Link>
-                <Badge className="border-0 bg-teal/15 text-[10px] text-teal">
-                  {unread} unread
-                </Badge>
-              </div>
-              {latest.sudFlagged && (
-                <p className="flex items-center gap-1 text-[10px] font-medium text-attention">
-                  <ShieldAlert className="h-3 w-3" /> Sensitive content flagged
-                </p>
-              )}
-              {/* Preview snippet respects the same Part 2 gate as the thread view. */}
-              {isMessageBodyMasked(latest, role, patient) ? (
-                <p className="flex items-center gap-1.5 text-muted-foreground">
-                  <Lock className="h-3 w-3" /> {MASKED_MESSAGE_BODY}
-                </p>
-              ) : (
-                <p className="line-clamp-2 whitespace-pre-wrap text-navy">{latest.body}</p>
-              )}
-              <p className="text-muted-foreground">
-                Waiting since <ClientDate value={oldestUnreadAt} /> · last message from{" "}
-                {latest.authorName}
-              </p>
-            </Card>
-          ))}
-        </ul>
+        <StaffTable rows={rows} rowKey={(r) => r.patient.id} label="Patient messages" testId="patient-messages-table"
+          views={[{ id: "needs", label: "Needs you", matches: () => true }]} defaultView="needs"
+          columns={[
+            { id: "patient", label: "Patient", sortValue: (r) => `${r.patient.firstName} ${r.patient.lastName}`, cell: (r) => `${r.patient.firstName} ${r.patient.lastName}` },
+            { id: "unread", label: "Unread", sortValue: (r) => r.unread, cell: (r) => <StatusChip lang="en" state="yourturn" label={`${r.unread} unread`} /> },
+            { id: "preview", label: "Message", cell: ({patient, latest}) => <>{latest.sudFlagged && <p className="flex items-center gap-1 text-attention"><ShieldAlert className="size-4" /> Sensitive content flagged</p>}{isMessageBodyMasked(latest, role, patient) ? <RestrictedCell label={MASKED_MESSAGE_BODY} /> : <p className="line-clamp-2 whitespace-pre-wrap">{latest.body}</p>}</> },
+            { id: "waiting", label: "Waiting since", sortValue: (r) => r.oldestUnreadAt, cell: (r) => <ClientDate value={r.oldestUnreadAt} /> },
+            { id: "author", label: "Last author", sortValue: (r) => r.latest.authorName, cell: (r) => r.latest.authorName },
+          ]}
+          primaryAction={(r) => <Button asChild size="sm" variant="outline"><Link to="/record/$patientId" params={{patientId:r.patient.id}} search={{section:"messages"}}>Open thread</Link></Button>}
+          emptyState="No unanswered patient messages"
+        />
       )}
     </div>
   );

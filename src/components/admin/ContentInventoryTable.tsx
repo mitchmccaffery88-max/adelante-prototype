@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { CONTENT_AUDIENCES, audiencesOf } from "@/lib/contentAudience";
 import { StatusChip } from "@/components/ui/status-chip";
 import { useState } from "react";
@@ -49,36 +50,24 @@ export function ContentInventoryTable({ entries, edit, review, canReview, canEdi
         <Input className="max-w-xs" aria-label="Review reason" placeholder="Reason for review" value={reason} onChange={(e) => setReason(e.target.value)} />
         <Button variant="outline" disabled={!canReview || !selected.length || !reason.trim()} onClick={() => { review(selected, reason); setSelected([]); setReason(""); }}>Mark reviewed ({selected.length})</Button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead><tr className="border-b border-border">{["Select", "Title", "Type", "Status", "Part 2 / Clinical", "Who it's for", "ES", "Reading level (Draft)", "Owner", "Last reviewed", "Next review", ""].map((s, i) => <th key={i} className="p-2">{s}</th>)}</tr></thead>
-          <tbody>
-            {rows.map((e) => {
-              const m = metaOf(e.body);
-              const label = inventoryStatus(e);
-              const shipped = label === "Live (shipped)";
-              const title = contentType(e.typeId).titleOf(e.body);
-              const rl = readingLevelOf(e.typeId, e.body);
-              return (
-                <tr key={e.id} className="border-b border-border" data-testid="inventory-row">
-                  <td className="p-2"><Checkbox aria-label={`Select ${title}`} disabled={shipped} checked={selected.includes(e.id)} onCheckedChange={(v) => setSelected((ids) => (v ? [...ids, e.id] : ids.filter((id) => id !== e.id)))} /></td>
-                  <td className="p-2" data-testid="managed-title">{title}</td>
-                  <td className="p-2">{contentType(e.typeId).label}</td>
-                  <td className="p-2" data-testid="inventory-status"><StatusChip lang="en" state={label === "Retired" ? "closed" : shipped || e.status === "published" ? "done" : e.status === "pending_review" ? "team" : "upnext"} label={e.status === "pending_review" && !shipped && label !== "Retired" ? "In clinical review" : label} /></td>
-                  <td className="p-2">{isPart2Content(e.typeId, e.body) && <Badge variant="outline">Part 2</Badge>}{m.clinical && <Badge variant="secondary">Clinical</Badge>}</td>
-                  <td className="p-2 text-sm" data-testid="inventory-audiences">{audienceLabel(e.body)}</td>
-                  <td className="p-2">{spanishStatusOf(e.body)}</td>
-                  <td className="p-2" data-testid="reading-grade">≈ grade {rl.grade}{rl.aboveTarget && <Badge variant="outline" className="ml-1">Above {READING_LEVEL_TARGET}</Badge>}</td>
-                  <td className="p-2">{m.owner || "Unassigned"}</td>
-                  <td className="p-2">{m.lastReviewed || "Not set"}</td>
-                  <td className="p-2">{m.nextReview || "Not set"}</td>
-                  <td className="p-2"><Button variant="outline" size="sm" disabled={!canEdit || e.status === "pending_review"} onClick={() => edit(e.id)}>Edit</Button></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <StaffTable rows={rows} rowKey={(e) => `${e.typeId}:${e.id}`} label="Content inventory" testId="content-inventory-table" rowTestId={() => "inventory-row"}
+        views={[{ id: "current", label: "Current view", matches: () => true }, { id: "review", label: "In review", matches: (e) => inventoryStatus(e) === "In review" }]} defaultView="current"
+        emptyState="No content matches these filters."
+        columns={[
+          { id: "select", label: "Select", cell: (e) => <Checkbox aria-label={`Select ${contentType(e.typeId).titleOf(e.body)}`} disabled={inventoryStatus(e) === "Live (shipped)"} checked={selected.includes(e.id)} onCheckedChange={(v) => setSelected((ids) => v ? [...ids, e.id] : ids.filter((id) => id !== e.id))} /> },
+          { id: "title", label: "Title", testId: "managed-title", sortValue: (e) => contentType(e.typeId).titleOf(e.body), cell: (e) => contentType(e.typeId).titleOf(e.body) },
+          { id: "type", label: "Type", sortValue: (e) => contentType(e.typeId).label, cell: (e) => contentType(e.typeId).label },
+          { id: "status", label: "Status", testId: "inventory-status", sortValue: inventoryStatus, cell: (e) => { const label = inventoryStatus(e); const shipped = label === "Live (shipped)"; return <StatusChip lang="en" state={label === "Retired" ? "closed" : shipped || e.status === "published" ? "done" : e.status === "pending_review" ? "team" : "upnext"} label={e.status === "pending_review" && !shipped && label !== "Retired" ? "In clinical review" : label} />; } },
+          { id: "flags", label: "Part 2 / Clinical", sortValue: (e) => `${isPart2Content(e.typeId, e.body)}:${!!metaOf(e.body).clinical}`, cell: (e) => <>{isPart2Content(e.typeId, e.body) && <Badge variant="outline">Part 2</Badge>}{metaOf(e.body).clinical && <Badge variant="secondary">Clinical</Badge>}</> },
+          { id: "audience", label: "Who it's for", testId: "inventory-audiences", sortValue: (e) => audienceLabel(e.body), cell: (e) => audienceLabel(e.body) },
+          { id: "es", label: "ES", sortValue: (e) => spanishStatusOf(e.body), cell: (e) => spanishStatusOf(e.body) },
+          { id: "reading", label: "Reading level (Draft)", testId: "reading-grade", sortValue: (e) => readingLevelOf(e.typeId, e.body).grade, cell: (e) => { const rl = readingLevelOf(e.typeId, e.body); return <>≈ grade {rl.grade}{rl.aboveTarget && <Badge variant="outline" className="ml-1">Above {READING_LEVEL_TARGET}</Badge>}</>; } },
+          { id: "owner", label: "Owner", sortValue: (e) => metaOf(e.body).owner || "Unassigned", cell: (e) => metaOf(e.body).owner || "Unassigned" },
+          { id: "reviewed", label: "Last reviewed", sortValue: (e) => metaOf(e.body).lastReviewed || "", cell: (e) => metaOf(e.body).lastReviewed || "Not set" },
+          { id: "next", label: "Next review", sortValue: (e) => metaOf(e.body).nextReview || "", cell: (e) => metaOf(e.body).nextReview || "Not set" },
+        ]}
+        primaryAction={(e) => <Button variant="outline" size="sm" disabled={!canEdit || e.status === "pending_review"} onClick={() => edit(e.id)}>Edit</Button>}
+      />
     </section>
   );
 }

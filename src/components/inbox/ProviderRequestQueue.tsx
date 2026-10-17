@@ -1,3 +1,5 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+import { StatusChip } from "@/components/ui/status-chip";
 // §Inbox — provider request queue. "Assigned to me" / "Unclaimed" sections,
 // plus a Done section for recent closures. Claim is a claim, not a takeover:
 // a claimed request is not claimable again (release is the escape hatch).
@@ -82,35 +84,6 @@ export function ProviderRequestQueue() {
     setOutcome("");
   };
 
-  const row = (r: ProviderRequest, actions: React.ReactNode) => (
-    <Card key={r.id} className="p-3 text-xs space-y-1.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link
-          to="/record/$patientId"
-          params={{ patientId: r.patientId }}
-          className="font-display text-base text-navy underline-offset-2 hover:underline"
-        >
-          {nameFor(r.patientId)}
-        </Link>
-        <div className="flex items-center gap-1.5">
-          <Badge variant="outline" className="text-[10px]">
-            {TYPE_LABEL[r.requestType]}
-          </Badge>
-          {r.status !== "done" && (
-            <Badge className={queueAgeTone(r.createdAt)}>{timeOpenLabel(r.createdAt)}</Badge>
-          )}
-        </div>
-      </div>
-      <p className="text-navy">{r.context}</p>
-      <p className="text-muted-foreground">
-        Asked by {r.requestedBy} · <ClientDate value={r.createdAt} />
-        {r.status === "claimed" && r.assignedTo ? ` · claimed by ${r.assignedTo}` : ""}
-        {r.status === "done" && r.completedBy ? ` · done by ${r.completedBy}` : ""}
-      </p>
-      {r.outcome && <p className="text-navy">Outcome: {r.outcome}</p>}
-      {actions}
-    </Card>
-  );
 
   return (
     <div className="space-y-5">
@@ -121,61 +94,24 @@ export function ProviderRequestQueue() {
           </Button>
         </div>
       )}
-      <section className="space-y-2">
-        <h2 className="font-display text-sm text-navy">Assigned to me ({mine.length})</h2>
-        {mine.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nothing claimed.</p>
-        ) : (
-          <ul className="space-y-2">
-            {mine.map((r) =>
-              row(
-                r,
-                canWrite ? (
-                  <div className="flex gap-2 pt-0.5">
-                    <Button size="sm" onClick={() => setCompleting(r)}>
-                      Mark done
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => AdelanteEHR.releaseProviderRequest(r.id, staffName, role)}
-                    >
-                      Release
-                    </Button>
-                  </div>
-                ) : null,
-              ),
-            )}
-          </ul>
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="font-display text-sm text-navy">Unclaimed ({unclaimed.length})</h2>
-        {unclaimed.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="No unclaimed requests" />
-        ) : (
-          <ul className="space-y-2">
-            {unclaimed.map((r) =>
-              row(
-                r,
-                canWrite ? (
-                  <Button size="sm" variant="outline" onClick={() => claim(r)}>
-                    Claim
-                  </Button>
-                ) : null,
-              ),
-            )}
-          </ul>
-        )}
-      </section>
-
-      {done.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="font-display text-sm text-navy">Recently completed</h2>
-          <ul className="space-y-2">{done.slice(-5).map((r) => row(r, null))}</ul>
-        </section>
-      )}
+      <StaffTable rows={[...mine,...unclaimed,...done.slice(-5)]} rowKey={(r)=>r.id} label="Provider requests" testId="provider-requests-table" defaultView="mine"
+        views={[
+          {id:"mine",label:"Assigned to me",matches:(r)=>r.status === "claimed" && r.assignedTo === staffName,emptyState:"Nothing claimed."},
+          {id:"unclaimed",label:"Unclaimed",matches:(r)=>r.status === "open",emptyState:<EmptyState icon={ClipboardList} title="No unclaimed requests" />},
+          {id:"done",label:"Recently completed",matches:(r)=>r.status === "done"},
+          {id:"current",label:"Current view",matches:()=>true},
+        ]}
+        columns={[
+          {id:"patient",label:"Patient",sortValue:(r)=>nameFor(r.patientId),cell:(r)=><Link to="/record/$patientId" params={{patientId:r.patientId}}>{nameFor(r.patientId)}</Link>},
+          {id:"type",label:"Type",sortValue:(r)=>TYPE_LABEL[r.requestType],cell:(r)=><Badge variant="outline">{TYPE_LABEL[r.requestType]}</Badge>},
+          {id:"ask",label:"Request",cell:(r)=><>{r.context}{r.outcome && <p>Outcome: {r.outcome}</p>}</>},
+          {id:"owner",label:"Owner",sortValue:(r)=>r.assignedTo ?? r.requestedBy,cell:(r)=><>Asked by {r.requestedBy}{r.status === "claimed" && r.assignedTo ? ` · claimed by ${r.assignedTo}` : ""}{r.status === "done" && r.completedBy ? ` · done by ${r.completedBy}` : ""}</>},
+          {id:"date",label:"Asked",sortValue:(r)=>r.createdAt,cell:(r)=><ClientDate value={r.createdAt} />},
+          {id:"status",label:"Status",sortValue:(r)=>r.status,cell:(r)=><StatusChip lang="en" state={r.status === "done" ? "done" : r.status === "claimed" && r.assignedTo === staffName ? "yourturn" : "team"} label={r.status} />},
+        ]}
+        primaryAction={canWrite ? (r)=>r.status === "claimed" ? <Button size="sm" variant="outline" onClick={()=>setCompleting(r)}>Mark done</Button> : r.status === "open" ? <Button size="sm" variant="outline" onClick={()=>claim(r)}>Claim</Button> : null : undefined}
+        moreActions={canWrite ? (r)=>r.status === "claimed" ? [{label:"Release",onSelect:()=>AdelanteEHR.releaseProviderRequest(r.id,staffName,role)}] : [] : undefined}
+      />
 
       <Dialog open={!!completing} onOpenChange={(o) => !o && setCompleting(null)}>
         <DialogContent>
