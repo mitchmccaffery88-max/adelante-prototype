@@ -4,11 +4,12 @@
 
 ## Phase 8b-1 — Shared staff table pilots (approved Oct 17)
 Rollback: e822105ffca551809487f2403bc60f728bfe8d9b
-- [ ] Record each pilot's source, existing hidden-data rules and rollback row parity before replacing presentation
-- [ ] One shared compact table: caseloads, eligibility worklist, notes queue and task queues; unchanged caller gates/handlers
-- [ ] New sorting/paging/views/lock/keyboard units and pilot browser/axe coverage; existing tests untouched
-- [ ] Full units/listed total, then full background browser suite --workers=1 on :8080 to completion; restore screenshots
+- [x] Record each pilot's source, existing hidden-data rules and rollback row parity before replacing presentation
+- [ ] One shared compact table: caseloads, eligibility worklist, notes queue and task queues; unchanged caller gates/handlers; review empty saved views, unsaved task drafts across paging and selected-view stat parity before close-out
+- [x] New sorting/paging/views/lock/keyboard units and pilot browser/axe coverage; existing tests untouched
+- [x] Full units/listed total: 2,691/2,691; full background browser suite --workers=1 on :8080 completed: 144/145; 14 regenerated tracked screenshots restored, 108/108 hashes match baseline
 - [ ] 390/768/1280 light/dark screenshots, parity report and completion only if green
+- STOPPED: existing e2e/contentWiring.spec.ts:47 role-switch evaluate failed with execution context destroyed during navigation (not an assertion mismatch). No test-line proposal without diagnosis/approval; no existing tests changed. All nine new pilot browser checks passed. Close-out and screenshot matrix deferred; no completion report.
 - Scope stop: no publishing, no 8b-2 or 8b-3; unrelated older roadmap items remain outside this approval.
 
 ## Phase 6 — Emotion check-in (approved 14 Oct)
