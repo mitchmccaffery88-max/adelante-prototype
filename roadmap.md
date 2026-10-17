@@ -450,13 +450,20 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] Pending nurse actions remain hidden; permissions and existing test assertions preserved
 - [x] Full units 2,671 passed / 2,671 listed, then full browsers 128 passed / 128 listed with --workers=1 against :8080, including axe
 - [x] Close-out report: docs/quickactions-batch2-report.md
-- Batches 3 and 4 not started; no publishing.
+- Batches 3 and 4 complete below; no publishing.
 
 ## Quick-actions batch 3 — done Oct 16
 - [x] Shared "+ New" on My work, Worklist, Case manager, Inbox and the content center (approved 8a-2 lines applied; 2,677/2,677 units, 135/135 browsers). See docs/quickactions-batch3-report.md.
-- [ ] Batch 4 STOPPED Oct 17: prior unit total 2,686 passed / 2,686 listed. Missing /tmp/browser-b4.log required a full rerun; interrupted half 44 passed without a completion total, then full run 135 passed / 136 listed. Approved literal role-name correction in e2e/quickActionsBatch4.spec.ts:43 changed "Clinical Coordinator" to "Clinical coordinator". Final full one-worker :8080 rerun completed 135 passed / 136 listed, 1 failed at line 45: `await expect(menu.getByRole("button", { name: "Edit consent form", exact: true })).toBeEnabled();` — element not found after the role switch. Current-role actions without a handler on this launcher are omitted under the approved launcher-scope decision. Proposed assertion change: none under current approval; await Mitch's decision on this contract. Restored screenshots after both full runs (16 and 15 respectively), zero differences against the pre-run backup. No permissions changed, close-out report, publishing or further work. Chart Task remains a question for Mitch.
-- [ ] Reuse shared New menu on My work, Worklist, Case manager, Inbox and content center; preserve registry gates and existing action paths
-- [ ] Remove only replaced legacy add controls; document patient selection or omission per page
-- [ ] New unit/browser files; full units then all browsers with --workers=1 on :8080; restore regenerated screenshots
-- [ ] Write docs/quickactions-batch3-report.md and mark complete only after all checks pass
-- Batch 4 not started; do not publish.
+- [x] Reuse shared New menu on My work, Worklist, Case manager, Inbox and content center; preserve registry gates and existing action paths
+- [x] Remove only replaced legacy add controls; document patient selection or omission per page
+- [x] New unit/browser files; full units then all browsers with --workers=1 on :8080; restore regenerated screenshots
+- [x] Write docs/quickactions-batch3-report.md and mark complete only after all checks pass
+
+## Quick-actions batch 4 — COMPLETE Oct 17
+- [x] Device-only per-staff prototype settings: choose/reorder up to eight, reset, own-role eligibility, no audit, hydration-safe storage
+- [x] Context-sensitive therapist/SUD counselor Task defaults with unchanged registry permissions; all coordinator setup, literal-label and launcher-scope decisions documented
+- [x] Prior full units 2,686 passed / 2,686 listed (331 files); final full browsers 136 passed / 136 listed (35 files), 0 failures, --workers=1 on :8080 to completion
+- [x] Restored 15 regenerated tracked images; all 108 pre-run tracked image hashes identical
+- [x] Close-out report and every final changed test line: docs/quickactions-batch4-report.md
+- [x] Quick-actions track complete. No permissions changed, no publishing, no work after batch 4.
+- Open question for Mitch only (not implemented): therapists have patientless dashboard Task but no chart Task because case_notes is read-only; grant chart Task or offer patient-prefilled dashboard Task in chart?
