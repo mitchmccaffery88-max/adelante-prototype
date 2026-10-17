@@ -202,6 +202,7 @@ export function CaseloadTable({
       <StaffTable
         rows={filtered} rowKey={(p) => p.id} label={title} testId="caseload-table"
         views={[{ id: "all", label: "Current caseload", matches: () => true }]}
+        emptyState="No patients match these filters."
         columns={[
           { id: "program", label: "Patient ID", mono: true, sortValue: (p) => p.programId, cell: (p) => p.programId },
           { id: "cin", label: "CIN", mono: true, cell: (p) => p.cin ? `••••${p.cin.slice(-4)}` : "—" },
