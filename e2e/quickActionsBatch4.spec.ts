@@ -5,17 +5,21 @@ test("personal quick actions stay disabled under another assigned role, switch s
   await page.goto("/clinician");
   await page.waitForFunction(() => !!(window as any).__adelante);
   // Test-only multi-role identity via the real registry/store path; no roster mutation.
-  await page.evaluate(async () => {
+  const creation = await page.evaluate(async () => {
     const dev = (window as any).__adelante;
     const { ra } = await dev.access();
-    ra.runAction("staff_add", { role: "sys_admin", staffId: "s-admin1" }, { via: "addStaffMemberWithReason", args: [
+    const result = await ra.runAction("staff_add", { role: "sys_admin", staffId: "s-admin1" }, undefined, { via: "addStaffMemberWithReason", args: [
       { role: "sys_admin", staffId: "s-admin1" },
       { id: "s-batch4", name: "Batch four test staff", role: "therapist", roleAssignments: [{ role: "therapist" }, { role: "clinical_coordinator" }] },
       "Test-only multi-role fixture",
     ] });
-    dev.setActingStaff("s-batch4", "therapist");
-    dev.go("/clinician-profile");
+    return { ok: result.ok, reason: result.ok ? undefined : result.reason };
   });
+  expect(creation, creation.reason).toMatchObject({ ok: true });
+  await page.evaluate(() => (window as any).__adelante.setActingStaff("s-batch4", "therapist"));
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Therapist · Batch four test staff");
+  await page.evaluate(() => (window as any).__adelante.go("/clinician-profile"));
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Therapist · Batch four test staff");
   const section = page.getByTestId("quick-action-settings");
   await expect(section).toBeVisible();
   await expect(section.getByText("Prototype — Saved on this device only")).toBeVisible();
@@ -36,6 +40,7 @@ test("personal quick actions stay disabled under another assigned role, switch s
   await page.keyboard.press("Escape");
   await page.getByTestId("staff-role-switcher").click();
   await page.getByTestId("switch-s-batch4-clinical_coordinator").click();
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Clinical Coordinator · Batch four test staff");
   await page.getByTestId("staff-new-slot").getByRole("button").click();
   await expect(menu.getByRole("button", { name: "Author consent form", exact: true })).toBeEnabled();
   await menu.getByRole("button", { name: "Author consent form", exact: true }).click();
@@ -47,6 +52,7 @@ test("personal quick actions stay disabled under another assigned role, switch s
   expect(await page.evaluate(() => localStorage.getItem("adelante.quickActions.s-batch4"))).toBeNull();
   await page.getByTestId("staff-role-switcher").click();
   await page.getByTestId("switch-s-batch4-therapist").click();
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Therapist · Batch four test staff");
   await expect(section.getByTestId("pref-progress_note")).toBeVisible();
   await expect(section.getByTestId("pref-consent_form_author")).toHaveCount(0);
 });

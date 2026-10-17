@@ -454,7 +454,7 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 
 ## Quick-actions batch 3 — done Oct 16
 - [x] Shared "+ New" on My work, Worklist, Case manager, Inbox and the content center (approved 8a-2 lines applied; 2,677/2,677 units, 135/135 browsers). See docs/quickactions-batch3-report.md.
-- [ ] Batch 4 STOPPED Oct 17: approved Task test lines applied; units 2,686 passed / 2,686 listed; full one-worker :8080 browsers stopped at e2e/quickActionsBatch4.spec.ts:24 (Author consent form option missing; snapshot shows ECM Provider Luz instead of test multi-role identity). 69 passed / 136 listed, 1 failed; 15 regenerated tracked screenshots restored. Await coordinator decision on fixture identity synchronization; no test/permission changes, close-out report, publishing or further work. Chart Task permissions remain unchanged; question for Mitch.
+- [ ] Batch 4 verification resumed Oct 17 under coordinator approval: diagnose staff_add result and runtime identity; setup-only corrections in the new browser spec; full units/list then full one-worker :8080 browser suite to completion, restore screenshots. No permission changes, publishing or further work. Chart Task remains a question for Mitch; close out only if all green.
 - [ ] Reuse shared New menu on My work, Worklist, Case manager, Inbox and content center; preserve registry gates and existing action paths
 - [ ] Remove only replaced legacy add controls; document patient selection or omission per page
 - [ ] New unit/browser files; full units then all browsers with --workers=1 on :8080; restore regenerated screenshots
