@@ -450,13 +450,20 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] Pending nurse actions remain hidden; permissions and existing test assertions preserved
 - [x] Full units 2,671 passed / 2,671 listed, then full browsers 128 passed / 128 listed with --workers=1 against :8080, including axe
 - [x] Close-out report: docs/quickactions-batch2-report.md
-- Batches 3 and 4 not started; no publishing.
+- Batches 3 and 4 complete below; no publishing.
 
 ## Quick-actions batch 3 — done Oct 16
 - [x] Shared "+ New" on My work, Worklist, Case manager, Inbox and the content center (approved 8a-2 lines applied; 2,677/2,677 units, 135/135 browsers). See docs/quickactions-batch3-report.md.
-- [ ] Batch 4 final approved verification Oct 17: post-switch spec now checks omission on /my-work and the real Legal & consent authoring view on /admin-content; only the approved block and literal switch-hint casing changed. Prior units 2,686 passed / 2,686 listed. Full one-worker :8080 browser suite pending completion and screenshot restoration; write close-out report only if all green. No permissions changed, publishing or further work. Chart Task remains a question for Mitch.
-- [ ] Reuse shared New menu on My work, Worklist, Case manager, Inbox and content center; preserve registry gates and existing action paths
-- [ ] Remove only replaced legacy add controls; document patient selection or omission per page
-- [ ] New unit/browser files; full units then all browsers with --workers=1 on :8080; restore regenerated screenshots
-- [ ] Write docs/quickactions-batch3-report.md and mark complete only after all checks pass
-- Batch 4 not started; do not publish.
+- [x] Reuse shared New menu on My work, Worklist, Case manager, Inbox and content center; preserve registry gates and existing action paths
+- [x] Remove only replaced legacy add controls; document patient selection or omission per page
+- [x] New unit/browser files; full units then all browsers with --workers=1 on :8080; restore regenerated screenshots
+- [x] Write docs/quickactions-batch3-report.md and mark complete only after all checks pass
+
+## Quick-actions batch 4 — COMPLETE Oct 17
+- [x] Device-only per-staff prototype settings: choose/reorder up to eight, reset, own-role eligibility, no audit, hydration-safe storage
+- [x] Context-sensitive therapist/SUD counselor Task defaults with unchanged registry permissions; all coordinator setup, literal-label and launcher-scope decisions documented
+- [x] Prior full units 2,686 passed / 2,686 listed (331 files); final full browsers 136 passed / 136 listed (35 files), 0 failures, --workers=1 on :8080 to completion
+- [x] Restored 15 regenerated tracked images; all 108 pre-run tracked image hashes identical
+- [x] Close-out report and every final changed test line: docs/quickactions-batch4-report.md
+- [x] Quick-actions track complete. No permissions changed, no publishing, no work after batch 4.
+- Open question for Mitch only (not implemented): therapists have patientless dashboard Task but no chart Task because case_notes is read-only; grant chart Task or offer patient-prefilled dashboard Task in chart?
