@@ -38,6 +38,6 @@ Non-billing / restricted roles verified: therapist cannot see billing rows; bill
 ## Validation
 - Units: 2,711 passed / 2,711 listed (337 files) — see phase8b3 run; the one new audit test corrected for the restored action re-passed (2/2).
 - New browser specs: billing 3/3, audit 6/6, admin 10/10 (focused, one worker).
-- Full browser suite (--workers=1, E2E_BASE_URL=http://localhost:8080), run after the last source change: RESULT_PLACEHOLDER
+- Full browser suite (--workers=1, E2E_BASE_URL=http://localhost:8080), run after the last source change: 174 passed / 174 (28.9m, exit 0); no existing assertion failed, the contentWiring flake exception was not needed.
 - Screenshot matrix: 26 tables × 390/768/1280 × light/dark = 156 captures; no JS errors, no text under 14px. Tables with no rows in demo data (ISL, blocked attempts, documents audit, vendor sessions, suppressions) captured as their existing empty states; their row rendering is covered by unit tests. Claims and DMC-ODS preview scroll horizontally inside their own container at 1280; long audit details now wrap instead of being clipped.
 - Tracked screenshots restored to rollback hashes.
