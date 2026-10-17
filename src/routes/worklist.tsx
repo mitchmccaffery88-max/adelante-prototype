@@ -374,13 +374,13 @@ function WorklistPage() {
           </> },
           { id: "c2", label: "Patient", sortValue: (t) => nameFor(t.patientId), cell: (t) => <>
 
-                      <Link
+                      {t.patientId ? <Link
                         to="/record/$patientId"
                         params={{ patientId: t.patientId }}
                         className="text-navy underline-offset-2 hover:underline"
                       >
                         {nameFor(t.patientId)}
-                      </Link>
+                      </Link> : <span className="text-ink-muted">—</span>}
                     
           </> },
           { id: "c3", label: "Facility / housing", sortValue: (t) => facilityName(t.facilityId) ?? "", cell: (t) => <>
@@ -438,7 +438,7 @@ function WorklistPage() {
                       )}
                     
           </>}
-          moreActions={(t) => [{ label: "Open chart", onSelect: () => { void navigate({ to: "/record/$patientId", params: { patientId: t.patientId } }); } }]}
+          moreActions={(t) => t.patientId ? [{ label: "Open chart", onSelect: () => { void navigate({ to: "/record/$patientId", params: { patientId: t.patientId } }); } }] : []}
         />
       )}
     </div>
