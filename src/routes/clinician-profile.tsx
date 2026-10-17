@@ -15,6 +15,7 @@ import { act } from "@/lib/actions/act";
 import { listSites } from "@/lib/providerReference";
 import { canEditTagList, getStaffProfile, listCareTags, PROFILE_DRAFT_LABEL, profileOwnerFor, availabilityPageTitle } from "@/lib/staffProfile";
 import { credentialSummary } from "@/lib/credentialAccess";
+import { QuickActionSettings } from "@/components/staff/QuickActionSettings";
 
 export const Route = createFileRoute("/clinician-profile")({
   head: () => ({
@@ -76,6 +77,8 @@ function StaffProfilePage() {
           </Select>
         )}
       </header>
+
+      <QuickActionSettings key={me.staffId} />
 
       <Card className="space-y-4 p-4" data-testid="profile-card">
         <div>
