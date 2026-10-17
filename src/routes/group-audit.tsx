@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 // §Group sessions — admin audit view for the eligibility gate.
 //
 // Same shape and discipline as the consent audit viewer: one filterable,
@@ -25,6 +26,20 @@ import { useActingRole } from "@/lib/roles";
 import { redactAuditEvents } from "@/lib/auditRedaction";
 import { roleSeesGroupJoinRequest } from "@/lib/groupJoinView";
 import { ClientDate } from "@/components/ClientDate";
+
+const copy = {
+  all: "All",
+  redacted: "Redacted",
+  group_audit_table: "Group audit",
+  group_audit_tableColumns: [
+    "When",
+    "Patient",
+    "Event",
+    "Actor",
+    "Group",
+    "Detail",
+  ],
+};
 
 export const Route = createFileRoute("/group-audit")({
   head: () => ({
@@ -190,66 +205,132 @@ function GroupAuditPage() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm" data-testid="group-audit-table">
-              <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="p-3">When</th>
-                  <th className="p-3">Patient</th>
-                  <th className="p-3">Event</th>
-                  <th className="p-3">Actor</th>
-                  <th className="p-3">Group</th>
-                  <th className="p-3">Detail</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {rows.map((r) => {
-                  const d = r.detail as Record<string, unknown>;
-                  const category = typeof d.category === "string" ? d.category : undefined;
-                  return (
-                    <tr key={r.event.id} className="align-top">
-                      <td className="p-3 whitespace-nowrap text-xs">
-                        <ClientDate value={r.event.at} />
-                      </td>
-                      <td className="p-3 text-xs">{r.subjectLabel}</td>
-                      <td className="p-3 text-xs">
-                        <Badge
-                          variant={r.event.action === "group_enrollment_blocked" || r.event.action === "group_join_approval_blocked" ? "outline" : "outline"}
-                          className="text-[10px]"
-                        >
-                          {ACTION_LABEL.get(r.event.action as never) ?? r.event.action.replace(/_/g, " ")}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-xs">
-                        {r.event.actorId ?? "—"}
-                        <div className="text-muted-foreground">
-                          {String(d.role ?? r.event.actorRole ?? "—")}
-                        </div>
-                      </td>
-                      <td className="p-3 text-xs">
-                        {typeof d.topic === "string" ? d.topic : (d.groupSessionId as string) ?? "—"}
-                        {category ? (
-                          <div className="text-muted-foreground">
-                            {CATEGORY_LABEL.get(category as never) ?? category}
-                          </div>
-                        ) : null}
-                      </td>
-                      <td className="p-3 text-xs text-muted-foreground">
-                        {typeof d.reason === "string"
-                          ? d.reason
-                          : Object.entries(d)
-                              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join("/") : String(v)}`)
-                              .join(" · ") || "—"}
-                        {r.redacted ? (
-                          <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <EyeOff className="h-3 w-3" /> {r.redactionReason}
-                          </div>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <StaffTable
+    views={[
+      { id: "all", label: copy.all, matches: () => true },
+      { id: "redacted", label: copy.redacted, matches: (r) => r.redacted },
+    ]}
+    rows={rows}
+    rowKey={(r) => r.event.id}
+    label={copy.group_audit_table}
+    testId="group-audit-table"
+    rowAttributes={(r) => ({ "data-row-id": r.event.id })}
+    columns={[
+      {
+        id: "c0",
+        label: copy.group_audit_tableColumns[0],
+        cell: (r) => {
+          const d = r.detail as Record<string, unknown>;
+          const category =
+            typeof d.category === "string" ? d.category : undefined;
+          return (
+            <>
+              <ClientDate value={r.event.at} />
+            </>
+          );
+        },
+      },
+      {
+        id: "c1",
+        label: copy.group_audit_tableColumns[1],
+        cell: (r) => {
+          const d = r.detail as Record<string, unknown>;
+          const category =
+            typeof d.category === "string" ? d.category : undefined;
+          return <>{r.subjectLabel}</>;
+        },
+      },
+      {
+        id: "c2",
+        label: copy.group_audit_tableColumns[2],
+        cell: (r) => {
+          const d = r.detail as Record<string, unknown>;
+          const category =
+            typeof d.category === "string" ? d.category : undefined;
+          return (
+            <>
+              <Badge
+                variant={
+                  r.event.action === "group_enrollment_blocked" ||
+                  r.event.action === "group_join_approval_blocked"
+                    ? "outline"
+                    : "outline"
+                }
+                className="text-sm"
+              >
+                {ACTION_LABEL.get(r.event.action as never) ??
+                  r.event.action.replace(/_/g, " ")}
+              </Badge>
+            </>
+          );
+        },
+      },
+      {
+        id: "c3",
+        label: copy.group_audit_tableColumns[3],
+        cell: (r) => {
+          const d = r.detail as Record<string, unknown>;
+          const category =
+            typeof d.category === "string" ? d.category : undefined;
+          return (
+            <>
+              {r.event.actorId ?? "—"}
+              <div className="text-muted-foreground">
+                {String(d.role ?? r.event.actorRole ?? "—")}
+              </div>
+            </>
+          );
+        },
+      },
+      {
+        id: "c4",
+        label: copy.group_audit_tableColumns[4],
+        cell: (r) => {
+          const d = r.detail as Record<string, unknown>;
+          const category =
+            typeof d.category === "string" ? d.category : undefined;
+          return (
+            <>
+              {typeof d.topic === "string"
+                ? d.topic
+                : ((d.groupSessionId as string) ?? "—")}
+              {category ? (
+                <div className="text-muted-foreground">
+                  {CATEGORY_LABEL.get(category as never) ?? category}
+                </div>
+              ) : null}
+            </>
+          );
+        },
+      },
+      {
+        id: "c5",
+        label: copy.group_audit_tableColumns[5],
+        cell: (r) => {
+          const d = r.detail as Record<string, unknown>;
+          const category =
+            typeof d.category === "string" ? d.category : undefined;
+          return (
+            <>
+              {typeof d.reason === "string"
+                ? d.reason
+                : Object.entries(d)
+                    .map(
+                      ([k, v]) =>
+                        `${k}: ${Array.isArray(v) ? v.join("/") : String(v)}`,
+                    )
+                    .join(" · ") || "—"}
+              {r.redacted ? (
+                <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                  <EyeOff className="h-3 w-3" /> {r.redactionReason}
+                </div>
+              ) : null}
+            </>
+          );
+        },
+      },
+    ]}
+  />
           </div>
         )}
       </Card>

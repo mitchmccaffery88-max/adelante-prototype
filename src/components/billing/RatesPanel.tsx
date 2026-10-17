@@ -1,3 +1,5 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+const tableCopy = { rates: "Rates", codes: "Billing codes and units" };
 // §Phase 7c — the real billing code table + effective-dated rate table on
 // /billing, and the per-claim amount cell (rate × units, basis, no-rate flag,
 // billing corrections). Every write goes through src/lib/rates.ts or
@@ -148,50 +150,12 @@ export function RatesPanel({ canWrite }: { canWrite: boolean }) {
           {!canWrite && <span className="text-[10px] text-muted-foreground">View only</span>}
         </header>
         {canWrite && <AddRateForm codes={codes.map((c) => c.code)} />}
-        <div className="divide-y md:hidden">
-          {rates.map((r) => (
-            <div key={r.id} className="p-3 text-xs space-y-1" data-testid="rate-row">
-              <div className="flex justify-between font-medium">
-                <span className="font-mono">{r.code}</span>
-                <span>{DOLLARS(r.amountCents)} / unit</span>
-              </div>
-              <div className="text-muted-foreground">{PROGRAM_LABEL[r.program]}</div>
-              <div>
-                {r.effectiveFrom} to {r.effectiveTo ?? "open"} {r.placeholder && <PlaceholderTag />}
-              </div>
-              {canWrite && !r.effectiveTo && <EndDateRate id={r.id} />}
-            </div>
-          ))}
-        </div>
-        <table className="hidden w-full text-sm md:table">
-          <thead className="bg-secondary/60 text-xs text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2 text-left">Code</th>
-              <th className="px-3 py-2 text-left">Program</th>
-              <th className="px-3 py-2 text-left">Per unit</th>
-              <th className="px-3 py-2 text-left">Effective</th>
-              <th className="px-3 py-2 text-left">Added by</th>
-              <th className="px-3 py-2 text-right" />
-            </tr>
-          </thead>
-          <tbody>
-            {rates.map((r) => (
-              <tr key={r.id} className="border-t" data-testid="rate-row">
-                <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
-                <td className="px-3 py-2 text-xs">{PROGRAM_LABEL[r.program]}</td>
-                <td className="px-3 py-2 font-mono text-xs">{DOLLARS(r.amountCents)}</td>
-                <td className="px-3 py-2 text-xs">
+<StaffTable rows={rates} rowKey={(r) => r.id} label={tableCopy.rates} testId="rates-table" rowTestId={() => "rate-row"} columns={[{ id: "code", label: "Code", mono: true, cell: (r) => <>{r.code}</> },{ id: "program", label: "Program", cell: (r) => <>{PROGRAM_LABEL[r.program]}</> },{ id: "amount", label: "Per unit", sortValue: (r) => r.amountCents, cell: (r) => <>{DOLLARS(r.amountCents)}</> },{ id: "effective", label: "Effective", cell: (r) => <>
                   {r.effectiveFrom} to {r.effectiveTo ?? "open"}
-                  {r.endReason && <div className="text-[10px] text-muted-foreground">Ended: {r.endReason}</div>}
-                </td>
-                <td className="px-3 py-2 text-xs">
+                  {r.endReason && <div className="text-sm text-muted-foreground">Ended: {r.endReason}</div>}
+                </> },{ id: "by", label: "Added by", cell: (r) => <>
                   {r.placeholder ? <PlaceholderTag /> : r.createdBy}
-                </td>
-                <td className="px-3 py-2 text-right">{canWrite && !r.effectiveTo && <EndDateRate id={r.id} />}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </> }]} primaryAction={(r) => <>{canWrite && !r.effectiveTo && <EndDateRate id={r.id} />}</>} />
       </section>
 
       <section className="rounded-xl border bg-card" data-testid="codes-section">
@@ -202,24 +166,18 @@ export function RatesPanel({ canWrite }: { canWrite: boolean }) {
           </p>
         </header>
         {canWrite && <CodeForm />}
-        <div className="divide-y">
-          {codes.map((c) => (
-            <div key={c.code} className="flex flex-wrap items-start justify-between gap-2 p-3 text-xs" data-testid="code-row">
-              <div>
+<StaffTable rows={codes} rowKey={(c) => c.code} label={tableCopy.codes} testId="codes-table" rowTestId={() => "code-row"} columns={[{ id: "code", label: "Code", mono: true, cell: (c) => c.code }, { id: "description", label: "Description and units", cell: (c) => <>              <div>
                 <span className="font-mono font-medium">{c.code}</span> — {c.description}
                 <div className="text-muted-foreground">
                   {unitBasisLabel(c)}
                   {c.unitType === "per_minutes" &&
                     (c.roundingRule === "half_plus" ? " · counts once more than half is delivered" : " · whole units only")}
                 </div>
-                {c.needsReview && <div className="text-[10px] text-attention">Needs billing review: {c.needsReview}</div>}
+                {c.needsReview && <div className="text-sm text-attention">Needs billing review: {c.needsReview}</div>}
               </div>
               {c.draft && (
-                <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-navy">Draft — pending billing review</span>
-              )}
-            </div>
-          ))}
-        </div>
+                <span className="rounded-full bg-gold/20 px-2 py-0.5 text-sm text-navy">Draft — pending billing review</span>
+              )}</> }]} />
       </section>
     </div>
   );

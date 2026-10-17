@@ -1,3 +1,4 @@
+import { StaffTable, RestrictedCell } from "@/components/staff/StaffTable";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdelanteEHR, useEhr, type AuditCategory } from "@/lib/ehr";
@@ -15,13 +16,26 @@ import { toast } from "sonner";
 import { useActingRole } from "@/lib/roles";
 import { ACCESS_LOG_ROLES } from "@/lib/accessLog";
 import { redactAuditEvents } from "@/lib/auditRedaction";
-import { EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { CatalogResolutionMetricsCard } from "@/components/admin/CatalogResolutionMetricsCard";
 import { RiskTextReviewPanel } from "@/components/admin/RiskTextReviewPanel";
 import { ClinicalContentReviewCard } from "@/components/admin/ClinicalContentReviewCard";
+
+const copy = {
+  all: "All",
+  redacted: "Redacted",
+  admin_audit_table: "Audit events",
+  admin_audit_tableColumns: [
+    "When",
+    "Category",
+    "Action",
+    "Patient",
+    "Actor",
+    "Detail",
+  ],
+};
 
 export const Route = createFileRoute("/admin-audit")({
   head: () => ({
@@ -264,58 +278,103 @@ function AdminAuditPage() {
         </Button>
       </div>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="p-0 overflow-hidden [&_td]:[overflow-wrap:anywhere]">
         {events.length === 0 ? (
           <div className="p-6 text-sm text-muted-foreground">No events recorded.</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground bg-muted/40">
-              <tr className="text-left">
-                <th className="p-2">When</th>
-                <th className="p-2">Category</th>
-                <th className="p-2">Action</th>
-                <th className="p-2">Patient</th>
-                <th className="p-2">Actor</th>
-                <th className="p-2">Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((r) => {
-                const e = r.event;
-                return (
-                <tr key={e.id} className="border-t align-top">
-                  <td className="p-2 whitespace-nowrap text-xs">
-                    <ClientDate value={e.at} />
-                  </td>
-                  <td className="p-2">
-                    <Badge variant="outline" className="text-[10px]">
-                      {e.category}
-                    </Badge>
-                  </td>
-                  <td className="p-2 font-mono text-[11px]">{e.action}</td>
-                  <td className="p-2 font-mono text-[11px]">
-                    {r.subjectLabel}
-                    {r.subjectMasked ? (
-                      <EyeOff className="inline h-3 w-3 ml-1 text-muted-foreground" />
-                    ) : null}
-                  </td>
-                  <td className="p-2 text-[11px]">
-                    {e.actorRole ?? "—"}
-                    {e.actorId ? <span className="text-muted-foreground"> · {e.actorId}</span> : null}
-                  </td>
-                  <td className="p-2 text-[11px] text-muted-foreground">
-                    {summarize(r.detail)}
-                    {r.redacted ? (
-                      <span className="ml-1 italic text-[10px]">
-                        [restricted — {r.redactionReason}]
-                      </span>
-                    ) : null}
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <StaffTable
+    views={[
+      { id: "all", label: copy.all, matches: () => true },
+      { id: "redacted", label: copy.redacted, matches: (r) => r.redacted },
+    ]}
+    rows={events}
+    rowKey={(r) => r.event.id}
+    label={copy.admin_audit_table}
+    testId="admin-audit-table"
+    rowAttributes={(r) => ({ "data-row-id": r.event.id })}
+    columns={[
+      {
+        id: "c0",
+        label: copy.admin_audit_tableColumns[0],
+        cell: (r) => {
+          const e = r.event;
+          return (
+            <>
+              <ClientDate value={e.at} />
+            </>
+          );
+        },
+      },
+      {
+        id: "c1",
+        label: copy.admin_audit_tableColumns[1],
+        cell: (r) => {
+          const e = r.event;
+          return (
+            <>
+              <Badge variant="outline" className="text-sm">
+                {e.category}
+              </Badge>
+            </>
+          );
+        },
+      },
+      {
+        id: "c2",
+        label: copy.admin_audit_tableColumns[2],
+        cell: (r) => {
+          const e = r.event;
+          return <>{e.action}</>;
+        },
+      },
+      {
+        id: "c3",
+        label: copy.admin_audit_tableColumns[3],
+        cell: (r) => {
+          const e = r.event;
+          return (
+            <>
+              {r.subjectMasked ? (
+                <RestrictedCell label={r.subjectLabel} />
+              ) : (
+                r.subjectLabel
+              )}
+            </>
+          );
+        },
+      },
+      {
+        id: "c4",
+        label: copy.admin_audit_tableColumns[4],
+        cell: (r) => {
+          const e = r.event;
+          return (
+            <>
+              {e.actorRole ?? "—"}
+              {e.actorId ? (
+                <span className="text-muted-foreground"> · {e.actorId}</span>
+              ) : null}
+            </>
+          );
+        },
+      },
+      {
+        id: "c5",
+        label: copy.admin_audit_tableColumns[5],
+        cell: (r) => {
+          const e = r.event;
+          return (
+            <>
+              {summarize(r.detail)}
+              {r.redacted ? (
+                <RestrictedCell label={`[restricted — ${r.redactionReason}]`} />
+              ) : null}
+            </>
+          );
+        },
+      },
+    ]}
+  />
         )}
       </Card>
     </div>

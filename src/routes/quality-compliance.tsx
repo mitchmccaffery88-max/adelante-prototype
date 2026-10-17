@@ -1,6 +1,7 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,14 @@ import { runAction } from "@/lib/actions/runAction";
 import { ACCESS_MODEL_DRAFT_LABEL, RESTRICT_ROLES, UNUSUAL_VOLUME_DRAFT, isRestricted, listRestrictedOpenItems } from "@/lib/chartAccess";
 import { canViewCompliance, outsideCaseloadReport, unusualVolumeFlags } from "@/lib/complianceMonitoring";
 import { ACCESS_LOG_LABEL } from "@/lib/accessLog";
+
+const copy = {
+  outside: "Charts opened outside caseload",
+  actor: "Staff member",
+  role: "Role",
+  charts: "Charts",
+  opens: "Opens",
+};
 
 export const Route = createFileRoute("/quality-compliance")({
   head: () => ({
@@ -64,12 +73,50 @@ function QualityCompliancePage() {
 
         <Card className="p-4" data-testid="outside-caseload-report">
           <h2 className="font-semibold">Charts opened outside caseload — this week</h2>
-          {rows.length ? <table className="mt-2 w-full text-left text-sm"><thead><tr className="border-b"><th className="p-2">Staff member</th><th className="p-2">Role</th><th className="p-2">Charts</th><th className="p-2">Opens</th><th /></tr></thead><tbody>
-            {rows.map((r) => (<Fragment key={r.actorId}>
-              <tr key={r.actorId} className="border-b"><td className="p-2">{r.actorName}</td><td className="p-2">{r.role}</td><td className="p-2">{r.charts}</td><td className="p-2">{r.opens}</td><td className="p-2"><Button size="sm" variant="ghost" onClick={() => setDrill(drill === r.actorId ? null : r.actorId)}>{drill === r.actorId ? "Hide" : "Access log"}</Button></td></tr>
-              {drill === r.actorId && <tr key={`${r.actorId}-d`}><td colSpan={5} className="bg-secondary/40 p-2"><ul className="text-xs">{r.rows.map((x) => <li key={x.id}>{new Date(x.at).toLocaleString()} · {name(x.patientId)} · {x.sectionId}</li>)}</ul></td></tr>}
-            </Fragment>))}
-          </tbody></table> : <p className="mt-2 text-sm text-muted-foreground">No charts opened outside caseload this week.</p>}
+          <StaffTable
+    rows={rows}
+    rowKey={(r) => r.actorId}
+    label={copy.outside}
+    testId="outside-caseload-table"
+    emptyState="No charts opened outside caseload this week."
+    columns={[
+      { id: "actor", label: copy.actor, cell: (r) => r.actorName },
+      { id: "role", label: copy.role, cell: (r) => r.role },
+      {
+        id: "charts",
+        label: copy.charts,
+        cell: (r) => r.charts,
+        sortValue: (r) => r.charts,
+      },
+      {
+        id: "opens",
+        label: copy.opens,
+        cell: (r) => r.opens,
+        sortValue: (r) => r.opens,
+      },
+    ]}
+    primaryAction={(r) => (
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => setDrill(drill === r.actorId ? null : r.actorId)}
+      >
+        {drill === r.actorId ? "Hide" : "Access log"}
+      </Button>
+    )}
+    rowDetails={(r) =>
+      drill === r.actorId ? (
+        <ul className="text-sm">
+          {r.rows.map((x) => (
+            <li key={x.id}>
+              {new Date(x.at).toLocaleString()} · {name(x.patientId)} ·{" "}
+              {x.sectionId}
+            </li>
+          ))}
+        </ul>
+      ) : null
+    }
+  />
         </Card>
 
         <Card className="p-4" data-testid="unusual-volume">

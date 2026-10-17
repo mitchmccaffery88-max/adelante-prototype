@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Quality pass Group A — supervision administration.
 //
@@ -30,14 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, Lock, UserCheck } from "lucide-react";
 
@@ -138,31 +131,14 @@ function SupervisionAdminPage() {
             <EmptyState title="No supervised staff" description="Nothing to configure." />
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Staff member</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Supervisor</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((s) => {
-                const status = supervisionStatus(s.id);
-                return (
-                  <TableRow key={s.id} data-testid={`supervision-row-${s.id}`}>
-                    <TableCell className="text-navy">
-                      {s.name}
+          <StaffTable rows={rows} rowKey={(s) => s.id} label={adminTableCopy.admin_supervision_table} testId="admin-supervision-table" rowTestId={(s) => `supervision-row-${s.id}`} columns={[{ id: "column-0", label: adminTableCopy.admin_supervision_table_0, mono: true, cell: (s) => { const status = supervisionStatus(s.id); return <>{s.name}
                       {s.credential ? (
-                        <span className="ml-1 font-mono text-xs text-muted-foreground">
+                        <span className="ml-1 font-mono text-sm text-muted-foreground">
                           {s.credential}
                         </span>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-sm">{roleLabel(s.role)}</TableCell>
-                    <TableCell>
-                      {canWrite ? (
+                      ) : null}</>; } },
+{ id: "column-1", label: adminTableCopy.admin_supervision_table_1, cell: (s) => { const status = supervisionStatus(s.id); return <>{roleLabel(s.role)}</>; } },
+{ id: "column-2", label: adminTableCopy.admin_supervision_table_2, cell: (s) => { const status = supervisionStatus(s.id); return <>{canWrite ? (
                         <Select
                           value={s.supervisedBy ?? NONE}
                           onValueChange={(v) => change(s.id, v)}
@@ -186,23 +162,15 @@ function SupervisionAdminPage() {
                         <span className="text-sm">
                           {STAFF_ROSTER.find((x) => x.id === s.supervisedBy)?.name ?? "Unassigned"}
                         </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {status.satisfied ? (
+                      )}</>; } },
+{ id: "column-3", label: adminTableCopy.admin_supervision_table_3, cell: (s) => { const status = supervisionStatus(s.id); return <>{status.satisfied ? (
                         <StatusChip lang="en" state="done" label="Billable" />
                       ) : (
                         <div className="space-y-1">
                           <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label="Not billable" />
-                          <p className="max-w-xs text-xs text-muted-foreground">{status.reason}</p>
+                          <p className="max-w-xs text-sm text-muted-foreground">{status.reason}</p>
                         </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      )}</>; } }]}  />
         )}
       </Card>
 
@@ -219,3 +187,10 @@ function SupervisionAdminPage() {
     </div>
   );
 }
+const adminTableCopy = {
+admin_supervision_table_0: "Staff member",
+admin_supervision_table_1: "Role",
+admin_supervision_table_2: "Supervisor",
+admin_supervision_table_3: "Status",
+admin_supervision_table: "admin supervision table"
+};

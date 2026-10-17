@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 // §Scheduling rule engine — admin registry.
 //
 // Rules are authored, previewed and MANUALLY run HERE (one `scheduling_rules`
@@ -33,14 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, Ban, Eye, Lock, Pencil, Play, Plus, RotateCcw, Workflow } from "lucide-react";
 
@@ -230,52 +223,25 @@ function SchedulingRulesPage() {
         {rules.length === 0 ? (
           <EmptyState title="No rules yet" description="Create a rule to generate worklist tasks." />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rule</TableHead>
-                <TableHead>Condition</TableHead>
-                <TableHead>Task type</TableHead>
-                <TableHead>Cadence</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Matches now</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rules.map((r) => (
-                <TableRow key={r.id} className={r.active ? "" : "opacity-60"}>
-                  <TableCell>
-                    <p className="font-medium text-navy">{r.label}</p>
-                    <p className="text-xs text-muted-foreground">{r.key}</p>
+          <StaffTable rows={rules} rowKey={(r) => r.id} label={adminTableCopy.admin_scheduling_rules_table} testId="admin-scheduling-rules-table"  views={[{ id: "all", label: "All", matches: () => true }, { id: "active", label: "Active", matches: (r) => r.active !== false }, { id: "inactive", label: "Inactive", matches: (r) => r.active === false }]} columns={[{ id: "column-0", label: adminTableCopy.admin_scheduling_rules_table_0, cell: (r) => {  return <><p className="font-medium text-navy">{r.label}</p>
+                    <p className="text-sm text-muted-foreground">{r.key}</p>
                     {!r.active && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Deactivated — {r.deactivationReason}
                       </p>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {r.match.activeProblemCategory && (
+                    )}</>; } },
+{ id: "column-1", label: adminTableCopy.admin_scheduling_rules_table_1, cell: (r) => {  return <>{r.match.activeProblemCategory && (
                       <div>Active problem: {r.match.activeProblemCategory}</div>
                     )}
                     {r.match.activeOrderFrequencyCode && (
                       <div>Active order freq: {r.match.activeOrderFrequencyCode}</div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs">{r.taskType}</TableCell>
-                  <TableCell className="text-xs">{cadenceLabel(r.cadenceMinutes)}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{r.priority}</Badge>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {AdelanteEHR.patientsMatchingRule(r).length}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {canWrite && (
+                    )}</>; } },
+{ id: "column-2", label: adminTableCopy.admin_scheduling_rules_table_2, cell: (r) => {  return <>{r.taskType}</>; } },
+{ id: "column-3", label: adminTableCopy.admin_scheduling_rules_table_3, cell: (r) => {  return <>{cadenceLabel(r.cadenceMinutes)}</>; } },
+{ id: "column-4", label: adminTableCopy.admin_scheduling_rules_table_4, cell: (r) => {  return <><Badge variant="secondary">{r.priority}</Badge></>; } },
+{ id: "column-5", label: adminTableCopy.admin_scheduling_rules_table_5, cell: (r) => {  return <>{AdelanteEHR.patientsMatchingRule(r).length}</>; } }]} primaryAction={(r) => canWrite ? <Button size="sm" variant="outline" onClick={() => startEdit(r)}>Edit</Button> : null} moreContent={(r) => <>{canWrite && (
                       <div className="flex justify-end gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => startEdit(r)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                        
                         {r.active ? (
                           <Button size="sm" variant="ghost" onClick={() => setDeactivating(r)}>
                             <Ban className="h-3.5 w-3.5" />
@@ -297,12 +263,7 @@ function SchedulingRulesPage() {
                           </Button>
                         )}
                       </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    )}</>} />
         )}
       </Card>
 
@@ -605,3 +566,13 @@ function RunHistoryCard() {
     </Card>
   );
 }
+
+const adminTableCopy = {
+admin_scheduling_rules_table_0: "Rule",
+admin_scheduling_rules_table_1: "Condition",
+admin_scheduling_rules_table_2: "Task type",
+admin_scheduling_rules_table_3: "Cadence",
+admin_scheduling_rules_table_4: "Priority",
+admin_scheduling_rules_table_5: "Matches now",
+admin_scheduling_rules_table: "admin scheduling rules table"
+};

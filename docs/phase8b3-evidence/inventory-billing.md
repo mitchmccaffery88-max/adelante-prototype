@@ -1,0 +1,16 @@
+
+## Billing/claims rollback inventory (649459806dd4)
+- `src/routes/billing.tsx` claims: BillingPage rows joins non-scheduled appointments to claims by encounter, adds claims without appointments, date descending; scheduled appointments remain hidden. `filtered` narrows by lane, status bucket, no-rate, arrangement missing, positive balance. Hooks billing-row/data-encounter, billing-row-lane/charge/status; writers ClaimActions -> advance, otherwise View only. Denied span/reason retained exactly.
+- Same file ISL: `islRows` from rows lane grant_isl only, existing date order; other lanes hidden, table absent when empty; no row actions/hooks. downloadIsl unchanged.
+- Same file credentials: all listClinicians in source order, no hidden rows; canBook reason visible; no actions/hooks.
+- `src/routes/admin-claims.tsx` claims: listClaims -> visibleClaims existing source/search/state/outcome filters -> sortClaimRows (patient/code/clinician/state/numeric charge); no added rows. claim-row; data-cell patient/code/clinician/state/charge; sort-* hooks; duplicate-review/review-flag/gate-blocked hooks. Move transitionClaim primary; Deny confirmation.ask secondary, read-only View only. Existing group disclosure projection retained.
+- Same file blocked: audit community_billing_blocked -> visibleBlocked existing search/source filters; shown only blocked outcome; blocked-attempt-row; read-only.
+- `src/components/billing/RatesPanel.tsx`: listRates source order all rows, duplicated desktop/mobile; rate-row, EndDateRate only writer/open rates; PlaceholderTag retained. listBillingCodes source order all codes, code-row; no actions. Existing forms unchanged.
+- `src/components/admin/CalaimCodesSection.tsx`: listCalaimCodes -> category filter; source order; other categories hidden. data-calaim-code. Deactivate -> deactivate confirmation, Reactivate -> reactivate, unchanged handlers; all/active/retired views only narrow.
+
+Selector audit: searched e2e and component tests for row/cell/sort/action hooks; no positional selector found on these tables. Existing catalog-governance Deactivate dialog assertion preserved. No permissions, money internals, exports or mutation logic intentionally changed.
+
+## Completion
+Converted billing-table, billing-isl-table, billing-credentials-table, claims-table, blocked-attempts-table, rates-table, codes-table, calaim-codes-table in the four inventoried source files. Corrected inventory detail: CalAIM uses listQualifyingCodes(true), has no category filter, and preserves all active/retired rows in original order. Its existing columns are code/description/added/status (not rates/categories).
+Protected ClaimAmount/PatientBalance/CorrectClaim, DOLLARS, downloadCsv/downloadIsl and advance remain unchanged. No StaffTable changes. Existing revenue/privacy observations: admin claim Move uses the existing direct transitionClaim path; no authorization or mutation changes made. Existing monetary internals retain their small typography by explicit exclusion.
+Created billingTables8b3.test.tsx and billingTables8b3.spec.ts. Focused Vitest: 1 test passed. Browser spec written, not run per coordinator rules. ESLint excluding formatting: zero errors, four existing-style warnings. Default formatter lint reports formatting deviations; no broad formatting was applied to protected functions.

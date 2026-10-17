@@ -1,3 +1,5 @@
+import type { ExportRow } from "@/lib/dmcOdsReadiness";
+import { StaffTable } from "@/components/staff/StaffTable";
 import { CircleAlert } from "lucide-react";
 // §Phase 10d-3 — DMC-ODS operational readiness (PROTOTYPE). CalOMS
 // completeness worklist + export-ready per-episode view. Part 2 protected:
@@ -112,18 +114,11 @@ function ReadinessPage() {
         {isReportingOnly(acting.role) && <Badge variant="outline" data-testid="reporting-only-layout">Reporting-access layout · {REPORTING_ONLY_LAYOUT_LABEL}</Badge>}
         <p className="text-[11px] text-muted-foreground">Every download is audited (who, when, row count — never the values).</p>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr>{cols.map((c) => <th key={c} className="whitespace-nowrap border-b border-border px-2 py-1 text-left font-medium">{c}</th>)}</tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r["Episode ID"]}>{cols.map((c) => <td key={c} className="whitespace-nowrap border-b border-border/50 px-2 py-1">{r[c] || "—"}</td>)}</tr>
-              ))}
-            </tbody>
-          </table>
+          <StaffTable rows={rows} rowKey={(r) => r["Episode ID"]} label={adminPreviewCopy.label} testId="dmc-ods-preview-table" columns={cols.map((c) => ({ id: c, label: c, mono: c.includes("ID"), cell: (r: ExportRow) => r[c] || "—" }))} />
         </div>
       </Card>
     </div>
   );
 }
+
+const adminPreviewCopy = { label: "DMC-ODS export preview" };

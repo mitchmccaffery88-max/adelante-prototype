@@ -1,9 +1,9 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 // §Batch C1/C2 — organisation-wide Part 2 disclosure log + record-access log.
 // sys_admin and the compliance stand-in (credentialing coordinator) only.
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
-import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import {
@@ -17,8 +17,9 @@ import {
 } from "@/lib/part2Disclosure";
 import { accessEventsFor, ACCESS_LOG_LABEL } from "@/lib/accessLog";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/disclosure-log")({
   head: () => ({
@@ -33,6 +34,17 @@ export const Route = createFileRoute("/disclosure-log")({
   }),
   component: DisclosureLogPage,
 });
+
+const copy = {
+  disclosures: "Disclosures",
+  access: "Record access",
+  when: "When",
+  person: "Person",
+  recipient: "Recipient",
+  purpose: "Purpose",
+  detail: "Detail",
+  actor: "Who",
+};
 
 const RECIPIENT_TYPES: RecipientType[] = ["internal", "advocate", "provider", "hie", "legal", "county", "patient", "other"];
 
@@ -89,45 +101,90 @@ function DisclosureLogPage() {
           <input type="checkbox" checked={emergencyOnly} onChange={(e) => setEmergencyOnly(e.target.checked)} /> Emergencies only
         </label>
       </div>
-      <Card className="divide-y divide-border" data-testid="disclosure-log-table">
-        {rows.length === 0 && <p className="p-4 text-sm text-muted-foreground">No disclosures match.</p>}
-        {rows.map((r) => (
-          <div key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 text-xs">
-            <span className="text-muted-foreground">{new Date(r.at).toLocaleString()}</span>
-            <span className="font-medium">{name(r.patientId)}</span>
-            <span>to {r.recipient.name}{r.recipient.organization ? ` (${r.recipient.organization})` : ""} · {r.recipient.type}</span>
-            <span>· {r.purpose}</span>
-            <span className="text-muted-foreground">· {CHANNEL_LABEL[r.channel]} · {r.recordClasses.join(", ")} · {r.consentRef} · {r.actorName} ({r.actingRole.replace(/_/g, " ")}){r.viewedAs ? ` as ${r.viewedAs}` : ""}</span>
+      <StaffTable
+    rows={rows}
+    rowKey={(r) => r.id}
+    label={copy.disclosures}
+    testId="disclosure-log-table"
+    emptyState="No disclosures match."
+    columns={[
+      {
+        id: "when",
+        label: copy.when,
+        cell: (r) => new Date(r.at).toLocaleString(),
+      },
+      { id: "person", label: copy.person, cell: (r) => name(r.patientId) },
+      {
+        id: "recipient",
+        label: copy.recipient,
+        cell: (r) => (
+          <>
+            to {r.recipient.name}
+            {r.recipient.organization
+              ? ` (${r.recipient.organization})`
+              : ""} · {r.recipient.type}
+          </>
+        ),
+      },
+      { id: "purpose", label: copy.purpose, cell: (r) => r.purpose },
+      {
+        id: "detail",
+        label: copy.detail,
+        cell: (r) => (
+          <>
+            {CHANNEL_LABEL[r.channel]} · {r.recordClasses.join(", ")} ·{" "}
+            {r.consentRef} · {r.actorName} ({r.actingRole.replace(/_/g, " ")})
+            {r.viewedAs ? ` as ${r.viewedAs}` : ""}
             {r.simulated && <Badge variant="outline">Simulated</Badge>}
             {r.emergency && (
-              <>
-                <Badge variant="outline">Emergency — {r.complianceReview === "reviewed" ? "reviewed" : "review pending"}</Badge>
-                {r.complianceReview !== "reviewed" && (
-                  <Button size="sm" variant="outline" className="h-7" onClick={() => {
-                    try { markEmergencyReviewed(r.id, { name: me.staffName, role: me.role, staffId: me.staffId }); AdelanteEHR._emit(); toast.success("Marked reviewed."); }
-                    catch (e) { toast.error((e as Error).message); }
-                  }}>Mark reviewed</Button>
-                )}
-              </>
+              <Badge variant="outline">
+                Emergency —{" "}
+                {r.complianceReview === "reviewed"
+                  ? "reviewed"
+                  : "review pending"}
+              </Badge>
             )}
-          </div>
-        ))}
-      </Card>
+          </>
+        ),
+      },
+    ]}
+    primaryAction={(r) => r.emergency && r.complianceReview !== "reviewed" ? (
+      <Button size="sm" variant="outline" onClick={() => {
+        try { markEmergencyReviewed(r.id, { name: me.staffName, role: me.role, staffId: me.staffId }); AdelanteEHR._emit(); toast.success("Marked reviewed."); }
+        catch (e) { toast.error((e as Error).message); }
+      }}>Mark reviewed</Button>
+    ) : null}
+  />
       <div>
         <h2 className="text-base font-semibold text-navy">Who accessed this record</h2>
         <p className="text-xs text-muted-foreground">{ACCESS_LOG_LABEL}. Pick a person above.</p>
       </div>
       {patientId && (
-        <Card className="divide-y divide-border" data-testid="access-log-table">
-          {access.length === 0 && <p className="p-4 text-sm text-muted-foreground">No record views logged yet.</p>}
-          {access.map((a) => (
-            <div key={a.id} className="flex flex-wrap gap-x-3 p-3 text-xs">
-              <span className="text-muted-foreground">{new Date(a.at).toLocaleString()}</span>
-              <span className="font-medium">{a.actorName}</span>
-              <span className="text-muted-foreground">{(a.role ?? "").replace(/_/g, " ")} · {a.kind} · {a.sectionId}{a.viewedAs ? ` · viewed as ${a.viewedAs}` : ""}</span>
-            </div>
-          ))}
-        </Card>
+        <StaffTable
+    rows={access}
+    rowKey={(a) => a.id}
+    label={copy.access}
+    testId="access-log-table"
+    emptyState="No record views logged yet."
+    columns={[
+      {
+        id: "when",
+        label: copy.when,
+        cell: (a) => new Date(a.at).toLocaleString(),
+      },
+      { id: "actor", label: copy.actor, cell: (a) => a.actorName },
+      {
+        id: "detail",
+        label: copy.detail,
+        cell: (a) => (
+          <>
+            {(a.role ?? "").replace(/_/g, " ")} · {a.kind} · {a.sectionId}
+            {a.viewedAs ? ` · viewed as ${a.viewedAs}` : ""}
+          </>
+        ),
+      },
+    ]}
+  />
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 // §Admin governance — frequency catalog + local RxNav suppressions.
@@ -26,14 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ArrowLeft, Ban, Clock, Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
@@ -191,60 +184,30 @@ function CatalogGovernancePage() {
             </Button>
           )}
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Label</TableHead>
-              <TableHead>Admin times</TableHead>
-              <TableHead>PRN</TableHead>
-              <TableHead>In use</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {frequencies.map((f) => {
-              const usage = AdelanteEHR.frequencyUsage(f.code);
-              return (
-                <TableRow key={f.code} className={f.active === false ? "opacity-60" : undefined}>
-                  <TableCell className="font-mono text-xs">
-                    {f.code}
-                    {f.active === false && (
-                      <Badge variant="outline" className="ml-1.5">
-                        Inactive
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {f.label}
+        <StaffTable rows={frequencies} rowKey={(f) => f.code} label={adminTableCopy.admin_frequencies_table} testId="admin-frequencies-table"  views={[{ id: "all", label: "All", matches: () => true }, { id: "active", label: "Active", matches: (r) => r.active !== false }, { id: "inactive", label: "Inactive", matches: (r) => r.active === false }]} columns={[{ id: "column-0", label: adminTableCopy.admin_frequencies_table_0, mono: true, cell: (f) => { const usage = AdelanteEHR.frequencyUsage(f.code); return <>{f.code}</>; } },
+{ id: "column-1", label: adminTableCopy.admin_frequencies_table_1, cell: (f) => { const usage = AdelanteEHR.frequencyUsage(f.code); return <>{f.label}
+                    {f.active === false && <Badge variant="outline">Inactive</Badge>}
                     {f.description && (
-                      <span className="block text-xs text-muted-foreground">{f.description}</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {f.isPrn ? "—" : f.adminTimes.map((h) => `${String(h).padStart(2, "0")}:00`).join(", ")}
+                      <span className="block text-sm text-muted-foreground">{f.description}</span>
+                    )}</>; } },
+{ id: "column-2", label: adminTableCopy.admin_frequencies_table_2, cell: (f) => { const usage = AdelanteEHR.frequencyUsage(f.code); return <>{f.isPrn ? "—" : f.adminTimes.map((h) => `${String(h).padStart(2, "0")}:00`).join(", ")}
                     {f.intervalDays && f.intervalDays > 1 && (
                       <span className="block text-muted-foreground">
                         every {f.intervalDays} days
                       </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {f.isPrn
+                    )}</>; } },
+{ id: "column-3", label: adminTableCopy.admin_frequencies_table_3, cell: (f) => { const usage = AdelanteEHR.frequencyUsage(f.code); return <>{f.isPrn
                       ? [
                           f.maxPerDay ? `max ${f.maxPerDay}/day` : null,
                           f.minGapMinutes ? `${f.minGapMinutes} min gap` : null,
                         ]
                           .filter(Boolean)
                           .join(" · ") || "PRN"
-                      : "No"}
-                  </TableCell>
-                  <TableCell className="text-xs">{usage.count}</TableCell>
-                  <TableCell className="space-x-1 text-right">
-                    {canWrite && (
+                      : "No"}</>; } },
+{ id: "column-4", label: adminTableCopy.admin_frequencies_table_4, cell: (f) => { const usage = AdelanteEHR.frequencyUsage(f.code); return <>{usage.count}</>; } }]} primaryAction={(f) => <>{canWrite && (
                       <>
                         <Button size="sm" variant="ghost" onClick={() => openEdit(f)}>
-                          <Pencil className="h-3.5 w-3.5" />
+                          <Pencil aria-label="Edit" className="h-3.5 w-3.5" />
                         </Button>
                         {f.active === false ? (
                           <Button
@@ -270,16 +233,10 @@ function CatalogGovernancePage() {
                           </Button>
                         )}
                         <Button size="sm" variant="ghost" onClick={() => remove(f)}>
-                          <Trash2 className="h-3.5 w-3.5 text-attention" />
+                          <Trash2 aria-label="Delete" className="h-3.5 w-3.5 text-attention" />
                         </Button>
                       </>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    )}</>} />
         <p className="text-xs text-muted-foreground">
           A frequency referenced by any signed or held order cannot be deleted — deactivate it with
           a reason instead, which removes it from the picker while existing orders keep resolving.
@@ -333,37 +290,19 @@ function CatalogGovernancePage() {
         {suppressions.length === 0 ? (
           <p className="text-xs text-muted-foreground">No suppressions.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Match</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Added</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {suppressions.map((s) => (
-                <TableRow key={s.id} className={s.active ? undefined : "opacity-60"}>
-                  <TableCell className="text-sm">
-                    {s.drugName ?? `RxCUI ${s.rxcui}`}
+          <StaffTable rows={suppressions} rowKey={(s) => s.id} label={adminTableCopy.admin_suppressions_table} testId="admin-suppressions-table"  views={[{ id: "all", label: "All", matches: () => true }, { id: "active", label: "Active", matches: (r) => r.active !== false }, { id: "inactive", label: "Inactive", matches: (r) => r.active === false }]} columns={[{ id: "column-0", label: adminTableCopy.admin_suppressions_table_0, cell: (s) => {  return <>{s.drugName ?? `RxCUI ${s.rxcui}`}
                     {!s.active && (
                       <Badge variant="outline" className="ml-1.5">
                         Lifted
                       </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {s.reason}
+                    )}</>; } },
+{ id: "column-1", label: adminTableCopy.admin_suppressions_table_1, cell: (s) => {  return <>{s.reason}
                     {s.deactivatedReason && (
                       <span className="block text-muted-foreground">
                         Lifted: {s.deactivatedReason}
                       </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{s.createdBy}</TableCell>
-                  <TableCell className="text-right">
-                    {canWrite &&
+                    )}</>; } },
+{ id: "column-2", label: adminTableCopy.admin_suppressions_table_2, cell: (s) => {  return <>{s.createdBy}</>; } }]} primaryAction={(s) => <>{canWrite &&
                       (s.active ? (
                         <Button
                           size="sm"
@@ -386,12 +325,7 @@ function CatalogGovernancePage() {
                         >
                           Re-apply
                         </Button>
-                      ))}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      ))}</>} />
         )}
       </Card>
 
@@ -586,3 +520,15 @@ function CatalogGovernancePage() {
     </div>
   );
 }
+const adminTableCopy = {
+admin_frequencies_table_0: "Code",
+admin_frequencies_table_1: "Label",
+admin_frequencies_table_2: "Admin times",
+admin_frequencies_table_3: "PRN",
+admin_frequencies_table_4: "In use",
+admin_frequencies_table: "admin frequencies table",
+admin_suppressions_table_0: "Match",
+admin_suppressions_table_1: "Reason",
+admin_suppressions_table_2: "Added",
+admin_suppressions_table: "admin suppressions table"
+};

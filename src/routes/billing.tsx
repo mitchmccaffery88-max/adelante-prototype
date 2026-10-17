@@ -1,3 +1,6 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+import { StatusChip } from "@/components/ui/status-chip";
+const tableCopy = { claims: "Claims worklist", isl: "ISL encounters", credentials: "Credentialing" };
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 import { BillingWorkspaceTiles } from "@/components/ops/OpsWorkspace";
@@ -406,75 +409,29 @@ function BillingPage() {
               <span className="text-xs text-muted-foreground">No claims match these filters.</span>
             )}
           </div>
-          <div className="rounded-xl border bg-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/60 text-xs text-muted-foreground">
-                <tr>
-                  <th className="text-left px-3 py-2">Date</th>
-                  <th className="text-left px-3 py-2">Program ID</th>
-                  <th className="text-left px-3 py-2">Clinician</th>
-                  <th className="text-left px-3 py-2">Lane</th>
-                  <th className="text-left px-3 py-2">Charge</th>
-                  <th className="text-left px-3 py-2">Status</th>
-                  <th className="text-right px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(({ key, date, appt, claim, patient, clinicianId, lane }) => {
-                  const clinician = clinicians.find((c) => c.id === clinicianId);
-                  const bucket = claim ? claimBillingBucket(claim.state) : null;
-                  return (
-                    <tr key={key} className="border-t" data-testid="billing-row" data-encounter={claim?.encounterId ?? appt?.id}>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        {new Date(date).toLocaleDateString()}
-                      </td>
-                      <td className="px-3 py-2">{patient?.programId ?? "—"}</td>
-                      <td className="px-3 py-2">{clinician?.name ?? "—"}</td>
-                      <td className="px-3 py-2">
-                        <span data-testid="billing-row-lane" className={`text-[10px] rounded-full px-2 py-0.5 ${lane === "unknown" ? "bg-gold/20 text-navy" : "bg-navy/10 text-navy"}`}>
+          <div className="rounded-xl border bg-card overflow-x-auto [&_select]:max-w-full">
+<StaffTable rows={filtered} rowKey={(r) => r.key} label={tableCopy.claims} testId="billing-table" rowTestId={() => "billing-row"} rowAttributes={(r) => ({ "data-encounter": r.claim?.encounterId ?? r.appt?.id })} columns={[{ id: "date", label: "Date", cell: ({ date, appt, claim, patient, clinicianId, lane }) => { const clinician = clinicians.find((c) => c.id === clinicianId); const bucket = claim ? claimBillingBucket(claim.state) : null; return <>{new Date(date).toLocaleDateString()}</>; } },{ id: "patient", label: "Program ID", mono: true, cell: ({ date, appt, claim, patient, clinicianId, lane }) => { const clinician = clinicians.find((c) => c.id === clinicianId); const bucket = claim ? claimBillingBucket(claim.state) : null; return <>{patient?.programId ?? "—"}</>; } },{ id: "clinician", label: "Clinician", cell: ({ date, appt, claim, patient, clinicianId, lane }) => { const clinician = clinicians.find((c) => c.id === clinicianId); const bucket = claim ? claimBillingBucket(claim.state) : null; return <>{clinician?.name ?? "—"}</>; } },{ id: "lane", label: "Lane", cell: ({ date, appt, claim, patient, clinicianId, lane }) => { const clinician = clinicians.find((c) => c.id === clinicianId); const bucket = claim ? claimBillingBucket(claim.state) : null; return <><span data-testid="billing-row-lane" className={`text-sm rounded-full px-2 py-0.5 ${lane === "unknown" ? "bg-gold/20 text-navy" : "bg-navy/10 text-navy"}`}>
                           {LANE_LABEL[lane]}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs" data-testid="billing-row-charge">
-                        {claim ? <ClaimAmount claim={claim} /> : "—"}
-                      </td>
-                      <td className="px-3 py-2" data-testid="billing-row-status">
-                        {claim && bucket ? (
+                        </span></>; } },{ id: "charge", label: "Charge", testId: "billing-row-charge", mono: true, sortValue: (r) => r.claim?.chargeCents ?? -1, cell: ({ date, appt, claim, patient, clinicianId, lane }) => { const clinician = clinicians.find((c) => c.id === clinicianId); const bucket = claim ? claimBillingBucket(claim.state) : null; return <>{claim ? <ClaimAmount claim={claim} /> : "—"}</>; } },{ id: "status", label: "Status", testId: "billing-row-status", cell: ({ date, appt, claim, patient, clinicianId, lane }) => { const clinician = clinicians.find((c) => c.id === clinicianId); const bucket = claim ? claimBillingBucket(claim.state) : null; return <>{claim && bucket ? (
                           <>
-                            <span className={`text-[10px] rounded-full px-2 py-0.5 ${STATUS_STYLE[bucket]}`}>
+                            {bucket === "denied" ? (<span className={`text-[10px] rounded-full px-2 py-0.5 ${STATUS_STYLE[bucket]}`}>
                               {BILLING_STATUS_ROWS.find((r) => r.status === bucket)?.label}
-                            </span>
+                            </span>) : <StatusChip lang="en" state={claim.state === "documented" ? "upnext" : claim.state === "submitted" ? "team" : claim.state === "paid" ? "done" : claim.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={BILLING_STATUS_ROWS.find((r) => r.status === bucket)?.label ?? bucket} />}
                             <ClaimSignatureLine claim={claim} />
                             {bucket === "draft" && (
-                              <span className="ml-1 text-[10px] text-muted-foreground">{claim.state}</span>
+                              <span className="ml-1 text-sm text-muted-foreground">{claim.state}</span>
                             )}
                             {claim.state === "denied" && claim.denialReason && (
                               <div className="text-[10px] text-attention mt-0.5">{claim.denialReason}</div>
                             )}
                           </>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground">{appt ? noClaimLabel(appt) : "—"}</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        {!claim ? null : canWrite ? (
+                          <span className="text-sm text-muted-foreground">{appt ? noClaimLabel(appt) : "—"}</span>
+                        )}</>; } }]} primaryAction={({ claim, lane }) => <>{!claim ? null : canWrite ? (
                           <ClaimActions claim={claim} lane={lane} onAdvance={advance} />
                         ) : (
-                          <span className="text-[10px] text-muted-foreground">View only</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">
-                      No claims to show.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                          <span className="text-sm text-muted-foreground">View only</span>
+                        )}</>} emptyState="No claims to show." />
           </div>
         </section>
       )}
@@ -506,36 +463,7 @@ function BillingPage() {
           </div>
           {islRows.length > 0 && (
             <div className="rounded-xl border bg-card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-secondary/60 text-xs text-muted-foreground">
-                  <tr>
-                    <th className="text-left px-3 py-2">Date</th>
-                    <th className="text-left px-3 py-2">Program ID</th>
-                    <th className="text-left px-3 py-2">Service</th>
-                    <th className="text-left px-3 py-2">Reason</th>
-                    <th className="text-left px-3 py-2">Charge</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {islRows.map(({ key, date, appt, claim, patient }) => (
-                    <tr key={key} className="border-t">
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        {new Date(date).toLocaleDateString()}
-                      </td>
-                      <td className="px-3 py-2">{patient?.programId ?? "—"}</td>
-                      <td className="px-3 py-2 text-xs">
-                        {appt?.serviceType?.replace("_", " ") ?? claim?.serviceCode ?? "—"}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-muted-foreground">
-                        {appt?.islReason ?? "uninsured"}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs">
-                        {claim ? <ClaimAmount claim={claim} /> : "No claim"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <StaffTable rows={islRows} rowKey={(r) => r.key} label={tableCopy.isl} testId="billing-isl-table" columns={[{ id: "date", label: "Date", cell: ({ date, appt, claim, patient }) => <>{new Date(date).toLocaleDateString()}</> },{ id: "patient", label: "Program ID", mono: true, cell: ({ date, appt, claim, patient }) => <>{patient?.programId ?? "—"}</> },{ id: "service", label: "Service", cell: ({ date, appt, claim, patient }) => <>{appt?.serviceType?.replace("_", " ") ?? claim?.serviceCode ?? "—"}</> },{ id: "reason", label: "Reason", cell: ({ date, appt, claim, patient }) => <>{appt?.islReason ?? "uninsured"}</> },{ id: "charge", label: "Charge", mono: true, cell: ({ date, appt, claim, patient }) => <>{claim ? <ClaimAmount claim={claim} /> : "No claim"}</> }]} />
             </div>
           )}
         </section>
@@ -547,67 +475,7 @@ function BillingPage() {
       {tab === "credentials" && (
         <section className="space-y-3">
           <div className="rounded-xl border bg-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/60 text-xs text-muted-foreground">
-                <tr>
-                  <th className="text-left px-3 py-2">Clinician</th>
-                  <th className="text-left px-3 py-2">Credential</th>
-                  <th className="text-left px-3 py-2">Medi-Cal</th>
-                  <th className="text-left px-3 py-2">License #</th>
-                  <th className="text-left px-3 py-2">NPI</th>
-                  <th className="text-left px-3 py-2">DEA</th>
-                  <th className="text-left px-3 py-2">DMC cert</th>
-                  <th className="text-left px-3 py-2">License exp.</th>
-                  <th className="text-left px-3 py-2">Booking</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clinicians.map((c, i) => {
-                  const canBook = AdelanteEHR.canBook(c.id);
-                  const expired = c.mediCalStatus === "expired" || !canBook.ok;
-                  return (
-                    <tr key={c.id} className={`border-t ${expired ? "bg-surface-sunk" : ""}`}>
-                      <td className="px-3 py-2">{c.name}</td>
-                      <td className="px-3 py-2">{c.credential}</td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={`text-[10px] rounded-full px-2 py-0.5 ${
-                            c.mediCalStatus === "active"
-                              ? "bg-teal/15 text-teal"
-                              : c.mediCalStatus === "pending"
-                                ? "bg-gold/20 text-navy"
-                                : "bg-surface-sunk text-attention"
-                          }`}
-                        >
-                          {c.mediCalStatus}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs">LIC-{1000 + i}</td>
-                      <td className="px-3 py-2 font-mono text-xs">
-                        193{i}45678{i}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs">{i === 0 ? "BR1234567" : "—"}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{i === 0 ? "DMC-0042" : "—"}</td>
-                      <td className="px-3 py-2 text-xs">{c.licenseExpiresOn ?? "—"}</td>
-                      <td className="px-3 py-2">
-                        {canBook.ok ? (
-                          <span className="text-[10px] rounded-full px-2 py-0.5 bg-teal/15 text-teal">
-                            Allowed
-                          </span>
-                        ) : (
-                          <span
-                            className="text-[10px] rounded-full px-2 py-0.5 bg-surface-sunk text-attention"
-                            title={canBook.reason}
-                          >
-                            Blocked
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <StaffTable rows={clinicians} rowKey={(c) => c.id} label={tableCopy.credentials} testId="billing-credentials-table" columns={[{ id: "name", label: "Clinician", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{c.name}</>; } },{ id: "credential", label: "Credential", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{c.credential}</>; } },{ id: "medical", label: "Medi-Cal", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <><StatusChip lang="en" state={c.mediCalStatus === "active" ? "done" : c.mediCalStatus === "pending" ? "upnext" : "closed"} label={c.mediCalStatus} /></>; } },{ id: "license", label: "License #", mono: true, cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>LIC-{1000 + i}</>; } },{ id: "npi", label: "NPI", mono: true, cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>193{i}45678{i}</>; } },{ id: "dea", label: "DEA", mono: true, cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{i === 0 ? "BR1234567" : "—"}</>; } },{ id: "dmc", label: "DMC cert", mono: true, cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{i === 0 ? "DMC-0042" : "—"}</>; } },{ id: "expires", label: "License exp.", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{c.licenseExpiresOn ?? "—"}</>; } },{ id: "booking", label: "Booking", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <><StatusChip lang="en" state={canBook.ok ? "done" : "yourturn"} label={canBook.ok ? "Allowed" : "Blocked"} />{!canBook.ok && <div className="text-sm text-muted-foreground">{canBook.reason}</div>}</>; } }]} />
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-teal" />

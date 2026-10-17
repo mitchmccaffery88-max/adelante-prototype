@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download } from "lucide-react";
@@ -15,6 +16,18 @@ import { ACTION_EVENTS } from "@/lib/actions/runAction";
 import { redactAuditEvent } from "@/lib/auditRedaction";
 import { NOTE_CONTENT_RBAC_DRAFT } from "@/lib/roles";
 import { SUD_REPORTING_ACCESS_LABEL, SUD_REPORTING_ACCESS_ROLES, SUD_REPORTING_POST_MVP_NOTE } from "@/lib/sudReportingAccess";
+
+const copy = {
+  action_audit_feed: "Action audit",
+  action_audit_feedColumns: [
+    "When",
+    "Event",
+    "Action",
+    "Who",
+    "Patient",
+    "Reason",
+  ],
+};
 
 export const Route = createFileRoute("/admin-permissions")({
   head: () => ({
@@ -194,34 +207,94 @@ function PermissionsPage() {
           <p className="text-sm text-muted-foreground">No action events yet in this session.</p>
         ) : (
           <div className="max-h-[50vh] overflow-auto rounded-md border">
-            <table className="w-full text-left text-xs" data-testid="action-audit-feed">
-              <thead className="sticky top-0 bg-muted">
-                <tr>
-                  <th className="p-2">When</th>
-                  <th className="p-2">Event</th>
-                  <th className="p-2">Action</th>
-                  <th className="p-2">Who</th>
-                  <th className="p-2">Patient</th>
-                  <th className="p-2">Reason</th>
-                </tr>
-              </thead>
-              <tbody>
-                {feed.map((e) => {
-                  const d = e.detail ?? {};
-                  const red = redactAuditEvent(e, role);
-                  return (
-                    <tr key={e.id} className="border-t">
-                      <td className="p-2 whitespace-nowrap">{new Date(e.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</td>
-                      <td className="p-2"><Badge variant={e.action === "action.blocked" ? "outline" : "secondary"}>{e.action}</Badge></td>
-                      <td className="p-2 font-mono text-[10px]">{String(d["actionId"] ?? "")}</td>
-                      <td className="p-2">{roleLabel(String(d["actingRole"] ?? e.actorRole ?? ""))} · {String(d["actorId"] ?? "")}{d["viewingStaffId"] ? ` (viewing ${String(d["viewingStaffId"])})` : ""}</td>
-                      <td className="p-2 font-mono text-[10px]">{red.subjectLabel}</td>
-                      <td className="p-2">{String(d["reason"] ?? d["outcome"] ?? "")}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <StaffTable
+    rows={feed}
+    rowKey={(e) => e.id}
+    label={copy.action_audit_feed}
+    testId="action-audit-feed"
+    rowAttributes={(e) => ({ "data-row-id": e.id })}
+    columns={[
+      {
+        id: "c0",
+        label: copy.action_audit_feedColumns[0],
+        cell: (e) => {
+          const d = e.detail ?? {};
+          const red = redactAuditEvent(e, role);
+          return (
+            <>
+              {new Date(e.at).toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </>
+          );
+        },
+      },
+      {
+        id: "c1",
+        label: copy.action_audit_feedColumns[1],
+        cell: (e) => {
+          const d = e.detail ?? {};
+          const red = redactAuditEvent(e, role);
+          return (
+            <>
+              <Badge
+                variant={
+                  e.action === "action.blocked" ? "outline" : "secondary"
+                }
+              >
+                {e.action}
+              </Badge>
+            </>
+          );
+        },
+      },
+      {
+        id: "c2",
+        label: copy.action_audit_feedColumns[2],
+        cell: (e) => {
+          const d = e.detail ?? {};
+          const red = redactAuditEvent(e, role);
+          return <>{String(d["actionId"] ?? "")}</>;
+        },
+      },
+      {
+        id: "c3",
+        label: copy.action_audit_feedColumns[3],
+        cell: (e) => {
+          const d = e.detail ?? {};
+          const red = redactAuditEvent(e, role);
+          return (
+            <>
+              {roleLabel(String(d["actingRole"] ?? e.actorRole ?? ""))} ·{" "}
+              {String(d["actorId"] ?? "")}
+              {d["viewingStaffId"]
+                ? ` (viewing ${String(d["viewingStaffId"])})`
+                : ""}
+            </>
+          );
+        },
+      },
+      {
+        id: "c4",
+        label: copy.action_audit_feedColumns[4],
+        cell: (e) => {
+          const d = e.detail ?? {};
+          const red = redactAuditEvent(e, role);
+          return <>{red.subjectLabel}</>;
+        },
+      },
+      {
+        id: "c5",
+        label: copy.action_audit_feedColumns[5],
+        cell: (e) => {
+          const d = e.detail ?? {};
+          const red = redactAuditEvent(e, role);
+          return <>{String(d["reason"] ?? d["outcome"] ?? "")}</>;
+        },
+      },
+    ]}
+  />
           </div>
         )}
       </Card>

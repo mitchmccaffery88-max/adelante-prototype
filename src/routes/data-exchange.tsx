@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -71,17 +72,11 @@ function Health() {
   return (
     <Panel title="Connection health" testId="dx-health">
       <HieStatusCard />
-      <table className="w-full text-xs">
-        <thead><tr className="text-left text-muted-foreground"><th>Run</th><th>Received</th><th>Matched</th><th>Held</th><th>Errors</th></tr></thead>
-        <tbody>
-          {log.map((r) => (
-            <tr key={r.id} className="border-t">
-              <td>{new Date(r.at).toLocaleString()}</td><td>{r.received}</td><td>{r.matched}</td><td>{r.held}</td>
-              <td>{r.errors}{r.note ? ` — ${r.note}` : ""}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <StaffTable rows={log} rowKey={(r) => r.id} label={adminTableCopy.data_exchange_health} testId="data-exchange-health"  columns={[{ id: "column-0", label: adminTableCopy.data_exchange_health_0, cell: (r) => {  return <>{new Date(r.at).toLocaleString()}</>; } },
+{ id: "column-1", label: adminTableCopy.data_exchange_health_1, cell: (r) => {  return <>{r.received}</>; } },
+{ id: "column-2", label: adminTableCopy.data_exchange_health_2, cell: (r) => {  return <>{r.matched}</>; } },
+{ id: "column-3", label: adminTableCopy.data_exchange_health_3, cell: (r) => {  return <>{r.held}</>; } },
+{ id: "column-4", label: adminTableCopy.data_exchange_health_4, cell: (r) => {  return <>{r.errors}{r.note ? ` — ${r.note}` : ""}</>; } }]}  />
     </Panel>
   );
 }
@@ -178,10 +173,12 @@ function Outbound() {
   };
   return (
     <Panel title="Outbound sharing log" testId="dx-outbound">
-      <table className="w-full text-xs">
-        <thead><tr className="text-left text-muted-foreground"><th>Patient</th><th>Sent</th><th>To</th><th>What</th><th>Purpose</th><th>Consent used</th></tr></thead>
-        <tbody>{rows.map((r) => <tr key={r.id} className="border-t"><td>{nameOf(r.patientId)}</td><td>{fmt(r.sentAt)}</td><td>{r.recipient}</td><td>{r.what}</td><td>{r.purpose}</td><td>{r.consentUsed}</td></tr>)}</tbody>
-      </table>
+      <StaffTable rows={rows} rowKey={(r) => r.id} label={adminTableCopy.data_exchange_outbound} testId="data-exchange-outbound"  columns={[{ id: "column-0", label: adminTableCopy.data_exchange_outbound_0, cell: (r) => {  return <>{nameOf(r.patientId)}</>; } },
+{ id: "column-1", label: adminTableCopy.data_exchange_outbound_1, cell: (r) => {  return <>{fmt(r.sentAt)}</>; } },
+{ id: "column-2", label: adminTableCopy.data_exchange_outbound_2, cell: (r) => {  return <>{r.recipient}</>; } },
+{ id: "column-3", label: adminTableCopy.data_exchange_outbound_3, cell: (r) => {  return <>{r.what}</>; } },
+{ id: "column-4", label: adminTableCopy.data_exchange_outbound_4, cell: (r) => {  return <>{r.purpose}</>; } },
+{ id: "column-5", label: adminTableCopy.data_exchange_outbound_5, cell: (r) => {  return <>{r.consentUsed}</>; } }]}  />
       <div className="flex flex-wrap items-center gap-2">
         <select aria-label="Patient for export" className="h-8 rounded-md border bg-background px-2 text-xs" value={pid || patients[0] || ""} onChange={(e) => setPid(e.target.value)}>
           {patients.map((id) => <option key={id} value={id}>{nameOf(id)}</option>)}
@@ -191,3 +188,19 @@ function Outbound() {
     </Panel>
   );
 }
+
+const adminTableCopy = {
+data_exchange_health_0: "Run",
+data_exchange_health_1: "Received",
+data_exchange_health_2: "Matched",
+data_exchange_health_3: "Held",
+data_exchange_health_4: "Errors",
+data_exchange_health: "data exchange health",
+data_exchange_outbound_0: "Patient",
+data_exchange_outbound_1: "Sent",
+data_exchange_outbound_2: "To",
+data_exchange_outbound_3: "What",
+data_exchange_outbound_4: "Purpose",
+data_exchange_outbound_5: "Consent used",
+data_exchange_outbound: "data exchange outbound"
+};

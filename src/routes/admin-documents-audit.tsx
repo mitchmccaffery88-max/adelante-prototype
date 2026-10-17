@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 // §Group E item 3 — documents audit surface.
 //
 // Deliberately NOT a new audit system: it is the same `listAuditEvents` stream
@@ -22,6 +23,13 @@ import { useActingRole } from "@/lib/roles";
 import { canAccess } from "@/lib/roles";
 import { redactAuditEvents } from "@/lib/auditRedaction";
 import { ClientDate } from "@/components/ClientDate";
+
+const copy = {
+  all: "All",
+  redacted: "Redacted",
+  documents_audit_table: "Document audit",
+  documents_audit_tableColumns: ["When", "Patient", "Event", "Who", "Detail"],
+};
 
 export const Route = createFileRoute("/admin-documents-audit")({
   head: () => ({
@@ -169,50 +177,91 @@ function DocumentsAuditPage() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm" data-testid="documents-audit-table">
-              <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="p-3">When</th>
-                  <th className="p-3">Patient</th>
-                  <th className="p-3">Event</th>
-                  <th className="p-3">Who</th>
-                  <th className="p-3">Detail</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {rows.map((r) => {
-                  const meta = EVENT_META.get(r.event.action);
-                  return (
-                    <tr key={r.event.id} className="align-top">
-                      <td className="p-3 whitespace-nowrap text-xs">
-                        <ClientDate value={r.event.at} />
-                      </td>
-                      <td className="p-3 text-xs">{r.subjectLabel}</td>
-                      <td className="p-3 text-xs">
-                        <Badge variant="outline" className="text-[10px]">
-                          {meta?.kind ?? "Document"}
-                        </Badge>
-                        <div className="mt-1">{meta?.label ?? r.event.action}</div>
-                      </td>
-                      <td className="p-3 text-xs">
-                        {r.event.actorId ?? "—"}
-                        <div className="text-muted-foreground">{r.event.actorRole ?? "—"}</div>
-                      </td>
-                      <td className="p-3 text-xs text-muted-foreground">
-                        {Object.entries(r.detail)
-                          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join("/") : String(v)}`)
-                          .join(" · ") || "—"}
-                        {r.redacted ? (
-                          <div className="mt-1 flex items-center gap-1 text-[11px]">
-                            <EyeOff className="h-3 w-3" /> {r.redactionReason}
-                          </div>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <StaffTable
+    views={[
+      { id: "all", label: copy.all, matches: () => true },
+      { id: "redacted", label: copy.redacted, matches: (r) => r.redacted },
+    ]}
+    rows={rows}
+    rowKey={(r) => r.event.id}
+    label={copy.documents_audit_table}
+    testId="documents-audit-table"
+    rowAttributes={(r) => ({ "data-row-id": r.event.id })}
+    columns={[
+      {
+        id: "c0",
+        label: copy.documents_audit_tableColumns[0],
+        cell: (r) => {
+          const meta = EVENT_META.get(r.event.action);
+          return (
+            <>
+              <ClientDate value={r.event.at} />
+            </>
+          );
+        },
+      },
+      {
+        id: "c1",
+        label: copy.documents_audit_tableColumns[1],
+        cell: (r) => {
+          const meta = EVENT_META.get(r.event.action);
+          return <>{r.subjectLabel}</>;
+        },
+      },
+      {
+        id: "c2",
+        label: copy.documents_audit_tableColumns[2],
+        cell: (r) => {
+          const meta = EVENT_META.get(r.event.action);
+          return (
+            <>
+              <Badge variant="outline" className="text-sm">
+                {meta?.kind ?? "Document"}
+              </Badge>
+              <div className="mt-1">{meta?.label ?? r.event.action}</div>
+            </>
+          );
+        },
+      },
+      {
+        id: "c3",
+        label: copy.documents_audit_tableColumns[3],
+        cell: (r) => {
+          const meta = EVENT_META.get(r.event.action);
+          return (
+            <>
+              {r.event.actorId ?? "—"}
+              <div className="text-muted-foreground">
+                {r.event.actorRole ?? "—"}
+              </div>
+            </>
+          );
+        },
+      },
+      {
+        id: "c4",
+        label: copy.documents_audit_tableColumns[4],
+        cell: (r) => {
+          const meta = EVENT_META.get(r.event.action);
+          return (
+            <>
+              {Object.entries(r.detail)
+                .map(
+                  ([k, v]) =>
+                    `${k}: ${Array.isArray(v) ? v.join("/") : String(v)}`,
+                )
+                .join(" · ") || "—"}
+              {r.redacted ? (
+                <div className="mt-1 flex items-center gap-1 text-sm">
+                  <EyeOff className="h-3 w-3" /> {r.redactionReason}
+                </div>
+              ) : null}
+            </>
+          );
+        },
+      },
+    ]}
+  />
           </div>
         )}
       </Card>
