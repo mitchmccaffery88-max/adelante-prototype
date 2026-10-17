@@ -2,6 +2,17 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 8b-3 — Billing, claims, admin, reference and audit tables (approved Oct 17)
+- Rollback SHA 649459806dd45b19214130247becf5871e83d34d
+- [ ] Pre-edit inventory (source, filters, hidden rows) per table
+- [ ] Convert billing/claims tables; denied claims keep today's look; money byte-identical
+- [ ] Convert audit tables (read-only, no new exposure)
+- [ ] Convert admin/reference tables
+- [ ] New unit + browser specs (row/amount parity, non-billing denial, axe)
+- [ ] Full unit + full browser suite last; screenshot matrix; report
+- [ ] Phase 8 table track done
+- Scope stop: no publishing, no Phase 9.
+
 ## Phase 8b-2 — Remaining staff tables (approved Oct 17)
 Rollback: 064533e3ba01fd425d1a66959495ef49a7f27406
 - [x] Record all active target row sources, filters, hidden-data rules and rollback projections before presentation edits

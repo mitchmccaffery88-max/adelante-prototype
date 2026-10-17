@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { CoverageReleaseAggregate } from "@/components/coverage/CoverageReleaseAggregate";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { actResult, actFor } from "@/lib/actions/act";
@@ -23,14 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   TrendingUp,
   Users,
@@ -321,81 +314,46 @@ function AdminPage() {
               </Badge>
             </div>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Patient ID</TableHead>
-                <TableHead>CIN</TableHead>
-                <TableHead>Episode day</TableHead>
-                <TableHead>Coverage</TableHead>
-                <TableHead>Next contact</TableHead>
-                <TableHead>Engagement</TableHead>
-                <TableHead>SMS reminders</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPatients.map((p) => (
-                <TableRow
-                  key={p.id}
-                  className="cursor-pointer hover:bg-secondary/40"
-                  onClick={() => setOpenPatientId(p.id)}
-                >
-                  <TableCell className="font-mono text-xs text-navy">{p.programId}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
+          <StaffTable rows={filteredPatients} rowKey={(p) => p.id} label={adminTableCopy.admin_patients} testId="admin-patients"  columns={[{ id: "column-0", label: adminTableCopy.admin_patients_0, mono: true, cell: (p) => {  return <>{p.programId}</>; } },
+{ id: "column-1", label: adminTableCopy.admin_patients_1, mono: true, cell: (p) => {  return <>{p.cin ? `••••${p.cin.slice(-4)}` : "—"}</>; } },
+{ id: "column-2", label: adminTableCopy.admin_patients_2, cell: (p) => {  return <><div className="flex items-center gap-2">
                       <div className="h-1.5 w-20 rounded-full bg-border">
                         <div
                           className="h-1.5 rounded-full bg-teal"
                           style={{ width: `${(p.episodeDay / 90) * 100}%` }}
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground">{p.episodeDay}/90</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <CoverageBadge status={p.coverage?.status} />
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {(() => {
+                      <span className="text-sm text-muted-foreground">{p.episodeDay}/90</span>
+                    </div></>; } },
+{ id: "column-3", label: adminTableCopy.admin_patients_3, cell: (p) => {  return <><CoverageBadge status={p.coverage?.status} /></>; } },
+{ id: "column-4", label: adminTableCopy.admin_patients_4, cell: (p) => {  return <>{(() => {
                       const contact = nextContact(p.id);
                       if (contact.kind === "none") return "—";
                       if (contact.kind === "group") {
                         return (
                           <span className="inline-flex items-center gap-1.5">
                             <ClientDate value={contact.start} />
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="outline" className="text-sm">
                               Group
                             </Badge>
                           </span>
                         );
                       }
                       return <ClientDate value={contact.start} />;
-                    })()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
+                    })()}</>; } },
+{ id: "column-5", label: adminTableCopy.admin_patients_5, cell: (p) => {  return <><Badge
                       variant="outline"
                       className={p.episodeDay > 30 ? "" : "border-teal/40 text-teal"}
                     >
                       {p.episodeDay > 30 ? "Steady" : "New"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {AdelanteEHR.isSmsOn(p.id) ? (
+                    </Badge></>; } },
+{ id: "column-6", label: adminTableCopy.admin_patients_6, cell: (p) => {  return <>{AdelanteEHR.isSmsOn(p.id) ? (
                       <Badge className="bg-gold/30 text-navy border-0">On</Badge>
                     ) : (
-                      <span className="text-xs text-muted-foreground">Off</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      <span className="text-sm text-muted-foreground">Off</span>
+                    )}</>; } }]} primaryAction={(p) => <Button size="sm" variant="outline" onClick={() => setOpenPatientId(p.id)}>Open</Button>} />
           <p className="mt-3 text-xs text-muted-foreground">
-            Click a row to open the patient profile. No names, diagnoses, or care-plan narrative
+            Use Open to open the patient profile. No names, diagnoses, or care-plan narrative
             shown in the table — clinical detail lives only in Case Manager and Clinician
             workspaces.
           </p>
@@ -831,3 +789,14 @@ function GroupActivityKpi() {
     </Card>
   );
 }
+
+const adminTableCopy = {
+admin_patients_0: "Patient ID",
+admin_patients_1: "CIN",
+admin_patients_2: "Episode day",
+admin_patients_3: "Coverage",
+admin_patients_4: "Next contact",
+admin_patients_5: "Engagement",
+admin_patients_6: "SMS reminders",
+admin_patients: "admin patients"
+};

@@ -1,3 +1,5 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+const tableCopy = { claims: "Claims", blocked: "Blocked attempts" };
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -369,28 +371,11 @@ function ClaimsPage() {
           {visibleBlocked.length === 0 ? (
             <p className="text-sm text-muted-foreground">No blocked attempts recorded.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs text-muted-foreground">
-                <tr><th className="py-1">Program ID</th><th>Service</th><th>Reason code</th><th>Reason</th></tr>
-              </thead>
-              <tbody className="divide-y">
-                {visibleBlocked.map((e) => {
-                  const pt = patients.find((p) => p.id === e.patientId);
-                  return (
-                    <tr key={e.id} data-testid="blocked-attempt-row">
-                      <td className="py-2 font-mono text-xs">{pt?.programId ?? "—"}</td>
-                      <td className="text-xs">{String(e.detail?.["service"] ?? "")}</td>
-                      <td>
+            <StaffTable rows={visibleBlocked} rowKey={(e) => e.id} label={tableCopy.blocked} testId="blocked-attempts-table" rowTestId={() => "blocked-attempt-row"} columns={[{ id: "patient", label: "Program ID", mono: true, cell: (e) => { const pt = patients.find((p) => p.id === e.patientId); return <>{pt?.programId ?? "—"}</>; } },{ id: "service", label: "Service", cell: (e) => { const pt = patients.find((p) => p.id === e.patientId); return <>{String(e.detail?.["service"] ?? "")}</>; } },{ id: "code", label: "Reason code", cell: (e) => { const pt = patients.find((p) => p.id === e.patientId); return <>
                         <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label={`Blocked: ${String(e.detail?.["reasonCode"] ?? "blocked")}`} />
-                      </td>
-                      <td className="text-xs text-muted-foreground">
+                      </>; } },{ id: "reason", label: "Reason", cell: (e) => { const pt = patients.find((p) => p.id === e.patientId); return <>
                         {String(e.detail?.["reason"] ?? "")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </>; } }]} />
           )}
         </Card>
       ) : (
@@ -402,34 +387,12 @@ function ClaimsPage() {
               : "No claims match the current filters."}
           </p>
         ) : (
-          <Table>
-              <TableHeader className="text-left text-xs text-muted-foreground">
-                <TableRow>
-                  <SortHeader label="Patient" sortKey="patient" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
-                  <TableHead className="h-8 px-2 text-xs">Source</TableHead>
-                  <SortHeader label="Code" sortKey="code" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
-                  <SortHeader label="Clinician" sortKey="clinician" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
-                  <SortHeader label="State" sortKey="state" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
-                  <SortHeader label="Charge" sortKey="charge" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
-                  <TableHead className="h-8 px-2 text-xs">Denial</TableHead>
-                  <TableHead className="h-8 px-2" />
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y">
-                {sortedClaims.map((c) => {
-                  const pt = patients.find((p) => p.id === c.patientId);
-                  const cl = clinicians.find((x) => x.id === c.clinicianId);
-                  const next = flow[c.state];
-                  const groupRef = parseGroupEncounterId(c.encounterId);
-                  return (
-                    <TableRow key={c.id} data-testid="claim-row">
-                      <TableCell className="px-2 py-2" data-cell="patient">
+<div className="min-w-0 overflow-x-auto [&_select]:max-w-full"><StaffTable rows={sortedClaims} rowKey={(c) => c.id} label={tableCopy.claims} testId="claims-table" rowTestId={() => "claim-row"} columns={[{ id: "patient", label: "Patient", sortTestId: "sort-patient", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return `${pt?.firstName ?? ""} ${pt?.lastName ?? ""}`; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="patient">
                         {pt?.firstName} {pt?.lastName}
                         {(c as { duplicateReview?: unknown }).duplicateReview ? (
                           <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label="Possible duplicate" className="ml-1" data-testid="claim-duplicate-review" />
                         ) : null}
-                      </TableCell>
-                      <TableCell className="px-2 py-2">
+                      </span></>; } },{ id: "source", label: "Source", cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <>
                         {groupRef ? (
                           <Popover>
                             <PopoverTrigger asChild>
@@ -438,7 +401,7 @@ function ClaimsPage() {
                                 <Badge className="bg-teal/15 text-teal">Group</Badge>
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-72 text-xs">
+                            <PopoverContent className="w-72 text-sm">
                               {/* Per-attendee billing: each present attendee has their own
                                   individualized note and their own claim. Peers are shown by
                                   program ID only — group membership is disclosure-sensitive. */}
@@ -463,45 +426,17 @@ function ClaimsPage() {
                                   </ul>
                                 );
                               })()}
-                              <p className="mt-2 text-[10px] italic text-muted-foreground">
+                              <p className="mt-2 text-sm italic text-muted-foreground">
                                 Billing code {c.serviceCode ?? "not set"} — billing can correct it from the amount column.
                               </p>
                             </PopoverContent>
                           </Popover>
                         ) : (
-                          <span className="text-xs text-muted-foreground">1:1</span>
+                          <span className="text-sm text-muted-foreground">1:1</span>
                         )}
-                      </TableCell>
-                      <TableCell className="px-2 py-2 font-mono text-xs" data-cell="code">
+                      </>; } },{ id: "code", label: "Code", sortTestId: "sort-code", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return c.serviceCode ?? ""; }, mono: true, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="code">
                         {c.serviceCode ? `${c.serviceCode}${c.units ? ` ×${c.units}` : ""}` : "—"}
-                      </TableCell>
-                      <TableCell className="px-2 py-2" data-cell="clinician">{cl?.name}</TableCell>
-                      <TableCell className="px-2 py-2" data-cell="state">{c.state === "denied" ? <Badge className={stateStyle[c.state]}>{c.state}</Badge> : <StatusChip lang="en" state={c.state === "documented" ? "upnext" : c.state === "submitted" ? "team" : c.state === "paid" ? "done" : c.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={c.state === "documented" ? "Documented" : c.state === "signed" || c.state === "coded" || c.state === "generated" ? "Ready to send" : c.state === "submitted" ? "With payer" : c.state === "partial" ? "Partly paid — review" : c.state} />}<ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = gateMessageFor(role, c); return m ? <p className="mt-1 text-[11px] text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</TableCell>
-                      <TableCell className="px-2 py-2 font-mono text-xs" data-cell="charge"><ClaimAmount claim={c} /></TableCell>
-                      <TableCell className="px-2 py-2">{c.reviewFlag ? <span data-testid="claim-review-flag" className="font-medium text-attention">{c.reviewFlag.label}</span> : (c.denialReason ?? "—")}</TableCell>
-                      <TableCell className="px-2 py-2 text-right space-x-2">
-                        {!canWrite ? (
-                          <span className="text-xs text-muted-foreground">View only</span>
-                        ) : (
-                          <>
-                            {next && (
-                              <Button size="sm" variant="outline" onClick={() => { const r = AdelanteEHRExt.transitionClaim(c.id, next); if (r.ok) toast.success(`to ${next}`); else toast.error(r.error); }}>
-                                Move to {next}
-                              </Button>
-                            )}
-                            {c.state === "submitted" && (
-                              <Button size="sm" variant="ghost" onClick={() => confirmation.ask({ title: "Deny this claim?", description: "The claim is marked denied and its history stays kept. Later corrections use the billing workflow; no new patient notification is sent.", confirmLabel: "Deny claim", keepLabel: "Keep claim", requireReason: true, onConfirm: reason => { confirmedAction("claim_status", "transitionClaim", c.patientId, reason, c.id, "denied", { denialReason: reason }); toast.success("Marked denied"); return true; } })}>
-                                Deny
-                              </Button>
-                            )}
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </span></>; } },{ id: "clinician", label: "Clinician", sortTestId: "sort-clinician", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return cl?.name ?? ""; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="clinician">{cl?.name}</span></>; } },{ id: "state", label: "State", sortTestId: "sort-state", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return c.state; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="state">{c.state === "denied" ? <Badge className={stateStyle[c.state]}>{c.state}</Badge> : <StatusChip lang="en" state={c.state === "documented" ? "upnext" : c.state === "submitted" ? "team" : c.state === "paid" ? "done" : c.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={c.state === "documented" ? "Documented" : c.state === "signed" || c.state === "coded" || c.state === "generated" ? "Ready to send" : c.state === "submitted" ? "With payer" : c.state === "partial" ? "Partly paid — review" : c.state} />}<ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = gateMessageFor(role, c); return m ? <p className="mt-1 text-sm text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</span></>; } },{ id: "charge", label: "Charge", sortTestId: "sort-charge", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return c.chargeCents ?? -1; }, mono: true, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="charge"><ClaimAmount claim={c} /></span></>; } },{ id: "denial", label: "Denial", cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <>{c.reviewFlag ? <span data-testid="claim-review-flag" className="font-medium text-attention">{c.reviewFlag.label}</span> : (c.denialReason ?? "—")}</>; } }]} primaryAction={(c) => { const next = flow[c.state]; return !canWrite ? <span className="text-sm text-muted-foreground">View only</span> : next ? <Button size="sm" variant="outline" onClick={() => { const r = AdelanteEHRExt.transitionClaim(c.id, next); if (r.ok) toast.success(`to ${next}`); else toast.error(r.error); }}>Move to {next}</Button> : null; }} moreActions={(c) => canWrite && c.state === "submitted" ? [{ label: "Deny", onSelect: () => confirmation.ask({ title: "Deny this claim?", description: "The claim is marked denied and its history stays kept. Later corrections use the billing workflow; no new patient notification is sent.", confirmLabel: "Deny claim", keepLabel: "Keep claim", requireReason: true, onConfirm: reason => { confirmedAction("claim_status", "transitionClaim", c.patientId, reason, c.id, "denied", { denialReason: reason }); toast.success("Marked denied"); return true; } }) }] : []} /></div>
         )}
       </Card>
       )}

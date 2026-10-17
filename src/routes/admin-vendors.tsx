@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 import { VoiceGuardrailNotice } from "@/components/voice/VoiceGuardrailNotice";
 import { HieStatusCard } from "@/components/hie/OutsideRecords";
@@ -144,34 +145,11 @@ function AdminVendorsPage() {
         {recent.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">No telehealth sessions yet.</p>
         ) : (
-          <table className="mt-3 w-full text-sm">
-            <thead className="text-xs text-muted-foreground">
-              <tr className="text-left">
-                <th className="py-1 pr-2">Room</th>
-                <th className="py-1 pr-2">State</th>
-                <th className="py-1 pr-2">Created</th>
-                <th className="py-1 pr-2">Duration</th>
-                <th className="py-1 pr-2">Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((s) => (
-                <tr key={s.id} className="border-t">
-                  <td className="py-1.5 pr-2 font-mono text-[11px]">{s.roomId}</td>
-                  <td className="py-1.5 pr-2">
-                    <StateBadge state={s.state} />
-                  </td>
-                  <td className="py-1.5 pr-2 text-xs">
-                    <ClientDate value={s.createdAt} />
-                  </td>
-                  <td className="py-1.5 pr-2 text-xs">
-                    {s.durationSec ? `${Math.round(s.durationSec / 60)} min` : "—"}
-                  </td>
-                  <td className="py-1.5 pr-2 text-xs text-muted-foreground">{s.endReason ?? ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <StaffTable rows={recent} rowKey={(s) => s.id} label={adminTableCopy.admin_vendor_sessions} testId="admin-vendor-sessions"  columns={[{ id: "column-0", label: adminTableCopy.admin_vendor_sessions_0, mono: true, cell: (s) => {  return <>{s.roomId}</>; } },
+{ id: "column-1", label: adminTableCopy.admin_vendor_sessions_1, cell: (s) => {  return <><StateBadge state={s.state} /></>; } },
+{ id: "column-2", label: adminTableCopy.admin_vendor_sessions_2, cell: (s) => {  return <><ClientDate value={s.createdAt} /></>; } },
+{ id: "column-3", label: adminTableCopy.admin_vendor_sessions_3, cell: (s) => {  return <>{s.durationSec ? `${Math.round(s.durationSec / 60)} min` : "—"}</>; } },
+{ id: "column-4", label: adminTableCopy.admin_vendor_sessions_4, cell: (s) => {  return <>{s.endReason ?? ""}</>; } }]}  />
         )}
       </Card>
     </div>
@@ -221,19 +199,14 @@ function VendorPanel({
 }
 
 function StateBadge({ state }: { state: string }) {
-  if (state === "in_progress" || state === "ended") return <StatusChip lang="en" state={state === "ended" ? "closed" : "done"} label={state.replace("_", " ")} />;
-  const map: Record<string, string> = {
-    scheduled: "bg-muted text-muted-foreground",
-    clinician_joined: "bg-gold/30 text-navy",
-    patient_joined: "bg-gold/30 text-navy",
-    in_progress: "bg-teal/20 text-teal",
-    ended: "bg-success/20 text-success",
-    expired: "bg-muted text-muted-foreground",
-    failed: "bg-surface-sunk text-attention",
-  };
-  return (
-    <Badge className={`${map[state] ?? "bg-muted"} border-0 text-[10px]`}>
-      {state.replace("_", " ")}
-    </Badge>
-  );
+  return <StatusChip lang="en" state={state === "ended" || state === "expired" ? "closed" : state === "failed" ? "urgent" : state === "in_progress" ? "done" : "team"} label={state.replace("_", " ")} />;
 }
+
+const adminTableCopy = {
+admin_vendor_sessions: "Telehealth sessions",
+admin_vendor_sessions_0: "Room",
+admin_vendor_sessions_1: "State",
+admin_vendor_sessions_2: "Created",
+admin_vendor_sessions_3: "Duration",
+admin_vendor_sessions_4: "Reason",
+};

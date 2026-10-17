@@ -1,3 +1,5 @@
+import { StatusChip } from "@/components/ui/status-chip";
+import { StaffTable } from "@/components/staff/StaffTable";
 // §Population health — KPI target administration.
 //
 // Same simple admin-form pattern as the facility registry: a table, a create
@@ -35,14 +37,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ArrowLeft, Lock, Pencil, Plus, Target } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
@@ -272,43 +266,19 @@ function AdminKpiTargetsPage() {
         <EmptyState icon={Target} title="No targets yet" description="Add your first KPI target." />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Metric</TableHead>
-                <TableHead>Target</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Effective</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {targets.map((t) => (
-                <TableRow key={t.id} data-target-metric={t.metricKey}>
-                  <TableCell>
-                    <p className="font-medium text-navy">{t.label}</p>
-                    <p className="text-xs text-muted-foreground">{t.metricKey}</p>
+          <StaffTable rows={targets} rowKey={(t) => t.id} label={adminTableCopy.admin_kpi_targets_table} testId="admin-kpi-targets-table" rowAttributes={(t) => ({ "data-target-metric": t.metricKey })} views={[{ id: "all", label: "All", matches: () => true }, { id: "active", label: "Active", matches: (r) => r.active !== false }, { id: "inactive", label: "Inactive", matches: (r) => r.active === false }]} columns={[{ id: "column-0", label: adminTableCopy.admin_kpi_targets_table_0, cell: (t) => {  return <><p className="font-medium text-navy">{t.label}</p>
+                    <p className="text-sm text-muted-foreground">{t.metricKey}</p>
                     {METRICS_WITHOUT_SOURCE[t.metricKey as MetricKey] && (
-                      <Badge variant="outline" className="mt-1 text-[10px]">
+                      <Badge variant="outline" className="mt-1 text-sm">
                         No live metric yet
                       </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>{formatTargetValue(t.targetValue, t.unit)}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{t.source ?? "—"}</TableCell>
-                  <TableCell className="text-xs">{t.effectiveMonth ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={t.active ? "default" : "outline"}>
-                      {t.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {canWrite ? (
+                    )}</>; } },
+{ id: "column-1", label: adminTableCopy.admin_kpi_targets_table_1, cell: (t) => {  return <>{formatTargetValue(t.targetValue, t.unit)}</>; } },
+{ id: "column-2", label: adminTableCopy.admin_kpi_targets_table_2, cell: (t) => {  return <>{t.source ?? "—"}</>; } },
+{ id: "column-3", label: adminTableCopy.admin_kpi_targets_table_3, cell: (t) => {  return <>{t.effectiveMonth ?? "—"}</>; } },
+{ id: "column-4", label: adminTableCopy.admin_kpi_targets_table_4, cell: (t) => {  return <><StatusChip lang="en" state={t.active ? "done" : "closed"} label={t.active ? "Active" : "Inactive"} /></>; } }]} primaryAction={(t) => canWrite ? <Button size="sm" variant="outline" onClick={() => openEdit(t)}>Edit</Button> : null} moreContent={(t) => <>{canWrite ? (
                       <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(t)}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
+                        
                         {t.active ? (
                           <Button
                             size="sm"
@@ -334,13 +304,8 @@ function AdminKpiTargetsPage() {
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">View only</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      <span className="text-sm text-muted-foreground">View only</span>
+                    )}</>} />
         </Card>
       )}
 
@@ -422,3 +387,12 @@ function AdminKpiTargetsPage() {
     </div>
   );
 }
+
+const adminTableCopy = {
+admin_kpi_targets_table_0: "Metric",
+admin_kpi_targets_table_1: "Target",
+admin_kpi_targets_table_2: "Source",
+admin_kpi_targets_table_3: "Effective",
+admin_kpi_targets_table_4: "Status",
+admin_kpi_targets_table: "admin kpi targets table"
+};

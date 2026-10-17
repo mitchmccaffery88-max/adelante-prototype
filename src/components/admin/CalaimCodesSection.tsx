@@ -1,3 +1,6 @@
+import { StaffTable } from "@/components/staff/StaffTable";
+import { StatusChip } from "@/components/ui/status-chip";
+const tableCopy = { codes: "CalAIM codes" };
 // §Population health Phase 2 — CalAIM qualifying-code administration.
 //
 // Lives on the KPI targets admin page rather than as its own route: it is
@@ -100,37 +103,16 @@ export function CalaimCodesSection({
         />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Added</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {codes.map((c) => (
-                <TableRow key={c.id} data-calaim-code={c.code}>
-                  <TableCell className="font-mono text-sm text-navy">{c.code}</TableCell>
-                  <TableCell className="text-sm">
+<StaffTable rows={codes} rowKey={(c) => c.id} label={tableCopy.codes} testId="calaim-codes-table" rowAttributes={(c) => ({ "data-calaim-code": c.code })} views={[{ id: "all", label: "All", matches: () => true }, { id: "active", label: "Active", matches: (c) => c.active }, { id: "retired", label: "Retired", matches: (c) => !c.active }]} columns={[{ id: "code", label: "Code", mono: true, cell: (c) => <>{c.code}</> },{ id: "description", label: "Description", cell: (c) => <>
                     {c.description ?? "—"}
                     {!c.active && c.deactivationReason && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Retired: {c.deactivationReason}
                       </p>
                     )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
+                  </> },{ id: "added", label: "Added", cell: (c) => <>
                     {c.createdAt.slice(0, 10)} · {c.createdBy}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={c.active ? "default" : "outline"}>
-                      {c.active ? "Active" : "Retired"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
+                  </> },{ id: "status", label: "Status", cell: (c) => <><StatusChip lang="en" state={c.active ? "done" : "closed"} label={c.active ? "Active" : "Retired"} /></> }]} primaryAction={(c) => <>
                     {canWrite ? (
                       c.active ? (
                         <Button
@@ -156,13 +138,9 @@ export function CalaimCodesSection({
                         </Button>
                       )
                     ) : (
-                      <span className="text-xs text-muted-foreground">View only</span>
+                      <span className="text-sm text-muted-foreground">View only</span>
                     )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </>} />
         </Card>
       )}
 

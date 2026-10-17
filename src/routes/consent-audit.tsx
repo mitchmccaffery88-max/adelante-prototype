@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 // §ASCMI consent audit viewer — one combined, filterable table over the
 // existing `consent` + `disclosure` audit streams. Read-only; gated through
 // the nav registry (`consent_ledger`, read is enough) exactly like every other
@@ -25,6 +26,21 @@ import {
   CONSENT_AUDIT_EVENT_TYPES,
 } from "@/lib/consentAudit";
 import { Check, X } from "lucide-react";
+
+const copy = {
+  all: "All",
+  redacted: "Redacted",
+  consent_audit_table: "Consent audit",
+  consent_audit_tableColumns: [
+    "When",
+    "Patient",
+    "Event",
+    "Actor",
+    "Categories",
+    "Advocate gates",
+    "Detail",
+  ],
+};
 
 export const Route = createFileRoute("/consent-audit")({
   head: () => ({
@@ -162,73 +178,132 @@ function ConsentAuditPage() {
         {rows.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No consent events match these filters.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm" data-testid="consent-audit-table">
-              <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="p-3">When</th>
-                  <th className="p-3">Patient</th>
-                  <th className="p-3">Event</th>
-                  <th className="p-3">Actor</th>
-                  <th className="p-3">Categories</th>
-                  <th className="p-3">Advocate gates</th>
-                  <th className="p-3">Detail</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {rows.map((r) => (
-                  <tr key={r.event.id} className="align-top">
-                    <td className="p-3 whitespace-nowrap text-xs">
-                      <ClientDate value={r.event.at} />
-                    </td>
-                    <td className="p-3 text-xs">{r.subjectLabel}</td>
-                    <td className="p-3 text-xs">
-                      <Badge variant="outline" className="text-[10px]">
-                        {r.event.category}
-                      </Badge>
-                      <div className="mt-1">{r.event.action.replace(/_/g, " ")}</div>
-                    </td>
-                    <td className="p-3 text-xs">
-                      {r.event.actorId ?? "—"}
-                      <div className="text-muted-foreground">{r.event.actorRole ?? "—"}</div>
-                    </td>
-                    <td className="p-3 text-xs">
-                      {r.categories.length === 0
-                        ? "—"
-                        : r.categories.map((c) => CATEGORY_LABEL.get(c) ?? c).join(", ")}
-                    </td>
-                    <td className="p-3 text-xs" data-testid="advocate-gates-cell">
-                      {r.gates ? (
-                        <div className="space-y-1">
-                          <GateChip ok={r.gates.linkValid} label="Advocate link valid" />
-                          <GateChip
-                            ok={r.gates.consentActive}
-                            label="Part 2 disclosure consent"
-                          />
-                          <div className="text-[11px] text-muted-foreground">
-                            {r.gates.part2Disclosed
-                              ? "SUD detail disclosed"
-                              : "SUD detail masked"}
-                          </div>
-                        </div>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="p-3 text-xs text-muted-foreground">
-                      {Object.entries(r.detail)
-                        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join("/") : String(v)}`)
-                        .join(" · ") || "—"}
-                      {r.redacted ? (
-                        <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <EyeOff className="h-3 w-3" /> {r.redactionReason}
-                        </div>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="overflow-x-auto [&_td]:[overflow-wrap:anywhere]">
+            <StaffTable
+    views={[
+      { id: "all", label: copy.all, matches: () => true },
+      { id: "redacted", label: copy.redacted, matches: (r) => r.redacted },
+    ]}
+    rows={rows}
+    rowKey={(r) => r.event.id}
+    label={copy.consent_audit_table}
+    testId="consent-audit-table"
+    rowAttributes={(r) => ({ "data-row-id": r.event.id })}
+    columns={[
+      {
+        id: "c0",
+        label: copy.consent_audit_tableColumns[0],
+        cell: (r) => {
+          return (
+            <>
+              <ClientDate value={r.event.at} />
+            </>
+          );
+        },
+      },
+      {
+        id: "c1",
+        label: copy.consent_audit_tableColumns[1],
+        cell: (r) => {
+          return <>{r.subjectLabel}</>;
+        },
+      },
+      {
+        id: "c2",
+        label: copy.consent_audit_tableColumns[2],
+        cell: (r) => {
+          return (
+            <>
+              <Badge variant="outline" className="text-sm">
+                {r.event.category}
+              </Badge>
+              <div className="mt-1">{r.event.action.replace(/_/g, " ")}</div>
+            </>
+          );
+        },
+      },
+      {
+        id: "c3",
+        label: copy.consent_audit_tableColumns[3],
+        cell: (r) => {
+          return (
+            <>
+              {r.event.actorId ?? "—"}
+              <div className="text-muted-foreground">
+                {r.event.actorRole ?? "—"}
+              </div>
+            </>
+          );
+        },
+      },
+      {
+        id: "c4",
+        label: copy.consent_audit_tableColumns[4],
+        cell: (r) => {
+          return (
+            <>
+              {r.categories.length === 0
+                ? "—"
+                : r.categories
+                    .map((c) => CATEGORY_LABEL.get(c) ?? c)
+                    .join(", ")}
+            </>
+          );
+        },
+      },
+      {
+        id: "c5",
+        label: copy.consent_audit_tableColumns[5],
+        testId: "advocate-gates-cell",
+        cell: (r) => {
+          return (
+            <>
+              {r.gates ? (
+                <div className="space-y-1">
+                  <GateChip
+                    ok={r.gates.linkValid}
+                    label="Advocate link valid"
+                  />
+                  <GateChip
+                    ok={r.gates.consentActive}
+                    label="Part 2 disclosure consent"
+                  />
+                  <div className="text-sm text-muted-foreground">
+                    {r.gates.part2Disclosed
+                      ? "SUD detail disclosed"
+                      : "SUD detail masked"}
+                  </div>
+                </div>
+              ) : (
+                "—"
+              )}
+            </>
+          );
+        },
+      },
+      {
+        id: "c6",
+        label: copy.consent_audit_tableColumns[6],
+        cell: (r) => {
+          return (
+            <>
+              {Object.entries(r.detail)
+                .map(
+                  ([k, v]) =>
+                    `${k}: ${Array.isArray(v) ? v.join("/") : String(v)}`,
+                )
+                .join(" · ") || "—"}
+              {r.redacted ? (
+                <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                  <EyeOff className="h-3 w-3" /> {r.redactionReason}
+                </div>
+              ) : null}
+            </>
+          );
+        },
+      },
+    ]}
+  />
           </div>
         )}
       </Card>
