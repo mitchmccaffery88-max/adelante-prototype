@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 import { CoverageAtReleasePanel } from "@/components/coverage/CoverageAtReleasePanel";
 // §Phase 3c — program-level Medi-Cal verification worklist.
@@ -10,7 +11,7 @@ import { CoverageAtReleasePanel } from "@/components/coverage/CoverageAtReleaseP
 // has no task row behind it and never will unless someone creates one. The
 // Phase 3a follow-up tasks that DO exist stay owned by /worklist; this page
 // links out to them rather than cloning claim/complete behaviour.
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import {
@@ -71,6 +72,7 @@ const STATE_TONE: Record<CoverageCheckState, string> = {
 };
 
 function EligibilityWorklistPage() {
+  const navigate = useNavigate();
   const acting = useActingStaff();
   const access = canAccess(acting.role, "eligibility");
   const patients = useEhr(() => AdelanteEHR.listPatients());
@@ -197,22 +199,12 @@ function EligibilityWorklistPage() {
           description="No patient matches these filters. Widen the county or status filter."
         />
       ) : (
-        <Card className="overflow-x-auto">
-          <table className="w-full text-sm" data-testid="coverage-worklist-table">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="text-left px-3 py-2">Patient</th>
-                <th className="text-left px-3 py-2">Status</th>
-                <th className="text-left px-3 py-2">Last recorded check</th>
-                <th className="text-left px-3 py-2">Coverage on file</th>
-                <th className="text-left px-3 py-2">Open follow-ups</th>
-                <th className="text-right px-3 py-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.patientId} className="border-t align-top">
-                  <td className="px-3 py-2">
+        <StaffTable
+          rows={rows} rowKey={(r) => r.patientId} label="Medi-Cal verification worklist" testId="coverage-worklist-table"
+          views={[{ id: "current", label: state === "needs_work" ? "Needs you" : "Current view", matches: () => true }]}
+          columns={[
+          { id: "c0", label: "Patient", sortValue: (r) => r.name, cell: (r) => <>
+
                     <Link
                       to="/record/$patientId"
                       params={{ patientId: r.patientId }}
@@ -221,15 +213,19 @@ function EligibilityWorklistPage() {
                       {r.name}
                     </Link>
                     <div className="text-xs text-muted-foreground">
-                      {r.programId}
+                      {<span className="font-mono">{r.programId}</span>}
                       {r.county ? ` · ${r.county} County` : ""}
                       {r.cinOnFile ? " · CIN on file" : " · no CIN"}
                     </div>
-                  </td>
-                  <td className="px-3 py-2">
+                  
+          </> },
+          { id: "c1", label: "Status", sortValue: (r) => r.state, cell: (r) => <>
+
                     {r.state === "not_medi_cal_reported" ? <span className="text-sm text-ink-muted">{COVERAGE_CHECK_STATE_LABEL[r.state]}</span> : <StatusChip lang="en" state={r.state === "current" ? "done" : access.level === "write" ? "yourturn" : "team"} label={r.state === "current" ? "Verified" : "Check eligibility"} />}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                  
+          </> },
+          { id: "c2", label: "Last recorded check", sortValue: (r) => r.lastCheck?.checkedAt ?? "", cell: (r) => <>
+
                     {r.pendingReport && (
                       <div className="mb-1 text-foreground" data-testid="pending-report">
                         <VerificationSourceBadge record={r.pendingReport} />{" "}
@@ -248,12 +244,16 @@ function EligibilityWorklistPage() {
                     ) : (
                       "No staff or electronic check has ever been recorded."
                     )}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                  
+          </> },
+          { id: "c3", label: "Coverage on file", sortValue: (r) => r.coverageStatus, cell: (r) => <>
+
                     <span className="capitalize text-foreground">{r.coverageStatus}</span>
                     <div>{r.activePlanPayer ?? "No plan span on file"}</div>
-                  </td>
-                  <td className="px-3 py-2 text-xs">
+                  
+          </> },
+          { id: "c4", label: "Open follow-ups", sortValue: (r) => r.openFollowUps.length, cell: (r) => <>
+
                     {r.openFollowUps.length === 0 ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
@@ -268,8 +268,11 @@ function EligibilityWorklistPage() {
                         ))}
                       </ul>
                     )}
-                  </td>
-                  <td className="px-3 py-2 text-right">
+                  
+          </> },
+          ]}
+          primaryAction={(r) => <>
+
                     {canRecord ? (
                       <Button
                         size="sm"
@@ -282,12 +285,10 @@ function EligibilityWorklistPage() {
                     ) : (
                       <span className="text-xs text-muted-foreground">Read only</span>
                     )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+                  
+          </>}
+          moreActions={(r) => [{ label: "Open chart", onSelect: () => { void navigate({ to: "/record/$patientId", params: { patientId: r.patientId } }); } }]}
+        />
       )}
 
       <p className="text-xs text-muted-foreground">

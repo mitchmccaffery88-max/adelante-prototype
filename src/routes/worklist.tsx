@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 import { PageNewLauncher } from "@/components/staff/PageNewLauncher";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Worklist Phase A — cross-facility operational task table.
@@ -349,40 +350,30 @@ function WorklistPage() {
       {scoped.length === 0 ? (
         <EmptyState icon={ListChecks} title="No tasks match these filters" />
       ) : (
-        <Card className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="text-left text-muted-foreground">
-              <tr className="border-b">
-                <th className="p-2">Priority</th>
-                <th className="p-2">Task</th>
-                <th className="p-2">Patient</th>
-                <th className="p-2">Facility / housing</th>
-                <th className="p-2">Due</th>
-                <th className="p-2">For roles</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Claim</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scoped.map((t) => {
-                const s = worklistStatusFor(t);
-                const overdue = isOverdue(t);
-                return (
-                  <tr key={t.id} className="border-b last:border-0 align-top">
-                    <td className="p-2">
+        <StaffTable
+          rows={scoped} rowKey={(t) => t.id} label="Task worklist" testId="task-worklist-table"
+          defaultView="needs"
+          views={[{ id: "all", label: "Current view", matches: () => true }, { id: "needs", label: "Needs you", matches: (t) => (worklistStatusFor(t) === "pending" || worklistStatusFor(t) === "in_progress") && (!t.claimedBy || t.claimedBy === staffName) && matchesDiscipline(t, role) }]}
+          columns={[
+          { id: "c0", label: "Priority", sortValue: (t) => taskPriority(t), cell: (t) => <>
+
                       <Badge className={PRIORITY_TONE[taskPriority(t)]}>
                         {taskPriority(t).toUpperCase()}
                       </Badge>
-                    </td>
-                    <td className="p-2 text-navy">
+                    
+          </> },
+          { id: "c1", label: "Task", sortValue: (t) => t.title, cell: (t) => <>
+
                       {t.title}
                       {t.taskType && (
                         <span className="block text-muted-foreground">
                           {t.taskType.replace(/_/g, " ")}
                         </span>
                       )}
-                    </td>
-                    <td className="p-2">
+                    
+          </> },
+          { id: "c2", label: "Patient", sortValue: (t) => nameFor(t.patientId), cell: (t) => <>
+
                       <Link
                         to="/record/$patientId"
                         params={{ patientId: t.patientId }}
@@ -390,15 +381,21 @@ function WorklistPage() {
                       >
                         {nameFor(t.patientId)}
                       </Link>
-                    </td>
-                    <td className="p-2 text-muted-foreground">
+                    
+          </> },
+          { id: "c3", label: "Facility / housing", sortValue: (t) => facilityName(t.facilityId) ?? "", cell: (t) => <>
+
                       {facilityName(t.facilityId) ?? "—"}
                       {t.housingUnit ? ` · ${t.housingUnit}` : ""}
-                    </td>
-                    <td className={`p-2 ${overdue ? "font-semibold text-attention" : "text-navy"}`}>
+                    
+          </> },
+          { id: "c4", label: "Due", sortValue: (t) => t.dueDate, cell: (t) => <>
+
                       {t.dueDate.slice(0, 10)}
-                    </td>
-                    <td className="p-2">
+                    
+          </> },
+          { id: "c5", label: "For roles", sortValue: (t) => t.allowedRoles?.join(",") ?? "", cell: (t) => <>
+
                       {t.allowedRoles?.length ? (
                         <span className="flex flex-wrap gap-1">
                           {t.allowedRoles.map((r) => (
@@ -410,11 +407,16 @@ function WorklistPage() {
                       ) : (
                         <span className="text-muted-foreground">Any</span>
                       )}
-                    </td>
-                    <td className="p-2">
-                      <StatusChip lang="en" state={s === "completed" ? "done" : s === "cancelled" ? "closed" : t.status === "snoozed" ? "upnext" : t.claimedBy ? (t.claimedBy === staffName ? "yourturn" : "team") : t.assignedTo === staffName || t.assignedTo === role || Boolean(t.allowedRoles?.includes(role)) ? "yourturn" : "team"} label={STATUS_LABEL[s]} />
-                    </td>
-                    <td className="p-2">
+                    
+          </> },
+          { id: "c6", label: "Status", sortValue: (t) => worklistStatusFor(t), cell: (t) => <>
+
+                      <StatusChip lang="en" state={worklistStatusFor(t) === "completed" ? "done" : worklistStatusFor(t) === "cancelled" ? "closed" : t.status === "snoozed" ? "upnext" : t.claimedBy ? (t.claimedBy === staffName ? "yourturn" : "team") : t.assignedTo === staffName || t.assignedTo === role || Boolean(t.allowedRoles?.includes(role)) ? "yourturn" : "team"} label={STATUS_LABEL[worklistStatusFor(t)]} />
+                    
+          </> },
+          ]}
+          primaryAction={(t) => <>
+
                       {!canWrite ? (
                         <span className="text-muted-foreground">{t.claimedBy ?? "—"}</span>
                       ) : t.claimedBy === staffName ? (
@@ -427,20 +429,17 @@ function WorklistPage() {
                         </Button>
                       ) : t.claimedBy ? (
                         <span className="text-muted-foreground">{t.claimedBy}</span>
-                      ) : s === "completed" || s === "cancelled" ? (
+                      ) : worklistStatusFor(t) === "completed" || worklistStatusFor(t) === "cancelled" ? (
                         <span className="text-muted-foreground">—</span>
                       ) : (
                         <Button size="sm" variant="outline" onClick={() => claim(t)}>
                           Claim
                         </Button>
                       )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
+                    
+          </>}
+          moreActions={(t) => [{ label: "Open chart", onSelect: () => { void navigate({ to: "/record/$patientId", params: { patientId: t.patientId } }); } }]}
+        />
       )}
     </div>
   );

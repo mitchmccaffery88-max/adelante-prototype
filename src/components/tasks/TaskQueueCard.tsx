@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 // §Dashboard Cleanup Phase 6a — the one task-queue card.
 //
 // Extracted verbatim from `/case-manager` so the Clinician Workspace and Care
@@ -78,7 +79,7 @@ export function TaskQueueCard({
           <ClipboardList className="h-4 w-4 text-teal" /> {title}
         </h2>
         {source.kind !== "none" && (
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <Badge className="bg-surface-sunk text-ink-muted border-0">
               {overdue.length} follow-up needed
             </Badge>
@@ -109,27 +110,13 @@ export function TaskQueueCard({
           messages.
         </div>
       ) : (
-        <ul className="space-y-2">
-          {list.slice(0, 12).map((t) => {
+        <StaffTable rows={list} rowKey={(t) => t.id} label={title} testId="task-queue-table"
+          views={[{ id: "current", label: showDone ? "All tasks" : "Needs you", matches: () => true }]}
+          columns={[{ id: "task", label: "Task", sortValue: (t) => t.title, cell: (t) => {
             const p = patients.find((x) => x.id === t.patientId);
-            return (
-              <TaskWorkRow
-                key={t.id}
-                task={t}
-                patientSlot={
-                  p ? (
-                    <button
-                      className="text-xs underline text-muted-foreground"
-                      onClick={() => onOpenPatient(p.id)}
-                    >
-                      {p.firstName} {p.lastName}
-                    </button>
-                  ) : null
-                }
-              />
-            );
-          })}
-        </ul>
+            return <ul><TaskWorkRow tablePresentation task={t} patientSlot={p ? <Button size="sm" variant="link" onClick={() => onOpenPatient(p.id)}>{p.firstName} {p.lastName}</Button> : null} /></ul>;
+          } }]}
+        />
       )}
     </Card>
   );

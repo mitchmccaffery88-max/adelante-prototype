@@ -11,14 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { StaffTable } from "@/components/staff/StaffTable";
 import { Download } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
@@ -206,93 +199,24 @@ export function CaseloadTable({
           </Button>
         )}
       </div>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Patient ID</TableHead>
-              <TableHead>CIN</TableHead>
-              <TableHead>Episode day</TableHead>
-              <TableHead>Coverage</TableHead>
-              <TableHead>Next appt</TableHead>
-              <TableHead>Engagement</TableHead>
-              <TableHead>SMS</TableHead>
-              {showAssignClinician && <TableHead>Primary clinician</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((p) => {
-              const primary = clinicians.find((c) => c.id === p.primaryClinicianId);
-              return (
-                <TableRow
-                  key={p.id}
-                  className={onOpenPatient ? "cursor-pointer hover:bg-secondary/40" : ""}
-                  onClick={() => onOpenPatient?.(p.id)}
-                >
-                  <TableCell className="font-mono text-xs text-navy">{p.programId}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-20 rounded-full bg-border">
-                        <div
-                          className="h-1.5 rounded-full bg-teal"
-                          style={{ width: `${(p.episodeDay / 90) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground">{p.episodeDay}/90</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <CoverageBadge status={p.coverage?.status} />
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {(() => {
-                      const upcoming = AdelanteEHR.appointmentsForPatient(p.id)
-                        .filter((a) => new Date(a.start).getTime() > Date.now())
-                        .sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
-                      return upcoming ? <ClientDate value={upcoming.start} /> : "—";
-                    })()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={p.episodeDay > 30 ? "" : "border-teal/40 text-teal"}
-                    >
-                      {p.episodeDay > 30 ? "Steady" : "New"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {AdelanteEHR.isSmsOn(p.id) ? (
-                      <Badge className="bg-gold/30 text-navy border-0">On</Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Off</span>
-                    )}
-                  </TableCell>
-                  {showAssignClinician && (
-                    <TableCell
-                      className="text-xs"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground truncate max-w-[140px]">
-                          {primary?.name ?? (
-                            <StatusChip lang="en" state={showAssignClinician ? "yourturn" : "team"} label="Unassigned" />
-                          )}
-                        </span>
-                        <AssignClinicianButton patientId={p.id} size="sm" variant="ghost" />
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <StaffTable
+        rows={filtered} rowKey={(p) => p.id} label={title} testId="caseload-table"
+        views={[{ id: "all", label: "Current caseload", matches: () => true }]}
+        columns={[
+          { id: "program", label: "Patient ID", mono: true, sortValue: (p) => p.programId, cell: (p) => p.programId },
+          { id: "cin", label: "CIN", mono: true, cell: (p) => p.cin ? `••••${p.cin.slice(-4)}` : "—" },
+          { id: "episode", label: "Episode day", sortValue: (p) => p.episodeDay, cell: (p) => <span>{p.episodeDay}/90</span> },
+          { id: "coverage", label: "Coverage", sortValue: (p) => p.coverage?.status ?? "", cell: (p) => <CoverageBadge status={p.coverage?.status} /> },
+          { id: "visit", label: "Next appt", sortValue: (p) => nextAppointment(p.id)?.start ?? "", cell: (p) => { const next = nextAppointment(p.id); return next ? <ClientDate value={next.start} /> : "—"; } },
+          { id: "engagement", label: "Engagement", sortValue: (p) => p.episodeDay, cell: (p) => <Badge variant="outline">{p.episodeDay > 30 ? "Steady" : "New"}</Badge> },
+          { id: "sms", label: "SMS", cell: (p) => AdelanteEHR.isSmsOn(p.id) ? <Badge className="bg-gold/30 text-on-gold border-0">On</Badge> : "Off" },
+          ...(showAssignClinician ? [{ id: "clinician", label: "Primary clinician", cell: (p: Patient) => <span>{clinicians.find((c) => c.id === p.primaryClinicianId)?.name ?? <StatusChip lang="en" state="yourturn" label="Unassigned" />}</span> }] : []),
+        ]}
+        primaryAction={onOpenPatient ? (p) => <Button size="sm" variant="outline" onClick={() => onOpenPatient(p.id)}>Open profile</Button> : undefined}
+        moreContent={showAssignClinician ? (p) => <AssignClinicianButton patientId={p.id} size="sm" variant="ghost" /> : undefined}
+      />
       <p className="mt-3 text-xs text-muted-foreground">
-        Click a row to open the patient profile. No names, diagnoses, or care-plan narrative
+        Open the patient profile. No names, diagnoses, or care-plan narrative
         shown in the table — clinical detail lives only in Case Manager and Clinician workspaces.
       </p>
     </Card>
@@ -316,4 +240,7 @@ function CoverageBadge({ status }: { status?: string }) {
   return (
     <Badge className={`${styles[status] ?? ""} border-0 text-xs`}>{labels[status] ?? status}</Badge>
   );
+}
+function nextAppointment(id: string) {
+  return AdelanteEHR.appointmentsForPatient(id).filter((a) => +new Date(a.start) > Date.now()).sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
 }

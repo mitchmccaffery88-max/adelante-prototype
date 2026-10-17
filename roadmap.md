@@ -2,6 +2,15 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 8b-1 — Shared staff table pilots (approved Oct 17)
+Rollback: e822105ffca551809487f2403bc60f728bfe8d9b
+- [ ] Record each pilot's source, existing hidden-data rules and rollback row parity before replacing presentation
+- [ ] One shared compact table: caseloads, eligibility worklist, notes queue and task queues; unchanged caller gates/handlers
+- [ ] New sorting/paging/views/lock/keyboard units and pilot browser/axe coverage; existing tests untouched
+- [ ] Full units/listed total, then full background browser suite --workers=1 on :8080 to completion; restore screenshots
+- [ ] 390/768/1280 light/dark screenshots, parity report and completion only if green
+- Scope stop: no publishing, no 8b-2 or 8b-3; unrelated older roadmap items remain outside this approval.
+
 ## Phase 6 — Emotion check-in (approved 14 Oct)
 - [ ] Shared eleven-emotion flow, private dismissal, real-record choices and timer
 - [x] Approved allowlist/snapshot and audiences-test setup corrections only

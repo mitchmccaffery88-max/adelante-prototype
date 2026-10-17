@@ -37,6 +37,8 @@ import { AutoCreatedFromNote } from "@/components/clinical/AutomationTrace";
 import { ClientDate } from "@/components/ClientDate";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 
 export const PRIORITY_TONE: Record<TaskPriority, string> = {
   stat: "bg-surface-sunk text-attention border-0",
@@ -65,12 +67,14 @@ export function TaskWorkRow({
   canWrite = true,
   patientSlot,
   className,
+  tablePresentation = false,
 }: {
   task: CaseTask;
   canWrite?: boolean;
   /** Optional patient link/label — the caseload card shows it, the record doesn't. */
   patientSlot?: ReactNode;
   className?: string;
+  tablePresentation?: boolean;
 }) {
   const { role, staffName } = useActingStaff();
   const [open, setOpen] = useState(false);
@@ -94,18 +98,18 @@ export function TaskWorkRow({
   return (
     <li
       className={cn(
-        "rounded-lg border p-3 text-sm",
-        overdue && "border-input bg-surface-sunk",
+        tablePresentation ? "text-sm min-w-0" : "rounded-lg border p-3 text-sm",
+        !tablePresentation && overdue && "border-input bg-surface-sunk",
         className,
       )}
       data-testid="task-work-row"
     >
-      <div className="flex items-start justify-between gap-3">
-        <button
+      <div className={tablePresentation ? "flex flex-wrap items-start justify-between gap-3" : "flex items-start justify-between gap-3"}>
+        <Button variant="ghost"
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="flex min-w-0 flex-1 items-start gap-2 text-left"
+          className={tablePresentation ? "flex min-w-0 w-full items-start gap-2 text-left h-auto px-0" : "flex min-w-0 flex-1 items-start gap-2 text-left h-auto px-0"}
         >
           {open ? (
             <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -131,8 +135,9 @@ export function TaskWorkRow({
               {task.claimedBy && <span>Claimed by {task.claimedBy}</span>}
             </span>
           </span>
-        </button>
+        </Button>
         <div className="shrink-0 text-right">{patientSlot}</div>
+        {tablePresentation && <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`More: ${task.id}`}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem onSelect={() => setOpen(true)}>Task details</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}
       </div>
 
       {open && (

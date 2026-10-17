@@ -1,3 +1,4 @@
+import { StaffTable } from "@/components/staff/StaffTable";
 // §EHR audit Phase 1a — the UNSCOPED (whole-clinic) view of unsigned
 // documentation. Same derivation as the Inbox Unsigned tab and the /clinician
 // tile (`listUnsignedWork`), just without the author filter.
@@ -7,7 +8,7 @@
 //   • no note yet     — an attended visit with nothing drafted; there is
 //                       nothing to sign, so the action is "open chart"
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,10 @@ export const Route = createFileRoute("/notes-queue")({
     meta: [
       { title: "Unsigned Notes — Adelante" },
       { name: "description", content: "Sign completed encounter notes to release billing." },
+      { property: "og:title", content: "Unsigned Notes — Adelante" },
+      { property: "og:description", content: "Review unfinished documentation and sign authorized notes." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: NotesQueuePage,
@@ -114,6 +119,7 @@ function QueueSignDialog({
 }
 
 function NotesQueuePage() {
+  const navigate = useNavigate();
   const actor = useActingStaff();
   const access = canAccess(actor.role, "therapy_notes");
   const rows = useEhr(() => listUnsignedWork());
@@ -153,52 +159,17 @@ function NotesQueuePage() {
             All caught up. Every attended encounter is documented and signed.
           </p>
         ) : (
-          <ul className="divide-y" data-testid="notes-queue-rows">
-            {rows.map((row) => {
-              const cl = clinicians.find((c) => c.id === row.authorId);
-              const auth = row.note ? noteSignAuthorization(row.note, actor) : null;
-              return (
-                <li key={row.id} className="py-3 flex items-center justify-between gap-2 text-sm">
-                  <div className="min-w-0">
-                    <div className="font-medium">
-                      {row.patient.firstName} {row.patient.lastName}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      <ClientDate value={row.date} /> · {cl?.name ?? row.authorId}
-                      {row.appointment?.serviceType ? ` · ${row.appointment.serviceType}` : ""}
-                    </div>
-                    {row.kind === "undocumented_encounter" && (
-                      <div className="text-xs text-muted-foreground">
-                        No note written yet — nothing to sign.
-                      </div>
-                    )}
-                    {auth && !auth.allowed && (
-                      <div className="text-xs text-muted-foreground">{auth.reason}</div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <ClockBadge row={row} />
-                    {row.kind === "draft_note" && auth?.allowed ? (
-                      <Button size="sm" onClick={() => setSigningId(row.id)}>
-                        {auth.asSupervisor ? "Sign as supervisor" : "Sign"}
-                      </Button>
-                    ) : (
-
-                      <Button asChild size="sm" variant="outline">
-                        <Link
-                          to="/record/$patientId"
-                          params={{ patientId: row.patient.id }}
-                          search={{ section: "notes" }}
-                        >
-                          Open chart
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <StaffTable rows={rows} rowKey={(row) => row.id} label="Unsigned notes" testId="notes-queue-rows"
+            views={[{ id: "needs", label: "Needs you", matches: (row) => row.authorId === (actor.clinicianId ?? actor.staffId) || Boolean(row.note && noteSignAuthorization(row.note, actor).allowed) }, { id: "all", label: "Everyone", matches: () => true }]}
+            defaultView="needs"
+            columns={[
+              { id: "patient", label: "Patient", sortValue: (row) => `${row.patient.firstName} ${row.patient.lastName}`, cell: (row) => <span className="font-medium">{row.patient.firstName} {row.patient.lastName}</span> },
+              { id: "date", label: "Date / owner", sortValue: (row) => row.date, cell: (row) => <><ClientDate value={row.date} /> · {clinicians.find((c) => c.id === row.authorId)?.name ?? row.authorId}{row.appointment?.serviceType ? ` · ${row.appointment.serviceType}` : ""}</> },
+              { id: "state", label: "Documentation", sortValue: (row) => row.kind, cell: (row) => <><ClockBadge row={row} />{row.kind === "undocumented_encounter" && <p>No note written yet — nothing to sign.</p>}{(() => { const auth = row.note ? noteSignAuthorization(row.note, actor) : null; return auth && !auth.allowed ? <p>{auth.reason}</p> : null; })()}</> },
+            ]}
+            primaryAction={(row) => { const auth = row.note ? noteSignAuthorization(row.note, actor) : null; return row.kind === "draft_note" && auth?.allowed ? <Button size="sm" onClick={() => setSigningId(row.id)}>{auth.asSupervisor ? "Sign as supervisor" : "Sign"}</Button> : <Button asChild size="sm" variant="outline"><Link to="/record/$patientId" params={{ patientId: row.patient.id }} search={{ section: "notes" }}>Open chart</Link></Button>; }}
+            moreActions={(row) => [{label: "Open chart", onSelect: () => { void navigate({ to: "/record/$patientId", params: { patientId: row.patient.id }, search: { section: "notes" } }); }}]}
+          />
         )}
       </Card>
       {signingRow && (
