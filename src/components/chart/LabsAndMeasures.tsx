@@ -5,6 +5,7 @@ import { StatusChip } from "@/components/ui/status-chip";
 import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ChartFrame } from "@/components/ui/chart-frame";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff, type StaffRole } from "@/lib/roles";
@@ -287,6 +288,7 @@ export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string
                   );
                 })}
               </ul>
+              <ChartFrame title="BMI and systolic blood pressure" rows={met.map((m) => ({ date: new Date(m.at).toLocaleDateString(), bmi: m.bmi, systolic: m.bpSystolic }))} columns={[{ key: "date", label: "Date" }, { key: "bmi", label: "BMI" }, { key: "systolic", label: "Systolic" }]} testId="metabolic-chart-frame">
               <div className="h-36">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={met.map((m) => ({ date: new Date(m.at).toLocaleDateString(), bmi: m.bmi, systolic: m.bpSystolic }))}>
@@ -299,6 +301,7 @@ export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string
                   </LineChart>
                 </ResponsiveContainer>
               </div>
+              </ChartFrame>
             </>
           )}
         </div>
