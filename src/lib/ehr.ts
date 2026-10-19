@@ -1659,6 +1659,13 @@ export interface Patient {
   episodeDay: number; // day within 90-day window
   smsFallback: boolean;
   consents: { hipaa: boolean; part2Sud: boolean; signedAt?: string };
+  /**
+   * §Privacy P1 addendum A — SUD consent that lets care COORDINATION staff
+   * (clinical_coordinator) be counted in SUD aggregates: a single TPO consent
+   * or a specific written consent naming the program. Absent = not on file
+   * (deny by default). Never widens chart access.
+   */
+  sudCoordinationConsent?: "tpo" | "specific_written";
   // §Recovery start date deliberately does NOT live here. It is patient-only
   // self-tracking (`src/lib/selfTracking.ts`) until it is clinically validated
   // as medically necessary. Do not add it back without that sign-off.
