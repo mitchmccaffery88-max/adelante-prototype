@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { AdelanteEHR, type ServiceType } from "@/lib/ehr";
+import { AdelanteEHR, isVisitActive, type ServiceType } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
 import { ADVOCATE_ACTOR_ROLE, PATIENT_ACTOR_ROLE, patientBookableClinicians, patientSelfBook, patientSlots } from "@/lib/patientBooking";
 import { dmcOdsExportRows, exportDmcOdsCsv, ASAM_CLINICAL_COLUMNS, exportColumnsFor } from "@/lib/dmcOdsReadiness";
@@ -10,11 +10,25 @@ const SVC: ServiceType = "therapy_individual";
 const actionEvents = () => AdelanteEHR.listAuditEvents({ category: "action" });
 
 function bookFor(patientId: string) {
-  const p = AdelanteEHR.getPatient(patientId)!;
-  const opt = patientBookableClinicians(p, SVC, "in_person").find((o) => patientSlots(o.clinician.id, SVC, "in_person").length > 2)!;
+  const p = AdelanteEHR.getPatient(patientId);
+  if (!p) throw new Error("Missing booking test patient");
+  const opt = patientBookableClinicians(p, SVC, "in_person").find((o) => patientSlots(o.clinician.id, SVC, "in_person").length > 2);
+  if (!opt) throw new Error("Missing booking test clinician");
   const slots = patientSlots(opt.clinician.id, SVC, "in_person");
   const loc = AdelanteEHR.locationsForService(SVC)[0]?.id;
-  const appt = patientSelfBook({ patientId, clinicianId: opt.clinician.id, start: slots[0], serviceType: SVC, modality: "in_person", locationId: loc });
+  const durationMin = AdelanteEHR.getServiceType(SVC)?.defaultDurationMin ?? 50;
+  const start = slots.find((slot) => {
+    const begins = new Date(slot).getTime();
+    const ends = begins + durationMin * 60_000;
+    return !AdelanteEHR.appointmentsForPatient(patientId).some((existing) => {
+      if (!isVisitActive(existing.status)) return false;
+      const existingStart = new Date(existing.start).getTime();
+      const existingEnd = existingStart + existing.durationMin * 60_000;
+      return existingStart < ends && begins < existingEnd;
+    });
+  });
+  if (!start) throw new Error("Missing patient-free booking test slot");
+  const appt = patientSelfBook({ patientId, clinicianId: opt.clinician.id, start, serviceType: SVC, modality: "in_person", locationId: loc });
   return { appt, clinicianId: opt.clinician.id };
 }
 
@@ -83,7 +97,7 @@ describe("Cleanup 2 — narrow reporting-only export", () => {
     expect(dmcOdsExportRows("billing_coordinator")).toBeNull();
     for (const r of dmcOdsExportRows("billing_coordinator") ?? []) for (const c of ASAM_CLINICAL_COLUMNS) expect(r).not.toHaveProperty(c);
     const out = exportDmcOdsCsv({ staffId: "s-bc1", role: "billing_coordinator" });
-    expect(out!.csv.split("\n")[0]).not.toMatch(/ASAM version|signature|LPHA|Medical necessity/);
+    expect(out).toBeNull();
     expect(out).toBeNull();
   });
   it("roles passing roleSeesAsam keep the full export", () => {
