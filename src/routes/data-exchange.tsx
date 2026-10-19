@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { disclosureCsvFilename } from "@/lib/exportFilenames";
 import { useActingStaff } from "@/lib/roles";
 import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { PatientMatchingQueue } from "@/components/identity/PatientMatchingQueue";
@@ -167,7 +168,7 @@ function Outbound() {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `disclosures-${nameOf(id).replace(/\s+/g, "-")}.csv`;
+    a.download = disclosureCsvFilename(id);
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Disclosure list exported");

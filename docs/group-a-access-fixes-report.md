@@ -27,3 +27,13 @@ All fixes narrow only; no permission matrix, role list, Part 2 rule, status mapp
 - New tests: unit 12/12, browser 3/3.
 - Full browser suite, run last after the final source change (--workers=1, :8080): 177 passed / 177 listed, 0 failures.
 - All 20 tracked screenshots restored to the rollback versions; hashes verified.
+
+## Addendum (Oct 19): export file names
+
+Rollback SHA: `ea295dbce9971ce842e483f392bf0a6a4b139a7a`.
+
+- Disclosure export (`src/routes/data-exchange.tsx:170`). Before: `disclosures-<First>-<Last>.csv`. After: `disclosures-<programId>-<YYYY-MM-DD>.csv`, via `src/lib/exportFilenames.ts`. The file contents are unchanged.
+- Approved test change: `src/components/__tests__/adminTables8b3.test.tsx:49`. Old: download bodies compared byte-identically to rollback. New: the same comparison, with the one approved file-name line mapped back to the old line, plus an assertion that the new line is present. No other existing assertion changed.
+- New test: `src/lib/__tests__/exportFilenamesNoNames.test.ts`.
+- Audit of every other download name. Generic names (date, report or kind only): caseload, claims, ISL, credential roster, permissions, goal audit, DMC-ODS, county, shift count, group engagement, content CSVs, templates. The print record uses a generic page title. Document downloads use the uploaded file's own name.
+- Still contain the patient's last name, NOT changed (stop rule): progress note PDF `note-<lastname>-<date>-<id>.pdf` (`src/lib/notePdf.ts:309`, pinned by `src/lib/__tests__/notePdf.test.ts:167`) and refusal PDF `refusal-<lastname>-<date>-<id>.pdf` (`src/lib/refusalPdf.ts:205`, pinned by `src/lib/__tests__/refusalPdf.test.ts:45`). Proposed: `note-<programId>-…` / `refusal-<programId>-…`. These need approval for those two test lines.
