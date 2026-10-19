@@ -34,8 +34,8 @@ describe("EngagementSection", () => {
     expect(screen.getByText("Patients ever engaged")).toBeTruthy();
     // Self-tracking aggregate is present; the small-cohort flag tracks cohort
     // size (Part B QA seeds grew the demo cohort, so check both directions).
-    expect(screen.getByText("Craving logs")).toBeTruthy();
+    expect(screen.queryByText("Craving logs")).toBeNull();
     const small = proj.selfTracking.cohortSize < proj.selfTracking.minimumCohortSize;
-    expect(Boolean(screen.queryByText(/below the .* minimum for safe small-cell reporting/))).toBe(small);
+    expect(screen.queryByText(/Self-tracking|below the .* minimum for safe small-cell reporting/)).toBeNull();
   });
 });

@@ -116,6 +116,8 @@ export interface DisclosureLogEntry {
   simulated: boolean;
   emergency: boolean;
   complianceReview?: "pending" | "reviewed";
+  /** Required emergency justification, retained for disclosure review only. */
+  emergencyReason?: string;
 }
 
 export type DisclosureResult =
@@ -175,10 +177,11 @@ export function part2ConsentFor(
 /** THE disclosure function. */
 export function disclose(req: DisclosureRequest): DisclosureResult {
   if (req.recordClasses.length === 0) return { ok: true };
+  const emergencyReason = req.emergency?.reason.trim();
   const emergency = !!req.emergency;
   let consentRef: string;
   if (emergency) {
-    if ((req.emergency!.reason ?? "").trim().length < 3)
+    if (!emergencyReason || emergencyReason.length < 3)
       return { ok: false, reason: "Describe the medical emergency before sharing." };
     consentRef = "Medical emergency — no consent (42 CFR 2.51)";
   } else {
@@ -211,7 +214,7 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
     channel: req.channel,
     simulated: !!req.simulated,
     emergency,
-    ...(emergency ? { complianceReview: "pending" as const } : {}),
+    ...(emergency ? { complianceReview: "pending" as const, emergencyReason } : {}),
   };
   log.unshift(entry);
   AdelanteEHR._recordAudit({
@@ -230,7 +233,7 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
       categories: ["sud_treatment"],
       purpose: entry.purpose,
       simulated: entry.simulated,
-      ...(emergency ? { complianceReview: "pending" } : {}),
+      ...(emergency ? { complianceReview: "pending", emergencyReason } : {}),
     },
   });
   return { ok: true, notice: PART2_NOTICE_BLOCK, entry };

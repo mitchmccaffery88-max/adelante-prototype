@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { AdelanteEHR } from "@/lib/ehr";
 import { recordDailyCheckIn, startCravingLog } from "@/lib/selfTracking";
+import { STAFF_ROSTER } from "@/lib/roles";
 import { checkInSummary } from "@/lib/caseloadReview";
 import { moodCheckInDayCount } from "@/lib/moodCheckInCount";
 import { isMessageBodyMasked } from "@/lib/careMessageMasking";
@@ -11,7 +12,8 @@ describe("§4 (d) mood check-in count for case managers", () => {
     const p = AdelanteEHR.listPatients()[1];
     recordDailyCheckIn(p.id, { emotions: ["depressed", "craving"], reasonId: "family" as never });
     try { startCravingLog(p.id, { intensity: 9, note: "CRAVE-SECRET" } as never); } catch { /* shape varies */ }
-    const s = checkInSummary(p, "cf_care_manager");
+    const manager = STAFF_ROSTER.find((m) => m.caseManagerId === p.caseManagerId);
+    const s = checkInSummary(p, manager?.role ?? "cf_care_manager", new Date(), manager?.id);
     expect(s.moodDaysThisWeek).toBe(1);
     expect(moodCheckInDayCount(p.id, "2000-01-01", "2999-12-31")).toBe(1);
     const json = JSON.stringify(s);
