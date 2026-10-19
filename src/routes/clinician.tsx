@@ -469,7 +469,7 @@ function QueueCountRow() {
   // §EHR audit Phase 1a — identical derivation and scope to the Inbox tab this
   // tile links to, so the two can never disagree.
   const unsigned = useEhr(
-    () => listUnsignedWork({ authorId: actor.clinicianId ?? actor.staffId }).length,
+    () => listUnsignedWork({ authorId: actor.clinicianId ?? actor.staffId, viewer: { role: actor.role, staffId: actor.staffId } }).length,
   );
 
   const mine = useEhr(

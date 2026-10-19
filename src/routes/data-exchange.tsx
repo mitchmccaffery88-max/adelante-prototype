@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { PatientMatchingQueue } from "@/components/identity/PatientMatchingQueue";
 import { HieNotice, HieStatusCard } from "@/components/hie/OutsideRecords";
 import { KIND_LABEL, hieSyncLog, listHeldHieRecords, releaseHeldHieRecord } from "@/lib/hie";
@@ -173,7 +174,7 @@ function Outbound() {
   };
   return (
     <Panel title="Outbound sharing log" testId="dx-outbound">
-      <StaffTable rows={rows} rowKey={(r) => r.id} label={adminTableCopy.data_exchange_outbound} testId="data-exchange-outbound"  columns={[{ id: "column-0", label: adminTableCopy.data_exchange_outbound_0, cell: (r) => {  return <>{nameOf(r.patientId)}</>; } },
+      <StaffTable rows={rows} rowKey={(r) => r.id} label={adminTableCopy.data_exchange_outbound} testId="data-exchange-outbound"  columns={[{ id: "column-0", label: adminTableCopy.data_exchange_outbound_0, cell: (r) => {  return <>{staffPatientLabel(actor, r.patientId)}</>; } },
 { id: "column-1", label: adminTableCopy.data_exchange_outbound_1, cell: (r) => {  return <>{fmt(r.sentAt)}</>; } },
 { id: "column-2", label: adminTableCopy.data_exchange_outbound_2, cell: (r) => {  return <>{r.recipient}</>; } },
 { id: "column-3", label: adminTableCopy.data_exchange_outbound_3, cell: (r) => {  return <>{r.what}</>; } },
@@ -181,7 +182,7 @@ function Outbound() {
 { id: "column-5", label: adminTableCopy.data_exchange_outbound_5, cell: (r) => {  return <>{r.consentUsed}</>; } }]}  />
       <div className="flex flex-wrap items-center gap-2">
         <select aria-label="Patient for export" className="h-8 rounded-md border bg-background px-2 text-xs" value={pid || patients[0] || ""} onChange={(e) => setPid(e.target.value)}>
-          {patients.map((id) => <option key={id} value={id}>{nameOf(id)}</option>)}
+          {patients.map((id) => <option key={id} value={id}>{staffPatientLabel(actor, id)}</option>)}
         </select>
         <Button size="sm" variant="outline" onClick={exportCsv}>Export disclosure list for a patient</Button>
       </div>

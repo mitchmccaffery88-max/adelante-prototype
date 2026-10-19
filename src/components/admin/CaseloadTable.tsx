@@ -12,6 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StaffTable } from "@/components/staff/StaffTable";
+import { useActingStaff } from "@/lib/roles";
+import { roleSeesSudProgram, patientSudProgramVisible } from "@/lib/sudProgramVisibility";
 import { Download } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
@@ -36,6 +38,11 @@ export function CaseloadTable({
   const [coverageFilter, setCoverageFilter] = useState<string>("all");
   const [bucketFilter, setBucketFilter] = useState<string>("all");
   const [programFilter, setProgramFilter] = useState<string>("all");
+  // §Group A #2 — the SUD program is Part 2 classification: the option shows
+  // only to roles with unconditional screeners_sud access, and matching keeps
+  // the per-patient Part 2 check (hidden, like the chart's ASAM section).
+  const { role } = useActingStaff();
+  const showSudProgram = roleSeesSudProgram(role);
   const [clinicianFilter, setClinicianFilter] = useState<string>("all");
   const [careNeedFilter, setCareNeedFilter] = useState<string>("all");
   const filtered = useMemo(
@@ -52,6 +59,7 @@ export function CaseloadTable({
           const hasProgram = (p.episodes ?? []).some(
             (e) => !e.closedAt && e.type === (programFilter as EpisodeType),
           );
+          if (programFilter === "sud_dmc_ods" && !patientSudProgramVisible(role, p)) return false;
           if (!hasProgram) return false;
         }
         if (clinicianFilter !== "all") {
@@ -67,7 +75,7 @@ export function CaseloadTable({
         }
         return true;
       }),
-    [patients, coverageFilter, bucketFilter, programFilter, clinicianFilter, careNeedFilter],
+    [patients, coverageFilter, bucketFilter, programFilter, clinicianFilter, careNeedFilter, role],
   );
   const clinicians = AdelanteEHR.listClinicians();
   const activeFilters =
@@ -152,7 +160,7 @@ export function CaseloadTable({
           <SelectContent>
             <SelectItem value="all">All programs</SelectItem>
             <SelectItem value="mental_health">Mental health</SelectItem>
-            <SelectItem value="sud_dmc_ods">SUD (DMC-ODS)</SelectItem>
+            {showSudProgram && <SelectItem value="sud_dmc_ods">SUD (DMC-ODS)</SelectItem>}
             <SelectItem value="ecm">ECM</SelectItem>
             <SelectItem value="ji_pre_release">JI pre-release</SelectItem>
             <SelectItem value="bhsa">BHSA</SelectItem>

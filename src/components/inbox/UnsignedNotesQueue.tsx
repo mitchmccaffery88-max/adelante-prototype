@@ -27,11 +27,11 @@ export function queueAgeTone(iso: string, now: number = Date.now()): string {
 }
 
 export function UnsignedNotesQueue() {
-  const { clinicianId, staffId } = useActingStaff();
+  const { clinicianId, staffId, role } = useActingStaff();
   const authorId = clinicianId ?? staffId;
   // §EHR audit Phase 1a — same derivation as /notes-queue and the clinician
   // tile, scoped to my own work.
-  const rows = useEhr(() => listUnsignedWork({ authorId }));
+  const rows = useEhr(() => listUnsignedWork({ authorId, viewer: { role, staffId } }));
 
   if (rows.length === 0) {
     return <EmptyState icon={FileText} title="No unsigned notes" description="Nothing of yours is sitting in draft." />;

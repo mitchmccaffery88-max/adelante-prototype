@@ -122,7 +122,7 @@ function NotesQueuePage() {
   const navigate = useNavigate();
   const actor = useActingStaff();
   const access = canAccess(actor.role, "therapy_notes");
-  const rows = useEhr(() => listUnsignedWork());
+  const rows = useEhr(() => listUnsignedWork({ viewer: { role: actor.role, staffId: actor.staffId } }));
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const onTime = useEhr(() => noteOnTimeRate(AdelanteEHR.listPatients()));
   const [signingId, setSigningId] = useState<string | null>(null);

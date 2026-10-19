@@ -31,6 +31,8 @@ import {
   type Patient,
   type ProgressNote,
 } from "@/lib/ehr";
+import { canAccess, noteGateClass, type StaffRole } from "@/lib/roles";
+import { viewerCanOpenChart } from "@/lib/staffPatientLabel";
 
 export type UnsignedWorkKind = "draft_note" | "undocumented_encounter";
 
@@ -53,8 +55,22 @@ export function isUnsignedDraft(note: ProgressNote): boolean {
   return noteStatus(note) === "draft" && !note.signedBy;
 }
 
+/**
+ * §Group A #1 — staff-facing viewer scope. A row shows only when the viewer
+ * could open that chart (existing chart-entry rule) and, for a Part 2 note,
+ * the note's existing gate class (`noteGateClass`) is not none/locked for
+ * that role. Hidden rows are omitted, never placeholders.
+ */
+export function viewerSeesUnsignedRow(viewer: { role: StaffRole; staffId?: string }, row: Pick<UnsignedWorkRow, "patient" | "note">): boolean {
+  if (!viewerCanOpenChart(viewer, row.patient.id)) return false;
+  const cls = row.note ? noteGateClass(row.note) : undefined;
+  if (!cls) return true;
+  const a = canAccess(viewer.role, cls, row.patient);
+  return a.level !== "none" && !a.locked;
+}
+
 export function listUnsignedWork(
-  opts: { authorId?: string; kinds?: UnsignedWorkKind[] } = {},
+  opts: { authorId?: string; kinds?: UnsignedWorkKind[]; viewer?: { role: StaffRole; staffId?: string } } = {},
   now: number = Date.now(),
 ): UnsignedWorkRow[] {
   const kinds = opts.kinds ?? (["draft_note", "undocumented_encounter"] as UnsignedWorkKind[]);
@@ -107,7 +123,9 @@ export function listUnsignedWork(
     }
   }
 
-  return rows.sort((x, y) => y.ageDays - x.ageDays || x.date.localeCompare(y.date));
+  const viewer = opts.viewer;
+  const scoped = viewer ? rows.filter((r) => viewerSeesUnsignedRow(viewer, r)) : rows;
+  return scoped.sort((x, y) => y.ageDays - x.ageDays || x.date.localeCompare(y.date));
 }
 
 /** Count used by the /clinician tile and the Inbox badge — same derivation. */

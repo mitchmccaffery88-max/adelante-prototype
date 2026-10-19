@@ -13,6 +13,7 @@ import { REGISTRY_VERSION, type ChartActionGroup } from "@/lib/chartActions";
 import { featureSnapshot } from "@/lib/features";
 import { flagsCsv, matrixCsv, noteContentByRole, permissionMatrix } from "@/lib/actions/permissionMatrix";
 import { ACTION_EVENTS } from "@/lib/actions/runAction";
+import { displayAuditDetail } from "@/lib/auditDisplay";
 import { redactAuditEvent } from "@/lib/auditRedaction";
 import { NOTE_CONTENT_RBAC_DRAFT } from "@/lib/roles";
 import { SUD_REPORTING_ACCESS_LABEL, SUD_REPORTING_ACCESS_ROLES, SUD_REPORTING_POST_MVP_NOTE } from "@/lib/sudReportingAccess";
@@ -290,7 +291,7 @@ function PermissionsPage() {
         cell: (e) => {
           const d = e.detail ?? {};
           const red = redactAuditEvent(e, role);
-          return <>{String(d["reason"] ?? d["outcome"] ?? "")}</>;
+          return <>{displayAuditDetail(d["reason"] ?? d["outcome"], e.patientId)}</>;
         },
       },
     ]}

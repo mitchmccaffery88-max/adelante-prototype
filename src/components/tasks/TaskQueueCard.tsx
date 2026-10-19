@@ -19,6 +19,7 @@ import { ClipboardList } from "lucide-react";
 import { TaskWorkRow } from "@/components/tasks/TaskWorkRow";
 import { type TaskWorkDraftCache } from "@/components/tasks/taskWorkDraft";
 import { useActingStaff } from "@/lib/roles";
+import { isInFacilityTask } from "@/lib/inFacility";
 
 export type TaskQueueSource =
   /** Tasks assigned to this case manager — the real `assignedTo` field. */
@@ -33,6 +34,11 @@ const NO_IDENTITY_NOTE =
 
 export const CLINICIAN_TASK_SOURCE_NOTE =
   "Task assignment is a case-manager field, so these are open follow-ups on the patients assigned to you — not tasks addressed to you personally.";
+
+/** §Group A #3 — outpatient queues never carry in-facility task text. */
+export function outpatientQueueTasks(source: TaskQueueSource): CaseTask[] {
+  return tasksFor(source).filter((t) => !isInFacilityTask(t));
+}
 
 function tasksFor(source: TaskQueueSource): CaseTask[] {
   if (source.kind === "case_manager") return AdelanteEHR.caseTasksForCM(source.cmId);
@@ -68,7 +74,7 @@ function TaskQueueContent({
   source: TaskQueueSource;
   onOpenPatient: (id: string) => void;
 }) {
-  const tasks = useEhr(() => tasksFor(source));
+  const tasks = useEhr(() => outpatientQueueTasks(source));
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const open = tasks.filter((t) => t.status === "open");
   const snoozed = tasks.filter((t) => t.status === "snoozed");

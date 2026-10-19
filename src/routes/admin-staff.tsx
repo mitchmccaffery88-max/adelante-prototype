@@ -137,6 +137,15 @@ function EditDrawer({ open, id, onClose, actor }: { open: boolean; id?: string; 
   const [role, setRole] = useState<StaffRole | undefined>(m?.role);
   const [sites, setSites] = useState(m?.siteIds?.join(", ") ?? "");
   const [reason, setReason] = useState("");
+  // §Group A #7 — the drawer stays mounted; selecting a different staff
+  // member resets role, sites and reason to that member's own values.
+  const [formFor, setFormFor] = useState(id);
+  if (id && id !== formFor) {
+    setFormFor(id);
+    setRole(m?.role);
+    setSites(m?.siteIds?.join(", ") ?? "");
+    setReason("");
+  }
   if (!m) return null;
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
