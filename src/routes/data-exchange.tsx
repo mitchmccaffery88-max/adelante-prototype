@@ -155,6 +155,12 @@ function Events() {
   );
 }
 
+/** Mitch Oct 19: export file names carry the program ID, never a patient name. */
+export function disclosureCsvFilename(patientId: string, today = new Date()): string {
+  const p = AdelanteEHR.listPatients().find((x) => x.id === patientId);
+  return `disclosures-${p?.programId ?? "unknown"}-${today.toISOString().slice(0, 10)}.csv`;
+}
+
 function Outbound() {
   const actor = useActingStaff();
   const rows = useEhr(() => listOutboundShares());
@@ -167,7 +173,7 @@ function Outbound() {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `disclosures-${nameOf(id).replace(/\s+/g, "-")}.csv`;
+    a.download = disclosureCsvFilename(id);
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Disclosure list exported");
