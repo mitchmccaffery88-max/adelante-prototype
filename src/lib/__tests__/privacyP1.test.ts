@@ -117,7 +117,7 @@ describe("Addendum A3 — existing restricted-chart path needs a reason and audi
     const actor = { staffId: m.id, name: m.name, role: m.role };
     expect(() => openRestrictedChart({ patientId: p.id, reason: " ", actor })).toThrow();
     openRestrictedChart({ patientId: p.id, reason: "Medical emergency", actor });
-    const ev = AdelanteEHR.listAudit?.() ?? [];
+    const ev = AdelanteEHR.listAuditEvents({});
     expect(JSON.stringify(ev)).toContain("record.restricted_opened");
   });
 });
