@@ -226,6 +226,7 @@ export function isReportingOnly(role: StaffRole): boolean {
 
 /** Columns this role's export carries: the county-file subset for reporting-only holders. */
 export function exportColumnsFor(role: StaffRole): readonly ExportColumn[] {
+  if (!roleSeesAsam(role) && !hasSudReportingAccess(role)) return [];
   return isReportingOnly(role) ? EXPORT_COLUMNS.filter((c) => !ASAM_CLINICAL_COLUMNS.includes(c)) : EXPORT_COLUMNS;
 }
 
