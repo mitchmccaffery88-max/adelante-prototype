@@ -28,7 +28,7 @@ import { listHlocReferrals } from "@/lib/outpatientCare";
 import { isReferralOpen } from "@/lib/noteAutofill";
 import { refillRunway, isMatOrder, listSelfReports } from "@/lib/medAdherence";
 import { moodCheckInDayCount } from "@/lib/moodCheckInCount";
-import { actingViewerSeesSelfTracking } from "@/lib/selfTrackingVisibility";
+import { actingViewerSeesSelfTracking } from "@/lib/careTeamTrackingGate";
 import { computeCheckInStreak } from "@/lib/checkInStreak";
 import { aiConsentStatus } from "@/lib/scribe";
 import { chartActionState } from "@/lib/chartActions";
@@ -388,9 +388,10 @@ export function _resetBriefStats() {
 
 /** Role-visibility class: role + Part 2 outcome for this patient. Never shared across roles. */
 export function visibilityClass(p: Patient, role: StaffRole) {
-  return `${role}|sud:${roleSeesAsamSection(role, p) ? 1 : 0}${actingViewerSeesSelfTracking(role, p) ? "" : "|self:0"}`;
+  return `${role}|sud:${roleSeesAsamSection(role, p) ? 1 : 0}`;
 }
-const keyOf = (p: Patient, role: StaffRole) => `${p.id}|${visibilityClass(p, role)}`;
+// §Privacy P1 — care-team self-tracking outcome splits the cache, not the logged class.
+const keyOf = (p: Patient, role: StaffRole) => `${p.id}|${visibilityClass(p, role)}${actingViewerSeesSelfTracking(role, p) ? "" : "#self:0"}`;
 
 let subscribed = false;
 function ensureSubscribed() {
@@ -426,7 +427,7 @@ function computeSection(entry: BriefCacheEntry, p: Patient, id: BriefSectionId, 
       sectionId: `brief:${id}`,
       kind: "compute",
       actorName: "System (Adel Brief)",
-      visibilityClass: entry.key.split("|").slice(1).join("|"),
+      visibilityClass: entry.key.split("#")[0].split("|").slice(1).join("|"),
       triggeredBy: triggeredBy.length ? triggeredBy : ["initial"],
       trigger: currentTrigger,
       system: true,

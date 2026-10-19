@@ -2,7 +2,7 @@ import { describe, expect, it, afterEach } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { STAFF_ROSTER, canAccess, type StaffRole } from "@/lib/roles";
 import { chartEntryFor, onCareTeam, openRestrictedChart, _resetChartAccessForTests } from "@/lib/chartAccess";
-import { viewerSeesSelfTracking } from "@/lib/selfTrackingVisibility";
+import { viewerSeesSelfTracking } from "@/lib/careTeamTrackingGate";
 import { checkInSummary } from "@/lib/caseloadReview";
 import { canSeeNavEntry, staffNavForRole } from "@/lib/navSections";
 import { hasSudReportingAccess } from "@/lib/sudReportingAccess";

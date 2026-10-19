@@ -1,7 +1,7 @@
 // §Item 7 — Case manager weekly caseload review.
 // One place for the draft contact cadence, contact logging, the Part 2-safe
 // check-in summary, week sign-off and the coordinator roll-up.
-import { viewerSeesSelfTracking } from "@/lib/selfTrackingVisibility";
+import { viewerSeesSelfTracking } from "@/lib/careTeamTrackingGate";
 import { moodCheckInDayCount } from "@/lib/moodCheckInCount";
 import { AdelanteEHR, registerCaseManagerResolver, type Patient } from "@/lib/ehr";
 import { STAFF_ROSTER, canAccess, type StaffRole } from "@/lib/roles";
