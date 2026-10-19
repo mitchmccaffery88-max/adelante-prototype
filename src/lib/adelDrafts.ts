@@ -9,7 +9,7 @@
 // adel_draft_drafted / _accepted / _edited / _discarded.
 import { withoutMergeHeld } from "./mergePart2";
 import { AdelanteEHR, refillNeedsCures, type Patient, type RefillRequest } from "@/lib/ehr";
-import { canAccess, type StaffRole } from "@/lib/roles";
+import { canAccess, noteGateClass, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { buildTrackingRows, latestFromHistory } from "@/lib/trackingTimeline";
 import { CSSRS_KEY } from "@/lib/cssrs";
@@ -84,7 +84,10 @@ export function buildNoteDraft(p: Patient, role: StaffRole, now = new Date()): N
   for (const a of headerAlerts(p, role, sections, now)) if (a.id !== "cssrs") risk.push(a.label);
 
   const plan: string[] = [];
-  const lastSigned = (p.progressNotes ?? []).filter((n) => n.signedAt && !n.voidedAt).sort((a, b) => (b.signedAt ?? "").localeCompare(a.signedAt ?? ""))[0];
+  // §Privacy P1 — the draft reads only notes this viewer may open (SUD,
+  // counseling/psychotherapy and SUD group notes keep their own gate).
+  const noteVisible = (n: Parameters<typeof noteGateClass>[0]) => { const c = noteGateClass(n); if (!c) return true; const a = canAccess(role, c, p); return a.level !== "none" && !a.locked; };
+  const lastSigned = (p.progressNotes ?? []).filter((n) => n.signedAt && !n.voidedAt && noteVisible(n)).sort((a, b) => (b.signedAt ?? "").localeCompare(a.signedAt ?? ""))[0];
   if (lastSigned?.plan) plan.push(`Last note's plan (${d(lastSigned.signedAt!)}): ${lastSigned.plan.split("\n")[0]}`);
   // Today's check-in: participation only (mood content stays patient-private).
   const checkedToday = (p.checkIns ?? []).some((c) => new Date(c.date).toDateString() === now.toDateString());

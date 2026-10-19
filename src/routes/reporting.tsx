@@ -280,11 +280,15 @@ function ReportingHome() {
   // right now"), so it deliberately does not respond to the period selector.
   // These are plain counts over the caseload; the CalOMS Area itself is what
   // the population-health gate hides.
-  const completeness = useEhr(() => calomsCompleteness());
-  const substanceRows = useEhr(() => substanceUseBreakdown());
-  const priorRows = useEhr(() => priorTreatmentBreakdown());
-  const dischargeRows = useEhr(() => dischargeStatusBreakdown());
-  const justice = useEhr(() => justiceSelfReportCoverage());
+  // §Privacy P1 — CalOMS (SUD) cards only for roles with Part 2 reporting
+  // access, counted over the patients that role may aggregate. Hidden otherwise.
+  const sudCohort = useEhr(() => (asamAccessMode(role) ? aggregatePatients(role) : null));
+  const seesCaloms = seesPopulation && !!sudCohort;
+  const completeness = useEhr(() => calomsCompleteness(sudCohort ?? []));
+  const substanceRows = useEhr(() => substanceUseBreakdown(sudCohort ?? []));
+  const priorRows = useEhr(() => priorTreatmentBreakdown(sudCohort ?? []));
+  const dischargeRows = useEhr(() => dischargeStatusBreakdown(sudCohort ?? []));
+  const justice = useEhr(() => justiceSelfReportCoverage(sudCohort ?? []));
   // §5d-4 — current-state funnel over the live need/referral records.
   const funnel = useEhr(() => sdohFunnel());
   const needCategory = useEhr(() => needsByCategory());
@@ -854,7 +858,7 @@ function ReportingHome() {
       <TimelyAccessReport />
       <PopulationHealthSection role={role} />
 
-      {seesPopulation && (
+      {seesCaloms && (
         <Area
           id="caloms"
           title="CalOMS data capture"

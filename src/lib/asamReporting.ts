@@ -19,7 +19,7 @@ import { AdelanteEHR, asamCosignOwnership, isCosignOwner, type CaseTask, type Pa
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { canAccess, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 import { ASAM_DEDUPE_PREFIX, dmcOdsLevelLabel, type AsamAssessment } from "@/lib/asam";
-import { cohortGuard, type CohortGuard } from "@/lib/cohortGuard";
+import { belowMinimumCohort, cohortGuard, type CohortGuard } from "@/lib/cohortGuard";
 
 const DAY = 86_400_000;
 
@@ -86,10 +86,17 @@ export const TOTALS_ONLY_ROLES: StaffRole[] = ["clinical_coordinator"];
 
 export type AsamAccessMode = "full" | "totals";
 
+/** Patients with a TPO or specific written SUD consent on file (addendum A1/A2). */
+export function coordinatorConsentedPatients(): Patient[] {
+  return AdelanteEHR.listPatients().filter((p) => !!p.sudCoordinationConsent && p.consents.part2Sud);
+}
+
 /** Role-level: "full" (rows + totals), "totals" (aggregate only), or null (hidden). */
 export function asamAccessMode(role: StaffRole): AsamAccessMode | null {
   if (roleSeesAsam(role)) return "full";
-  if (TOTALS_ONLY_ROLES.includes(role)) return "totals";
+  // §Privacy P1 addendum D — coordinators count only patients whose consent
+  // permits it, and the whole aggregate is hidden below the cohort guard.
+  if (TOTALS_ONLY_ROLES.includes(role) && !belowMinimumCohort(coordinatorConsentedPatients().length)) return "totals";
   return null;
 }
 
@@ -117,7 +124,7 @@ function visiblePatients(role: StaffRole): Patient[] {
 /** Patients counted in aggregates: totals-only roles count everyone (no names leave). */
 export function aggregatePatients(role: StaffRole): Patient[] {
   const mode = asamAccessMode(role);
-  if (mode === "totals") return AdelanteEHR.listPatients();
+  if (mode === "totals") return coordinatorConsentedPatients();
   if (mode === "full") return AdelanteEHR.listPatients().filter((p) => roleSeesAsam(role, p));
   return [];
 }
