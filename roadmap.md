@@ -7,9 +7,11 @@
 - [x] Inventory: billing reach, self-tracking readers, SUD cards, AI summary inputs, coordinator consent/note/emergency model
 - [x] Source narrowings + new tests (src/lib/__tests__/privacyP1.test.ts, 15/15)
 - [x] Coordinator state-reporting ownership, My Work missing-viewer denial, emergency disclosure reason retention
-- [ ] STOPPED: focused run 88/93; unapproved existing reschedule setup failure and export assertions; details in docs/privacy-p1-report.md
-- [ ] After stop resolution: new owner/audit tests, full units, full browser suite to EXIT last, screenshots restore
-- Next after P1: 9a-1
+- [x] Four stop-item decisions received; both booking cases fail identically on isolated rollback (2 failed / 2 selected)
+- [x] Approved initial booking setup and export repairs; coordinator worklist success assertion
+- [ ] STOP: newly exposed cleanupReschedule.test.ts:54 expects r.ok true, receives false (focused 28/29); destination setup repair needs delegated approval
+- [ ] After stop resolution: NEW owner/disclosure-audit tests, full units, then full browser suite to EXIT last; screenshot parity and final report
+- Scope: no publishing, 9a, 9c or P2 in this continuation.
 
 ## Phase 8b-3 — Billing, claims, admin, reference and audit tables (approved Oct 17)
 - Rollback SHA 649459806dd45b19214130247becf5871e83d34d

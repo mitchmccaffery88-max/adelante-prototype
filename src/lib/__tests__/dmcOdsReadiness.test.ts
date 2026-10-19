@@ -64,11 +64,12 @@ describe("10d-3 CalOMS completeness", () => {
     expect(c.dischargeMissing).toContain("Other reason text");
     expect(calomsWorklist("therapist")!.some((r) => r.patientId === "p3")).toBe(true);
   });
-  // Batch G1: billing_coordinator holds "SUD reporting access", so it sees the worklist (batchG.test.ts).
-  it("is hidden for case manager, billing and coordinator", () => {
-    for (const r of ["ecm_provider", "billing", "clinical_coordinator"] as const) {
+  // Privacy P1: the clinical coordinator owns state reporting; billing stays excluded.
+  it("is hidden for case manager and billing roles; visible for the state-reporting coordinator", () => {
+    for (const r of ["ecm_provider", "billing", "billing_coordinator"] as const) {
       expect(calomsWorklist(r)).toBeNull();
     }
+    expect(calomsWorklist("clinical_coordinator")).not.toBeNull();
   });
 });
 

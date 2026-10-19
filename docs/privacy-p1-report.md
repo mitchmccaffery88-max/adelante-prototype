@@ -2,7 +2,24 @@
 
 Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. Continuation starting HEAD: `45eed859b7867be78d62a7bb7f8441856737ba48`.
 
-No publishing, 9a work or Phase 9 plan edits. Focused units: **88 passed / 93 total; 5 failed**. Full units/browser validation has not run. Tracked screenshots remain unchanged against rollback. P1 is incomplete.
+No publishing, 9a, 9c or P2 work, or Phase 9 plan edits. Latest focused units: **28 passed / 29 total; 1 failed** (three files). Full units/browser validation has not run. P1 is incomplete and stopped on a newly exposed existing assertion. The prior 88/93 result below is historical.
+
+## Oct 19 delegated stop-item continuation
+
+- Both selected booking cases were run first on a non-destructive `git archive` copy of rollback `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba` under `/tmp/privacy-p1-rollback`, using the current dependencies. **0 passed / 2 selected; both failed** at `bookFor` with the same patient overlap message (Oct 20, 4:00 PM, Marisol Reyes). The same two current cases failed identically before edits. Evidence: `/tmp/privacy-p1-rollback-cases.log`, `/tmp/privacy-p1-current-cases.log`.
+- Conditional approval therefore applied: `cleanupReschedule.test.ts` booking setup now chooses a real available slot with no active patient appointment interval overlap. No assertions, retries, timeouts, clocks or production overlap rules changed for this repair.
+- Approved former `cleanupReschedule.test.ts:86`: null export CSV-header dereference → `expect(out).toBeNull()`; existing null assertion retained.
+- Approved `dmcOdsReadiness.ts:228-231`: `exportColumnsFor` now returns `[]` when neither ASAM nor state-reporting access exists. `crossRoleJourneys.test.ts` assertion unchanged.
+- Approved former `dmcOdsReadiness.test.ts:69-70`: null roles now `ecm_provider`, `billing`, `billing_coordinator`; clinical coordinator worklist explicitly non-null.
+- Validation: `cleanupReschedule`, `dmcOdsReadiness`, `crossRoleJourneys`: **28 passed / 29 total**, 2 files passed / 1 failed. Evidence: `/tmp/privacy-p1-approved.log`.
+
+### New stop signal — no further implementation or suites
+
+`src/lib/__tests__/cleanupReschedule.test.ts:54` (formerly :40): current `expect(r.ok).toBe(true)` receives `false`. The setup no longer fails before the assertion; the existing reschedule case now reaches it. The destination selector at current :50 (formerly :36) chooses the first clinician slot other than the newly booked start and does not exclude the patient's other appointments; its previously overlapping first slot can be selected again. This destination cause is source-based, not yet confirmed by a separate runtime reason capture.
+
+Proposed, **not applied**: authorize a destination-setup-only change at current :50 that selects a genuinely patient-free interval, excluding the visit being moved. Preserve `expect(r.ok).toBe(true)`, the audit-count assertion, the persisted-start assertion, every clock and production overlap rule. The delegated approval covered only initial booking setup, so this newly exposed assertion triggers STOP.
+
+Pending NEW coordinator CalOMS/TPS and disclosure-audit tests were not added after this stop. Full units and full browser suite were not started; there is no final completion SHA or completed P1 validation. No claim-workflow end-to-end re-verification this continuation. Earlier inventory/capability table and reported-not-built boundaries remain below.
 
 ## Changes
 
