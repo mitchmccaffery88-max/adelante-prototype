@@ -256,8 +256,8 @@ describe("J6 county reporting", () => {
   it("billing coordinator: CalOMS client rows, no ASAM signature/med-necessity columns, no clinical content", () => {
     _resetCountyReporting();
     const bc = { role: "billing_coordinator" as const, name: "Deneen Ford", staffId: "s-bc1" };
-    expect(generateReport(bc, "caloms", "30").report).toBe("caloms");
-    expect(calomsBlockerRows("billing_coordinator")).not.toBeNull();
+    expect(() => generateReport(bc, "caloms", "30")).toThrow(/SUD reporting access/);
+    expect(calomsBlockerRows("billing_coordinator")).toBeNull();
     const cols = exportColumnsFor("billing_coordinator");
     for (const c of ASAM_CLINICAL_COLUMNS) expect(cols).not.toContain(c);
     for (const row of dmcOdsExportRows("billing_coordinator") ?? []) for (const c of ASAM_CLINICAL_COLUMNS) expect(Object.keys(row).filter((k) => cols.includes(k as never))).not.toContain(c);

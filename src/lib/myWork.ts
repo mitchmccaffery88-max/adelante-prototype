@@ -382,7 +382,8 @@ export function screenerDueRows(
     // for a viewer whose `screeners_sud` access does not resolve for THIS
     // patient; the re-screen list follows the same precedent. Gating the whole
     // list on `screeners_sud` would wrongly hide legitimate MH re-screens.
-    const sudLocked = viewer ? canAccess(viewer.role, "screeners_sud", p).locked : false;
+    const sudAccess = viewer ? canAccess(viewer.role, "screeners_sud", p) : undefined;
+    const sudLocked = !sudAccess || sudAccess.locked || sudAccess.level === "none";
     for (const due of AdelanteEHR.rescreensDue(p.id)) {
       if (sudLocked && isPart2Screener(due.key)) continue;
       out.push({

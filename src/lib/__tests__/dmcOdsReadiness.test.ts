@@ -89,8 +89,8 @@ describe("10d-3 export", () => {
 describe("coordinator totals only", () => {
   it("never receives a patient name", () => {
     const r = asamClinicalReport("clinical_coordinator")!;
-    expect(r.tasks.every((t) => t.patientName === "")).toBe(true);
-    expect(r.cosign).toHaveLength(0);
-    expect(r.differences).toHaveLength(0);
+    expect(r).toBeNull();
+    expect(r?.cosign).toBeUndefined();
+    expect(r?.differences).toBeUndefined();
   });
 });

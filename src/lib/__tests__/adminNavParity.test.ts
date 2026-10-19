@@ -69,7 +69,7 @@ describe("/admin self-gate", () => {
       expect(inNav).toBe(!locked);
     }
     expect(canAccess("peer_specialist", "population_health").level).toBe("none");
-    expect(canAccess("billing", "population_health").level).toBe("read");
+    expect(canAccess("billing", "population_health").level).toBe("none");
     expect(staffNavForRole("billing").some((e) => e.to === "/admin")).toBe(false);
   });
 });

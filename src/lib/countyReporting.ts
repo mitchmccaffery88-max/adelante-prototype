@@ -32,7 +32,7 @@ export const ISL_PRIVATE_PAY_NOTE = "Private pay excluded (Draft — Christi to 
 
 // ------------------------------------------------------------------ access
 /** CalOMS/TPS client-level preparer (Batch G1 decision). Returned CalOMS errors route here too. */
-export const COUNTY_PREPARER_ROLE: StaffRole = "billing_coordinator";
+export const COUNTY_PREPARER_ROLE: StaffRole = "clinical_coordinator";
 /** Hub roles. The SUD counselor keeps clinical access but no longer prepares county files. */
 export const COUNTY_REPORTING_ROLES: readonly StaffRole[] = ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator"];
 export const canViewCountyReporting = (role: StaffRole) => COUNTY_REPORTING_ROLES.includes(role);

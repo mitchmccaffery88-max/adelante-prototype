@@ -145,7 +145,7 @@ describe("population_health RBAC", () => {
     expect(canAccess("sys_admin", "population_health").level).toBe("write");
     expect(canAccess("clinical_coordinator", "population_health").level).toBe("write");
     for (const r of ["billing", "billing_coordinator", "pmhnp", "therapist", "ecm_provider"] as const) {
-      expect(canAccess(r, "population_health").level).toBe("read");
+      expect(canAccess(r, "population_health").level).toBe(r === "billing" || r === "billing_coordinator" ? "none" : "read");
     }
   });
 

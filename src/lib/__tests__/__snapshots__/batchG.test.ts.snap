@@ -2,6 +2,6 @@
 
 exports[`G1 — SUD reporting access capability > grant list lives in one constant (snapshot) 1`] = `
 [
-  "billing_coordinator",
+  "clinical_coordinator",
 ]
 `;

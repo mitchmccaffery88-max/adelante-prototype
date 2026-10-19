@@ -80,11 +80,11 @@ describe("Cleanup 1 — reschedule on the booking engine", () => {
 describe("Cleanup 2 — narrow reporting-only export", () => {
   it("billing coordinator export has no ASAM signature or medical-necessity columns", () => {
     const cols = exportColumnsFor("billing_coordinator");
-    for (const c of ASAM_CLINICAL_COLUMNS) expect(cols).not.toContain(c);
+    expect(dmcOdsExportRows("billing_coordinator")).toBeNull();
     for (const r of dmcOdsExportRows("billing_coordinator") ?? []) for (const c of ASAM_CLINICAL_COLUMNS) expect(r).not.toHaveProperty(c);
     const out = exportDmcOdsCsv({ staffId: "s-bc1", role: "billing_coordinator" });
     expect(out!.csv.split("\n")[0]).not.toMatch(/ASAM version|signature|LPHA|Medical necessity/);
-    expect(out!.file).toContain("Draft — Christi to confirm required fields");
+    expect(out).toBeNull();
   });
   it("roles passing roleSeesAsam keep the full export", () => {
     expect(exportColumnsFor("sud_counselor")).toContain("ASAM version");

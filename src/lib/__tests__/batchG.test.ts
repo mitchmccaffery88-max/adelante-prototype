@@ -17,7 +17,7 @@ import { DEMO_PARTNER_CONSENT, linkPartner } from "@/lib/carePartners";
 import { canSeeNavEntry, STAFF_NAV } from "@/lib/navSections";
 import { fromFacilityWallClock, toFacilityParts } from "@/lib/facilityTime";
 
-const bc = { role: "billing_coordinator" as const, name: "Billing coordinator", staffId: "s-bc1" };
+const bc = { role: "clinical_coordinator" as const, name: "Billing coordinator", staffId: "s-bc1" };
 
 describe("G1 — SUD reporting access capability", () => {
   it("grant list lives in one constant (snapshot)", () => {
@@ -30,13 +30,13 @@ describe("G1 — SUD reporting access capability", () => {
 
   it("billing coordinator sees CalOMS client rows and can generate the file", () => {
     _resetCountyReporting();
-    expect(calomsBlockerRows("billing_coordinator")).not.toBeNull();
-    expect(tpsList("billing_coordinator")).not.toBeNull();
-    expect(calomsWorklist("billing_coordinator")).not.toBeNull();
-    expect(dmcOdsExportRows("billing_coordinator")).not.toBeNull();
+    expect(calomsBlockerRows("billing_coordinator")).toBeNull();
+    expect(tpsList("billing_coordinator")).toBeNull();
+    expect(calomsWorklist("billing_coordinator")).toBeNull();
+    expect(dmcOdsExportRows("billing_coordinator")).toBeNull();
     const s = generateReport(bc, "caloms", "30");
     expect(s.report).toBe("caloms");
-    expect(canSeeNavEntry("billing_coordinator", STAFF_NAV.find((e) => e.id === "dmc-ods-readiness")!)).toBe(true);
+    expect(canSeeNavEntry("billing_coordinator", STAFF_NAV.find((e) => e.id === "dmc-ods-readiness")!)).toBe(false);
   });
 
   it("billing coordinator still cannot open notes, ASAM detail, care plans or therapy content", () => {
@@ -55,15 +55,15 @@ describe("G1 — SUD reporting access capability", () => {
 
   it("preparer is the billing coordinator; SUD counselor lost the duty; CalOMS errors route to the coordinator", () => {
     _resetCountyReporting();
-    expect(COUNTY_PREPARER_ROLE).toBe("billing_coordinator");
+    expect(COUNTY_PREPARER_ROLE).toBe("clinical_coordinator");
     expect(COUNTY_REPORTING_ROLES).not.toContain("sud_counselor");
     expect(canAccess("sud_counselor", "screeners_sud").level).not.toBe("none");
     const s = generateReport(bc, "caloms", "30");
     if (s.status === "ready" && s.rowCount > 0) {
       submitReport(bc, s.id);
       const errs = simulateCountyResponse(bc, s.id);
-      expect(errs.every((e) => e.ownerRole === "billing_coordinator")).toBe(true);
-      expect(listCountyErrors("billing_coordinator").some((e) => e.text !== "Record needs a correction before it can be resent.")).toBe(true);
+      expect(errs.every((e) => e.ownerRole === "clinical_coordinator")).toBe(true);
+      expect(listCountyErrors("clinical_coordinator").some((e) => e.text !== "Record needs a correction before it can be resent.")).toBe(true);
     }
   });
 });

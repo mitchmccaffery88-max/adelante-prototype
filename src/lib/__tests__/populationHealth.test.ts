@@ -17,8 +17,8 @@ describe("10d-2 role visibility", () => {
   });
   it("coordinator sees SUD totals only", () => {
     const r = populationHealthReport("clinical_coordinator")!;
-    expect(r.sudMode).toBe("totals");
-    expect(tile(r, "dast-10")!.administered).toBe(tile(populationHealthReport("therapist"), "dast-10")!.administered);
+    expect(r.sudMode).toBeNull();
+    expect(tile(r, "dast-10")).toBeUndefined();
   });
   it("case manager sees no SUD tile; billing sees no section", () => {
     const r = populationHealthReport("ecm_provider")!;

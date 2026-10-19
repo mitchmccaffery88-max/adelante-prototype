@@ -11,9 +11,8 @@ import type { StaffRole } from "@/lib/roles";
 export const SUD_REPORTING_ACCESS_LABEL = "SUD reporting access";
 
 /** THE grant list. Adding a role later is one line here (covered by the snapshot test). */
-// §Privacy P1 — billing_coordinator removed: billing roles see no SUD/CalOMS
-// client detail. The list is intentionally empty (deny by default).
-export const SUD_REPORTING_ACCESS_ROLES: readonly StaffRole[] = [];
+// §Privacy P1 — state reporting only; no SUD chart grant. Billing stays excluded.
+export const SUD_REPORTING_ACCESS_ROLES: readonly StaffRole[] = ["clinical_coordinator"];
 
 export const SUD_REPORTING_POST_MVP_NOTE =
   "Post-MVP candidates — requires executive RBAC approval: a future Data & Outcomes Analyst role and a future Compliance Officer role (not created).";
