@@ -501,3 +501,8 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] Close-out report and every final changed test line: docs/quickactions-batch4-report.md
 - [x] Quick-actions track complete. No permissions changed, no publishing, no work after batch 4.
 - Open question for Mitch only (not implemented): therapists have patientless dashboard Task but no chart Task because case_notes is read-only; grant chart Task or offer patient-prefilled dashboard Task in chart?
+
+## Group A access-hardening fixes — COMPLETE Oct 19
+- [x] Seven narrowing fixes (unsigned notes, caseload SUD program, in-facility tasks, audit feed scrubbing, outbound names, claim Move via registry, staff drawer reset). See docs/group-a-access-fixes-report.md.
+- [x] Units 2,720/2,723 (3 pre-existing/conflict-avoided, see report); full browsers 177/177 --workers=1; screenshots restored.
+- Open for Mitch: roster sheet leaves mouse locked after closing; disclosure export file name contains patient name; reschedule unit tests are clock-dependent.
