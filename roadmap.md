@@ -2,6 +2,14 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Privacy P1 — billing minimum-necessary, self-tracking, SUD cards, AI inputs (approved Oct 19)
+- Rollback SHA f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba
+- [x] Inventory: billing reach, self-tracking readers, SUD cards, AI summary inputs, coordinator consent/note/emergency model
+- [x] Source narrowings + new tests (src/lib/__tests__/privacyP1.test.ts, 15/15)
+- [ ] STOPPED: 14 existing unit assertions encode the old broader access; awaiting coordinator approval of proposed lines
+- [ ] After approval: full units, full browser suite last, screenshots restore, docs/privacy-p1-report.md
+- Next after P1: 9a-1
+
 ## Phase 8b-3 — Billing, claims, admin, reference and audit tables (approved Oct 17)
 - Rollback SHA 649459806dd45b19214130247becf5871e83d34d
 - [x] Pre-edit inventory (source, filters, hidden rows) per table
