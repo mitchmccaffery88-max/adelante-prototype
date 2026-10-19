@@ -28,6 +28,7 @@ import { listHlocReferrals } from "@/lib/outpatientCare";
 import { isReferralOpen } from "@/lib/noteAutofill";
 import { refillRunway, isMatOrder, listSelfReports } from "@/lib/medAdherence";
 import { moodCheckInDayCount } from "@/lib/moodCheckInCount";
+import { actingViewerSeesSelfTracking } from "@/lib/selfTrackingVisibility";
 import { computeCheckInStreak } from "@/lib/checkInStreak";
 import { aiConsentStatus } from "@/lib/scribe";
 import { chartActionState } from "@/lib/chartActions";
@@ -187,8 +188,9 @@ export function computeEngagement(p: Patient, role: StaffRole, now: Date): Brief
   if (lastContact)
     out.push({ id: "contact", text: `${plural(Math.max(0, Math.floor((+now - +new Date(lastContact)) / DAY)), "day")} since last contact.`, at: lastContact, sectionId: lastContact === lastStaffMsg ? "messages" : "appointments", sources: lastContact === lastStaffMsg ? src("message", [msgs.find((m) => m.authorType === "staff" && m.createdAt === lastStaffMsg)!.id]) : src("appointment", [past.find((a) => a.status === "attended" && a.start === lastAttended)!.id]) });
   // Check-in participation: day COUNTS only (moodCheckInCount) — never mood content.
+  // §Privacy P1 — only the patient's care team (with chart entry) reads it.
   const keys: string[] = [];
-  for (let i = 0; i < 30; i++) {
+  if (actingViewerSeesSelfTracking(role, p)) for (let i = 0; i < 30; i++) {
     const d = ymd(new Date(+now - i * DAY));
     if (moodCheckInDayCount(p.id, d, d) > 0) keys.push(d);
   }
@@ -334,7 +336,7 @@ function sourceFingerprint(src: BriefSource, p: Patient, role: StaffRole, now: D
     case "screeners": return h(`${(p.screenerHistory ?? []).map((s) => `${(s as { key?: string }).key}|${(s as { date?: string; completedAt?: string }).date ?? (s as { completedAt?: string }).completedAt}`).join(",")}#${(p.missedScreeners ?? []).length}#${listScreenerRequests(p.id).map((r) => r.id).join(",")}#${(p.severityFlags ?? []).map((f) => `${f.id}${f.reviewedAt ? "r" : ""}`).join(",")}`);
     case "appointments": return h(apptsFor(p.id).map((a) => `${a.id}|${a.status}|${a.start}`).join(","));
     case "messages": { const m = p.careMessages ?? []; return `${m.length}|${m.at(-1)?.createdAt ?? ""}`; }
-    case "checkins": return String(moodCheckInDayCount(p.id, ymd(new Date(+now - 30 * DAY)), ymd(now)));
+    case "checkins": return actingViewerSeesSelfTracking(role, p) ? String(moodCheckInDayCount(p.id, ymd(new Date(+now - 30 * DAY)), ymd(now))) : "hidden";
     case "patient": return h(`${p.releaseDate}|${(p.problems ?? []).map((x) => `${x.icd10Code}|${x.status}`).join(",")}`);
     case "plan": { const pl = getStructuredPlan(p.id); return h(`${pl.review.version}|${pl.review.signedAt}|${pl.review.reviewDueAt}|${pl.goals.map((g) => `${g.id}|${g.status}|${g.clinicalText}`).join(",")}`); }
     case "sdoh": return h(`${planNeeds(p.id).map((n) => `${n.id}|${n.step}`).join(",")}#${(p.resourceReferrals ?? []).map((r) => `${r.id}|${r.status}`).join(",")}`);
@@ -386,7 +388,7 @@ export function _resetBriefStats() {
 
 /** Role-visibility class: role + Part 2 outcome for this patient. Never shared across roles. */
 export function visibilityClass(p: Patient, role: StaffRole) {
-  return `${role}|sud:${roleSeesAsamSection(role, p) ? 1 : 0}`;
+  return `${role}|sud:${roleSeesAsamSection(role, p) ? 1 : 0}${actingViewerSeesSelfTracking(role, p) ? "" : "|self:0"}`;
 }
 const keyOf = (p: Patient, role: StaffRole) => `${p.id}|${visibilityClass(p, role)}`;
 

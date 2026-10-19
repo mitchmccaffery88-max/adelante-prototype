@@ -512,8 +512,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   population_health: {
     sys_admin: "write",
     clinical_coordinator: "write",
-    billing: "read",
-    billing_coordinator: "read",
+    // §Privacy P1 — billing roles see claim-level data only: no population
+    // health dashboards (named clinical drill-downs, CalOMS, engagement).
+    billing: "none",
+    billing_coordinator: "none",
     pmhnp: "read",
     therapist: "read",
     ecm_provider: "read",

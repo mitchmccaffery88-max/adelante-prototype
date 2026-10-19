@@ -95,7 +95,7 @@ function InboxPage() {
           {isBilling && <TabsTrigger value="billing">Billing</TabsTrigger>}
           <TabsTrigger value="unsigned">Unsigned</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
+          {!BILLING_ROLES.includes(role) && <TabsTrigger value="documents">Documents</TabsTrigger>}
           <TabsTrigger value="advocate">Advocate</TabsTrigger>
           <TabsTrigger value="inquiries">Community</TabsTrigger>
         </TabsList>
@@ -132,7 +132,8 @@ function InboxPage() {
         {/* §v3.0 Phase 5 — document verify queue. Ownership is derived from
             the patient's pre-release episode, not assigned here. */}
         <TabsContent value="documents" className="pt-3">
-          <DocumentVerifyQueue />
+          {/* §Privacy P1 — document metadata/notes are not claim data. */}
+          {!BILLING_ROLES.includes(role) && <DocumentVerifyQueue />}
         </TabsContent>
         {/* §Group D items 1 + 2 — advocate care-plan input and eligibility
             attestations, reviewed by the episode-derived plan owner. */}

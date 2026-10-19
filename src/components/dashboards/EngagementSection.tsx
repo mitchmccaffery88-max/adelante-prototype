@@ -6,7 +6,7 @@
 // class and this section renders inside that gate.
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, AlertTriangle, HeartPulse, Users } from "lucide-react";
+import { Activity, Users } from "lucide-react";
 import type { EngagementProjection } from "@/lib/engagementReporting";
 
 function pct(v: number | null): string {
@@ -37,7 +37,7 @@ function Stat({
 }
 
 export function EngagementSection({ projection }: { projection: EngagementProjection }) {
-  const { overall, byTrack, selfTracking, hasAnyEngagementData, windowDays, cohorts } = projection;
+  const { overall, byTrack, hasAnyEngagementData, windowDays, cohorts } = projection;
 
   return (
     <Card className="space-y-4 p-4">
@@ -144,51 +144,8 @@ export function EngagementSection({ projection }: { projection: EngagementProjec
         never counted as confirmed.
       </p>
 
-      {/* Self-tracking — population level only. */}
-      <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-        <h3 className="flex items-center gap-2 text-sm font-medium text-navy">
-          <HeartPulse className="h-4 w-4 text-teal" /> Private self-tracking — population totals
-          only
-        </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Craving logs, lapse records and recovery start dates are patient-private: they are not in
-          the clinical record and there is no per-patient view of them anywhere for staff. Only
-          de-aggregated counts appear here.
-        </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat
-            label="Craving logs"
-            value={String(selfTracking.cravingLogs)}
-            basis={`${selfTracking.cravingLogsWithSurfCompleted} rode the craving out`}
-          />
-          <Stat label="Lapse records" value={String(selfTracking.lapses)} basis="Self-reported" />
-          <Stat
-            label="Recovery date set"
-            value={pct(
-              selfTracking.recoveryDateSetRate === null
-                ? null
-                : selfTracking.recoveryDateSetRate * 100,
-            )}
-            basis={`${selfTracking.recoveryDateSet} of ${selfTracking.cohortSize} patients`}
-          />
-          <Stat
-            label="Patients using self-tracking"
-            value={String(selfTracking.patientsWithAnyActivity)}
-            basis="Any craving, lapse, check-in or date"
-          />
-        </div>
-        {selfTracking.belowMinimumCohort && (
-          <p className="mt-3 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-900 dark:text-amber-200">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>
-              Cohort of {selfTracking.cohortSize} is below the {selfTracking.minimumCohortSize}
-              -patient minimum for safe small-cell reporting. At this size these totals are
-              practically re-identifiable by anyone who knows the caseload. Shown for the demo;
-              before production these must be suppressed, not just flagged.
-            </span>
-          </p>
-        )}
-      </div>
+      {/* §Privacy P1 — private self-tracking totals are no longer shown on
+          any aggregate dashboard; they stay with the patient and care team. */}
     </Card>
   );
 }

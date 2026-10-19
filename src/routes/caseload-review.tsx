@@ -111,7 +111,7 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
   const [type, setType] = useState<ContactType>("call");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState("");
-  const s = checkInSummary(row.patient, actor.role);
+  const s = checkInSummary(row.patient, actor.role, new Date(), actor.id);
   const recent = listContacts(row.patient.id).slice(0, 3);
   return (
     <li>
@@ -133,9 +133,11 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
         </p>
         <div className="text-sm" data-testid="checkin-summary">
           {s.daysThisWeek} check-in days this week · Trend: {s.trend}
-          <span className="block" data-testid="mood-count">
-            {s.moodDaysThisWeek} mood check-in days this week
-          </span>
+          {s.moodDaysThisWeek !== null && (
+            <span className="block" data-testid="mood-count">
+              {s.moodDaysThisWeek} mood check-in days this week
+            </span>
+          )}
           {s.followUpSuggested && (
             <Badge variant="outline" className="ml-2">
               Clinical follow-up suggested
