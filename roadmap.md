@@ -6,8 +6,9 @@
 - Rollback SHA f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba
 - [x] Inventory: billing reach, self-tracking readers, SUD cards, AI summary inputs, coordinator consent/note/emergency model
 - [x] Source narrowings + new tests (src/lib/__tests__/privacyP1.test.ts, 15/15)
-- [ ] STOPPED: 14 existing unit assertions encode the old broader access; awaiting coordinator approval of proposed lines
-- [ ] After approval: full units, full browser suite last, screenshots restore, docs/privacy-p1-report.md
+- [x] Coordinator state-reporting ownership, My Work missing-viewer denial, emergency disclosure reason retention
+- [ ] STOPPED: focused run 88/93; unapproved existing reschedule setup failure and export assertions; details in docs/privacy-p1-report.md
+- [ ] After stop resolution: new owner/audit tests, full units, full browser suite to EXIT last, screenshots restore
 - Next after P1: 9a-1
 
 ## Phase 8b-3 — Billing, claims, admin, reference and audit tables (approved Oct 17)

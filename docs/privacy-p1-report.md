@@ -1,0 +1,59 @@
+# Privacy P1 — continuation stopped
+
+Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. Continuation starting HEAD: `45eed859b7867be78d62a7bb7f8441856737ba48`.
+
+No publishing, 9a work or Phase 9 plan edits. Focused units: **88 passed / 93 total; 5 failed**. Full units/browser validation has not run. Tracked screenshots remain unchanged against rollback. P1 is incomplete.
+
+## Changes
+
+- `sudReportingAccess.ts:16`: sole state-reporting role is clinical_coordinator; billing roles remain denied. No chart grants changed.
+- `countyReporting.ts:35`: CalOMS preparer/error owner billing_coordinator → clinical_coordinator. General reminder owner and hub role list unchanged.
+- `myWork.ts:385-387`: absent viewer, locked access or none access omits SUD re-screen rows.
+- `part2Disclosure.ts:119-121,180-237`: required trimmed emergency reason retained as emergencyReason in disclosure entry and audit detail. No new emergency SUD chart route.
+- `countyReporting.ts:458-461`: TPS totals already suppress 1–10 via suppressCell; no change needed.
+
+## Stop signals and proposed resolution
+
+- `cleanupReschedule.test.ts:17` called at `:35` and `:46`: both existing cases fail before assertions because slots[0] overlaps p1's existing appointment. No P1 booking logic changed. Proposed separate setup repair: select a genuinely patient-free slot; no assertion weakening. This needs delegated approval before continuing.
+- `cleanupReschedule.test.ts:86`: current reads null export's csv header; proposed `expect(out).toBeNull()`. :83 was approved but this follow-on exact line remains unresolved.
+- `crossRoleJourneys.test.ts:262`: current expects billing coordinator's schema to exclude ASAM fields, but exportColumnsFor returns the full schema even though rows/export are denied. Proposed source narrowing: return [] for roles with neither ASAM nor state-reporting access, preserving this assertion.
+- `dmcOdsReadiness.test.ts:69-70`: clinical coordinator's CalOMS worklist currently expected null; under Mitch's new owner decision it must succeed. Proposed split: billing roles/case manager null, clinical coordinator non-null. This is covered by Mitch's coordinator-success instruction, but not applied after the stop.
+
+## Approved expectation changes applied
+
+- adminNavParity:72 billing population-health read → none; dashboardMetrics:148 expects none for both billing roles, read for existing clinical readers.
+- batchG snapshot: sole billing coordinator → clinical coordinator. :33-39 billing rows/worklists/DMC export null and readiness nav false; positive CalOMS actor now clinical coordinator. :58,65-66 preparer/error owner and authorized reader clinical coordinator.
+- countyReporting:30,37,42 positive actor/CalOMS rows now clinical coordinator; denied-role loop substitutes billing coordinator for clinical coordinator.
+- crossRoleJourneys:259-260 billing coordinator CalOMS throws / blocker rows null.
+- cleanupReschedule:83 export rows null; :87 null export; :86 unresolved above.
+- runAction snapshot:381-382 billing coordinator TPS allowed → hidden; :747-748 clinical coordinator TPS hidden → allowed.
+- asamReporting:93 and follow-on accesses: no-consent coordinator report null/absent; dmcOdsReadiness:92 and follow-ons absent; populationHealth:20-21 no-consent SUD mode null and DAST tile absent. Positive 11-consented-patient case remains in privacyP1.test.ts:71-80.
+- section4part2:14-15 passes roster case-manager identity and still expects one day.
+- engagementSection:37-39 Craving logs absent; small-cohort assertion replaced by self-tracking/warning absence, no net loss of assertions.
+
+## Capability before/after
+
+| Capability | Rollback | Current |
+|---|---|---|
+| Billing claims write | Allowed | Preserved |
+| Billing population health | Read | None |
+| Billing coordinator state reporting | Granted | Denied |
+| Clinical coordinator state reporting | Denied | Sole owner |
+| Clinical coordinator SUD chart | Denied | Unchanged, P2 |
+| Coordinator aggregate cohort | All patients | Consent-marked only, hidden below 11 |
+| Staff check-in participation | Role-only | Chart access plus care-team identity |
+| Dashboard self-tracking | Rendered | Removed |
+| Generated signed-note plan | Latest note | Viewer note-class-filtered |
+| Emergency disclosure reason | Not retained | Retained |
+
+## Inventory evidence (partial, not full closeout)
+
+- Billing access: roles.ts:503-522; claims/nav checks privacyP1.test.ts:20-35. /billing and /admin-claims remain available. Chart/search denies billing: chartAccess.ts:23-27,62-82. Inbox Documents hidden: inbox.tsx:97,134-136.
+- County rows/actions/disclosures: countyReporting.ts:35-54,125-135,450-482,537-553; DMC export: dmcOdsReadiness.ts:224-238,290-322.
+- Self-tracking: careTeamTrackingGate.ts:10-22; care-team identity chartAccess.ts:52-56; caseload-review.tsx:113-145; Adel Brief adelBrief.ts:188-197,336-337,390-391; aggregate block removed from EngagementSection.tsx.
+- SUD aggregate consent: asamReporting.ts:89-129; reporting.tsx CalOMS gate; optional deny-default consent marker ehr.ts:1661-1669.
+- Generated-note input: adelDrafts.ts:84-91; privacyP1.test.ts:89-110.
+
+## Reported, not built / unverified
+
+Coordinator B-item clinical access and emergency SUD-detail route are deferred to P2. Optional coordination-consent marker is not a complete signed recipient/scope/provenance/revocation/counseling-release workflow. New owner/disclosure-audit tests remain pending. Complete nested billing payload/export and all-generator inventory, end-to-end claim workflow, full units, browser suite to EXIT, screenshot restoration and final closeout SHA remain pending stop resolution. Current evidence is path-specific, not comprehensive P1 verification.
