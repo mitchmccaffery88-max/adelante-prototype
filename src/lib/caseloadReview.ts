@@ -184,8 +184,8 @@ export interface CheckInSummary {
   daysThisWeek: number;
   trend: Trend;
   followUpSuggested: boolean;
-  /** Days with a patient mood check-in this week — a count only. */
-  moodDaysThisWeek: number;
+  /** Days with a patient mood check-in this week — a count only; null when the viewer is not on the care team. */
+  moodDaysThisWeek: number | null;
 }
 
 /**
@@ -195,7 +195,7 @@ export interface CheckInSummary {
  * store and are never read by staff surfaces. Only non-SUD short forms
  * (PHQ-2 / GAD-2) are read, so nothing SUD-related can surface.
  */
-export function checkInSummary(patient: Patient, _viewerRole: StaffRole, now: Date = new Date()): CheckInSummary {
+export function checkInSummary(patient: Patient, _viewerRole: StaffRole, now: Date = new Date(), viewerStaffId?: string): CheckInSummary {
   const ws = ymd(weekStart(now));
   const quick = (patient.screenerHistory ?? []).filter((h) => shortFormByKey(h.key));
   const days = new Set(quick.map((h) => h.completedAt.slice(0, 10)).filter((d) => d >= ws && d <= ymd(now)));
@@ -212,7 +212,9 @@ export function checkInSummary(patient: Patient, _viewerRole: StaffRole, now: Da
     const def = shortFormByKey(h.key)!;
     return +new Date(h.completedAt) >= since && isShortFormPositive(def, h.score);
   });
-  return { daysThisWeek: days.size, trend, followUpSuggested, moodDaysThisWeek: moodCheckInDayCount(patient.id, ws, ymd(now)) };
+  // §Privacy P1 — self-tracking participation only for the care team.
+  const mood = viewerStaffId && viewerSeesSelfTracking(_viewerRole, viewerStaffId, patient) ? moodCheckInDayCount(patient.id, ws, ymd(now)) : null;
+  return { daysThisWeek: days.size, trend, followUpSuggested, moodDaysThisWeek: mood };
 }
 
 // ---------------------------------------------------------------- review
