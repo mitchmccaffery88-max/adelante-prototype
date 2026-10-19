@@ -23,4 +23,7 @@ All fixes narrow only; no permission matrix, role list, Part 2 rule, status mapp
 - Data-exchange "incoming events" list still links names (chart-link column, out of scope).
 
 ## Validation
-See chat close-out for unit and browser totals and final SHA.
+- Units: 2,720 passed of 2,723 listed (338 files); the 3 failures were the clock-dependent `cleanupReschedule` pair (fails identically at rollback) and one `adminTables8b3` check that drove reverting the download file name (24/24 passing after the revert).
+- New tests: unit 12/12, browser 3/3.
+- Full browser suite, run last after the final source change (--workers=1, :8080): 177 passed / 177 listed, 0 failures.
+- All 20 tracked screenshots restored to the rollback versions; hashes verified.
