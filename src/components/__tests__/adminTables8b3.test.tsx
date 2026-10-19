@@ -46,7 +46,11 @@ it("all CSV/download function bodies are byte-identical to rollback", () => {
       }
       visit(source); return result;
     };
-    expect(bodies(readFileSync(path, "utf8"))).toEqual(bodies(execFileSync("git", ["show", `649459806dd4:${path}`], { encoding: "utf8" })));
+    // Mitch Oct 19 (approved): only the disclosure file name changed to the program ID.
+    const NEW_NAME = "a.download = disclosureCsvFilename(id);";
+    const OLD_NAME = 'a.download = `disclosures-${nameOf(id).replace(/\\s+/g, "-")}.csv`;';
+    expect(bodies(readFileSync(path, "utf8")).map((b) => b.replace(NEW_NAME, OLD_NAME))).toEqual(bodies(execFileSync("git", ["show", `649459806dd4:${path}`], { encoding: "utf8" })));
+    if (file === "data-exchange") expect(readFileSync(path, "utf8")).toContain(NEW_NAME);
   }
 });
 it("CIN masking and explicit Open retain the existing drawer boundary", () => {

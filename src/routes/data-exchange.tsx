@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { disclosureCsvFilename } from "@/lib/exportFilenames";
 import { useActingStaff } from "@/lib/roles";
 import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { PatientMatchingQueue } from "@/components/identity/PatientMatchingQueue";
@@ -153,12 +154,6 @@ function Events() {
       </ul>
     </Panel>
   );
-}
-
-/** Mitch Oct 19: export file names carry the program ID, never a patient name. */
-export function disclosureCsvFilename(patientId: string, today = new Date()): string {
-  const p = AdelanteEHR.listPatients().find((x) => x.id === patientId);
-  return `disclosures-${p?.programId ?? "unknown"}-${today.toISOString().slice(0, 10)}.csv`;
 }
 
 function Outbound() {
