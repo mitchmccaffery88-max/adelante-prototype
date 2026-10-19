@@ -510,3 +510,7 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 ## Phase 9b — chart foundation and palette — COMPLETE Oct 19
 - [x] Approved chart tokens light+dark, chartTheme helpers, View as table on every chart. See docs/phase9b-report.md.
 - [ ] 9a/9c dashboards and stat tiles — not started (awaiting Mitch).
+
+## Export file names — disclosure DONE Oct 19
+- [x] Disclosure export named by program ID; approved adminTables8b3 line; new no-name test
+- [ ] Note PDF and refusal PDF file names (last name) — waiting on approval for notePdf.test.ts:167 and refusalPdf.test.ts:45
