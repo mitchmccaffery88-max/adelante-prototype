@@ -31,4 +31,4 @@ No existing chart read `var(--chart-*)`, so no chart changed color. The three ch
 
 ## Validation
 - Units: 2,735 / 2,735 passed (339 files). `cleanupReschedule.test.ts` passed 6/6 on both rollback and current today (clock moved past the Oct 20 clash window); no edits.
-- Full browser suite: see roadmap / close-out.
+- Full browser suite: 179 / 179 passed (29.3m, --workers=1, :8080, exit 0), run last after the final source change. Tracked screenshots unchanged vs rollback.
