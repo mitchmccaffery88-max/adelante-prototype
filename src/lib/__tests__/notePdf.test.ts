@@ -164,6 +164,6 @@ describe("note PDF builder", () => {
   });
 
   it("names the file by patient and signed date", () => {
-    expect(notePdfFilename(base, patient)).toBe("note-rivera-2026-07-20-pn-abc.pdf");
+    expect(notePdfFilename(base, { ...patient, programId: "ADL-2026-001" } as Patient)).toBe("note-ADL-2026-001-2026-07-20-pn-abc.pdf");
   });
 });

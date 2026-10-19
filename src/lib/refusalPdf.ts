@@ -202,7 +202,7 @@ export function buildRefusalFormPdf(args: {
 
 export function refusalPdfFilename(form: RefusalForm, patient: Patient): string {
   const date = (form.finalizedAt ?? form.createdAt).slice(0, 10);
-  return `refusal-${patient.lastName.toLowerCase()}-${date}-${form.id.slice(0, 6)}.pdf`;
+  return `refusal-${patient.programId ?? "unknown"}-${date}-${form.id.slice(0, 6)}.pdf`;
 }
 
 /** One-click export: builds and downloads the PDF in the browser. */

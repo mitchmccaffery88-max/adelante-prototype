@@ -36,4 +36,11 @@ Rollback SHA: `ea295dbce9971ce842e483f392bf0a6a4b139a7a`.
 - Approved test change: `src/components/__tests__/adminTables8b3.test.tsx:49`. Old: download bodies compared byte-identically to rollback. New: the same comparison, with the one approved file-name line mapped back to the old line, plus an assertion that the new line is present. No other existing assertion changed.
 - New test: `src/lib/__tests__/exportFilenamesNoNames.test.ts`.
 - Audit of every other download name. Generic names (date, report or kind only): caseload, claims, ISL, credential roster, permissions, goal audit, DMC-ODS, county, shift count, group engagement, content CSVs, templates. The print record uses a generic page title. Document downloads use the uploaded file's own name.
-- Still contain the patient's last name, NOT changed (stop rule): progress note PDF `note-<lastname>-<date>-<id>.pdf` (`src/lib/notePdf.ts:309`, pinned by `src/lib/__tests__/notePdf.test.ts:167`) and refusal PDF `refusal-<lastname>-<date>-<id>.pdf` (`src/lib/refusalPdf.ts:205`, pinned by `src/lib/__tests__/refusalPdf.test.ts:45`). Proposed: `note-<programId>-…` / `refusal-<programId>-…`. These need approval for those two test lines.
+- (Superseded below) Previously still contained the patient's last name: progress note PDF `note-<lastname>-<date>-<id>.pdf` (`src/lib/notePdf.ts:309`, pinned by `src/lib/__tests__/notePdf.test.ts:167`) and refusal PDF `refusal-<lastname>-<date>-<id>.pdf` (`src/lib/refusalPdf.ts:205`, pinned by `src/lib/__tests__/refusalPdf.test.ts:45`). Proposed: `note-<programId>-…` / `refusal-<programId>-…`. These need approval for those two test lines.
+
+### Follow-up (Oct 19): PDF file names — approved
+- `src/lib/notePdf.ts` `notePdfFilename`: `note-<lastname>-<date>-<id>.pdf` → `note-<programId>-<date>-<id>.pdf`.
+- `src/lib/refusalPdf.ts` `refusalPdfFilename`: `refusal-<lastname>-<date>-<id>.pdf` → `refusal-<programId>-<date>-<id>.pdf`. PDF contents unchanged.
+- Approved test lines: `notePdf.test.ts:167` old `notePdfFilename(base, patient)` → `"note-rivera-2026-07-20-pn-abc.pdf"`; new `notePdfFilename(base, { ...patient, programId: "ADL-2026-001" })` → `"note-ADL-2026-001-2026-07-20-pn-abc.pdf"`. `refusalPdf.test.ts:45` old → `"refusal-rivera-2026-07-30-rf-123.pdf"`; new (same programId) → `"refusal-ADL-2026-001-2026-07-30-rf-123.pdf"`.
+- `exportFilenamesNoNames.test.ts` extended to note and refusal names for every seeded patient.
+- No download file name in the app now contains a patient name or DOB.

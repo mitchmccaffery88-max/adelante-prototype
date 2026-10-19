@@ -306,7 +306,7 @@ export function buildProgressNotePdf(args: {
 
 export function notePdfFilename(note: ProgressNote, patient: Patient): string {
   const date = (note.signedAt ?? note.date ?? "").slice(0, 10) || "undated";
-  return `note-${patient.lastName.toLowerCase()}-${date}-${note.id.slice(0, 6)}.pdf`;
+  return `note-${patient.programId ?? "unknown"}-${date}-${note.id.slice(0, 6)}.pdf`;
 }
 
 /**

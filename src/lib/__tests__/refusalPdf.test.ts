@@ -42,6 +42,6 @@ describe("refusal form PDF export", () => {
   });
 
   it("names the file by patient and finalize date", () => {
-    expect(refusalPdfFilename(form, patient)).toBe("refusal-rivera-2026-07-30-rf-123.pdf");
+    expect(refusalPdfFilename(form, { ...patient, programId: "ADL-2026-001" } as Patient)).toBe("refusal-ADL-2026-001-2026-07-30-rf-123.pdf");
   });
 });

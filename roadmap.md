@@ -505,12 +505,12 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 ## Group A access-hardening fixes — COMPLETE Oct 19
 - [x] Seven narrowing fixes (unsigned notes, caseload SUD program, in-facility tasks, audit feed scrubbing, outbound names, claim Move via registry, staff drawer reset). See docs/group-a-access-fixes-report.md.
 - [x] Units 2,720/2,723 (3 pre-existing/conflict-avoided, see report); full browsers 177/177 --workers=1; screenshots restored.
-- Open for Mitch: roster sheet leaves mouse locked after closing; disclosure export file name contains patient name; reschedule unit tests are clock-dependent.
+- Open for Mitch: roster sheet leaves mouse locked after closing; reschedule unit tests are clock-dependent.
 
 ## Phase 9b — chart foundation and palette — COMPLETE Oct 19
 - [x] Approved chart tokens light+dark, chartTheme helpers, View as table on every chart. See docs/phase9b-report.md.
 - [ ] 9a/9c dashboards and stat tiles — not started (awaiting Mitch).
 
-## Export file names — disclosure DONE Oct 19
+## Export file names — DONE Oct 19 (disclosure, note PDF, refusal PDF)
 - [x] Disclosure export named by program ID; approved adminTables8b3 line; new no-name test
-- [ ] Note PDF and refusal PDF file names (last name) — waiting on approval for notePdf.test.ts:167 and refusalPdf.test.ts:45
+- [x] Note PDF and refusal PDF file names use program ID (approved test lines changed)
