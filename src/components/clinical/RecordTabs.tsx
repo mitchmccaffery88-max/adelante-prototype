@@ -132,6 +132,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { ClientDate } from "@/components/ClientDate";
+import { ChartFrame } from "@/components/ui/chart-frame";
 import { ReferForNeedDialog } from "@/components/clinical/ReferForNeedDialog";
 import { resourceLinkState, referralProviderLabel } from "@/lib/referralLinks";
 import { SdohActivityLog } from "@/components/clinical/SdohActivityLog";
@@ -3317,6 +3318,7 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
         </label>
       </div>
       {trend.length >= 2 && (
+        <ChartFrame title="Score trend" rows={trend as unknown as Record<string, unknown>[]} columns={[{ key: "date", label: "Date" }, { key: "score", label: "Score" }]} testId="tracking-timeline-trend-frame">
         <div className="h-36" data-testid="tracking-timeline-trend">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trend}>
@@ -3328,6 +3330,7 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
             </LineChart>
           </ResponsiveContainer>
         </div>
+        </ChartFrame>
       )}
       {rows.length === 0 ? (
         <p className="text-xs text-muted-foreground">No entries match these filters.</p>
@@ -3462,6 +3465,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
               {last && last.textVerified === false ? " · item text pending verification" : ""}
               {def?.cutoffDraft ? " · cutoff draft pending clinical sign-off" : ""}
             </p>
+            <ChartFrame title={`${title} scores`} rows={data} columns={[{ key: "date", label: "Date" }, { key: "score", label: "Score" }, { key: "severity", label: "Severity" }, { key: "timepoint", label: "Timepoint" }]} testId={`tracking-${sk}-frame`}>
             <div className="h-40 mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
@@ -3490,6 +3494,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+            </ChartFrame>
           </div>
         );
       })}
