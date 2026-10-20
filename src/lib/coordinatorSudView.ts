@@ -1,7 +1,7 @@
 // One allowlisted projection for chart, search, export and agentic summaries.
 // No raw Patient, screener answers, ASAM worksheets, group narrative or task text.
 import { AdelanteEHR, type Patient, type ProgressNote } from "./ehr";
-import { canAccess, getActingStaff } from "./roles";
+import { getActingStaff } from "./roles";
 import { getStructuredPlan } from "./structuredCarePlan";
 import { listLabOrders } from "./chartOrders";
 import { listEpisodes } from "./outpatientCare";
@@ -52,4 +52,26 @@ export function coordinatorAwareNoteGate(role: SudViewer["role"], patient: Patie
   const viewer = { ...actingSudViewer(), role, ...(staffId ? { staffId } : {}) };
   const allowed = coordinatorNoteCanRead(viewer, patient, note);
   return { level: allowed ? "read" as const : "none" as const, locked: !allowed };
+}
+
+/** Identity only: downstream summaries/search/export never receive a raw chart. */
+export function coordinatorPatientIdentity(p: Patient): Patient {
+  return { id: p.id, firstName: p.firstName, lastName: p.lastName, dob: p.dob,
+    phone: "", releaseDate: "", enrolledAt: p.enrolledAt, episodeDay: 0,
+    smsFallback: false, consents: { hipaa: false, part2Sud: false }, programId: p.programId };
+}
+
+export function coordinatorSummaryLines(p: Patient, viewer: SudViewer, now = Date.now()): string[] {
+  const v = coordinatorSudView(p, viewer, now);
+  auditCoordinatorSudView(viewer, p, "summary");
+  return [
+    ...v.diagnoses.map((r) => `${r.description} · ${r.status}`),
+    ...v.treatmentPlans.map((r) => `${r.text} · ${r.status}`),
+    ...v.medications.map((r) => `${r.name} · ${r.dose ?? r.sig ?? "Dose not recorded"}`),
+    ...v.adherence.map((r) => `${r.at} · ${r.status} · ${r.source}`),
+    ...v.labs.map((r) => `${r.testId} · ${r.result ? `${r.result.value} ${r.result.unit}` : r.status}`),
+    ...v.attendance.map((r) => `${r.start} · ${r.status}`),
+    ...v.dischargeSummaries.map((r) => r.summary ?? ""),
+    ...[...v.progressNotes, ...v.counselingNotes].map((r) => [r.subjective, r.objective, r.assessment, r.plan].filter(Boolean).join(" · ")),
+  ].filter(Boolean);
 }

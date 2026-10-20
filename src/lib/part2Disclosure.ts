@@ -10,6 +10,7 @@
 //   (c) writes a disclosure-log entry that never contains clinical content.
 // Non-SUD disclosures pass straight through (no notice, no log entry).
 import { AdelanteEHR, LEGAL_DISCLOSURE_CONSENT_CATEGORY } from "./ehr";
+import { validateCoordinatorEmergency } from "./coordinatorSudAccess";
 
 // Legal disclosure records live in outpatientCare.ts, which registers its
 // reader here (no import: avoids an ehr → outpatientCare load cycle).
@@ -183,6 +184,12 @@ export function part2ConsentFor(
 /** THE disclosure function. */
 export function disclose(req: DisclosureRequest): DisclosureResult {
   if (req.recordClasses.length === 0) return { ok: true };
+  if (req.channel === "coordinator_emergency") {
+    if (req.actor.role !== "clinical_coordinator" || !req.actor.staffId || !req.emergency)
+      return { ok: false, reason: "Coordinator emergency evidence is required." };
+    try { validateCoordinatorEmergency({ reason: req.emergency.exception ?? "", detail: req.emergency.detail ?? "", reference: req.emergency.reference }); }
+    catch { return { ok: false, reason: "An allowed reason, detail and applicable reference are required." }; }
+  }
   const emergencyReason = req.emergency?.reason.trim();
   const emergency = !!req.emergency;
   let consentRef: string;

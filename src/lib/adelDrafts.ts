@@ -10,6 +10,7 @@
 import { withoutMergeHeld } from "./mergePart2";
 import { coordinatorNoteCanRead } from "./coordinatorSudAccess";
 import { getActingStaff } from "./roles";
+import { actingSudViewer, coordinatorSummaryLines } from "./coordinatorSudView";
 import { AdelanteEHR, refillNeedsCures, type Patient, type RefillRequest } from "@/lib/ehr";
 import { canAccess, noteGateClass, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
@@ -63,6 +64,10 @@ export function lastSignedNoteAt(p: Patient): string | undefined {
     .at(-1);
 }
 export function buildNoteDraft(p: Patient, role: StaffRole, now = new Date()): NoteDraft {
+  if (role === "clinical_coordinator") {
+    const lines = coordinatorSummaryLines(p, { ...actingSudViewer(), role }, now.getTime());
+    return { subjective: "", objective: lines.join("\n"), assessment: "", plan: "" };
+  }
   const since = lastSignedNoteAt(p) ?? new Date(+now - 30 * DAY).toISOString();
   const appts = AdelanteEHR.listAppointments().filter((a) => a.patientId === p.id);
   const today = appts.find((a) => new Date(a.start).toDateString() === now.toDateString());

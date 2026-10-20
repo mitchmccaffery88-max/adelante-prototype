@@ -22,6 +22,7 @@ import { isReferralOpen } from "@/lib/noteAutofill";
 import { canAccess, redactNoteBodies, type StaffRole } from "@/lib/roles";
 import { isPart2Screener } from "@/lib/screeners";
 import { filterSudMedsForRole, roleSeesAsamSection } from "@/lib/asamReporting";
+import { actingSudViewer, coordinatorPatientIdentity, coordinatorSummaryLines } from "./coordinatorSudView";
 
 export interface ChartReviewFacts {
   patient: Patient;
@@ -60,6 +61,12 @@ export function chartReviewFacts(
 ): ChartReviewFacts | undefined {
   const patient = AdelanteEHR.getPatient(patientId);
   if (!patient) return undefined;
+  if (viewerRole === "clinical_coordinator") {
+    return { patient: coordinatorPatientIdentity(patient), activeOrders: [], recentDoses: [],
+      dosesGiven: 0, dosesRefusedOrHeld: 0, recentNotes: [], visibleScreeners: [], hiddenScreenerCount: 0,
+      openGoals: 0, doneGoals: 0, openTasks: 0, openReferrals: 0, openSdoh: 0, activeAlerts: [], rescreensDue: [],
+      careGaps: coordinatorSummaryLines(patient, { ...actingSudViewer(), role: viewerRole }, now.getTime()) };
+  }
   const t = now.getTime();
 
   const appts = [...AdelanteEHR.appointmentsForPatient(patientId)].sort(

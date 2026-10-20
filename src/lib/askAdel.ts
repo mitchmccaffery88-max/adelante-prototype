@@ -270,6 +270,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
           lines: ["Pick a patient first — this answer reads their own record."],
         };
       }
+      if (ctx.role === "clinical_coordinator") return { backing: "real", lines: facts.careGaps };
       const lines = [
         facts.lastAppointment
           ? `Last visit ${facts.lastAppointment.start.slice(0, 10)}.`
