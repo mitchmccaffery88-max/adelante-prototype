@@ -1,0 +1,32 @@
+{
+  "rollback": "7c0e871520e0a2eb6b8a29ed604e4e2cefa385f3",
+  "inspected_images": 120,
+  "restored": [
+    "e2e/screenshots/access-bell-anita.png",
+    "e2e/screenshots/access-compliance.png",
+    "e2e/screenshots/access-peer-chart.png",
+    "e2e/screenshots/adel-history-shared.png",
+    "e2e/screenshots/adel-history-staff.png",
+    "e2e/screenshots/advocate-active-en.png",
+    "e2e/screenshots/calendars-coordinator.png",
+    "e2e/screenshots/calendars-luis-es.png",
+    "e2e/screenshots/content-adel-es.png",
+    "e2e/screenshots/content-careplan.png",
+    "e2e/screenshots/continuity-anita.png",
+    "e2e/screenshots/continuity-coverage.png",
+    "e2e/screenshots/continuity-luis-es.png",
+    "e2e/screenshots/continuity-reassign.png",
+    "e2e/screenshots/p2-emergency-unlock.png",
+    "e2e/screenshots/u2-anita-needs-action.png",
+    "e2e/screenshots/u2-coordinator-thread.png"
+  ],
+  "remaining_differences": [],
+  "new_evidence": [
+    "docs/phase9a1-evidence/kpi-1280-dark.png",
+    "docs/phase9a1-evidence/kpi-1280-light.png",
+    "docs/phase9a1-evidence/kpi-390-dark.png",
+    "docs/phase9a1-evidence/kpi-390-light.png",
+    "docs/phase9a1-evidence/kpi-768-dark.png",
+    "docs/phase9a1-evidence/kpi-768-light.png"
+  ]
+}

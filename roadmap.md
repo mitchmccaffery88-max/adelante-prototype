@@ -2,6 +2,16 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 9a-1 — COMPLETE (Oct 20)
+- Rollback 7c0e871520e0a2eb6b8a29ed604e4e2cefa385f3; starting HEAD 193c406f54a7604b8ac2dab8d42106f1efcc585e
+- [x] StatTile and KPI conversion, unchanged selectors and caller access; real weekly MAR/attendance projections only
+- [x] NEW suppression/member-boundary/projection/rollback parity/browser tests; existing assertions untouched
+- [x] Six light/dark 390/768/1280 section captures; full units 2,798/2,798 (347 files), then full background one-worker browser suite to EXIT 0: 182 passed, 0 failed (31.2m)
+- [x] Restored 17 regenerated rollback screenshots; 120 inspected, zero byte differences; retained six new evidence images
+- [x] Final docs/phase9a1-report.md; final managed SHA reported in chat
+- Next in sequence: Phase 9a-2 — not started, awaits its batch authorization
+- No publishing, 9a-2/3 or permission/privacy changes.
+
 ## Privacy P2 — COMPLETE (Oct 20)
 - Rollback c5c3da6af29fc6ed3a3064d84f7b9b9654c7fe28; original starting HEAD 14fe8a744a3cb730390e39447f84b78fd3d5f054
 - Closeout starting HEAD / validated source checkpoint 3874f3859cfff66622b38cc4c4c73b1678679919; final managed closeout SHA reported in chat
@@ -12,7 +22,7 @@
 - [x] Prior browser process/log unavailable: reran FULL suite before edits, background --workers=1 on :8080, polled to EXIT 0: 180/180 passed, 0 failed (31.4m); no flake exception used
 - [x] Restored 16 regenerated screenshots; all 20 rollback images byte-identical; kept new e2e/screenshots/p2-emergency-unlock.png evidence
 - [x] Final docs/privacy-p2-report.md with exact per-role before/after table; only clinical_coordinator gains access
-- [ ] Next in sequence: Phase 9a-1 — NOT STARTED; no 9a work authorized by this closeout
+- [x] Next in sequence: Phase 9a-1 separately authorized Oct 20; work tracked above
 - Scope closed: no publishing, unrelated widening or 9a implementation.
 
 ## Privacy P1 — billing minimum-necessary, self-tracking, SUD cards, AI inputs (approved Oct 19)
