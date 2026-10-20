@@ -64,7 +64,7 @@ All findings below are **PRE-EXISTING**, reproduced on rollback, except the expl
 | PRE-EXISTING | Admin / `button-name` | Episode day, coverage, consent purpose selects receive accessible names; existing Next contact type name retained | `src/routes/admin.tsx:262,273,433` |
 | PRE-EXISTING | Admin / `color-contrast` | Blocked actions and Flags changed zero strip labels: same shared opacity removal as billing | `src/components/ops/OpsWorkspace.tsx:21–23` |
 
-Compliance is axe-clean on rollback and current. No classified finding remains unfixed. The original NEW billing scroll finding was recorded during the pre-fix current scan; the current archive evidence contains its corrected state. The prior stop report remains the historical record below, not a claim of unapproved scope expansion.
+Compliance is axe-clean on rollback and current. No classified finding remains unfixed. The original NEW billing scroll finding was recorded during the pre-fix current scan; the current archive evidence contains its corrected state. The earlier stop is recorded in project history; fixes followed the accepted scope extension.
 
 ## Accepted new denial-test correction
 `e2e/roleDashboards9c.spec.ts:46–51`: billing requesting `/admin` must be denied (`not.toHaveURL(/\/admin$/)`) and **zero** `admin-kpis` must render. The previous assumption that the destination must specifically be `/billing` was incorrect. The accepted correction retains route denial plus tile absence, not a weaker check. No existing assertion, timeout, retry, threshold, deletion, or skip changed.
@@ -73,7 +73,7 @@ Compliance is axe-clean on rollback and current. No classified finding remains u
 - Reproducible diagnostic: `phase9c2-evidence/pinned-parity.py`; complete per-role captured values and visible-testid inventories: `phase9c2-evidence/pinned-parity.json`.
 - Clock pinned **before browser module evaluation** on both previews to `2026-10-20T16:47:00.000Z`; timezone UTC, locale en-US, 1280×1800.
 - Both start in fresh isolated browser contexts with empty device storage and the same source seeds. `Math.random` is fixed to 0.5 on both before module evaluation, making random seed IDs and simulated delivery outcomes identical (`ehr.ts:4469,9479`; `ehr-ext.ts:491`). This is diagnostic-only, not an app/test clock change.
-- The same automatic mount reminder sweep runs on both through unchanged `useReminderSweep.ts:49–62`; no interval clock advancement or manual sweep. Date stays pinned while timers work normally.
+- The same automatic mount reminder sweep runs on both through unchanged `useReminderSweep.ts:41–52`; no interval clock advancement or manual sweep. Date stays pinned while timers work normally.
 - Compares exact strings (no number rounding, timestamp masking, whitespace collapsing, or value substitutions): sorted visible-testid **sets and multiplicities**, each node's own text excluding nested testid owners, each StatTile's full text and value, every Today-strip button, and every `data-count` tile.
 - Descendant testid owners are compared independently, so relocating a section does not falsely compare a parent containing its moved child. Every actual tile value remains included; non-testid tile text remains in its nearest identified owner. This is a layout-order-independent comparison, not ignoring unequal values.
 
@@ -90,10 +90,10 @@ Compliance is axe-clean on rollback and current. No classified finding remains u
 ## Validation — complete
 - Full fresh units: **2,857/2,857**, **353/353 files**, EXIT 0; 70.86s. Known DMC pair passed unchanged. Prior accepted run: same totals.
 - Static rollback binding/selector parity: 19/19, included in full units.
-- NEW role-dashboard spec: **3/3 standalone runs**, **11/11 each**, EXIT 0 each (1.4m, 1.5m, 1.4m). All five homes × two viewports pass summary/action bounds and full-shell axe. Existing action readbacks for clinician, case manager, billing pass; compliance seed has no waiting review item, so no fabricated review mutation.
+- NEW role-dashboard spec: **3/3 standalone runs**, **11/11 each**, EXIT 0 each (1.6m, 1.5m, 1.4m). All five homes × two viewports pass summary/action bounds and full-shell axe. Existing action readbacks for clinician, case manager, billing pass; compliance seed has no waiting review item, so no fabricated review mutation.
 - FULL browser suite: `E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1`, launched in background and polled to literal **EXIT 0**: **211/211 passed**, **31.0m**. This was the **last validation step**; no further test suite or browser scan afterward.
 - No flake exceptions needed; contentWiring:47 and staffNewAudit8a2:29 remain unchanged. No other failures.
-- Build telemetry: latest read **build OK**, 2026-10-20T17:33:50Z.
+- Build telemetry: latest read **build OK**, 2026-10-20T17:34:58Z.
 - Route metadata inspected on index and all five content homes; existing app-specific title, description, Open Graph and Twitter tags retained.
 
 ## Evidence, restoration and next phase
