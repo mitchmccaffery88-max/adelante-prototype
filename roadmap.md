@@ -19,7 +19,7 @@
 - [x] NEW tests statTileParity9a2, suppression9a2, e2e/statTiles9a2; 30 evidence captures
 - [x] Full units 2,817/2,817 (349 files)
 - [x] Full browser suite 187/187, EXIT 0; 17 screenshots restored (0 diffs); docs/phase9a2-report.md final
-- Next: 9a-3 billing/compliance/county tiles — not started.
+- Next: 9a-3 — complete (see above).
 
 ## Phase 9a-1 — COMPLETE (Oct 20)
 - Rollback 7c0e871520e0a2eb6b8a29ed604e4e2cefa385f3; starting HEAD 193c406f54a7604b8ac2dab8d42106f1efcc585e
