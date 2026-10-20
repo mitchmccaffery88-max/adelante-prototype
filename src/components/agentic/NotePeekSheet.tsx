@@ -2,6 +2,8 @@
 // and Part 2 checks as the chart: no therapy_notes access → no body; a note
 // whose gate class is locked for this role shows only a protected notice.
 import { Link } from "@tanstack/react-router";
+import { coordinatorNoteCanRead } from "@/lib/coordinatorSudAccess";
+import { getActingStaff } from "@/lib/roles";
 import { AdelanteEHR, useEhr, type ProgressNote } from "@/lib/ehr";
 import { canAccess, getStaffMember, noteBodyRestricted, noteGateClass, NOTE_CONTENT_RESTRICTED, useActingStaff } from "@/lib/roles";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -15,6 +17,7 @@ export function noteVisibleToRole(
   note: ProgressNote,
   actorTokens: (string | undefined)[] = [],
 ): { visible: boolean; reason?: string } {
+  if (role === "clinical_coordinator") return { visible: coordinatorNoteCanRead({ role, staffId: actorTokens[0] ?? getActingStaff()?.id }, patient, note) };
   const base = canAccess(role, "therapy_notes", patient);
   if (base.level === "none" || base.locked) return { visible: false, reason: base.reason };
   if (noteBodyRestricted(role, patient, note, actorTokens)) return { visible: false, reason: NOTE_CONTENT_RESTRICTED };

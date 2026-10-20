@@ -52,6 +52,10 @@ export function noteExportGate(
   if (!(EXPORTABLE_NOTE_STATUSES as readonly string[]).includes(status)) {
     return { allowed: false, reason: "Only signed or cosigned notes can be exported." };
   }
+  if (role === "clinical_coordinator") {
+    const allowed = coordinatorNoteCanRead({ role, staffId: actorTokens[0] ?? getActingStaff()?.id }, patient, note);
+    return allowed ? { allowed: true } : { allowed: false, reason: "Not available for this role." };
+  }
   const rbac = canAccess(role, "therapy_notes", patient);
   if (rbac.level === "none") {
     return { allowed: false, reason: rbac.reason ?? "No access to clinical notes." };

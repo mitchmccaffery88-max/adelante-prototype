@@ -3,6 +3,7 @@
 // self-service view at /patient.
 import { useEffect, useState } from "react";
 import { RestrictedChartGate } from "@/components/chart/RestrictedChartGate";
+import { CoordinatorSudPanel } from "@/components/chart/CoordinatorSudPanel";
 import { recordView, ACCESS_LOG_ROLES } from "@/lib/accessLog";
 import { ChartHeader } from "@/components/chart/ChartHeader";
 import { BriefTab } from "@/components/chart/BriefTab";
@@ -202,6 +203,7 @@ function ChartBody({
       <main className="mx-auto min-w-0 max-w-[1600px] px-4 py-5 pb-24">
         {/* §Quality pass Group A — live supervision status for supervised roles. */}
         <SupervisionBanner />
+        <CoordinatorSudPanel patient={patient} />
         <ChartTabPanel key={activeTab.id} tab={activeTab} patientId={patient.id} focus={loc.sub} />
       </main>
       <ChartActionLauncher patientId={patient.id} sections={searchable} onSelectSection={onSelect} />
