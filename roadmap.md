@@ -9,8 +9,10 @@
 - [x] Coordinator state-reporting ownership, My Work missing-viewer denial, emergency disclosure reason retention
 - [x] Four stop-item decisions received; both booking cases fail identically on isolated rollback (2 failed / 2 selected)
 - [x] Approved initial booking setup and export repairs; coordinator worklist success assertion
-- [ ] STOP: newly exposed cleanupReschedule.test.ts:54 expects r.ok true, receives false (focused 28/29); destination setup repair needs delegated approval
-- [ ] After stop resolution: NEW owner/disclosure-audit tests, full units, then full browser suite to EXIT last; screenshot parity and final report
+- [x] Approved destination setup repair (cleanupReschedule 6/6)
+- [x] NEW owner/disclosure-audit tests (privacyP1Owner.test.ts 4/4); full units 2,757/2,757
+- [x] Full browser suite ran to EXIT: 178/179; screenshots restored (0 differ)
+- [ ] STOP: staffNewAudit8a2.spec.ts:29 timed out at 30s (passes standalone); needs decision: flake exception or rerun
 - Scope: no publishing, 9a, 9c or P2 in this continuation.
 
 ## Phase 8b-3 — Billing, claims, admin, reference and audit tables (approved Oct 17)

@@ -1,8 +1,16 @@
-# Privacy P1 — continuation stopped
+# Privacy P1 — stopped at final browser run
 
-Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. Continuation starting HEAD: `45eed859b7867be78d62a7bb7f8441856737ba48`.
+Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. No publishing, 9a, 9c or P2 work.
 
-No publishing, 9a, 9c or P2 work, or Phase 9 plan edits. Latest focused units: **28 passed / 29 total; 1 failed** (three files). Full units/browser validation has not run. P1 is incomplete and stopped on a newly exposed existing assertion. The prior 88/93 result below is historical.
+## Oct 20 final continuation
+
+- Approved destination setup (`cleanupReschedule.test.ts`, helper `patientFreeDestination`): reschedule target excludes the moved visit and any overlapping active patient appointment. Used at the p1 reschedule case and (pre-approved slot-selection setup, reported) the advocate-tier loop. No assertions, clocks, retries, timeouts or overlap rules changed. File 6/6.
+- NEW `src/lib/__tests__/privacyP1Owner.test.ts` (4 tests): clinical_coordinator generates CalOMS with one disclosure audit per disclosure check; DMC-ODS export writes a disclosure audit; tps_mark/tps_send_link allowed via runAction; billing and billing_coordinator refused for CalOMS, DMC-ODS export, TPS rows and both TPS actions.
+- State SUD reporting owners now: clinical_coordinator (CalOMS file, TPS actions, client-level rows); DMC-ODS export also roles passing roleSeesAsam.
+- County TPS totals "<11": already in place (countyReporting.ts:458-461).
+- Full units: **2,757 passed / 2,757** (342 files).
+- Full browser suite: **178 passed / 179; 1 failed** (33.4 min, --workers=1, :8080, EXIT 1). Failure: `e2e/staffNewAudit8a2.spec.ts:29` therapist /clinician + New options — 30s test timeout, no assertion mismatch. Standalone rerun passed (24.7s). Not the documented contentWiring:47 exception, so P1 STOPS here. Proposed (not applied): delegate treating :29 as a load-timing flake like contentWiring:47, or approve a full-suite rerun. 16 regenerated tracked screenshots restored to rollback; 0 differ.
+- Final SHA: reported in chat at end of turn (commit made by platform after this edit).
 
 ## Oct 19 delegated stop-item continuation
 
