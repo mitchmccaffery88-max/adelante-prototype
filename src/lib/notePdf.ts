@@ -10,6 +10,8 @@
 // content a role could not read in the UI. `buildProgressNotePdf` re-runs the
 // gate itself and throws, so a caller cannot bypass it by skipping the check.
 import { disclose, type DisclosureActor } from "./part2Disclosure";
+import { coordinatorNoteCanRead } from "./coordinatorSudAccess";
+import { getActingStaff } from "./roles";
 import { jsPDF } from "jspdf";
 import {
   isNoteStrictlyRestricted,
