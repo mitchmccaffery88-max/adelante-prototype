@@ -33,6 +33,8 @@ import {
   referralDeclineReasonLabel,
 } from "@/lib/referralActions";
 import { deliverReferrerUpdate } from "@/lib/referrerUpdateDelivery";
+import { referrerDecisionFor } from "@/lib/referrerUpdateGate";
+import { ReferrerAuthorizationCard } from "@/components/referral/ReferrerAuthorizationCard";
 import {
   NO_REFERRER_CONTACT_NOTE,
   OUTREACH_FALLBACK_DRAFT,
@@ -115,6 +117,7 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
               </div>
             </Card>
 
+            <ReferrerAuthorizationCard referral={referral} />
             <Card className="p-4 text-sm" data-testid="referral-referred-by">
               <div className="font-medium text-navy mb-2">Referred by</div>
               <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
@@ -296,6 +299,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
   const notifyReferrer = async (event: "contacted" | "enrolled" | "declined") => {
     const outcome = await deliverReferrerUpdate(referral, event);
     if (outcome === "sent") toast.success("The person who referred them has been texted.");
+    else if (outcome === "held") toast.message(referrerDecisionFor(referral, event).send ? "Referrer update held." : (referrerDecisionFor(referral, event) as { held: string }).held);
     else if (outcome === "no_phone")
       toast.message("No text to the referrer — no work phone on file for them.");
     else toast.message("No text was sent to the referrer — texting isn't connected here.");

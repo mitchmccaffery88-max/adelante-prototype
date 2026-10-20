@@ -1,0 +1,27 @@
+diff --git a/src/components/tasks/TaskQueueCard.tsx b/src/components/tasks/TaskQueueCard.tsx
+index e75bbf32..396bb623 100644
+--- a/src/components/tasks/TaskQueueCard.tsx
++++ b/src/components/tasks/TaskQueueCard.tsx
+@@ -1,3 +1,4 @@
++import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
+ import { StaffTable } from "@/components/staff/StaffTable";
+ // §Dashboard Cleanup Phase 6a — the one task-queue card.
+ //
+@@ -79,6 +80,8 @@ function TaskQueueContent({
+ }) {
+   const tasks = useEhr(() => outpatientQueueTasks(source));
+   const patients = useEhr(() => AdelanteEHR.listPatients());
++  const viewer = useActingStaff();
++  const labelViewer = () => ({ role: viewer.role, staffId: viewer.staffId });
+   const open = tasks.filter((t) => t.status === "open");
+   const snoozed = tasks.filter((t) => t.status === "snoozed");
+   const now = Date.now();
+@@ -137,7 +140,7 @@ function TaskQueueContent({
+           views={[{ id: "current", label: showDone ? "All tasks" : "Needs you", matches: () => true }]}
+           columns={[{ id: "task", label: "Task", sortValue: (t) => t.title, cell: (t) => {
+             const p = patients.find((x) => x.id === t.patientId);
+-            return <ul><TaskWorkRow tablePresentation draftCache={draftCache} task={t} patientSlot={p ? <Button size="sm" variant="link" onClick={() => onOpenPatient(p.id)}>{p.firstName} {p.lastName}</Button> : null} /></ul>;
++            return <ul><TaskWorkRow tablePresentation draftCache={draftCache} task={t} patientSlot={p ? (viewerCanOpenChart(labelViewer(), p.id) ? <Button size="sm" variant="link" onClick={() => onOpenPatient(p.id)}>{staffPatientLabel(labelViewer(), p.id)}</Button> : <span className="font-mono text-sm">{p.programId}</span>) : null} /></ul>;
+           } }]}
+         />
+       )}

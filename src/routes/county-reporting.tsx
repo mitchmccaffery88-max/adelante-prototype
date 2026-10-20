@@ -8,6 +8,7 @@ import { Lock } from "lucide-react";
 import { useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import { act } from "@/lib/actions/act";
+import { canDownloadSubmission } from "@/lib/countyDownloadAccess";
 import {
   BHOATR_DOLLARS_NOTE,
   bhoatrRollup,
@@ -236,7 +237,9 @@ function CountyReportingPage() {
             {subs.map((s) => (
               <li key={s.id} className="flex flex-wrap items-center gap-2 py-1.5">
                 <span className="flex-1">{s.report.toUpperCase()} · {s.periodLabel} · {s.rowCount} rows{s.withheld ? ` · ${s.withheld} withheld` : ""}<span className="block text-xs text-muted-foreground">by {s.generatedBy} · {s.status === "submitted" ? `submitted (Simulated) ${s.submittedAt?.slice(0, 16).replace("T", " ")}` : s.status}{s.resendOf ? " · resend" : ""}</span></span>
-                <Button size="sm" variant="ghost" onClick={() => download(`${s.report}-${s.periodKey}.csv`, s.file)}>Download</Button>
+                {canDownloadSubmission(me.role, s)
+                  ? <Button size="sm" variant="ghost" onClick={() => download(`${s.report}-${s.periodKey}.csv`, s.file)}>Download</Button>
+                  : <span className="inline-flex items-center gap-1 text-sm text-ink-muted" data-testid="county-download-restricted"><Lock className="size-4" />Client-level file — state-reporting owner only</span>}
               </li>
             ))}
           </ul>

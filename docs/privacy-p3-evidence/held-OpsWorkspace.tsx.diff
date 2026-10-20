@@ -1,0 +1,20 @@
+diff --git a/src/components/ops/OpsWorkspace.tsx b/src/components/ops/OpsWorkspace.tsx
+index f418b8b8..00d0aad0 100644
+--- a/src/components/ops/OpsWorkspace.tsx
++++ b/src/components/ops/OpsWorkspace.tsx
+@@ -1,5 +1,6 @@
+ // §Turn 6 — billing tiles + Today strip, and the admin Today strip. Counts come
+ // only from billingWorkspace / adminToday so strip and tiles always agree.
++import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
+ import { useEffect, useState, type ReactNode } from "react";
+ import { Link } from "@tanstack/react-router";
+ import { ChevronDown } from "lucide-react";
+@@ -47,7 +48,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
+   const [open, setOpen] = useState<Record<TileId, boolean>>({ action: true, pipeline: false, payments: false });
+   useEffect(() => { try { const raw = localStorage.getItem(key); if (raw) setOpen((v) => ({ ...v, ...JSON.parse(raw) })); } catch { /* optional */ } }, [key]);
+   const set = (id: TileId, v: boolean) => setOpen((o) => { const n = { ...o, [id]: v }; try { localStorage.setItem(key, JSON.stringify(n)); } catch { /* optional */ } return n; });
+-  const name = (pid: string) => { const p = patients.find((x) => x.id === pid); return p ? `${p.firstName} ${p.lastName}` : pid; };
++  const name = (pid: string) => (patients.some((x) => x.id === pid) ? staffPatientLabel({ role, staffId }, pid) : pid);
+   const counts = claimBucketCounts(claims);
+   const reminders = useEhr(() => countyReminders(role));
+   const actionCount = ws.blocked.length + ws.holds.length + ws.eligibilityDue.length + reminders.length;

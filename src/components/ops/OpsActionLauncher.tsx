@@ -20,6 +20,7 @@ import { billingWorkspace, adminToday, claimBlockLabel } from "@/lib/billingWork
 import { featureSnapshot, REQUIRES_LIVE_VENDOR, type FeatureId } from "@/lib/features";
 import { listMerges } from "@/lib/patientMerge";
 import { searchPatients } from "@/lib/patientSearch";
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -156,10 +157,14 @@ function OpsBody({ action, claimId, setClaimId, done }: { action: ChartAction; c
 
 function ClaimPicker({ claims, hint, blocked, choose }: { claims: Claim[]; hint: string; blocked: { claim: Claim; reason: string }[]; choose: (id: string) => void }) {
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  const me = useActingStaff();
+  const viewer = { role: me.role, staffId: me.staffId };
   const [q, setQ] = useState("");
+  // Privacy P3 — names (and name search) only for viewers with chart access.
   const rows = claims.filter((c) => {
     const p = patients.find((x) => x.id === c.patientId);
-    return !q.trim() || `${c.id} ${p?.firstName} ${p?.lastName} ${p?.programId}`.toLowerCase().includes(q.toLowerCase());
+    const named = p && viewerCanOpenChart(viewer, p.id) ? `${p.firstName} ${p.lastName}` : "";
+    return !q.trim() || `${c.id} ${named} ${p?.programId}`.toLowerCase().includes(q.toLowerCase());
   });
   return (
     <div className="space-y-2" data-testid="ops-claim-picker">
@@ -174,7 +179,7 @@ function ClaimPicker({ claims, hint, blocked, choose }: { claims: Claim[]; hint:
             return (
               <Button key={c.id} variant="ghost" className="h-auto w-full justify-start rounded-none py-2 text-left" onClick={() => choose(c.id)}>
                 <span>
-                  <span className="block font-medium">{p ? `${p.firstName} ${p.lastName}` : c.patientId} · {c.serviceDate ?? ""}</span>
+                  <span className="block font-medium">{p ? staffPatientLabel(viewer, p.id) : c.patientId} · {c.serviceDate ?? ""}</span>
                   <span className="block text-xs text-muted-foreground">{c.serviceCode ?? "—"} · {c.state}{why ? ` · ${why}` : ""}</span>
                 </span>
               </Button>
@@ -190,15 +195,19 @@ function PatientPick({ render }: { render: (patientId: string) => ReactNode }) {
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const [q, setQ] = useState("");
   const [pid, setPid] = useState("");
+  const me = useActingStaff();
+  const viewer = { role: me.role, staffId: me.staffId };
   const p = patients.find((x) => x.id === pid);
-  if (p) return <div className="space-y-3"><p className="text-sm">{p.firstName} {p.lastName} · {p.programId} <Button size="sm" variant="ghost" onClick={() => setPid("")}>Change</Button></p>{render(p.id)}</div>;
-  const rows = q.trim().length >= 2 ? searchPatients(patients, q, undefined, 10).map((r) => r.patient) : patients.slice(0, 10);
+  if (p) return <div className="space-y-3"><p className="text-sm">{viewerCanOpenChart(viewer, p.id) ? `${p.firstName} ${p.lastName} · ${p.programId}` : p.programId} <Button size="sm" variant="ghost" onClick={() => setPid("")}>Change</Button></p>{render(p.id)}</div>;
+  const rows = q.trim().length >= 2
+    ? searchPatients(patients, q, undefined, 10).map((r) => r.patient).filter((x) => viewerCanOpenChart(viewer, x.id) || x.programId.toLowerCase().includes(q.trim().toLowerCase()))
+    : patients.slice(0, 10);
   return (
     <div className="space-y-2" data-testid="ops-patient-picker">
       <Label htmlFor="ops-patient-search">Patient</Label>
       <Input id="ops-patient-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, DOB or program ID" />
       <div className="divide-y rounded-md border">
-        {rows.map((x) => <Button key={x.id} variant="ghost" className="h-auto w-full justify-start rounded-none py-2 text-left" onClick={() => setPid(x.id)}><span><span className="block font-medium">{x.firstName} {x.lastName}</span><span className="block text-xs text-muted-foreground">DOB {x.dob} · {x.programId}</span></span></Button>)}
+        {rows.map((x) => <Button key={x.id} variant="ghost" className="h-auto w-full justify-start rounded-none py-2 text-left" onClick={() => setPid(x.id)}><span>{viewerCanOpenChart(viewer, x.id) ? <><span className="block font-medium">{x.firstName} {x.lastName}</span><span className="block text-xs text-muted-foreground">DOB {x.dob} · {x.programId}</span></> : <span className="block font-medium font-mono">{x.programId}</span>}</span></Button>)}
       </div>
     </div>
   );
@@ -367,6 +376,8 @@ function FlagPanel() {
 }
 
 function ReconfirmPanel() {
+  const me = useActingStaff();
+  const viewer = { role: me.role, staffId: me.staffId };
   const merges = useEhr(() => listMerges().filter((m) => m.status === "active"));
   const patients = useEhr(() => AdelanteEHR.listPatients());
   if (!merges.length) return <p className="text-sm text-muted-foreground">No merged records need consent review.</p>;
@@ -376,7 +387,7 @@ function ReconfirmPanel() {
         const p = patients.find((x) => x.id === m.survivorId);
         return (
           <li key={m.id} className="flex items-center justify-between p-2">
-            <span>{p ? `${p.firstName} ${p.lastName}` : m.survivorId}</span>
+            <span>{p ? staffPatientLabel(viewer, p.id) : m.survivorId}</span>
             <Link to="/record/$patientId" params={{ patientId: m.survivorId }} search={{ section: "consents" } as never} className="text-teal underline">Open consents</Link>
           </li>
         );

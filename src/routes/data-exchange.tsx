@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { disclosureCsvFilename } from "@/lib/exportFilenames";
 import { useActingStaff } from "@/lib/roles";
-import { staffPatientLabel } from "@/lib/staffPatientLabel";
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { PatientMatchingQueue } from "@/components/identity/PatientMatchingQueue";
 import { HieNotice, HieStatusCard } from "@/components/hie/OutsideRecords";
 import { KIND_LABEL, hieSyncLog, listHeldHieRecords, releaseHeldHieRecord } from "@/lib/hie";
@@ -38,10 +38,6 @@ export const Route = createFileRoute("/data-exchange")({
 });
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-const nameOf = (id: string) => {
-  const p = AdelanteEHR.getPatient(id);
-  return p ? `${p.firstName} ${p.lastName}` : "Unknown";
-};
 
 function Panel({ title, children, testId }: { title: string; children: React.ReactNode; testId: string }) {
   return (
@@ -119,7 +115,8 @@ function Held() {
 const FU_LABEL: Record<FollowUp, string> = { followed: "Followed up within 48h", overdue: "Follow-up needed", open: "Open", "n/a": "—" };
 
 function Events() {
-  const { role } = useActingStaff();
+  const { role, staffId } = useActingStaff();
+  const actor = { role, staffId };
   const events = useEhr(() => listIncomingEvents(role));
   const [kind, setKind] = useState("all");
   const [fu, setFu] = useState("all");
@@ -145,7 +142,9 @@ function Events() {
       <ul className="space-y-1 text-xs">
         {shown.map(({ encounter: e, followUp }) => (
           <li key={e.id} className="flex flex-wrap items-center gap-2 border-t pt-1">
-            <Link to="/record/$patientId" params={{ patientId: e.patientId }} search={{ section: "outside-records" }} className="text-navy underline">{nameOf(e.patientId)}</Link>
+            {viewerCanOpenChart(actor, e.patientId)
+              ? <Link to="/record/$patientId" params={{ patientId: e.patientId }} search={{ section: "outside-records" }} className="text-navy underline">{staffPatientLabel(actor, e.patientId)}</Link>
+              : <span className="font-mono" data-testid="dx-event-program-id">{staffPatientLabel(actor, e.patientId)}</span>}
             <span>{KIND_LABEL[e.kind]}</span><span>{fmt(e.at)}</span>
             {followUp === "n/a" ? <Badge variant="outline">{FU_LABEL[followUp]}</Badge> : followUp === "followed" ? <StatusChip lang="en" state="done" label={FU_LABEL[followUp]} /> : <Badge variant="outline">{FU_LABEL[followUp]}</Badge>}
           </li>

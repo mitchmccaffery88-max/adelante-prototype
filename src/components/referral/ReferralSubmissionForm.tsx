@@ -6,6 +6,7 @@
 // `variant="public"` is the original page exactly as it shipped.
 // `variant="staff"` is the same form with the marketing header and the
 // public confirmation screen omitted (staff have the real queue).
+import { REFERRER_TYPES, REFERRER_TYPE_LABELS, REFERRER_TYPE_LABELS_ES, type ReferrerType } from "@/lib/referrerPolicy";
 import { useEffect, useState } from "react";
 import {
   AdelanteEHR,
@@ -170,7 +171,7 @@ export function ReferralSubmissionForm({
   // powered it so nothing lingers from earlier visits.
   const [confirmation, setConfirmation] = useState<{
     reference: string;
-    textStatus: "sent" | "not_configured" | "failed" | "no_phone" | "pending";
+    textStatus: "sent" | "not_configured" | "failed" | "no_phone" | "pending" | "held";
   } | null>(null);
   useEffect(() => {
     if (staff) return;
@@ -188,6 +189,7 @@ export function ReferralSubmissionForm({
     referringAgency: "",
     referrerEmail: "",
     referrerPhone: "",
+    referrerType: "" as ReferrerType | "",
     referralSource: "probation" as ReferralSource,
     firstName: "",
     lastName: "",
@@ -264,6 +266,7 @@ export function ReferralSubmissionForm({
       justiceInvolved: form.justiceInvolved || undefined,
       referringAgency: form.referringAgency.trim(),
       referrerName: form.referrerName.trim(),
+      ...(form.referrerType ? { referrerType: form.referrerType } : {}),
       referrerEmail: form.referrerEmail || undefined,
       referrerPhone: form.referrerPhone || undefined,
       referralSource: form.referralSource,
@@ -386,6 +389,20 @@ export function ReferralSubmissionForm({
               value={form.referrerName}
               onChange={(e) => setForm({ ...form, referrerName: e.target.value })}
             />
+          </Field>
+          <Field label={screenLang === "es" ? "¿Quién hace el referido?" : "Who is referring?"}>
+            <select
+              aria-label={screenLang === "es" ? "¿Quién hace el referido?" : "Who is referring?"}
+              data-testid="referrer-type"
+              className="h-12 w-full rounded-sm border border-line-strong bg-surface px-3 text-ink"
+              value={form.referrerType}
+              onChange={(e) => setForm({ ...form, referrerType: e.target.value as ReferrerType | "" })}
+            >
+              <option value="">{screenLang === "es" ? "Elige una opción" : "Choose one"}</option>
+              {REFERRER_TYPES.map((t) => (
+                <option key={t} value={t}>{screenLang === "es" ? REFERRER_TYPE_LABELS_ES[t] : REFERRER_TYPE_LABELS[t]}</option>
+              ))}
+            </select>
           </Field>
           <Field label="Agency / organization">
             <Input

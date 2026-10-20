@@ -4,7 +4,7 @@ import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import { coordinatorEmergencyFor, coordinatorSudCanRead, EMERGENCY_REASONS, COORDINATOR_SUD_DRAFT, type EmergencyReason } from "@/lib/coordinatorSudAccess";
 import { coordinatorSudView, auditCoordinatorSudView } from "@/lib/coordinatorSudView";
-import { canUnlockCoordinatorEmergency } from "@/lib/coordinatorSudEmergency";
+import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency } from "@/lib/coordinatorSudEmergency";
 import { runAction } from "@/lib/actions/runAction";
 import { ConfirmDialog } from "@/components/staff/confirm-dialog";
 import { FormField } from "@/components/staff/form-field";
@@ -19,6 +19,7 @@ export function CoordinatorSudPanel({ patient }: { patient: Patient }) {
   const [reason, setReason] = useState<EmergencyReason | "">("");
   const [reference, setReference] = useState("");
   const [error, setError] = useState("");
+  const [ending, setEnding] = useState(false);
   const version = useEhr(() => JSON.stringify([patient.sudCoordinationConsent, patient.sudCounselingNotesRelease, coordinatorEmergencyFor(actor, patient.id)]));
   useEffect(() => { setNow(Date.now()); const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
   const visible = now !== null && coordinatorSudCanRead(actor, patient, "diagnoses", now);
@@ -30,7 +31,7 @@ export function CoordinatorSudPanel({ patient }: { patient: Patient }) {
   if (role !== "clinical_coordinator" || now === null) return null;
   const view = visible || counseling ? coordinatorSudView(patient, actor, now) : undefined;
   return <section className="space-y-4 border-b border-line pb-5" data-testid="coordinator-sud-panel">
-    {grant && <div className="flex items-center gap-2 border border-urgent bg-surface p-3 text-sm text-urgent" role="status" data-testid="emergency-access-banner"><ShieldAlert className="size-5 shrink-0" />Emergency access — ends {new Date(grant.end).toLocaleTimeString()} — reviewed by compliance</div>}
+    {grant && <div className="flex items-center gap-2 border border-urgent bg-surface p-3 text-sm text-urgent" role="status" data-testid="emergency-access-banner"><ShieldAlert className="size-5 shrink-0" /><span className="min-w-0 flex-1">Emergency access — ends {new Date(grant.end).toLocaleTimeString()} — reviewed by compliance</span>{canEndCoordinatorEmergency(actor, patient.id, now) && <Button variant="outline" size="sm" data-testid="emergency-end-now" onClick={() => setEnding(true)}>End access now</Button>}</div>}
     {view && <>
       <h2 className="text-lg font-semibold text-ink">SUD care — minimum necessary</h2>
       <div className="grid min-w-0 gap-4 md:grid-cols-2">
@@ -59,6 +60,11 @@ export function CoordinatorSudPanel({ patient }: { patient: Patient }) {
       {reason && reason !== "medical_emergency" && <FormField label="Reference" required value={reference} onChange={setReference} />}
       {error && <p role="alert" className="text-sm text-attention">{error}</p>}
     </ConfirmDialog>
+    <ConfirmDialog open={ending} onOpenChange={setEnding} title="End access now" description="Re-locks SUD detail for this client right away. The compliance review keeps the record." confirmLabel="End access now" keepLabel="Keep access" reasonLabel="Note (optional)" reasonHelp="Leave out clinical content." onConfirm={(note) => {
+      const result = runAction("coordinator_emergency_end", { role, staffId, staffName }, AdelanteEHR.getPatient(patient.id), { args: [{ patientId: patient.id, actor, note }] });
+      if (!result.ok) return false;
+      setNow(Date.now()); return true;
+    }} />
   </section>;
 }
 function DetailList({ title, rows }: { title: string; rows: string[] }) {

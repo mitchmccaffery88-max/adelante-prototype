@@ -1,3 +1,4 @@
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { StatusChip } from "@/components/ui/status-chip";
 // §U2 — staff-to-staff team threads (staff shell only).
 import { useEffect, useState } from "react";
@@ -86,7 +87,7 @@ export function ThreadList({ selected }: { selected?: string }) {
             <Link to="/team-messages" search={{ thread: t.id }} className={`block p-3 text-sm hover:bg-muted ${selected === t.id ? "bg-muted" : ""}`}>
               <span className="flex items-center justify-between gap-2"><span className="truncate font-medium">{t.subject}</span>{unread > 0 && <Badge>{unread}</Badge>}</span>
               <span className="block truncate text-xs text-muted-foreground">
-                {p ? `${p.firstName} ${p.lastName}` : "Direct"} · {t.status === "resolved" ? "Resolved" : "Open"}{t.containsSud ? " · SUD" : ""}{t.escalationKey ? " · Escalation" : ""}
+                {p ? staffPatientLabel(actor, p.id) : "Direct"} · {t.status === "resolved" ? "Resolved" : "Open"}{t.containsSud ? " · SUD" : ""}{t.escalationKey ? " · Escalation" : ""}
               </span>
             </Link>
           </li>
@@ -125,7 +126,7 @@ export function ThreadView({ threadId }: { threadId: string }) {
       <header className="space-y-1">
         <h2 className="font-display text-lg text-navy">{t.subject}</h2>
         <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-          {patient ? <Link className="underline" to="/record/$patientId" params={{ patientId: patient.id }} search={{}}>{patient.firstName} {patient.lastName}</Link> : "Direct thread"}
+          {patient ? (viewerCanOpenChart(actor, patient.id) ? <Link className="underline" to="/record/$patientId" params={{ patientId: patient.id }} search={{}}>{staffPatientLabel(actor, patient.id)}</Link> : <span className="font-mono">{patient.programId}</span>) : "Direct thread"}
           {t.containsSud && <StatusChip lang="en" state="restricted" label={SUD_THREAD_LABEL} />}
           {t.escalationKey && <Link className="underline" to="/escalations" search={{ view: "all", type: undefined, overdue: undefined, owner: undefined }}>Linked escalation</Link>}
           <Badge variant="secondary">{t.status === "resolved" ? "Resolved" : "Open"}</Badge>

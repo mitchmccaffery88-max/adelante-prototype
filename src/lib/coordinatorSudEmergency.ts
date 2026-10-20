@@ -1,8 +1,8 @@
 import { AdelanteEHR } from "./ehr";
 import { chartEntryFor, registerEmergencyReviewItem } from "./chartAccess";
-import { disclose } from "./part2Disclosure";
+import { disclose, recordEmergencyAccessEnded } from "./part2Disclosure";
 import { auditSafeReason } from "./actions/runAction";
-import { EMERGENCY_ACCESS_MS, saveCoordinatorEmergencyGrant, validateCoordinatorEmergency, type EmergencyReason, type SudViewer } from "./coordinatorSudAccess";
+import { EMERGENCY_ACCESS_MS, coordinatorEmergencyFor, endCoordinatorEmergencyGrant, saveCoordinatorEmergencyGrant, validateCoordinatorEmergency, type EmergencyReason, type SudViewer } from "./coordinatorSudAccess";
 
 export function canUnlockCoordinatorEmergency(viewer: SudViewer, patientId?: string): boolean {
   return viewer.role === "clinical_coordinator" && !!viewer.staffId && !!patientId && chartEntryFor(viewer.role, viewer.staffId, patientId).ok;
@@ -31,4 +31,26 @@ export function unlockCoordinatorEmergency(input: { patientId: string; actor: Su
   if (!event) throw new Error("Access audit was not recorded.");
   AdelanteEHR._emit();
   return { grant, event };
+}
+/** Privacy P3 — only the coordinator who opened an active window may end it. */
+export function canEndCoordinatorEmergency(viewer: SudViewer, patientId?: string, now = Date.now()): boolean {
+  return viewer.role === "clinical_coordinator" && !!viewer.staffId && !!patientId && !!coordinatorEmergencyFor(viewer, patientId, now);
+}
+export function endCoordinatorEmergencyNow(input: { patientId: string; actor: SudViewer; note?: string }) {
+  const { actor, patientId } = input;
+  if (!canEndCoordinatorEmergency(actor, patientId) || !actor.staffId) throw new Error("There is no emergency access window of yours to end.");
+  const patient = AdelanteEHR.getPatient(patientId);
+  if (!patient) throw new Error("Client not found.");
+  const endedAt = new Date().toISOString();
+  const grant = endCoordinatorEmergencyGrant(actor.staffId, patientId);
+  if (!grant) throw new Error("There is no emergency access window of yours to end.");
+  recordEmergencyAccessEnded(grant.disclosureId, endedAt);
+  const note = auditSafeReason(input.note?.trim() || undefined, patient);
+  AdelanteEHR._recordAudit({ category: "access", action: "part2_emergency_ended_early", patientId,
+    actorId: actor.staffId, actorRole: actor.role,
+    detail: { actorName: actor.name ?? actor.staffId, patientId, disclosureLogId: grant.disclosureId, start: grant.start, scheduledEnd: grant.end, end: endedAt, endedEarly: true, ...(note ? { note } : {}), simulated: true } });
+  const event = AdelanteEHR.listAuditEvents({ patientId }).find((e) => e.action === "part2_emergency_ended_early" && e.detail?.disclosureLogId === grant.disclosureId);
+  if (!event) throw new Error("Access audit was not recorded.");
+  AdelanteEHR._emit();
+  return { grant: { ...grant, end: endedAt }, event };
 }

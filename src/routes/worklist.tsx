@@ -1,3 +1,4 @@
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { PageNewLauncher } from "@/components/staff/PageNewLauncher";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -111,7 +112,7 @@ export function matchesDiscipline(t: CaseTask, role: StaffRole): boolean {
 }
 
 function WorklistPage() {
-  const { role, staffName } = useActingStaff();
+  const { role, staffName, staffId } = useActingStaff();
   const { view } = Route.useSearch();
   const navigate = useNavigate();
   const access = canAccess(role, "worklist");
@@ -141,10 +142,8 @@ function WorklistPage() {
   const supervisory = role === "clinical_coordinator" || role === "sys_admin";
   const [myDiscipline, setMyDiscipline] = useState(!supervisory);
 
-  const nameFor = (id: string) => {
-    const p = patients.find((x) => x.id === id);
-    return p ? `${p.firstName} ${p.lastName}` : id;
-  };
+  // Privacy P3 — full name only with chart access; otherwise the program ID.
+  const nameFor = (id: string) => (patients.some((x) => x.id === id) ? staffPatientLabel({ role, staffId }, id) : id);
   const facilityName = (id?: string) => facilities.find((f) => f.id === id)?.name;
 
   const scoped = useMemo(() => {
