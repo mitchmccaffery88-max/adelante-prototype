@@ -118,3 +118,11 @@ The chart-access label module is mocked in place of the real one. Through `chart
 
 Same method as 9c-2. The current tree and a `git archive` of `8ce8a634` (node_modules symlinked, no stash) each ran one dump with Date pinned to 2026-10-20T15:00Z and a seeded `Math.random`. The dump covered `asamAccessMode`, `aggregatePatients`, `asamClinicalReport`, `populationHealthReport`, and CalOMS completeness / substance / justice for all 17 staff roles. Result: **all 17 roles byte-identical**, including sys_admin, because the demo seed has 0 consent-permitted patients (<11, so hidden in both). The ≥11 behaviour is proven by the new cohort test above.
 
+### Clean validation (continuation)
+Order: all edits done → dev-server restart → units **2,893/2,893 (359 files), EXIT 0** → full browser suite `--workers=1` on :8080, nothing else running → **210/211, EXIT 1 (40.1 min)**.
+
+**STOP (stop rule: an existing test asserts the old name display).** `e2e/access.spec.ts:50`. sys_admin opens `/quality-compliance` → "Client to restrict" and picks the option by patient name (`ids.otherName`, built at `:24` from first name + last initial). sys_admin has no chart access, so under the approved name policy (`quality-compliance.tsx:45`) the option now shows the program ID. The click timed out after 180 s.
+- Current: `await page.getByRole("option", { name: new RegExp(ids.otherName) }).first().click();`
+- Proposed: pick by program ID. Add `otherProgramId` to the `ids` evaluate at `:24` (`ps.find(p => p.id === other).programId`) and change `:50` to `{ name: new RegExp(ids.otherProgramId) }`. No other assertion changes.
+- Not applied; awaiting approval. `staffNewAudit8a2:93` did not fail in this run.
+Tracked screenshots restored against 8ce8a634.

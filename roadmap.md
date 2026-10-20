@@ -2,7 +2,7 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## Privacy P3 — STOPPED (Oct 20): browser 210/211, staffNewAudit8a2.spec.ts:93 not an approved flake
+## Privacy P3 — STOPPED (Oct 20 continuation): browser 210/211, e2e/access.spec.ts:50 picks a client by name (name policy) — awaiting approval
 - Rollback 8ce8a6343e53917d7473af94e2006583c9e342b7; starting HEAD 4d2723e7 (no content diff)
 - [x] 1 Patient-name policy: incoming events + remaining ungated name surfaces
 - [x] 2 Referrer types, minimum-necessary updates, authorization capture, SUD hold, audit + disclosure log
