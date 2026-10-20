@@ -2,17 +2,18 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## Privacy P2 — coordinator minimum-necessary SUD access (approved Oct 19)
-- Rollback c5c3da6af29fc6ed3a3064d84f7b9b9654c7fe28; starting HEAD 14fe8a744a3cb730390e39447f84b78fd3d5f054
-- [x] Initial chart/search/export/summary inventory; capability boundaries recorded
-- [ ] Consent/release read gates; emergency registry/dialog/audit/disclosure/review/expiry; access audits
-- [ ] NEW tests; full units; stop on unapproved existing assertions
-- [ ] Full background browser suite to EXIT as last validation; restore rollback screenshots
-- [ ] Final docs/privacy-p2-report.md with capabilities, totals and final SHA
-- [x] Approved snapshot: exactly 17 new emergency keys, all hidden; every pre-existing entry byte-identical. NEW group fixtures corrected; focused validation 28/28, new surface tests 7/7.
-- STOP: full units 2,773/2,774 (343/344 files); existing privacyP1.test.ts:109 fails because its counseling absence assertion shares PRIVATE-P1-PLAN with an earlier now-consented standard SUD note. Existing test source unchanged; unique counseling fixture marker requires approval.
-- Remaining: live emergency/read-audit/expiry review, every-B populated coverage, full green units then full background browsers to EXIT. Browser suite not started under stop rule; screenshots 0 differences vs rollback. No final SHA.
-- Scope: no publishing, 9a or unrelated widening.
+## Privacy P2 — COMPLETE (Oct 20)
+- Rollback c5c3da6af29fc6ed3a3064d84f7b9b9654c7fe28; original starting HEAD 14fe8a744a3cb730390e39447f84b78fd3d5f054
+- Closeout starting HEAD / validated source checkpoint 3874f3859cfff66622b38cc4c4c73b1678679919; final managed closeout SHA reported in chat
+- [x] Consent/release and B-only gates; emergency registry/dialog/audit/disclosure/review/four-hour expiry; view audits
+- [x] Search/export/AI boundaries; dev-only test API documented; med/MAR print sections unchanged (B is a ceiling)
+- [x] Approved snapshot-only addition (17 hidden keys; other entries byte-identical); approved counseling fixture distinction plus standard-note consent assertion
+- [x] NEW unit/surface/live emergency tests; full units 2,775/2,775 (344 files)
+- [x] Prior browser process/log unavailable: reran FULL suite before edits, background --workers=1 on :8080, polled to EXIT 0: 180/180 passed, 0 failed (31.4m); no flake exception used
+- [x] Restored 16 regenerated screenshots; all 20 rollback images byte-identical; kept new e2e/screenshots/p2-emergency-unlock.png evidence
+- [x] Final docs/privacy-p2-report.md with exact per-role before/after table; only clinical_coordinator gains access
+- [ ] Next in sequence: Phase 9a-1 — NOT STARTED; no 9a work authorized by this closeout
+- Scope closed: no publishing, unrelated widening or 9a implementation.
 
 ## Privacy P1 — billing minimum-necessary, self-tracking, SUD cards, AI inputs (approved Oct 19)
 - Rollback SHA f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba
