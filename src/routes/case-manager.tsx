@@ -276,8 +276,8 @@ function CaseManagerPage() {
         <ReferralTrackerCard referrals={referrals} title="Referral status" showViewAll />
       </section>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 min-w-0 p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-lg text-navy flex items-center gap-2">
               <Users className="h-4 w-4 text-teal" /> Caseload
@@ -384,7 +384,7 @@ function CaseManagerPage() {
               )}
             </div>
           </div>
-          <div className="hidden sm:block">
+          <div className="hidden sm:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

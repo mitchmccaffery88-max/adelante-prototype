@@ -2,6 +2,15 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 9c-1 — IN PROGRESS (Oct 20)
+- Rollback 1e410aad83903e2950d62031329ff42b3ff18033; starting HEAD 89e1b1bdc87041e9fa982502325a24ad753e63aa
+- [ ] Approved fixture field `occurrencesRecorded` in suppression9a2 + statTileParity9a2 (no assertion changes)
+- [ ] Overflow: case-manager grid min-w-0/grid-cols-1, billing header stack/wrap, admin grid min-w-0 + StaffTable scroll wrapper; before/after scrollWidth at 390/768/1280 on 8 routes
+- [ ] Roster mouse lock: StaffTable More menu defers sheet open to next tick; no manual body pointer-events
+- [ ] Chart colors: RecordTabs/LabsAndMeasures onto chartTheme tokens (single, axis, series 1/2, grid)
+- [ ] NEW tests e2e/overflow9c.spec.ts + chartColors9c.test.ts; units; FULL browser suite --workers=1 to EXIT last
+- [ ] Restore tracked screenshots vs rollback; evidence docs/phase9c1-evidence/; docs/phase9c1-report.md; final SHA
+
 ## Phase 9a-3 — COMPLETE (Oct 20)
 - Rollback / starting HEAD 7c834669d4f2811e28dac8b50090906873b9b8ad
 - [x] /billing Outstanding, Paid, Drafts/write-offs on StatTile; Denied card + denied chip unchanged

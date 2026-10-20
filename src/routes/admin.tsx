@@ -253,8 +253,8 @@ function AdminPage() {
 
       <PopulationCarePlanStrip className="mb-6" />
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 min-w-0 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="font-display text-lg text-navy">Caseload</h2>
             <div className="flex flex-wrap items-center gap-2">

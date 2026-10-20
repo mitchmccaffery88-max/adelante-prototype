@@ -55,7 +55,7 @@ describe("9a-2 converted tiles render the selector number", () => {
         attendance={{ present: 30, late: 2, absent: 8, denominator: 40, pct: 80 }}
         metric={{ value: 80, unit: "pct", higherIsBetter: true, basis: "32 of 40" } as never}
         onOpenAbsences={() => {}}
-        openGroups={{ activeGroups: 0, enrolledPatients: 0, patientsReached: 0, attendance: { present: 0, late: 0, absent: 0, denominator: 0, pct: null } }}
+        openGroups={{ activeGroups: 0, enrolledPatients: 0, patientsReached: 0, attendance: { present: 0, late: 0, absent: 0, denominator: 0, pct: null, occurrencesRecorded: 0 } }}
       />,
     );
     expect(screen.getByTestId("group-active-count").textContent).toBe("3");

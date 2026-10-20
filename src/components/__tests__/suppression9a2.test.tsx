@@ -41,7 +41,7 @@ describe("9a-2 small-cohort suppression", () => {
         attendance={{ present: 3, late: 0, absent: 1, denominator: 4, pct: 75 }}
         metric={{ value: 75, unit: "pct", higherIsBetter: true } as never}
         onOpenAbsences={() => {}}
-        openGroups={{ activeGroups: 1, enrolledPatients: 4, patientsReached: 3, attendance: { present: 3, late: 0, absent: 1, denominator: 4, pct: 75 } }}
+        openGroups={{ activeGroups: 1, enrolledPatients: 4, patientsReached: 3, attendance: { present: 3, late: 0, absent: 1, denominator: 4, pct: 75, occurrencesRecorded: 1 } }}
       />,
     );
     expect(screen.getByTestId("group-active-count").textContent).toBe("2");
