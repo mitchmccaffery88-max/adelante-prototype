@@ -1,21 +1,24 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
-import { _resetCountyReporting, generateReport, tpsList } from "@/lib/countyReporting";
+import { _resetCountyReporting, generateReport, setTpsWindow, tpsList } from "@/lib/countyReporting";
 import { exportDmcOdsCsv } from "@/lib/dmcOdsReadiness";
 
 const coord = { role: "clinical_coordinator" as const, name: "Clinical coordinator", staffId: "s-cc-p1" };
 const disclosureEvents = () => AdelanteEHR.listAuditEvents({ category: "disclosure" });
 
-beforeEach(() => _resetCountyReporting());
+beforeEach(() => {
+  _resetCountyReporting();
+  setTpsWindow({ role: "sys_admin", name: "Admin" }, { start: "2000-01-01", end: "2100-01-01" });
+});
 
 describe("Privacy P1 — clinical coordinator owns state SUD reporting", () => {
   it("generates the CalOMS file and every checked patient writes a disclose() audit entry", () => {
     const before = disclosureEvents().length;
     const s = generateReport(coord, "caloms", "30");
     expect(s.file).toContain("#");
-    expect(s.checks).toBeGreaterThan(0);
-    expect(disclosureEvents().length - before).toBe(s.checks);
+    expect(s.disclosureChecks).toBeGreaterThan(0);
+    expect(disclosureEvents().length - before).toBe(s.disclosureChecks);
   });
   it("the DMC-ODS export goes through disclose() with an audit entry", () => {
     const before = disclosureEvents().length;
