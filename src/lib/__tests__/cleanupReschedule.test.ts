@@ -32,6 +32,21 @@ function bookFor(patientId: string) {
   return { appt, clinicianId: opt.clinician.id };
 }
 
+function patientFreeDestination(patientId: string, clinicianId: string, appt: { id: string; start: string }) {
+  const durationMin = AdelanteEHR.getServiceType(SVC)?.defaultDurationMin ?? 50;
+  return patientSlots(clinicianId, SVC, "in_person", appt.id).find((slot) => {
+    if (slot === appt.start) return false;
+    const begins = new Date(slot).getTime();
+    const ends = begins + durationMin * 60_000;
+    return !AdelanteEHR.appointmentsForPatient(patientId).some((existing) => {
+      if (existing.id === appt.id || !isVisitActive(existing.status)) return false;
+      const existingStart = new Date(existing.start).getTime();
+      const existingEnd = existingStart + existing.durationMin * 60_000;
+      return existingStart < ends && begins < existingEnd;
+    });
+  })!;
+}
+
 function advocateLink(type: "hipaa_authorization" | "conservatorship", n: number) {
   const patient = AdelanteEHR.createPatient({ firstName: "Ana", lastName: `Resched_${n}` });
   const invite = AdelanteEHR.createAdvocateInvitation({
@@ -47,7 +62,7 @@ function advocateLink(type: "hipaa_authorization" | "conservatorship", n: number
 describe("Cleanup 1 — reschedule on the booking engine", () => {
   it("patient reschedule runs through runAction and writes the standard audit event", () => {
     const { appt, clinicianId } = bookFor("p1");
-    const next = patientSlots(clinicianId, SVC, "in_person", appt.id).find((s) => s !== appt.start)!;
+    const next = patientFreeDestination("p1", clinicianId, appt);
     const before = actionEvents().length;
     const p = AdelanteEHR.getPatient("p1")!;
     const r = runAction("patient_reschedule", { role: PATIENT_ACTOR_ROLE, staffId: p.id, staffName: "Patient (self)" }, p, { args: [{ patientId: p.id, apptId: appt.id, start: next }] });
@@ -68,7 +83,7 @@ describe("Cleanup 1 — reschedule on the booking engine", () => {
     const con = advocateLink("conservatorship", 2);
     for (const l of [hip, con]) {
       const { appt, clinicianId } = bookFor(l.patient.id);
-      const next = patientSlots(clinicianId, SVC, "in_person", appt.id).find((s) => s !== appt.start)!;
+      const next = patientFreeDestination(l.patient.id, clinicianId, appt);
       const r = runAction("advocate_reschedule", { role: ADVOCATE_ACTOR_ROLE, staffId: l.linkId, staffName: "Advocate" }, l.patient, { args: [{ linkId: l.linkId, apptId: appt.id, start: next }] });
       expect(r.ok).toBe(l === con);
     }
