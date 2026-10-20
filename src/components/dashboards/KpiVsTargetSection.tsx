@@ -26,8 +26,8 @@ import {
   DEFAULT_PERIOD,
   type ReportingPeriodKey,
 } from "@/lib/reportingPeriods";
-import { useEhr, type KpiTarget } from "@/lib/ehr";
-import { liveKpiSparkline } from "@/lib/kpiSparkline";
+import type { KpiTarget } from "@/lib/ehr";
+import type { KpiSparkline } from "@/lib/kpiSparkline";
 import { Clock, Minus, Target } from "lucide-react";
 import type { ChartStatus } from "@/lib/chartTheme";
 
@@ -40,16 +40,15 @@ export function KpiVsTargetSection({
   metrics,
   onDrillDown,
   period = DEFAULT_PERIOD,
+  sparklines = {},
 }: {
   targets: KpiTarget[];
   metrics: LiveMetricMap;
   onDrillDown: (metricKey: MetricKey) => void;
   period?: ReportingPeriodKey;
+  sparklines?: Partial<Record<MetricKey, KpiSparkline | null>>;
 }) {
   const [showGaps, setShowGaps] = useState(true);
-  const sparklines = useEhr(() => Object.fromEntries(targets.map((t) =>
-    [t.metricKey, liveKpiSparkline(t.metricKey as MetricKey)],
-  )));
 
   if (targets.length === 0) {
     return (

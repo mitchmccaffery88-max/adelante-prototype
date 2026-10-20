@@ -16,6 +16,7 @@ import {
   type MetricKey,
 } from "@/lib/dashboardMetrics";
 import { KpiVsTargetSection } from "@/components/dashboards/KpiVsTargetSection";
+import { liveKpiSparkline } from "@/lib/kpiSparkline";
 import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { CalAimSection } from "@/components/dashboards/CalAimSection";
 import { GroupUtilizationSection } from "@/components/dashboards/GroupUtilizationSection";
@@ -90,6 +91,9 @@ function DashboardsPage() {
     ? allTargets
     : allTargets.filter((t) => !isInFacilityMetric(t.metricKey));
   const metrics = useEhr(() => computeLiveMetrics(new Date(), days));
+  const sparklines = useEhr(() => access.level === "none" ? {} : Object.fromEntries(
+    targets.map((t) => [t.metricKey, liveKpiSparkline(t.metricKey as MetricKey)]),
+  ));
   const qualifyingCodes = useEhr(() => AdelanteEHR.listQualifyingCodes());
   const calaimCaseload = useEhr(() => calaimEligiblePatients());
   const calaimDischarges = useEhr(() => calaimEligibleDischarges());
@@ -321,6 +325,7 @@ function DashboardsPage() {
         <KpiVsTargetSection
           targets={targets}
           metrics={metrics}
+          sparklines={sparklines}
           period={period}
           onDrillDown={(key) => setDrill(key)}
         />

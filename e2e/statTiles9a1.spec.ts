@@ -38,7 +38,7 @@ test("9a-1 KPI scalar parity, dialog drill-down, accessible light/dark matrix", 
 
 test("9a-1 billing cannot see the KPI section", async ({ page }) => {
   await bootTables(page, "s-bill1", "billing", "/billing");
-  await expect(page.getByRole("heading", { name: "Billing", exact: true })).toBeVisible();
+  await expect(page.getByTestId("billing-workspace")).toBeVisible();
   await page.evaluate(() => (window as any).__adelante.go("/dashboards"));
   await expect(page.getByTestId("kpi-vs-target")).toHaveCount(0);
   await expect(page).not.toHaveURL(/\/dashboards$/);
