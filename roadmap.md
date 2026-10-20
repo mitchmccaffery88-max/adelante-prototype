@@ -2,7 +2,7 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## Phase 9a-3 — IN VALIDATION (Oct 20)
+## Phase 9a-3 — COMPLETE (Oct 20)
 - Rollback / starting HEAD 7c834669d4f2811e28dac8b50090906873b9b8ad
 - [x] /billing Outstanding, Paid, Drafts/write-offs on StatTile; Denied card + denied chip unchanged
 - [x] BillingStatusSummary icon + word per status (Denied unchanged)
@@ -10,7 +10,7 @@
 - [x] County cards on StatTile, Simulated kept; quality-compliance tokens
 - [x] NEW tests billingParity9a3, billingSparkline9a3, e2e/statTiles9a3; 36 evidence captures
 - [x] Units 2,830/2,830 (351 files)
-- [ ] Full browser suite --workers=1, restore screenshots, final SHA
+- [x] Full browser suite 191/191, EXIT 0; 17 screenshots restored (0 diffs); final SHA 1e410aad83903e2950d62031329ff42b3ff18033
 - Pending Mitch: CalAIM chip below 11; type-only errors in 9a-2 test files (no edit without approval)
 
 ## Phase 9a-2 — COMPLETE (Oct 20)

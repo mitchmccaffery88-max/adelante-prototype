@@ -19,7 +19,9 @@ Rollback / starting HEAD: 7c834669d4f2811e28dac8b50090906873b9b8ad. Not publishe
 
 ## Validation
 - Units: 2,830 / 2,830 (351 files).
-- Browser: see final section.
+- Browser: full suite --workers=1 on :8080, 191 / 191 passed, EXIT 0 (34.3m); no flake exceptions used.
+- Screenshots: 17 tracked images regenerated and restored from rollback, 0 differences.
+- Final SHA: 1e410aad83903e2950d62031329ff42b3ff18033 (managed checkpoint follows this message).
 - Evidence: docs/phase9a3-evidence/ (36 captures).
 
 ## Stop items / for Mitch
