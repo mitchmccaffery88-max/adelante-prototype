@@ -117,3 +117,15 @@ The equivalent pre-import Date-only setup was verified externally at that timest
 - FULL browser suite: `E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1`, background process, polled through its **literal EXIT 0**; **200/200 passed, 29.0m**, zero failures, no flake exceptions. Last validation run before closeout edits. Log was `/tmp/browser/9c1/e2e.log`; tests were not filtered or retried.
 - Restored **17** regenerated tracked screenshots from rollback; inspected and verified **194/194** rollback image files byte-identical. Retained all 12 new chart captures and before/after JSON evidence.
 - Preview build log: build OK. No application or test edits in this closeout; only report/roadmap and requested screenshot restoration.
+
+## Addendum — approved DMC Date freeze and CalAIM decision (Oct 20)
+
+Complete; not published. Batch rollback / starting HEAD after P3 and its documentation commit: `66bc81a63aef1b021fa22a1ce246f25b5aa668fc` (recorded before editing).
+
+- Applied exactly the approved test-local `vi.hoisted` Date-only freeze at `2026-09-29T15:00:00.000Z`, plus `afterAll(() => vi.useRealTimers())` and the missing imports in `src/lib/__tests__/dmcOdsReadiness.test.ts`. No assertion, timeout, retry, other test, production seed or billing/medical-necessity logic changed.
+- The historical temporary external harness was not retained. Recreated the same external pre-import Vitest setup/config approach in `/tmp/dmc-date-freeze/pinned.setup.ts` and `pinned.config.ts`: setup pins Date to `2026-10-20T14:02:00Z` before loading the edited file. Its test-local hoisted freeze then overrides that clock before EHR/EHR-ext seed imports. An external beforeAll assertion independently confirms the resulting clock is `2026-09-29T15:00:00.000Z`; both seeded treatment-claim tests pass without any assertion changes.
+- Collision-clock runs: **8/8, 8/8, 8/8**, all **EXIT 0**; durations **1.68s, 1.96s, 2.32s**. Current-clock run started **2026-10-20T23:06:08Z**, **8/8**, **EXIT 0**, **1.48s**. Logs: `/tmp/dmc-date-freeze/pinned-{1,2,3}.log` and `current.log`.
+- Full units: **2,893/2,893**, **359/359 files**, **EXIT 0**, **106.77s**; DMC file **8/8** including the formerly unstable pair. Log: `/tmp/dmc-date-freeze/full-units.log`. The existing production-bundle inspection unit test also passed; no separate build was run.
+- Mitch DECIDED: **keep the CalAIM Your turn chip whenever ≥1 discharge is eligible**, even below 11; the count remains **<11**. No CalAIM code change; removed this decision from roadmap open items.
+- Changed project files are only the approved test, `roadmap.md`, and this requested report addendum. No application files changed, so no browser suite or screenshot regeneration was needed. Next batch: seeded claims.
+- Final managed SHA is reported after the documentation changes are checkpointed; no manual Git commit.

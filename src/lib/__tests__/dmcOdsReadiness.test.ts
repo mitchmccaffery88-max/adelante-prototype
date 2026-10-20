@@ -1,5 +1,10 @@
 // §Phase 10d-3 — medical necessity gate, CalOMS completeness, prototype export.
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+vi.hoisted(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-09-29T15:00:00.000Z"));
+});
+afterAll(() => vi.useRealTimers());
 import { AdelanteEHR, demoScenarioPatientId } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { setActingRole, setActingStaff, type StaffRole } from "@/lib/roles";
