@@ -47,9 +47,9 @@ export function StaffPatientSearch({
 
   const identity = assignmentIdentityFor(staff);
   const results = useMemo(
-    () => searchPatients(patients, query, identity),
+    () => searchPatients(patients, query, identity, 8, { role, staffId: staff.staffId }),
     // identity is derived from the acting staff row; depend on its parts.
-    [patients, query, identity.caseManagerId, identity.clinicianId],
+    [patients, query, identity.caseManagerId, identity.clinicianId, role, staff.staffId],
   );
 
   useEffect(() => setActive(0), [query]);

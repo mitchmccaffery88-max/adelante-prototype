@@ -1,4 +1,5 @@
 import { continuityBriefText, continuityForPatient } from "./medContinuity";
+import { actingSudViewer, coordinatorSudView } from "./coordinatorSudView";
 // V1 — Adel Brief consistency checker. For every bullet, resolve each source
 // record (through the SAME role-filtered chart views the linked section uses),
 // rebuild the bullet's numbers / dates / labels from those records alone, and
@@ -267,6 +268,19 @@ function noteBodies(p: Patient): string[] {
 export function checkBriefFor(p: Patient, role: StaffRole, now = new Date()): BriefIssue[] {
   const issues: BriefIssue[] = [];
   const entry = getAdelBrief(p, role, now);
+  if (role === "clinical_coordinator") {
+    const v = coordinatorSudView(p, { ...actingSudViewer(), role }, +now);
+    const allowed = new Map<string, string>([
+      ...v.medications.map((r) => [`p2-med-${r.id}`, `${r.name} · ${r.dose ?? r.sig ?? "Dose not recorded"}`] as [string, string]),
+      ...v.attendance.map((r) => [`p2-visit-${r.id}`, `${r.start} · ${r.status}`] as [string, string]),
+      ...v.treatmentPlans.map((r) => [`p2-goal-${r.id}`, `${r.text} · ${r.status}`] as [string, string]),
+      ...v.labs.map((r) => [`p2-lab-${r.id}`, `${r.testId} · ${r.result ? `${r.result.value} ${r.result.unit}` : r.status}`] as [string, string]),
+    ]);
+    for (const { id: section } of BRIEF_SECTIONS) for (const b of entry.sections[section]?.bullets ?? []) {
+      if (allowed.get(b.id) !== b.text) issues.push({ patientId: p.id, role, section, bulletId: b.id, problem: "unresolved_source", detail: "Coordinator source absent or no longer authorized" });
+    }
+    return issues;
+  }
   const sees = roleSeesAsamSection(role, p);
   const bodies = noteBodies(p);
   for (const { id: section } of BRIEF_SECTIONS) {

@@ -10,6 +10,7 @@
  * requirement (SculptSoft `86bc4a5d5`).
  */
 import { isAssignedTo, type AssignmentIdentity } from "./caseloadScope";
+import type { SudViewer } from "./coordinatorSudAccess";
 
 export interface SearchablePatient {
   id: string;
@@ -70,6 +71,7 @@ export function searchPatients<T extends SearchablePatient>(
   query: string,
   identity: AssignmentIdentity = {},
   limit = 8,
+  viewer?: SudViewer,
 ): PatientSearchResult<T>[] {
   const q = query.trim();
   if (q.length < 2) return [];
@@ -77,7 +79,14 @@ export function searchPatients<T extends SearchablePatient>(
   for (const patient of patients) {
     const matchedOn = matchField(patient, q);
     if (!matchedOn) continue;
-    results.push({ patient, matchedOn, assigned: isAssignedTo(patient, identity) });
+    // Lookup searches identifiers, not clinical content. Never return a raw chart
+    // to coordinator result consumers, even when its notes are consented.
+    const projected = viewer?.role === "clinical_coordinator" ? {
+      id: patient.id, firstName: patient.firstName, lastName: patient.lastName,
+      dob: patient.dob, programId: patient.programId, cin: patient.cin,
+      caseManagerId: patient.caseManagerId, primaryClinicianId: patient.primaryClinicianId,
+    } as T : patient;
+    results.push({ patient: projected, matchedOn, assigned: isAssignedTo(patient, identity) });
   }
   results.sort((a, b) => {
     if (a.assigned !== b.assigned) return a.assigned ? -1 : 1;
