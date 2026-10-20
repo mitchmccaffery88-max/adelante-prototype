@@ -1,9 +1,10 @@
-# Phase 9c-2 — stopped pending scope decision
+# Phase 9c-2 — complete
 
-## Baseline
-- Rollback recorded before edits: `aff263ff1aa707d68994b7f175f83aa9d09306fd`; accepted 9c-1 `b15085a8`.
-- No publishing, existing-test edits, Date freeze, or billing/medical-necessity changes.
-- Status: **not complete**. New whole-home accessibility checks failed; the full browser suite was not launched after these unapproved failures.
+## Baseline and scope
+- Rollback: `aff263ff1aa707d68994b7f175f83aa9d09306fd`; accepted 9c-1 `b15085a8`.
+- Layout regrouping plus accepted presentation-only accessibility fixes. No changes to roles, access, Part 2, metric selectors, values, suppression, handlers, crisis banner, patient screens, or denied-claim styling.
+- No publishing. The DMC readiness pre-import Date freeze remains **unapproved and unapplied**; no production billing/medical-necessity change.
+- Isolated rollback used `git archive` in `/tmp/rollback-9c2`, shared dependencies by symlink, separate preview on :8081. No stash or working-tree replacement.
 
 ## Before / proposed order (shared before editing)
 | Home | Baseline desktop / phone | Proposed order and baseline source |
@@ -36,26 +37,68 @@ Measurements in `phase9c2-evidence/after.json`; widths 1280×800 and 390×844.
 | Compliance review region | 260–346 | 369–455 |
 | Compliance unusual-volume region | 366–472 | 475–601 |
 
-The case-manager scope framing was subsequently made unframed inside the task card, reducing its vertical footprint. Horizontal tracks show first tiles, not all summaries simultaneously. Phone screenshots show the existing fixed crisis footer covering the lower part of the original 828px scope measurement; final unobscured fold acceptance remains pending.
+The case-manager scope framing was subsequently made unframed inside the task card, reducing its vertical footprint. Horizontal tracks show first tiles, not all summaries simultaneously. The unchanged fixed crisis footer remains in place. The new spec passes every action/summary bounding check at 1280×800 and 390×844; it checks viewport bounds, not a separate footer-occlusion assertion.
 
-## Validation / stop
-- Full units: **2,857/2,857, 353 files**, 75.44s. Unchanged known DMC pair passed; setup freeze remains unapplied.
-- New static AST parity: **19/19**. Existing value/ID/handler bindings and non-JSX selector expressions match rollback; role/access/store/suppression modules byte-identical. This is **not** the complete requested rendered per-role visible-testid/value parity; that remains pending.
-- New focused browser spec: initial **2/11 passed, 9 failed**. All ten role/viewport bounding checks reached and passed before axe. Eight failures were whole-home accessibility findings; the ninth was an incorrect new denial-test assumption that `/admin` redirects billing to `/billing`. It actually redirects to another permitted home. Corrected only that new test to assert route denial and absence of admin tiles; standalone **1/1 passed**, 17.2s. No existing assertions/timeouts/retries edited.
-- Clinician axe: tablist child semantics (WorkspaceDashboard.tsx:108), skipped heading level (:127), low-contrast zero-count strip labels (:85).
-- Case-manager axe: unnamed select/table controls and form labels, contrast. Examples: case-manager.tsx:259 and its existing shared tables. Details retained in the focused test log during this session.
-- Billing axe: unnamed selects (billing.tsx:377/390), heading ordering, zero-count strip contrast (OpsWorkspace.tsx:21–23). **New** phone KPI scroll region also requires keyboard focusability (billing.tsx:234).
-- Admin axe: unnamed controls (admin.tsx:262/273/433) and zero-count strip contrast (OpsWorkspace.tsx:21–23).
-- These findings are not approved flake exceptions. Most arise from unchanged markup, but no rollback browser accessibility comparison was run, so they are not claimed as validated pre-existing exceptions. The new scroll-focus issue is acknowledged as introduced by this layout.
-- **Stopped without altering assertions or expanding scope** to relabel controls, change contrast, or fix heading/tab semantics. No full browser suite run; no literal EXIT or final acceptance claimed.
-- Build telemetry latest: build OK, 15:20:01 UTC.
+## Axe classification and accepted fixes
+The same whole-staff-shell scope used by the new spec was scanned on rollback :8081 and current :8080 at 1280×800 and 390×844. Complete rule/node evidence: `phase9c2-evidence/axe-classification.json`. Current has **zero violations on all ten role/viewport combinations**. No axe rule, filter, or scope was relaxed.
 
-## Evidence and restoration
-- Baseline ten captures plus 30 after captures (each home 390/768/1280 light/dark) retained in `docs/phase9c2-evidence/`.
-- All **206** rollback image files checked; **0** differences/restorations needed. New evidence preserved.
-- Current checkpoint before report write: `9d694cb10929746488b5b5e03cf2c21af91ee2b1`; managed final checkpoint reported in chat, not an accepted phase-final SHA.
+All findings below are **PRE-EXISTING**, reproduced on rollback, except the explicit NEW scroll-region finding. References are current source lines; rollback nodes retain their original source references in the evidence.
 
-## Remaining blockers
-1. Approval to resolve full-home accessibility findings outside reorder-only scope, plus new KPI scroll focusability.
-2. Complete rendered rollback parity by acting role, verify summaries above the fixed footer, and exercise each existing next-action flow with real actionable state (compliance baseline queue is empty).
-3. Then run full one-worker browser suite on :8080 in background and poll through literal EXIT, restore images, and finish closeout.
+| Classification | Home / rule | Element(s) and fix | Current file:line |
+|---|---|---|---|
+| NEW | Billing / `scrollable-region-focusable` | Horizontal KPI track gets `tabIndex=0`, `role=region`, accessible name “Billing summary”, visible existing-token focus ring | `src/routes/billing.tsx:234` |
+| PRE-EXISTING | Clinician / `aria-required-children` | Schedule tablist's “This week” button gets `role=tab` and `aria-selected`; existing handler preserved | `src/components/clinician/WorkspaceDashboard.tsx:108` |
+| PRE-EXISTING | Clinician / `color-contrast` | Zero-count Today button (Cosign) no longer applies parent `opacity-45`; existing muted text token retained | `src/components/clinician/WorkspaceDashboard.tsx:84` |
+| PRE-EXISTING | Clinician / `heading-order` | Both action groups' Now headings, including waiting group: h4 → h3; words unchanged | `src/components/clinician/WorkspaceDashboard.tsx:127` |
+| PRE-EXISTING | Case manager / `button-name` | Case-manager picker receives accessible name | `src/routes/case-manager.tsx:259` |
+| PRE-EXISTING | Case manager / `button-name` | Five caseload selects: episode day, coverage, program, clinician, care need receive accessible names | `src/components/admin/CaseloadTable.tsx:134,145,157,169,181` |
+| PRE-EXISTING | Case manager and admin / `button-name` | Four referral selects: status, program, clinician, care need receive accessible names | `src/components/admin/ReferralTrackerCard.tsx:136,148,156,166` |
+| PRE-EXISTING | Case manager / `button-name` | Check-in modality receives accessible name | `src/routes/case-manager.tsx:712` |
+| PRE-EXISTING | Case manager / `label` | Desktop DOB from/to fields bind existing labels with htmlFor/id; mobile equivalents bind too; check-in date binds existing label. Rollback has three desktop unnamed date fields and one phone field | `src/routes/case-manager.tsx:315–333,361–379,681–684` |
+| PRE-EXISTING | Case manager / `color-contrast` | ECM badge uses existing path-soft/path tokens, desktop and mobile; visible label unchanged | `src/routes/case-manager.tsx:443,538` |
+| PRE-EXISTING | Billing / `color-contrast` | Ready-to-send zero strip label: remove `opacity-70`; existing muted text retained | `src/components/ops/OpsWorkspace.tsx:21–23` |
+| PRE-EXISTING | Billing / `color-contrast` | Unselected billing entity button: replace foreground/60 with muted-foreground | `src/routes/billing.tsx:330` |
+| PRE-EXISTING | Billing / `color-contrast` | County-reportable explanatory text: replace navy/80 with muted-foreground | `src/routes/billing.tsx:346` |
+| PRE-EXISTING | Billing / `heading-order` | Blocked claims heading h3 → h2; sibling Duplicate holds and Eligibility headings aligned; text/counts unchanged | `src/components/ops/OpsWorkspace.tsx:76,85,94` |
+| PRE-EXISTING | Billing / `select-name` | Lane and Status native filters receive accessible names | `src/routes/billing.tsx:378,392` |
+| PRE-EXISTING | Admin / `button-name` | Episode day, coverage, consent purpose selects receive accessible names; existing Next contact type name retained | `src/routes/admin.tsx:262,273,433` |
+| PRE-EXISTING | Admin / `color-contrast` | Blocked actions and Flags changed zero strip labels: same shared opacity removal as billing | `src/components/ops/OpsWorkspace.tsx:21–23` |
+
+Compliance is axe-clean on rollback and current. No classified finding remains unfixed. The original NEW billing scroll finding was recorded during the pre-fix current scan; the current archive evidence contains its corrected state. The prior stop report remains the historical record below, not a claim of unapproved scope expansion.
+
+## Accepted new denial-test correction
+`e2e/roleDashboards9c.spec.ts:46–51`: billing requesting `/admin` must be denied (`not.toHaveURL(/\/admin$/)`) and **zero** `admin-kpis` must render. The previous assumption that the destination must specifically be `/billing` was incorrect. The accepted correction retains route denial plus tile absence, not a weaker check. No existing assertion, timeout, retry, threshold, deletion, or skip changed.
+
+## Pinned rendered value parity
+- Reproducible diagnostic: `phase9c2-evidence/pinned-parity.py`; complete per-role captured values and visible-testid inventories: `phase9c2-evidence/pinned-parity.json`.
+- Clock pinned **before browser module evaluation** on both previews to `2026-10-20T16:47:00.000Z`; timezone UTC, locale en-US, 1280×1800.
+- Both start in fresh isolated browser contexts with empty device storage and the same source seeds. `Math.random` is fixed to 0.5 on both before module evaluation, making random seed IDs and simulated delivery outcomes identical (`ehr.ts:4469,9479`; `ehr-ext.ts:491`). This is diagnostic-only, not an app/test clock change.
+- The same automatic mount reminder sweep runs on both through unchanged `useReminderSweep.ts:49–62`; no interval clock advancement or manual sweep. Date stays pinned while timers work normally.
+- Compares exact strings (no number rounding, timestamp masking, whitespace collapsing, or value substitutions): sorted visible-testid **sets and multiplicities**, each node's own text excluding nested testid owners, each StatTile's full text and value, every Today-strip button, and every `data-count` tile.
+- Descendant testid owners are compared independently, so relocating a section does not falsely compare a parent containing its moved child. Every actual tile value remains included; non-testid tile text remains in its nearest identified owner. This is a layout-order-independent comparison, not ignoring unequal values.
+
+| Role / home | Visible testid set size on both | Result |
+|---|---:|---|
+| therapist / clinician | 37 | Byte-identical values and inventories |
+| ecm_provider / case manager | 28 | Byte-identical values and inventories |
+| billing / billing | 47 | Byte-identical values and inventories |
+| sys_admin / admin | 36 | Byte-identical values and inventories |
+| credentialing_coordinator / compliance | 14 | Byte-identical values and inventories |
+
+**Remaining value differences: zero.** Earlier unpinned differences are superseded, not accepted as parity: time-dependent Last outreach differed, random simulated SMS failure/sweep outcomes changed notifications/tasks, and moved sections changed parent text ordering. With identical clock, randomness, and sweep these differences disappear without app changes. No real value changed; no stop condition triggered.
+
+## Validation — complete
+- Full fresh units: **2,857/2,857**, **353/353 files**, EXIT 0; 70.86s. Known DMC pair passed unchanged. Prior accepted run: same totals.
+- Static rollback binding/selector parity: 19/19, included in full units.
+- NEW role-dashboard spec: **3/3 standalone runs**, **11/11 each**, EXIT 0 each (1.4m, 1.5m, 1.4m). All five homes × two viewports pass summary/action bounds and full-shell axe. Existing action readbacks for clinician, case manager, billing pass; compliance seed has no waiting review item, so no fabricated review mutation.
+- FULL browser suite: `E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1`, launched in background and polled to literal **EXIT 0**: **211/211 passed**, **31.0m**. This was the **last validation step**; no further test suite or browser scan afterward.
+- No flake exceptions needed; contentWiring:47 and staffNewAudit8a2:29 remain unchanged. No other failures.
+- Build telemetry: latest read **build OK**, 2026-10-20T17:33:50Z.
+- Route metadata inspected on index and all five content homes; existing app-specific title, description, Open Graph and Twitter tags retained.
+
+## Evidence, restoration and next phase
+- Retained ten baseline captures, thirty home light/dark captures at 390/768/1280, before/after measurements, original unpinned diagnostic, new pinned parity, and raw rollback/current axe evidence.
+- After browser EXIT, restored **17** regenerated tracked screenshots against aff263ff. Checked **223** rollback image files (including SVGs): **zero byte differences**. Details: `phase9c2-evidence/screenshot-restoration.json`; new evidence untouched.
+- Phase 9c-2 **done**. **Privacy P3 next**, not started.
+- No publishing. DMC setup freeze awaits Mitch and remains unapplied.
+- Final managed closeout SHA is reported in chat after these documentation/restoration changes; source validation checkpoint was `e6b33b0722f3ec5d3dfbb83ec1dd326bd805ea69`.
