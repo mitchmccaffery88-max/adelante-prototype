@@ -231,7 +231,7 @@ function BillingPage() {
   }
 
   const summary = (
-      <div className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] lg:grid-flow-row lg:grid-cols-4 gap-3 overflow-x-auto" data-testid="billing-kpis">
+      <div role="region" aria-label="Billing summary" tabIndex={0} className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] lg:grid-flow-row lg:grid-cols-4 gap-3 overflow-x-auto rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" data-testid="billing-kpis">
         <StatTile
           label="Outstanding"
           value={kpis.outstandingCents}
@@ -327,7 +327,7 @@ function BillingPage() {
             <button
               key={k}
               onClick={() => setEntity(k)}
-              className={`px-2.5 py-1 rounded-full ${entity === k ? "bg-navy text-navy-foreground" : "text-foreground/60"}`}
+              className={`px-2.5 py-1 rounded-full ${entity === k ? "bg-navy text-navy-foreground" : "text-muted-foreground"}`}
             >
               {k === "bagga_npi" ? "Bagga's clinic NPI" : "Adelante"}
             </button>
@@ -340,7 +340,7 @@ function BillingPage() {
         <AlertTriangle className="h-4 w-4 text-navy mt-0.5 shrink-0" />
         <div>
           <div className="font-medium text-navy">ISL reportable encounters — mandate 1/1/2027</div>
-          <div className="text-xs text-navy/80">
+          <div className="text-xs text-navy">
             Uninsured, benefit-exhausted, and restricted-setting encounters are non-billable but
             county-reportable. An annual export is stubbed on the ISL tab.
           </div>
@@ -375,6 +375,7 @@ function BillingPage() {
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <label className="text-muted-foreground">Lane:</label>
             <select
+              aria-label="Lane filter"
               value={laneFilter}
               onChange={(e) => setLaneFilter(e.target.value as typeof laneFilter)}
               className="rounded-md border bg-card px-2 py-1"
@@ -388,6 +389,7 @@ function BillingPage() {
             </select>
             <label className="text-muted-foreground">Status:</label>
             <select
+              aria-label="Status filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
               className="rounded-md border bg-card px-2 py-1"

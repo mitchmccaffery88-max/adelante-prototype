@@ -256,7 +256,7 @@ function CaseManagerPage() {
             </Button>
           )}
           <Select value={cmId} onValueChange={setCmId}>
-            <SelectTrigger className="w-[280px]">
+            <SelectTrigger className="w-[280px]" aria-label="Case manager">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -312,8 +312,9 @@ function CaseManagerPage() {
             {filtersOpen && (
               <div className="mt-2 grid grid-cols-2 gap-3 sm:hidden">
                 <div>
-                  <Label className="text-xs text-muted-foreground">DOB from</Label>
+                  <Label htmlFor="cm-dob-from-mobile" className="text-xs text-muted-foreground">DOB from</Label>
                   <Input
+                    id="cm-dob-from-mobile"
                     type="date"
                     value={dobFrom}
                     onChange={(e) => setDobFrom(e.target.value)}
@@ -321,8 +322,9 @@ function CaseManagerPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">DOB to</Label>
+                  <Label htmlFor="cm-dob-to-mobile" className="text-xs text-muted-foreground">DOB to</Label>
                   <Input
+                    id="cm-dob-to-mobile"
                     type="date"
                     value={dobTo}
                     onChange={(e) => setDobTo(e.target.value)}
@@ -356,8 +358,9 @@ function CaseManagerPage() {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">DOB from</Label>
+                <Label htmlFor="cm-dob-from" className="text-xs text-muted-foreground">DOB from</Label>
                 <Input
+                  id="cm-dob-from"
                   type="date"
                   value={dobFrom}
                   onChange={(e) => setDobFrom(e.target.value)}
@@ -365,8 +368,9 @@ function CaseManagerPage() {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">DOB to</Label>
+                <Label htmlFor="cm-dob-to" className="text-xs text-muted-foreground">DOB to</Label>
                 <Input
+                  id="cm-dob-to"
                   type="date"
                   value={dobTo}
                   onChange={(e) => setDobTo(e.target.value)}
@@ -436,7 +440,7 @@ function CaseManagerPage() {
                         </Badge>
                       )}
                       {p.coverage?.ecmEligible && (
-                        <Badge className="bg-teal/15 text-teal border-0">ECM</Badge>
+                        <Badge className="bg-path-soft text-path border-0">ECM</Badge>
                       )}
                       {(() => {
                         const pending = AdelanteEHR.listProviderSwitches({
@@ -531,7 +535,7 @@ function CaseManagerPage() {
                           </Badge>
                         )}
                         {p.coverage?.ecmEligible && (
-                          <Badge className="bg-teal/15 text-teal border-0 text-[10px]">ECM</Badge>
+                          <Badge className="bg-path-soft text-path border-0 text-[10px]">ECM</Badge>
                         )}
                         {pendingSwitch > 0 && (
                           <Badge className="bg-warning/20 text-warning-foreground border-0 text-[10px]">
@@ -674,8 +678,9 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
       <div className="mt-4 space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-sm">Date</Label>
+            <Label htmlFor="cm-checkin-date" className="text-sm">Date</Label>
             <Input
+              id="cm-checkin-date"
               type="date"
               value={date}
               onChange={(e) => {
@@ -704,7 +709,7 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
         <div className="space-y-1.5">
           <Label className="text-sm">Modality</Label>
           <Select value={modality} onValueChange={(v) => setModality(v as typeof modality)}>
-            <SelectTrigger>
+            <SelectTrigger aria-label="Modality">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
