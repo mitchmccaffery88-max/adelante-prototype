@@ -12,7 +12,7 @@
 - [x] Approved destination setup repair (cleanupReschedule 6/6)
 - [x] NEW owner/disclosure-audit tests (privacyP1Owner.test.ts 4/4); full units 2,757/2,757
 - [x] Full browser suite ran to EXIT: 178/179; screenshots restored (0 differ)
-- [ ] STOP: staffNewAudit8a2.spec.ts:29 timed out at 30s (passes standalone); needs decision: flake exception or rerun
+- [ ] Delegated decision: run unchanged therapist staffNewAudit8a2.spec.ts:29 standalone three times (--workers=1, :8080), record durations and prior green timings if available; complete P1 only on 3/3, otherwise STOP; restore screenshots
 - Scope: no publishing, 9a, 9c or P2 in this continuation.
 
 ## Phase 8b-3 — Billing, claims, admin, reference and audit tables (approved Oct 17)
