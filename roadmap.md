@@ -2,6 +2,16 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 9c-2 — IN PROGRESS (Oct 20)
+- Rollback / starting HEAD aff263ff1aa707d68994b7f175f83aa9d09306fd (9c-1 accepted b15085a8)
+- [x] Measure existing first-screen sections at 1280×800 and 390×844; list proposed order with source lines before presentation edits
+- [x] Regroup existing role-home actions, summaries and details; preserve gates, values, suppression, testids and handlers; ten measured first-screen summary positions fit
+- [x] NEW static rollback binding parity 19/19; full units 2,857/2,857 (353 files), including unchanged DMC pair
+- [ ] BLOCKED: NEW whole-home axe checks expose contrast, unnamed controls, heading/tab semantics beyond reorder-only scope; see docs/phase9c2-report.md. No existing test changed
+- [ ] Rendered per-role visible-testid parity and final screenshot evidence pending
+- [ ] FULL background browser suite --workers=1 on :8080, poll to literal EXIT; restore rollback images; report and final SHA
+- DMC pre-import Date freeze remains UNAPPROVED and unapplied; no publishing
+
 ## Phase 9c-1 — COMPLETE (Oct 20)
 - Rollback 1e410aad83903e2950d62031329ff42b3ff18033; starting HEAD 89e1b1bdc87041e9fa982502325a24ad753e63aa
 - [x] Approved fixture field `occurrencesRecorded` in suppression9a2 + statTileParity9a2 (both attendance objects; no assertion changes)

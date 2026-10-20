@@ -178,52 +178,8 @@ function CaseManagerPage() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [recordId, setRecordId] = useState<string | null>(null);
 
-  return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-      <PageNewLauncher />
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">
-            {t("navCaseManager")}
-          </div>
-          <h1 className="font-display text-3xl text-navy mt-1">{t("cmTitle")}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">{t("cmSubtitle")}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!cmId}
-            onClick={() => setUploadOpen(true)}
-          >
-            <UploadCloud className="h-4 w-4 mr-1.5" /> Upload caseload
-          </Button>
-          {/* §Custody tracking — population-level released/active search. */}
-          {inFacilityEnabled() && (
-            <Button asChild variant="outline" size="sm">
-              <Link to="/released-search">Patient search (custody)</Link>
-            </Button>
-          )}
-          <Select value={cmId} onValueChange={setCmId}>
-            <SelectTrigger className="w-[280px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {cms.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name} · {c.role.replace("_", " ")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </header>
-
-      <WorkspaceSectionOrder>
-        {cmId && <TaskQueueCard source={{ kind: "case_manager", cmId }} onOpenPatient={setActiveId} />}
-      </WorkspaceSectionOrder>
-      <section className="mb-6 flex flex-col gap-4">
-        <Card className="p-4" data-testid="caseload-scope-card">
+  const scopeSummary = (
+<div className={cmId ? "py-3" : "rounded-md border bg-card p-4"} data-testid="caseload-scope-card">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2" role="group" aria-label="Caseload view">
               <Button
@@ -265,7 +221,55 @@ function CaseManagerPage() {
               No patients are currently assigned to {acting.staffName}.
             </p>
           )}
-        </Card>
+        </div>
+  );
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+      <PageNewLauncher />
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div className="text-xs font-medium uppercase tracking-wider text-teal">
+            {t("navCaseManager")}
+          </div>
+          <h1 className="font-display text-3xl text-navy mt-1">{t("cmTitle")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t("cmSubtitle")}</p>
+        </div>
+      </header>
+
+      <WorkspaceSectionOrder>
+        {cmId && <TaskQueueCard source={{ kind: "case_manager", cmId }} onOpenPatient={setActiveId} summary={scopeSummary} />}
+      </WorkspaceSectionOrder>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!cmId}
+            onClick={() => setUploadOpen(true)}
+          >
+            <UploadCloud className="h-4 w-4 mr-1.5" /> Upload caseload
+          </Button>
+          {/* §Custody tracking — population-level released/active search. */}
+          {inFacilityEnabled() && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/released-search">Patient search (custody)</Link>
+            </Button>
+          )}
+          <Select value={cmId} onValueChange={setCmId}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {cms.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name} · {c.role.replace("_", " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      <section className="mb-6 flex flex-col gap-4">
+        {!cmId && scopeSummary}
         <CaseloadTable
           patients={scopedPatients}
           title={scope === "mine" ? "My assigned caseload" : "Program caseload (all clients)"}

@@ -1,0 +1,1500 @@
+[
+  {
+    "role": "therapist",
+    "route": "/clinician",
+    "width": 1280,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "Acting as: Therapist \u00b7 Marisol Reyes\n4\nCrisis\n9+\nTHERAPIST\nNew\nCARE\nContent library\nReferrals\nCare C",
+        "top": 45,
+        "bottom": 3956
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "Acting as: Therapist \u00b7 Marisol Reyes\n4\nCrisis\n9+",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: Therapist \u00b7 Marisol Reyes",
+        "top": 61,
+        "bottom": 91
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "New",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "BUTTON",
+        "id": "dashboard-new-button",
+        "text": "New",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 214,
+        "bottom": 250
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:Therapist \u00b7 Marisol Reyes+ New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nCare\nClinician\nClinician\n\u00b7 Caseload & sessions\nAsk Adel\nPrototype\nMy work\n3",
+        "top": 101,
+        "bottom": 166
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nCare\nClinician",
+        "top": 109,
+        "bottom": 129
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-patient-search",
+        "text": "",
+        "top": 115,
+        "bottom": 151
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 113,
+        "bottom": 153
+      },
+      {
+        "tag": "A",
+        "id": "top-bar-my-work",
+        "text": "My work\n3",
+        "top": 114,
+        "bottom": 152
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Clinician workspace",
+        "top": 222,
+        "bottom": 252
+      },
+      {
+        "tag": "DIV",
+        "id": "workspace-identity",
+        "text": "Your workspace \u2014 Marisol Reyes, LCSW\nMedi-Cal enrollment: active",
+        "top": 256,
+        "bottom": 280
+      },
+      {
+        "tag": "DIV",
+        "id": "workspace-dashboard-tiles",
+        "text": "Needs you\nNeeds my action\n40 open \u00b7 27 now\nSee all escalations to\nAll \u00b7 40\nNow \u00b7 27\nToday \u00b7 2\nThis w",
+        "top": 365,
+        "bottom": 3924
+      },
+      {
+        "tag": "SECTION",
+        "id": "workspace-section-needs",
+        "text": "Needs you\nNeeds my action\n40 open \u00b7 27 now\nSee all escalations to\nAll \u00b7 40\nNow \u00b7 27\nToday \u00b7 2\nThis w",
+        "top": 365,
+        "bottom": 2727
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Needs you",
+        "top": 365,
+        "bottom": 393
+      },
+      {
+        "tag": "DIV",
+        "id": "workspace-tile-actions",
+        "text": "Needs my action\n40 open \u00b7 27 now\nSee all escalations to\nAll \u00b7 40\nNow \u00b7 27\nToday \u00b7 2\nThis week \u00b7 11\nN",
+        "top": 409,
+        "bottom": 2531
+      },
+      {
+        "tag": "A",
+        "id": "needs-action-escalations-link",
+        "text": "See all escalations to",
+        "top": 510,
+        "bottom": 528
+      },
+      {
+        "tag": "DIV",
+        "id": "action-row-crisis",
+        "text": "Marcus L.\n\nCrisis follow-up \u2014 coordinator pool \u00b7 2h 0m left\n\nOpen crisis\nHand off",
+        "top": 607,
+        "bottom": 668
+      },
+      {
+        "tag": "DIV",
+        "id": "action-row-crisis",
+        "text": "Carmen Ibarra\n\nCrisis follow-up \u2014 coordinator pool \u00b7 24h 0m left\n\nOpen crisis\nHand off",
+        "top": 668,
+        "bottom": 729
+      },
+      {
+        "tag": "DIV",
+        "id": "action-row-unsigned",
+        "text": "Marcus L.\n\nVisit needs a note \u00b7 Due now\n\nWrite note",
+        "top": 729,
+        "bottom": 790
+      },
+      {
+        "tag": "DIV",
+        "id": "action-row-asam",
+        "text": "Marcus L.\n\nASAM assessment \u00b7 Due now\n\nOpen ASAM",
+        "top": 790,
+        "bottom": 851
+      }
+    ]
+  },
+  {
+    "role": "therapist",
+    "route": "/clinician",
+    "width": 390,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "4\n9+\nActing as:\nTherapist \u00b7 Marisol Reyes\n+ New\nAdelante\nCare\nClinician\nClinician\nAsk Adel\nPrototype",
+        "top": 45,
+        "bottom": 4183
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "4\n9+",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: Therapist \u00b7 Marisol Reyes",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "BUTTON",
+        "id": "dashboard-new-button",
+        "text": "New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:\nTherapist \u00b7 Marisol Reyes\n+ New",
+        "top": 101,
+        "bottom": 154
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nCare\nClinician\nClinician\nAsk Adel\nPrototype\nMy work\n3",
+        "top": 154,
+        "bottom": 315
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nCare\nClinician",
+        "top": 162,
+        "bottom": 182
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-patient-search",
+        "text": "",
+        "top": 222,
+        "bottom": 258
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 266,
+        "bottom": 306
+      },
+      {
+        "tag": "A",
+        "id": "top-bar-my-work",
+        "text": "My work\n3",
+        "top": 267,
+        "bottom": 305
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Clinician workspace",
+        "top": 371,
+        "bottom": 401
+      },
+      {
+        "tag": "DIV",
+        "id": "workspace-identity",
+        "text": "Your workspace \u2014 Marisol Reyes, LCSW\nMedi-Cal enrollment: active",
+        "top": 405,
+        "bottom": 457
+      },
+      {
+        "tag": "DIV",
+        "id": "workspace-dashboard-tiles",
+        "text": "Needs you\nNeeds my action\n40 open \u00b7 27 now\nSee all escalations to\nAll \u00b7 40\nNow \u00b7 27\nToday \u00b7 2\nThis w",
+        "top": 594,
+        "bottom": 4151
+      },
+      {
+        "tag": "SECTION",
+        "id": "workspace-section-needs",
+        "text": "Needs you\nNeeds my action\n40 open \u00b7 27 now\nSee all escalations to\nAll \u00b7 40\nNow \u00b7 27\nToday \u00b7 2\nThis w",
+        "top": 594,
+        "bottom": 2948
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Needs you",
+        "top": 594,
+        "bottom": 622
+      },
+      {
+        "tag": "DIV",
+        "id": "workspace-tile-actions",
+        "text": "Needs my action\n40 open \u00b7 27 now\nSee all escalations to\nAll \u00b7 40\nNow \u00b7 27\nToday \u00b7 2\nThis week \u00b7 11\nN",
+        "top": 638,
+        "bottom": 2752
+      },
+      {
+        "tag": "A",
+        "id": "needs-action-escalations-link",
+        "text": "See all escalations to",
+        "top": 735,
+        "bottom": 753
+      },
+      {
+        "tag": "DIV",
+        "id": "action-row-crisis",
+        "text": "Marcus L.\n\nCrisis follow-up \u2014 coordinator pool \u00b7 2h 0m left\n\nOpen crisis\nHand off",
+        "top": 832,
+        "bottom": 893
+      }
+    ]
+  },
+  {
+    "role": "ecm_provider",
+    "route": "/case-manager",
+    "width": 1280,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "Acting as: ECM Provider \u00b7 Luz Herrera\n9\nECM PROVIDER\nNew\nCARE\nContent library\nReferrals\nCare Coordin",
+        "top": 45,
+        "bottom": 4629
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "Acting as: ECM Provider \u00b7 Luz Herrera\n9",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: ECM Provider \u00b7 Luz Herrera",
+        "top": 61,
+        "bottom": 91
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "New",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "BUTTON",
+        "id": "dashboard-new-button",
+        "text": "New",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 214,
+        "bottom": 250
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:ECM Provider \u00b7 Luz Herrera+ New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nCare\nCare Coordination\nCare Coordination\n\u00b7 Check-ins & resources\nAsk Adel\nPrototype\nMy work",
+        "top": 101,
+        "bottom": 166
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nCare\nCare Coordination",
+        "top": 109,
+        "bottom": 129
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-patient-search",
+        "text": "",
+        "top": 115,
+        "bottom": 151
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 113,
+        "bottom": 153
+      },
+      {
+        "tag": "A",
+        "id": "top-bar-my-work",
+        "text": "My work\n10",
+        "top": 114,
+        "bottom": 152
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Care Coordination",
+        "top": 222,
+        "bottom": 252
+      },
+      {
+        "tag": "SECTION",
+        "id": "workspace-section-needs",
+        "text": "Needs you\nMy tasks\n0 follow-up needed\n5 due today\n0 snoozed\nShow all\nNeeds you (6)\nTask\n\n\nSame-day \u2014",
+        "top": 352,
+        "bottom": 1608
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Needs you",
+        "top": 352,
+        "bottom": 380
+      },
+      {
+        "tag": "DIV",
+        "id": "task-queue-card",
+        "text": "My tasks\n0 follow-up needed\n5 due today\n0 snoozed\nShow all\nNeeds you (6)\nTask\n\n\nSame-day \u2014 ID and do",
+        "top": 396,
+        "bottom": 1608
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "My tasks",
+        "top": 421,
+        "bottom": 449
+      },
+      {
+        "tag": "TABLE",
+        "id": "task-queue-table",
+        "text": "Task\n\n\nSame-day \u2014 ID and documents\nUrgent\nPending\nPatient said they need help with \"ID and documents",
+        "top": 513,
+        "bottom": 1539
+      },
+      {
+        "tag": "LI",
+        "id": "task-work-row",
+        "text": "Same-day \u2014 ID and documents\nUrgent\nPending\nPatient said they need help with \"ID and documents\" today",
+        "top": 565,
+        "bottom": 705
+      },
+      {
+        "tag": "LI",
+        "id": "task-work-row",
+        "text": "C-SSRS indicated\nRoutine\nPending\nAdminister the C-SSRS Screener. Trigger: Crisis language detected i",
+        "top": 722,
+        "bottom": 882
+      }
+    ]
+  },
+  {
+    "role": "ecm_provider",
+    "route": "/case-manager",
+    "width": 390,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "9\nActing as:\nECM Provider \u00b7 Luz Herrera\n+ New\nAdelante\nCare\nCare Coordination\nCare Coordination\nAsk ",
+        "top": 45,
+        "bottom": 8524
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "9",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: ECM Provider \u00b7 Luz Herrera",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "BUTTON",
+        "id": "dashboard-new-button",
+        "text": "New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:\nECM Provider \u00b7 Luz Herrera\n+ New",
+        "top": 101,
+        "bottom": 154
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nCare\nCare Coordination\nCare Coordination\nAsk Adel\nPrototype\nMy work\n12",
+        "top": 154,
+        "bottom": 315
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nCare\nCare Coordination",
+        "top": 162,
+        "bottom": 182
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-patient-search",
+        "text": "",
+        "top": 222,
+        "bottom": 258
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 266,
+        "bottom": 306
+      },
+      {
+        "tag": "A",
+        "id": "top-bar-my-work",
+        "text": "My work\n12",
+        "top": 267,
+        "bottom": 305
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Care Coordination",
+        "top": 371,
+        "bottom": 401
+      },
+      {
+        "tag": "SECTION",
+        "id": "workspace-section-needs",
+        "text": "Needs you\nMy tasks\n0 follow-up needed\n7 due today\n0 snoozed\nShow all\nNeeds you (8)\nTask\nSame-day \u2014 I",
+        "top": 565,
+        "bottom": 2923
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Needs you",
+        "top": 565,
+        "bottom": 593
+      },
+      {
+        "tag": "DIV",
+        "id": "task-queue-card",
+        "text": "My tasks\n0 follow-up needed\n7 due today\n0 snoozed\nShow all\nNeeds you (8)\nTask\nSame-day \u2014 ID and docu",
+        "top": 609,
+        "bottom": 2923
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "My tasks",
+        "top": 630,
+        "bottom": 658
+      },
+      {
+        "tag": "TABLE",
+        "id": "task-queue-table",
+        "text": "Task\nSame-day \u2014 ID and documents\nUrgent\nPending\nPatient said they need help with \"ID and documents\" ",
+        "top": 798,
+        "bottom": 2854
+      }
+    ]
+  },
+  {
+    "role": "billing",
+    "route": "/billing",
+    "width": 1280,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "Acting as: Billing coordinator \u00b7 Tonya Price\n5\nBILLING COORDINATOR\nNew\nCARE\nQUEUES\nPOPULATION HEALTH",
+        "top": 45,
+        "bottom": 4928
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "Acting as: Billing coordinator \u00b7 Tonya Price\n5",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: Billing coordinator \u00b7 Tonya Price",
+        "top": 61,
+        "bottom": 91
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "New",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ops-new-button",
+        "text": "New",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 214,
+        "bottom": 250
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:Billing coordinator \u00b7 Tonya Price+ New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nRevenue & billing\nBilling\nBilling\n\u00b7 Claims, ISL & credentials\nAsk Adel\nPrototype",
+        "top": 101,
+        "bottom": 166
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nRevenue & billing\nBilling",
+        "top": 109,
+        "bottom": 129
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 113,
+        "bottom": 153
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Billing coordinator",
+        "top": 198,
+        "bottom": 228
+      },
+      {
+        "tag": "A",
+        "id": "billing-provider-ref-link",
+        "text": "Provider & site reference",
+        "top": 198,
+        "bottom": 236
+      },
+      {
+        "tag": "A",
+        "id": "billing-county-reporting-link",
+        "text": "County reporting",
+        "top": 198,
+        "bottom": 236
+      },
+      {
+        "tag": "SECTION",
+        "id": "billing-workspace",
+        "text": "7\nClaims blocked\n0\nReady to send\n20\nEligibility checks due\n3\nPayments to post\n2\nDuplicate holds\nNeed",
+        "top": 306,
+        "bottom": 1584
+      },
+      {
+        "tag": "DIV",
+        "id": "billing-today-strip",
+        "text": "7\nClaims blocked\n0\nReady to send\n20\nEligibility checks due\n3\nPayments to post\n2\nDuplicate holds",
+        "top": 306,
+        "bottom": 358
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-blocked",
+        "text": "7\nClaims blocked",
+        "top": 306,
+        "bottom": 358
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-ready",
+        "text": "0\nReady to send",
+        "top": 306,
+        "bottom": 358
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-eligibility",
+        "text": "20\nEligibility checks due",
+        "top": 306,
+        "bottom": 358
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-payments",
+        "text": "3\nPayments to post",
+        "top": 306,
+        "bottom": 358
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-holds",
+        "text": "2\nDuplicate holds",
+        "top": 306,
+        "bottom": 358
+      },
+      {
+        "tag": "DIV",
+        "id": "billing-tile-action",
+        "text": "Needs my action\n29 items\nBLOCKED CLAIMS \u00b7 7\nMarcus L. \u00b7 2026-10-20\nBlocked: clinical documentation i",
+        "top": 370,
+        "bottom": 1460
+      },
+      {
+        "tag": "H3",
+        "id": null,
+        "text": "BLOCKED CLAIMS \u00b7 7",
+        "top": 432,
+        "bottom": 452
+      },
+      {
+        "tag": "SPAN",
+        "id": "tile-blocked-count",
+        "text": "7",
+        "top": 433,
+        "bottom": 451
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Marcus L. \u00b7 2026-10-20\nBlocked: clinical documentation incomplete\nFix",
+        "top": 452,
+        "bottom": 505
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Alicia Serrano \u00b7 2026-10-17\nBlocked: payment arrangement not recorded\nFix",
+        "top": 505,
+        "bottom": 558
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Alicia Serrano \u00b7 2026-10-20\nBlocked: payment arrangement not recorded\nFix",
+        "top": 558,
+        "bottom": 611
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Jasmine Holt \u00b7 2026-10-20\nBlocked: clinical documentation incomplete\nFix",
+        "top": 611,
+        "bottom": 664
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Luis Camacho \u00b7 2026-10-20\nBlocked: no rate on file\nFix",
+        "top": 664,
+        "bottom": 717
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Marcus L. \u00b7 2026-10-19\nBlocked: clinical documentation incomplete\nFix",
+        "top": 717,
+        "bottom": 770
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Alicia Serrano \u00b7 2026-10-19\nBlocked: payment arrangement not recorded\nFix",
+        "top": 770,
+        "bottom": 822
+      }
+    ]
+  },
+  {
+    "role": "billing",
+    "route": "/billing",
+    "width": 390,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "5\nActing as:\nBilling coordinator \u00b7 Tonya Price\n+ New\nAdelante\nRevenue & billing\nBilling\nBilling\nAsk ",
+        "top": 45,
+        "bottom": 12210
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "5",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: Billing coordinator \u00b7 Tonya Price",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ops-new-button",
+        "text": "New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:\nBilling coordinator \u00b7 Tonya Price\n+ New",
+        "top": 101,
+        "bottom": 154
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nRevenue & billing\nBilling\nBilling\nAsk Adel\nPrototype",
+        "top": 154,
+        "bottom": 271
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nRevenue & billing\nBilling",
+        "top": 162,
+        "bottom": 182
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 222,
+        "bottom": 262
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Billing coordinator",
+        "top": 303,
+        "bottom": 333
+      },
+      {
+        "tag": "A",
+        "id": "billing-provider-ref-link",
+        "text": "Provider & site reference",
+        "top": 385,
+        "bottom": 423
+      },
+      {
+        "tag": "A",
+        "id": "billing-county-reporting-link",
+        "text": "County reporting",
+        "top": 385,
+        "bottom": 423
+      },
+      {
+        "tag": "SECTION",
+        "id": "billing-workspace",
+        "text": "7\nClaims blocked\n0\nReady to send\n20\nEligibility checks due\n3\nPayments to post\n2\nDuplicate holds\nNeed",
+        "top": 493,
+        "bottom": 1951
+      },
+      {
+        "tag": "DIV",
+        "id": "billing-today-strip",
+        "text": "7\nClaims blocked\n0\nReady to send\n20\nEligibility checks due\n3\nPayments to post\n2\nDuplicate holds",
+        "top": 493,
+        "bottom": 665
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-blocked",
+        "text": "7\nClaims blocked",
+        "top": 493,
+        "bottom": 545
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-ready",
+        "text": "0\nReady to send",
+        "top": 493,
+        "bottom": 545
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-eligibility",
+        "text": "20\nEligibility checks due",
+        "top": 553,
+        "bottom": 605
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-payments",
+        "text": "3\nPayments to post",
+        "top": 553,
+        "bottom": 605
+      },
+      {
+        "tag": "BUTTON",
+        "id": "strip-holds",
+        "text": "2\nDuplicate holds",
+        "top": 613,
+        "bottom": 665
+      },
+      {
+        "tag": "DIV",
+        "id": "billing-tile-action",
+        "text": "Needs my action\n29 items\nBLOCKED CLAIMS \u00b7 7\nAlicia Serrano \u00b7 2026-10-17\nBlocked: payment arrangement",
+        "top": 677,
+        "bottom": 1827
+      },
+      {
+        "tag": "H3",
+        "id": null,
+        "text": "BLOCKED CLAIMS \u00b7 7",
+        "top": 739,
+        "bottom": 759
+      },
+      {
+        "tag": "SPAN",
+        "id": "tile-blocked-count",
+        "text": "7",
+        "top": 740,
+        "bottom": 758
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Alicia Serrano \u00b7 2026-10-17\nBlocked: payment arrangement not recorded\nFix",
+        "top": 759,
+        "bottom": 832
+      },
+      {
+        "tag": "LI",
+        "id": "tile-blocked-row",
+        "text": "Marcus L. \u00b7 2026-10-20\nBlocked: clinical documentation incomplete\nFix",
+        "top": 832,
+        "bottom": 885
+      }
+    ]
+  },
+  {
+    "role": "sys_admin",
+    "route": "/admin",
+    "width": 1280,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "Acting as: System admin \u00b7 Adelante System Admin\n4\nCrisis\n3\nSYSTEM ADMIN\nNew\nCARE\nQUEUES\nPOPULATION H",
+        "top": 45,
+        "bottom": 5151
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "Acting as: System admin \u00b7 Adelante System Admin\n4\nCrisis\n3",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: System admin \u00b7 Adelante System Admin",
+        "top": 61,
+        "bottom": 91
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "New",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ops-new-button",
+        "text": "New",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 214,
+        "bottom": 250
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:System admin \u00b7 Adelante System Admin+ New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nAdministration\nPilot dashboard\nPilot dashboard\n\u00b7 Program-level overview\nAsk Adel\nPrototype\n",
+        "top": 101,
+        "bottom": 166
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nAdministration\nPilot dashboard",
+        "top": 109,
+        "bottom": 129
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 113,
+        "bottom": 153
+      },
+      {
+        "tag": "A",
+        "id": "top-bar-my-work",
+        "text": "My work\n0",
+        "top": 114,
+        "bottom": 152
+      },
+      {
+        "tag": "DIV",
+        "id": "admin-today-strip",
+        "text": "2\nMatching queue\n0\nBlocked actions (24h)\n2\nFailed notifications\n0\nFlags changed (7 days)",
+        "top": 198,
+        "bottom": 250
+      },
+      {
+        "tag": "BUTTON",
+        "id": "admin-strip-matching",
+        "text": "2\nMatching queue",
+        "top": 198,
+        "bottom": 250
+      },
+      {
+        "tag": "BUTTON",
+        "id": "admin-strip-blocked",
+        "text": "0\nBlocked actions (24h)",
+        "top": 198,
+        "bottom": 250
+      },
+      {
+        "tag": "BUTTON",
+        "id": "admin-strip-failed",
+        "text": "2\nFailed notifications",
+        "top": 198,
+        "bottom": 250
+      },
+      {
+        "tag": "BUTTON",
+        "id": "admin-strip-flags",
+        "text": "0\nFlags changed (7 days)",
+        "top": 198,
+        "bottom": 250
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Pilot dashboard",
+        "top": 290,
+        "bottom": 320
+      }
+    ]
+  },
+  {
+    "role": "sys_admin",
+    "route": "/admin",
+    "width": 390,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "4\n3\nActing as:\nSystem admin \u00b7 Adelante System Admin\n+ New\nAdelante\nAdministration\nPilot dashboard\nPi",
+        "top": 45,
+        "bottom": 13951
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "4\n3",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: System admin \u00b7 Adelante System Admin",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ops-new-button",
+        "text": "New",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:\nSystem admin \u00b7 Adelante System Admin\n+ New",
+        "top": 101,
+        "bottom": 158
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nAdministration\nPilot dashboard\nPilot dashboard\nAsk Adel\nPrototype\nMy work\n0",
+        "top": 158,
+        "bottom": 275
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nAdministration\nPilot dashboard",
+        "top": 166,
+        "bottom": 186
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 226,
+        "bottom": 266
+      },
+      {
+        "tag": "A",
+        "id": "top-bar-my-work",
+        "text": "My work\n0",
+        "top": 227,
+        "bottom": 265
+      },
+      {
+        "tag": "DIV",
+        "id": "admin-today-strip",
+        "text": "2\nMatching queue\n0\nBlocked actions (24h)\n3\nFailed notifications\n0\nFlags changed (7 days)",
+        "top": 307,
+        "bottom": 419
+      },
+      {
+        "tag": "BUTTON",
+        "id": "admin-strip-matching",
+        "text": "2\nMatching queue",
+        "top": 307,
+        "bottom": 359
+      },
+      {
+        "tag": "BUTTON",
+        "id": "admin-strip-blocked",
+        "text": "0\nBlocked actions (24h)",
+        "top": 307,
+        "bottom": 359
+      },
+      {
+        "tag": "BUTTON",
+        "id": "admin-strip-failed",
+        "text": "3\nFailed notifications",
+        "top": 367,
+        "bottom": 419
+      },
+      {
+        "tag": "BUTTON",
+        "id": "admin-strip-flags",
+        "text": "0\nFlags changed (7 days)",
+        "top": 367,
+        "bottom": 419
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Pilot dashboard",
+        "top": 459,
+        "bottom": 489
+      }
+    ]
+  },
+  {
+    "role": "credentialing_coordinator",
+    "route": "/quality-compliance",
+    "width": 1280,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "Acting as: Credentialing coordinator \u00b7 Marcus Webb\nCREDENTIALING COORDINATOR\nQUEUES\nADMINISTRATION\nC",
+        "top": 45,
+        "bottom": 845
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "Acting as: Credentialing coordinator \u00b7 Marcus Webb",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: Credentialing coordinator \u00b7 Marcus Webb",
+        "top": 61,
+        "bottom": 91
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 162,
+        "bottom": 198
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:Credentialing coordinator \u00b7 Marcus Webb",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nAdministration\nQuality & compliance\nQuality & compliance\n\u00b7 Chart access monitoring (Draft)\n",
+        "top": 101,
+        "bottom": 166
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nAdministration\nQuality & compliance",
+        "top": 109,
+        "bottom": 129
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 113,
+        "bottom": 153
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Quality & compliance",
+        "top": 190,
+        "bottom": 220
+      },
+      {
+        "tag": "DIV",
+        "id": "restricted-opens",
+        "text": "Restricted record opened\n\nNothing waiting.",
+        "top": 260,
+        "bottom": 346
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Restricted record opened",
+        "top": 277,
+        "bottom": 301
+      },
+      {
+        "tag": "DIV",
+        "id": "outside-caseload-report",
+        "text": "Charts opened outside caseload \u2014 this week\nNo charts opened outside caseload this week.\nPage 1 / 1 \u00b7",
+        "top": 366,
+        "bottom": 540
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Charts opened outside caseload \u2014 this week",
+        "top": 383,
+        "bottom": 407
+      },
+      {
+        "tag": "DIV",
+        "id": "outside-caseload-table",
+        "text": "No charts opened outside caseload this week.",
+        "top": 407,
+        "bottom": 475
+      },
+      {
+        "tag": "DIV",
+        "id": "unusual-volume",
+        "text": "Unusual volume \u2014 today\n\nFlag when one person opens more than 30 distinct charts in a day (Draft thre",
+        "top": 560,
+        "bottom": 666
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Unusual volume \u2014 today",
+        "top": 577,
+        "bottom": 601
+      }
+    ]
+  },
+  {
+    "role": "credentialing_coordinator",
+    "route": "/quality-compliance",
+    "width": 390,
+    "rows": [
+      {
+        "tag": "DIV",
+        "id": "staff-shell",
+        "text": "Acting as:\nCredentialing coordinator \u00b7 Marcus Webb\nAdelante\nAdministration\nQuality & compliance\nQual",
+        "top": 45,
+        "bottom": 889
+      },
+      {
+        "tag": "HEADER",
+        "id": "staff-shell-header",
+        "text": "",
+        "top": 48,
+        "bottom": 104
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator",
+        "text": "Acting as: Credentialing coordinator \u00b7 Marcus Webb",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-new-slot",
+        "text": "",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "INPUT",
+        "id": "staff-nav-quick-jump",
+        "text": "",
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "tag": "DIV",
+        "id": "acting-role-indicator-mobile",
+        "text": "Acting as:\nCredentialing coordinator \u00b7 Marcus Webb",
+        "top": 101,
+        "bottom": 138
+      },
+      {
+        "tag": "DIV",
+        "id": "staff-top-bar",
+        "text": "Adelante\nAdministration\nQuality & compliance\nQuality & compliance\nAsk Adel\nPrototype",
+        "top": 138,
+        "bottom": 255
+      },
+      {
+        "tag": "NAV",
+        "id": "staff-breadcrumbs",
+        "text": "Adelante\nAdministration\nQuality & compliance",
+        "top": 146,
+        "bottom": 166
+      },
+      {
+        "tag": "BUTTON",
+        "id": "ask-adel-button",
+        "text": "Ask Adel\nPrototype",
+        "top": 206,
+        "bottom": 246
+      },
+      {
+        "tag": "H1",
+        "id": null,
+        "text": "Quality & compliance",
+        "top": 279,
+        "bottom": 309
+      },
+      {
+        "tag": "DIV",
+        "id": "restricted-opens",
+        "text": "Restricted record opened\n\nNothing waiting.",
+        "top": 369,
+        "bottom": 455
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Restricted record opened",
+        "top": 386,
+        "bottom": 410
+      },
+      {
+        "tag": "DIV",
+        "id": "outside-caseload-report",
+        "text": "Charts opened outside caseload \u2014 this week\nNo charts opened outside caseload this week.\nPage 1 / 1 \u00b7",
+        "top": 475,
+        "bottom": 673
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Charts opened outside caseload \u2014 this week",
+        "top": 492,
+        "bottom": 540
+      },
+      {
+        "tag": "DIV",
+        "id": "outside-caseload-table",
+        "text": "No charts opened outside caseload this week.",
+        "top": 540,
+        "bottom": 608
+      },
+      {
+        "tag": "DIV",
+        "id": "unusual-volume",
+        "text": "Unusual volume \u2014 today\n\nFlag when one person opens more than 30 distinct charts in a day (Draft thre",
+        "top": 693,
+        "bottom": 819
+      },
+      {
+        "tag": "H2",
+        "id": null,
+        "text": "Unusual volume \u2014 today",
+        "top": 710,
+        "bottom": 734
+      }
+    ]
+  }
+]
