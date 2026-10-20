@@ -1,8 +1,16 @@
-# Privacy P1 — continuation stopped
+# Privacy P1 — final
 
-Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. Continuation starting HEAD: `45eed859b7867be78d62a7bb7f8441856737ba48`.
+Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. No publishing, 9a, 9c or P2 work.
 
-No publishing, 9a, 9c or P2 work, or Phase 9 plan edits. Latest focused units: **28 passed / 29 total; 1 failed** (three files). Full units/browser validation has not run. P1 is incomplete and stopped on a newly exposed existing assertion. The prior 88/93 result below is historical.
+## Oct 20 final continuation
+
+- Approved destination setup (`cleanupReschedule.test.ts`, helper `patientFreeDestination`): reschedule target excludes the moved visit and any overlapping active patient appointment. Used at the p1 reschedule case and (pre-approved slot-selection setup, reported) the advocate-tier loop. No assertions, clocks, retries, timeouts or overlap rules changed. File 6/6.
+- NEW `src/lib/__tests__/privacyP1Owner.test.ts` (4 tests): clinical_coordinator generates CalOMS with one disclosure audit per disclosure check; DMC-ODS export writes a disclosure audit; tps_mark/tps_send_link allowed via runAction; billing and billing_coordinator refused for CalOMS, DMC-ODS export, TPS rows and both TPS actions.
+- State SUD reporting owners now: clinical_coordinator (CalOMS file, TPS actions, client-level rows); DMC-ODS export also roles passing roleSeesAsam.
+- County TPS totals "<11": already in place (countyReporting.ts:458-461).
+- Full units: **2,757 passed / 2,757** (342 files).
+- Full browser suite: BROWSER_RESULT
+- Final SHA: reported in chat at end of turn (commit made by platform after this edit).
 
 ## Oct 19 delegated stop-item continuation
 
