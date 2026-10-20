@@ -2,13 +2,14 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## B3 — Seeded end-to-end claims (Oct 20)
+## B3 — Seeded end-to-end claims (Oct 20) — STOPPED at inventory
 - Rollback / starting HEAD after DMC and its docs: 2f56b883487b7d927a7c63d080bfc14459173a40 (DMC source checkpoint 615a3ac8)
-- [ ] Inventory public lifecycle APIs and billing payloads with file:line; stop if narrowing breaks a workflow
-- [ ] Separate QA scenario, fictional patients, real store/registry lifecycle writes; default seed unchanged
-- [ ] NEW scenario unit tests and claimLifecycleB3 browser walkthroughs
-- [ ] Finish edits, restart, full units, exclusive full one-worker browser suite polled to literal EXIT last
-- [ ] Restore rollback screenshots; report contents/payloads/narrowings/totals/final SHA
+- [x] Inventory public lifecycle APIs and billing payloads with file:line in docs/b3-claims-report.md
+- [ ] BLOCKED: approve treatment of payment reconciliation and county-reporting fields excluded by the strict claim allowlist; removing them breaks existing workflows
+- [ ] BLOCKED: resolve deterministic IDs (public creators generate random IDs), payment meaning (patient receipts only; no payer ledger or incoming partial transition), and audit scope (one registry event plus one lifecycle event)
+- [ ] After decisions: separate QA scenario and NEW lifecycle tests; default seed unchanged
+- [ ] After implementation: restart, full units, exclusive full one-worker browser suite polled to literal EXIT last, screenshot restoration and report closeout
+- No application/test edits, validation runs or screenshot changes at this diagnostic stop.
 - No publishing; billing rules, rates, states, permissions, denied look and P1/P3 unchanged.
 
 ## DMC Date-freeze batch — COMPLETE (Oct 20)
