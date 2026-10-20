@@ -18,11 +18,7 @@ test("coordinator emergency unlock: gated, audited, time-limited, counseling sta
   await page.waitForFunction(() => !!(window as unknown as W).__adelante?.AdelanteEHR, null, { timeout: 60_000 });
 
   // A coordinator with a chart-enterable patient who has no SUD consent or release.
-  const staffId = await page.evaluate(() => {
-    const e = (window as unknown as W).__adelante.AdelanteEHR as unknown as { listStaff?: () => { id: string; role: string }[] };
-    void e;
-    return "s-cc1";
-  });
+  const staffId = "s-cc1"; // Priya Raman, clinical_coordinator
   await as(page, staffId, "clinical_coordinator");
   const patientId = await page.evaluate(async (sid) => {
     const w = window as unknown as W;
