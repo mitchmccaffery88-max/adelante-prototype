@@ -49,11 +49,11 @@ export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId,
   const current = Math.min(page, pages - 1);
   const visible = sorted.slice(current * STAFF_TABLE_PAGE_SIZE, (current + 1) * STAFF_TABLE_PAGE_SIZE);
   const hasActions = Boolean(primaryAction || moreActions || moreContent);
-  return <div data-density="compact" className="staff-table min-w-0 space-y-3 text-sm text-ink">
-    {views.length > 0 && <div role="group" aria-label={copy.views} className="flex flex-wrap gap-2">
+  return <div data-density="compact" className="staff-table min-w-0 space-y-3 overflow-x-auto text-sm text-ink">
+    {views.length > 0 && <div role="group" aria-label={copy.views} className="sticky left-0 flex flex-wrap gap-2">
       {views.map((v) => <Button key={v.id} variant={v.id === activeView ? "secondary" : "ghost"} aria-pressed={v.id === activeView} className="text-sm" onClick={() => { setView(v.id); onViewChange?.(v.id); setPage(0); }}>{v.label} ({rows.filter(v.matches).length})</Button>)}
     </div>}
-    {visible.length === 0 ? <div role="status" data-testid={testId} className="py-6 text-sm text-ink-muted">{selected?.emptyState ?? emptyState ?? "Nothing in this view."}</div> : <div className="overflow-x-auto"><table aria-label={label} data-testid={testId} className="w-full border-collapse text-left">
+    {visible.length === 0 ? <div role="status" data-testid={testId} className="py-6 text-sm text-ink-muted">{selected?.emptyState ?? emptyState ?? "Nothing in this view."}</div> : <table aria-label={label} data-testid={testId} className="w-full border-collapse text-left">
       <thead className="bg-surface-sunk text-ink-muted"><tr>{columns.map((c) => <th key={c.id} scope="col" aria-sort={sort?.id === c.id ? sort.descending ? "descending" : "ascending" : "none"} className="px-3 py-1 font-medium">
         {c.sortValue ? <Button variant="ghost" data-testid={c.sortTestId} data-sort={c.sortTestId ? sort?.id === c.id ? sort.descending ? "desc" : "asc" : "none" : undefined} className="h-9 px-0 text-sm whitespace-normal text-left" onClick={() => { setSort({ id: c.id, descending: sort?.id === c.id ? !sort.descending : false }); setPage(0); }}>{c.label}{sort?.id === c.id ? sort.descending ? <ArrowDown /> : <ArrowUp /> : <ChevronsUpDown />}</Button> : c.label}
       </th>)}{hasActions && <th scope="col" className="min-w-32 px-3 py-2 font-medium">{copy.actions}</th>}</tr></thead>
@@ -70,8 +70,8 @@ export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId,
           }}>{a.label}</DropdownMenuItem>)}{moreContent?.(row)}</DropdownMenuContent></DropdownMenu> : null;
         })()}</div></td>}
       </tr>)}</tbody>
-    </table></div>}
-    <nav aria-label={`${label} pages`} className="flex items-center justify-end gap-3 text-sm">
+    </table>}
+    <nav aria-label={`${label} pages`} className="sticky left-0 flex items-center justify-end gap-3 text-sm">
       <span aria-live="polite">{copy.page} {current + 1} / {pages} · {sorted.length}</span>
       <Button variant="outline" size="icon" aria-label={copy.previous} title={copy.previous} disabled={current === 0} onClick={() => setPage(current - 1)}><ChevronLeft /></Button>
       <Button variant="outline" size="icon" aria-label={copy.next} title={copy.next} disabled={current + 1 >= pages} onClick={() => setPage(current + 1)}><ChevronRight /></Button>
