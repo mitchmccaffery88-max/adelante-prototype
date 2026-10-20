@@ -2,12 +2,14 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## Phase 9a-1 — IN PROGRESS (Oct 20)
+## Phase 9a-1 — COMPLETE (Oct 20)
 - Rollback 7c0e871520e0a2eb6b8a29ed604e4e2cefa385f3; starting HEAD 193c406f54a7604b8ac2dab8d42106f1efcc585e
-- [ ] StatTile and KPI conversion, unchanged selectors and caller access; real weekly MAR/attendance projections only
-- [ ] NEW suppression/member-boundary/projection/rollback parity/browser tests
-- [ ] Six light/dark 390/768/1280 section captures; full units then full background one-worker browser suite to EXIT
-- [ ] Restore rollback screenshots; finalize docs/phase9a1-report.md and report final managed SHA
+- [x] StatTile and KPI conversion, unchanged selectors and caller access; real weekly MAR/attendance projections only
+- [x] NEW suppression/member-boundary/projection/rollback parity/browser tests; existing assertions untouched
+- [x] Six light/dark 390/768/1280 section captures; full units 2,798/2,798 (347 files), then full background one-worker browser suite to EXIT 0: 182 passed, 0 failed (31.2m)
+- [x] Restored 17 regenerated rollback screenshots; 120 inspected, zero byte differences; retained six new evidence images
+- [x] Final docs/phase9a1-report.md; final managed SHA reported in chat
+- Next in sequence: Phase 9a-2 — not started, awaits its batch authorization
 - No publishing, 9a-2/3 or permission/privacy changes.
 
 ## Privacy P2 — COMPLETE (Oct 20)

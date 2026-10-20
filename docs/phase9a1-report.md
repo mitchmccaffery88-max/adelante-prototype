@@ -1,4 +1,4 @@
-# Phase 9a-1 — StatTile and KPI vs target
+# Phase 9a-1 — COMPLETE: StatTile and KPI vs target
 
 ## Baselines and scope
 - Approved rollback: `7c0e871520e0a2eb6b8a29ed604e4e2cefa385f3`.
@@ -24,9 +24,10 @@
 - Full units **2,798/2,798 passed, 347/347 files, EXIT 0** (98.51s).
 - NEW `e2e/statTiles9a1.spec.ts`: **2/2 passed** standalone (15.1s + 7.8s), visible backlog parity (explicit <11), real Details dialog/no navigation, billing exclusion, all axe violations absent in light/dark at 390/768/1280, section no overflow.
 - Initial new-test diagnostics: fixed fixture missing batchId; new browser assertion corrected Billing heading to existing billing-workspace; low-contrast status text replaced with neutral word + colored icon. No existing tests, thresholds/timeouts/retries changed. Latest harness build OK.
-- Full browser suite: pending background --workers=1 on `E2E_BASE_URL=http://localhost:8080`, polled to EXIT as final validation step.
+- Full browser suite: **182/182 passed, 0 failed, EXIT 0 (31.2m)**; background --workers=1 on `E2E_BASE_URL=http://localhost:8080`, polled to its literal EXIT line as final validation step. New tile specs passed inside the full run (11.4s and 6.2s); existing slow therapist New-menu test passed (25.4s). No flake exception needed.
 
 ## Evidence and closeout
 - Six section screenshots: `docs/phase9a1-evidence/kpi-{390,768,1280}-{light,dark}.png`; mobile-light and desktop-dark reviewed visually, labels wrap and measured section widths fit. All six axe states pass.
-- Rollback tracked images restoration: pending full-suite completion; new evidence is retained.
-- No stop items or flake exceptions used so far. Final closeout/next batch pending full-suite result.
+- Rollback tracked images restored after the full run: **120 inspected, 17 regenerated restored, zero remaining byte differences** against rollback, including existing `e2e/screenshots/p2-emergency-unlock.png`; six new 9a-1 images retained. Manifest: `docs/phase9a1-evidence/screenshot-restoration.json`.
+- No stop items, existing assertion changes, permission changes or flake exceptions. Phase 9a-1 complete; 9a-2 is next, not started. Unpublished.
+- Final managed closeout SHA is reported in chat; pre-documentation/restoration checkpoint `9afd273ca5de806be6cc5a40a7d9d140f07ce549`. Documentation cannot embed its own content-derived final revision.
