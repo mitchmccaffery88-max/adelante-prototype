@@ -1,0 +1,1808 @@
+{
+  "rollback": "aff263ff1aa707d68994b7f175f83aa9d09306fd",
+  "pinnedTimestamp": "2026-10-20T16:47:00.000Z",
+  "seed": "fresh browser storage; Math.random returns 0.5 on both before module evaluation",
+  "sweep": "same automatic mount sweep on both; Date fixed, interval timers not advanced",
+  "roles": {
+    "therapist": {
+      "pass": true,
+      "differences": {},
+      "rollback": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "action-row-asam",
+          "action-row-closing",
+          "action-row-crisis",
+          "action-row-outside",
+          "action-row-plan",
+          "action-row-screener",
+          "action-row-switch",
+          "action-row-task",
+          "action-row-unsigned",
+          "ask-adel-button",
+          "dashboard-new-button",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "needs-action-escalations-link",
+          "schedule-row",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-new-slot",
+          "staff-patient-search",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "today-strip",
+          "top-bar-my-work",
+          "workspace-dashboard-tiles",
+          "workspace-identity",
+          "workspace-schedule",
+          "workspace-section-needs",
+          "workspace-section-today",
+          "workspace-section-waiting",
+          "workspace-tile-actions",
+          "workspace-tile-caseload",
+          "workspace-tile-requests",
+          "workspace-tile-schedule",
+          "workspace-waiting"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: Therapist · Marisol Reyes"
+          ],
+          "staff-shell": [
+            "TherapistCareContent libraryReferralsCare CoordinationClinicianClinician workspacesGroup sessionsGroup eligibility auditQueuesPopulation healthConsent & privacyRevenue & billingAdministrationMy accountClinicianClinician workspaceMy own workspace Dashboard Patient chart"
+          ],
+          "staff-shell-header": [
+            "4Crisis9+"
+          ],
+          "acting-role-indicator": [
+            "Acting as: Therapist · Marisol Reyes"
+          ],
+          "staff-new-slot": [
+            ""
+          ],
+          "dashboard-new-button": [
+            "New"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Clinician· Caseload & sessions"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteCareClinician"
+          ],
+          "staff-patient-search": [
+            ""
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "top-bar-my-work": [
+            "My work4"
+          ],
+          "workspace-identity": [
+            "Your workspace — Marisol Reyes, LCSWMedi-Cal enrollment: active"
+          ],
+          "workspace-dashboard-tiles": [
+            ""
+          ],
+          "workspace-section-needs": [
+            "Needs you"
+          ],
+          "workspace-tile-actions": [
+            "Needs my action13 open · 13 nowAll · 13Now · 13Today · 0This week · 0Now · 12Today · 0No items.This week · 0No items."
+          ],
+          "needs-action-escalations-link": [
+            "See all escalations to"
+          ],
+          "action-row-crisis": [
+            "Marcus L.Crisis follow-up — coordinator pool · 2h 0m leftOpen crisisHand off"
+          ],
+          "action-row-unsigned": [
+            "Daniel M.Visit needs a note · Due nowWrite note",
+            "Marcus L.Visit needs a note · Due nowWrite note"
+          ],
+          "action-row-asam": [
+            "Marcus L.ASAM assessment · Due nowOpen ASAM"
+          ],
+          "action-row-closing": [
+            "Alicia SerranoPast visit needs closing · Due nowMark attended"
+          ],
+          "action-row-outside": [
+            "Marcus L.Outside event follow-up · Due nowReview event"
+          ],
+          "action-row-screener": [
+            "Marcus L.PHQ-9 re-screen · Due nowSend re-screen"
+          ],
+          "action-row-plan": [
+            "Rosa T.Care plan review · Due nowReview plan"
+          ],
+          "action-row-switch": [
+            "Daniel M.Provider switch review · Due nowReview",
+            "Daniel M.Provider switch review · Due nowReview",
+            "Rosa T.Provider switch review · Due nowReview",
+            "Tomás ReynaProvider switch review · Due nowReview"
+          ],
+          "workspace-tile-caseload": [
+            "My caseload2 patients · 2 need attention"
+          ],
+          "workspace-tile-requests": [
+            "Requests & booking0 appointment requests waiting"
+          ],
+          "workspace-section-waiting": [
+            "Waiting on others"
+          ],
+          "workspace-waiting": [
+            "Now · 1Today · 0No items.This week · 0No items."
+          ],
+          "action-row-task": [
+            "Rosa T.Provider switch review: Rosa T. · Due nowOpen task"
+          ],
+          "workspace-section-today": [
+            "Today"
+          ],
+          "today-strip": [
+            "TodayNext visit4:00 PM · TomásVisits left today2Needs closing1Unsigned2Cosign0Crisis · my patients1"
+          ],
+          "workspace-schedule": [
+            ""
+          ],
+          "workspace-tile-schedule": [
+            "Schedule2 upcoming · 0 checked in · 0 doneUp next 2In progress / checked in 0Done today 0Cancelled · Missed visit · late cancel · rescheduled 0This week · 3"
+          ],
+          "schedule-row": [
+            "4:00 PMTomás ReynaTalk with a counselor · ScheduledCheck in",
+            "6:45 PMMarcus L.Talk with a counselor · ScheduledCheck in"
+          ]
+        },
+        "statTiles": [],
+        "todayValues": [
+          "Next visit\n4:00 PM · Tomás",
+          "Visits left today\n2",
+          "Needs closing\n1",
+          "Unsigned\n2",
+          "Cosign\n0",
+          "Crisis · my patients\n1"
+        ],
+        "countTiles": [],
+        "taskCounts": []
+      },
+      "current": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "action-row-asam",
+          "action-row-closing",
+          "action-row-crisis",
+          "action-row-outside",
+          "action-row-plan",
+          "action-row-screener",
+          "action-row-switch",
+          "action-row-task",
+          "action-row-unsigned",
+          "ask-adel-button",
+          "dashboard-new-button",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "needs-action-escalations-link",
+          "schedule-row",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-new-slot",
+          "staff-patient-search",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "today-strip",
+          "top-bar-my-work",
+          "workspace-dashboard-tiles",
+          "workspace-identity",
+          "workspace-schedule",
+          "workspace-section-needs",
+          "workspace-section-today",
+          "workspace-section-waiting",
+          "workspace-tile-actions",
+          "workspace-tile-caseload",
+          "workspace-tile-requests",
+          "workspace-tile-schedule",
+          "workspace-waiting"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: Therapist · Marisol Reyes"
+          ],
+          "staff-shell": [
+            "TherapistCareContent libraryReferralsCare CoordinationClinicianClinician workspacesGroup sessionsGroup eligibility auditQueuesPopulation healthConsent & privacyRevenue & billingAdministrationMy accountClinicianClinician workspaceMy own workspace Dashboard Patient chart"
+          ],
+          "staff-shell-header": [
+            "4Crisis9+"
+          ],
+          "acting-role-indicator": [
+            "Acting as: Therapist · Marisol Reyes"
+          ],
+          "staff-new-slot": [
+            ""
+          ],
+          "dashboard-new-button": [
+            "New"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Clinician· Caseload & sessions"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteCareClinician"
+          ],
+          "staff-patient-search": [
+            ""
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "top-bar-my-work": [
+            "My work4"
+          ],
+          "workspace-identity": [
+            "Your workspace — Marisol Reyes, LCSWMedi-Cal enrollment: active"
+          ],
+          "workspace-dashboard-tiles": [
+            ""
+          ],
+          "today-strip": [
+            "TodayNext visit4:00 PM · TomásVisits left today2Needs closing1Unsigned2Cosign0Crisis · my patients1"
+          ],
+          "workspace-section-needs": [
+            "Needs you"
+          ],
+          "workspace-tile-actions": [
+            "Needs my action13 open · 13 nowAll · 13Now · 13Today · 0This week · 0Now · 12Today · 0No items.This week · 0No items."
+          ],
+          "needs-action-escalations-link": [
+            "See all escalations to"
+          ],
+          "action-row-crisis": [
+            "Marcus L.Crisis follow-up — coordinator pool · 2h 0m leftOpen crisisHand off"
+          ],
+          "action-row-unsigned": [
+            "Daniel M.Visit needs a note · Due nowWrite note",
+            "Marcus L.Visit needs a note · Due nowWrite note"
+          ],
+          "action-row-asam": [
+            "Marcus L.ASAM assessment · Due nowOpen ASAM"
+          ],
+          "action-row-closing": [
+            "Alicia SerranoPast visit needs closing · Due nowMark attended"
+          ],
+          "action-row-outside": [
+            "Marcus L.Outside event follow-up · Due nowReview event"
+          ],
+          "action-row-screener": [
+            "Marcus L.PHQ-9 re-screen · Due nowSend re-screen"
+          ],
+          "action-row-plan": [
+            "Rosa T.Care plan review · Due nowReview plan"
+          ],
+          "action-row-switch": [
+            "Daniel M.Provider switch review · Due nowReview",
+            "Daniel M.Provider switch review · Due nowReview",
+            "Rosa T.Provider switch review · Due nowReview",
+            "Tomás ReynaProvider switch review · Due nowReview"
+          ],
+          "workspace-tile-caseload": [
+            "My caseload2 patients · 2 need attention"
+          ],
+          "workspace-tile-requests": [
+            "Requests & booking0 appointment requests waiting"
+          ],
+          "workspace-section-waiting": [
+            "Waiting on others"
+          ],
+          "workspace-waiting": [
+            "Now · 1Today · 0No items.This week · 0No items."
+          ],
+          "action-row-task": [
+            "Rosa T.Provider switch review: Rosa T. · Due nowOpen task"
+          ],
+          "workspace-section-today": [
+            "Today"
+          ],
+          "workspace-schedule": [
+            ""
+          ],
+          "workspace-tile-schedule": [
+            "Schedule2 upcoming · 0 checked in · 0 doneUp next 2In progress / checked in 0Done today 0Cancelled · Missed visit · late cancel · rescheduled 0This week · 3"
+          ],
+          "schedule-row": [
+            "4:00 PMTomás ReynaTalk with a counselor · ScheduledCheck in",
+            "6:45 PMMarcus L.Talk with a counselor · ScheduledCheck in"
+          ]
+        },
+        "statTiles": [],
+        "todayValues": [
+          "Next visit\n4:00 PM · Tomás",
+          "Visits left today\n2",
+          "Needs closing\n1",
+          "Unsigned\n2",
+          "Cosign\n0",
+          "Crisis · my patients\n1"
+        ],
+        "countTiles": [],
+        "taskCounts": []
+      }
+    },
+    "ecm_provider": {
+      "pass": true,
+      "differences": {},
+      "rollback": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "ask-adel-button",
+          "caseload-empty-mine",
+          "caseload-scope-all",
+          "caseload-scope-card",
+          "caseload-scope-mine",
+          "caseload-scope-note",
+          "caseload-table",
+          "dashboard-new-button",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "queue-last-attempt",
+          "queue-referred-by",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-new-slot",
+          "staff-patient-search",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "task-queue-card",
+          "task-queue-table",
+          "task-work-row",
+          "top-bar-my-work",
+          "workspace-section-needs",
+          "workspace-section-today",
+          "workspace-section-waiting"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: ECM Provider · Luz Herrera"
+          ],
+          "staff-shell": [
+            "ECM ProviderCareContent libraryReferralsCare CoordinationAssisted sign-upClinicianClinician workspacesGroup sessionsGroup eligibility auditWeekly caseload reviewQueuesPopulation healthConsent & privacyRevenue & billingAdministrationMy accountCare CoordinationCare CoordinationReview assigned or program-wide clients. Opening a record shows the chart sections available to your role. Upload caseloadLupita Sanchez, MSW · ecm providerMy assigned caseload0/0 Export CSVAll daysAll coverageAll programsAll cliniciansAll care needsCurrent caseload (0)Page 1 / 1 · 0Open the patient profile. No names, diagnoses, or care-plan narrative shown in the table — clinical detail lives only in Case Manager and Clinician workspaces.Referral statusView all referrals4/4All statusesAll programsAll cliniciansAll care needs      Carmen IbarraCommunity-based organization · 10/20/2026, 4:47:00 PMenrolledSent10/20/2026, 4:47:00 PMOutreach10/20/2026, 4:47:00 PMEnrolled10/20/2026, 4:47:00 PMEnrolled as ADL-2026-008Eli B.Parole · 10/20/2026, 2:47:00 PMsubmittedSent10/20/2026, 2:47:00 PMOutreach10/20/2026, 2:50:00 PMEnrolledPendingWelcome text sentSasha K.Drug court / reentry court · 10/18/2026, 4:47:00 PMcontactedSent10/18/2026, 4:47:00 PMOutreach10/18/2026, 4:50:00 PMEnrolledPendingWelcome text sentDaniel M.Probation · 8/9/2026, 4:47:00 PMenrolledSent8/9/2026, 4:47:00 PMOutreach8/9/2026, 4:50:00 PMEnrolled8/9/2026, 4:47:00 PMWelcome text sentAging badge — Draft: a referral with no staff action in 3 days reads as due and 7 days as overdue. A newly released person's phone number commonly stops being reachable inside a week. Not yet ratified by care operations. Caseload5 clientsSearchDOB fromDOB toClientCINDOBEpisode dayCoverageLast contactFlagsActionDaniel M.••••001A1989-04-1223/90Coverage type unknownCheck eligibilityActiveNo contactECMSwitch·2OpenProfileRecordRosa T.••••002B1995-09-0311/90Coverage type unknownCheckingSuspended — renewNo contactSwitch·3OpenProfileRecordAlicia R.—1994-02-1812/90—No contactOpenProfileRecordMarcus Whitfield—1988-11-0419/90—No contactOpenProfileRecordLucía Moreno—1991-03-2220/90—No contactOpenProfileRecordDaniel M.CIN: ••••001ACoverage type unknownCheck eligibilityActiveDOB1989-04-12Episode day23/90Last contactNo contactFlagsECMSwitch·2OpenProfileRecordRosa T.CIN: ••••002BCoverage type unknownCheckingSuspended — renewDOB1995-09-03Episode day11/90Last contactNo contactFlagsSwitch·3OpenProfileRecordAlicia R.CIN: ——DOB1994-02-18Episode day12/90Last contactNo contactFlags—OpenProfileRecordMarcus WhitfieldCIN: ——DOB1988-11-04Episode day19/90Last contactNo contactFlags—OpenProfileRecordLucía MorenoCIN: ——DOB1991-03-22Episode day20/90Last contactNo contactFlags—OpenProfileRecordDaniel M.Full record: SDOH, referrals, external coordination, peer notes.Quick peekOpen record Follow-ups for this client5 open follow-ups.Follow-ups are added and worked on the client's record, alongside their other open items.Open follow-ups on the record Weekly check-inGoal: weekly contact during active treatment. CM: Lupita Sanchez, MSW.DateTime4PMModalityPhoneAttendedBrief non-clinical notesLog check-in Recent check-insNo check-ins yet for this client. Medi-Cal eligibilityCoverage: Medi-Cal active (self-reported, not verified). No verification is on file.Review and update client eligibilityOpen verification worklist Refer for a needTransitional housing placementsentReferRides to appointmentsscheduledReferJob readiness programidentifiedRefer"
+          ],
+          "staff-shell-header": [
+            "5"
+          ],
+          "acting-role-indicator": [
+            "Acting as: ECM Provider · Luz Herrera"
+          ],
+          "staff-new-slot": [
+            ""
+          ],
+          "dashboard-new-button": [
+            "New"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Care Coordination· Check-ins & resources"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteCareCare Coordination"
+          ],
+          "staff-patient-search": [
+            ""
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "top-bar-my-work": [
+            "My work10"
+          ],
+          "workspace-section-needs": [
+            "Needs you"
+          ],
+          "task-queue-card": [
+            "My tasks0 follow-up needed7 due today0 snoozedShow allNeeds you (8)Page 1 / 1 · 8"
+          ],
+          "task-queue-table": [
+            "Task"
+          ],
+          "task-work-row": [
+            "C-SSRS indicatedroutinePendingAdminister the C-SSRS Screener. Trigger: PHQ-9 item 9 positive. Response protocol per risk level is a DRAFT pending clinical sign-off. Due 2026-10-20screener flagTomás Reyna",
+            "Connect request — Work or job trainingroutinePendingTomás asked the care team to help connect them for \"Work or job training\". Use Refer on this need; making the referral closes this request. Due 2026-10-22sdoh follow upTomás Reyna",
+            "Coordinate provider switch: Daniel M.routinePendingBooked with a new provider. From Marisol Reyes → Dr. M. Bagga. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchDaniel M.",
+            "Coordinate provider switch: Rosa T.routinePendingBooked with a new provider. From James Okafor → Kayla Nguyen. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchRosa T.",
+            "Coordinate provider switch: Tomás ReynaroutinePendingPrimary provider reassigned. From Marisol Reyes → Renee Castillo. Demo setup — SUD counselor caseload Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchTomás Reyna",
+            "Refill request: Trazodone 50 mgroutinePendingat bedtime · prescriber Dr. M. Bagga, M.D. · note: Walgreens on Main Due 2026-10-20manualRosa T.",
+            "Same-day safety follow-up (staff only)urgentPendingSafety screening answers were positive. Follow up privately today. Do not share with advocates or discuss where others may hear. Draft rule — pending clinical review. Due 2026-10-20sdoh follow upTomás Reyna",
+            "Same-day — ID and documentsurgentPendingPatient said they need help with \"ID and documents\" today. Draft rule — pending clinical review. Due 2026-10-20sdoh follow upTomás Reyna"
+          ],
+          "workspace-section-waiting": [
+            "Waiting on othersNo items."
+          ],
+          "workspace-section-today": [
+            "TodayNo items."
+          ],
+          "caseload-scope-card": [
+            ""
+          ],
+          "caseload-scope-mine": [
+            "My caseload (0)"
+          ],
+          "caseload-scope-all": [
+            "All program patients (21)"
+          ],
+          "caseload-scope-note": [
+            "Default view only. This changes what's listed, not what you're allowed to open."
+          ],
+          "caseload-empty-mine": [
+            "No patients are currently assigned to Luz Herrera."
+          ],
+          "caseload-table": [
+            "No patients match these filters."
+          ],
+          "queue-referred-by": [
+            "Referred by Drug Court · CM. PatelNo referrer contact",
+            "Referred by Parole · Agent YuNo referrer contact",
+            "Referred by Tulare County Probation · Officer HernandezNo referrer contact",
+            "Referred by Visalia Family Resource Center · Gloria Benítez"
+          ],
+          "queue-last-attempt": [
+            "Last outreach: Reached the person · Luz Herrera · 10/20/2026, 4:47:00 PM"
+          ]
+        },
+        "statTiles": [],
+        "todayValues": [],
+        "countTiles": [],
+        "taskCounts": []
+      },
+      "current": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "ask-adel-button",
+          "caseload-empty-mine",
+          "caseload-scope-all",
+          "caseload-scope-card",
+          "caseload-scope-mine",
+          "caseload-scope-note",
+          "caseload-table",
+          "dashboard-new-button",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "queue-last-attempt",
+          "queue-referred-by",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-new-slot",
+          "staff-patient-search",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "task-queue-card",
+          "task-queue-table",
+          "task-work-row",
+          "top-bar-my-work",
+          "workspace-section-needs",
+          "workspace-section-today",
+          "workspace-section-waiting"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: ECM Provider · Luz Herrera"
+          ],
+          "staff-shell": [
+            "ECM ProviderCareContent libraryReferralsCare CoordinationAssisted sign-upClinicianClinician workspacesGroup sessionsGroup eligibility auditWeekly caseload reviewQueuesPopulation healthConsent & privacyRevenue & billingAdministrationMy accountCare CoordinationCare CoordinationReview assigned or program-wide clients. Opening a record shows the chart sections available to your role. Upload caseloadLupita Sanchez, MSW · ecm providerMy assigned caseload0/0 Export CSVAll daysAll coverageAll programsAll cliniciansAll care needsCurrent caseload (0)Page 1 / 1 · 0Open the patient profile. No names, diagnoses, or care-plan narrative shown in the table — clinical detail lives only in Case Manager and Clinician workspaces.Referral statusView all referrals4/4All statusesAll programsAll cliniciansAll care needs      Carmen IbarraCommunity-based organization · 10/20/2026, 4:47:00 PMenrolledSent10/20/2026, 4:47:00 PMOutreach10/20/2026, 4:47:00 PMEnrolled10/20/2026, 4:47:00 PMEnrolled as ADL-2026-008Eli B.Parole · 10/20/2026, 2:47:00 PMsubmittedSent10/20/2026, 2:47:00 PMOutreach10/20/2026, 2:50:00 PMEnrolledPendingWelcome text sentSasha K.Drug court / reentry court · 10/18/2026, 4:47:00 PMcontactedSent10/18/2026, 4:47:00 PMOutreach10/18/2026, 4:50:00 PMEnrolledPendingWelcome text sentDaniel M.Probation · 8/9/2026, 4:47:00 PMenrolledSent8/9/2026, 4:47:00 PMOutreach8/9/2026, 4:50:00 PMEnrolled8/9/2026, 4:47:00 PMWelcome text sentAging badge — Draft: a referral with no staff action in 3 days reads as due and 7 days as overdue. A newly released person's phone number commonly stops being reachable inside a week. Not yet ratified by care operations. Caseload5 clientsSearchDOB fromDOB toClientCINDOBEpisode dayCoverageLast contactFlagsActionDaniel M.••••001A1989-04-1223/90Coverage type unknownCheck eligibilityActiveNo contactECMSwitch·2OpenProfileRecordRosa T.••••002B1995-09-0311/90Coverage type unknownCheckingSuspended — renewNo contactSwitch·3OpenProfileRecordAlicia R.—1994-02-1812/90—No contactOpenProfileRecordMarcus Whitfield—1988-11-0419/90—No contactOpenProfileRecordLucía Moreno—1991-03-2220/90—No contactOpenProfileRecordDaniel M.CIN: ••••001ACoverage type unknownCheck eligibilityActiveDOB1989-04-12Episode day23/90Last contactNo contactFlagsECMSwitch·2OpenProfileRecordRosa T.CIN: ••••002BCoverage type unknownCheckingSuspended — renewDOB1995-09-03Episode day11/90Last contactNo contactFlagsSwitch·3OpenProfileRecordAlicia R.CIN: ——DOB1994-02-18Episode day12/90Last contactNo contactFlags—OpenProfileRecordMarcus WhitfieldCIN: ——DOB1988-11-04Episode day19/90Last contactNo contactFlags—OpenProfileRecordLucía MorenoCIN: ——DOB1991-03-22Episode day20/90Last contactNo contactFlags—OpenProfileRecordDaniel M.Full record: SDOH, referrals, external coordination, peer notes.Quick peekOpen record Follow-ups for this client5 open follow-ups.Follow-ups are added and worked on the client's record, alongside their other open items.Open follow-ups on the record Weekly check-inGoal: weekly contact during active treatment. CM: Lupita Sanchez, MSW.DateTime4PMModalityPhoneAttendedBrief non-clinical notesLog check-in Recent check-insNo check-ins yet for this client. Medi-Cal eligibilityCoverage: Medi-Cal active (self-reported, not verified). No verification is on file.Review and update client eligibilityOpen verification worklist Refer for a needTransitional housing placementsentReferRides to appointmentsscheduledReferJob readiness programidentifiedRefer"
+          ],
+          "staff-shell-header": [
+            "5"
+          ],
+          "acting-role-indicator": [
+            "Acting as: ECM Provider · Luz Herrera"
+          ],
+          "staff-new-slot": [
+            ""
+          ],
+          "dashboard-new-button": [
+            "New"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Care Coordination· Check-ins & resources"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteCareCare Coordination"
+          ],
+          "staff-patient-search": [
+            ""
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "top-bar-my-work": [
+            "My work10"
+          ],
+          "workspace-section-needs": [
+            "Needs you"
+          ],
+          "task-queue-card": [
+            "My tasks0 follow-up needed7 due today0 snoozedShow allNeeds you (8)Page 1 / 1 · 8"
+          ],
+          "caseload-scope-card": [
+            ""
+          ],
+          "caseload-scope-mine": [
+            "My caseload (0)"
+          ],
+          "caseload-scope-all": [
+            "All program patients (21)"
+          ],
+          "caseload-scope-note": [
+            "Default view only. This changes what's listed, not what you're allowed to open."
+          ],
+          "caseload-empty-mine": [
+            "No patients are currently assigned to Luz Herrera."
+          ],
+          "task-queue-table": [
+            "Task"
+          ],
+          "task-work-row": [
+            "C-SSRS indicatedroutinePendingAdminister the C-SSRS Screener. Trigger: PHQ-9 item 9 positive. Response protocol per risk level is a DRAFT pending clinical sign-off. Due 2026-10-20screener flagTomás Reyna",
+            "Connect request — Work or job trainingroutinePendingTomás asked the care team to help connect them for \"Work or job training\". Use Refer on this need; making the referral closes this request. Due 2026-10-22sdoh follow upTomás Reyna",
+            "Coordinate provider switch: Daniel M.routinePendingBooked with a new provider. From Marisol Reyes → Dr. M. Bagga. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchDaniel M.",
+            "Coordinate provider switch: Rosa T.routinePendingBooked with a new provider. From James Okafor → Kayla Nguyen. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchRosa T.",
+            "Coordinate provider switch: Tomás ReynaroutinePendingPrimary provider reassigned. From Marisol Reyes → Renee Castillo. Demo setup — SUD counselor caseload Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchTomás Reyna",
+            "Refill request: Trazodone 50 mgroutinePendingat bedtime · prescriber Dr. M. Bagga, M.D. · note: Walgreens on Main Due 2026-10-20manualRosa T.",
+            "Same-day safety follow-up (staff only)urgentPendingSafety screening answers were positive. Follow up privately today. Do not share with advocates or discuss where others may hear. Draft rule — pending clinical review. Due 2026-10-20sdoh follow upTomás Reyna",
+            "Same-day — ID and documentsurgentPendingPatient said they need help with \"ID and documents\" today. Draft rule — pending clinical review. Due 2026-10-20sdoh follow upTomás Reyna"
+          ],
+          "workspace-section-waiting": [
+            "Waiting on othersNo items."
+          ],
+          "workspace-section-today": [
+            "TodayNo items."
+          ],
+          "caseload-table": [
+            "No patients match these filters."
+          ],
+          "queue-referred-by": [
+            "Referred by Drug Court · CM. PatelNo referrer contact",
+            "Referred by Parole · Agent YuNo referrer contact",
+            "Referred by Tulare County Probation · Officer HernandezNo referrer contact",
+            "Referred by Visalia Family Resource Center · Gloria Benítez"
+          ],
+          "queue-last-attempt": [
+            "Last outreach: Reached the person · Luz Herrera · 10/20/2026, 4:47:00 PM"
+          ]
+        },
+        "statTiles": [],
+        "todayValues": [],
+        "countTiles": [],
+        "taskCounts": []
+      }
+    },
+    "billing": {
+      "pass": true,
+      "differences": {},
+      "rollback": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "arrangement-filter",
+          "ask-adel-button",
+          "balance-filter",
+          "billing-county-reporting-link",
+          "billing-kpi-drafts",
+          "billing-kpi-outstanding",
+          "billing-kpi-paid",
+          "billing-kpis",
+          "billing-provider-ref-link",
+          "billing-row",
+          "billing-row-charge",
+          "billing-row-lane",
+          "billing-row-status",
+          "billing-status-summary",
+          "billing-table",
+          "billing-tile-action",
+          "billing-tile-payments",
+          "billing-tile-pipeline",
+          "billing-today-strip",
+          "billing-workspace",
+          "claim-amount",
+          "claim-signature-seed",
+          "claim-units",
+          "correct-claim",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "no-rate-badge",
+          "no-rate-filter",
+          "ops-new-button",
+          "patient-balance",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-new-slot",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "strip-blocked",
+          "strip-eligibility",
+          "strip-holds",
+          "strip-payments",
+          "strip-ready",
+          "tile-blocked-count",
+          "tile-blocked-row",
+          "tile-eligibility-count",
+          "tile-holds-count"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: Billing coordinator · Tonya Price"
+          ],
+          "staff-shell": [
+            "Billing coordinatorCareQueuesPopulation healthConsent & privacyRevenue & billingBillingClaims worklistMedi-Cal verificationCalAIM qualifying codesAdministrationMy accountBilling coordinatorTulare County pilot · 7 funding lanes tracked separately from billing status.Open claims worklist toBilling entityContract-type decision unresolved — toggle here for demo.Bagga's clinic NPIAdelanteISL reportable encounters — mandate 1/1/2027Uninsured, benefit-exhausted, and restricted-setting encounters are non-billable but county-reportable. An annual export is stubbed on the ISL tab.Claims worklistISL (0)Code & rate tableCredentialingLane:All lanesDMC-ODSSpecialty MH (county MHP)Medi-Cal (FFS / managed care)CalAIM ECM / Community SupportsMedi-Cal (program not set)Self-paySliding feeGrant / ISLBHSAMedicarePrivate insuranceCommercial (inactive at launch)Non-billableCoverage type unknownStatus:All statusesdraftreadysubmittedpaiddeniedwrite offPage 1 / 1 · 8"
+          ],
+          "staff-shell-header": [
+            "5"
+          ],
+          "acting-role-indicator": [
+            "Acting as: Billing coordinator · Tonya Price"
+          ],
+          "staff-new-slot": [
+            ""
+          ],
+          "ops-new-button": [
+            "New"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Billing· Claims, ISL & credentials"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteRevenue & billingBilling"
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "billing-provider-ref-link": [
+            "Provider & site reference"
+          ],
+          "billing-county-reporting-link": [
+            "County reporting"
+          ],
+          "billing-workspace": [
+            ""
+          ],
+          "billing-today-strip": [
+            ""
+          ],
+          "strip-blocked": [
+            "4Claims blocked"
+          ],
+          "strip-ready": [
+            "0Ready to send"
+          ],
+          "strip-eligibility": [
+            "21Eligibility checks due"
+          ],
+          "strip-payments": [
+            "0Payments to post"
+          ],
+          "strip-holds": [
+            "0Duplicate holds"
+          ],
+          "billing-tile-action": [
+            "Needs my action25 itemsBlocked claims · Duplicate holds · Eligibility checks due · Alicia R.never checkedAlicia Serranonever checkedCarmen Ibarranever checkedDaniel M.never checkedDaniela Ortiznever checkedDaniela Ortiznever checkedElena Vargasnever checkedJasmine Holtnever checkedAll 21 on the eligibility worklist"
+          ],
+          "tile-blocked-count": [
+            "4"
+          ],
+          "tile-blocked-row": [
+            "Rosa T. · 2026-10-19Blocked: clinical documentation incompleteFix",
+            "Tomás Reyna · 2026-10-20Blocked: no rate on fileFix",
+            "Tomás Reyna · 2026-10-20Blocked: no rate on fileFix",
+            "Tomás Reyna · 2026-10-20Blocked: no rate on fileFix"
+          ],
+          "tile-holds-count": [
+            "0"
+          ],
+          "tile-eligibility-count": [
+            "21"
+          ],
+          "billing-tile-pipeline": [
+            "Claims pipeline0 ready to send"
+          ],
+          "billing-tile-payments": [
+            "Payments0 to post"
+          ],
+          "billing-status-summary": [
+            "Billing statusDraft5Ready0Submitted1Paid1Denied0Write-off0Partial0Counts claim records — the same ones on the Claims worklist and Billing page. Draft covers documented, signed and coded claims. Partial has no payment amount recorded yet."
+          ],
+          "billing-kpis": [
+            "Denied$0.000 claims"
+          ],
+          "billing-kpi-outstanding": [
+            "Outstanding$165.001 claimsSubmitted dollars per week, last 12 weeks"
+          ],
+          "billing-kpi-paid": [
+            "Paid$165.001 claimsPaid dollars per week, last 12 weeks"
+          ],
+          "billing-kpi-drafts": [
+            "Drafts / write-offs55 draft · 0 write-off"
+          ],
+          "no-rate-filter": [
+            "No rate on file (4)"
+          ],
+          "arrangement-filter": [
+            "Payment arrangement not recorded (0)"
+          ],
+          "balance-filter": [
+            "Patient balances (0)"
+          ],
+          "billing-table": [
+            "DateProgram IDClinicianLaneChargeStatusActions"
+          ],
+          "billing-row": [
+            "10/10/2026ADL-2026-003Marisol ReyesClosed",
+            "10/15/2026ADL-2026-002James OkaforAwaiting note signature Write off",
+            "10/17/2026ADL-2026-001Marisol Reyes Mark paid Deny",
+            "10/18/2026ADL-2026-003Marisol Reyes",
+            "10/20/2026ADL-2026-008Marisol Reyes Mark coded Write off",
+            "10/20/2026ADL-2026-008Marisol Reyes Mark coded Write off",
+            "10/20/2026ADL-2026-008— Mark coded Write off",
+            "10/29/2026ADL-2026-008Marisol Reyes Mark ready Write off"
+          ],
+          "billing-row-lane": [
+            "Coverage type unknown",
+            "Coverage type unknown",
+            "Coverage type unknown",
+            "DMC-ODS",
+            "Medi-Cal (FFS / managed care)",
+            "Medi-Cal (FFS / managed care)",
+            "Medi-Cal (program not set)",
+            "Specialty MH (county MHP)"
+          ],
+          "billing-row-charge": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "—"
+          ],
+          "claim-amount": [
+            "",
+            "",
+            "",
+            "",
+            "$165.00",
+            "$165.00",
+            "$165.00"
+          ],
+          "no-rate-badge": [
+            "No rate on file",
+            "No rate on file",
+            "No rate on file",
+            "No rate on file"
+          ],
+          "claim-units": [
+            "90834 · DMC-ODS · 1 × per encounter, estimated from schedule",
+            "90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00",
+            "90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00",
+            "90834 · Specialty MH (county MHP) · 1 × per encounter, estimated from schedule @ $165.00",
+            "H0001 · 1 × per encounter, corrected by billing",
+            "H0001 · 1 × per encounter, corrected by billing",
+            "H0001 · 1 × per encounter, corrected by billing"
+          ],
+          "patient-balance": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "correct-claim": [
+            "Correct",
+            "Correct",
+            "Correct",
+            "Correct",
+            "Correct"
+          ],
+          "billing-row-status": [
+            "Draftcoded",
+            "Draftdocumented",
+            "Draftsigned",
+            "Draftsigned",
+            "Draftsigned",
+            "No claim — not billable",
+            "Paid",
+            "Submitted"
+          ],
+          "claim-signature-seed": [
+            "Seed data — no note signature",
+            "Seed data — no note signature",
+            "Seed data — no note signature"
+          ]
+        },
+        "statTiles": [
+          {
+            "id": "billing-kpi-drafts",
+            "value": "5 draft · 0 write-off",
+            "text": "Drafts / write-offs\n\n5\n\n5 draft · 0 write-off"
+          },
+          {
+            "id": "billing-kpi-outstanding",
+            "value": "1 claims",
+            "text": "Outstanding\n\n$165.00\n\n1 claims\n\nSubmitted dollars per week, last 12 weeks"
+          },
+          {
+            "id": "billing-kpi-paid",
+            "value": "1 claims",
+            "text": "Paid\n\n$165.00\n\n1 claims\n\nPaid dollars per week, last 12 weeks"
+          }
+        ],
+        "todayValues": [],
+        "countTiles": [
+          {
+            "id": "strip-blocked",
+            "count": "4",
+            "text": "4\nClaims blocked"
+          },
+          {
+            "id": "strip-eligibility",
+            "count": "21",
+            "text": "21\nEligibility checks due"
+          },
+          {
+            "id": "strip-holds",
+            "count": "0",
+            "text": "0\nDuplicate holds"
+          },
+          {
+            "id": "strip-payments",
+            "count": "0",
+            "text": "0\nPayments to post"
+          },
+          {
+            "id": "strip-ready",
+            "count": "0",
+            "text": "0\nReady to send"
+          }
+        ],
+        "taskCounts": []
+      },
+      "current": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "arrangement-filter",
+          "ask-adel-button",
+          "balance-filter",
+          "billing-county-reporting-link",
+          "billing-kpi-drafts",
+          "billing-kpi-outstanding",
+          "billing-kpi-paid",
+          "billing-kpis",
+          "billing-provider-ref-link",
+          "billing-row",
+          "billing-row-charge",
+          "billing-row-lane",
+          "billing-row-status",
+          "billing-status-summary",
+          "billing-table",
+          "billing-tile-action",
+          "billing-tile-payments",
+          "billing-tile-pipeline",
+          "billing-today-strip",
+          "billing-workspace",
+          "claim-amount",
+          "claim-signature-seed",
+          "claim-units",
+          "correct-claim",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "no-rate-badge",
+          "no-rate-filter",
+          "ops-new-button",
+          "patient-balance",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-new-slot",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "strip-blocked",
+          "strip-eligibility",
+          "strip-holds",
+          "strip-payments",
+          "strip-ready",
+          "tile-blocked-count",
+          "tile-blocked-row",
+          "tile-eligibility-count",
+          "tile-holds-count"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: Billing coordinator · Tonya Price"
+          ],
+          "staff-shell": [
+            "Billing coordinatorCareQueuesPopulation healthConsent & privacyRevenue & billingBillingClaims worklistMedi-Cal verificationCalAIM qualifying codesAdministrationMy accountBilling coordinatorTulare County pilot · 7 funding lanes tracked separately from billing status.Open claims worklist toBilling entityContract-type decision unresolved — toggle here for demo.Bagga's clinic NPIAdelanteISL reportable encounters — mandate 1/1/2027Uninsured, benefit-exhausted, and restricted-setting encounters are non-billable but county-reportable. An annual export is stubbed on the ISL tab.Claims worklistISL (0)Code & rate tableCredentialingLane:All lanesDMC-ODSSpecialty MH (county MHP)Medi-Cal (FFS / managed care)CalAIM ECM / Community SupportsMedi-Cal (program not set)Self-paySliding feeGrant / ISLBHSAMedicarePrivate insuranceCommercial (inactive at launch)Non-billableCoverage type unknownStatus:All statusesdraftreadysubmittedpaiddeniedwrite offPage 1 / 1 · 8"
+          ],
+          "staff-shell-header": [
+            "5"
+          ],
+          "acting-role-indicator": [
+            "Acting as: Billing coordinator · Tonya Price"
+          ],
+          "staff-new-slot": [
+            ""
+          ],
+          "ops-new-button": [
+            "New"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Billing· Claims, ISL & credentials"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteRevenue & billingBilling"
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "billing-provider-ref-link": [
+            "Provider & site reference"
+          ],
+          "billing-county-reporting-link": [
+            "County reporting"
+          ],
+          "billing-workspace": [
+            ""
+          ],
+          "billing-today-strip": [
+            ""
+          ],
+          "strip-blocked": [
+            "4Claims blocked"
+          ],
+          "strip-ready": [
+            "0Ready to send"
+          ],
+          "strip-eligibility": [
+            "21Eligibility checks due"
+          ],
+          "strip-payments": [
+            "0Payments to post"
+          ],
+          "strip-holds": [
+            "0Duplicate holds"
+          ],
+          "billing-kpis": [
+            "Denied$0.000 claims"
+          ],
+          "billing-kpi-outstanding": [
+            "Outstanding$165.001 claimsSubmitted dollars per week, last 12 weeks"
+          ],
+          "billing-kpi-paid": [
+            "Paid$165.001 claimsPaid dollars per week, last 12 weeks"
+          ],
+          "billing-kpi-drafts": [
+            "Drafts / write-offs55 draft · 0 write-off"
+          ],
+          "billing-tile-action": [
+            "Needs my action25 itemsBlocked claims · Duplicate holds · Eligibility checks due · Alicia R.never checkedAlicia Serranonever checkedCarmen Ibarranever checkedDaniel M.never checkedDaniela Ortiznever checkedDaniela Ortiznever checkedElena Vargasnever checkedJasmine Holtnever checkedAll 21 on the eligibility worklist"
+          ],
+          "tile-blocked-count": [
+            "4"
+          ],
+          "tile-blocked-row": [
+            "Rosa T. · 2026-10-19Blocked: clinical documentation incompleteFix",
+            "Tomás Reyna · 2026-10-20Blocked: no rate on fileFix",
+            "Tomás Reyna · 2026-10-20Blocked: no rate on fileFix",
+            "Tomás Reyna · 2026-10-20Blocked: no rate on fileFix"
+          ],
+          "tile-holds-count": [
+            "0"
+          ],
+          "tile-eligibility-count": [
+            "21"
+          ],
+          "billing-tile-pipeline": [
+            "Claims pipeline0 ready to send"
+          ],
+          "billing-tile-payments": [
+            "Payments0 to post"
+          ],
+          "billing-status-summary": [
+            "Billing statusDraft5Ready0Submitted1Paid1Denied0Write-off0Partial0Counts claim records — the same ones on the Claims worklist and Billing page. Draft covers documented, signed and coded claims. Partial has no payment amount recorded yet."
+          ],
+          "no-rate-filter": [
+            "No rate on file (4)"
+          ],
+          "arrangement-filter": [
+            "Payment arrangement not recorded (0)"
+          ],
+          "balance-filter": [
+            "Patient balances (0)"
+          ],
+          "billing-table": [
+            "DateProgram IDClinicianLaneChargeStatusActions"
+          ],
+          "billing-row": [
+            "10/10/2026ADL-2026-003Marisol ReyesClosed",
+            "10/15/2026ADL-2026-002James OkaforAwaiting note signature Write off",
+            "10/17/2026ADL-2026-001Marisol Reyes Mark paid Deny",
+            "10/18/2026ADL-2026-003Marisol Reyes",
+            "10/20/2026ADL-2026-008Marisol Reyes Mark coded Write off",
+            "10/20/2026ADL-2026-008Marisol Reyes Mark coded Write off",
+            "10/20/2026ADL-2026-008— Mark coded Write off",
+            "10/29/2026ADL-2026-008Marisol Reyes Mark ready Write off"
+          ],
+          "billing-row-lane": [
+            "Coverage type unknown",
+            "Coverage type unknown",
+            "Coverage type unknown",
+            "DMC-ODS",
+            "Medi-Cal (FFS / managed care)",
+            "Medi-Cal (FFS / managed care)",
+            "Medi-Cal (program not set)",
+            "Specialty MH (county MHP)"
+          ],
+          "billing-row-charge": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "—"
+          ],
+          "claim-amount": [
+            "",
+            "",
+            "",
+            "",
+            "$165.00",
+            "$165.00",
+            "$165.00"
+          ],
+          "no-rate-badge": [
+            "No rate on file",
+            "No rate on file",
+            "No rate on file",
+            "No rate on file"
+          ],
+          "claim-units": [
+            "90834 · DMC-ODS · 1 × per encounter, estimated from schedule",
+            "90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00",
+            "90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00",
+            "90834 · Specialty MH (county MHP) · 1 × per encounter, estimated from schedule @ $165.00",
+            "H0001 · 1 × per encounter, corrected by billing",
+            "H0001 · 1 × per encounter, corrected by billing",
+            "H0001 · 1 × per encounter, corrected by billing"
+          ],
+          "patient-balance": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "correct-claim": [
+            "Correct",
+            "Correct",
+            "Correct",
+            "Correct",
+            "Correct"
+          ],
+          "billing-row-status": [
+            "Draftcoded",
+            "Draftdocumented",
+            "Draftsigned",
+            "Draftsigned",
+            "Draftsigned",
+            "No claim — not billable",
+            "Paid",
+            "Submitted"
+          ],
+          "claim-signature-seed": [
+            "Seed data — no note signature",
+            "Seed data — no note signature",
+            "Seed data — no note signature"
+          ]
+        },
+        "statTiles": [
+          {
+            "id": "billing-kpi-drafts",
+            "value": "5 draft · 0 write-off",
+            "text": "Drafts / write-offs\n\n5\n\n5 draft · 0 write-off"
+          },
+          {
+            "id": "billing-kpi-outstanding",
+            "value": "1 claims",
+            "text": "Outstanding\n\n$165.00\n\n1 claims\n\nSubmitted dollars per week, last 12 weeks"
+          },
+          {
+            "id": "billing-kpi-paid",
+            "value": "1 claims",
+            "text": "Paid\n\n$165.00\n\n1 claims\n\nPaid dollars per week, last 12 weeks"
+          }
+        ],
+        "todayValues": [],
+        "countTiles": [
+          {
+            "id": "strip-blocked",
+            "count": "4",
+            "text": "4\nClaims blocked"
+          },
+          {
+            "id": "strip-eligibility",
+            "count": "21",
+            "text": "21\nEligibility checks due"
+          },
+          {
+            "id": "strip-holds",
+            "count": "0",
+            "text": "0\nDuplicate holds"
+          },
+          {
+            "id": "strip-payments",
+            "count": "0",
+            "text": "0\nPayments to post"
+          },
+          {
+            "id": "strip-ready",
+            "count": "0",
+            "text": "0\nReady to send"
+          }
+        ],
+        "taskCounts": []
+      }
+    },
+    "sys_admin": {
+      "pass": true,
+      "differences": {},
+      "rollback": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "admin-disclosure-log-link",
+          "admin-group-active",
+          "admin-group-activity",
+          "admin-group-enrolled",
+          "admin-group-seats",
+          "admin-kpi-completion",
+          "admin-kpi-ecm",
+          "admin-kpi-enrolled",
+          "admin-kpi-intake",
+          "admin-kpi-referrals",
+          "admin-kpi-verified",
+          "admin-kpis",
+          "admin-patients",
+          "admin-provider-ref-link",
+          "admin-strip-blocked",
+          "admin-strip-failed",
+          "admin-strip-flags",
+          "admin-strip-matching",
+          "admin-today-strip",
+          "ask-adel-button",
+          "billing-status-card",
+          "coverage-release-aggregate",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "ops-new-button",
+          "queue-last-attempt",
+          "queue-referred-by",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-new-slot",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "top-bar-my-work"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: System admin · Adelante System Admin"
+          ],
+          "staff-shell": [
+            "System adminCareQueuesPopulation healthConsent & privacyRevenue & billingAdministrationPilot dashboardClinical coordinationPermissions & featuresCare partner directoryCounty reportingData exchangeKPI targetsNote templatesScheduling rulesPatient Content & Resources CenterCatalog governanceAudit logQuality & complianceCredentialingSupervisionStaff membersVendor statusTeam calendarLocation calendarsMy accountAdministratorPilot dashboard\n\n De-identified · minimum-necessaryAdministrationClinical coordinationRouting, conflicts & coveragePermissions & featuresRole × action matrix, feature flags, action auditCare partner directoryExternal partners, clusters and contacts (staff-facing)County reportingPrototype: CalOMS, DATAR, ISL, BHOATR, TPS — nothing is submittedData exchangeSimulated HIE: sync, matching, held records, sharing logKPI targetsTargets behind the dashboardsNote templatesDocumentation template libraryScheduling rulesRules that generate worklist rowsPatient Content & Resources CenterLessons, community resources & naloxone access — author and publishCatalog governanceFrequencies & drug-catalog rulesAudit logTraceability & CSV exportQuality & complianceChart access monitoring (Draft)CredentialingLicenses, DEA & enrollmentsSupervisionTrainee & MA supervisor linksStaff membersAdd, change roles/sites, deactivateVendor statusIntegration healthTeam calendarWho's out this week, by siteLocation calendarsClinic hours, holidays & closures Population care planDe-identifiedPlans8/21Intake complete4Open goals2Open life needs10Avg PHQ-913.4Avg GAD-711.8Crisis flags0Part 2 meds3CaseloadAll daysAll coverageAny next contact Export CSV21/21Page 1 / 1 · 21Use Open to open the patient profile. No names, diagnoses, or care-plan narrative shown in the table — clinical detail lives only in Case Manager and Clinician workspaces.Referral statusView all referrals4/4All statusesAll programsAll cliniciansAll care needs      Carmen IbarraCommunity-based organization · 10/20/2026, 4:47:00 PMenrolledSent10/20/2026, 4:47:00 PMOutreach10/20/2026, 4:47:00 PMEnrolled10/20/2026, 4:47:00 PMEnrolled as ADL-2026-008Eli B.Parole · 10/20/2026, 2:47:00 PMsubmittedSent10/20/2026, 2:47:00 PMOutreach10/20/2026, 2:50:00 PMEnrolledPendingWelcome text sentSasha K.Drug court / reentry court · 10/18/2026, 4:47:00 PMcontactedSent10/18/2026, 4:47:00 PMOutreach10/18/2026, 4:50:00 PMEnrolledPendingWelcome text sentDaniel M.Probation · 8/9/2026, 4:47:00 PMenrolledSent8/9/2026, 4:47:00 PMOutreach8/9/2026, 4:50:00 PMEnrolled8/9/2026, 4:47:00 PMWelcome text sentAging badge — Draft: a referral with no staff action in 3 days reads as due and 7 days as overdue. A newly released person's phone number commonly stops being reachable inside a week. Not yet ratified by care operations. Credentialing0All clinician licenses valid for at least 30 days.Expired licenses hard-stop new bookings on the clinician workspace. Delivery health (24h)0 failed8 upcoming contact(s) in the next 48h — 1:1 visits and group meetings.Reminders check automatically while the app is open; send now to run a check immediately.Send due remindersNo delivery failuresNotifications reached patients in the last 24 hours.Failed SMS/email deliveries auto-create a CM outreach task. Integrated vendors DetailsmockTelehealth videoadelante-mock-telehealthmockMedication management (eScribe)escribe-mockmockAdelante is the EHR of record. Vendors are swappable.Test connections Consent audit logFull logAll purposesNo consent changes recorded.Append-only. Patient identifiers are de-identified programIds only.Billing statusCounts claim records — the same ones on the Claims worklist and Billing page. Draft covers documented, signed and coded claims. Partial has no payment amount recorded yet.Open the Claims worklist"
+          ],
+          "staff-shell-header": [
+            "4Crisis1"
+          ],
+          "acting-role-indicator": [
+            "Acting as: System admin · Adelante System Admin"
+          ],
+          "staff-new-slot": [
+            ""
+          ],
+          "ops-new-button": [
+            "New"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Pilot dashboard· Program-level overview"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteAdministrationPilot dashboard"
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "top-bar-my-work": [
+            "My work0"
+          ],
+          "admin-today-strip": [
+            ""
+          ],
+          "admin-strip-matching": [
+            "3Matching queue"
+          ],
+          "admin-strip-blocked": [
+            "1Blocked actions (24h)"
+          ],
+          "admin-strip-failed": [
+            "0Failed notifications"
+          ],
+          "admin-strip-flags": [
+            "0Flags changed (7 days)"
+          ],
+          "admin-kpis": [
+            ""
+          ],
+          "admin-kpi-enrolled": [
+            "Enrolled patients21"
+          ],
+          "admin-kpi-completion": [
+            "Session completion80%"
+          ],
+          "admin-kpi-intake": [
+            "Intake velocity<11Too few referrals to report · fewer than 11 referrals (all time)"
+          ],
+          "admin-kpi-referrals": [
+            "Active referrals<11"
+          ],
+          "admin-kpi-verified": [
+            "Medi-Cal verified0%"
+          ],
+          "admin-kpi-ecm": [
+            "ECM caseload10%<11 of 21"
+          ],
+          "admin-group-activity": [
+            "Group activityManage groups toActive groupsPatients enrolledScheduled seats (next 7 days)"
+          ],
+          "admin-group-active": [
+            "3"
+          ],
+          "admin-group-enrolled": [
+            "<11"
+          ],
+          "admin-group-seats": [
+            "<11"
+          ],
+          "coverage-release-aggregate": [
+            "Coverage at releaseToo few released patients to report (fewer than 11)Open tracker"
+          ],
+          "admin-patients": [
+            "Patient IDCINEpisode dayCoverageNext contactEngagementSMS remindersActionsADL-2026-001••••001A23/90Active10/20/2026, 7:15:00 PMNewOnOpenADL-2026-002••••002B11/90Suspended10/20/2026, 8:45:00 PMNewOffOpenADL-2026-003••••003C60/90Active10/20/2026, 6:45:00 PMSteadyOffOpenADL-2026-004••••567A34/90Active—SteadyOnOpenADL-2026-900—12/90——NewOnOpenADL-2026-901—19/90——NewOnOpenADL-2026-902—20/90——NewOnOpenADL-2026-008••••000A1/90Assistance10/20/2026, 5:45:00 PMNewOffOpenADL-2026-009—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-010—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-011—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-012—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-013—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-014—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-015—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-016—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-017—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-018—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-019—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-020—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-021—1/90—10/20/2026, 5:45:00 PMNewOffOpen"
+          ],
+          "queue-referred-by": [
+            "Referred by Drug Court · CM. PatelNo referrer contact",
+            "Referred by Parole · Agent YuNo referrer contact",
+            "Referred by Tulare County Probation · Officer HernandezNo referrer contact",
+            "Referred by Visalia Family Resource Center · Gloria Benítez"
+          ],
+          "queue-last-attempt": [
+            "Last outreach: Reached the person · Luz Herrera · 10/20/2026, 4:47:00 PM"
+          ],
+          "admin-disclosure-log-link": [
+            "Disclosure & access log"
+          ],
+          "admin-provider-ref-link": [
+            "Provider & site reference"
+          ],
+          "billing-status-card": [
+            "Draft5Ready0Submitted1Paid1Denied0Write-off0Partial0"
+          ]
+        },
+        "statTiles": [
+          {
+            "id": "Active groups",
+            "value": null,
+            "text": "Active groups\n\n3"
+          },
+          {
+            "id": "admin-kpi-completion",
+            "value": null,
+            "text": "Session completion\n\n80%"
+          },
+          {
+            "id": "admin-kpi-ecm",
+            "value": "<11 of 21",
+            "text": "ECM caseload\n\n10%\n\n<11 of 21"
+          },
+          {
+            "id": "admin-kpi-enrolled",
+            "value": null,
+            "text": "Enrolled patients\n\n21"
+          },
+          {
+            "id": "admin-kpi-intake",
+            "value": "Too few referrals to report · fewer than 11 referrals (all time)",
+            "text": "Intake velocity\n\n<11\n\nToo few referrals to report · fewer than 11 referrals (all time)"
+          },
+          {
+            "id": "admin-kpi-referrals",
+            "value": null,
+            "text": "Active referrals\n\n<11"
+          },
+          {
+            "id": "admin-kpi-verified",
+            "value": null,
+            "text": "Medi-Cal verified\n\n0%"
+          },
+          {
+            "id": "Patients enrolled",
+            "value": null,
+            "text": "Patients enrolled\n\n<11"
+          },
+          {
+            "id": "Scheduled seats (next 7 days)",
+            "value": null,
+            "text": "Scheduled seats (next 7 days)\n\n<11"
+          }
+        ],
+        "todayValues": [],
+        "countTiles": [
+          {
+            "id": "admin-strip-blocked",
+            "count": "1",
+            "text": "1\nBlocked actions (24h)"
+          },
+          {
+            "id": "admin-strip-failed",
+            "count": "0",
+            "text": "0\nFailed notifications"
+          },
+          {
+            "id": "admin-strip-flags",
+            "count": "0",
+            "text": "0\nFlags changed (7 days)"
+          },
+          {
+            "id": "admin-strip-matching",
+            "count": "3",
+            "text": "3\nMatching queue"
+          }
+        ],
+        "taskCounts": []
+      },
+      "current": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "admin-disclosure-log-link",
+          "admin-group-active",
+          "admin-group-activity",
+          "admin-group-enrolled",
+          "admin-group-seats",
+          "admin-kpi-completion",
+          "admin-kpi-ecm",
+          "admin-kpi-enrolled",
+          "admin-kpi-intake",
+          "admin-kpi-referrals",
+          "admin-kpi-verified",
+          "admin-kpis",
+          "admin-patients",
+          "admin-provider-ref-link",
+          "admin-strip-blocked",
+          "admin-strip-failed",
+          "admin-strip-flags",
+          "admin-strip-matching",
+          "admin-today-strip",
+          "ask-adel-button",
+          "billing-status-card",
+          "coverage-release-aggregate",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "ops-new-button",
+          "queue-last-attempt",
+          "queue-referred-by",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-new-slot",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "top-bar-my-work"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: System admin · Adelante System Admin"
+          ],
+          "staff-shell": [
+            "System adminCareQueuesPopulation healthConsent & privacyRevenue & billingAdministrationPilot dashboardClinical coordinationPermissions & featuresCare partner directoryCounty reportingData exchangeKPI targetsNote templatesScheduling rulesPatient Content & Resources CenterCatalog governanceAudit logQuality & complianceCredentialingSupervisionStaff membersVendor statusTeam calendarLocation calendarsMy accountAdministratorPilot dashboard\n\n De-identified · minimum-necessaryAdministrationClinical coordinationRouting, conflicts & coveragePermissions & featuresRole × action matrix, feature flags, action auditCare partner directoryExternal partners, clusters and contacts (staff-facing)County reportingPrototype: CalOMS, DATAR, ISL, BHOATR, TPS — nothing is submittedData exchangeSimulated HIE: sync, matching, held records, sharing logKPI targetsTargets behind the dashboardsNote templatesDocumentation template libraryScheduling rulesRules that generate worklist rowsPatient Content & Resources CenterLessons, community resources & naloxone access — author and publishCatalog governanceFrequencies & drug-catalog rulesAudit logTraceability & CSV exportQuality & complianceChart access monitoring (Draft)CredentialingLicenses, DEA & enrollmentsSupervisionTrainee & MA supervisor linksStaff membersAdd, change roles/sites, deactivateVendor statusIntegration healthTeam calendarWho's out this week, by siteLocation calendarsClinic hours, holidays & closures Population care planDe-identifiedPlans8/21Intake complete4Open goals2Open life needs10Avg PHQ-913.4Avg GAD-711.8Crisis flags0Part 2 meds3CaseloadAll daysAll coverageAny next contact Export CSV21/21Page 1 / 1 · 21Use Open to open the patient profile. No names, diagnoses, or care-plan narrative shown in the table — clinical detail lives only in Case Manager and Clinician workspaces.Referral statusView all referrals4/4All statusesAll programsAll cliniciansAll care needs      Carmen IbarraCommunity-based organization · 10/20/2026, 4:47:00 PMenrolledSent10/20/2026, 4:47:00 PMOutreach10/20/2026, 4:47:00 PMEnrolled10/20/2026, 4:47:00 PMEnrolled as ADL-2026-008Eli B.Parole · 10/20/2026, 2:47:00 PMsubmittedSent10/20/2026, 2:47:00 PMOutreach10/20/2026, 2:50:00 PMEnrolledPendingWelcome text sentSasha K.Drug court / reentry court · 10/18/2026, 4:47:00 PMcontactedSent10/18/2026, 4:47:00 PMOutreach10/18/2026, 4:50:00 PMEnrolledPendingWelcome text sentDaniel M.Probation · 8/9/2026, 4:47:00 PMenrolledSent8/9/2026, 4:47:00 PMOutreach8/9/2026, 4:50:00 PMEnrolled8/9/2026, 4:47:00 PMWelcome text sentAging badge — Draft: a referral with no staff action in 3 days reads as due and 7 days as overdue. A newly released person's phone number commonly stops being reachable inside a week. Not yet ratified by care operations. Credentialing0All clinician licenses valid for at least 30 days.Expired licenses hard-stop new bookings on the clinician workspace. Delivery health (24h)0 failed8 upcoming contact(s) in the next 48h — 1:1 visits and group meetings.Reminders check automatically while the app is open; send now to run a check immediately.Send due remindersNo delivery failuresNotifications reached patients in the last 24 hours.Failed SMS/email deliveries auto-create a CM outreach task. Integrated vendors DetailsmockTelehealth videoadelante-mock-telehealthmockMedication management (eScribe)escribe-mockmockAdelante is the EHR of record. Vendors are swappable.Test connections Consent audit logFull logAll purposesNo consent changes recorded.Append-only. Patient identifiers are de-identified programIds only.Billing statusCounts claim records — the same ones on the Claims worklist and Billing page. Draft covers documented, signed and coded claims. Partial has no payment amount recorded yet.Open the Claims worklist"
+          ],
+          "staff-shell-header": [
+            "4Crisis1"
+          ],
+          "acting-role-indicator": [
+            "Acting as: System admin · Adelante System Admin"
+          ],
+          "staff-new-slot": [
+            ""
+          ],
+          "ops-new-button": [
+            "New"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Pilot dashboard· Program-level overview"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteAdministrationPilot dashboard"
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "top-bar-my-work": [
+            "My work0"
+          ],
+          "admin-today-strip": [
+            ""
+          ],
+          "admin-strip-matching": [
+            "3Matching queue"
+          ],
+          "admin-strip-blocked": [
+            "1Blocked actions (24h)"
+          ],
+          "admin-strip-failed": [
+            "0Failed notifications"
+          ],
+          "admin-strip-flags": [
+            "0Flags changed (7 days)"
+          ],
+          "admin-kpis": [
+            ""
+          ],
+          "admin-kpi-enrolled": [
+            "Enrolled patients21"
+          ],
+          "admin-kpi-completion": [
+            "Session completion80%"
+          ],
+          "admin-kpi-intake": [
+            "Intake velocity<11Too few referrals to report · fewer than 11 referrals (all time)"
+          ],
+          "admin-kpi-referrals": [
+            "Active referrals<11"
+          ],
+          "admin-kpi-verified": [
+            "Medi-Cal verified0%"
+          ],
+          "admin-kpi-ecm": [
+            "ECM caseload10%<11 of 21"
+          ],
+          "admin-group-activity": [
+            "Group activityManage groups toActive groupsPatients enrolledScheduled seats (next 7 days)"
+          ],
+          "admin-group-active": [
+            "3"
+          ],
+          "admin-group-enrolled": [
+            "<11"
+          ],
+          "admin-group-seats": [
+            "<11"
+          ],
+          "coverage-release-aggregate": [
+            "Coverage at releaseToo few released patients to report (fewer than 11)Open tracker"
+          ],
+          "admin-patients": [
+            "Patient IDCINEpisode dayCoverageNext contactEngagementSMS remindersActionsADL-2026-001••••001A23/90Active10/20/2026, 7:15:00 PMNewOnOpenADL-2026-002••••002B11/90Suspended10/20/2026, 8:45:00 PMNewOffOpenADL-2026-003••••003C60/90Active10/20/2026, 6:45:00 PMSteadyOffOpenADL-2026-004••••567A34/90Active—SteadyOnOpenADL-2026-900—12/90——NewOnOpenADL-2026-901—19/90——NewOnOpenADL-2026-902—20/90——NewOnOpenADL-2026-008••••000A1/90Assistance10/20/2026, 5:45:00 PMNewOffOpenADL-2026-009—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-010—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-011—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-012—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-013—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-014—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-015—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-016—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-017—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-018—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-019—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-020—1/90—10/20/2026, 5:45:00 PMNewOffOpenADL-2026-021—1/90—10/20/2026, 5:45:00 PMNewOffOpen"
+          ],
+          "queue-referred-by": [
+            "Referred by Drug Court · CM. PatelNo referrer contact",
+            "Referred by Parole · Agent YuNo referrer contact",
+            "Referred by Tulare County Probation · Officer HernandezNo referrer contact",
+            "Referred by Visalia Family Resource Center · Gloria Benítez"
+          ],
+          "queue-last-attempt": [
+            "Last outreach: Reached the person · Luz Herrera · 10/20/2026, 4:47:00 PM"
+          ],
+          "admin-disclosure-log-link": [
+            "Disclosure & access log"
+          ],
+          "admin-provider-ref-link": [
+            "Provider & site reference"
+          ],
+          "billing-status-card": [
+            "Draft5Ready0Submitted1Paid1Denied0Write-off0Partial0"
+          ]
+        },
+        "statTiles": [
+          {
+            "id": "Active groups",
+            "value": null,
+            "text": "Active groups\n\n3"
+          },
+          {
+            "id": "admin-kpi-completion",
+            "value": null,
+            "text": "Session completion\n\n80%"
+          },
+          {
+            "id": "admin-kpi-ecm",
+            "value": "<11 of 21",
+            "text": "ECM caseload\n\n10%\n\n<11 of 21"
+          },
+          {
+            "id": "admin-kpi-enrolled",
+            "value": null,
+            "text": "Enrolled patients\n\n21"
+          },
+          {
+            "id": "admin-kpi-intake",
+            "value": "Too few referrals to report · fewer than 11 referrals (all time)",
+            "text": "Intake velocity\n\n<11\n\nToo few referrals to report · fewer than 11 referrals (all time)"
+          },
+          {
+            "id": "admin-kpi-referrals",
+            "value": null,
+            "text": "Active referrals\n\n<11"
+          },
+          {
+            "id": "admin-kpi-verified",
+            "value": null,
+            "text": "Medi-Cal verified\n\n0%"
+          },
+          {
+            "id": "Patients enrolled",
+            "value": null,
+            "text": "Patients enrolled\n\n<11"
+          },
+          {
+            "id": "Scheduled seats (next 7 days)",
+            "value": null,
+            "text": "Scheduled seats (next 7 days)\n\n<11"
+          }
+        ],
+        "todayValues": [],
+        "countTiles": [
+          {
+            "id": "admin-strip-blocked",
+            "count": "1",
+            "text": "1\nBlocked actions (24h)"
+          },
+          {
+            "id": "admin-strip-failed",
+            "count": "0",
+            "text": "0\nFailed notifications"
+          },
+          {
+            "id": "admin-strip-flags",
+            "count": "0",
+            "text": "0\nFlags changed (7 days)"
+          },
+          {
+            "id": "admin-strip-matching",
+            "count": "3",
+            "text": "3\nMatching queue"
+          }
+        ],
+        "taskCounts": []
+      }
+    },
+    "credentialing_coordinator": {
+      "pass": true,
+      "differences": {},
+      "rollback": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "ask-adel-button",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "outside-caseload-report",
+          "outside-caseload-table",
+          "restricted-opens",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "unusual-volume"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: Credentialing coordinator · Marcus Webb"
+          ],
+          "staff-shell": [
+            "Credentialing coordinatorQueuesAdministrationCounty reportingQuality & complianceCredentialingSupervisionMy accountQuality & complianceDraft — pending exec RBAC review · Prototype access log — production requires immutable storage"
+          ],
+          "staff-shell-header": [
+            ""
+          ],
+          "acting-role-indicator": [
+            "Acting as: Credentialing coordinator · Marcus Webb"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Quality & compliance· Chart access monitoring (Draft)"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteAdministrationQuality & compliance"
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "restricted-opens": [
+            "Restricted record openedNothing waiting."
+          ],
+          "outside-caseload-report": [
+            "Charts opened outside caseload — this weekPage 1 / 1 · 0"
+          ],
+          "outside-caseload-table": [
+            "No charts opened outside caseload this week."
+          ],
+          "unusual-volume": [
+            "Unusual volume — todayFlag when one person opens more than 30 distinct charts in a day (Draft threshold).No one over the threshold today."
+          ]
+        },
+        "statTiles": [],
+        "todayValues": [],
+        "countTiles": [],
+        "taskCounts": []
+      },
+      "current": {
+        "visibleTestids": [
+          "acting-role-indicator",
+          "ask-adel-button",
+          "demo-controls-bar",
+          "demo-state-switcher",
+          "outside-caseload-report",
+          "outside-caseload-table",
+          "restricted-opens",
+          "staff-breadcrumbs",
+          "staff-nav-quick-jump",
+          "staff-role-switcher",
+          "staff-shell",
+          "staff-shell-header",
+          "staff-top-bar",
+          "unusual-volume"
+        ],
+        "ownTextByTestid": {
+          "demo-controls-bar": [
+            "Demo controlsDemo"
+          ],
+          "demo-state-switcher": [
+            "QA: choose a scenario"
+          ],
+          "staff-role-switcher": [
+            "Role: Credentialing coordinator · Marcus Webb"
+          ],
+          "staff-shell": [
+            "Credentialing coordinatorQueuesAdministrationCounty reportingQuality & complianceCredentialingSupervisionMy accountQuality & complianceDraft — pending exec RBAC review · Prototype access log — production requires immutable storage"
+          ],
+          "staff-shell-header": [
+            ""
+          ],
+          "acting-role-indicator": [
+            "Acting as: Credentialing coordinator · Marcus Webb"
+          ],
+          "staff-nav-quick-jump": [
+            ""
+          ],
+          "staff-top-bar": [
+            "Quality & compliance· Chart access monitoring (Draft)"
+          ],
+          "staff-breadcrumbs": [
+            "AdelanteAdministrationQuality & compliance"
+          ],
+          "ask-adel-button": [
+            "Ask AdelPrototype"
+          ],
+          "restricted-opens": [
+            "Restricted record openedNothing waiting."
+          ],
+          "unusual-volume": [
+            "Unusual volume — todayFlag when one person opens more than 30 distinct charts in a day (Draft threshold).No one over the threshold today."
+          ],
+          "outside-caseload-report": [
+            "Charts opened outside caseload — this weekPage 1 / 1 · 0"
+          ],
+          "outside-caseload-table": [
+            "No charts opened outside caseload this week."
+          ]
+        },
+        "statTiles": [],
+        "todayValues": [],
+        "countTiles": [],
+        "taskCounts": []
+      }
+    }
+  }
+}
