@@ -19,6 +19,7 @@ import { SDOH_SOURCE_LABEL as _SRC } from "@/lib/ehr";
 import { CssrsStaffControl } from "@/components/screeners/CssrsStaffControl";
 import { listScreenerDrafts, SCREENER_DRAFT_IN_PROGRESS_LABEL } from "@/lib/screenerDrafts";
 import { CSSRS_KEY } from "@/lib/cssrs";
+import { SINGLE_COLOR, chartDefaults } from "@/lib/chartTheme";
 // §Clinical record tab bodies — extracted from ClientRecordDrawer so the
 // quick-peek drawer and the full-page chart render the SAME components.
 // Do not fork a second copy of any tab body here or anywhere else.
@@ -3322,11 +3323,11 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
         <div className="h-36" data-testid="tracking-timeline-trend">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <CartesianGrid {...chartDefaults.grid} />
               <XAxis dataKey="date" fontSize={11} />
               <YAxis fontSize={11} />
               <RTooltip />
-              <Line type="monotone" dataKey="score" stroke="var(--navy)" strokeWidth={2} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="score" stroke={SINGLE_COLOR} strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -3469,7 +3470,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
             <div className="h-40 mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <CartesianGrid {...chartDefaults.grid} />
                   <XAxis dataKey="date" fontSize={11} />
                   <YAxis fontSize={11} />
                   <RTooltip />
@@ -3478,16 +3479,16 @@ export function TrackingTab({ patientId }: { patientId: string }) {
                       <ReferenceLine
                         key={i}
                         x={d.date}
-                        stroke="var(--teal)"
+                        stroke={chartDefaults.axis.stroke}
                         strokeDasharray="4 4"
-                        label={{ value: d.timepoint, fontSize: 10, fill: "var(--teal)" }}
+                        label={{ value: d.timepoint, fontSize: 10, fill: "var(--ink-muted)" }}
                       />
                     ) : null,
                   )}
                   <Line
                     type="monotone"
                     dataKey="score"
-                    stroke="var(--navy)"
+                    stroke={SINGLE_COLOR}
                     strokeWidth={2}
                     dot={{ r: 4 }}
                   />

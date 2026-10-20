@@ -232,13 +232,14 @@ function BillingPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
-      <header className="flex items-start justify-between gap-4">
-        <div>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
           <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
           <p className="text-sm text-muted-foreground">
             Tulare County pilot · 7 funding lanes tracked separately from billing status.
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
         <Link to="/provider-reference" className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary" data-testid="billing-provider-ref-link">
           Provider &amp; site reference
         </Link>
@@ -251,6 +252,7 @@ function BillingPage() {
         >
           Open claims worklist to
         </Link>
+        </div>
       </header>
 
       {confirmation.dialog}

@@ -53,7 +53,7 @@ export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId,
     {views.length > 0 && <div role="group" aria-label={copy.views} className="flex flex-wrap gap-2">
       {views.map((v) => <Button key={v.id} variant={v.id === activeView ? "secondary" : "ghost"} aria-pressed={v.id === activeView} className="text-sm" onClick={() => { setView(v.id); onViewChange?.(v.id); setPage(0); }}>{v.label} ({rows.filter(v.matches).length})</Button>)}
     </div>}
-    {visible.length === 0 ? <div role="status" data-testid={testId} className="py-6 text-sm text-ink-muted">{selected?.emptyState ?? emptyState ?? "Nothing in this view."}</div> : <table aria-label={label} data-testid={testId} className="w-full border-collapse text-left">
+    {visible.length === 0 ? <div role="status" data-testid={testId} className="py-6 text-sm text-ink-muted">{selected?.emptyState ?? emptyState ?? "Nothing in this view."}</div> : <div className="overflow-x-auto"><table aria-label={label} data-testid={testId} className="w-full border-collapse text-left">
       <thead className="bg-surface-sunk text-ink-muted"><tr>{columns.map((c) => <th key={c.id} scope="col" aria-sort={sort?.id === c.id ? sort.descending ? "descending" : "ascending" : "none"} className="px-3 py-1 font-medium">
         {c.sortValue ? <Button variant="ghost" data-testid={c.sortTestId} data-sort={c.sortTestId ? sort?.id === c.id ? sort.descending ? "desc" : "asc" : "none" : undefined} className="h-9 px-0 text-sm whitespace-normal text-left" onClick={() => { setSort({ id: c.id, descending: sort?.id === c.id ? !sort.descending : false }); setPage(0); }}>{c.label}{sort?.id === c.id ? sort.descending ? <ArrowDown /> : <ArrowUp /> : <ChevronsUpDown />}</Button> : c.label}
       </th>)}{hasActions && <th scope="col" className="min-w-32 px-3 py-2 font-medium">{copy.actions}</th>}</tr></thead>
@@ -61,10 +61,16 @@ export function StaffTable<T>({ rows, columns, rowKey, label, testId, rowTestId,
         {columns.map((c) => <td key={c.id} data-testid={c.testId} data-label={c.label} className={`px-3 py-2 break-words ${c.mono ? "font-mono" : ""}`}>{c.cell(row)}{c === columns[0] && rowDetails && <div className="col-span-2 min-w-0">{rowDetails(row)}</div>}</td>)}
         {hasActions && <td data-label={copy.actions} className="min-w-32 px-3 py-1"><div className="flex flex-wrap items-center gap-2">{primaryAction?.(row)}{(() => {
           const actions = moreActions?.(row) ?? [];
-          return actions.length > 0 || moreContent ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={moreLabel?.(row) ?? `${copy.more}: ${rowKey(row)}`} title={copy.more}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map((a) => <DropdownMenuItem key={a.label} disabled={a.disabled} onSelect={a.onSelect}>{a.label}</DropdownMenuItem>)}{moreContent?.(row)}</DropdownMenuContent></DropdownMenu> : null;
+          return actions.length > 0 || moreContent ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={moreLabel?.(row) ?? `${copy.more}: ${rowKey(row)}`} title={copy.more}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" onCloseAutoFocus={(event) => event.preventDefault()}>{actions.map((a) => <DropdownMenuItem key={a.label} disabled={a.disabled} onSelect={() => {
+            // §9c-1 — let the modal menu fully close (releasing its pointer
+            // lock) before the action opens a sheet/dialog; the menu's close
+            // never moves focus over the opened surface.
+            const select = a.onSelect;
+            setTimeout(select, 0);
+          }}>{a.label}</DropdownMenuItem>)}{moreContent?.(row)}</DropdownMenuContent></DropdownMenu> : null;
         })()}</div></td>}
       </tr>)}</tbody>
-    </table>}
+    </table></div>}
     <nav aria-label={`${label} pages`} className="flex items-center justify-end gap-3 text-sm">
       <span aria-live="polite">{copy.page} {current + 1} / {pages} · {sorted.length}</span>
       <Button variant="outline" size="icon" aria-label={copy.previous} title={copy.previous} disabled={current === 0} onClick={() => setPage(current - 1)}><ChevronLeft /></Button>

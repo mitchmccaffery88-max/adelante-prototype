@@ -2,6 +2,16 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 9c-1 — IN PROGRESS (Oct 20), STOPPED on one existing assertion
+- Rollback 1e410aad83903e2950d62031329ff42b3ff18033; starting HEAD 89e1b1bdc87041e9fa982502325a24ad753e63aa
+- [x] Approved fixture field `occurrencesRecorded` in suppression9a2 + statTileParity9a2 (both attendance objects; no assertion changes)
+- [x] Overflow: case-manager grid min-w-0/grid-cols-1 + table scroll wrapper, billing header stack/wrap, admin grid min-w-0 + StaffTable scroll wrapper + VendorStatusCard header wrap; before numbers in docs/phase9c1-evidence/before.json (case-manager 1,104@768, billing 441@390, admin 426@390 + 1,330@1280)
+- [x] Roster mouse lock: StaffTable More menu defers onSelect to next tick + onCloseAutoFocus guard; live browser flow passes
+- [x] Chart colors: RecordTabs/LabsAndMeasures onto chartTheme tokens (single, axis, series 1/2, grid)
+- [x] NEW tests e2e/overflow9c.spec.ts (9/9) + chartColors9c.test.tsx (8/8)
+- [ ] STOP ITEM awaiting Mitch: staffTables8b2.test.tsx:34 expects the More-menu handler synchronously; the approved defer makes it async — line needs `await vi.waitFor(...)` (encodes the approved defer)
+- [ ] After approval: full units, FULL browser suite --workers=1 to EXIT last, after-measurements + evidence, restore screenshots vs rollback, docs/phase9c1-report.md, final SHA
+
 ## Phase 9a-3 — COMPLETE (Oct 20)
 - Rollback / starting HEAD 7c834669d4f2811e28dac8b50090906873b9b8ad
 - [x] /billing Outstanding, Paid, Drafts/write-offs on StatTile; Denied card + denied chip unchanged

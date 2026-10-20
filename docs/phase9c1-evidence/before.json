@@ -1,0 +1,114 @@
+{
+  "/case-manager": {
+    "390": {
+      "scroll": 390,
+      "inner": 390
+    },
+    "768": {
+      "scroll": 1104,
+      "inner": 768
+    },
+    "1280": {
+      "scroll": 1280,
+      "inner": 1280
+    }
+  },
+  "/billing": {
+    "390": {
+      "scroll": 441,
+      "inner": 390
+    },
+    "768": {
+      "scroll": 768,
+      "inner": 768
+    },
+    "1280": {
+      "scroll": 1280,
+      "inner": 1280
+    }
+  },
+  "/admin": {
+    "390": {
+      "scroll": 426,
+      "inner": 390
+    },
+    "768": {
+      "scroll": 768,
+      "inner": 768
+    },
+    "1280": {
+      "scroll": 1330,
+      "inner": 1280
+    }
+  },
+  "/admin-staff": {
+    "390": {
+      "scroll": 390,
+      "inner": 390
+    },
+    "768": {
+      "scroll": 768,
+      "inner": 768
+    },
+    "1280": {
+      "scroll": 1280,
+      "inner": 1280
+    }
+  },
+  "/dashboards": {
+    "390": {
+      "scroll": 390,
+      "inner": 390
+    },
+    "768": {
+      "scroll": 768,
+      "inner": 768
+    },
+    "1280": {
+      "scroll": 1280,
+      "inner": 1280
+    }
+  },
+  "/reporting": {
+    "390": {
+      "scroll": 390,
+      "inner": 390
+    },
+    "768": {
+      "scroll": 768,
+      "inner": 768
+    },
+    "1280": {
+      "scroll": 1280,
+      "inner": 1280
+    }
+  },
+  "/clinician": {
+    "390": {
+      "scroll": 390,
+      "inner": 390
+    },
+    "768": {
+      "scroll": 768,
+      "inner": 768
+    },
+    "1280": {
+      "scroll": 1280,
+      "inner": 1280
+    }
+  },
+  "/my-work": {
+    "390": {
+      "scroll": 390,
+      "inner": 390
+    },
+    "768": {
+      "scroll": 768,
+      "inner": 768
+    },
+    "1280": {
+      "scroll": 1280,
+      "inner": 1280
+    }
+  }
+}

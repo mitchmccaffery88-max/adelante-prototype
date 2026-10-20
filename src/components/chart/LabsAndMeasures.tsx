@@ -6,6 +6,7 @@ import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ChartFrame } from "@/components/ui/chart-frame";
+import { chartDefaults, seriesColorFor } from "@/lib/chartTheme";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff, type StaffRole } from "@/lib/roles";
@@ -40,6 +41,8 @@ export type FormDone = (message: string, sectionId: string) => void;
 
 const isoDay = (offsetDays = 0) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
 const selectCls = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
+/** §9c-1 — stable series keys so each measure keeps its chart color. */
+const LAB_SERIES = ["bmi", "systolic"] as const;
 
 function useActor() {
   const { role, staffName } = useActingStaff();
@@ -292,12 +295,12 @@ export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string
               <div className="h-36">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={met.map((m) => ({ date: new Date(m.at).toLocaleDateString(), bmi: m.bmi, systolic: m.bpSystolic }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <CartesianGrid {...chartDefaults.grid} />
                     <XAxis dataKey="date" fontSize={11} />
                     <YAxis fontSize={11} />
                     <RTooltip />
-                    <Line type="monotone" dataKey="bmi" stroke="var(--navy)" strokeWidth={2} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="systolic" stroke="var(--teal)" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="bmi" stroke={seriesColorFor("bmi", LAB_SERIES)} strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="systolic" stroke={seriesColorFor("systolic", LAB_SERIES)} strokeWidth={2} dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
