@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { StaffTable } from "@/components/staff/StaffTable";
 afterEach(cleanup);
@@ -18,7 +18,7 @@ it("counts and pages only the caller's supplied records, never excluded identiti
   expect(screen.queryByText("credential-104")).toBeNull();
 });
 
-it("secondary row actions run their original handler once, never a record action on view changes", () => {
+it("secondary row actions run their original handler once, never a record action on view changes", async () => {
   let writes = 0;
   render(<StaffTable rows={[{ id: "visible" }]} rowKey={(r) => r.id} label="Queue" columns={[{ id: "id", label: "ID", cell: (r) => r.id }]}
     views={[{ id: "all", label: "All", matches: () => true }, { id: "none", label: "None", matches: () => false }]}
@@ -31,7 +31,7 @@ it("secondary row actions run their original handler once, never a record action
   fireEvent.keyDown(trigger, { key: "Enter" });
   const item = screen.getByRole("menuitem", { name: "Existing action" });
   fireEvent.click(item);
-  expect(writes).toBe(1);
+  await vi.waitFor(() => expect(writes).toBe(1));
 });
 
 it("visible cell projections and host-owned details never introduce additional table records", () => {
