@@ -60,6 +60,7 @@ import { RESTRICT_ROLES, COMPLIANCE_ROLES, roleHasChartEntry, setRecordRestricte
 import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";
 import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/moudContinuity";
 import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
+import { canUnlockCoordinatorEmergency, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 export const REGISTRY_VERSION = "2026-10-15.staff-dialogs";
@@ -107,6 +108,8 @@ export interface ChartAction {
   needsPatient?: boolean;
   /** The store only simulates the work (no live connection) — the audit records `simulated: true`. */
   simulated?: boolean;
+  /** Domain disclosure event is the single success audit for an emergency unlock. */
+  successAuditFromStore?: boolean;
   /** §Turn 6 — shown in the billing / admin / coordinator "+ New" (OpsActionLauncher). */
   opsMenu?: boolean;
   /** Shown disabled in "+ New" with this label (roadmap item, not built). */
@@ -129,6 +132,7 @@ export function cosignRouteLabel(staffId?: string): string {
 }
 
 export const CHART_ACTIONS: ChartAction[] = [
+  { id: "coordinator_emergency_unlock", label: { en: "Emergency access", es: "Acceso de emergencia" }, group: "admin", menu: false, check: "canUnlockCoordinatorEmergency", simulated: true, successAuditFromStore: true, store: refs(["unlockCoordinatorEmergency", unlockCoordinatorEmergency]), allowed: (actor, patient) => canUnlockCoordinatorEmergency(actor, patient?.id) ? ok() : hide("Emergency access is not available for this chart.") },
   // §K2 — staff contacts + advocate, same model as onboarding.
   { id: "patient_contacts_update", label: { en: "Edit emergency contacts", es: "Editar contactos de emergencia" }, group: "admin", menu: false, sectionId: "contact", check: "DEMOGRAPHICS_EDITOR_ROLES", store: refs(["updateEmergencyContactsByStaff", (...a: unknown[]) => (AdelanteEHR.updateEmergencyContactsByStaff as (...x: unknown[]) => unknown)(...a)], ["createAdvocateInvitation", (...a: unknown[]) => (AdelanteEHR.createAdvocateInvitation as (...x: unknown[]) => unknown)(...a)], ["updateAdvocateFromContact", (...a: unknown[]) => (AdelanteEHR.updateAdvocateFromContact as (...x: unknown[]) => unknown)(...a)]), allowed: ({ role }) => (["ecm_provider", "clinical_coordinator", "sys_admin"] as string[]).includes(role) ? ok() : hide("Your role can't edit contact details.") },
   // §Consent workflow W1–W8 (Draft — pending counsel review).

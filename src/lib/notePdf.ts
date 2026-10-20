@@ -10,6 +10,8 @@
 // content a role could not read in the UI. `buildProgressNotePdf` re-runs the
 // gate itself and throws, so a caller cannot bypass it by skipping the check.
 import { disclose, type DisclosureActor } from "./part2Disclosure";
+import { coordinatorNoteCanRead } from "./coordinatorSudAccess";
+import { getActingStaff } from "./roles";
 import { jsPDF } from "jspdf";
 import {
   isNoteStrictlyRestricted,
@@ -51,6 +53,10 @@ export function noteExportGate(
   const status = noteStatus(note);
   if (!(EXPORTABLE_NOTE_STATUSES as readonly string[]).includes(status)) {
     return { allowed: false, reason: "Only signed or cosigned notes can be exported." };
+  }
+  if (role === "clinical_coordinator") {
+    const allowed = coordinatorNoteCanRead({ role, staffId: actorTokens[0] ?? getActingStaff()?.id }, patient, note);
+    return allowed ? { allowed: true } : { allowed: false, reason: "Not available for this role." };
   }
   const rbac = canAccess(role, "therapy_notes", patient);
   if (rbac.level === "none") {

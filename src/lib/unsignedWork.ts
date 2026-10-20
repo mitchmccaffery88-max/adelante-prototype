@@ -33,6 +33,7 @@ import {
 } from "@/lib/ehr";
 import { canAccess, noteGateClass, type StaffRole } from "@/lib/roles";
 import { viewerCanOpenChart } from "@/lib/staffPatientLabel";
+import { coordinatorNoteCanRead } from "./coordinatorSudAccess";
 
 export type UnsignedWorkKind = "draft_note" | "undocumented_encounter";
 
@@ -63,6 +64,7 @@ export function isUnsignedDraft(note: ProgressNote): boolean {
  */
 export function viewerSeesUnsignedRow(viewer: { role: StaffRole; staffId?: string }, row: Pick<UnsignedWorkRow, "patient" | "note">): boolean {
   if (!viewerCanOpenChart(viewer, row.patient.id)) return false;
+  if (viewer.role === "clinical_coordinator" && row.note) return coordinatorNoteCanRead(viewer, row.patient, row.note);
   const cls = row.note ? noteGateClass(row.note) : undefined;
   if (!cls) return true;
   const a = canAccess(viewer.role, cls, row.patient);

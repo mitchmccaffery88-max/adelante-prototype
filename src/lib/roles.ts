@@ -1,4 +1,5 @@
 import { isFeatureEnabled } from "@/lib/features";
+import { coordinatorNoteCanRead, coordinatorSudCanRead } from "./coordinatorSudAccess";
 // §4 — Acting staff role + record-class RBAC matrix.
 // Additive layer on top of the existing persona routing; never replaces it.
 
@@ -922,6 +923,10 @@ export function canAccess(
   cls: RecordClass,
   patient?: Patient,
 ): { level: AccessLevel; locked: boolean; reason?: string } {
+  if (role === "clinical_coordinator" && cls === "psychotherapy_notes") {
+    const allowed = coordinatorSudCanRead({ role }, patient, "counseling_notes");
+    return { level: allowed ? "read" : "none", locked: !allowed };
+  }
   const level = MATRIX[cls]?.[permissionRole(role)] ?? "none";
   if (level === "consent_gated") {
     // LIVE check against the structured ConsentRecord — never cached. Expiry
@@ -1700,9 +1705,10 @@ export const NOTE_CONTENT_RBAC_DRAFT = "Draft — pending executive RBAC review"
 export function noteBodyRestricted(
   role: StaffRole,
   patient: Patient | undefined,
-  note: { clinicianId?: string },
+  note: { clinicianId?: string } & Partial<Pick<ProgressNote, "category" | "restrictedTier" | "groupRef">>,
   actorTokens: (string | undefined)[] = [],
 ): boolean {
+  if (role === "clinical_coordinator") return !coordinatorNoteCanRead({ role, staffId: actorTokens[0] ?? getActingStaff()?.id }, patient, note);
   if (canAccess(role, "therapy_notes", patient).level !== "summary") return false;
   const mine = actorTokens.filter(Boolean) as string[];
   return !(note.clinicianId && mine.includes(note.clinicianId));
@@ -1711,6 +1717,7 @@ export function noteBodyRestricted(
 /** Patient copy with restricted note bodies blanked — for read models that carry the whole patient. */
 export function redactNoteBodies<P extends Patient>(role: StaffRole, patient: P, actorTokens: (string | undefined)[] = []): P {
   const notes = patient.progressNotes;
+  if (role === "clinical_coordinator") return { ...patient, progressNotes: notes?.filter((n) => coordinatorNoteCanRead({ role, staffId: actorTokens[0] ?? getActingStaff()?.id }, patient, n)) };
   const none = canAccess(role, "therapy_notes", patient).level === "none";
   const mine = actorTokens.filter(Boolean) as string[];
   const hide = (n: { clinicianId?: string }) =>

@@ -46,8 +46,10 @@ export type DisclosureChannel =
   | "county_report"
   | "care_partner_handoff"
   | "adel_share";
+// Patient-specific P2 exceptions are internal access, not outbound export grants.
 
-export const CHANNEL_LABEL: Record<DisclosureChannel, string> = {
+export const CHANNEL_LABEL: Record<DisclosureChannel | "coordinator_emergency", string> = {
+  coordinator_emergency: "Emergency access review (Simulated)",
   hie_share: "HIE share (Simulated)",
   note_pdf: "Note PDF",
   record_print: "Record print / PDF",
@@ -92,10 +94,10 @@ export interface DisclosureRequest {
   actor: DisclosureActor;
   recipient: DisclosureRecipient;
   purpose: string;
-  channel: DisclosureChannel;
+  channel: DisclosureChannel | "coordinator_emergency";
   /** Empty = no Part 2 content (non-SUD disclosure passes straight through). */
   recordClasses: Part2RecordClass[];
-  emergency?: { reason: string };
+  emergency?: { reason: string; exception?: "medical_emergency" | "audit_evaluation" | "court_order"; detail?: string; reference?: string; start?: string; end?: string };
   simulated?: boolean;
   at?: string;
 }
@@ -112,12 +114,16 @@ export interface DisclosureLogEntry {
   consentRef: string;
   recordClasses: Part2RecordClass[];
   patientId: string;
-  channel: DisclosureChannel;
+  channel: DisclosureChannel | "coordinator_emergency";
   simulated: boolean;
   emergency: boolean;
   complianceReview?: "pending" | "reviewed";
   /** Required emergency justification, retained for disclosure review only. */
   emergencyReason?: string;
+  emergencyDetail?: string;
+  emergencyReference?: string;
+  accessStart?: string;
+  accessEnd?: string;
 }
 
 export type DisclosureResult =
@@ -183,7 +189,11 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
   if (emergency) {
     if (!emergencyReason || emergencyReason.length < 3)
       return { ok: false, reason: "Describe the medical emergency before sharing." };
-    consentRef = "Medical emergency — no consent (42 CFR 2.51)";
+    if (req.channel === "coordinator_emergency" && req.actor.role !== "clinical_coordinator") return { ok: false, reason: "Coordinator access only." };
+    if (req.emergency?.exception && req.emergency.exception !== "medical_emergency") {
+      if (req.channel !== "coordinator_emergency" || !req.emergency.reference?.trim() || !req.emergency.detail?.trim()) return { ok: false, reason: "Exception reference and detail are required." };
+      consentRef = req.emergency.exception === "court_order" ? "Part 2 court order — reference on file" : "Audit/evaluation — reference on file";
+    } else consentRef = "Medical emergency — no consent (42 CFR 2.51)";
   } else {
     const c = part2ConsentFor(req.patientId, req.recipient, req.purpose);
     if (!c.ok) {
@@ -214,7 +224,7 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
     channel: req.channel,
     simulated: !!req.simulated,
     emergency,
-    ...(emergency ? { complianceReview: "pending" as const, emergencyReason } : {}),
+    ...(emergency ? { complianceReview: "pending" as const, emergencyReason, emergencyDetail: req.emergency?.detail, emergencyReference: req.emergency?.reference, accessStart: req.emergency?.start, accessEnd: req.emergency?.end } : {}),
   };
   log.unshift(entry);
   AdelanteEHR._recordAudit({
@@ -233,7 +243,7 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
       categories: ["sud_treatment"],
       purpose: entry.purpose,
       simulated: entry.simulated,
-      ...(emergency ? { complianceReview: "pending", emergencyReason } : {}),
+      ...(emergency ? { complianceReview: "pending", emergencyReason, emergencyDetail: entry.emergencyDetail, emergencyReference: entry.emergencyReference, start: entry.accessStart, end: entry.accessEnd, actorName: entry.actorName } : {}),
     },
   });
   return { ok: true, notice: PART2_NOTICE_BLOCK, entry };
