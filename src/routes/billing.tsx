@@ -1,3 +1,5 @@
+import { StatTile } from "@/components/ui/stat-tile";
+import { claimWeeklyProjection } from "@/lib/billingSparkline";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 const tableCopy = { claims: "Claims worklist", isl: "ISL encounters", credentials: "Credentialing" };
@@ -195,6 +197,9 @@ function BillingPage() {
     return { byStatus, outstandingCents, paidCents, deniedCents };
   }, [claims]);
 
+  const paidSpark = useMemo(() => claimWeeklyProjection("paid", claims, new Date()), [claims]);
+  const submittedSpark = useMemo(() => claimWeeklyProjection("submitted", claims, new Date()), [claims]);
+
   // §Phase 7b — the page guard is fast feedback only; `transitionClaim`
   // enforces billing write itself and attributes the real acting staff.
   function advance(claim: Claim, to: ClaimState) {
@@ -268,17 +273,24 @@ function BillingPage() {
       />
 
       {/* KPI tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" data-testid="billing-kpis">
+        <StatTile
           label="Outstanding"
-          value={DOLLARS(kpis.outstandingCents)}
-          sub={`${kpis.byStatus.ready + kpis.byStatus.submitted} claims`}
+          value={kpis.outstandingCents}
+          formattedValue={DOLLARS(kpis.outstandingCents)}
+          nonPatient
+          tileTestId="billing-kpi-outstanding"
+          comparison={`${kpis.byStatus.ready + kpis.byStatus.submitted} claims`}
+          sparkline={submittedSpark}
         />
-        <Kpi
+        <StatTile
           label="Paid"
-          value={DOLLARS(kpis.paidCents)}
-          sub={`${kpis.byStatus.paid} claims`}
-          tone="teal"
+          value={kpis.paidCents}
+          formattedValue={DOLLARS(kpis.paidCents)}
+          nonPatient
+          tileTestId="billing-kpi-paid"
+          comparison={`${kpis.byStatus.paid} claims`}
+          sparkline={paidSpark}
         />
         <Kpi
           label="Denied"
@@ -286,10 +298,12 @@ function BillingPage() {
           sub={`${kpis.byStatus.denied} claims`}
           tone="destructive"
         />
-        <Kpi
+        <StatTile
           label="Drafts / write-offs"
-          value={String(kpis.byStatus.draft + kpis.byStatus.write_off)}
-          sub={`${kpis.byStatus.draft} draft · ${kpis.byStatus.write_off} write-off`}
+          value={kpis.byStatus.draft + kpis.byStatus.write_off}
+          nonPatient
+          tileTestId="billing-kpi-drafts"
+          comparison={`${kpis.byStatus.draft} draft · ${kpis.byStatus.write_off} write-off`}
         />
       </div>
 

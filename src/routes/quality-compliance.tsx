@@ -54,10 +54,9 @@ function QualityCompliancePage() {
   const opens = JSON.parse(items) as ReturnType<typeof listRestrictedOpenItems>;
   const name = (id: string) => patients.find((p) => p.id === id)?.name ?? "Client";
   return (
-    
       <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
         <div>
-          <h1 className="font-display text-2xl text-navy">Quality &amp; compliance</h1>
+          <h1 className="text-2xl font-bold text-foreground">Quality &amp; compliance</h1>
           <p className="text-sm text-muted-foreground">{ACCESS_MODEL_DRAFT_LABEL} · {ACCESS_LOG_LABEL}</p>
         </div>
 
@@ -143,6 +142,5 @@ function QualityCompliancePage() {
           </Card>
         )}
       </div>
-    
   );
 }

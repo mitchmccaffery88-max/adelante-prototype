@@ -36,6 +36,7 @@ import {
 import { DEFAULT_PERIOD, REPORTING_PERIODS, periodLabel, type ReportingPeriodKey } from "@/lib/reportingPeriods";
 import { MIN_COHORT_SIZE } from "@/lib/cohortGuard";
 import { Card } from "@/components/ui/card";
+import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -129,16 +130,16 @@ function CountyReportingPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="county-cards">
         {cards.map((c) => (
-          <Card key={c.report} className="space-y-2 p-3" data-testid={`county-card-${c.report}`}>
-            <div className="text-sm font-medium text-navy">{c.label}</div>
-            <div className="text-xs text-muted-foreground">Next due: {c.due ?? "On request"}</div>
-            {c.dueOnClosedDay && <div className="text-xs text-attention" data-testid="due-closed-day-warning">Due date falls on a clinic closed day ({c.dueOnClosedDay})</div>}
-            <StatusChip lang="en" state={c.status === "submitted" ? "done" : c.status === "not_started" ? "upnext" : me.role === COUNTY_PREPARER_ROLE ? "yourturn" : "team"} label={c.status === "errors_returned" ? "Errors to fix" : c.status === "draft_ready" ? "Ready" : CARD_STATUS_LABEL[c.status]} data-testid="card-status" />
-            <div className="text-xs">Blockers: {c.blockers}</div>
-            <div className="text-xs font-medium" data-testid="card-next">{c.nextAction}</div>
-            {cardAction(c.report)}
-            {c.report === "isl" && <p className="text-[11px] text-muted-foreground">{ISL_DEADLINE_NOTE}</p>}
-          </Card>
+          <StatTile key={c.report} tileTestId={`county-card-${c.report}`} label={c.label} value={c.blockers} nonPatient basis="Blockers" numberTestId="card-blockers">
+            <div className="mt-2 space-y-2">
+              <div className="text-sm text-muted-foreground">Next due: {c.due ?? "On request"}</div>
+              {c.dueOnClosedDay && <div className="text-sm text-attention" data-testid="due-closed-day-warning">Due date falls on a clinic closed day ({c.dueOnClosedDay})</div>}
+              <StatusChip lang="en" state={c.status === "submitted" ? "done" : c.status === "not_started" ? "upnext" : me.role === COUNTY_PREPARER_ROLE ? "yourturn" : "team"} label={c.status === "errors_returned" ? "Errors to fix" : c.status === "draft_ready" ? "Ready" : CARD_STATUS_LABEL[c.status]} data-testid="card-status" />
+              <div className="text-sm font-medium" data-testid="card-next">{c.nextAction}</div>
+              {cardAction(c.report)}
+              {c.report === "isl" && <p className="text-sm text-muted-foreground">{ISL_DEADLINE_NOTE}</p>}
+            </div>
+          </StatTile>
         ))}
       </section>
 

@@ -2,13 +2,24 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 9a-3 — COMPLETE (Oct 20)
+- Rollback / starting HEAD 7c834669d4f2811e28dac8b50090906873b9b8ad
+- [x] /billing Outstanding, Paid, Drafts/write-offs on StatTile; Denied card + denied chip unchanged
+- [x] BillingStatusSummary icon + word per status (Denied unchanged)
+- [x] Weekly paid / submitted sparklines (src/lib/billingSparkline.ts, read-only)
+- [x] County cards on StatTile, Simulated kept; quality-compliance tokens
+- [x] NEW tests billingParity9a3, billingSparkline9a3, e2e/statTiles9a3; 36 evidence captures
+- [x] Units 2,830/2,830 (351 files)
+- [x] Full browser suite 191/191, EXIT 0; 17 screenshots restored (0 diffs); final SHA 1e410aad83903e2950d62031329ff42b3ff18033
+- Pending Mitch: CalAIM chip below 11; type-only errors in 9a-2 test files (no edit without approval)
+
 ## Phase 9a-2 — COMPLETE (Oct 20)
 - Rollback 2c463a96f657306af2a3dc4fcf72eb9b39d84cad; starting HEAD 2628d52c860253c0d2f074fcdcf0f4b4033cf55e
 - [x] /admin KPIs + group activity, CalAIM, group utilization, engagement, /reporting tiles, PopulationHealth, TimelyAccess, catalog metrics on StatTile / "<11"
 - [x] NEW tests statTileParity9a2, suppression9a2, e2e/statTiles9a2; 30 evidence captures
 - [x] Full units 2,817/2,817 (349 files)
 - [x] Full browser suite 187/187, EXIT 0; 17 screenshots restored (0 diffs); docs/phase9a2-report.md final
-- Next: 9a-3 billing/compliance/county tiles — not started.
+- Next: 9a-3 — complete (see above).
 
 ## Phase 9a-1 — COMPLETE (Oct 20)
 - Rollback 7c0e871520e0a2eb6b8a29ed604e4e2cefa385f3; starting HEAD 193c406f54a7604b8ac2dab8d42106f1efcc585e
