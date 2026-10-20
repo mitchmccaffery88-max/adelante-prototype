@@ -58,7 +58,8 @@ export function coordinatorAwareNoteGate(role: SudViewer["role"], patient: Patie
 export function coordinatorPatientIdentity(p: Patient): Patient {
   return { id: p.id, firstName: p.firstName, lastName: p.lastName, dob: p.dob,
     phone: "", releaseDate: "", enrolledAt: p.enrolledAt, episodeDay: 0,
-    smsFallback: false, consents: { hipaa: false, part2Sud: false }, programId: p.programId };
+    smsFallback: false, consents: { hipaa: false, part2Sud: false }, programId: p.programId,
+    screeners: {}, needs: [], carePlanSummary: "" };
 }
 
 export function coordinatorSummaryLines(p: Patient, viewer: SudViewer, now = Date.now()): string[] {

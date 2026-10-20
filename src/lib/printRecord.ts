@@ -29,6 +29,8 @@ import { canAccess, getStaffMember, redactNoteBodies, type StaffRole } from "./r
 import { filterSudMedsForRole } from "./asamReporting";
 import { isSudMedication } from "./sudMedClassifier";
 import { disclose, type DisclosureActor, type Part2RecordClass } from "./part2Disclosure";
+import { coordinatorNoteCanRead } from "./coordinatorSudAccess";
+import { actingSudViewer, auditCoordinatorSudView, coordinatorPatientIdentity } from "./coordinatorSudView";
 
 export type NotesScope = "current" | "range" | "all";
 
@@ -148,6 +150,16 @@ export function buildPrintRecordDocument(args: {
   actor?: DisclosureActor;
 }): PrintRecordDocument {
   const { patient, role, flags } = args;
+  if (role === "clinical_coordinator") {
+    const viewer = { ...actingSudViewer(), role, staffId: args.actor?.staffId ?? actingSudViewer().staffId };
+    const entries: PrintNoteEntry[] = flags.notes ? (patient.progressNotes ?? [])
+      .filter((n) => coordinatorNoteCanRead(viewer, patient, n) && noteExportGate(n, role, patient, [viewer.staffId]).allowed)
+      .filter((n) => flags.notesScope !== "range" || inRange(n.date, flags.notesFrom, flags.notesTo))
+      .map((note) => ({ note: { id: note.id, date: note.date, status: noteStatus(note), category: note.category }, masked: false, authorLabel: authorLabelFor(note), blocks: buildNoteDocumentModel({ note, patient, role, actor: args.actor }) })) : [];
+    const disclosure = entries.length ? disclose({ patientId: patient.id, actor: args.actor ?? { name: "staff", role, staffId: viewer.staffId }, recipient: { name: "Adelante care team (printed copy)", type: "internal" }, purpose: "Treatment — printed record", channel: "record_print", recordClasses: ["SUD treatment notes"] }) : undefined;
+    if (entries.length) auditCoordinatorSudView(viewer, patient, "print");
+    return { patient: coordinatorPatientIdentity(patient), facilityName: AdelanteEHR.currentFacility(patient.id)?.name ?? "Adelante Health", role, printedAt: (args.now ?? new Date()).toISOString(), denied: [], sections: entries.length && disclosure?.ok ? [{ key: "notes", label: PRINT_SECTION_LABEL.notes, scopeLabel: "Authorized notes", entries }] : [], part2Notice: disclosure?.ok ? disclosure.notice : undefined };
+  }
   const now = args.now ?? new Date();
   const tz = patient.facilityTimezone;
   const sections: PrintSection[] = [];

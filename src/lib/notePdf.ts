@@ -11,6 +11,7 @@
 // gate itself and throws, so a caller cannot bypass it by skipping the check.
 import { disclose, type DisclosureActor } from "./part2Disclosure";
 import { coordinatorNoteCanRead } from "./coordinatorSudAccess";
+import { auditCoordinatorSudView, actingSudViewer } from "./coordinatorSudView";
 import { getActingStaff } from "./roles";
 import { jsPDF } from "jspdf";
 import {
@@ -138,9 +139,10 @@ export function buildNoteDocumentModel(args: {
   exportedBy?: string;
   /** §Batch C1 — Part 2 redisclosure notice returned by `disclose()`. */
   part2Notice?: string;
+  actor?: DisclosureActor;
 }): NoteDocBlock[] {
   const { note, patient, role, authorLabel, exportedBy } = args;
-  const gate = noteExportGate(note, role, patient);
+  const gate = noteExportGate(note, role, patient, [args.actor?.staffId]);
   if (!gate.allowed) throw new Error(gate.reason ?? "Export not permitted");
 
   const out: NoteDocBlock[] = [];
@@ -165,7 +167,7 @@ export function buildNoteDocumentModel(args: {
   if (note.category)
     out.push({ kind: "field", label: "Sensitivity", value: note.category.replace("_", " ") });
 
-  if (note.templateSchema) {
+  if (note.templateSchema && role !== "clinical_coordinator") {
     out.push({
       kind: "heading",
       text: `Template — ${note.templateTitle ?? note.templateKey ?? "Structured note"}${
@@ -234,6 +236,7 @@ export function buildProgressNotePdf(args: {
   authorLabel?: string;
   exportedBy?: string;
   part2Notice?: string;
+  actor?: DisclosureActor;
 }): jsPDF {
   const blocks = buildNoteDocumentModel(args);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -322,6 +325,9 @@ export function notePdfFilename(note: ProgressNote, patient: Patient): string {
 export function prepareNoteExport(
   args: Parameters<typeof buildProgressNotePdf>[0] & { actor?: DisclosureActor },
 ): Parameters<typeof buildProgressNotePdf>[0] {
+  const gate = noteExportGate(args.note, args.role, args.patient, [args.actor?.staffId]);
+  if (!gate.allowed) throw new Error(gate.reason ?? "Export not permitted");
+  if (args.role === "clinical_coordinator") auditCoordinatorSudView({ ...actingSudViewer(), role: args.role, staffId: args.actor?.staffId ?? getActingStaff()?.id }, args.patient, "export");
   const sud = isNoteSudSensitive(args.note);
   const res = disclose({
     patientId: args.patient.id,

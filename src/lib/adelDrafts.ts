@@ -93,7 +93,7 @@ export function buildNoteDraft(p: Patient, role: StaffRole, now = new Date()): N
   const plan: string[] = [];
   // §Privacy P1 — the draft reads only notes this viewer may open (SUD,
   // counseling/psychotherapy and SUD group notes keep their own gate).
-  const noteVisible = (n: Parameters<typeof noteGateClass>[0]) => { if (role === "clinical_coordinator") return coordinatorNoteCanRead({ role, staffId: getActingStaff()?.id }, p, n); const c = noteGateClass(n); if (!c) return true; const a = canAccess(role, c, p); return a.level !== "none" && !a.locked; };
+  const noteVisible = (n: Parameters<typeof noteGateClass>[0]) => { const c = noteGateClass(n); if (!c) return true; const a = canAccess(role, c, p); return a.level !== "none" && !a.locked; };
   const lastSigned = (p.progressNotes ?? []).filter((n) => n.signedAt && !n.voidedAt && noteVisible(n)).sort((a, b) => (b.signedAt ?? "").localeCompare(a.signedAt ?? ""))[0];
   if (lastSigned?.plan) plan.push(`Last note's plan (${d(lastSigned.signedAt!)}): ${lastSigned.plan.split("\n")[0]}`);
   // Today's check-in: participation only (mood content stays patient-private).

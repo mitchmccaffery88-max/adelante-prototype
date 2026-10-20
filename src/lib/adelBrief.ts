@@ -210,6 +210,7 @@ export function computeEngagement(p: Patient, role: StaffRole, now: Date): Brief
 
 /** Visit focus: measure changes, open goals, open refills, pending results, outside events. */
 export function computeVisitFocus(p: Patient, role: StaffRole, now: Date): BriefBullet[] {
+  if (role === "clinical_coordinator") return coordinatorBriefBullets(p, "visit_focus", now);
   const out: BriefBullet[] = [];
   const nowIso = now.toISOString();
   // §C3 — newest open severity flag first; else a recent "improving" note (Draft rules).
@@ -256,6 +257,7 @@ export function computeVisitFocus(p: Patient, role: StaffRole, now: Date): Brief
 
 /** Care gaps: rescreens due, plan/safety review, SDOH, unsigned notes, referrals, consents. */
 export function computeCareGaps(p: Patient, role: StaffRole, now: Date): BriefBullet[] {
+  if (role === "clinical_coordinator") return coordinatorBriefBullets(p, "care_gaps", now);
   const out: BriefBullet[] = [];
   const nowIso = now.toISOString();
   const phq = series(p, role, "phq-9").at(-1);

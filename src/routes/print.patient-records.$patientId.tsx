@@ -97,7 +97,7 @@ function PrintRecordPage() {
   const doc = useMemo(
     () =>
       patient && recordView({ actorId: staffId, actorName: staffName, role, patientId: patient.id, sectionId: "print-record", kind: "print" }) !== undefined
-        ? buildPrintRecordDocument({ patient, role, flags: search, actor: { name: staffName, role } })
+        ? buildPrintRecordDocument({ patient, role, flags: search, actor: { name: staffName, role, staffId } })
         : undefined,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [patient?.id, role, staffName, searchKey],
