@@ -44,4 +44,11 @@ export function validateCoordinatorEmergency(input: { reason: string; detail: st
 export function saveCoordinatorEmergencyGrant(grant: CoordinatorEmergencyGrant) {
   grants.set(key(grant.staffId, grant.patientId), { ...grant });
 }
+/** Privacy P3 — re-lock now. Deletes the grant; never extends or widens it. */
+export function endCoordinatorEmergencyGrant(staffId: string, patientId: string): CoordinatorEmergencyGrant | undefined {
+  const k = key(staffId, patientId);
+  const grant = grants.get(k);
+  grants.delete(k);
+  return grant ? { ...grant } : undefined;
+}
 export function _resetCoordinatorEmergencyForTests() { grants.clear(); }

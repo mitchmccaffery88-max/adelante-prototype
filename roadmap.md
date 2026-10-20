@@ -2,6 +2,17 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Privacy P3 — STOPPED (Oct 20): browser 210/211, staffNewAudit8a2.spec.ts:93 not an approved flake
+- Rollback 8ce8a6343e53917d7473af94e2006583c9e342b7; starting HEAD 4d2723e7 (no content diff)
+- [x] 1 Patient-name policy: incoming events + remaining ungated name surfaces
+- [x] 2 Referrer types, minimum-necessary updates, authorization capture, SUD hold, audit + disclosure log
+- [x] 3 sys_admin (ASAM section + population-health SUD slices HELD: locked asamReporting.ts) de-identified reporting aggregates (consent-only SUD, <11)
+- [x] 4 Production bundle free of inspection hook + NEW test; demo-only exposure list
+- [x] 5 Emergency "End access now"
+- [ ] HELD for approval: TaskQueueCard/OpsWorkspace/quality-compliance name fixes + asamReporting (parity-locked)
+- [ ] Units 2,891/2,891 done; browser 210/211 STOPPED; screenshots restored; docs/privacy-p3-report.md written;, screenshots restored, docs/privacy-p3-report.md, final SHA
+
+
 ## Phase 9c-2 — COMPLETE (Oct 20)
 - Rollback aff263ff1aa707d68994b7f175f83aa9d09306fd (9c-1 accepted b15085a8)
 - [x] Existing role-home actions/summaries regrouped; gates, values, suppression, testids, handlers, denied look, patient screens and crisis banner preserved

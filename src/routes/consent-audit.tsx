@@ -1,3 +1,5 @@
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
+import { getActingStaff } from "@/lib/roles";
 import { StaffTable } from "@/components/staff/StaffTable";
 // §ASCMI consent audit viewer — one combined, filterable table over the
 // existing `consent` + `disclosure` audit streams. Read-only; gated through
@@ -130,7 +132,7 @@ function ConsentAuditPage() {
               <SelectItem value="all">All patients</SelectItem>
               {patients.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.programId} · {p.firstName} {p.lastName}
+                  {viewerCanOpenChart({ role, staffId: getActingStaff()?.id }, p.id) ? `${p.programId} · ${p.firstName} ${p.lastName}` : p.programId}
                 </SelectItem>
               ))}
             </SelectContent>

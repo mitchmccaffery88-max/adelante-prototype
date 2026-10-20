@@ -1,3 +1,4 @@
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { listLegalDisclosures, revokeLegalDisclosure } from "@/lib/outpatientCare";
 import { useActingStaff, canAccess } from "@/lib/roles";
 import { runAction } from "@/lib/actions/runAction";
@@ -112,7 +113,7 @@ function ConsentPage() {
           <SelectContent>
             {patients.map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.programId} · {p.firstName} {p.lastName}
+                {viewerCanOpenChart(acting, p.id) ? `${p.programId} · ${p.firstName} ${p.lastName}` : p.programId}
               </SelectItem>
             ))}
           </SelectContent>

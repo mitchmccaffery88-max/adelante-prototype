@@ -1,0 +1,14 @@
+diff --git a/src/lib/asamReporting.ts b/src/lib/asamReporting.ts
+index 38c293b7..6a6eef61 100644
+--- a/src/lib/asamReporting.ts
++++ b/src/lib/asamReporting.ts
+@@ -82,7 +82,8 @@ import { isSudMedication, type SudClassifiable } from "@/lib/sudMedClassifier";
+ export const ACCESS_RULE_DRAFT_NOTE = "Access rule: draft pending compliance review.";
+ export const TOTALS_ONLY_NOTE =
+   "Totals only. Named rows need a consent that names your role, not yet supported. Access rule: draft pending compliance review.";
+-export const TOTALS_ONLY_ROLES: StaffRole[] = ["clinical_coordinator"];
++// Privacy P3 (Mitch, Oct 20) — sys_admin: de-identified totals only, same consent-only cohort.
++export const TOTALS_ONLY_ROLES: StaffRole[] = ["clinical_coordinator", "sys_admin"];
+ 
+ export type AsamAccessMode = "full" | "totals";
+ 

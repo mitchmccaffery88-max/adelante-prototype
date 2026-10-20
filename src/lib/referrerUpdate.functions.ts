@@ -12,14 +12,18 @@
 //   • A real way to stop.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { composeReferrerMessage } from "./referrerPolicy";
 
 export const REFERRER_UPDATE_EVENTS = ["received", "contacted", "enrolled", "declined"] as const;
 export type ReferrerUpdateEvent = (typeof REFERRER_UPDATE_EVENTS)[number];
 
+// Privacy P3 — the payload carries the policy-approved message kind only;
+// no name, no event detail. The older first-name composer below is retained
+// for its existing tests but no longer used for sending.
 const UpdateSchema = z.object({
   to: z.string().min(3).max(40),
-  event: z.enum(REFERRER_UPDATE_EVENTS),
-  personLabel: z.string().min(1).max(80),
+  message: z.enum(["receipt", "outreach_completed", "enrolled"]),
+  enrolledOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 export function composeReferrerUpdate(input: {
@@ -68,7 +72,7 @@ export const sendReferrerUpdate = createServerFn({ method: "POST" })
       body: new URLSearchParams({
         To: data.to,
         From: from,
-        Body: composeReferrerUpdate(data),
+        Body: composeReferrerMessage(data.message, data.enrolledOn),
       }),
     });
     if (!res.ok) {

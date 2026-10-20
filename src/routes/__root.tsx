@@ -18,7 +18,6 @@ import "../lib/flagJourneys";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";
-import { installDevInspect } from "../lib/devInspect";
 import { AppShell } from "../components/AppShell";
 import { Toaster } from "../components/ui/sonner";
 
@@ -219,7 +218,12 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-  useEffect(() => installDevInspect((to) => router.history.push(to)), [router]);
+  // Privacy P3 — the inspection hook is loaded only in dev / the isolated e2e
+  // build; both flags are compile-time constants, so production drops the module.
+  useEffect(() => {
+    if (!(import.meta.env.DEV || import.meta.env.VITE_E2E === true)) return;
+    void import("../lib/devInspect").then((m) => m.installDevInspect((to) => router.history.push(to)));
+  }, [router]);
 
   // §Message-routing gap #1 — install the real out-of-band SMS transport for
   // staff alerts (crisis flags, unread patient messages). Browser only.

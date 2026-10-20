@@ -68,7 +68,7 @@ import {
   REFERRAL_SOURCE_FOLD_NOTE,
 } from "@/lib/referralFunnel";
 import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
-import { TOTALS_ONLY_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport, asamAccessMode, aggregatePatients } from "@/lib/asamReporting";
+import { TOTALS_ONLY_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
 import { PopulationHealthSection } from "@/components/reporting/PopulationHealthSection";
 import { TimelyAccessReport } from "@/components/reporting/TimelyAccessReport";
 import { ASAM_DRAFT_NOTE } from "@/lib/asam";
@@ -78,6 +78,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { Card } from "@/components/ui/card";
 import { StatTile } from "@/components/ui/stat-tile";
 import { MIN_COHORT_SIZE } from "@/lib/cohortGuard";
+import { TOTALS_EXPORT_ROLES, exportReportingTotals } from "@/lib/reportingTotalsExport";
+import { reportingSudCohort, reportingSudMode } from "@/lib/sysAdminReporting";
+import { getActingStaff } from "@/lib/roles";
 import { HieUtilizationTile } from "@/components/hie/OutsideRecords";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -318,7 +321,8 @@ function ReportingHome() {
   // the population-health gate hides.
   // §Privacy P1 — CalOMS (SUD) cards only for roles with Part 2 reporting
   // access, counted over the patients that role may aggregate. Hidden otherwise.
-  const sudCohort = useEhr(() => (asamAccessMode(role) ? aggregatePatients(role) : null));
+  // Privacy P3 — sys_admin joins as totals-only over the consent-permitted cohort.
+  const sudCohort = useEhr(() => (reportingSudMode(role) ? reportingSudCohort(role) : null));
   const seesCaloms = seesPopulation && !!sudCohort;
   const completeness = useEhr(() => calomsCompleteness(sudCohort ?? []));
   const substanceRows = useEhr(() => substanceUseBreakdown(sudCohort ?? []));
@@ -375,6 +379,25 @@ function ReportingHome() {
             Every reporting surface in one place, grouped by what you are trying to answer. Each
             area shows its headline numbers and links straight to the records behind them.
           </p>
+          {TOTALS_EXPORT_ROLES.includes(role) && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2"
+              data-testid="reporting-totals-export"
+              onClick={() => {
+                const csv = exportReportingTotals({ role, staffId: getActingStaff()?.id });
+                const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `reporting-totals-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Export de-identified totals (CSV)
+            </Button>
+          )}
         </div>
         <Card className="flex flex-wrap items-center justify-between gap-3 p-3">
           <PeriodSelector

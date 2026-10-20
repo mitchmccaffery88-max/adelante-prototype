@@ -46,7 +46,8 @@ export type DisclosureChannel =
   | "dmc_ods_csv"
   | "county_report"
   | "care_partner_handoff"
-  | "adel_share";
+  | "adel_share"
+  | "referrer_update";
 // Patient-specific P2 exceptions are internal access, not outbound export grants.
 
 export const CHANNEL_LABEL: Record<DisclosureChannel | "coordinator_emergency", string> = {
@@ -62,6 +63,7 @@ export const CHANNEL_LABEL: Record<DisclosureChannel | "coordinator_emergency", 
   county_report: "County reporting file (prototype)",
   care_partner_handoff: "Care partner handoff",
   adel_share: "Patient share from Adel (Simulated summary)",
+  referrer_update: "Referrer status update",
 };
 
 export type RecipientType = "patient" | "internal" | "advocate" | "provider" | "hie" | "legal" | "county" | "other";
@@ -254,6 +256,46 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
     },
   });
   return { ok: true, notice: PART2_NOTICE_BLOCK, entry };
+}
+
+/**
+ * Privacy P3 — a Part 2 consent that NAMES this recipient (legal-disclosure
+ * ledger match on name or organization, not revoked). Category-only consents
+ * do not count for referrer updates.
+ */
+export function part2ConsentNamesRecipient(patientId: string | undefined, recipient: { name: string; organization?: string }): boolean {
+  if (!patientId) return false;
+  const names = [recipient.name, recipient.organization].filter((x): x is string => !!x && !!x.trim()).map(norm);
+  return listLegalDisclosures(patientId).some((r) => !r.revokedAt && names.includes(norm(r.recipient)));
+}
+
+/**
+ * Privacy P3 — every referrer status message that is SENT writes one
+ * disclosure-log entry and one audit event. Content-free: message kind only.
+ */
+export function logReferrerStatusDisclosure(input: {
+  patientId: string; actor: DisclosureActor; recipient: DisclosureRecipient;
+  message: string; referralId: string; sud: boolean; consentRef: string; simulated?: boolean;
+}): DisclosureLogEntry {
+  const entry: DisclosureLogEntry = {
+    id: `dl-${++seq}`, at: new Date().toISOString(), actorName: input.actor.name, actorId: input.actor.staffId,
+    actingRole: input.actor.role, recipient: { ...input.recipient }, purpose: `Referral status: ${input.message}`,
+    consentRef: input.consentRef, recordClasses: input.sud ? ["SUD referral information"] : [],
+    patientId: input.patientId, channel: "referrer_update", simulated: !!input.simulated, emergency: false,
+  };
+  log.unshift(entry);
+  AdelanteEHR._recordAudit({ category: "disclosure", action: "referrer_status_disclosure", patientId: input.patientId,
+    actorId: input.actor.staffId ?? input.actor.name, actorRole: input.actor.role,
+    detail: { disclosureLogId: entry.id, referralId: input.referralId, recipientType: entry.recipient.type, message: input.message, consentRef: input.consentRef, simulated: entry.simulated } });
+  return { ...entry, recipient: { ...entry.recipient }, recordClasses: [...entry.recordClasses] };
+}
+
+/** Privacy P3 — an emergency window ended early: shorten the logged end time only. */
+export function recordEmergencyAccessEnded(id: string, endAt: string): DisclosureLogEntry | undefined {
+  const e = log.find((x) => x.id === id);
+  if (!e || !e.emergency || e.channel !== "coordinator_emergency") return undefined;
+  if (!e.accessEnd || Date.parse(endAt) < Date.parse(e.accessEnd)) e.accessEnd = endAt;
+  return { ...e, recipient: { ...e.recipient }, recordClasses: [...e.recordClasses] };
 }
 
 /** Compliance marks an emergency disclosure reviewed. */

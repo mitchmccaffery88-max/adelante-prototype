@@ -1,3 +1,4 @@
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -47,7 +48,7 @@ function TeamCalendarPage() {
           <p className="text-xs text-muted-foreground">Nothing was cancelled and no patient was notified.</p>
           {resched.map((r) => {
             const p = patients.find((x) => x.id === r.patientId);
-            return <div key={r.id} className="flex items-center justify-between text-sm"><span>{p ? `${p.firstName} ${p.lastName}` : "Patient"} · {new Date(r.start).toLocaleString()} · {r.cause === "site_closed" ? "clinic closed" : "clinician out"}</span><Button size="sm" variant="outline" onClick={() => { try { act("calendar_reschedule_done", "markRescheduleHandled", actor, { itemId: r.id }); toast.success("Marked handled"); } catch (e) { toast.error((e as Error).message); } }}>Mark handled</Button></div>;
+            return <div key={r.id} className="flex items-center justify-between text-sm"><span>{p ? staffPatientLabel(actor, p.id) : "Patient"} · {new Date(r.start).toLocaleString()} · {r.cause === "site_closed" ? "clinic closed" : "clinician out"}</span><Button size="sm" variant="outline" onClick={() => { try { act("calendar_reschedule_done", "markRescheduleHandled", actor, { itemId: r.id }); toast.success("Marked handled"); } catch (e) { toast.error((e as Error).message); } }}>Mark handled</Button></div>;
           })}
         </Card>
       )}
