@@ -2,6 +2,13 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## DMC Date-freeze batch — IN VALIDATION (Oct 20)
+- Rollback / starting HEAD after P3 and its docs: 66bc81a63aef1b021fa22a1ce246f25b5aa668fc
+- [x] Mitch-approved test-local hoisted Date-only freeze in dmcOdsReadiness.test.ts; restore real timers afterAll; no assertion or production changes
+- [ ] External collision/current-clock checks, three consecutive runs, then full unit suite
+- [x] DECIDED: keep CalAIM Your turn chip for ≥1 eligible discharge even below 11; count remains <11; no code change
+- Next: seeded claims. Nothing published.
+
 ## Privacy P3 — COMPLETE (Oct 20)
 - Rollback 8ce8a6343e53917d7473af94e2006583c9e342b7
 - [x] 1 Patient-name policy (incoming events, TaskQueueCard, OpsWorkspace, quality-compliance + other surfaces); ~20 untraced surfaces listed for later
@@ -22,7 +29,7 @@
 - [x] Units 2,857/2,857 (353 files); new dashboard spec 3/3 standalone (11/11 each)
 - [x] FULL background one-worker browser suite on :8080, polled to literal EXIT 0: 211/211, 31.0m; last validation step; no flake exceptions
 - [x] Restored 17 tracked screenshots vs rollback; 223 rollback image files byte-identical; new evidence preserved; docs/phase9c2-report.md complete
-- DMC pre-import Date freeze remains UNAPPROVED and unapplied; no publishing
+- DMC pre-import Date freeze approved Oct 20; separate batch tracked above; no publishing
 - Next: finish Privacy P3 (approval for access.spec.ts:50), then the DMC Date-freeze batch
 
 ## Phase 9c-1 — COMPLETE (Oct 20)
@@ -38,7 +45,7 @@
 - [x] Units: previously 2,836/2,838 with the approved PRE-EXISTING DMC pair; fresh read-only full run 2,838/2,838 (352 files). Date-pinned diagnosis reproduces the pair at 14:02 UTC; see report
 - [x] FULL background browser suite --workers=1 on :8080, polled to literal EXIT 0: 200/200, 29.0m; no flake exceptions
 - [x] Restored 17 screenshots vs rollback; 194 rollback images byte-identical; docs/phase9c1-report.md complete; validated source SHA ffcccdf3bbec2e06e96d87b21d7b2d398640640a (managed closeout SHA reported separately)
-- [ ] Awaiting Mitch: DMC readiness pair setup-only pre-import Date freeze proposal; no test or billing/medical-necessity logic changed
+- [x] Mitch approved DMC readiness pair setup-only pre-import Date freeze Oct 20; separate batch tracked above; no billing/medical-necessity logic changed
 - Next: Phase 9c-2 — complete; Privacy P3 next. Nothing published.
 
 ## Phase 9a-3 — COMPLETE (Oct 20)
@@ -50,7 +57,8 @@
 - [x] NEW tests billingParity9a3, billingSparkline9a3, e2e/statTiles9a3; 36 evidence captures
 - [x] Units 2,830/2,830 (351 files)
 - [x] Full browser suite 191/191, EXIT 0; 17 screenshots restored (0 diffs); final SHA 1e410aad83903e2950d62031329ff42b3ff18033
-- Pending Mitch: CalAIM chip below 11; type-only errors in 9a-2 test files (no edit without approval)
+- [x] Mitch DECIDED: CalAIM chip stays visible for ≥1 eligible discharge below 11; count stays <11
+- Pending Mitch: type-only errors in 9a-2 test files (no edit without approval)
 
 ## Phase 9a-2 — COMPLETE (Oct 20)
 - Rollback 2c463a96f657306af2a3dc4fcf72eb9b39d84cad; starting HEAD 2628d52c860253c0d2f074fcdcf0f4b4033cf55e
