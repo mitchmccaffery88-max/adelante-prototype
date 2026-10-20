@@ -2,6 +2,17 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 9a-3 — IN VALIDATION (Oct 20)
+- Rollback / starting HEAD 7c834669d4f2811e28dac8b50090906873b9b8ad
+- [x] /billing Outstanding, Paid, Drafts/write-offs on StatTile; Denied card + denied chip unchanged
+- [x] BillingStatusSummary icon + word per status (Denied unchanged)
+- [x] Weekly paid / submitted sparklines (src/lib/billingSparkline.ts, read-only)
+- [x] County cards on StatTile, Simulated kept; quality-compliance tokens
+- [x] NEW tests billingParity9a3, billingSparkline9a3, e2e/statTiles9a3; 36 evidence captures
+- [x] Units 2,830/2,830 (351 files)
+- [ ] Full browser suite --workers=1, restore screenshots, final SHA
+- Pending Mitch: CalAIM chip below 11; type-only errors in 9a-2 test files (no edit without approval)
+
 ## Phase 9a-2 — COMPLETE (Oct 20)
 - Rollback 2c463a96f657306af2a3dc4fcf72eb9b39d84cad; starting HEAD 2628d52c860253c0d2f074fcdcf0f4b4033cf55e
 - [x] /admin KPIs + group activity, CalAIM, group utilization, engagement, /reporting tiles, PopulationHealth, TimelyAccess, catalog metrics on StatTile / "<11"

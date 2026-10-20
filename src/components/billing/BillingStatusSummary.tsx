@@ -5,6 +5,23 @@
 import { Link } from "@tanstack/react-router";
 import { claimBucketCounts, type BillingBucket, type Claim } from "@/lib/ehr-ext";
 import { Badge } from "@/components/ui/badge";
+import { StatusChip, type StatusChipState } from "@/components/ui/status-chip";
+
+// Phase 9a-3 — icon + word per status (presentation only). Denied keeps its
+// pre-9a Badge look exactly (9d on hold); every count is unchanged.
+const CHIP_STATE: Record<Exclude<BillingStatus, "denied">, StatusChipState> = {
+  draft: "upnext", ready: "upnext", submitted: "team", paid: "done", write_off: "closed", partial: "team",
+};
+
+function StatusWord({ status, label }: { status: BillingStatus; label: string }) {
+  if (status === "denied") return <span>{label}</span>;
+  return <StatusChip lang="en" state={CHIP_STATE[status]} label={label} />;
+}
+
+function Count({ status, cls, n, className = "" }: { status: BillingStatus; cls: string; n: number; className?: string }) {
+  if (status === "denied") return <Badge className={`${cls} border-0${className ? ` ${className}` : ""}`}>{n}</Badge>;
+  return <span className={`text-base font-semibold text-foreground${className ? ` ${className}` : ""}`} data-billing-count={status}>{n}</span>;
+}
 
 export type BillingStatus = BillingBucket;
 
@@ -49,12 +66,12 @@ export function BillingStatusList({
               className="underline-offset-2 hover:underline"
               data-billing-status-link={status}
             >
-              {label}
+              <StatusWord status={status} label={label} />
             </Link>
           ) : (
-            <span>{label}</span>
+            <StatusWord status={status} label={label} />
           )}
-          <Badge className={`${cls} border-0`}>{counts[status]}</Badge>
+          <Count status={status} cls={cls} n={counts[status]} />
         </li>
       ))}
     </ul>
@@ -74,18 +91,18 @@ export function BillingStatusStrip({
   return (
     <section className="rounded-xl border bg-card p-3 space-y-2" data-testid="billing-status-summary">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-display text-base text-navy">Billing status</h2>
+        <h2 className="text-base font-semibold text-foreground">Billing status</h2>
         {active !== "all" && (
           <button
             type="button"
             onClick={() => onSelect("all")}
-            className="text-xs text-navy underline"
+            className="text-sm text-primary underline"
           >
             Show all statuses
           </button>
         )}
       </div>
-      <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
         {BILLING_STATUS_ROWS.map(({ status, label, cls }) => {
           const on = active === status;
           return (
@@ -95,15 +112,15 @@ export function BillingStatusStrip({
               aria-pressed={on}
               data-billing-status-filter={status}
               onClick={() => onSelect(on ? "all" : status)}
-              className={`rounded-lg border px-2 py-2 text-left hover:bg-secondary ${on ? "ring-2 ring-navy" : ""}`}
+              className={`rounded-lg border px-2 py-2 text-left hover:bg-secondary ${on ? "ring-2 ring-ring" : ""}`}
             >
-              <div className="text-xs text-muted-foreground">{label}</div>
-              <Badge className={`${cls} border-0 mt-1`}>{counts[status]}</Badge>
+              {status === "denied" ? <div className="text-xs text-muted-foreground">{label}</div> : <StatusWord status={status} label={label} />}
+              <div className="mt-1"><Count status={status} cls={cls} n={counts[status]} /></div>
             </button>
           );
         })}
       </div>
-      <p className="text-xs text-muted-foreground">{BILLING_STATUS_NOTE}</p>
+      <p className="text-sm text-muted-foreground">{BILLING_STATUS_NOTE}</p>
     </section>
   );
 }
