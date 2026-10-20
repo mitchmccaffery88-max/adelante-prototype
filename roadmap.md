@@ -4,11 +4,13 @@
 
 ## Privacy P2 — coordinator minimum-necessary SUD access (approved Oct 19)
 - Rollback c5c3da6af29fc6ed3a3064d84f7b9b9654c7fe28; starting HEAD 14fe8a744a3cb730390e39447f84b78fd3d5f054
-- [ ] Inventory all coordinator chart/search/export/summary gates and role capabilities
+- [x] Initial chart/search/export/summary inventory; capability boundaries recorded
 - [ ] Consent/release read gates; emergency registry/dialog/audit/disclosure/review/expiry; access audits
 - [ ] NEW tests; full units; stop on unapproved existing assertions
 - [ ] Full background browser suite to EXIT as last validation; restore rollback screenshots
 - [ ] Final docs/privacy-p2-report.md with capabilities, totals and final SHA
+- STOP: runAction.test.ts:15 existing permissions snapshot rejects 17 new coordinator_emergency_unlock keys (all hidden in patientless matrix). Existing tests unchanged; approval needed before continuation. Focused 14/17 pass; 2 additional NEW-test fixture assertions assumed group_notes was none but existing consent-gated matrix resolves read.
+- Remaining: complete all read/audit/summary integrations and new surface tests before full validation; no full units/browser suite run.
 - Scope: no publishing, 9a or unrelated widening.
 
 ## Privacy P1 — billing minimum-necessary, self-tracking, SUD cards, AI inputs (approved Oct 19)
