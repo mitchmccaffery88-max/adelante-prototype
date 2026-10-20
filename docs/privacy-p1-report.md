@@ -1,4 +1,4 @@
-# Privacy P1 — final
+# Privacy P1 — stopped at final browser run
 
 Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. No publishing, 9a, 9c or P2 work.
 
@@ -9,7 +9,7 @@ Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. No publishing, 9a, 9c or P
 - State SUD reporting owners now: clinical_coordinator (CalOMS file, TPS actions, client-level rows); DMC-ODS export also roles passing roleSeesAsam.
 - County TPS totals "<11": already in place (countyReporting.ts:458-461).
 - Full units: **2,757 passed / 2,757** (342 files).
-- Full browser suite: BROWSER_RESULT
+- Full browser suite: **178 passed / 179; 1 failed** (33.4 min, --workers=1, :8080, EXIT 1). Failure: `e2e/staffNewAudit8a2.spec.ts:29` therapist /clinician + New options — 30s test timeout, no assertion mismatch. Standalone rerun passed (24.7s). Not the documented contentWiring:47 exception, so P1 STOPS here. Proposed (not applied): delegate treating :29 as a load-timing flake like contentWiring:47, or approve a full-suite rerun. 16 regenerated tracked screenshots restored to rollback; 0 differ.
 - Final SHA: reported in chat at end of turn (commit made by platform after this edit).
 
 ## Oct 19 delegated stop-item continuation
