@@ -2,6 +2,15 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## B3 — Seeded end-to-end claims (Oct 20)
+- Rollback / starting HEAD after DMC and its docs: 2f56b883487b7d927a7c63d080bfc14459173a40 (DMC source checkpoint 615a3ac8)
+- [ ] Inventory public lifecycle APIs and billing payloads with file:line; stop if narrowing breaks a workflow
+- [ ] Separate QA scenario, fictional patients, real store/registry lifecycle writes; default seed unchanged
+- [ ] NEW scenario unit tests and claimLifecycleB3 browser walkthroughs
+- [ ] Finish edits, restart, full units, exclusive full one-worker browser suite polled to literal EXIT last
+- [ ] Restore rollback screenshots; report contents/payloads/narrowings/totals/final SHA
+- No publishing; billing rules, rates, states, permissions, denied look and P1/P3 unchanged.
+
 ## DMC Date-freeze batch — COMPLETE (Oct 20)
 - Rollback / starting HEAD after P3 and its docs: 66bc81a63aef1b021fa22a1ce246f25b5aa668fc
 - [x] Mitch-approved test-local hoisted Date-only freeze in dmcOdsReadiness.test.ts; restore real timers afterAll; no assertion or production changes
