@@ -259,7 +259,7 @@ function AdminPage() {
             <h2 className="font-display text-lg text-navy">Caseload</h2>
             <div className="flex flex-wrap items-center gap-2">
               <Select value={bucketFilter} onValueChange={setBucketFilter}>
-                <SelectTrigger className="h-8 w-[140px] text-xs">
+                <SelectTrigger className="h-8 w-[140px] text-xs" aria-label="Episode day filter">
                   <SelectValue placeholder="Episode day" />
                 </SelectTrigger>
                 <SelectContent>
@@ -270,7 +270,7 @@ function AdminPage() {
                 </SelectContent>
               </Select>
               <Select value={coverageFilter} onValueChange={setCoverageFilter}>
-                <SelectTrigger className="h-8 w-[140px] text-xs">
+                <SelectTrigger className="h-8 w-[140px] text-xs" aria-label="Coverage filter">
                   <SelectValue placeholder="Coverage" />
                 </SelectTrigger>
                 <SelectContent>
@@ -430,7 +430,7 @@ function AuditLogCard({ events }: { events: ReturnType<typeof AdelanteEHR.listAl
             Full log
           </Link>
           <Select value={purpose} onValueChange={setPurpose}>
-            <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectTrigger className="h-8 w-[130px] text-xs" aria-label="Consent purpose filter">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

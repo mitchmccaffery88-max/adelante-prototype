@@ -133,7 +133,7 @@ export function ReferralTrackerCard({
       </div>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[140px]" aria-label="Status filter"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="submitted">Sent</SelectItem>
@@ -145,7 +145,7 @@ export function ReferralTrackerCard({
           </SelectContent>
         </Select>
         <Select value={programFilter} onValueChange={setProgramFilter}>
-          <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[160px]"><SelectValue placeholder="Program" /></SelectTrigger>
+          <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[160px]" aria-label="Program filter"><SelectValue placeholder="Program" /></SelectTrigger>
           <SelectContent>
             {programOptions.map((o) => (
               <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
@@ -153,7 +153,7 @@ export function ReferralTrackerCard({
           </SelectContent>
         </Select>
         <Select value={clinicianFilter} onValueChange={setClinicianFilter}>
-          <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[180px]"><SelectValue placeholder="Clinician" /></SelectTrigger>
+          <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[180px]" aria-label="Clinician filter"><SelectValue placeholder="Clinician" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All clinicians</SelectItem>
             <SelectItem value="unassigned">Unassigned</SelectItem>
@@ -163,7 +163,7 @@ export function ReferralTrackerCard({
           </SelectContent>
         </Select>
         <Select value={careNeedFilter} onValueChange={setCareNeedFilter}>
-          <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[160px]"><SelectValue placeholder="Care need" /></SelectTrigger>
+          <SelectTrigger className="h-9 sm:h-8 text-xs sm:w-[160px]" aria-label="Care need filter"><SelectValue placeholder="Care need" /></SelectTrigger>
           <SelectContent>
             {careNeedOptions.map((o) => (
               <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>

@@ -131,7 +131,7 @@ export function CaseloadTable({
       </div>
       <div className="mb-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
         <Select value={bucketFilter} onValueChange={setBucketFilter}>
-          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[140px] text-xs">
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[140px] text-xs" aria-label="Episode day filter">
             <SelectValue placeholder="Episode day" />
           </SelectTrigger>
           <SelectContent>
@@ -142,7 +142,7 @@ export function CaseloadTable({
           </SelectContent>
         </Select>
         <Select value={coverageFilter} onValueChange={setCoverageFilter}>
-          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[140px] text-xs">
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[140px] text-xs" aria-label="Coverage filter">
             <SelectValue placeholder="Coverage" />
           </SelectTrigger>
           <SelectContent>
@@ -154,7 +154,7 @@ export function CaseloadTable({
           </SelectContent>
         </Select>
         <Select value={programFilter} onValueChange={setProgramFilter}>
-          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[160px] text-xs">
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[160px] text-xs" aria-label="Program filter">
             <SelectValue placeholder="Program" />
           </SelectTrigger>
           <SelectContent>
@@ -167,7 +167,7 @@ export function CaseloadTable({
           </SelectContent>
         </Select>
         <Select value={clinicianFilter} onValueChange={setClinicianFilter}>
-          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[180px] text-xs">
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[180px] text-xs" aria-label="Clinician filter">
             <SelectValue placeholder="Clinician" />
           </SelectTrigger>
           <SelectContent>
@@ -179,7 +179,7 @@ export function CaseloadTable({
           </SelectContent>
         </Select>
         <Select value={careNeedFilter} onValueChange={setCareNeedFilter}>
-          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[160px] text-xs">
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[160px] text-xs" aria-label="Care need filter">
             <SelectValue placeholder="Care need" />
           </SelectTrigger>
           <SelectContent>

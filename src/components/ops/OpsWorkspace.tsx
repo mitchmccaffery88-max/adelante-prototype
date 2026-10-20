@@ -18,7 +18,7 @@ type TileId = "action" | "pipeline" | "payments";
 
 function StripCount({ label, n, onClick, testId }: { label: string; n: number; onClick?: () => void; testId: string }) {
   return (
-    <button type="button" data-testid={testId} data-count={n} onClick={onClick} className={`rounded-md border px-3 py-1.5 text-left text-sm ${n ? "bg-card" : "text-muted-foreground opacity-70"}`}>
+    <button type="button" data-testid={testId} data-count={n} onClick={onClick} className={`rounded-md border px-3 py-1.5 text-left text-sm ${n ? "bg-card" : "text-muted-foreground"}`}>
       <span className="block text-lg font-semibold leading-none">{n}</span>
       <span className="text-xs">{label}</span>
     </button>
@@ -73,7 +73,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
             ))}
           </ul>
         )}
-        <h3 className="text-xs font-medium uppercase text-muted-foreground">Blocked claims · <span data-testid="tile-blocked-count">{ws.blocked.length}</span></h3>
+        <h2 className="text-xs font-medium uppercase text-muted-foreground">Blocked claims · <span data-testid="tile-blocked-count">{ws.blocked.length}</span></h2>
         <ul className="mb-3 divide-y text-sm">
           {ws.blocked.map(({ claim, reason }) => (
             <li key={claim.id} className="flex items-center gap-2 py-1.5" data-testid="tile-blocked-row">
@@ -82,7 +82,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
             </li>
           ))}
         </ul>
-        <h3 className="text-xs font-medium uppercase text-muted-foreground">Duplicate holds · <span data-testid="tile-holds-count">{ws.holds.length}</span></h3>
+        <h2 className="text-xs font-medium uppercase text-muted-foreground">Duplicate holds · <span data-testid="tile-holds-count">{ws.holds.length}</span></h2>
         <ul className="mb-3 divide-y text-sm">
           {ws.holds.map((c) => (
             <li key={c.id} className="flex items-center gap-2 py-1.5">
@@ -91,7 +91,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
             </li>
           ))}
         </ul>
-        <h3 className="text-xs font-medium uppercase text-muted-foreground">Eligibility checks due · <span data-testid="tile-eligibility-count">{ws.eligibilityDue.length}</span></h3>
+        <h2 className="text-xs font-medium uppercase text-muted-foreground">Eligibility checks due · <span data-testid="tile-eligibility-count">{ws.eligibilityDue.length}</span></h2>
         <ul className="divide-y text-sm">
           {ws.eligibilityDue.slice(0, 8).map((r) => (
             <li key={r.patientId} className="flex items-center gap-2 py-1.5"><span className="flex-1">{r.name}<span className="block text-xs text-muted-foreground">{r.state.replace(/_/g, " ")}</span></span></li>
