@@ -82,8 +82,8 @@ export function StatTile({ label, value, formattedValue, unit = "count", persona
       </TooltipTrigger><TooltipContent className="text-sm">{PRIVACY_TEXT}</TooltipContent></Tooltip></TooltipProvider>}
     </div>
     {comparison && <p className="mt-1 text-sm text-muted-foreground">{comparison}</p>}
-    {state && Icon && <p className={`mt-2 inline-flex items-center gap-1.5 text-sm font-medium ${staff && !member && status ? statusClasses[status] : "text-foreground"}`} data-chart-status={status} data-status-color={staff && !member ? "staff" : "neutral"}>
-      <Icon className="h-4 w-4 shrink-0" aria-hidden />{state.word}
+    {state && Icon && <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-foreground" data-chart-status={status} data-status-color={staff && !member ? "staff" : "neutral"}>
+      <Icon className={`h-4 w-4 shrink-0 ${staff && !member && status ? statusClasses[status] : "text-foreground"}`} aria-hidden />{state.word}
     </p>}
     {!missing && !suppressed && basis && <p className="mt-1 text-sm text-muted-foreground">{basis}</p>}
     {children}

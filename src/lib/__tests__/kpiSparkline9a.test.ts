@@ -4,7 +4,7 @@ import type { DoseAdministration } from "@/lib/ehr";
 
 const now = new Date("2026-10-20T12:00:00Z");
 const dose = (id: string, at: string, action: DoseAdministration["action"], voided = false): DoseAdministration => ({
-  id, patientId: id, orderId: "o", scheduledAt: at, chartedAt: at, action, chartedBy: "staff", voided,
+  id, patientId: id, orderId: "o", batchId: "batch", scheduledAt: at, chartedAt: at, action, chartedBy: "staff", voided,
 });
 const records: KpiHistoryRecords = {
   patients: Array.from({ length: 11 }, (_, i) => ({ id: `p${i}`, administrations: [
