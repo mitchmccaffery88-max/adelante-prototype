@@ -38,7 +38,7 @@ describe("9a-2 small-cohort suppression", () => {
       <GroupUtilizationSection
         activeGroups={2}
         enrolledPatients={5}
-        attendance={{ present: 3, late: 0, absent: 1, denominator: 4, pct: 75 }}
+        attendance={{ present: 3, late: 0, absent: 1, denominator: 4, pct: 75, occurrencesRecorded: 1 }}
         metric={{ value: 75, unit: "pct", higherIsBetter: true } as never}
         onOpenAbsences={() => {}}
         openGroups={{ activeGroups: 1, enrolledPatients: 4, patientsReached: 3, attendance: { present: 3, late: 0, absent: 1, denominator: 4, pct: 75, occurrencesRecorded: 1 } }}
