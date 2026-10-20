@@ -87,11 +87,11 @@ describe("Privacy P1 rule 4 + addendum D — SUD aggregates", () => {
 });
 
 describe("Privacy P1 rule 5 + addendum C — generated note draft filters notes", () => {
-  function withNote(cat: "sud" | undefined, tier?: "psychotherapy_notes") {
+  function withNote(cat: "sud" | undefined, tier?: "psychotherapy_notes", marker = "PRIVATE-P1-PLAN") {
     const p = AdelanteEHR.listPatients().find((x) => !x.consents.part2Sud) ?? AdelanteEHR.listPatients()[0];
     const n = AdelanteEHR.addProgressNote(p.id, {
       clinicianId: "c-p1", date: new Date().toISOString(), sessionType: "individual",
-      subjective: "", objective: "", assessment: "", plan: "PRIVATE-P1-PLAN", authorSource: "human",
+      subjective: "", objective: "", assessment: "", plan: marker, authorSource: "human",
       status: "draft", category: cat, restrictedTier: tier,
     } as never)!;
     n.signedAt = new Date(Date.now() + 60_000).toISOString();
@@ -104,9 +104,15 @@ describe("Privacy P1 rule 5 + addendum C — generated note draft filters notes"
     expect(planText(p, "therapist")).toContain("PRIVATE-P1-PLAN");
   });
   it("a counseling (psychotherapy-tier) note never reaches the coordinator, even with TPO consent", () => {
-    const p = withNote(undefined, "psychotherapy_notes");
+    const p = withNote(undefined, "psychotherapy_notes", "PRIVATE-P1-COUNSELING");
     p.sudCoordinationConsent = "tpo";
+    expect(planText(p, "clinical_coordinator")).not.toContain("PRIVATE-P1-COUNSELING");
+  });
+  it("a standard SUD note reaches the coordinator only with consent on file", () => {
+    const p = withNote("sud");
     expect(planText(p, "clinical_coordinator")).not.toContain("PRIVATE-P1-PLAN");
+    p.sudCoordinationConsent = "tpo";
+    expect(planText(p, "clinical_coordinator")).toContain("PRIVATE-P1-PLAN");
   });
 });
 
