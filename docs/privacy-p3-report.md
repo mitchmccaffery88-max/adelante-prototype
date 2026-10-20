@@ -80,3 +80,10 @@ Only sys_admin gained anything. The county download change narrows only.
 ## Validation
 
 See the bottom of this file.
+
+### Results
+- Units: 2,891/2,891 (358 files), EXIT 0. An earlier run had one time-of-day collision in `cancelNoShow.test.ts` (`ehr.ts:9265`, same class as the DMC pair); it passed 3/3 on its own and in the final run.
+- Production bundle: hook absent (new test passes; the hook was present before the change).
+- Browser runs: run 1 210/211 (`statTiles9a3.spec.ts:39` billing_coordinator, page reloaded during axe; 3/3 standalone). Run 2 208/211 and run 3 interrupted — the dev-server log shows the platform re-touched every edited file mid-run (HMR "page reload" at 20:12), which created duplicate module copies for bare `/src/...` imports. A dev-server restart cleared it (identity check confirmed).
+- Final clean run: **210/211, EXIT 1**. Sole failure: `e2e/staffNewAudit8a2.spec.ts:93` (sys_admin + New toggles a flag; the menu item was detached during click, 30s timeout). This is NOT an approved exception (only `:29` is approved). **STOPPED** here — not re-run standalone this turn, and no change was made for it.
+- Tracked screenshots restored against the rollback.
