@@ -7,8 +7,7 @@
 //     "No record-level detail" state instead of an invisible spacer, so the
 //     difference reads as intentional rather than as a broken button.
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatTile } from "@/components/ui/stat-tile";
 import { Button } from "@/components/ui/button";
 import {
   evaluateTarget,
@@ -27,14 +26,13 @@ import {
   DEFAULT_PERIOD,
   type ReportingPeriodKey,
 } from "@/lib/reportingPeriods";
-import type { KpiTarget } from "@/lib/ehr";
-import { ChevronRight, Clock, Minus, Target } from "lucide-react";
+import { useEhr, type KpiTarget } from "@/lib/ehr";
+import { liveKpiSparkline } from "@/lib/kpiSparkline";
+import { Clock, Minus, Target } from "lucide-react";
+import type { ChartStatus } from "@/lib/chartTheme";
 
-const STATUS_STYLE: Record<string, string> = {
-  met: "bg-emerald-100 text-emerald-800",
-  near: "bg-amber-100 text-amber-800",
-  missed: "bg-red-100 text-red-800",
-  no_metric: "bg-muted text-muted-foreground",
+const STATUS: Record<string, ChartStatus | undefined> = {
+  met: "good", near: "warning", missed: "serious", no_metric: undefined,
 };
 
 export function KpiVsTargetSection({
@@ -49,28 +47,32 @@ export function KpiVsTargetSection({
   period?: ReportingPeriodKey;
 }) {
   const [showGaps, setShowGaps] = useState(true);
+  const sparklines = useEhr(() => Object.fromEntries(targets.map((t) =>
+    [t.metricKey, liveKpiSparkline(t.metricKey as MetricKey)],
+  )));
 
   if (targets.length === 0) {
     return (
-      <Card className="p-6 text-center text-sm text-muted-foreground">
+      <section className="py-6 text-center text-sm text-muted-foreground">
         No KPI targets configured yet.
-      </Card>
+      </section>
     );
   }
 
 
   return (
-    <Card className="divide-y p-0">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
+    <section aria-label="KPI vs target" data-testid="kpi-vs-target" className="min-w-0 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 py-3">
         <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-teal" />
-          <h2 className="font-display text-lg text-navy">KPI vs target</h2>
+          <Target className="h-5 w-5 text-path" />
+          <h2 className="text-lg font-bold text-foreground">KPI vs target</h2>
         </div>
         <Button size="sm" variant="ghost" onClick={() => setShowGaps((v) => !v)}>
           {showGaps ? "Hide data gaps" : "Show data gaps"}
         </Button>
       </div>
 
+      <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       {targets.map((t) => {
         const key = t.metricKey as MetricKey;
         const metric = metrics[key];
@@ -88,64 +90,44 @@ export function KpiVsTargetSection({
         return (
           <div
             key={t.id}
-            className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+            className="min-w-0"
             data-metric-key={t.metricKey}
             data-metric-status={evaluation.status}
             data-metric-drillable={drillable ? "yes" : "no"}
             data-metric-period-behavior={behavior}
           >
-            <div className="min-w-[220px]">
-              <p className="text-sm font-medium text-navy">
-                {METRIC_KEY_LABELS[key] ?? t.label}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Target {formatTargetValue(t.targetValue, t.unit)}
-                {t.source ? ` · ${t.source}` : ""}
-                {t.effectiveMonth ? ` · from ${t.effectiveMonth}` : ""}
-              </p>
-              <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Clock className="h-3 w-3" aria-hidden />
+            <StatTile
+              label={METRIC_KEY_LABELS[key] ?? t.label}
+              value={metric?.value ?? null}
+              formattedValue={formatMetric(metric)}
+              unit={metric?.unit ?? t.unit}
+              comparison={`Draft target ${formatTargetValue(t.targetValue, t.unit)}${t.source ? ` · ${t.source}` : ""}${t.effectiveMonth ? ` · from ${t.effectiveMonth}` : ""}`}
+              status={STATUS[evaluation.status]}
+              basis={metric?.basis}
+              numberTestId={`metric-${t.metricKey}`}
+              sparkline={sparklines[key]}
+              target={t.targetValue}
+              onDrillDown={drillable ? () => onDrillDown(key) : undefined}
+              noDetail={<span
+                className="inline-flex items-center gap-1 rounded-sm border border-dashed border-border px-2 py-1 text-sm text-muted-foreground"
+                data-testid={`no-detail-${t.metricKey}`} title={noDetailReason}
+              ><Minus className="h-4 w-4 shrink-0" aria-hidden />{noDetailReason}</span>}
+            >
+              <p className="mt-2 inline-flex items-center gap-1 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" aria-hidden />
                 {periodNoteFor(key, period)}
               </p>
               {showGaps && behavior === "point_in_time" && pointReason && (
-                <p className="mt-1 max-w-md text-xs italic text-muted-foreground">{pointReason}</p>
+                <p className="mt-1 text-sm italic text-muted-foreground">{pointReason}</p>
               )}
               {showGaps && evaluation.status === "no_metric" && gapReason && (
-                <p className="mt-1 max-w-md text-xs italic text-muted-foreground">{gapReason}</p>
+                <p className="mt-1 text-sm italic text-muted-foreground">{gapReason}</p>
               )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="font-display text-xl text-navy" data-testid={`metric-${t.metricKey}`}>
-                  {evaluation.status === "no_metric" ? "—" : formatMetric(metric)}
-                </p>
-                {metric?.basis && evaluation.status !== "no_metric" && (
-                  <p className="text-[11px] text-muted-foreground">{metric.basis}</p>
-                )}
-              </div>
-              <Badge className={STATUS_STYLE[evaluation.status]}>
-                {evaluation.status === "no_metric" ? "No live metric yet" : evaluation.label}
-              </Badge>
-              {drillable ? (
-                <Button size="sm" variant="outline" onClick={() => onDrillDown(key)}>
-                  Details <ChevronRight className="ml-1 h-3 w-3" />
-                </Button>
-              ) : (
-                <span
-                  className="inline-flex w-[132px] items-center justify-center gap-1 rounded-md border border-dashed border-border px-2 py-1 text-center text-[11px] leading-tight text-muted-foreground"
-                  data-testid={`no-detail-${t.metricKey}`}
-                  title={noDetailReason}
-                >
-                  <Minus className="h-3 w-3 shrink-0" aria-hidden />
-                  {noDetailReason}
-                </span>
-              )}
-            </div>
+            </StatTile>
           </div>
         );
       })}
-
-    </Card>
+      </div>
+    </section>
   );
 }
