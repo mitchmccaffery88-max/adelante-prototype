@@ -2,10 +2,11 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## DMC Date-freeze batch — IN VALIDATION (Oct 20)
+## DMC Date-freeze batch — COMPLETE (Oct 20)
 - Rollback / starting HEAD after P3 and its docs: 66bc81a63aef1b021fa22a1ce246f25b5aa668fc
 - [x] Mitch-approved test-local hoisted Date-only freeze in dmcOdsReadiness.test.ts; restore real timers afterAll; no assertion or production changes
-- [ ] External collision/current-clock checks, three consecutive runs, then full unit suite
+- [x] External 2026-10-20T14:02:00Z collision-clock harness: 8/8 on three consecutive runs; test-local clock confirmed 2026-09-29T15:00:00.000Z; current clock 8/8
+- [x] Full unit suite 2,893/2,893 (359 files), EXIT 0; DMC file 8/8; no browser run (test-only change plus requested roadmap/report)
 - [x] DECIDED: keep CalAIM Your turn chip for ≥1 eligible discharge even below 11; count remains <11; no code change
 - Next: seeded claims. Nothing published.
 
