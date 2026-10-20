@@ -9,7 +9,7 @@ import { StaffTable } from "@/components/staff/StaffTable";
 // them no matter what. Rather than invent an assignment, the card takes an
 // explicit source and changes its own title and note to match what it is
 // actually showing.
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AdelanteEHR, useEhr, type CaseTask } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +62,7 @@ export function TaskQueueCard({
 }: {
   source: TaskQueueSource;
   onOpenPatient: (id: string) => void;
+  summary?: ReactNode;
 }) {
   const { staffId, role } = useActingStaff();
   return <TaskQueueContent key={`${staffId}:${role}`} {...props} />;
@@ -70,9 +71,11 @@ export function TaskQueueCard({
 function TaskQueueContent({
   source,
   onOpenPatient,
+  summary,
 }: {
   source: TaskQueueSource;
   onOpenPatient: (id: string) => void;
+  summary?: ReactNode;
 }) {
   const tasks = useEhr(() => outpatientQueueTasks(source));
   const patients = useEhr(() => AdelanteEHR.listPatients());
@@ -110,6 +113,7 @@ function TaskQueueContent({
           </div>
         )}
       </div>
+      {summary}
       {source.kind === "clinician_patients" && (
         <p className="mb-3 text-xs text-muted-foreground" data-testid="task-queue-source-note">
           {CLINICIAN_TASK_SOURCE_NOTE}

@@ -70,6 +70,12 @@ function QualityCompliancePage() {
             </li>))}</ul> : <p className="mt-2 text-sm text-muted-foreground">Nothing waiting.</p>}
         </Card>
 
+        <Card className="p-4" data-testid="unusual-volume">
+          <h2 className="font-semibold">Unusual volume — today</h2>
+          <p className="text-xs text-muted-foreground">Flag when one person opens more than {UNUSUAL_VOLUME_DRAFT} distinct charts in a day (Draft threshold).</p>
+          {vol.length ? <ul className="mt-2 text-sm">{vol.map((v) => <li key={v.actorId}><StatusChip lang="en" state={RESTRICT_ROLES.includes(role) ? "yourturn" : "team"} label="Unusual volume" /> {v.actorName} · {v.charts} charts</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">No one over the threshold today.</p>}
+        </Card>
+
         <Card className="p-4" data-testid="outside-caseload-report">
           <h2 className="font-semibold">Charts opened outside caseload — this week</h2>
           <StaffTable
@@ -116,12 +122,6 @@ function QualityCompliancePage() {
       ) : null
     }
   />
-        </Card>
-
-        <Card className="p-4" data-testid="unusual-volume">
-          <h2 className="font-semibold">Unusual volume — today</h2>
-          <p className="text-xs text-muted-foreground">Flag when one person opens more than {UNUSUAL_VOLUME_DRAFT} distinct charts in a day (Draft threshold).</p>
-          {vol.length ? <ul className="mt-2 text-sm">{vol.map((v) => <li key={v.actorId}><StatusChip lang="en" state={RESTRICT_ROLES.includes(role) ? "yourturn" : "team"} label="Unusual volume" /> {v.actorName} · {v.charts} charts</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">No one over the threshold today.</p>}
         </Card>
 
         {RESTRICT_ROLES.includes(role) && (

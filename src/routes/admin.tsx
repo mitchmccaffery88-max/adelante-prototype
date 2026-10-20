@@ -193,32 +193,8 @@ function AdminPage() {
         </div>
       </header>
 
-      <nav aria-label="Administration" className="mb-6">
-        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-          Administration
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {adminLinks.map((entry) => (
-            <Link
-              key={entry.id}
-              to={entry.to}
-              data-admin-link-id={entry.id}
-              className="flex items-start gap-3 rounded-lg border bg-card p-3 hover:bg-secondary/50"
-            >
-              {entry.icon ? <entry.icon className="mt-0.5 h-4 w-4 shrink-0 text-teal" /> : null}
-              <span className="min-w-0">
-                <span className="block text-xs font-medium uppercase tracking-wider text-teal">
-                  {entry.label}
-                </span>
-                <span className="mt-1 block text-sm text-foreground">{entry.desc}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </nav>
-
       {/* §9a-2 — StatTile presentation: neutral (no targets), "<11" for small patient counts. */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6" data-testid="admin-kpis">
+      <div className="grid grid-flow-col auto-cols-[minmax(14rem,1fr)] xl:grid-flow-row xl:grid-cols-6 gap-4 overflow-x-auto mb-6" data-testid="admin-kpis">
         <StatTile label="Enrolled patients" value={stats.enrolled} tileTestId="admin-kpi-enrolled" />
         <StatTile label="Session completion" value={stats.completionRate} unit="percent" cohortSize={stats.enrolled} tileTestId="admin-kpi-completion" />
         <StatTile
@@ -244,6 +220,30 @@ function AdminPage() {
           tileTestId="admin-kpi-ecm"
         />
       </div>
+
+      <nav aria-label="Administration" className="mb-6">
+        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+          Administration
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {adminLinks.map((entry) => (
+            <Link
+              key={entry.id}
+              to={entry.to}
+              data-admin-link-id={entry.id}
+              className="flex items-start gap-3 rounded-lg border bg-card p-3 hover:bg-secondary/50"
+            >
+              {entry.icon ? <entry.icon className="mt-0.5 h-4 w-4 shrink-0 text-teal" /> : null}
+              <span className="min-w-0">
+                <span className="block text-xs font-medium uppercase tracking-wider text-teal">
+                  {entry.label}
+                </span>
+                <span className="mt-1 block text-sm text-foreground">{entry.desc}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </nav>
 
       <div className="mb-6">
         <GroupActivityKpi />

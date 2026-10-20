@@ -38,7 +38,7 @@ function Tile({ id, title, summary, open, onOpenChange, children }: { id: TileId
   );
 }
 
-export function BillingWorkspaceTiles() {
+export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
   const { role, staffId } = useActingStaff();
   const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
   const patients = useEhr(() => AdelanteEHR.listPatients());
@@ -54,13 +54,14 @@ export function BillingWorkspaceTiles() {
 
   return (
     <section className="space-y-3" data-testid="billing-workspace">
-      <div className="flex flex-wrap gap-2" data-testid="billing-today-strip">
+      <div className="flex gap-2 overflow-x-auto [&>button]:shrink-0" data-testid="billing-today-strip">
         <StripCount testId="strip-blocked" label="Claims blocked" n={ws.blocked.length} onClick={() => set("action", true)} />
         <StripCount testId="strip-ready" label="Ready to send" n={ws.ready.length} onClick={() => set("pipeline", true)} />
         <StripCount testId="strip-eligibility" label="Eligibility checks due" n={ws.eligibilityDue.length} onClick={() => set("action", true)} />
         <StripCount testId="strip-payments" label="Payments to post" n={ws.paymentsToPost.length} onClick={() => set("payments", true)} />
         <StripCount testId="strip-holds" label="Duplicate holds" n={ws.holds.length} onClick={() => set("action", true)} />
       </div>
+      {summary}
       <Tile id="action" title="Needs my action" summary={`${actionCount} items`} open={open.action} onOpenChange={(v) => set("action", v)}>
         {reminders.length > 0 && (
           <ul className="mb-3 divide-y text-sm" data-testid="county-reminders">

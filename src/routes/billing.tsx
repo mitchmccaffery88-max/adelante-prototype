@@ -230,52 +230,8 @@ function BillingPage() {
     toast.success("ISL report exported.");
   }
 
-  return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
-          <p className="text-sm text-muted-foreground">
-            Tulare County pilot · 7 funding lanes tracked separately from billing status.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-        <Link to="/provider-reference" className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary" data-testid="billing-provider-ref-link">
-          Provider &amp; site reference
-        </Link>
-        <Link to="/county-reporting" className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary" data-testid="billing-county-reporting-link">
-          County reporting
-        </Link>
-        <Link
-          to="/admin-claims"
-          className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary"
-        >
-          Open claims worklist to
-        </Link>
-        </div>
-      </header>
-
-      {confirmation.dialog}
-      {canWrite && <BillingWorkspaceTiles />}
-      <OpsActionLauncher />
-
-      {!canWrite && (
-        <div className="rounded-xl border bg-card p-3 text-sm text-muted-foreground" data-testid="billing-read-only">
-          View only — billing staff change billing status and work claims.
-        </div>
-      )}
-
-      <BillingStatusStrip
-        counts={statusCounts}
-        active={statusFilter}
-        onSelect={(s) => {
-          setStatusFilter(s);
-          setTab("claims");
-        }}
-      />
-
-      {/* KPI tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" data-testid="billing-kpis">
+  const summary = (
+      <div className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] lg:grid-flow-row lg:grid-cols-4 gap-3 overflow-x-auto" data-testid="billing-kpis">
         <StatTile
           label="Outstanding"
           value={kpis.outstandingCents}
@@ -308,6 +264,54 @@ function BillingPage() {
           comparison={`${kpis.byStatus.draft} draft · ${kpis.byStatus.write_off} write-off`}
         />
       </div>
+
+
+  );
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
+          <p className="text-sm text-muted-foreground">
+            Tulare County pilot · 7 funding lanes tracked separately from billing status.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+        <Link to="/provider-reference" className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary" data-testid="billing-provider-ref-link">
+          Provider &amp; site reference
+        </Link>
+        <Link to="/county-reporting" className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary" data-testid="billing-county-reporting-link">
+          County reporting
+        </Link>
+        <Link
+          to="/admin-claims"
+          className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary"
+        >
+          Open claims worklist to
+        </Link>
+        </div>
+      </header>
+
+      {confirmation.dialog}
+      {canWrite && <BillingWorkspaceTiles summary={summary} />}
+      {!canWrite && summary}
+      <OpsActionLauncher />
+
+      {!canWrite && (
+        <div className="rounded-xl border bg-card p-3 text-sm text-muted-foreground" data-testid="billing-read-only">
+          View only — billing staff change billing status and work claims.
+        </div>
+      )}
+
+      <BillingStatusStrip
+        counts={statusCounts}
+        active={statusFilter}
+        onSelect={(s) => {
+          setStatusFilter(s);
+          setTab("claims");
+        }}
+      />
 
       {/* Billing entity toggle — surfaces the unresolved contract-type decision */}
       <div className="rounded-xl border bg-amber-50/60 border-amber-200 p-3 flex items-center gap-3 text-sm">
