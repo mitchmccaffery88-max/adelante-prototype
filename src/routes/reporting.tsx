@@ -76,6 +76,8 @@ import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
 import { Card } from "@/components/ui/card";
+import { StatTile } from "@/components/ui/stat-tile";
+import { MIN_COHORT_SIZE } from "@/lib/cohortGuard";
 import { HieUtilizationTile } from "@/components/hie/OutsideRecords";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -120,29 +122,63 @@ export const Route = createFileRoute("/reporting")({
 // Presentational primitives
 // ---------------------------------------------------------------------------
 
+/**
+ * §9a-2 — every non-billing reporting number renders through StatTile.
+ * Neutral tiles (no targets on this page) show no status. Counts of people
+ * below 11 show "<11"; record/configuration counts pass `nonPatient`.
+ * `note` is hidden when the number is suppressed unless `safeNote` is set,
+ * because some notes carry the same small number.
+ */
 function Stat({
   label,
   value,
+  formatted,
+  unit = "count",
+  cohortSize,
+  nonPatient,
   note,
-  muted,
+  safeNote,
+  testId,
 }: {
   label: string;
-  value: string;
+  value: number | null;
+  formatted?: string;
+  unit?: "count" | "percent";
+  cohortSize?: number;
+  nonPatient?: boolean;
   note?: string;
-  muted?: boolean;
+  safeNote?: string;
+  testId?: string;
 }) {
+  const missing = value == null || !Number.isFinite(value);
+  const suppressed =
+    !missing && !nonPatient && (cohortSize != null ? cohortSize < MIN_COHORT_SIZE : unit === "count" && value < MIN_COHORT_SIZE);
+  return (
+    <StatTile
+      label={label}
+      value={value}
+      formattedValue={formatted}
+      unit={unit}
+      cohortSize={cohortSize}
+      nonPatient={nonPatient}
+      comparison={suppressed ? safeNote : note}
+      tileTestId={testId}
+    />
+  );
+}
+
+/** Billing tiles keep their pre-9a look until Phase 9a-3. */
+function BillingStat({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <div className="rounded-lg border border-border/60 bg-card/40 p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p
-        className={`mt-1 font-display text-2xl ${muted ? "text-muted-foreground" : "text-navy"}`}
-      >
-        {value}
-      </p>
+      <p className="mt-1 font-display text-2xl text-navy">{value}</p>
       {note && <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{note}</p>}
     </div>
   );
 }
+
+const small = (n: number) => (n < MIN_COHORT_SIZE ? "<11" : String(n));
 
 function Area({
   id,
@@ -391,24 +427,26 @@ function ReportingHome() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat
               label="MAR compliance"
-              value={pctText(metrics.mar_compliance_pct.value)}
+              value={metrics.mar_compliance_pct.value}
+              formatted={metrics.mar_compliance_pct.value === null ? undefined : pctText(metrics.mar_compliance_pct.value)}
+              unit="percent"
               note={`${periodLabel(period)} · ${metrics.mar_compliance_pct.basis ?? ""}`}
-              muted={metrics.mar_compliance_pct.value === null}
             />
             <Stat
               label="Group attendance"
-              value={pctText(metrics.group_attendance_rate_pct.value)}
-              note={`${periodLabel(period)} · ${groupActive} active group(s), ${groupEnrolled} enrolled`}
-              muted={metrics.group_attendance_rate_pct.value === null}
+              value={metrics.group_attendance_rate_pct.value}
+              formatted={metrics.group_attendance_rate_pct.value === null ? undefined : pctText(metrics.group_attendance_rate_pct.value)}
+              unit="percent"
+              note={`${periodLabel(period)} · ${groupActive} active group(s), ${small(groupEnrolled)} enrolled`}
             />
             <Stat
               label="Unsigned notes"
-              value={String(metrics.unsigned_notes_count.value ?? 0)}
+              value={metrics.unsigned_notes_count.value ?? 0}
               note="As of now — current backlog, not a period measure"
             />
             <Stat
               label="Tasks needing follow-up"
-              value={String(metrics.overdue_task_count.value ?? 0)}
+              value={metrics.overdue_task_count.value ?? 0}
               note="As of now — current backlog, not a period measure"
             />
           </div>
@@ -446,17 +484,20 @@ function ReportingHome() {
             <div className="grid gap-3 sm:grid-cols-3">
               <Stat
                 label="Qualifying codes configured"
-                value={String(qualifyingCodes)}
+                value={qualifyingCodes}
+                nonPatient
                 note="Admin-maintained code list"
               />
               <Stat
                 label="CalAIM caseload"
-                value={String(distinctPatients(calaimCaseload))}
+                value={distinctPatients(calaimCaseload)}
+                safeNote="As of now — patients with an active qualifying diagnosis"
                 note="As of now — patients with an active qualifying diagnosis"
               />
               <Stat
                 label="Eligible discharges"
-                value={String(calaimDischarges.length)}
+                value={calaimDischarges.length}
+                safeNote="Fixed 24-hour handoff window — not affected by the period selector"
                 note="Fixed 24-hour handoff window — not affected by the period selector"
               />
             </div>
@@ -480,44 +521,41 @@ function ReportingHome() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="sdoh-funnel-stats">
             <Stat
               label="Needs identified"
-              value={String(funnel.identified)}
-              note={`Across ${funnel.patients} patient(s)`}
+              value={funnel.identified}
+              note={`Across ${small(funnel.patients)} patient(s)`}
             />
             <Stat
               label="Connect requested"
-              value={String(funnel.connectRequested)}
+              value={funnel.connectRequested}
               note="Patient asked the care team to connect them"
-              muted={funnel.connectRequested === 0}
+              safeNote="Patient asked the care team to connect them"
             />
             <Stat
               label="Referred to a resource"
-              value={String(funnel.referred)}
+              value={funnel.referred}
               note={
                 funnel.medianDaysToReferral === null
                   ? "Not yet referred to a resource — no elapsed time to report"
                   : `Median ${funnel.medianDaysToReferral} day(s) from identified`
               }
-              muted={funnel.referred === 0}
             />
             <Stat
               label="Connected"
-              value={String(funnel.connected)}
+              value={funnel.connected}
               note={
                 funnel.medianDaysToConnected === null
                   ? "No connection recorded yet"
                   : `Median ${funnel.medianDaysToConnected} day(s) from resource referral`
               }
-              muted={funnel.connected === 0}
             />
             <Stat
               label="Resolved"
-              value={String(funnel.resolved)}
+              value={funnel.resolved}
               note={
                 funnel.medianDaysToResolved === null
                   ? "No resolved need yet"
                   : `Median ${funnel.medianDaysToResolved} day(s) from identified`
               }
-              muted={funnel.resolved === 0}
             />
           </div>
           {funnel.belowMinimumCohort && (
@@ -600,44 +638,41 @@ function ReportingHome() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <Stat
               label="Submitted"
-              value={String(refFunnel.submitted)}
+              value={refFunnel.submitted}
               note={periodLabel(period)}
+              safeNote={periodLabel(period)}
             />
             <Stat
               label="Contacted"
-              value={String(refFunnel.contacted)}
+              value={refFunnel.contacted}
               note={
                 refFunnel.medianDaysToContact === null
                   ? "Reached in person or by phone — nobody reached yet"
                   : `Reached — median ${refFunnel.medianDaysToContact} day(s) from submission`
               }
-              muted={refFunnel.contacted === 0}
             />
             <Stat
               label="Enrolled"
-              value={String(refFunnel.enrolled)}
+              value={refFunnel.enrolled}
               note={
                 refFunnel.medianDaysToEnroll === null
                   ? "No enrollment in this period"
                   : `Median ${refFunnel.medianDaysToEnroll} day(s) from contact`
               }
-              muted={refFunnel.enrolled === 0}
             />
             <Stat
               label="First appointment booked"
-              value={String(refFunnel.firstApptScheduled)}
+              value={refFunnel.firstApptScheduled}
               note="A booking only — not counted as reached"
-              muted={refFunnel.firstApptScheduled === 0}
             />
             <Stat
               label="First appointment attended"
-              value={String(refFunnel.firstApptAttended)}
+              value={refFunnel.firstApptAttended}
               note={
                 refFunnel.medianDaysToFirstAttended === null
                   ? "No attended first session yet"
                   : `Median ${refFunnel.medianDaysToFirstAttended} day(s) from submission`
               }
-              muted={refFunnel.firstApptAttended === 0}
             />
           </div>
           {refFunnel.belowMinimumCohort && (
@@ -647,23 +682,24 @@ function ReportingHome() {
             />
           )}
           <div className="mt-3 grid gap-3 sm:grid-cols-3" data-testid="request-to-booked">
-            <Stat label="Appointment requests" value={String(reqBooked.requested)} note="Made at intake — waiting for or given staff confirmation" />
+            <Stat label="Appointment requests" value={reqBooked.requested} note="Made at intake — waiting for or given staff confirmation" safeNote="Made at intake — waiting for or given staff confirmation" testId="rtb-requested" />
             <Stat
               label="Request to booked"
-              value={String(reqBooked.booked)}
+              value={reqBooked.booked}
+              cohortSize={reqBooked.belowMinimumCohort ? 0 : undefined}
               note={reqBooked.medianDaysToBooked === null ? "None booked yet" : `Median ${reqBooked.medianDaysToBooked} day(s) from request`}
-              muted={reqBooked.booked === 0}
+              testId="rtb-booked"
             />
-            <Stat label="Contacted, not booked" value={String(reqBooked.contactedNotBooked)} note="Closed with a reason" muted={reqBooked.contactedNotBooked === 0} />
+            <Stat label="Contacted, not booked" value={reqBooked.contactedNotBooked} cohortSize={reqBooked.belowMinimumCohort ? 0 : undefined} note="Closed with a reason" safeNote="Closed with a reason" testId="rtb-contacted" />
           </div>
           {reqBooked.belowMinimumCohort && (
             <CohortGuardNotice cohortSize={reqBooked.cohortSize} minimumCohortSize={reqBooked.minimumCohortSize} />
           )}
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="appointment-outcomes">
-            <Stat label="No-shows" value={apptOut.belowMinimumCohort ? "—" : String(apptOut.noShows)} note={`Of ${apptOut.belowMinimumCohort ? "—" : apptOut.visits} visits in the period`} />
-            <Stat label="Cancellations" value={apptOut.belowMinimumCohort ? "—" : String(apptOut.cancellations)} note="Staff-cancelled, including confirmed patient requests" />
-            <Stat label="Late cancels (draft)" value={apptOut.belowMinimumCohort ? "—" : String(apptOut.lateCancels)} note="Cancelled inside 24 hours — label only, no fee" />
-            <Stat label="Cancel requests waiting" value={apptOut.belowMinimumCohort ? "—" : String(apptOut.pendingCancelRequests)} note="Patient or advocate asked; staff to confirm" />
+            <Stat label="No-shows" value={apptOut.noShows} cohortSize={apptOut.belowMinimumCohort ? 0 : undefined} note={`Of ${small(apptOut.visits)} visits in the period`} safeNote="Visits in the period" />
+            <Stat label="Cancellations" value={apptOut.cancellations} cohortSize={apptOut.belowMinimumCohort ? 0 : undefined} note="Staff-cancelled, including confirmed patient requests" />
+            <Stat label="Late cancels (draft)" value={apptOut.lateCancels} cohortSize={apptOut.belowMinimumCohort ? 0 : undefined} note="Cancelled inside 24 hours — label only, no fee" />
+            <Stat label="Cancel requests waiting" value={apptOut.pendingCancelRequests} cohortSize={apptOut.belowMinimumCohort ? 0 : undefined} note="Patient or advocate asked; staff to confirm" />
           </div>
           {apptOut.belowMinimumCohort && (
             <CohortGuardNotice cohortSize={apptOut.cohortSize} minimumCohortSize={apptOut.minimumCohortSize} />
@@ -783,12 +819,12 @@ function ReportingHome() {
               )}
             </Card>
             <div className="grid gap-3 sm:grid-cols-4">
-              <Stat label="Needed" value={String(asamReport.tasks.filter((t) => t.state === "needed").length)} />
-              <Stat label="Due (next 7 days)" value={String(asamReport.tasks.filter((t) => t.state === "due").length)} />
-              <Stat label="Follow-up needed" value={String(asamReport.tasks.filter((t) => t.state === "overdue").length)} />
-              <Stat label="Awaiting co-signature" value={String(asamReport.cosignCount)} />
-              <Stat label="Assessment visit scheduled" value={String(asamReport.visitScheduled)} />
-              <Stat label="Assessment visit not yet scheduled" value={String(asamReport.visitNotScheduled)} />
+              <Stat label="Needed" value={asamReport.tasks.filter((t) => t.state === "needed").length} />
+              <Stat label="Due (next 7 days)" value={asamReport.tasks.filter((t) => t.state === "due").length} />
+              <Stat label="Follow-up needed" value={asamReport.tasks.filter((t) => t.state === "overdue").length} />
+              <Stat label="Awaiting co-signature" value={asamReport.cosignCount} />
+              <Stat label="Assessment visit scheduled" value={asamReport.visitScheduled} />
+              <Stat label="Assessment visit not yet scheduled" value={asamReport.visitNotScheduled} />
             </div>
             <div className="space-y-1" data-testid="asam-by-reason">
               <p className="text-xs font-medium">Open ASAM tasks by reason for assessment</p>
@@ -839,15 +875,17 @@ function ReportingHome() {
               </Card>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <Stat label="Reassessments due (30 days)" value={String(asamReport.reassessmentsDue30.length)} note={`Draft interval — ${ASAM_DRAFT_NOTE}`} />
+              <Stat label="Reassessments due (30 days)" value={asamReport.reassessmentsDue30.length} note={`Draft interval — ${ASAM_DRAFT_NOTE}`} safeNote={`Draft interval — ${ASAM_DRAFT_NOTE}`} />
               <Stat
                 label="Median days, trigger to signed assessment"
-                value={asamReport.timeliness.triggerToAssessment.medianDays === null ? "—" : String(asamReport.timeliness.triggerToAssessment.medianDays)}
+                value={asamReport.timeliness.triggerToAssessment.medianDays}
+                cohortSize={asamReport.timeliness.triggerToAssessment.cohortSize}
                 note={`${asamReport.timeliness.triggerToAssessment.withinWindow} of ${asamReport.timeliness.triggerToAssessment.cohortSize} within the draft ${asamReport.timeliness.triggerToAssessment.windowDays}-day window`}
               />
               <Stat
                 label="Median days, signed to first DMC-ODS service"
-                value={asamReport.timeliness.assessmentToService.medianDays === null ? "—" : String(asamReport.timeliness.assessmentToService.medianDays)}
+                value={asamReport.timeliness.assessmentToService.medianDays}
+                cohortSize={asamReport.timeliness.assessmentToService.cohortSize}
                 note={asamReport.timeliness.assessmentToService.cohortSize === 0 ? "No DMC-ODS treatment service recorded after a signed assessment yet" : `${asamReport.timeliness.assessmentToService.withinWindow} of ${asamReport.timeliness.assessmentToService.cohortSize} within the draft ${asamReport.timeliness.assessmentToService.windowDays}-day window`}
               />
             </div>
@@ -881,22 +919,26 @@ function ReportingHome() {
               <div className="grid gap-3 sm:grid-cols-4">
                 <Stat
                   label="Substance use recorded"
-                  value={`${completeness.substanceUse} of ${completeness.total}`}
+                  value={completeness.substanceUse}
+                  formatted={`${completeness.substanceUse} of ${completeness.total}`}
                   note={`As of now — ${pctText(completeness.substanceUsePct)} of the caseload`}
                 />
                 <Stat
                   label="Prior treatment recorded"
-                  value={`${completeness.priorTreatment} of ${completeness.total}`}
+                  value={completeness.priorTreatment}
+                  formatted={`${completeness.priorTreatment} of ${completeness.total}`}
                   note={`As of now — ${pctText(completeness.priorTreatmentPct)} of the caseload`}
                 />
                 <Stat
                   label="Discharge recorded"
-                  value={`${completeness.discharge} of ${completeness.total}`}
+                  value={completeness.discharge}
+                  formatted={`${completeness.discharge} of ${completeness.total}`}
                   note="As of now — most recent discharge per patient"
                 />
                 <Stat
                   label="Justice estimates reported"
-                  value={`${completeness.justice} of ${completeness.total}`}
+                  value={completeness.justice}
+                  formatted={`${completeness.justice} of ${completeness.total}`}
                   note="Self-reported by patients — not verified facility data"
                 />
               </div>
@@ -932,21 +974,22 @@ function ReportingHome() {
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Stat
                     label="Reported any arrest, past 12 months"
-                    value={String(justice.anyArrestPast12Months)}
+                    value={justice.anyArrestPast12Months}
                     note="Patient estimate"
+                    safeNote="Patient estimate"
                   />
                   <Stat
                     label="Median time in custody"
-                    value={
-                      justice.medianCustodyMonths === null
-                        ? "No live metric yet"
-                        : `${justice.medianCustodyMonths} months`
-                    }
+                    value={justice.medianCustodyMonths}
+                    formatted={justice.medianCustodyMonths === null ? undefined : `${justice.medianCustodyMonths} months`}
+                    cohortSize={justice.cohortSize}
+                    safeNote="Patient estimate"
                     note="Patient estimate"
                   />
                   <Stat
                     label="Referral sources reported"
-                    value={String(justice.referralSources.length)}
+                    value={justice.referralSources.length}
+                    nonPatient
                     note="Self-reported referral source values in use"
                   />
                 </div>
@@ -979,24 +1022,24 @@ function ReportingHome() {
             <div className="grid gap-3 sm:grid-cols-3">
               <Stat
                 label="Patients in program"
-                value={String(engagement.cohorts.members.length)}
+                value={engagement.cohorts.members.length}
                 note={`${engagement.cohorts.buckets.length} resolved cohort(s)`}
               />
               <Stat
                 label="Active in period"
-                value={pctText(engagement.overall.activeRatePct)}
+                value={engagement.overall.activeRatePct}
+                formatted={engagement.overall.activeRatePct === null ? undefined : pctText(engagement.overall.activeRatePct)}
+                unit="percent"
+                cohortSize={engagement.cohorts.members.length}
                 note={`${periodLabel(period)} · any recorded activity`}
-                muted={engagement.overall.activeRatePct === null}
+                safeNote={`${periodLabel(period)} · any recorded activity`}
               />
               <Stat
                 label="Median days since activity"
-                value={
-                  engagement.overall.medianDaysSinceActivity === null
-                    ? "—"
-                    : String(engagement.overall.medianDaysSinceActivity)
-                }
+                value={engagement.overall.medianDaysSinceActivity}
+                cohortSize={engagement.overall.everEngaged}
                 note="Among patients who ever engaged"
-                muted={engagement.overall.medianDaysSinceActivity === null}
+                safeNote="Among patients who ever engaged"
               />
             </div>
           )}
@@ -1029,14 +1072,14 @@ function ReportingHome() {
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-4">
-                <Stat
+                <BillingStat
                   label="Open claims"
                   value={String(openClaims)}
                   note="As of now — not yet paid or denied"
                 />
-                <Stat label="Total claims" value={String(claims.length)} note="All time" />
-                <Stat label="Paid" value={String(claimsByState["paid"] ?? 0)} note="All time" />
-                <Stat
+                <BillingStat label="Total claims" value={String(claims.length)} note="All time" />
+                <BillingStat label="Paid" value={String(claimsByState["paid"] ?? 0)} note="All time" />
+                <BillingStat
                   label="Denied"
                   value={String(claimsByState["denied"] ?? 0)}
                   note="All time"

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FlaskConical, PencilLine } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
+import { StatTile } from "@/components/ui/stat-tile";
 
 const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0);
 
@@ -17,8 +18,8 @@ export function CatalogResolutionMetricsCard() {
     <Card className="p-4 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-lg text-navy flex items-center gap-2">
-            <FlaskConical className="h-4 w-4 text-teal" /> Dose resolution fallbacks
+          <h2 className="font-display text-lg text-foreground flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-primary" /> Dose resolution fallbacks
           </h2>
           <p className="text-xs text-muted-foreground">
             How often catalog selections needed DailyMed, and how often a clinician had to enter a
@@ -56,7 +57,7 @@ export function CatalogResolutionMetricsCard() {
 
       {m.recentManualJustifications.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-navy flex items-center gap-1.5">
+          <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
             <PencilLine className="h-3 w-3" /> Recent manual-dose justifications
           </p>
           <ul className="space-y-1">
@@ -82,12 +83,13 @@ export function CatalogResolutionMetricsCard() {
   );
 }
 
+// §9a-2 — StatTile presentation. Catalog selections and signed orders are
+// event counts, not counts of people, so small-cohort hiding does not apply.
 function Metric({
   label,
   value,
   share,
   hint,
-  destructive,
 }: {
   label: string;
   value: number;
@@ -96,19 +98,8 @@ function Metric({
   destructive?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border p-3">
-      <div className="flex items-baseline justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span
-          className={`font-display text-xl ${destructive && value > 0 ? "text-ink-muted" : "text-navy"}`}
-        >
-          {value}
-        </span>
-      </div>
-      <Progress value={share} className="mt-2 h-1.5" />
-      <p className="mt-1 text-[10px] text-muted-foreground">
-        {share}% · {hint}
-      </p>
-    </div>
+    <StatTile label={label} value={value} nonPatient basis={`${share}% · ${hint}`}>
+      <Progress value={share} className="mt-2 h-1.5" aria-label={`${label}: ${share}%`} />
+    </StatTile>
   );
 }

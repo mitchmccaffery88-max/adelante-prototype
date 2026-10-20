@@ -2,6 +2,14 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Phase 9a-2 — IN PROGRESS (Oct 20)
+- Rollback 2c463a96f657306af2a3dc4fcf72eb9b39d84cad; starting HEAD 2628d52c860253c0d2f074fcdcf0f4b4033cf55e
+- [x] /admin KPIs + group activity, CalAIM, group utilization, engagement, /reporting tiles, PopulationHealth, TimelyAccess, catalog metrics on StatTile / "<11"
+- [x] NEW tests statTileParity9a2, suppression9a2, e2e/statTiles9a2; 30 evidence captures
+- [x] Full units 2,817/2,817 (349 files)
+- [ ] Full browser suite to EXIT, restore screenshots, final report + SHA
+- Next: 9a-3 billing/compliance/county tiles — not started.
+
 ## Phase 9a-1 — COMPLETE (Oct 20)
 - Rollback 7c0e871520e0a2eb6b8a29ed604e4e2cefa385f3; starting HEAD 193c406f54a7604b8ac2dab8d42106f1efcc585e
 - [x] StatTile and KPI conversion, unchanged selectors and caller access; real weekly MAR/attendance projections only
