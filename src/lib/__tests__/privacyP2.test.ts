@@ -21,7 +21,8 @@ describe("Privacy P2 — minimum-necessary consent and release", () => {
     for (const item of COORDINATOR_SUD_ITEMS) expect(coordinatorSudCanRead(coord, patient(consent), item)).toBe(true);
     expect(coordinatorSudCanRead(coord, patient(consent), "counseling_notes")).toBe(false);
     expect(canAccess(coord.role, "screeners_sud", patient(consent)).level).toBe("none");
-    expect(canAccess(coord.role, "group_notes", patient(consent)).level).toBe("none");
+    expect(canAccess(coord.role, "group_notes", patient(consent))).toEqual(canAccess(coord.role, "group_notes", patient()));
+    expect(coordinatorNoteCanRead(coord, patient(consent), { category: "group" })).toBe(false);
   });
   it("no consent hides all B items", () => {
     for (const item of COORDINATOR_SUD_ITEMS) expect(coordinatorSudCanRead(coord, patient(), item)).toBe(false);
