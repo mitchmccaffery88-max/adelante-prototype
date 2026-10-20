@@ -66,8 +66,9 @@ test("coordinator emergency unlock: gated, audited, time-limited, counseling sta
   const records = await page.evaluate(async (pid) => {
     const w = window as unknown as W;
     const e = w.__adelante.AdelanteEHR as unknown as { listAuditEvents: (f?: unknown) => { action: string; patientId?: string; detail?: Record<string, unknown> }[] };
-    const { listDisclosureLog } = await import("/src/lib/part2Disclosure.ts") as { listDisclosureLog: (f: { patientId: string; emergencyOnly?: boolean }) => { id: string; emergencyReason?: string; complianceReview?: string; accessEnd?: string }[] };
-    const { listRestrictedOpenItems } = await import("/src/lib/chartAccess.ts") as { listRestrictedOpenItems: () => { disclosureId?: string; medicalFollowUp?: boolean }[] };
+    const { ca, pd } = await w.__adelante.access();
+    const listDisclosureLog = pd.listDisclosureLog as (f: { patientId: string; emergencyOnly?: boolean }) => { id: string; emergencyReason?: string; complianceReview?: string; accessEnd?: string }[];
+    const listRestrictedOpenItems = ca.listRestrictedOpenItems as () => { disclosureId?: string; medicalFollowUp?: boolean }[];
     const audits = e.listAuditEvents({ patientId: pid }).filter((x) => x.action === "part2_emergency_disclosure");
     const disclosures = listDisclosureLog({ patientId: pid, emergencyOnly: true });
     const items = listRestrictedOpenItems().filter((i) => disclosures.some((d) => d.id === i.disclosureId));
@@ -82,8 +83,9 @@ test("coordinator emergency unlock: gated, audited, time-limited, counseling sta
 
   // The same grant is visible to the gate: B items readable, counseling not.
   const gates = await page.evaluate(async ({ pid, sid }) => {
-    const { coordinatorSudCanRead } = await import("/src/lib/coordinatorSudAccess.ts") as { coordinatorSudCanRead: (v: unknown, p: unknown, item: string) => boolean };
     const w = window as unknown as W;
+    const { cs } = await w.__adelante.access();
+    const coordinatorSudCanRead = cs.coordinatorSudCanRead as (v: unknown, p: unknown, item: string) => boolean;
     const e = w.__adelante.AdelanteEHR as unknown as { getPatient: (i: string) => unknown };
     const viewer = { role: "clinical_coordinator", staffId: sid };
     const p = e.getPatient(pid);

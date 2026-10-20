@@ -29,13 +29,15 @@ export function installDevInspect(navigate?: (to: string) => void) {
     },
     /** §Access batch — same module instances the app uses. */
     access: async () => {
-      const [ca, st, ra, nr] = await Promise.all([
+      const [ca, st, ra, nr, pd, cs] = await Promise.all([
         import("@/lib/chartAccess"),
         import("@/lib/staffThreads"),
         import("@/lib/actions/runAction"),
         import("@/lib/notificationRouting"),
+        import("@/lib/part2Disclosure"),
+        import("@/lib/coordinatorSudAccess"),
       ]);
-      return { ca, st, ra, nr };
+      return { ca, st, ra, nr, pd, cs };
     },
     /** §Group 1 / consent walkthroughs — same module instances the app uses. */
     avail: async () => {
