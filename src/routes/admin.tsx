@@ -628,11 +628,11 @@ function VendorStatusCard() {
   const [pingedAt, setPingedAt] = useState<string | null>(null);
   return (
     <Card className="p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-display text-lg text-navy flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-teal" /> Integrated vendors
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h3 className="font-display text-lg text-navy flex min-w-0 items-center gap-2">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-teal" /> Integrated vendors
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link to="/disclosure-log" className="text-[11px] text-teal underline underline-offset-2" data-testid="admin-disclosure-log-link">Disclosure &amp; access log</Link>{" "}
           <Link to="/provider-reference" className="text-[11px] text-teal underline underline-offset-2" data-testid="admin-provider-ref-link">
             Provider &amp; site reference
