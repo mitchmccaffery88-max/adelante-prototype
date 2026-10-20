@@ -9,8 +9,9 @@
 - [ ] NEW tests; full units; stop on unapproved existing assertions
 - [ ] Full background browser suite to EXIT as last validation; restore rollback screenshots
 - [ ] Final docs/privacy-p2-report.md with capabilities, totals and final SHA
-- STOP: runAction.test.ts:15 existing permissions snapshot rejects 17 new coordinator_emergency_unlock keys (all hidden in patientless matrix). Existing tests unchanged; approval needed before continuation. Focused 14/17 pass; 2 additional NEW-test fixture assertions assumed group_notes was none but existing consent-gated matrix resolves read.
-- Remaining: complete all read/audit/summary integrations and new surface tests before full validation; no full units/browser suite run.
+- [x] Approved snapshot: exactly 17 new emergency keys, all hidden; every pre-existing entry byte-identical. NEW group fixtures corrected; focused validation 28/28, new surface tests 7/7.
+- STOP: full units 2,773/2,774 (343/344 files); existing privacyP1.test.ts:109 fails because its counseling absence assertion shares PRIVATE-P1-PLAN with an earlier now-consented standard SUD note. Existing test source unchanged; unique counseling fixture marker requires approval.
+- Remaining: live emergency/read-audit/expiry review, every-B populated coverage, full green units then full background browsers to EXIT. Browser suite not started under stop rule; screenshots 0 differences vs rollback. No final SHA.
 - Scope: no publishing, 9a or unrelated widening.
 
 ## Privacy P1 — billing minimum-necessary, self-tracking, SUD cards, AI inputs (approved Oct 19)

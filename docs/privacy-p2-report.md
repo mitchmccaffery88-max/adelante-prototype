@@ -1,5 +1,25 @@
 # Privacy P2 — stopped, not complete
 
+## Oct 20 continuation — current status (supersedes earlier stop below)
+- Approved snapshot update applied: exactly 17 new `coordinator_emergency_unlock` keys, all `hidden`. Removing only those added lines reproduces the prior snapshot byte for byte. Coordinator is hidden because the real gate requires a patient and actor/site eligibility; the matrix supplies no patient. No other snapshot entry changed.
+- Two NEW group assumptions corrected with baseline grant equality plus explicit group-note denial; no reduction in assertions. Combined focused validation **28/28**; NEW surface tests **7/7**.
+- Full unit suite **2,773 passed / 2,774 total**, **343 passed / 344 files**, 53.66s, EXIT 1. Log `/tmp/privacy-p2-units.log`.
+- STOP: existing `privacyP1.test.ts:109` asserts no `PRIVATE-P1-PLAN` anywhere in coordinator draft output. Its preceding test inserted a standard SUD note with that same marker; the counseling test then enables TPO consent. P2 lawfully includes the standard note, so this marker cannot distinguish the forbidden counseling note. NEW isolated tests prove the unique unreleased counseling marker absent. No existing test source/assertion changed.
+- Proposed delegated approval: give only the counseling fixture a unique plan marker and assert that marker absent, leaving the standard fixture and all other assertions unchanged. Not applied.
+- Current source checkpoint before this report update: `088271d8bd423f3a6262bca6472304d390531c80`; no final SHA or completion claim.
+- Browser suite **not started**, as required by the existing-assertion stop rule. Tracked screenshots/images **0 differences** vs `c5c3da6a`. No publish or 9a; neither flake exception used.
+- Latest observed preview compilation **build OK**, 2026-10-20T03:13:11Z.
+
+### Surface changes and remaining verification
+- `patientSearch.ts` / StaffPatientSearch: coordinator lookup results contain identifier fields only, no clinical bodies, regardless of consent/release. No note-body search exists; none added.
+- `notePdf.ts`: authorization precedes disclose(), actor propagated to model, coordinator SOAP-only output omits template item answers; authorized exports audited.
+- `printRecord.ts`: coordinator output contains authorized signed note bodies and identity only, hides counseling/group entries entirely when blocked, calls disclose() for included notes; print route supplies staff ID. Coordinator medication/MAR print sections not added.
+- `agenticPrototype.ts`, `adelDrafts.ts`, `askAdel.ts`: coordinator patient answers/drafts consume bounded record summaries, not raw charts, screener answers, task/alert/referral or private-check-in data; counseling only with its separate release.
+- `adelBrief.ts`: coordinator bullets use projected medications, attendance, SUD goals and labs; actor/consent/release/emergency-state cache partition and synchronous coordinator reads prevent old grant-key reuse. `adelBriefCheck.ts` checks current authorized source content.
+- `part2Disclosure.ts`: emergency channel independently validates coordinator exception/detail/reference.
+- NEW tests cover identifier search, note preview, PDF/print disclosure, standard/counseling summary inclusion and exact four-hour expiry.
+- Remaining: live emergency dialog/banner/compliance flow, comprehensive read-audit/expiry review including note preview and print state, populated tests for every B record type, full green units then full background browsers polled to EXIT. P2 remains incomplete; preceding inventory table records the unchanged per-role scope.
+
 ## Versions and scope
 - Approved rollback: `c5c3da6af29fc6ed3a3064d84f7b9b9654c7fe28`.
 - Recorded starting HEAD: `14fe8a744a3cb730390e39447f84b78fd3d5f054` (different from supplied rollback; both retained).

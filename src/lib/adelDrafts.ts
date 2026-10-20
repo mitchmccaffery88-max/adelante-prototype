@@ -10,6 +10,7 @@
 import { withoutMergeHeld } from "./mergePart2";
 import { coordinatorNoteCanRead } from "./coordinatorSudAccess";
 import { getActingStaff } from "./roles";
+import { actingSudViewer, coordinatorSummaryLines } from "./coordinatorSudView";
 import { AdelanteEHR, refillNeedsCures, type Patient, type RefillRequest } from "@/lib/ehr";
 import { canAccess, noteGateClass, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
@@ -63,6 +64,10 @@ export function lastSignedNoteAt(p: Patient): string | undefined {
     .at(-1);
 }
 export function buildNoteDraft(p: Patient, role: StaffRole, now = new Date()): NoteDraft {
+  if (role === "clinical_coordinator") {
+    const lines = coordinatorSummaryLines(p, { ...actingSudViewer(), role }, now.getTime());
+    return { subjective: "", objective: lines.join("\n"), assessment: "", plan: "" };
+  }
   const since = lastSignedNoteAt(p) ?? new Date(+now - 30 * DAY).toISOString();
   const appts = AdelanteEHR.listAppointments().filter((a) => a.patientId === p.id);
   const today = appts.find((a) => new Date(a.start).toDateString() === now.toDateString());
@@ -88,7 +93,7 @@ export function buildNoteDraft(p: Patient, role: StaffRole, now = new Date()): N
   const plan: string[] = [];
   // §Privacy P1 — the draft reads only notes this viewer may open (SUD,
   // counseling/psychotherapy and SUD group notes keep their own gate).
-  const noteVisible = (n: Parameters<typeof noteGateClass>[0]) => { if (role === "clinical_coordinator") return coordinatorNoteCanRead({ role, staffId: getActingStaff()?.id }, p, n); const c = noteGateClass(n); if (!c) return true; const a = canAccess(role, c, p); return a.level !== "none" && !a.locked; };
+  const noteVisible = (n: Parameters<typeof noteGateClass>[0]) => { const c = noteGateClass(n); if (!c) return true; const a = canAccess(role, c, p); return a.level !== "none" && !a.locked; };
   const lastSigned = (p.progressNotes ?? []).filter((n) => n.signedAt && !n.voidedAt && noteVisible(n)).sort((a, b) => (b.signedAt ?? "").localeCompare(a.signedAt ?? ""))[0];
   if (lastSigned?.plan) plan.push(`Last note's plan (${d(lastSigned.signedAt!)}): ${lastSigned.plan.split("\n")[0]}`);
   // Today's check-in: participation only (mood content stays patient-private).

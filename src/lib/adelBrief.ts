@@ -34,6 +34,8 @@ import { aiConsentStatus } from "@/lib/scribe";
 import { chartActionState } from "@/lib/chartActions";
 import { reentryDay, briefLastSeen, type BriefAction } from "@/lib/chartBrief";
 import { SimulatedLlmAdapter, type LlmSentence } from "@/lib/vendors/llm";
+import { actingSudViewer, coordinatorSudView, auditCoordinatorSudView } from "./coordinatorSudView";
+import { coordinatorEmergencyFor, coordinatorSudCanRead } from "./coordinatorSudAccess";
 
 const DAY = 86400000;
 export const BRIEF_SECTION_CAP = 3;
@@ -136,6 +138,7 @@ function series(p: Patient, role: StaffRole, key: string) {
 // ---------------------------------------------------------------- the four fixed sections
 /** Adherence: med adherence (runway / missed doses), MAT continuity, overdue re-screens. */
 export function computeAdherence(p: Patient, role: StaffRole, now: Date): BriefBullet[] {
+  if (role === "clinical_coordinator") return coordinatorBriefBullets(p, "adherence", now);
   const out: BriefBullet[] = [];
   const nowIso = now.toISOString();
   if (canAccess(role, "meds_erx", p).level !== "none") {
@@ -168,6 +171,7 @@ export function computeAdherence(p: Patient, role: StaffRole, now: Date): BriefB
 
 /** Engagement: attended vs missed (30/60 d), check-in streak, messages, days since contact, reentry day. */
 export function computeEngagement(p: Patient, role: StaffRole, now: Date): BriefBullet[] {
+  if (role === "clinical_coordinator") return coordinatorBriefBullets(p, "engagement", now);
   const out: BriefBullet[] = [];
   const nowIso = now.toISOString();
   const past = seesVisits(role, p) ? apptsFor(p.id).filter((a) => +new Date(a.start) <= +now) : [];
@@ -206,6 +210,7 @@ export function computeEngagement(p: Patient, role: StaffRole, now: Date): Brief
 
 /** Visit focus: measure changes, open goals, open refills, pending results, outside events. */
 export function computeVisitFocus(p: Patient, role: StaffRole, now: Date): BriefBullet[] {
+  if (role === "clinical_coordinator") return coordinatorBriefBullets(p, "visit_focus", now);
   const out: BriefBullet[] = [];
   const nowIso = now.toISOString();
   // §C3 — newest open severity flag first; else a recent "improving" note (Draft rules).
@@ -252,6 +257,7 @@ export function computeVisitFocus(p: Patient, role: StaffRole, now: Date): Brief
 
 /** Care gaps: rescreens due, plan/safety review, SDOH, unsigned notes, referrals, consents. */
 export function computeCareGaps(p: Patient, role: StaffRole, now: Date): BriefBullet[] {
+  if (role === "clinical_coordinator") return coordinatorBriefBullets(p, "care_gaps", now);
   const out: BriefBullet[] = [];
   const nowIso = now.toISOString();
   const phq = series(p, role, "phq-9").at(-1);
@@ -300,6 +306,15 @@ const COMPUTE: Record<BriefSectionId, (p: Patient, r: StaffRole, now: Date) => B
   visit_focus: computeVisitFocus,
   care_gaps: computeCareGaps,
 };
+
+function coordinatorBriefBullets(p: Patient, section: BriefSectionId, now: Date): BriefBullet[] {
+  const v = coordinatorSudView(p, { ...actingSudViewer(), role: "clinical_coordinator" }, +now);
+  const at = now.toISOString();
+  if (section === "adherence") return v.medications.map((r) => ({ id: `p2-med-${r.id}`, text: `${r.name} · ${r.dose ?? r.sig ?? "Dose not recorded"}`, at, sectionId: "medications", sources: src("order", [r.id]) })).slice(0, BRIEF_SECTION_CAP);
+  if (section === "engagement") return v.attendance.map((r) => ({ id: `p2-visit-${r.id}`, text: `${r.start} · ${r.status}`, at: r.start, sectionId: "appointments", sources: src("appointment", [r.id]) })).slice(0, BRIEF_SECTION_CAP);
+  if (section === "visit_focus") return v.treatmentPlans.map((r) => ({ id: `p2-goal-${r.id}`, text: `${r.text} · ${r.status}`, at, sectionId: "care-plan", sources: src("goal", [r.id]) })).slice(0, BRIEF_SECTION_CAP);
+  return v.labs.map((r) => ({ id: `p2-lab-${r.id}`, text: `${r.testId} · ${r.result ? `${r.result.value} ${r.result.unit}` : r.status}`, at, sectionId: "labs", sources: src("lab_order", [r.id]) })).slice(0, BRIEF_SECTION_CAP);
+}
 
 /** Suggested actions — registry-gated (chartActionState), max 4. */
 export function computeBriefActions(p: Patient, role: StaffRole, staffId: string, now: Date): BriefAction[] {
@@ -388,6 +403,10 @@ export function _resetBriefStats() {
 
 /** Role-visibility class: role + Part 2 outcome for this patient. Never shared across roles. */
 export function visibilityClass(p: Patient, role: StaffRole) {
+  if (role === "clinical_coordinator") {
+    const viewer = { ...actingSudViewer(), role };
+    return `${role}|actor:${viewer.staffId ?? "none"}|b:${coordinatorSudCanRead(viewer, p, "diagnoses") ? 1 : 0}|release:${p.sudCounselingNotesRelease ? 1 : 0}|grant:${coordinatorEmergencyFor(viewer, p.id)?.end ?? "none"}`;
+  }
   return `${role}|sud:${roleSeesAsamSection(role, p) ? 1 : 0}`;
 }
 // §Privacy P1 — care-team self-tracking outcome splits the cache, not the logged class.
@@ -413,7 +432,7 @@ let currentTrigger: BriefComputeTrigger = "view";
 function computeSection(entry: BriefCacheEntry, p: Patient, id: BriefSectionId, now: Date, triggeredBy: BriefSource[] = []) {
   const t = nowMs();
   briefStats.sectionComputes[id]++;
-  entry.sections[id] = { id, bullets: COMPUTE[id](p, entry.role, now).slice(0, BRIEF_SECTION_CAP), computedAt: now.toISOString() };
+  entry.sections[id] = { id, bullets: (entry.role === "clinical_coordinator" ? coordinatorBriefBullets(p, id, now) : COMPUTE[id](p, entry.role, now)).slice(0, BRIEF_SECTION_CAP), computedAt: now.toISOString() };
   // V2 — a SYSTEM event in the existing record-access log (never a view):
   // which sources triggered it, never any bullet text. Quiet append so the
   // log write can't re-trigger this cache or update React mid-render.
@@ -460,6 +479,7 @@ function changedSections(entry: BriefCacheEntry, fp: Partial<Record<BriefSource,
  * since last validation) touches no record data.
  */
 export function getAdelBrief(p: Patient, role: StaffRole, now = new Date()): BriefCacheEntry {
+  if (role === "clinical_coordinator") auditCoordinatorSudView({ ...actingSudViewer(), role }, p, "brief");
   ensureSubscribed();
   const t = nowMs();
   const key = keyOf(p, role);
@@ -490,6 +510,7 @@ export function getAdelBrief(p: Patient, role: StaffRole, now = new Date()): Bri
  * synchronously.
  */
 export function peekAdelBrief(p: Patient, role: StaffRole): BriefCacheEntry {
+  if (role === "clinical_coordinator") return getAdelBrief(p, role);
   ensureSubscribed();
   const entry = cache.get(keyOf(p, role));
   if (!entry) return getAdelBrief(p, role);
