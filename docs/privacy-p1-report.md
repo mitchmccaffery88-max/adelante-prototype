@@ -1,6 +1,28 @@
-# Privacy P1 — stopped at final browser run
+# Privacy P1 — COMPLETE
 
 Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. No publishing, 9a, 9c or P2 work.
+
+## Oct 20 delegated final closeout
+
+Mitch approved classifying the sole full-suite timeout as a load-timing flake if the unchanged therapist test passed three standalone runs. **Condition met: 3/3 passed**, each against current code with `E2E_BASE_URL=http://localhost:8080`, `--workers=1`, no test, timeout or retry changes.
+
+| Standalone run | Result | Test duration | Command duration reported by Playwright |
+|---|---|---|---|
+| 1 | Passed, EXIT 0 | 24.750s | 36.2s |
+| 2 | Passed, EXIT 0 | 22.812s | 32.0s |
+| 3 | Passed, EXIT 0 | 22.203s | 31.5s |
+
+Evidence: `/tmp/privacy-p1-timing/run-{1,2,3}.json` and corresponding `.log` files. An initial anchored grep selected no tests; no test ran in that invocation. The corrected selector ran exactly the therapist case each time.
+
+Final validation: **units 2,757/2,757; full browsers 178/179**, with the sole `staffNewAudit8a2.spec.ts:29` 30-second timeout accepted under Mitch's delegated rule (only full-run failure plus 3/3 standalone passes), like the existing contentWiring:47 exception. This is not a 179/179 green full run. The previous standalone pass was 24.7s.
+
+Historical timings: Phase 9b's report records 179/179 in 29.3 minutes, but surviving logs do not supply this test's individual duration. No export-filename full-run timing log was found. Both requested historical individual durations are unavailable, not inferred.
+
+**Follow-up:** investigate why the therapist New-menu audit case is slow and runs close to its unchanged 30s limit (about 25s in the previous rerun and first confirmation). No timeout increase, retry change or production change was made.
+
+Screenshots: the prior full run's 16 regenerated tracked screenshots were restored; these three runs regenerated none requiring restoration. Final check of 100 tracked screenshot/evidence image paths present in rollback: **0 differ**. Browser test and configuration remain unchanged this continuation.
+
+Validated code checkpoint SHA: `5f0dfe6e22606b5e7aaf335366e20a0fd7eba13f`; final documentation closeout SHA is supplied in the completion message after the platform records these edits. P1 is COMPLETE under the delegated validation decision. Scope limitations below remain disclosed; no P2, 9a or publishing.
 
 ## Oct 20 final continuation
 
@@ -9,7 +31,7 @@ Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. No publishing, 9a, 9c or P
 - State SUD reporting owners now: clinical_coordinator (CalOMS file, TPS actions, client-level rows); DMC-ODS export also roles passing roleSeesAsam.
 - County TPS totals "<11": already in place (countyReporting.ts:458-461).
 - Full units: **2,757 passed / 2,757** (342 files).
-- Full browser suite: **178 passed / 179; 1 failed** (33.4 min, --workers=1, :8080, EXIT 1). Failure: `e2e/staffNewAudit8a2.spec.ts:29` therapist /clinician + New options — 30s test timeout, no assertion mismatch. Standalone rerun passed (24.7s). Not the documented contentWiring:47 exception, so P1 STOPS here. Proposed (not applied): delegate treating :29 as a load-timing flake like contentWiring:47, or approve a full-suite rerun. 16 regenerated tracked screenshots restored to rollback; 0 differ.
+- Full browser suite: **178 passed / 179; 1 failed** (33.4 min, --workers=1, :8080, EXIT 1). Failure: `e2e/staffNewAudit8a2.spec.ts:29` therapist /clinician + New options — 30s test timeout, no assertion mismatch. Standalone rerun passed (24.7s). Initially stopped; resolved by the delegated 3/3 confirmation above. 16 regenerated tracked screenshots restored to rollback; 0 differ.
 - Final SHA: reported in chat at end of turn (commit made by platform after this edit).
 
 ## Oct 19 delegated stop-item continuation
@@ -21,7 +43,7 @@ Rollback: `f8a650cfdc77ff6a3c2bbaadfc243bef87ed92ba`. No publishing, 9a, 9c or P
 - Approved former `dmcOdsReadiness.test.ts:69-70`: null roles now `ecm_provider`, `billing`, `billing_coordinator`; clinical coordinator worklist explicitly non-null.
 - Validation: `cleanupReschedule`, `dmcOdsReadiness`, `crossRoleJourneys`: **28 passed / 29 total**, 2 files passed / 1 failed. Evidence: `/tmp/privacy-p1-approved.log`.
 
-### New stop signal — no further implementation or suites
+### Historical stop signal — resolved by delegated destination-setup approval
 
 `src/lib/__tests__/cleanupReschedule.test.ts:54` (formerly :40): current `expect(r.ok).toBe(true)` receives `false`. The setup no longer fails before the assertion; the existing reschedule case now reaches it. The destination selector at current :50 (formerly :36) chooses the first clinician slot other than the newly booked start and does not exclude the patient's other appointments; its previously overlapping first slot can be selected again. This destination cause is source-based, not yet confirmed by a separate runtime reason capture.
 
@@ -37,7 +59,7 @@ Pending NEW coordinator CalOMS/TPS and disclosure-audit tests were not added aft
 - `part2Disclosure.ts:119-121,180-237`: required trimmed emergency reason retained as emergencyReason in disclosure entry and audit detail. No new emergency SUD chart route.
 - `countyReporting.ts:458-461`: TPS totals already suppress 1–10 via suppressCell; no change needed.
 
-## Stop signals and proposed resolution
+## Historical stop signals and proposed resolution (all subsequently approved and resolved)
 
 - `cleanupReschedule.test.ts:17` called at `:35` and `:46`: both existing cases fail before assertions because slots[0] overlaps p1's existing appointment. No P1 booking logic changed. Proposed separate setup repair: select a genuinely patient-free slot; no assertion weakening. This needs delegated approval before continuing.
 - `cleanupReschedule.test.ts:86`: current reads null export's csv header; proposed `expect(out).toBeNull()`. :83 was approved but this follow-on exact line remains unresolved.
@@ -71,7 +93,7 @@ Pending NEW coordinator CalOMS/TPS and disclosure-audit tests were not added aft
 | Generated signed-note plan | Latest note | Viewer note-class-filtered |
 | Emergency disclosure reason | Not retained | Retained |
 
-## Inventory evidence (partial, not full closeout)
+## Inventory evidence (path-specific; comprehensive inventory remains unverified)
 
 - Billing access: roles.ts:503-522; claims/nav checks privacyP1.test.ts:20-35. /billing and /admin-claims remain available. Chart/search denies billing: chartAccess.ts:23-27,62-82. Inbox Documents hidden: inbox.tsx:97,134-136.
 - County rows/actions/disclosures: countyReporting.ts:35-54,125-135,450-482,537-553; DMC export: dmcOdsReadiness.ts:224-238,290-322.
@@ -81,4 +103,4 @@ Pending NEW coordinator CalOMS/TPS and disclosure-audit tests were not added aft
 
 ## Reported, not built / unverified
 
-Coordinator B-item clinical access and emergency SUD-detail route are deferred to P2. Optional coordination-consent marker is not a complete signed recipient/scope/provenance/revocation/counseling-release workflow. New owner/disclosure-audit tests remain pending. Complete nested billing payload/export and all-generator inventory, end-to-end claim workflow, full units, browser suite to EXIT, screenshot restoration and final closeout SHA remain pending stop resolution. Current evidence is path-specific, not comprehensive P1 verification.
+Coordinator B-item clinical access and emergency SUD-detail route are deferred to P2. Optional coordination-consent marker is not a complete signed recipient/scope/provenance/revocation/counseling-release workflow. Complete nested billing payload/export and all-generator inventory and a dedicated end-to-end claim workflow remain unverified; current inventory evidence is path-specific, not comprehensive. Owner/disclosure-audit tests, full units, full browser suite to EXIT and screenshot restoration are complete, with the explicitly accepted browser flake documented above.
