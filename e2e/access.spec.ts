@@ -21,7 +21,7 @@ test("access model + per-person notifications", async ({ page }) => {
   const ids = await page.evaluate(() => {
     const e = (window as unknown as W).__adelante.AdelanteEHR as unknown as { listPatients: () => { id: string; firstName: string; lastName: string }[] };
     const ps = e.listPatients();
-    return { luis: ps.find((p) => p.firstName === "Luis" && p.lastName === "Camacho")!.id, other: ps.find((p) => p.firstName !== "Luis")!.id, otherName: (() => { const o = ps.find((p) => p.firstName !== "Luis")!; return `${o.firstName} ${o.lastName}`; })() };
+    return { luis: ps.find((p) => p.firstName === "Luis" && p.lastName === "Camacho")!.id, other: ps.find((p) => p.firstName !== "Luis")!.id, otherName: (() => { const o = ps.find((p) => p.firstName !== "Luis")!; return `${o.firstName} ${o.lastName}`; })(), otherProgramId: (ps.find((p) => p.firstName !== "Luis")! as unknown as { programId: string }).programId };
   });
 
   // 1. Billing: no search field; /record/<Luis> redirects.
@@ -47,7 +47,7 @@ test("access model + per-person notifications", async ({ page }) => {
   await as(page, "s-admin1", "sys_admin");
   await go(page, "/quality-compliance");
   await page.getByRole("combobox", { name: "Client to restrict" }).click();
-  await page.getByRole("option", { name: new RegExp(ids.otherName) }).first().click();
+  await page.getByRole("option", { name: new RegExp(ids.otherProgramId) }).first().click();
   await page.getByLabel("Restriction reason").fill("Staff member is also a client (test)");
   await page.getByTestId("restrict-record").getByRole("button").last().click();
   await expect.poll(() => page.evaluate(async (pid) => { const { ca } = await (window as unknown as W).__adelante.access(); return ca.isRestricted(pid); }, ids.other)).toBe(true);
