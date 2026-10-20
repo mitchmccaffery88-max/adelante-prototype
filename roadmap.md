@@ -23,7 +23,7 @@
 - [x] FULL background one-worker browser suite on :8080, polled to literal EXIT 0: 211/211, 31.0m; last validation step; no flake exceptions
 - [x] Restored 17 tracked screenshots vs rollback; 223 rollback image files byte-identical; new evidence preserved; docs/phase9c2-report.md complete
 - DMC pre-import Date freeze remains UNAPPROVED and unapplied; no publishing
-- Next: Privacy P3 — not started
+- Next: finish Privacy P3 (approval for access.spec.ts:50), then the DMC Date-freeze batch
 
 ## Phase 9c-1 — COMPLETE (Oct 20)
 - Rollback 1e410aad83903e2950d62031329ff42b3ff18033; starting HEAD 89e1b1bdc87041e9fa982502325a24ad753e63aa
