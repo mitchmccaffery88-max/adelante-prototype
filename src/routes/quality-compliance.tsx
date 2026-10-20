@@ -65,7 +65,7 @@ function QualityCompliancePage() {
           <h2 className="font-semibold">Restricted record opened</h2>
           {opens.length ? <ul className="mt-2 divide-y">{opens.map((i) => (
             <li key={i.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
-              <span className="flex-1">{i.actorName} opened a restricted record · {new Date(i.at).toLocaleString()}</span>
+              <span className="flex-1">{i.actorName} {i.disclosureId ? "used emergency access" : "opened a restricted record"} · {new Date(i.at).toLocaleString()}{i.medicalFollowUp ? " · Medical compliance follow-up" : ""}</span>
               <Input className="w-56" aria-label="Review note" placeholder="Review note" value={note[i.id] ?? ""} onChange={(e) => setNote({ ...note, [i.id]: e.target.value })} />
               <Button size="sm" variant="outline" disabled={!note[i.id]?.trim()} onClick={() => runAction("compliance_restricted_review", actor, undefined, { args: [{ id: i.id, note: note[i.id], actor: { staffId, name: staffName, role } }] })}>Mark reviewed</Button>
             </li>))}</ul> : <p className="mt-2 text-sm text-muted-foreground">Nothing waiting.</p>}

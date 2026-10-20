@@ -1663,9 +1663,11 @@ export interface Patient {
    * §Privacy P1 addendum A — SUD consent that lets care COORDINATION staff
    * (clinical_coordinator) be counted in SUD aggregates: a single TPO consent
    * or a specific written consent naming the program. Absent = not on file
-   * (deny by default). Never widens chart access.
+   * (deny by default). Privacy P2 permits only the coordinator item-read projection.
    */
   sudCoordinationConsent?: "tpo" | "specific_written";
+  /** Separate counseling-note release; absent/false never authorizes access. */
+  sudCounselingNotesRelease?: boolean;
   // §Recovery start date deliberately does NOT live here. It is patient-only
   // self-tracking (`src/lib/selfTracking.ts`) until it is clinically validated
   // as medically necessary. Do not add it back without that sign-off.

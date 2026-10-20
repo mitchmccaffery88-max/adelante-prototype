@@ -16,6 +16,7 @@ import { AdelanteEHR, type Patient } from "./ehr";
 import { getStaffMember, type StaffRole } from "./roles";
 import { defaultSiteId, primarySiteFor, sitesFor, calendarOwnerFor, siteName } from "./workingCalendar";
 import { isAssignedTo, assignmentIdentityFor } from "./caseloadScope";
+import { markEmergencyReviewed } from "./part2Disclosure";
 
 export const ACCESS_MODEL_DRAFT_LABEL = "Draft — pending exec RBAC review";
 export const CHART_DENIED_MESSAGE = "This chart isn't available for your role";
@@ -85,7 +86,7 @@ export function searchablePatientsFor(role: StaffRole, staffId: string | undefin
 // Restricted record
 // ---------------------------------------------------------------------------
 export interface RestrictionRow { patientId: string; reason: string; byStaffId: string; byName: string; at: string }
-export interface RestrictedOpenItem { id: string; patientId: string; actorId: string; actorName: string; role: string; at: string; acknowledgedAt?: string; acknowledgedBy?: string }
+export interface RestrictedOpenItem { id: string; patientId: string; actorId: string; actorName: string; role: string; at: string; acknowledgedAt?: string; acknowledgedBy?: string; disclosureId?: string; medicalFollowUp?: boolean }
 const restrictions = new Map<string, RestrictionRow>();
 const openedItems: RestrictedOpenItem[] = [];
 /** Charts this session already unlocked with a reason (per person + patient). */
@@ -96,6 +97,12 @@ export const isRestricted = (patientId: string) => restrictions.has(patientId);
 export const restrictionFor = (patientId: string) => restrictions.get(patientId);
 export const listRestrictedOpenItems = (open = true) => openedItems.filter((i) => !open || !i.acknowledgedAt);
 export const isChartUnlocked = (staffId: string | undefined, patientId: string) => unlocked.has(`${staffId}|${patientId}`);
+/** P2 adds review work, never a chart-unlock or another unlock audit. */
+export function registerEmergencyReviewItem(input: Omit<RestrictedOpenItem, "id">): RestrictedOpenItem {
+  const item = { ...input, id: `rro-${++seq}` };
+  openedItems.unshift(item);
+  return item;
+}
 
 type Actor = { staffId: string; name: string; role: StaffRole };
 function need(reason: string) { if (!reason?.trim()) throw new Error("A reason is required."); }
@@ -131,6 +138,7 @@ export function acknowledgeRestrictedOpen(input: { id: string; note: string; act
   need(input.note);
   const item = openedItems.find((i) => i.id === input.id);
   if (!item) throw new Error("Item not found.");
+  if (item.disclosureId) markEmergencyReviewed(item.disclosureId, input.actor);
   item.acknowledgedAt = new Date().toISOString();
   item.acknowledgedBy = input.actor.name;
   AdelanteEHR._recordAudit({ category: "access", action: "record.restricted_open_reviewed", patientId: item.patientId, actorId: input.actor.staffId, actorRole: input.actor.role, detail: { itemId: item.id, note: input.note.trim() } });

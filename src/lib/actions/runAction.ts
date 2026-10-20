@@ -187,6 +187,9 @@ export function runAction<T = unknown>(
     return { ok: false, reason: refused, value, event: write("action.blocked", actionId, actor, patient, "blocked", refused, flags, store.name) };
   }
   const sim = actionIsSimulated(entry);
+  if (entry.successAuditFromStore && value && typeof value === "object" && "event" in value) {
+    return { ok: true, value: value as T, outcome: "succeeded", event: (value as { event: AuditEvent }).event };
+  }
   if (answer.state === "cosign") {
     const event = write("action.cosign_routed", actionId, actor, patient, "cosign_routed", answer.reason, flags, store.name, sim);
     return { ok: true, value: value as T, outcome: "cosign_routed", event };
