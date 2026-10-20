@@ -14,15 +14,19 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+import { MIN_COHORT_SIZE } from "@/lib/cohortGuard";
+
 const pct = (n: number) => `${Math.round(n * 100)}%`;
+/** §9a-2 — every cross-patient count below 11 shows "<11" (display only). */
+const c = (n: number) => (n < MIN_COHORT_SIZE ? "<11" : String(n));
+const small = (n: number) => n < MIN_COHORT_SIZE;
 const RISK_LABEL = { none: "None", low: "Low", moderate: "Moderate", high: "High" } as const;
 
 function GuardNote({ r }: { r: SliceReport }) {
   if (!r.guard.belowMinimumCohort) return null;
   return (
-    <p className="rounded-md border border-warning/40 bg-warning/10 p-1.5 text-[11px] text-foreground" data-testid="pop-cohort-caveat">
-      Group of {r.guard.cohortSize} is below the {r.guard.minimumCohortSize}-person minimum — counts may identify people.
-      Shown for the demo; must be suppressed before real pilot data.
+    <p className="rounded-md border border-border bg-muted p-1.5 text-sm text-foreground" data-testid="pop-cohort-caveat">
+      This group is below the {r.guard.minimumCohortSize}-person minimum — counts under 11 are hidden to protect privacy.
     </p>
   );
 }
@@ -48,15 +52,15 @@ function SliceBody({ r, compact }: { r: SliceReport; compact?: boolean }) {
                   {t.name}
                   {t.caveat && <span className="block text-[10px] text-muted-foreground">{t.caveat}</span>}
                 </td>
-                <td className="text-center">{t.administered}</td>
+                <td className="text-center">{c(t.administered)}</td>
                 <td className="text-center">
-                  {t.positive} ({pct(t.positiveRate)})
+                  {c(t.positive)}{small(t.administered) ? "" : ` (${pct(t.positiveRate)})`}
                   {t.cutoff !== undefined && <span className="block text-[10px] text-muted-foreground">≥ {t.cutoff}, draft</span>}
                 </td>
                 <td className="text-center">
                   {t.withChange === 0
                     ? "—"
-                    : `${t.improved} lower · ${t.unchanged} same · ${t.worsened} higher (mean ${t.meanChange! > 0 ? "+" : ""}${t.meanChange})`}
+                    : small(t.withChange) ? "<11 with change" : `${c(t.improved)} lower · ${c(t.unchanged)} same · ${c(t.worsened)} higher (mean ${t.meanChange! > 0 ? "+" : ""}${t.meanChange})`}
                 </td>
               </tr>
             ))}
@@ -65,24 +69,24 @@ function SliceBody({ r, compact }: { r: SliceReport; compact?: boolean }) {
       </div>
       <div className={`grid gap-3 ${compact ? "" : "md:grid-cols-3"}`}>
         <Card className="space-y-1 p-3" data-testid="pop-tile-cssrs">
-          <p className="text-xs font-medium text-navy">C-SSRS latest risk level (draft mapping)</p>
+          <p className="text-xs font-medium text-foreground">C-SSRS latest risk level (draft mapping)</p>
           <p className="text-xs">
-            {r.cssrs.latestByRisk.map((x) => `${RISK_LABEL[x.risk]} ${x.count}`).join(" · ")}
+            {r.cssrs.latestByRisk.map((x) => `${RISK_LABEL[x.risk]} ${c(x.count)}`).join(" · ")}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            {r.cssrs.counted} counted; {r.cssrs.excludedPlaceholder} left out (collected on placeholder text).
-            {r.cssrs.withChange > 0 && ` Change: ${r.cssrs.lower} lower, ${r.cssrs.unchanged} same, ${r.cssrs.higher} higher.`}
+            {c(r.cssrs.counted)} counted; {c(r.cssrs.excludedPlaceholder)} left out (collected on placeholder text).
+            {r.cssrs.withChange > 0 && ` Change: ${c(r.cssrs.lower)} lower, ${c(r.cssrs.unchanged)} same, ${c(r.cssrs.higher)} higher.`}
           </p>
         </Card>
         <Card className="space-y-1 p-3" data-testid="pop-tile-social">
-          <p className="text-xs font-medium text-navy">Social needs (AHC-HRSN domains)</p>
+          <p className="text-xs font-medium text-foreground">Social needs (AHC-HRSN domains)</p>
           {r.social.length === 0 ? (
             <p className="text-xs text-muted-foreground">No AHC-HRSN screens on file.</p>
           ) : (
             <ul className="space-y-0.5 text-xs">
               {r.social.map((d) => (
                 <li key={d.key}>
-                  {d.label}: {d.positive} of {d.screened}
+                  {d.label}: {c(d.positive)} of {c(d.screened)}
                   {d.staffOnly && <span className="ml-1 text-[10px] text-muted-foreground">(staff-only)</span>}
                 </li>
               ))}
@@ -91,13 +95,13 @@ function SliceBody({ r, compact }: { r: SliceReport; compact?: boolean }) {
         </Card>
         {r.levels && (
           <Card className="space-y-1 p-3" data-testid="pop-tile-levels">
-            <p className="text-xs font-medium text-navy">Level-of-care mix (signed, current version)</p>
+            <p className="text-xs font-medium text-foreground">Level-of-care mix (signed, current version)</p>
             {r.levels.length === 0 ? (
               <p className="text-xs text-muted-foreground">No signed ASAM level.</p>
             ) : (
               <ul className="space-y-0.5 text-xs">
                 {r.levels.map((l) => (
-                  <li key={l.level}>{l.level}: {l.count}</li>
+                  <li key={l.level}>{l.level}: {c(l.count)}</li>
                 ))}
               </ul>
             )}
@@ -117,8 +121,8 @@ export function PopulationHealthSection({ role }: { role: StaffRole }) {
   return (
     <section className="space-y-3" aria-labelledby="population-health-heading" data-area="population-health" data-testid="reporting-population-health">
       <div>
-        <h2 id="population-health-heading" className="flex items-center gap-2 font-display text-lg text-navy">
-          <HeartPulse className="h-4 w-4 text-teal" aria-hidden /> Population health
+        <h2 id="population-health-heading" className="flex items-center gap-2 font-display text-lg text-foreground">
+          <HeartPulse className="h-4 w-4 text-primary" aria-hidden /> Population health
         </h2>
         <p className="max-w-2xl text-xs text-muted-foreground">
           Screener positivity and change, C-SSRS risk levels, social needs and level-of-care mix, overall and by group.
@@ -143,7 +147,7 @@ export function PopulationHealthSection({ role }: { role: StaffRole }) {
         )}
       </Card>
       <Card className="space-y-2 p-4">
-        <h3 className="text-sm font-medium text-navy">Everyone</h3>
+        <h3 className="text-sm font-medium text-foreground">Everyone</h3>
         <SliceBody r={report.overall} />
       </Card>
       <Card className="space-y-3 p-4">
@@ -164,8 +168,8 @@ export function PopulationHealthSection({ role }: { role: StaffRole }) {
         <div className="space-y-4">
           {slice.groups.map((g) => (
             <div key={g.key} className="space-y-2 border-t border-border/50 pt-3" data-testid={`pop-group-${slice.kind}-${g.key}`}>
-              <p className="text-sm font-medium text-navy">
-                {g.label} <span className="text-xs font-normal text-muted-foreground">({g.report.guard.cohortSize})</span>
+              <p className="text-sm font-medium text-foreground">
+                {g.label} <span className="text-xs font-normal text-muted-foreground">({c(g.report.guard.cohortSize)})</span>
               </p>
               <SliceBody r={g.report} compact />
             </div>

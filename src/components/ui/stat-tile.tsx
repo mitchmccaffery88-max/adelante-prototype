@@ -14,6 +14,10 @@ export interface StatTileProps {
   formattedValue?: string;
   unit?: "count" | "percent";
   personal?: boolean;
+  /** Not a count of people (configuration, catalog or code counts): exempt like personal work. */
+  nonPatient?: boolean;
+  /** Optional test id on the tile itself. */
+  tileTestId?: string;
   cohortSize?: number;
   comparison?: string;
   status?: ChartStatus;
@@ -60,7 +64,7 @@ function Sparkline({ series, target, targetConfirmed }: { series: KpiSparkline; 
   </figure>;
 }
 
-export function StatTile({ label, value, formattedValue, unit = "count", personal = false, cohortSize,
+export function StatTile({ label, value, formattedValue, unit = "count", personal = false, nonPatient = false, tileTestId, cohortSize,
   comparison, status, basis, sparkline, target, targetConfirmed, onDrillDown, noDetail, numberTestId, children }: StatTileProps) {
   const ref = useRef<HTMLElement>(null);
   const staff = useStaffDensity() === "compact";
@@ -69,11 +73,11 @@ export function StatTile({ label, value, formattedValue, unit = "count", persona
     setMember(Boolean(ref.current?.closest(".member-comfortable, .member-overlay, .patient-theme, [data-audience='patient'], [data-audience='member']")));
   }, [staff]);
   const missing = value == null || !Number.isFinite(value);
-  const suppressed = !missing && !personal && (cohortSize != null ? cohortSize < MIN_COHORT_SIZE : unit === "count" && value < MIN_COHORT_SIZE);
+  const suppressed = !missing && !personal && !nonPatient && (cohortSize != null ? cohortSize < MIN_COHORT_SIZE : unit === "count" && value < MIN_COHORT_SIZE);
   const state = !missing && !suppressed && status ? chartStatus(status) : null;
   const Icon = state?.icon;
   const number = missing ? "No live metric yet" : suppressed ? "<11" : formattedValue ?? `${value}${unit === "percent" ? "%" : ""}`;
-  return <article ref={ref} className="min-w-0 rounded-md border border-border bg-card p-4 shadow-sm" data-stat-tile data-personal={personal ? "yes" : "no"}>
+  return <article ref={ref} className="min-w-0 rounded-md border border-border bg-card p-4 shadow-sm" data-stat-tile data-testid={tileTestId} data-suppressed={suppressed ? "yes" : "no"} data-personal={personal ? "yes" : "no"}>
     <p className="text-base font-medium text-foreground">{label}</p>
     <div className="mt-2 flex min-h-10 items-center gap-2">
       <p className={missing ? "text-lg font-semibold text-foreground" : "text-3xl font-bold text-foreground"} data-testid={numberTestId}>{number}</p>

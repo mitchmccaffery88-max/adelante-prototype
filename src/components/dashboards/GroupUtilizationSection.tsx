@@ -6,7 +6,8 @@
 // attendance in the window, it says so instead of rendering 0%.
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CalendarClock, PieChart, ChevronRight, Download } from "lucide-react";
+import { Users, Download } from "lucide-react";
+import { StatTile } from "@/components/ui/stat-tile";
 import { formatMetric, type LiveMetric } from "@/lib/dashboardMetrics";
 import {
   openGroupEngagementRows,
@@ -93,69 +94,63 @@ export function GroupUtilizationSection({
   return (
     <section className="space-y-3" aria-labelledby="group-util-heading">
       <div>
-        <h2 id="group-util-heading" className="font-display text-lg text-navy">
+        <h2 id="group-util-heading" className="font-display text-lg text-foreground">
           Group utilization
         </h2>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Live from group rosters and facilitator-recorded attendance. Occurrences where nobody
           took attendance are excluded — missing data, not a missed group.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="p-4" data-tile="group-active">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <CalendarClock className="h-4 w-4" /> Active groups
-          </div>
-          {activeGroups > 0 ? (
-            <p className="mt-2 font-display text-3xl text-navy" data-testid="group-active-count">
-              {activeGroups}
-            </p>
-          ) : (
-            <p className="mt-2 text-sm text-muted-foreground">
-              No groups with an active roster yet.
-            </p>
-          )}
-        </Card>
+        <div data-tile="group-active" className="min-w-0">
+          <StatTile
+            label="Active groups"
+            value={activeGroups > 0 ? activeGroups : null}
+            nonPatient
+            numberTestId={activeGroups > 0 ? "group-active-count" : undefined}
+          >
+            {activeGroups === 0 && (
+              <p className="mt-1 text-sm text-muted-foreground">No groups with an active roster yet.</p>
+            )}
+          </StatTile>
+        </div>
 
-        <Card className="p-4" data-tile="group-enrolled">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Users className="h-4 w-4" /> Patients enrolled
-          </div>
-          <p className="mt-2 font-display text-3xl text-navy" data-testid="group-enrolled-count">
-            {enrolledPatients}
-          </p>
-          <p className="text-[11px] text-muted-foreground">Distinct active enrollments</p>
-        </Card>
+        <div data-tile="group-enrolled" className="min-w-0">
+          <StatTile
+            label="Patients enrolled"
+            value={enrolledPatients}
+            basis="Distinct active enrollments"
+            numberTestId="group-enrolled-count"
+          />
+        </div>
 
-        <Card className="p-4" data-tile="group-attendance">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <PieChart className="h-4 w-4" /> Attendance rate ({windowDays}d)
-          </div>
-          {measured ? (
-            <>
-              <p className="mt-2 font-display text-3xl text-navy" data-testid="group-attendance-pct">
-                {formatMetric(metric)}
+        <div data-tile="group-attendance" className="min-w-0">
+          <StatTile
+            label={`Attendance rate (${windowDays}d)`}
+            value={measured ? (metric?.value ?? attendance.pct) : null}
+            formattedValue={formatMetric(metric)}
+            unit="percent"
+            cohortSize={attendance.denominator}
+            basis={metric?.basis}
+            numberTestId={measured ? "group-attendance-pct" : undefined}
+            onDrillDown={measured ? onOpenAbsences : undefined}
+          >
+            {!measured && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                No attendance has been recorded in the last {windowDays} days.
               </p>
-              <p className="text-[11px] text-muted-foreground">{metric?.basis}</p>
-              <Button size="sm" variant="outline" className="mt-3" onClick={onOpenAbsences}>
-                Details <ChevronRight className="ml-1 h-3 w-3" />
-              </Button>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-muted-foreground">
-              No live metric yet — no attendance has been recorded in the last {windowDays} days.
-            </p>
-          )}
-        </Card>
-
+            )}
+          </StatTile>
+        </div>
       </div>
 
       <Card className="p-4" data-tile="open-group-engagement">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Users className="h-4 w-4" /> Open group engagement (non-billing)
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Users className="h-4 w-4" aria-hidden /> Open group engagement (non-billing)
         </div>
-        <p className="text-[11px] text-muted-foreground mt-1">
+        <p className="mt-1 text-sm text-muted-foreground">
           Open psychoeducational groups are tracked for program reach only. They never create a
           claim, so this is engagement data, not clinical claims data.
         </p>
@@ -167,33 +162,22 @@ export function GroupUtilizationSection({
           onClick={downloadOpenGroupCsv}
           data-testid="open-group-engagement-export"
         >
-          <Download className="h-3.5 w-3.5 mr-1.5" /> Export CSV (non-billing)
+          <Download className="h-4 w-4 mr-1.5" aria-hidden /> Export CSV (non-billing)
         </Button>
         {openGroups.activeGroups === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">No open groups running yet.</p>
         ) : (
-          <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 text-sm">
-            <div>
-              <dt className="text-[11px] text-muted-foreground">Open groups</dt>
-              <dd className="font-display text-2xl text-navy">{openGroups.activeGroups}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-muted-foreground">Enrolled</dt>
-              <dd className="font-display text-2xl text-navy">{openGroups.enrolledPatients}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-muted-foreground">Reached ({windowDays}d)</dt>
-              <dd className="font-display text-2xl text-navy">{openGroups.patientsReached}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-muted-foreground">Attendance ({windowDays}d)</dt>
-              <dd className="font-display text-2xl text-navy">
-                {openGroups.attendance.pct === null
-                  ? "—"
-                  : `${Math.round(openGroups.attendance.pct)}%`}
-              </dd>
-            </div>
-          </dl>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatTile label="Open groups" value={openGroups.activeGroups} nonPatient />
+            <StatTile label="Enrolled" value={openGroups.enrolledPatients} />
+            <StatTile label={`Reached (${windowDays}d)`} value={openGroups.patientsReached} />
+            <StatTile
+              label={`Attendance (${windowDays}d)`}
+              value={openGroups.attendance.pct === null ? null : Math.round(openGroups.attendance.pct)}
+              unit="percent"
+              cohortSize={openGroups.attendance.denominator}
+            />
+          </div>
         )}
       </Card>
     </section>

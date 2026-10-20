@@ -1,4 +1,6 @@
 import { StaffTable } from "@/components/staff/StaffTable";
+import { StatTile } from "@/components/ui/stat-tile";
+import { MIN_COHORT_SIZE } from "@/lib/cohortGuard";
 import { CoverageReleaseAggregate } from "@/components/coverage/CoverageReleaseAggregate";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { actResult, actFor } from "@/lib/actions/act";
@@ -215,47 +217,31 @@ function AdminPage() {
         </div>
       </nav>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-        <Kpi
-          icon={Users}
-          label="Enrolled patients"
-          value={stats.enrolled.toString()}
-          accent="navy"
-        />
-        <Kpi
-          icon={ClipboardCheck}
-          label="Session completion"
-          value={`${stats.completionRate}%`}
-          accent="teal"
-        />
-        <Kpi
-          icon={Timer}
+      {/* §9a-2 — StatTile presentation: neutral (no targets), "<11" for small patient counts. */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6" data-testid="admin-kpis">
+        <StatTile label="Enrolled patients" value={stats.enrolled} tileTestId="admin-kpi-enrolled" />
+        <StatTile label="Session completion" value={stats.completionRate} unit="percent" cohortSize={stats.enrolled} tileTestId="admin-kpi-completion" />
+        <StatTile
           label="Intake velocity"
-          value={
+          value={intakeVelocity.medianDays ?? null}
+          formattedValue={intakeVelocity.medianDays == null ? undefined : `${intakeVelocity.medianDays}d median`}
+          cohortSize={intakeVelocity.belowMinimumCohort ? 0 : intakeVelocity.n}
+          comparison={
             intakeVelocity.belowMinimumCohort
-              ? "Too few referrals to report"
-              : `${intakeVelocity.medianDays ?? "—"}d median`
-          }
-          sub={
-            intakeVelocity.belowMinimumCohort
-              ? `Fewer than ${intakeVelocity.minimumCohortSize} referrals (${intakeVelocity.periodLabel})`
+              ? `Too few referrals to report · fewer than ${intakeVelocity.minimumCohortSize} referrals (${intakeVelocity.periodLabel})`
               : `referral to 1st attended session · n=${intakeVelocity.n} · ${intakeVelocity.periodLabel}`
           }
-          accent="gold"
+          tileTestId="admin-kpi-intake"
         />
-        <Kpi
-          icon={TrendingUp}
-          label="Active referrals"
-          value={referrals.filter((r) => !isReferralClosed(r.status)).length.toString()}
-          accent="teal"
-        />
-        <Kpi icon={ShieldCheck} label="Medi-Cal verified" value={`${verifiedPct}%`} accent="navy" />
-        <Kpi
-          icon={HandHeart}
+        <StatTile label="Active referrals" value={referrals.filter((r) => !isReferralClosed(r.status)).length} tileTestId="admin-kpi-referrals" />
+        <StatTile label="Medi-Cal verified" value={verifiedPct} unit="percent" cohortSize={patients.length} tileTestId="admin-kpi-verified" />
+        <StatTile
           label="ECM caseload"
-          value={`${ecmPct}%`}
-          sub={`${ecmCount} of ${patients.length}`}
-          accent="gold"
+          value={ecmPct}
+          unit="percent"
+          cohortSize={patients.length}
+          basis={ecmCount >= MIN_COHORT_SIZE ? `${ecmCount} of ${patients.length}` : `<11 of ${patients.length}`}
+          tileTestId="admin-kpi-ecm"
         />
       </div>
 
@@ -413,36 +399,6 @@ function CoverageBadge({ status }: { status?: string }) {
   };
   return (
     <Badge className={`${styles[status] ?? ""} border-0 text-xs`}>{labels[status] ?? status}</Badge>
-  );
-}
-
-function Kpi({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  sub?: string;
-  accent: "navy" | "teal" | "gold";
-}) {
-  const colors = {
-    navy: "bg-navy/10 text-navy",
-    teal: "bg-teal/15 text-teal",
-    gold: "bg-gold/30 text-navy",
-  } as const;
-  return (
-    <Card className="p-5">
-      <div className={`h-10 w-10 rounded-lg grid place-items-center ${colors[accent]}`}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1 font-display text-3xl text-navy">{value}</div>
-      {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
-    </Card>
   );
 }
 
@@ -760,31 +716,16 @@ function GroupActivityKpi() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <UsersRound className="h-4 w-4 text-teal" />
-          <h2 className="font-display text-lg text-navy">Group activity</h2>
+          <h2 className="font-display text-lg text-foreground">Group activity</h2>
         </div>
         <Link to="/group-sessions" className="text-xs text-teal underline-offset-2 hover:underline">
           Manage groups to
         </Link>
       </div>
       <div className="mt-3 grid gap-4 sm:grid-cols-3">
-        <div>
-          <div className="text-xs text-muted-foreground">Active groups</div>
-          <div className="font-display text-2xl text-navy" data-testid="admin-group-active">
-            {active}
-          </div>
-        </div>
-        <div>
-          <div className="text-xs text-muted-foreground">Patients enrolled</div>
-          <div className="font-display text-2xl text-navy" data-testid="admin-group-enrolled">
-            {enrolled}
-          </div>
-        </div>
-        <div>
-          <div className="text-xs text-muted-foreground">Scheduled seats (next 7 days)</div>
-          <div className="font-display text-2xl text-navy" data-testid="admin-group-seats">
-            {seats}
-          </div>
-        </div>
+        <StatTile label="Active groups" value={active} nonPatient numberTestId="admin-group-active" />
+        <StatTile label="Patients enrolled" value={enrolled} numberTestId="admin-group-enrolled" />
+        <StatTile label="Scheduled seats (next 7 days)" value={seats} numberTestId="admin-group-seats" />
       </div>
     </Card>
   );

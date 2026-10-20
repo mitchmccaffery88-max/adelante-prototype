@@ -7,33 +7,17 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, Users } from "lucide-react";
+import { StatTile } from "@/components/ui/stat-tile";
+import { MIN_COHORT_SIZE } from "@/lib/cohortGuard";
 import type { EngagementProjection } from "@/lib/engagementReporting";
 
 function pct(v: number | null): string {
   return v === null ? "No live metric yet" : `${Math.round(v * 10) / 10}%`;
 }
 
-function num(v: number | null, hasData: boolean): string {
-  if (!hasData || v === null || !Number.isFinite(v)) return "—";
-  return String(Math.round(v * 10) / 10);
-}
-
-function Stat({
-  label,
-  value,
-  basis,
-}: {
-  label: string;
-  value: string;
-  basis?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-border/60 bg-card/40 p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 font-display text-xl text-navy">{value}</p>
-      {basis && <p className="mt-0.5 text-[11px] text-muted-foreground">{basis}</p>}
-    </div>
-  );
+/** §9a-2 — table cells are cross-patient counts too: below 11 shows "<11". */
+function cell(n: number): string {
+  return n < MIN_COHORT_SIZE ? "<11" : String(n);
 }
 
 export function EngagementSection({ projection }: { projection: EngagementProjection }) {
@@ -45,9 +29,9 @@ export function EngagementSection({ projection }: { projection: EngagementProjec
         <div>
           <h2
             id="engagement-heading"
-            className="flex items-center gap-2 font-display text-lg text-navy"
+            className="flex items-center gap-2 font-display text-lg text-foreground"
           >
-            <Activity className="h-4 w-4 text-teal" /> Patient engagement
+            <Activity className="h-4 w-4 text-primary" /> Patient engagement
           </h2>
 
           <p className="text-sm text-muted-foreground">
@@ -56,7 +40,7 @@ export function EngagementSection({ projection }: { projection: EngagementProjec
           </p>
         </div>
         <Badge variant="outline" className="text-xs">
-          {cohorts.total} patient{cohorts.total === 1 ? "" : "s"}
+          {cell(cohorts.total)} patient{cohorts.total === 1 ? "" : "s"}
         </Badge>
       </div>
 
@@ -67,28 +51,29 @@ export function EngagementSection({ projection }: { projection: EngagementProjec
         </p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat
+          <StatTile
             label={`Active in last ${windowDays} days`}
-            value={pct(overall.activeRatePct)}
+            value={overall.activeRatePct === null ? null : Math.round(overall.activeRatePct * 10) / 10}
+            unit="percent"
+            cohortSize={overall.patients}
             basis={`${overall.activeInWindow} of ${overall.patients} patients`}
           />
-          <Stat
+          <StatTile
             label="Patients ever engaged"
-            value={String(overall.everEngaged)}
+            value={overall.everEngaged}
             basis="Any completion or saved lesson work"
           />
-          <Stat
+          <StatTile
             label="Completions per patient"
-            value={num(overall.avgCompletionsPerPatient, hasAnyEngagementData)}
+            value={overall.avgCompletionsPerPatient === null || !Number.isFinite(overall.avgCompletionsPerPatient) ? null : Math.round(overall.avgCompletionsPerPatient * 10) / 10}
+            cohortSize={overall.patients}
             basis={`${overall.totalLessonsCompleted + overall.totalRecoveryLessonsCompleted + overall.totalExercisesCompleted} total completions`}
           />
-          <Stat
+          <StatTile
             label="Median days since activity"
-            value={
-              overall.medianDaysSinceActivity === null
-                ? "No live metric yet"
-                : `${overall.medianDaysSinceActivity}d`
-            }
+            value={overall.medianDaysSinceActivity}
+            formattedValue={overall.medianDaysSinceActivity === null ? undefined : `${overall.medianDaysSinceActivity}d`}
+            cohortSize={overall.everEngaged}
             basis="Among patients who ever engaged"
           />
         </div>
@@ -118,20 +103,20 @@ export function EngagementSection({ projection }: { projection: EngagementProjec
                   {c.label}
                   {c.provisionalPatients > 0 && (
                     <Badge variant="outline" className="ml-2 text-[10px]">
-                      {c.provisionalPatients} unconfirmed
+                      {cell(c.provisionalPatients)} unconfirmed
                     </Badge>
                   )}
                 </td>
-                <td className="py-1.5 pr-2 text-right tabular-nums">{c.patients}</td>
-                <td className="py-1.5 pr-2 text-right tabular-nums">{c.everEngaged}</td>
+                <td className="py-1.5 pr-2 text-right tabular-nums">{cell(c.patients)}</td>
+                <td className="py-1.5 pr-2 text-right tabular-nums">{cell(c.everEngaged)}</td>
                 <td className="py-1.5 pr-2 text-right tabular-nums">
-                  {c.patients === 0 ? "—" : `${c.activeInWindow} (${pct(c.activeRatePct)})`}
+                  {c.patients === 0 ? "—" : c.patients < MIN_COHORT_SIZE ? "<11" : `${c.activeInWindow} (${pct(c.activeRatePct)})`}
                 </td>
-                <td className="py-1.5 pr-2 text-right tabular-nums">{c.totalLessonsCompleted}</td>
+                <td className="py-1.5 pr-2 text-right tabular-nums">{cell(c.totalLessonsCompleted)}</td>
                 <td className="py-1.5 pr-2 text-right tabular-nums">
-                  {c.totalRecoveryLessonsCompleted}
+                  {cell(c.totalRecoveryLessonsCompleted)}
                 </td>
-                <td className="py-1.5 text-right tabular-nums">{c.totalToolFlowsCompleted}</td>
+                <td className="py-1.5 text-right tabular-nums">{cell(c.totalToolFlowsCompleted)}</td>
               </tr>
             ))}
           </tbody>
