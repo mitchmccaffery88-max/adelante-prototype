@@ -85,7 +85,7 @@ See the bottom of this file.
 
 - Names: `TaskQueueCard.tsx:140` (program ID text, no link, without chart access), `OpsWorkspace.tsx:50`, `quality-compliance.tsx:45` now use `staffPatientLabel` / `viewerCanOpenChart`.
 - sys_admin ASAM and population-health totals: `asamReporting.ts` `TOTALS_ONLY_ROLES` now includes `sys_admin` (same consent cohort, hidden below 11, no named rows). New test `privacyP3SysAdminCohort.test.ts` proves at 11 consented patients sys_admin's ASAM report and population-health report equal the coordinator's totals exactly, with no names or rows.
-- Held for Mitch, unchanged: authorized non-covered referrers get "enrolled on <date>" only.
+- DECIDED by Mitch (Oct 20): an authorized non-covered referrer gets "enrolled on <date>" only; "outreach completed" stays held for them. Current behaviour kept; no longer held.
 - DMC Date freeze: approved for its own batch; NOT applied here.
 
 ### Changed existing test lines (old → new)
@@ -126,3 +126,15 @@ Order: all edits done → dev-server restart → units **2,893/2,893 (359 files)
 - Proposed: pick by program ID. Add `otherProgramId` to the `ids` evaluate at `:24` (`ps.find(p => p.id === other).programId`) and change `:50` to `{ name: new RegExp(ids.otherProgramId) }`. No other assertion changes.
 - Not applied; awaiting approval. `staffNewAudit8a2:93` did not fail in this run.
 Tracked screenshots restored against 8ce8a634.
+
+
+## Closeout (Oct 20, final)
+- Approved test edit `e2e/access.spec.ts` (encodes the name policy: sys_admin has no chart access, so the option shows the program ID). Nothing else in the file changed.
+  - `:24` old: `return { luis: …, other: …, otherName: (() => { … })() };` → new: same, plus `otherProgramId: (ps.find((p) => p.firstName !== "Luis")! as unknown as { programId: string }).programId`
+  - `:50` old: `page.getByRole("option", { name: new RegExp(ids.otherName) })` → new: `page.getByRole("option", { name: new RegExp(ids.otherProgramId) })`
+- access.spec.ts standalone: 1/1 passed.
+- Dev server restarted; FULL browser suite `--workers=1`, `E2E_BASE_URL=http://localhost:8080`, background, nothing else running: **211/211, 37.6m, EXIT 0**. No flake exceptions used.
+- Units (previous run, no source change since): 2,893/2,893.
+- Screenshots: 16 tracked images restored; all 244 rollback PNGs byte-identical to 8ce8a634.
+- Referrer decision recorded above. DMC Date freeze approved but not applied here (own batch). ~20 untraced name surfaces remain listed for a later batch.
+- Status: Privacy P3 COMPLETE. Not published.

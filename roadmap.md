@@ -2,16 +2,16 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## Privacy P3 — STOPPED (Oct 20 continuation): browser 210/211, e2e/access.spec.ts:50 picks a client by name (name policy) — awaiting approval
-- Rollback 8ce8a6343e53917d7473af94e2006583c9e342b7; starting HEAD 4d2723e7 (no content diff)
-- [x] 1 Patient-name policy: incoming events + remaining ungated name surfaces
-- [x] 2 Referrer types, minimum-necessary updates, authorization capture, SUD hold, audit + disclosure log
-- [x] 3 sys_admin (ASAM section + population-health SUD slices HELD: locked asamReporting.ts) de-identified reporting aggregates (consent-only SUD, <11)
-- [x] 4 Production bundle free of inspection hook + NEW test; demo-only exposure list
+## Privacy P3 — COMPLETE (Oct 20)
+- Rollback 8ce8a6343e53917d7473af94e2006583c9e342b7
+- [x] 1 Patient-name policy (incoming events, TaskQueueCard, OpsWorkspace, quality-compliance + other surfaces); ~20 untraced surfaces listed for later
+- [x] 2 Referrer types/updates/authorization/SUD hold/audit + disclosure log; DECIDED: authorized non-covered gets "enrolled on <date>" only
+- [x] 3 sys_admin de-identified reporting aggregates (consent-only SUD, <11)
+- [x] 4 Production bundle hook-free + NEW test; demo-only exposure list
 - [x] 5 Emergency "End access now"
-- [ ] HELD for approval: TaskQueueCard/OpsWorkspace/quality-compliance name fixes + asamReporting (parity-locked)
-- [ ] Units 2,891/2,891 done; browser 210/211 STOPPED; screenshots restored; docs/privacy-p3-report.md written;, screenshots restored, docs/privacy-p3-report.md, final SHA
-
+- [x] Approved e2e/access.spec.ts:24/:50 program-ID selection; standalone 1/1
+- [x] Units 2,893/2,893; FULL browser 211/211 EXIT 0; screenshots restored; report complete
+- Next: DMC Date-freeze batch, then the seeded claims. Nothing published.
 
 ## Phase 9c-2 — COMPLETE (Oct 20)
 - Rollback aff263ff1aa707d68994b7f175f83aa9d09306fd (9c-1 accepted b15085a8)
