@@ -5,6 +5,7 @@ import { StaffTable } from "@/components/staff/StaffTable";
 import { TaskQueueCard } from "@/components/tasks/TaskQueueCard";
 
 vi.mock("@/lib/roles", () => ({ useActingStaff: () => ({ staffId: "staff-one", role: "ecm_provider", staffName: "Test owner" }) }));
+vi.mock("@/lib/staffPatientLabel", () => ({ staffPatientLabel: () => "Client", viewerCanOpenChart: () => false }));
 vi.mock("@/lib/actions/act", () => ({ act: vi.fn(), actFor: vi.fn() }));
 vi.mock("@/components/clinical/AutomationTrace", () => ({ AutoCreatedFromNote: () => null }));
 vi.mock("@/lib/ehr", () => {

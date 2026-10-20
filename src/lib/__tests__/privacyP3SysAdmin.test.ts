@@ -13,10 +13,10 @@ import { STAFF_ROLES } from "@/lib/roles";
 describe("Privacy P3 — sys_admin aggregates", () => {
   it("counts the same consent-only cohort as the coordinator; hidden below 11", () => {
     const n = coordinatorConsentedPatients().length;
-    expect(asamAccessMode("sys_admin")).toBeNull();
+    expect(asamAccessMode("sys_admin")).toBe(n >= 11 ? "totals" : null);
     expect(reportingSudMode("sys_admin")).toBe(n >= 11 ? "totals" : null);
     expect(reportingSudCohort("sys_admin").map((p) => p.id)).toEqual(n >= 11 ? coordinatorConsentedPatients().map((p) => p.id) : []);
-    expect(aggregatePatients("sys_admin")).toEqual([]);
+    expect(aggregatePatients("sys_admin").map((p) => p.id)).toEqual(n >= 11 ? coordinatorConsentedPatients().map((p) => p.id) : []);
     expect(reportingSudCohort("clinical_coordinator").map((p) => p.id)).toEqual(aggregatePatients("clinical_coordinator").map((p) => p.id));
   });
   it("gets no client-level rows, names, chart access or SUD detail", () => {

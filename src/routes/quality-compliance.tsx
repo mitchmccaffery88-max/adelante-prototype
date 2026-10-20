@@ -1,3 +1,4 @@
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 import { createFileRoute } from "@tanstack/react-router";
@@ -42,7 +43,7 @@ function QualityCompliancePage() {
   const report = useEhr(() => JSON.stringify(outsideCaseloadReport()));
   const flags = useEhr(() => JSON.stringify(unusualVolumeFlags()));
   const items = useEhr(() => JSON.stringify(listRestrictedOpenItems()));
-  const patients = useEhr(() => AdelanteEHR.listPatients().map((p) => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, restricted: isRestricted(p.id) })));
+  const patients = useEhr(() => AdelanteEHR.listPatients().map((p) => ({ id: p.id, name: staffPatientLabel({ role, staffId }, p.id), restricted: isRestricted(p.id) })));
   const [drill, setDrill] = useState<string | null>(null);
   const [pick, setPick] = useState("");
   const [reason, setReason] = useState("");

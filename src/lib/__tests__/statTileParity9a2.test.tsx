@@ -11,6 +11,7 @@ import { CalAimSection } from "@/components/dashboards/CalAimSection";
 import { GroupUtilizationSection } from "@/components/dashboards/GroupUtilizationSection";
 import { CatalogResolutionMetricsCard } from "@/components/admin/CatalogResolutionMetricsCard";
 import { AdelanteEHR } from "@/lib/ehr";
+import { withApprovedP3 } from "@/test/privacyP3Approved";
 
 const ROLLBACK = "2c463a96f657306af2a3dc4fcf72eb9b39d84cad";
 const SELECTORS = [
@@ -33,7 +34,7 @@ afterEach(cleanup);
 describe("9a-2 selector parity with rollback", () => {
   it.each(SELECTORS)("%s is unchanged since rollback", (path) => {
     const old = execFileSync("git", ["show", `${ROLLBACK}:${path}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-    expect(readFileSync(path, "utf8")).toBe(old);
+    expect(readFileSync(path, "utf8")).toBe(withApprovedP3(path, old));
   });
 });
 

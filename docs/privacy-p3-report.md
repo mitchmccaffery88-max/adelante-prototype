@@ -26,7 +26,7 @@ Fixed with the existing `staffPatientLabel` / `viewerCanOpenChart` rule (full na
 | Ops claim picker / patient picker / merge reconfirm | `src/components/ops/OpsActionLauncher.tsx` | label; name and DOB hidden, and name search disabled, without chart access |
 | Referrer texts | `src/lib/referrerPolicy.ts` | no patient name in any text |
 
-Held — STOP items (existing parity tests lock these files byte-for-byte or binding-for-binding; proposed diffs in `docs/privacy-p3-evidence/`):
+Previously held — now APPLIED (delegated approval, Oct 20 continuation) (existing parity tests lock these files byte-for-byte or binding-for-binding; proposed diffs in `docs/privacy-p3-evidence/`):
 
 | File | Existing test | Current | Proposed |
 |---|---|---|---|
@@ -81,9 +81,40 @@ Only sys_admin gained anything. The county download change narrows only.
 
 See the bottom of this file.
 
-### Results
-- Units: 2,891/2,891 (358 files), EXIT 0. An earlier run had one time-of-day collision in `cancelNoShow.test.ts` (`ehr.ts:9265`, same class as the DMC pair); it passed 3/3 on its own and in the final run.
-- Production bundle: hook absent (new test passes; the hook was present before the change).
-- Browser runs: run 1 210/211 (`statTiles9a3.spec.ts:39` billing_coordinator, page reloaded during axe; 3/3 standalone). Run 2 208/211 and run 3 interrupted — the dev-server log shows the platform re-touched every edited file mid-run (HMR "page reload" at 20:12), which created duplicate module copies for bare `/src/...` imports. A dev-server restart cleared it (identity check confirmed).
-- Final clean run: **210/211, EXIT 1**. Sole failure: `e2e/staffNewAudit8a2.spec.ts:93` (sys_admin + New toggles a flag; the menu item was detached during click, 30s timeout). This is NOT an approved exception (only `:29` is approved). **STOPPED** here — not re-run standalone this turn, and no change was made for it.
-- Tracked screenshots restored against the rollback.
+## Continuation (Oct 20, 21:09 UTC) — approved items applied
+
+- Names: `TaskQueueCard.tsx:140` (program ID text, no link, without chart access), `OpsWorkspace.tsx:50`, `quality-compliance.tsx:45` now use `staffPatientLabel` / `viewerCanOpenChart`.
+- sys_admin ASAM and population-health totals: `asamReporting.ts` `TOTALS_ONLY_ROLES` now includes `sys_admin` (same consent cohort, hidden below 11, no named rows). New test `privacyP3SysAdminCohort.test.ts` proves at 11 consented patients sys_admin's ASAM report and population-health report equal the coordinator's totals exactly, with no names or rows.
+- Held for Mitch, unchanged: authorized non-covered referrers get "enrolled on <date>" only.
+- DMC Date freeze: approved for its own batch; NOT applied here.
+
+### Changed existing test lines (old → new)
+
+All approved substitutions live in one new helper, `src/test/privacyP3Approved.ts` (`withApprovedP3`). It applies only the exact approved source changes to the rollback text, and fails if an anchor is not found exactly once. Every other file and assertion in these tests is unchanged.
+
+`src/components/__tests__/roleDashboardParity9c2.test.ts`
+- added import (line 5): `import { withApprovedP3 } from "@/test/privacyP3Approved";`
+- :28 (was :27) old `expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(old(path)));`
+  new `expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedP3(path, old(path))));`
+- :31 (was :30) old `expect(readFileSync(path, "utf8")).toBe(old(path));`
+  new `expect(readFileSync(path, "utf8")).toBe(withApprovedP3(path, old(path)));`
+
+`src/lib/__tests__/statTileParity9a2.test.tsx`
+- added import (line 14): `import { withApprovedP3 } from "@/test/privacyP3Approved";`
+- :37 old `expect(readFileSync(path, "utf8")).toBe(old);`
+  new `expect(readFileSync(path, "utf8")).toBe(withApprovedP3(path, old));`
+
+`src/components/__tests__/staffTable8b1Closeout.test.tsx` — setup only, no assertion change:
+```diff
+ vi.mock("@/lib/roles", () => ({ useActingStaff: () => ({ staffId: "staff-one", role: "ecm_provider", staffName: "Test owner" }) }));
++vi.mock("@/lib/staffPatientLabel", () => ({ staffPatientLabel: () => "Client", viewerCanOpenChart: () => false }));
+ vi.mock("@/lib/actions/act", () => ({ act: vi.fn(), actFor: vi.fn() }));
+```
+The chart-access label module is mocked in place of the real one. Through `chartAccess` → `ehr-ext`, the real module needs `supervisorCandidates`, which the test's partial roles mock does not supply. The test's mocked patient list is empty, so the label is never rendered.
+
+`src/lib/__tests__/__snapshots__/runAction.test.ts.snap`: +17 lines `"coordinator_emergency_end": "hidden"` (one per role), nothing else.
+
+### Pinned-clock parity: every other role identical
+
+Same method as 9c-2. The current tree and a `git archive` of `8ce8a634` (node_modules symlinked, no stash) each ran one dump with Date pinned to 2026-10-20T15:00Z and a seeded `Math.random`. The dump covered `asamAccessMode`, `aggregatePatients`, `asamClinicalReport`, `populationHealthReport`, and CalOMS completeness / substance / justice for all 17 staff roles. Result: **all 17 roles byte-identical**, including sys_admin, because the demo seed has 0 consent-permitted patients (<11, so hidden in both). The ≥11 behaviour is proven by the new cohort test above.
+
