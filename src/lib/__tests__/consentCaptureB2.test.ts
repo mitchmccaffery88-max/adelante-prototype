@@ -11,7 +11,21 @@ import { PATIENT_ACTOR_ROLE } from "../patientBooking";
 import { PART2_ELEMENT_KEYS } from "../consentRecordModel";
 import { advocateOwnReleaseStatus, consentRecordHistory, listESignRequests, myConsentRecords, type CaptureDraft } from "../consentCapture";
 import { chartAction } from "../chartActions";
-import { consentParitySnapshot } from "./consentRecordModelB2.test";
+import type { ConsentCategory } from "../ehr";
+
+const CATS: ConsentCategory[] = ["sud_treatment", "mental_health", "case_coordination", "billing"] as ConsentCategory[];
+/** Same projection as the B2-1 parity fixture (consentRecordModelB2.test.ts). */
+function consentParitySnapshot() {
+  return AdelanteEHR.listPatients().map((p, i) => {
+    const a = AdelanteEHR.activeConsentRecord(p.id);
+    return {
+      id: /^(p\d+|p-demo-.*)$/.test(p.id) ? p.id : `#${i}`,
+      active: a ? { id: a.id, formType: a.formType, status: a.status, sections: a.sections } : null,
+      cats: CATS.map((c) => AdelanteEHR.isConsentCategoryAuthorized(p.id, c)),
+      state: AdelanteEHR.getConsentState(p.id),
+    };
+  });
+}
 
 const staff = { role: "clinical_coordinator" as const, staffId: "s-cc", staffName: "Coordinator Test" };
 const storeActor = { role: "clinical_coordinator" as const, staffId: "s-cc", name: "Coordinator Test" };
@@ -34,7 +48,7 @@ describe("B2-2 consent capture", () => {
     const before = JSON.stringify(consentParitySnapshot());
     const n = succeeded("consent_record_capture");
     const r = runAction("consent_record_capture", staff, patient(), { args: [{ draft: draft(), method: "e_sign", signer: "Test Person", relationship: "patient", attested: true, actor: storeActor }] });
-    expect(r.ok).toBe(true);
+    expect(r.ok ? "" : r.reason).toBe("");
     expect(succeeded("consent_record_capture")).toBe(n + 1);
     const h = consentRecordHistory(patient().id).find((x) => x.consentType === "hipaa_authorization")!;
     expect(h.status).toBe("active");
