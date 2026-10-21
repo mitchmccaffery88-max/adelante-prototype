@@ -9,9 +9,9 @@
 
 ## Required before/after inventory
 
-**PARTIALLY IMPLEMENTED — SECOND STOP:** the approved `/billing` adapter and target projections are applied, but the mounted BillingWorkspaceTiles still receives whole records. The table remains proposed until that boundary and validation are complete.
+**IMPLEMENTED — FULL VALIDATION IN PROGRESS:** all named billing boundaries, including mounted BillingWorkspaceTiles, receive projected inputs for billing audiences. Nonbilling selectors return original store records.
 
-| Surface / source | Before: received fields | Proposed after: received fields |
+| Surface / source | Before: received fields | Implemented after: received fields |
 |---|---|---|
 | `/billing`, `billing.tsx:113–156` | Whole Patient / Appointment / Claim records; BillingRow retains Patient and Appointment | Explicit patient ID/program ID/authorized name, claim-needed payer/member/coverage/arrangement fields; appointment ID/patient ID/provider/start/duration/status/funding/service/modality/location/charge/ISL reason; explicit claim/financial projection. No appointment ASAM task ID or patient clinical subgraphs. Existing row date logic remains unchanged (standalone-date correctness is separate). |
 | `/admin-claims`, `admin-claims.tsx:221–231,247–268,390–439` | Whole patients/claims; filtered clinical audit records; raw patient names; claim signature trace | Same claim-only projection and identity selector using existing staffPatientLabel/viewerCanOpenChart; projected blocked-attempt identifiers/service/reason. CSV stays program ID only with current columns. |
@@ -125,3 +125,33 @@ These two substitutions permit the original workspace computations to consume pr
 Proposed NEW `src/test/billingWorkspaceB3bApproved.ts` would apply **only** the two production substitutions above, **only** to `src/lib/billingWorkspace.ts`, requiring each anchor exactly once and returning every other file unchanged. Both tests would import that adapter. This is distinct from the approved OpsWorkspace inventory adapter and the billing.tsx-only adapter; it removes no comparisons and leaves all other source bytes pinned.
 
 No additional production files or existing tests were edited after discovering this conflict. No full validation or browser suite was started. Pending: approved OpsWorkspace adapter/comparison, safe coverage inputs and workspace ID/count parity for both billing roles on both seeds, new privacy and browser tests, clinician/sys_admin parity, restart/full validation/screenshot restoration/closeout SHA. The partial helper's empty eligibility list remains an acknowledged unfinished implementation, not a validated change. Nothing published.
+
+## Third-stop approval — implemented exact changes
+
+Rollback remains b1d3c414. The two production changes are exactly the current/proposed blocks above: billingWorkspace adds the defaulted coverageRows parameter, and eligibilityDue filters that input. All other billingWorkspace bytes are pinned by the NEW billingWorkspaceB3bApproved adapter, scoped only to that file, with exact-once anchors.
+
+NEW opsWorkspaceB3bApproved adapter applies only the three approved declarations in OpsWorkspace; their old/new text is recorded above. The billing.tsx adapter remains billing-only.
+
+Existing test changes (line numbers refer to rollback):
+
+- roleDashboardParity9c2.test.ts:28 old `expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedP3(path, old(path))));`
+- New `expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path))))));`
+- roleDashboardParity9c2.test.ts:32 old `expect(readFileSync(path, "utf8")).toBe(withApprovedP3(path, old(path)));`
+- New `expect(readFileSync(path, "utf8")).toBe(withApprovedBillingWorkspaceB3b(path, withApprovedP3(path, old(path))));`
+- billingParity9a3.test.tsx:19 old `it.each(SELECTORS)("%s is byte-identical to rollback", (p) => expect(readFileSync(p, "utf8")).toBe(old(p)));`
+- New `it.each(SELECTORS)("%s is byte-identical to rollback", (p) => expect(readFileSync(p, "utf8")).toBe(withApprovedBillingWorkspaceB3b(p, old(p))));`
+- Imports added to the first test: withApprovedBillingB3b, withApprovedOpsWorkspaceB3b, withApprovedBillingWorkspaceB3b from their corresponding NEW src/test adapters; second test imports only withApprovedBillingWorkspaceB3b. No assertions removed, skipped or loosened. No further pre-approved substitutions were needed.
+
+### Safe coverage and preserved lists
+
+Coverage rows are derived/sorted by the existing coverageWorklistRows first, then projected to patientId, programId, county, coverageStatus, verified, cinOnFile, activePlanPayer, daysSinceCheck, state and policy-approved name; openFollowUps is empty and no verification/report/task graph leaves the selector. Name masking occurs after original sorting so all list IDs and order remain identical. billingOpsWorkspace calls the original billingWorkspace; no list logic is copied. Original claims still drive generic documentation validation inside the existing store boundary.
+
+### Focused checks
+
+- Approved source/inventory parity tests: 28/28.
+- NEW billingProjectionB3b.test.ts: 5/5; exact root/nested allowlists, private-key recursion, payment reconciliation, every workspace list ID/order/count/reason for both billing roles on both default and B3a seeds; lane parity; pinned clinician/sys_admin selector/workspace parity and shared clinical files byte-identical to rollback.
+- NEW billingPrivacyB3b.spec.ts: 3/3; both billing roles re-walk all seven lifecycle branches, exact amounts/dual audits/CSV headers, blocked Ready, unchanged denied class, no note links or provenance, program IDs on admin claims, and axe.
+- Default seed contains no group claim: the NEW browser fixture uses existing public group creation/attendance/documentation/claim stores on fictional B3a patients (no record patching or ID injection), then verifies no topic, other attendee ID/program ID or attendance list in the group popover. No group permission or registry changes.
+- Screenshots visually inspected: group reference only; signed provider/date; receipts/balances and denied look retained. Temporary images are under /tmp/browser.
+
+Full validation follows after the required restart. Nothing published.

@@ -6,6 +6,7 @@ import { staffPatientLabel, viewerCanOpenChart } from "./staffPatientLabel";
 import { gateMessageFor } from "./dmcOdsReadiness";
 import { laneFor as originalLaneFor } from "./billingLane";
 import { billingWorkspace, claimBlockLabel } from "./billingWorkspace";
+import { coverageWorklistRows, type CoverageWorklistRow } from "./coverageWorklist";
 
 export const billingAudience = (role: StaffRole) => role === "billing" || role === "billing_coordinator";
 export const CLAIM_KEYS = ["id", "encounterId", "patientId", "clinicianId", "state", "updatedAt", "serviceDate", "serviceCode", "program", "programSource", "codeSource", "unitsSource", "units", "minutes", "rateId", "rateCentsPerUnit", "rateStatus", "chargeCents", "noRateReason", "denialReason", "taxonomy", "supervisingStaffId", "arrangementMissing", "payerId", "copayCents", "deductibleCents", "coinsuranceBps", "payerPortionCents", "patientPortionCents", "patientPaidCents", "patientBalanceCents", "overpaidReview", "voidBlocked"] as const;
@@ -48,9 +49,15 @@ export function billingDocumentationBlock(role: StaffRole, c: Claim) { return "d
 export function billingClaimBlock(c: Claim, role: StaffRole) { return "billingBlock" in c ? (c as BillingClaim).billingBlock : claimBlockLabel(c, role); }
 export function billingOpsWorkspace(role: StaffRole, claims: Claim[]) {
   if (!billingAudience(role)) return billingWorkspace(role, claims);
-  return { blocked: claims.flatMap(claim => { const reason = billingClaimBlock(claim, role); return reason ? [{ claim, reason }] : []; }),
-    ready: claims.filter(c => c.state === "generated" && !c.duplicateReview), eligibilityDue: [],
-    paymentsToPost: claims.filter(c => (c.patientBalanceCents ?? 0) > 0 && c.state !== "written_off"), holds: claims.filter(c => Boolean(c.duplicateReview)) };
+  return billingWorkspace(role, claims, billingCoverageRows());
+}
+export function billingCoverageRows(): CoverageWorklistRow[] {
+  // Derive and sort through the original worklist, then strip task/report graphs.
+  // Masking names after sorting preserves every existing list's order and IDs.
+  return coverageWorklistRows().map(row => ({
+    ...pick(row, ["patientId", "programId", "county", "coverageStatus", "verified", "cinOnFile", "activePlanPayer", "daysSinceCheck", "state"]),
+    name: billingPatientLabel(row.patientId), openFollowUps: [],
+  }));
 }
 export function billingPatientLabel(id: string) { return staffPatientLabel({ role: getActingRole(), staffId: getActingStaff().id }, id); }
 export function billingBlockedAttempts() {
