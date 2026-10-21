@@ -1,5 +1,6 @@
 import { StatusChip } from "@/components/ui/status-chip";
 import { FormsToSign } from "@/components/consent/FormsToSign";
+import { PatientConsentESign } from "@/components/consent/PatientConsentESign";
 import { GroupConsentPrompt } from "@/components/consent/PatientSignedForms";
 import { AdvocateConsentStatus } from "@/components/consent/AdvocateConsentStatus";
 import { openScreenerRequestsForPatient } from "@/lib/chartOrders";
@@ -294,6 +295,7 @@ export function PatientHome() {
       <YourGroupsSection patientId={patient.id} />
       {/* §Group 2 O2 — "Sign later": the waiting advocate consent shows here. */}
       <FormsToSign patientId={patient.id} lang={patient.preferredLanguage === "es" ? "es" : "en"} />
+      <PatientConsentESign patientId={patient.id} lang={patient.preferredLanguage === "es" ? "es" : "en"} />
       <GroupConsentPrompt patientId={patient.id} lang={patient.preferredLanguage === "es" ? "es" : "en"} />
       <AdvocateConsentStatus patientId={patient.id} />
       <TasksCard patientId={patient.id} />

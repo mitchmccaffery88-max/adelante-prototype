@@ -16,6 +16,7 @@ import { AdvocateDocumentStatusPanel } from "@/components/advocate/AdvocateDocum
 import { useAdvocateSession } from "@/components/advocate/AdvocateSessionContext";
 import { AdvocateViewHeader, useSupportingName } from "@/components/advocate/AdvocateViewParts";
 import { useI18n } from "@/lib/i18n";
+import { AdvocateOwnReleaseStatus } from "@/components/advocate/AdvocateOwnReleaseStatus";
 
 /** Ordinary screen copy — Spanish draft pending translation review. */
 const SCREEN_COPY = {
@@ -63,6 +64,8 @@ function AdvocateMyDocuments() {
       <Card className="p-5">
         <AdvocateDocumentStatusPanel linkId={linkId} attestedName={attestedName} />
       </Card>
+
+      <AdvocateOwnReleaseStatus linkId={linkId} />
 
       <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div>
