@@ -2,6 +2,9 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## Audit: denied-navigation audit under slow load (NEW, Oct 21) — investigate only, not implemented
+- [ ] Read-only finding: guard logic cannot skip the audit (only redirect source is RouteAccessGuard.tsx:37 audit then :61 navigate in the same effect; role restored at module init roles.ts:1557/1566; lastWarned de-dupe is per-mount and only suppresses repeats). Gap: audit events live only in memory (ehr.ts:6977 appendAudit → auditEvents); any full page reload after the redirect (e.g. dev-server dependency re-optimisation) wipes it and the reloaded /worklist triggers no new denial → 0 events. Real gap possible: yes (prototype storage). Proposed app-only fix, awaiting approval: persist nav_access_denied (and other access audits) to sessionStorage and rehydrate on load, until production immutable storage.
+
 ## B3b — Billing privacy narrowing (Oct 21) — BEHAVIOURAL TEST STOP
 - Rollback: b1d3c414de160babe95c541483a610853cb3e076; B3a accepted 2409b85c
 - [x] Inventory and old-test stop checks; asam allowed block / permission snapshot byte-identical to 2f56b883
