@@ -1,7 +1,7 @@
 // §B2-2 — consent record capture flows (additive; no gate reads these yet —
 // enforcement switches in B2-4). Every write runs through a registry action
 // (chartActions consent_record_*) and lands in the ONE consent ledger as a
-// typed record via AdelanteEHR.createConsentRecord. Typed records carry no
+// typed record via the ledger create function. Typed records carry no
 // legacy `sections`, so no existing gate, AI-consent check or migration reads
 // them. Draft — pending counsel.
 import { AdelanteEHR, effectiveConsentStatus, type ConsentRecord, type ConsentRecordStatus } from "./ehr";
