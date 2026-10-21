@@ -7,7 +7,7 @@
 import { AdelanteEHR, effectiveConsentStatus, type ConsentRecord, type ConsentRecordStatus } from "./ehr";
 import { canAccess, type StaffRole } from "./roles";
 import { roleHasChartEntry } from "./chartAccess";
-import { migrateLegacyConsents, publishedForm, textHash, type FormKey } from "./consentForms";
+import { publishedForm, textHash, type FormKey } from "./consentForms";
 import {
   isPart2Type,
   verbalAssentAllowed,
@@ -121,8 +121,6 @@ function extensionFor(d: CaptureDraft, signature: NonNullable<ConsentRecordExten
 function write(d: CaptureDraft, ext: ConsentRecordExtension, capturedBy: { staffId?: string; staffName: string; role: string }, source: string): ConsentRecord {
   const errors = validateConsentExtension(ext);
   if (errors.length) throw new Error(errors.join(" "));
-  // Run the lazy legacy migration first so a typed record never changes whether it runs.
-  migrateLegacyConsents(d.patientId);
   const today = new Date().toISOString().slice(0, 10);
   return AdelanteEHR.createConsentRecord({
     patientId: d.patientId,
