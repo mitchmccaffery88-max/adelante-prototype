@@ -102,7 +102,7 @@ describe("B2-2 consent capture", () => {
   });
 
   it("advocate sees only their own release status", () => {
-    const link = AdelanteEHR.listAdvocateLinks()[0]!;
+    const link = AdelanteEHR.listAdvocateLinks()[0] ?? AdelanteEHR.createAdvocateInvitation({ patientId: patient().id, advocateName: "Fictional Helper", invitationSentTo: "helper@example.test", invitationChannel: "email", designatedBy: "patient" as never });
     const before = advocateOwnReleaseStatus(link.id);
     expect(before).toBe("none");
     runAction("consent_record_capture", staff, AdelanteEHR.getPatient(link.patientId), { args: [{ draft: draft({ patientId: link.patientId, consentType: "advocate_release", recipients: [{ kind: "person", name: "Helper", directoryRef: link.id }] }), method: "e_sign", signer: "Test Person", relationship: "patient", attested: true, actor: storeActor }] });
