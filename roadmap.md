@@ -649,3 +649,13 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 
 ## B3b validation stop (Oct 21)
 - [ ] Full browser suite: 214/215, EXIT 1 — staffSlowLoadLanding8c2.spec.ts:31 saw 0 nav_access_denied audits under 6x CPU throttle; guard/audit path byte-identical to rollback b1d3c414 (verified via git diff). Units 2,907/2,907 green; new billingPrivacyB3b spec 3/3. Stopped per stop rule; awaiting Mitch: rerun or investigate.
+
+## B2 — complete consent record (approved Oct 21)
+- [x] B2-0 inventory freeze — rollback ee589ba2; docs/b2-consent-inventory.md; NEW src/lib/__tests__/consentInventoryB2.test.ts; no behaviour change
+- [ ] B2-1 model extension (multi-active per type + recipient, consentCovers) — next
+- [ ] B2-2 capture / e-sign EN-ES / paper upload / history
+- [ ] B2-3 revoke / renew / expiry / missing-expired staff view
+- [ ] B2-4 enforcement switch
+- [ ] B2-5 migration to legacyUnverified (report affected patients first)
+- [ ] B2-6 audit + disclosure links
+- [ ] Audit: denied-navigation audit under slow load — moved to backend / immutable-audit phase (no sessionStorage)

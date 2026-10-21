@@ -99,7 +99,11 @@ Each batch: restart → full units → full one-worker browser suite on :8080, b
 
 Existing tests likely affected (stop rule applies): consentRecords, consentWorkflow (unit + e2e), consentAuditView, consentPublishReason, intakeConsentReprompt, advocateSudDisclosureConsent, part2DisclosureAccessLog, part2SimulatedHardening, privacyP3Referrer, poDisclosure, section4part2, groupEnrollmentTelehealthConsent, sdohReferralConsentAttribution, coordinatorEmergencyP2.spec, consentSigningClearance8a2.spec, myWorkPart2Screeners. B2-4 and B2-5 are where most would break; those stop for approval.
 
-## Decisions needed from Mitch
-1. Do legacy flags grant nothing (default) or keep granting until a date?
-2. Is verbal assent allowed for any type in MVP?
-3. Multi-active records per patient: approve.
+## Decisions (Mitch, Oct 21 — approved)
+1. Legacy flags grant NOTHING: they become legacyUnverified records with no access. Demo patients needing access are re-captured as signed records through real store functions; affected-patient count and effect reported before switching.
+2. Verbal assent is LIMITED (Draft — pending counsel): allowed only for the referrer_authorization "enrolled" update to a non-covered referrer (family / community) and for SMS / portal reminders; records who heard it, when, and the exact wording. Never for Part 2 (TPO or specific), counseling-notes release, HIPAA authorization, legal disclosure or advocate SUD release — those need e-sign or an uploaded wet signature.
+3. Multiple active records per patient: approved, one per type + recipient.
+4. Denied-navigation audit under slow load: folded into backend / immutable-audit work; no sessionStorage.
+
+## Status
+- B2-0 done (docs/b2-consent-inventory.md, consentInventoryB2.test.ts). B2-1 next.
