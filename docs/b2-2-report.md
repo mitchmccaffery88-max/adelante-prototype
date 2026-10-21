@@ -48,4 +48,4 @@ No adapter substitutions were needed (ehr.ts untouched in B2-2).
 ## Validation
 - Dev server restarted; full units 2,917/2,917, 364 files, EXIT 0.
 - Full browser suite, `--workers=1`, E2E_BASE_URL=http://localhost:8080, background, alone: **219 passed (34.1m), EXIT 0** (log `/tmp/b22-browser.log`).
-- Screenshots restored byte-identical to 7d973925.
+- Screenshots: 17 of 21 restored; all now byte-identical to 7d973925.
