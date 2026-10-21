@@ -107,3 +107,5 @@ Patient lessons, exercises, recovery and toolkit screens use `.patient-theme`; s
 - Part 2 CONTENT in /admin-content is visible to every content author (`contentPart2VisibleToStaff` in `contentStaff.ts`); patient-record Part 2 checks are untouched. Why: authors maintain the content; patient data stays restricted.
 
 - Staff-facing patient names and unsigned-work rows in operations tables use `viewerCanOpenChart` / `staffPatientLabel` (`staffPatientLabel.ts`) on top of `chartEntryFor`; Part 2 note rows use `noteGateClass` + `canAccess`. Why: queues can never show more than the chart would.
+
+- Billing-only reads use billingProjection allowlists at UI ingestion boundaries; non-billing reads retain original records and store gates. Why: clinical graphs and signature provenance cannot reach claims-only presentation.
