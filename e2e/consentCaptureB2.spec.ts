@@ -101,7 +101,7 @@ test("B2-2 staff capture, Part 2 validation, paper upload and send for e-sign", 
 test("B2-2 patient e-sign in Spanish at 390px", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 1800 });
   await boot(page);
-  const pid = "p-demo-mar-seed-es"; // seeded, onboarded Spanish-preferring demo patient
+  const pid = "p1"; // seeded patient with intake completed; Spanish chosen with the member language toggle
   const sent = await page.evaluate(async (id) => {
     const app = (window as unknown as W).__adelante;
     const { ra } = await app.access();
@@ -111,7 +111,8 @@ test("B2-2 patient e-sign in Spanish at 390px", async ({ page }) => {
     return r.ok;
   }, pid);
   expect(sent).toBe(true);
-  await go(page, "/home");
+  await go(page, "/profile");
+  await page.getByRole("button", { name: "Cambiar idioma a español" }).click();
   const card = page.getByTestId("patient-consent-esign");
   await expect(card).toBeVisible();
   await expect(card).toContainText("Formularios de consentimiento de tu equipo");
@@ -125,7 +126,6 @@ test("B2-2 patient e-sign in Spanish at 390px", async ({ page }) => {
   await expect(card).toBeHidden();
   expect(await succeeded(page, "consent_record_patient_sign")).toBe(n + 1);
   expect((await typed(page, pid)).find((r) => r.type === "sms_reminder")).toMatchObject({ method: "e_sign", status: "active" });
-  await go(page, "/profile");
-  await expect(page.getByTestId("my-consent-records")).toBeVisible();
+  await expect(page.getByTestId("my-consent-records")).toContainText("Mis formularios");
   await axe(page, "my-consent-records");
 });
