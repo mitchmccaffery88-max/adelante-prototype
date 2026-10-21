@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { withApprovedBillingB3b } from "@/test/billingB3bApproved";
 import { withApprovedP3 } from "@/test/privacyP3Approved";
 
 const rollback = "aff263ff1aa707d68994b7f175f83aa9d09306fd";
@@ -25,7 +26,7 @@ function inventory(source: string) {
 
 describe("9c-2 unchanged values, IDs and handlers against rollback", () => {
   it.each(files)("%s preserves existing bindings", path => {
-    expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedP3(path, old(path))));
+    expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedBillingB3b(path, withApprovedP3(path, old(path)))));
   });
   it.each(["src/lib/roles.ts", "src/lib/chartAccess.ts", "src/lib/navGuard.ts", "src/lib/clinicianWorkspace.ts", "src/lib/billingWorkspace.ts", "src/lib/ehr.ts", "src/lib/ehr-ext.ts", "src/lib/asamReporting.ts", "src/lib/complianceMonitoring.ts", "src/components/ui/stat-tile.tsx", "src/components/billing/BillingStatusSummary.tsx"])("%s keeps selector/access/suppression behavior byte-identical", path => {
     expect(readFileSync(path, "utf8")).toBe(withApprovedP3(path, old(path)));

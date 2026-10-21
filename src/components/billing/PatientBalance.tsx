@@ -1,3 +1,4 @@
+import { billingClaimInput, billingArrangement } from "@/lib/billingProjection";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { confirmedAction } from "@/components/staff/confirmed-action";
@@ -21,8 +22,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 const DOLLARS = (c?: number) => (c === undefined ? "—" : `$${(c / 100).toFixed(2)}`);
 const inputCls = "rounded-md border bg-background px-2 py-1 text-xs";
 
-export function PatientBalance({ claim, canWrite }: { claim: Claim; canWrite: boolean }) {
-  const arrangement = useEhr(() => AdelanteEHR.getPatient(claim.patientId)?.paymentArrangement);
+export function PatientBalance({ claim: input, canWrite }: { claim: Claim; canWrite: boolean }) {
+  const claim = billingClaimInput(input);
+  const arrangement = useEhr(() => billingArrangement(claim.patientId));
   const patientPays = claim.program ? PATIENT_PAY_PROGRAMS.has(claim.program) : false;
   const payments = claim.patientPayments ?? [];
   return (

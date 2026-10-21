@@ -1,3 +1,4 @@
+import { billingClaimInput, billingArrangement } from "@/lib/billingProjection";
 import { StaffTable } from "@/components/staff/StaffTable";
 const tableCopy = { rates: "Rates", codes: "Billing codes and units" };
 // §Phase 7c — the real billing code table + effective-dated rate table on
@@ -38,7 +39,8 @@ const btnCls = "rounded-md bg-navy text-navy-foreground px-3 py-1.5 text-xs disa
 // Amount cell
 // ---------------------------------------------------------------------------
 
-export function ClaimAmount({ claim }: { claim: Claim }) {
+export function ClaimAmount({ claim: input }: { claim: Claim }) {
+  const claim = billingClaimInput(input);
   const { role } = useActingStaff();
   const canWrite = canAccess(role, "billing").level === "write";
   const locked = ["submitted", "paid", "denied", "partial"].includes(claim.state);

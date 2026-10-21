@@ -1,3 +1,5 @@
+import { billingClaims, billingPatients, billingBlockedAttempts, billingAudience, billingDocumentationBlock, type BillingClaim } from "@/lib/billingProjection";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { StaffTable } from "@/components/staff/StaffTable";
 const tableCopy = { claims: "Claims", blocked: "Blocked attempts" };
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
@@ -216,18 +218,16 @@ function SortHeader({
 
 function ClaimsPage() {
   const confirmation = useConfirmDialog();
-  const { role } = useActingStaff();
+  const { role, staffId } = useActingStaff();
   const canWrite = canAccess(role, "billing").level === "write";
-  const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
-  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const claims = useEhrExt(() => billingClaims());
+  const patients = useEhr(() => billingPatients());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const [service, setService] = useState<ServiceFilter>("all");
   const [outcome, setOutcome] = useState<OutcomeFilter>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
   const blockedAttempts = useEhr(() =>
-    AdelanteEHR.listAuditEvents({ category: "clinical" }).filter(
-      (e) => e.action === "community_billing_blocked",
-    ),
+    billingBlockedAttempts(),
   );
 
   const visibleClaims = claims.filter((c) => {
@@ -246,7 +246,7 @@ function ClaimsPage() {
 
   const patientLabel = (id: string) => {
     const p = patients.find((x) => x.id === id);
-    return p ? `${p.firstName} ${p.lastName}` : "";
+    return p ? (billingAudience(role) ? staffPatientLabel({ role, staffId }, id) : `${p.firstName} ${p.lastName}`) : "";
   };
   const sortedClaims = useMemo(
     () =>
@@ -387,8 +387,8 @@ function ClaimsPage() {
               : "No claims match the current filters."}
           </p>
         ) : (
-<div className="min-w-0 overflow-x-auto [&_select]:max-w-full"><StaffTable rows={sortedClaims} rowKey={(c) => c.id} label={tableCopy.claims} testId="claims-table" rowTestId={() => "claim-row"} columns={[{ id: "patient", label: "Patient", sortTestId: "sort-patient", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return `${pt?.firstName ?? ""} ${pt?.lastName ?? ""}`; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="patient">
-                        {pt?.firstName} {pt?.lastName}
+<div className="min-w-0 overflow-x-auto [&_select]:max-w-full"><StaffTable rows={sortedClaims} rowKey={(c) => c.id} label={tableCopy.claims} testId="claims-table" rowTestId={() => "claim-row"} columns={[{ id: "patient", label: "Patient", sortTestId: "sort-patient", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return billingAudience(role) ? patientLabel(c.patientId) : `${pt?.firstName ?? ""} ${pt?.lastName ?? ""}`; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="patient">
+                        {billingAudience(role) ? patientLabel(c.patientId) : <>{pt?.firstName} {pt?.lastName}</>}
                         {(c as { duplicateReview?: unknown }).duplicateReview ? (
                           <StatusChip lang="en" state={canWrite ? "yourturn" : "team"} label="Possible duplicate" className="ml-1" data-testid="claim-duplicate-review" />
                         ) : null}
@@ -402,6 +402,7 @@ function ClaimsPage() {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-72 text-sm">
+                              {billingAudience(role) ? <div data-testid="billing-group-reference"><p>Group-sourced claim</p><p className="font-mono">{groupRef.sessionId}</p><p>{groupRef.occurrenceStart}</p></div> : <>
                               {/* Per-attendee billing: each present attendee has their own
                                   individualized note and their own claim. Peers are shown by
                                   program ID only — group membership is disclosure-sensitive. */}
@@ -426,6 +427,7 @@ function ClaimsPage() {
                                   </ul>
                                 );
                               })()}
+                              </>}
                               <p className="mt-2 text-sm italic text-muted-foreground">
                                 Billing code {c.serviceCode ?? "not set"} — billing can correct it from the amount column.
                               </p>
@@ -436,7 +438,7 @@ function ClaimsPage() {
                         )}
                       </>; } },{ id: "code", label: "Code", sortTestId: "sort-code", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return c.serviceCode ?? ""; }, mono: true, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="code">
                         {c.serviceCode ? `${c.serviceCode}${c.units ? ` ×${c.units}` : ""}` : "—"}
-                      </span></>; } },{ id: "clinician", label: "Clinician", sortTestId: "sort-clinician", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return cl?.name ?? ""; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="clinician">{cl?.name}</span></>; } },{ id: "state", label: "State", sortTestId: "sort-state", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return c.state; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="state">{c.state === "denied" ? <Badge className={stateStyle[c.state]}>{c.state}</Badge> : <StatusChip lang="en" state={c.state === "documented" ? "upnext" : c.state === "submitted" ? "team" : c.state === "paid" ? "done" : c.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={c.state === "documented" ? "Documented" : c.state === "signed" || c.state === "coded" || c.state === "generated" ? "Ready to send" : c.state === "submitted" ? "With payer" : c.state === "partial" ? "Partly paid — review" : c.state} />}<ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = gateMessageFor(role, c); return m ? <p className="mt-1 text-sm text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</span></>; } },{ id: "charge", label: "Charge", sortTestId: "sort-charge", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return c.chargeCents ?? -1; }, mono: true, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="charge"><ClaimAmount claim={c} /></span></>; } },{ id: "denial", label: "Denial", cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <>{c.reviewFlag ? <span data-testid="claim-review-flag" className="font-medium text-attention">{c.reviewFlag.label}</span> : (c.denialReason ?? "—")}</>; } }]} primaryAction={(c) => { const next = flow[c.state]; return !canWrite ? <span className="text-sm text-muted-foreground">View only</span> : next ? <Button size="sm" variant="outline" onClick={() => confirmation.ask({ title: `Move this claim to ${next}?`, description: "The claim status changes and its history stays kept. Amounts don't change.", confirmLabel: `Move to ${next}`, keepLabel: "Keep claim", requireReason: true, onConfirm: (reason) => { confirmedAction("claim_status", "transitionClaim", c.patientId, reason, c.id, next); toast.success(`to ${next}`); return true; } })}>Move to {next}</Button> : null; }} moreActions={(c) => canWrite && c.state === "submitted" ? [{ label: "Deny", onSelect: () => confirmation.ask({ title: "Deny this claim?", description: "The claim is marked denied and its history stays kept. Later corrections use the billing workflow; no new patient notification is sent.", confirmLabel: "Deny claim", keepLabel: "Keep claim", requireReason: true, onConfirm: reason => { confirmedAction("claim_status", "transitionClaim", c.patientId, reason, c.id, "denied", { denialReason: reason }); toast.success("Marked denied"); return true; } }) }] : []} /></div>
+                      </span></>; } },{ id: "clinician", label: "Clinician", sortTestId: "sort-clinician", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return cl?.name ?? ""; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="clinician">{cl?.name}</span></>; } },{ id: "state", label: "State", sortTestId: "sort-state", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return c.state; }, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="state">{c.state === "denied" ? <Badge className={stateStyle[c.state]}>{c.state}</Badge> : <StatusChip lang="en" state={c.state === "documented" ? "upnext" : c.state === "submitted" ? "team" : c.state === "paid" ? "done" : c.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={c.state === "documented" ? "Documented" : c.state === "signed" || c.state === "coded" || c.state === "generated" ? "Ready to send" : c.state === "submitted" ? "With payer" : c.state === "partial" ? "Partly paid — review" : c.state} />}<ClaimSignatureLine claim={c} />{claimBillingBucket(c.state) === "draft" && (() => { const m = billingDocumentationBlock(role, c); return m ? <p className="mt-1 text-sm text-destructive" data-testid="claim-gate-blocked">{m}</p> : null; })()}</span></>; } },{ id: "charge", label: "Charge", sortTestId: "sort-charge", sortValue: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); return c.chargeCents ?? -1; }, mono: true, cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <><span data-cell="charge"><ClaimAmount claim={c} /></span></>; } },{ id: "denial", label: "Denial", cell: (c) => { const pt = patients.find((p) => p.id === c.patientId); const cl = clinicians.find((x) => x.id === c.clinicianId); const groupRef = parseGroupEncounterId(c.encounterId); return <>{("billingReviewFlag" in c ? (c as BillingClaim).billingReviewFlag : ("reviewFlag" in c ? c.reviewFlag : undefined)) ? <span data-testid="claim-review-flag" className="font-medium text-attention">{("billingReviewFlag" in c ? (c as BillingClaim).billingReviewFlag : ("reviewFlag" in c ? c.reviewFlag : undefined))?.label}</span> : (c.denialReason ?? "—")}</>; } }]} primaryAction={(c) => { const next = flow[c.state]; return !canWrite ? <span className="text-sm text-muted-foreground">View only</span> : next ? <Button size="sm" variant="outline" onClick={() => confirmation.ask({ title: `Move this claim to ${next}?`, description: "The claim status changes and its history stays kept. Amounts don't change.", confirmLabel: `Move to ${next}`, keepLabel: "Keep claim", requireReason: true, onConfirm: (reason) => { confirmedAction("claim_status", "transitionClaim", c.patientId, reason, c.id, next); toast.success(`to ${next}`); return true; } })}>Move to {next}</Button> : null; }} moreActions={(c) => canWrite && c.state === "submitted" ? [{ label: "Deny", onSelect: () => confirmation.ask({ title: "Deny this claim?", description: "The claim is marked denied and its history stays kept. Later corrections use the billing workflow; no new patient notification is sent.", confirmLabel: "Deny claim", keepLabel: "Keep claim", requireReason: true, onConfirm: reason => { confirmedAction("claim_status", "transitionClaim", c.patientId, reason, c.id, "denied", { denialReason: reason }); toast.success("Marked denied"); return true; } }) }] : []} /></div>
         )}
       </Card>
       )}

@@ -1,3 +1,4 @@
+import { billingClaims, billingPatients, billingAudience, billingOpsWorkspace, billingClaimBlock } from "@/lib/billingProjection";
 import { StaffNewTrigger } from "@/components/StaffDensity";
 import { NewActionMenu } from "@/components/staff/NewActionMenu";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -129,8 +130,8 @@ export function OpsActionLauncher() {
 
 function OpsBody({ action, claimId, setClaimId, done }: { action: ChartAction; claimId: string; setClaimId: (id: string) => void; done: () => void }) {
   const { role } = useActingStaff();
-  const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
-  const ws = billingWorkspace(role, claims);
+  const claims = useEhrExt(() => billingClaims());
+  const ws = billingOpsWorkspace(role, claims);
   const claim = claims.find((c) => c.id === claimId);
   const pick = (list: Claim[], hint: string): ReactNode => <ClaimPicker claims={list} hint={hint} blocked={ws.blocked} choose={setClaimId} />;
   switch (action.id) {
@@ -156,7 +157,7 @@ function OpsBody({ action, claimId, setClaimId, done }: { action: ChartAction; c
 }
 
 function ClaimPicker({ claims, hint, blocked, choose }: { claims: Claim[]; hint: string; blocked: { claim: Claim; reason: string }[]; choose: (id: string) => void }) {
-  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const patients = useEhr(() => billingPatients());
   const me = useActingStaff();
   const viewer = { role: me.role, staffId: me.staffId };
   const [q, setQ] = useState("");
@@ -192,7 +193,7 @@ function ClaimPicker({ claims, hint, blocked, choose }: { claims: Claim[]; hint:
 }
 
 function PatientPick({ render }: { render: (patientId: string) => ReactNode }) {
-  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const patients = useEhr(() => billingPatients());
   const [q, setQ] = useState("");
   const [pid, setPid] = useState("");
   const me = useActingStaff();
@@ -200,14 +201,14 @@ function PatientPick({ render }: { render: (patientId: string) => ReactNode }) {
   const p = patients.find((x) => x.id === pid);
   if (p) return <div className="space-y-3"><p className="text-sm">{viewerCanOpenChart(viewer, p.id) ? `${p.firstName} ${p.lastName} · ${p.programId}` : p.programId} <Button size="sm" variant="ghost" onClick={() => setPid("")}>Change</Button></p>{render(p.id)}</div>;
   const rows = q.trim().length >= 2
-    ? searchPatients(patients, q, undefined, 10).map((r) => r.patient).filter((x) => viewerCanOpenChart(viewer, x.id) || x.programId.toLowerCase().includes(q.trim().toLowerCase()))
+    ? billingAudience(me.role) ? patients.filter(x => `${x.firstName} ${x.lastName} ${x.programId}`.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 10) : searchPatients(patients as Parameters<typeof searchPatients>[0], q, undefined, 10).map((r) => r.patient).filter((x) => viewerCanOpenChart(viewer, x.id) || (x.programId ?? "").toLowerCase().includes(q.trim().toLowerCase()))
     : patients.slice(0, 10);
   return (
     <div className="space-y-2" data-testid="ops-patient-picker">
       <Label htmlFor="ops-patient-search">Patient</Label>
       <Input id="ops-patient-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, DOB or program ID" />
       <div className="divide-y rounded-md border">
-        {rows.map((x) => <Button key={x.id} variant="ghost" className="h-auto w-full justify-start rounded-none py-2 text-left" onClick={() => setPid(x.id)}><span>{viewerCanOpenChart(viewer, x.id) ? <><span className="block font-medium">{x.firstName} {x.lastName}</span><span className="block text-xs text-muted-foreground">DOB {x.dob} · {x.programId}</span></> : <span className="block font-medium font-mono">{x.programId}</span>}</span></Button>)}
+        {rows.map((x) => <Button key={x.id} variant="ghost" className="h-auto w-full justify-start rounded-none py-2 text-left" onClick={() => setPid(x.id)}><span>{viewerCanOpenChart(viewer, x.id) ? <><span className="block font-medium">{x.firstName} {x.lastName}</span><span className="block text-xs text-muted-foreground">{!billingAudience(me.role) && "dob" in x ? <>DOB {x.dob} · </> : null}{x.programId}</span></> : <span className="block font-medium font-mono">{x.programId}</span>}</span></Button>)}
       </div>
     </div>
   );
@@ -226,7 +227,7 @@ function CorrectForm({ claim, done }: { claim: Claim; done: () => void }) {
   const [units, setUnits] = useState(String(claim.units ?? 1));
   const [reason, setReason] = useState("");
   const [program, setProgram] = useState<string>(claim.program ?? "");
-  const docsBlocked = claimBlockLabel(claim, role) === BLOCKED_DOCS;
+  const docsBlocked = billingClaimBlock(claim, role) === BLOCKED_DOCS;
   return (
     <div className="space-y-3" data-testid="ops-correct-form">
       {docsBlocked && <p className="rounded-md border p-2 text-sm" data-testid="ops-docs-blocked">{BLOCKED_DOCS}. The clinician must finish the note; billing can't clear this.</p>}

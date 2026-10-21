@@ -1,8 +1,17 @@
+import { billingAudience, billingClaimInput, type BillingClaim } from "@/lib/billingProjection";
+import { useActingStaff } from "@/lib/roles";
 // §Phase 7b.1 — "Signed from note … by … on …" for a billing reviewer.
 import { Link } from "@tanstack/react-router";
 import { AdelanteEHRExt, type Claim } from "@/lib/ehr-ext";
 
 export function ClaimSignatureLine({ claim }: { claim: Claim }) {
+  const { role } = useActingStaff();
+  if (billingAudience(role)) {
+    const safe = billingClaimInput(claim) as BillingClaim;
+    const sig = safe.billingSignature;
+    if (sig === "seed") return <p className="mt-1 text-sm text-muted-foreground" data-testid="claim-signature-seed">Seed data — no note signature</p>;
+    return <p className="mt-1 text-sm text-muted-foreground" data-testid="claim-signature">{sig === "unsigned" ? "Blocked: note not signed" : `${sig.cosign ? "Cosigned" : "Signed"} by ${sig.signerName} on ${new Date(sig.signedAt).toLocaleDateString()}`}</p>;
+  }
   if (claim.state === "documented") return null;
   const sig = AdelanteEHRExt.claimSignature(claim);
   if (!sig) return null;
