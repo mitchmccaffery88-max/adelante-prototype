@@ -184,3 +184,29 @@ B3b is implemented but **not validated complete**. Remaining blocker: resolve th
 - Stop-rule check: `git diff b1d3c414..HEAD` over RouteAccessGuard.tsx, navGuard.ts, roles.ts, StaffShell.tsx, worklist.tsx is EMPTY — no B3b change touches the guard, audit, or landing path. New spec `e2e/billingPrivacyB3b.spec.ts` passed 3/3 in the same run.
 - Assessment: timing-sensitive audit-read race under CPU throttling (the audit effect and the test's `listAuditEvents` read), not a B3b regression. Prior full suites on this test were green (214/214 in B3a).
 - STOPPED here per the stop rule; no screenshots restored, no final SHA claimed. Awaiting Mitch's decision (rerun vs. investigate).
+
+## Slow-load diagnosis (Oct 21, Mitch-directed; no code or test edits)
+
+### Standalone runs on current code (E2E_BASE_URL=http://localhost:8080, --workers=1)
+
+| Run | Result | Test duration | Wall time |
+|-----|--------|---------------|-----------|
+| 1 | PASS | 39.3s | 2.4m |
+| 2 | PASS | 32.6s | 52.9s |
+| 3 | PASS | 33.0s | 53.5s |
+
+### Standalone runs on rollback b1d3c414 (git archive copy at /tmp/b3b-rollback, node_modules symlinked, own dev server on :8090, no stash)
+
+| Run | Result | Test duration | Wall time |
+|-----|--------|---------------|-----------|
+| 1 | PASS | 33.8s | 1.6m |
+| 2 | PASS | 56.6s | 1.3m |
+| 3 | PASS | 32.1s | 57.4s |
+
+### Import-chain finding for the /case-manager → /worklist path
+
+No B3b-changed module is imported on that path. `src/routes/case-manager.tsx:1,229` and `src/routes/worklist.tsx:3,223` mount `PageNewLauncher`, which imports `DashboardActionLauncher` (src/components/staff/PageNewLauncher.tsx:7) — not OpsActionLauncher or OpsWorkspace. The B3b-touched modules (billingProjection, billingWorkspace, OpsWorkspace, OpsActionLauncher, ClaimSignatureLine, RatesPanel, PatientBalance, routes billing/admin-claims/admin) are reachable only from the billing, admin-claims and admin surfaces; StaffShell and StaffNavSidebar import none of them. The earlier byte-identity diff over the guard/audit/landing files already showed no behavioural change; this confirms there is also no bundle-weight change on the failing path.
+
+### Assessment
+
+The test passes 3/3 standalone on current code AND 3/3 on the rollback, and no B3b code path is involved. The single full-suite failure (0 audits instead of 1) did not reproduce in six standalone runs. Per Mitch's instruction this is reported and STOPPED here: the test is an audit assertion, is not on the flake list, and no rerun of the full suite or test change has been made. Awaiting Mitch's decision.
