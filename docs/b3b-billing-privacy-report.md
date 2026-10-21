@@ -175,3 +175,12 @@ Full validation follows after the required restart. Nothing published.
 Screenshot restoration against b1d3c414 is recorded in docs/b3b-evidence/screenshot-restoration.json; all rollback e2e screenshots compare byte-identical. Full failure summary retained in docs/b3b-evidence/full-browser-summary.txt.
 
 B3b is implemented but **not validated complete**. Remaining blocker: resolve the existing slow-load audit assertion under explicit approval, then repeat required final validation. Nothing published.
+
+## Validation stop — full browser suite (Oct 21)
+
+- Full units: 2,907 passed / 1 skipped (360 files) — green.
+- Full browser suite --workers=1 on :8080 (background, alone, polled to literal EXIT): 214 passed, 1 failed, EXIT 1.
+- Failure: `e2e/staffSlowLoadLanding8c2.spec.ts:31` — expected exactly one `nav_access_denied` audit under 6x CPU throttle; observed 0. Redirect to /worklist itself succeeded.
+- Stop-rule check: `git diff b1d3c414..HEAD` over RouteAccessGuard.tsx, navGuard.ts, roles.ts, StaffShell.tsx, worklist.tsx is EMPTY — no B3b change touches the guard, audit, or landing path. New spec `e2e/billingPrivacyB3b.spec.ts` passed 3/3 in the same run.
+- Assessment: timing-sensitive audit-read race under CPU throttling (the audit effect and the test's `listAuditEvents` read), not a B3b regression. Prior full suites on this test were green (214/214 in B3a).
+- STOPPED here per the stop rule; no screenshots restored, no final SHA claimed. Awaiting Mitch's decision (rerun vs. investigate).

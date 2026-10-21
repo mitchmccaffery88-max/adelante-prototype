@@ -643,3 +643,6 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 ## Export file names — DONE Oct 19 (disclosure, note PDF, refusal PDF)
 - [x] Disclosure export named by program ID; approved adminTables8b3 line; new no-name test
 - [x] Note PDF and refusal PDF file names use program ID (approved test lines changed)
+
+## B3b validation stop (Oct 21)
+- [ ] Full browser suite: 214/215, EXIT 1 — staffSlowLoadLanding8c2.spec.ts:31 saw 0 nav_access_denied audits under 6x CPU throttle; guard/audit path byte-identical to rollback b1d3c414 (verified via git diff). Units 2,907/2,907 green; new billingPrivacyB3b spec 3/3. Stopped per stop rule; awaiting Mitch: rerun or investigate.
