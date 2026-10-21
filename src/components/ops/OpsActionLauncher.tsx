@@ -201,7 +201,7 @@ function PatientPick({ render }: { render: (patientId: string) => ReactNode }) {
   const p = patients.find((x) => x.id === pid);
   if (p) return <div className="space-y-3"><p className="text-sm">{viewerCanOpenChart(viewer, p.id) ? `${p.firstName} ${p.lastName} · ${p.programId}` : p.programId} <Button size="sm" variant="ghost" onClick={() => setPid("")}>Change</Button></p>{render(p.id)}</div>;
   const rows = q.trim().length >= 2
-    ? billingAudience(me.role) ? patients.filter(x => `${x.firstName} ${x.lastName} ${x.programId}`.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 10) : searchPatients(patients as Parameters<typeof searchPatients>[0], q, undefined, 10).map((r) => r.patient).filter((x) => viewerCanOpenChart(viewer, x.id) || x.programId.toLowerCase().includes(q.trim().toLowerCase()))
+    ? billingAudience(me.role) ? patients.filter(x => `${x.firstName} ${x.lastName} ${x.programId}`.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 10) : searchPatients(patients as Parameters<typeof searchPatients>[0], q, undefined, 10).map((r) => r.patient).filter((x) => viewerCanOpenChart(viewer, x.id) || (x.programId ?? "").toLowerCase().includes(q.trim().toLowerCase()))
     : patients.slice(0, 10);
   return (
     <div className="space-y-2" data-testid="ops-patient-picker">
