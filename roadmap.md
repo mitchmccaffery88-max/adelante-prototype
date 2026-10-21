@@ -2,16 +2,18 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## B3b — Billing privacy narrowing (Oct 21) — THIRD EXISTING-TEST STOP
+## B3b — Billing privacy narrowing (Oct 21) — BEHAVIOURAL TEST STOP
 - Rollback: b1d3c414de160babe95c541483a610853cb3e076; B3a accepted 2409b85c
 - [x] Inventory and old-test stop checks; asam allowed block / permission snapshot byte-identical to 2f56b883
 - [x] Mitch delegated approval: exact /billing selector adapter only; preserve all other inventory bindings.
 - [x] Second-stop delegation approved: NEW OpsWorkspace-only exact-once adapter for three declarations; all other inventory bindings pinned.
-- [ ] Apply approved OpsWorkspace adapter and finish projection/group/signature/name boundaries. BLOCKED: reusing billingWorkspace on safe coverage inputs requires two source substitutions pinned by roleDashboardParity9c2.test.ts:32 and billingParity9a3.test.tsx:19; exact current/proposed in B3b report. No further test changes authorized.
-- [ ] Reuse original workspace computations with safe coverage inputs; pinned-clock default/B3a claim and patient ID/count parity for billing and billing_coordinator; STOP on differences.
-- [ ] NEW projection / lifecycle browser tests and pinned-clock clinician / sys_admin parity
-- [ ] Restart → full units → exclusive background full browser :8080 --workers=1, poll literal EXIT last
-- [ ] Restore screenshots; docs/b3b-billing-privacy-report.md before/after fields; final SHA
+- [x] Third-stop delegation approved and applied: exact-once OpsWorkspace and billingWorkspace adapters; every other byte/inventory binding pinned; projection/group/signature/name boundaries complete.
+- [x] Original workspace computations reused with safe coverage rows; every list ID/order/count/reason matches for billing and billing_coordinator on default and B3a seeds under pinned clock.
+- [x] NEW projection privacy units 5/5, lifecycle privacy browser 3/3; clinician / sys_admin selectors/workspaces and shared clinical sources unchanged.
+- [x] Restart → full units 2,900/2,900 EXIT 0 → exclusive full browser :8080 --workers=1, polled to literal EXIT 1: 216 passed / 1 failed (41.3m).
+- [ ] BLOCKED: e2e/staffSlowLoadLanding8c2.spec.ts:31 expects one nav_access_denied audit, observed zero; behaviour/audit assertion outside adapter delegation. No test/production change or unapproved retry. Await diagnostic/test synchronization approval; then repeat final validation.
+- [x] Rollback screenshots restored byte-identically; report implemented field table, exact adapter lines and behaviour stop documented.
+- [ ] Final successful closeout SHA awaits resolution of the behaviour-test blocker; current checkpoint reported separately.
 - Narrowing only; no publishing, reconciliation/export/denied-look/rule/permission changes; stop on workflow or existing-test conflict.
 
 ## B3a — Seeded end-to-end claims (Oct 21) — COMPLETE

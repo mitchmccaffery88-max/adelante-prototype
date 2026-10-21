@@ -1,0 +1,31 @@
+
+  1) [chromium] › e2e/staffSlowLoadLanding8c2.spec.ts:10:1 › slow load: Cathy's denied deep link lands on her landing with no default-role audit 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m1[39m
+    Received: [31m0[39m
+
+      29 |     (window as W).__adelante.AdelanteEHR.listAuditEvents({}).filter((a: W) => a.action === "nav_access_denied"),
+      30 |   );
+    > 31 |   expect(denied.length).toBe(1);
+         |                         ^
+      32 |   expect(denied[0].actorRole).toBe("clinical_coordinator");
+      33 |   expect(denied[0].actorId).toBe("s-cc2");
+      34 |   await expect(page.getByTestId("acting-role-indicator")).toContainText("Cathy");
+        at /dev-server/e2e/staffSlowLoadLanding8c2.spec.ts:31:25
+
+    Error Context: test-results/staffSlowLoadLanding8c2-sl-f6e0c--with-no-default-role-audit-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/staffSlowLoadLanding8c2-sl-f6e0c--with-no-default-role-audit-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/staffSlowLoadLanding8c2-sl-f6e0c--with-no-default-role-audit-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/staffSlowLoadLanding8c2.spec.ts:10:1 › slow load: Cathy's denied deep link lands on her landing with no default-role audit 
+  216 passed (41.3m)
+EXIT 1

@@ -7,6 +7,7 @@ import { cleanup, render } from "@testing-library/react";
 import { BillingStatusList, BillingStatusStrip, billingStatusCounts } from "@/components/billing/BillingStatusSummary";
 import { AdelanteEHRExt, claimBillingBucket } from "@/lib/ehr-ext";
 import { exportClaimsCsv } from "@/lib/billingWorkspace";
+import { withApprovedBillingWorkspaceB3b } from "@/test/billingWorkspaceB3bApproved";
 
 const ROLLBACK = "7c834669d4f2811e28dac8b50090906873b9b8ad";
 const old = (p: string) => execFileSync("git", ["show", `${ROLLBACK}:${p}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
@@ -16,7 +17,7 @@ const kpiBlock = (src: string) => src.slice(src.indexOf("const kpis = useMemo"),
 afterEach(cleanup);
 
 describe("9a-3 billing selector and export parity", () => {
-  it.each(SELECTORS)("%s is byte-identical to rollback", (p) => expect(readFileSync(p, "utf8")).toBe(old(p)));
+  it.each(SELECTORS)("%s is byte-identical to rollback", (p) => expect(readFileSync(p, "utf8")).toBe(withApprovedBillingWorkspaceB3b(p, old(p))));
   it("KPI dollar/count computation on /billing is byte-identical", () => {
     expect(kpiBlock(readFileSync("src/routes/billing.tsx", "utf8"))).toBe(kpiBlock(old("src/routes/billing.tsx")));
   });

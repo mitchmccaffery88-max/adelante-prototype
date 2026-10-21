@@ -1,6 +1,7 @@
 // §Turn 6 — billing tiles + Today strip, and the admin Today strip. Counts come
 // only from billingWorkspace / adminToday so strip and tiles always agree.
 import { staffPatientLabel } from "@/lib/staffPatientLabel";
+import { billingClaims, billingPatients, billingOpsWorkspace } from "@/lib/billingProjection";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
@@ -41,9 +42,9 @@ function Tile({ id, title, summary, open, onOpenChange, children }: { id: TileId
 
 export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
   const { role, staffId } = useActingStaff();
-  const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
-  const patients = useEhr(() => AdelanteEHR.listPatients());
-  const ws = billingWorkspace(role, claims);
+  const claims = useEhrExt(() => billingClaims());
+  const patients = useEhr(() => billingPatients());
+  const ws = billingOpsWorkspace(role, claims);
   const key = `adelante:billing-tiles:${staffId}`;
   const [open, setOpen] = useState<Record<TileId, boolean>>({ action: true, pipeline: false, payments: false });
   useEffect(() => { try { const raw = localStorage.getItem(key); if (raw) setOpen((v) => ({ ...v, ...JSON.parse(raw) })); } catch { /* optional */ } }, [key]);

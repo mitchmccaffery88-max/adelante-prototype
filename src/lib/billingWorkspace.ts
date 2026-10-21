@@ -33,7 +33,7 @@ export interface BillingWorkspace {
   holds: Claim[];
 }
 
-export function billingWorkspace(role: StaffRole, claims: Claim[] = AdelanteEHRExt.listClaims()): BillingWorkspace {
+export function billingWorkspace(role: StaffRole, claims: Claim[] = AdelanteEHRExt.listClaims(), coverageRows: CoverageWorklistRow[] = coverageWorklistRows()): BillingWorkspace {
   const blocked = claims.flatMap((claim) => {
     const reason = claimBlockLabel(claim, role);
     return reason ? [{ claim, reason }] : [];
@@ -41,7 +41,7 @@ export function billingWorkspace(role: StaffRole, claims: Claim[] = AdelanteEHRE
   return {
     blocked,
     ready: claims.filter((c) => c.state === "generated" && !c.duplicateReview),
-    eligibilityDue: coverageWorklistRows().filter((r) => ELIGIBILITY_DUE.includes(r.state)),
+    eligibilityDue: coverageRows.filter((r) => ELIGIBILITY_DUE.includes(r.state)),
     paymentsToPost: claims.filter((c) => (c.patientBalanceCents ?? 0) > 0 && c.state !== "written_off"),
     holds: claims.filter((c) => Boolean(c.duplicateReview)),
   };
