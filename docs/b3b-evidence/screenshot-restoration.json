@@ -1,6 +1,6 @@
 {
   "rollback": "b1d3c414de160babe95c541483a610853cb3e076",
-  "inspected": 21,
+  "inspected": 248,
   "restored": [
     "e2e/screenshots/access-bell-anita.png",
     "e2e/screenshots/access-compliance.png",
