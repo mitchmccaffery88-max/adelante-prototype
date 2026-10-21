@@ -406,3 +406,11 @@ Kind is a text heuristic; Section A rows above are hand-reviewed and take preced
 | src/routes/intake.tsx:593 | reader | ledger | `part2Sud: AdelanteEHR.isConsentCategoryAuthorized(currentId, "sud_treatment"),` |
 
 Total lines: 342. Unclassified: 0.
+
+## B2-1 additions
+
+| Entry point | File:line | Kind | Notes |
+|---|---|---|---|
+| consentCovers (typed-record coverage check, live, not wired into any gate until B2-4) | src/lib/ehr.ts:12723 | reader / ledger | Only new entry-point line; pin test regex gains `consentCovers` and `src/lib/ehr.ts` count 41 → 42 |
+| createConsentRecord `extension` (typed fields, supersede within type + recipient) | src/lib/ehr.ts:12749-12790 | writer / ledger | Existing line, no new pin |
+| Validation + types | src/lib/consentRecordModel.ts | pure | No entry-point names; not pinned |
