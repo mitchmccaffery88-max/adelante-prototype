@@ -1,5 +1,6 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { disclose } from "./part2Disclosure";
+import { recipientKey, validateConsentExtension, verbalAssentAllowed, type ConsentRecordExtension, type ConsentType } from "./consentRecordModel";
 import { allergiesNotRecorded, findAllergyMatches, requiresCuresCheck } from "./orderSafety";
 import {
   crisisTriggeringScores,
@@ -3686,7 +3687,7 @@ export interface ConsentRecordSection {
   expiresOn?: string;
 }
 
-export interface ConsentRecord {
+export interface ConsentRecord extends ConsentRecordExtension {
   id: string;
   /**
    * §Batch E — carried over from a merged record. Not in force for the
@@ -12683,10 +12684,13 @@ export const AdelanteEHR = {
       .map((r) => ({ ...r, status: effectiveConsentStatus(r) }))
       .sort((a, b) => +new Date(b.signedAt) - +new Date(a.signedAt));
   },
-  /** The single record currently in force for a patient, if any. */
+  /**
+   * The single untyped (pre-B2) record currently in force for a patient, if
+   * any. §B2-1 typed records live beside it and are read via consentCovers.
+   */
   activeConsentRecord(patientId: string, at = new Date()): ConsentRecord | undefined {
     return consentRecords.find(
-      (r) => r.patientId === patientId && !r.needsReviewAfterMerge && effectiveConsentStatus(r, at) === "active",
+      (r) => r.patientId === patientId && !r.consentType && !r.needsReviewAfterMerge && effectiveConsentStatus(r, at) === "active",
     );
   },
   /**
@@ -12699,7 +12703,7 @@ export const AdelanteEHR = {
     category: ConsentCategory,
     at = new Date(),
   ): boolean {
-    const has = consentRecords.some((r) => r.patientId === patientId && !r.needsReviewAfterMerge);
+    const has = consentRecords.some((r) => r.patientId === patientId && !r.consentType && !r.needsReviewAfterMerge);
     if (!has) {
       // Legacy fallback: patients with no structured record yet.
       const p = patients.find((x) => x.id === patientId);
@@ -12710,6 +12714,30 @@ export const AdelanteEHR = {
     const rec = AdelanteEHR.activeConsentRecord(patientId, at);
     if (!rec) return false;
     return Boolean(rec.sections.find((s) => s.category === category)?.authorized);
+  },
+  /**
+   * §B2-1 — does a typed record cover this use, evaluated live (no caching)?
+   * Denies expired, revoked, superseded and legacyUnverified records; verbal
+   * assent covers only the allowed types. Not wired into any gate until B2-4.
+   */
+  consentCovers(
+    patientId: string,
+    q: { type: ConsentType; recipient?: string; purpose?: string; item?: string; at?: Date },
+  ): boolean {
+    const at = q.at ?? new Date();
+    return consentRecords.some((r) => {
+      if (r.patientId !== patientId || r.consentType !== q.type) return false;
+      if (r.needsReviewAfterMerge || r.legacyUnverified || r.expiryEventOccurredAt) return false;
+      if (effectiveConsentStatus(r, at) !== "active") return false;
+      if (r.signature?.method === "verbal_assent" && !verbalAssentAllowed(r.consentType, r.purposeCode)) return false;
+      if (q.recipient) {
+        const want = q.recipient.trim().toLowerCase();
+        if (!r.recipients?.some((x) => (x.directoryRef ?? "").toLowerCase() === want || x.name.trim().toLowerCase() === want)) return false;
+      }
+      if (q.purpose && r.purposeCode !== q.purpose && r.purpose !== q.purpose) return false;
+      if (q.item && r.items && !r.items.includes(q.item)) return false;
+      return true;
+    });
   },
   createConsentRecord(input: {
     patientId: string;
@@ -12723,15 +12751,28 @@ export const AdelanteEHR = {
     sections: ConsentRecordSection[];
     capturedBy: { staffId?: string; staffName: string; role: string };
     supersedesId?: string;
+    extension?: ConsentRecordExtension;
   }): ConsentRecord {
     if (!patients.some((p) => p.id === input.patientId)) throw new Error("Patient not found.");
     if (!input.attested) throw new Error("Attestation is required to capture a consent record.");
     if (input.signedByName.trim().length < 2)
       throw new Error("A typed signature name is required.");
     if (!input.effectiveDate) throw new Error("An effective date is required.");
+    const ext = input.extension;
+    const extErrors = ext ? validateConsentExtension(ext) : [];
+    if (extErrors.length) throw new Error(extErrors.join(" "));
     const now = new Date().toISOString();
     // A new record supersedes whatever was in force — history is preserved.
-    const prior = AdelanteEHR.activeConsentRecord(input.patientId);
+    // §B2-1: typed records supersede only within the same type + recipient key.
+    const prior = ext?.consentType
+      ? consentRecords.find(
+          (r) =>
+            r.patientId === input.patientId &&
+            r.consentType === ext.consentType &&
+            recipientKey(r.recipients) === recipientKey(ext.recipients) &&
+            effectiveConsentStatus(r) === "active",
+        )
+      : AdelanteEHR.activeConsentRecord(input.patientId);
     if (prior) prior.status = "superseded";
     const rec: ConsentRecord = {
       id: uid(),
@@ -12747,6 +12788,7 @@ export const AdelanteEHR = {
       status: "active",
       supersedesId: input.supersedesId ?? prior?.id,
       sections: input.sections,
+      ...(ext ?? {}),
     };
     consentRecords.unshift(rec);
     appendAudit({
