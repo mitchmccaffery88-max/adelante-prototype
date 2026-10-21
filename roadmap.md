@@ -2,6 +2,16 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
+## B3b — Billing privacy narrowing (Oct 21) — STOPPED FOR APPROVAL
+- Rollback: b1d3c414de160babe95c541483a610853cb3e076; B3a accepted 2409b85c
+- [x] Inventory and old-test stop checks; asam allowed block / permission snapshot byte-identical to 2f56b883
+- [ ] Mitch approval: roleDashboardParity9c2.test.ts:28 pins whole-record /billing selectors and row declarations; exact current/proposed in docs/b3b-billing-privacy-report.md. No production/test edits yet.
+- [ ] Billing-safe read projection; own-claim group reference; billing-safe signature; admin claims name policy
+- [ ] NEW projection / lifecycle browser tests and pinned-clock clinician / sys_admin parity
+- [ ] Restart → full units → exclusive background full browser :8080 --workers=1, poll literal EXIT last
+- [ ] Restore screenshots; docs/b3b-billing-privacy-report.md before/after fields; final SHA
+- Narrowing only; no publishing, reconciliation/export/denied-look/rule/permission changes; stop on workflow or existing-test conflict.
+
 ## B3a — Seeded end-to-end claims (Oct 21) — COMPLETE
 - Rollback / starting HEAD after DMC and its docs: 2f56b883487b7d927a7c63d080bfc14459173a40 (DMC source checkpoint 615a3ac8)
 - [x] Inventory public lifecycle APIs and billing payloads with file:line in docs/b3-claims-report.md
