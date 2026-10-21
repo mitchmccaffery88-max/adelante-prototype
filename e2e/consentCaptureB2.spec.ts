@@ -36,7 +36,7 @@ async function fillTerms(page: Page, type: string) {
   const sheet = page.getByRole("dialog");
   await sheet.getByLabel("Consent type").selectOption(type);
   await sheet.getByLabel("Recipient", { exact: true }).fill("Valley Clinic");
-  await sheet.getByLabel("Purpose").fill("Coordinate care");
+  await sheet.getByLabel("Purpose", { exact: true }).fill("Coordinate care");
   await sheet.getByLabel("Information covered").fill("visit summaries");
   await sheet.getByLabel("Ends on").fill("2027-10-21");
   return sheet;
