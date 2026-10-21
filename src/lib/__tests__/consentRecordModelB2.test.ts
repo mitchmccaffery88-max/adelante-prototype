@@ -10,10 +10,10 @@ const CATS: ConsentCategory[] = ["sud_treatment", "mental_health", "case_coordin
 
 /** Gate outputs for every seeded patient, captured identically on rollback a2601c9f. */
 export function consentParitySnapshot() {
-  return AdelanteEHR.listPatients().map((p) => {
+  return AdelanteEHR.listPatients().map((p, i) => {
     const a = AdelanteEHR.activeConsentRecord(p.id);
     return {
-      id: p.id,
+      id: p.id.startsWith("p") ? p.id : `#${i}`, // generated seed ids are random per run
       active: a ? { id: a.id, formType: a.formType, status: a.status, sections: a.sections } : null,
       cats: CATS.map((c) => AdelanteEHR.isConsentCategoryAuthorized(p.id, c)),
       state: AdelanteEHR.getConsentState(p.id),
