@@ -12686,7 +12686,7 @@ export const AdelanteEHR = {
   },
   /**
    * The single untyped (pre-B2) record currently in force for a patient, if
-   * any. §B2-1 typed records live beside it and are read via consentCovers.
+   * any. §B2-1 typed records live beside it and are read by the B2-1 coverage check.
    */
   activeConsentRecord(patientId: string, at = new Date()): ConsentRecord | undefined {
     return consentRecords.find(

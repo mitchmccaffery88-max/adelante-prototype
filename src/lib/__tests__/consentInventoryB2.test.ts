@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 
 const LEGACY_FLAG = /sudCoordinationConsent|sudCounselingNotesRelease|consents\??\.(part2Sud|hipaa|signedAt)|consentState/;
 const ENTRY_POINT =
-  /isConsentCategoryAuthorized|activeConsentRecord|listConsentRecords|createConsentRecord|revokeConsentRecord|part2ConsentFor|getConsentState|\bsetConsent\(|staffSetConsent|patientWithdrawConsent|referrerAuthorizationFor|recordReferrerAuthorization|revokeReferrerAuthorization|groupConsentBlock|setGroupConsentGate|migrateLegacyConsents|signChecked/;
+  /isConsentCategoryAuthorized|activeConsentRecord|listConsentRecords|createConsentRecord|revokeConsentRecord|part2ConsentFor|getConsentState|\bsetConsent\(|staffSetConsent|patientWithdrawConsent|referrerAuthorizationFor|recordReferrerAuthorization|revokeReferrerAuthorization|groupConsentBlock|setGroupConsentGate|migrateLegacyConsents|signChecked|consentCovers/;
 
 const LEGACY_FLAG_READERS: Record<string, number> = {
   "src/components/chart/CoordinatorSudPanel.tsx": 1,
@@ -46,7 +46,7 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/chartOrders.ts": 1,
   "src/lib/consentAudit.ts": 1,
   "src/lib/consentForms.ts": 19,
-  "src/lib/ehr.ts": 41,
+  "src/lib/ehr.ts": 42,
   "src/lib/hie.ts": 4,
   "src/lib/identityDemoSeed.ts": 1,
   "src/lib/outpatientCare.ts": 4,
