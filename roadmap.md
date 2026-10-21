@@ -2,12 +2,13 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## B3a — Seeded end-to-end claims (Oct 21) — IN PROGRESS
+## B3a — Seeded end-to-end claims (Oct 21) — COMPLETE
 - Rollback / starting HEAD after DMC and its docs: 2f56b883487b7d927a7c63d080bfc14459173a40 (DMC source checkpoint 615a3ac8)
 - [x] Inventory public lifecycle APIs and billing payloads with file:line in docs/b3-claims-report.md
 - [x] Mitch decisions: retain financial reconciliation and county exports; stable keys resolve generated IDs; partial receipt keeps state; paid has no insurer remittance ledger; one action.succeeded plus one claim_status_changed
 - [x] Separate QA scenario and NEW lifecycle tests; default seed unchanged; focused UI walkthrough 3/3
-- [ ] After implementation: restart, full units, exclusive full one-worker browser suite polled to literal EXIT last, screenshot restoration and report closeout
+- [x] After all edits: restart → full units 2,895/2,895 (360 files) → exclusive full browser --workers=1 on :8080, background-polled to literal EXIT 0: 214/214 (38.0m), no exceptions
+- [x] Restored 17 tracked screenshots; all 246 rollback images byte-identical; evidence and report finalized; B3b remains separate
 - B3b next: clinical-subgraph-free billing projection; group-topic/other-attendee removal; billing-safe signature status; /admin-claims name policy. Standalone service-date observation deferred.
 - No publishing; billing rules, rates, states, permissions, denied look and P1/P3 unchanged.
 

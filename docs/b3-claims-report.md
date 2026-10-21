@@ -92,4 +92,12 @@ Superbill and good-faith estimate are unimplemented registry entries (`chartActi
 
 ## Validation and closeout
 
-Focused builder 2/2 and focused browser 3/3 passed during implementation; both exports downloaded through the actual controls. Final sequence pending: finish edits → restart → full units → exclusive full one-worker browser suite on :8080, polled to literal EXIT as last validation → rollback screenshot restoration → report/roadmap/final SHA. No publishing or manual Git state changes.
+Completed in the approved order:
+
+1. Finished all code/test edits, then restarted the supervised dev server.
+2. Full units: **2,895/2,895, 360 files, EXIT 0** (145.16s), including the production hook-free test and NEW builder 2/2. Existing tests unchanged.
+3. Exclusive FULL browser: `E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1`, background and polling only until **214/214, 38.0m, literal EXIT 0**. NEW spec 3/3 also passed inside the full run. No retries, flake exceptions, concurrent validation or test edits during the run.
+4. Restored 17 tracked screenshots against `2f56b883`; all **246 rollback images byte-identical**. Restoration inventory: `docs/b3a-evidence/screenshot-restoration.json`. Both B3a screenshots reviewed and retained separately.
+5. Report/roadmap finalized. Validated source checkpoint `64c144ab6cb1ace58d2247fd8dd2be6874ce6853`; managed final closeout SHA reported in chat. No publishing or manual Git state changes.
+
+B3b remains deferred exactly as listed above; no privacy narrowing, standalone-date fix, county-format change or permission widening was included in B3a. Insurer remittance remains a post-MVP gap.
