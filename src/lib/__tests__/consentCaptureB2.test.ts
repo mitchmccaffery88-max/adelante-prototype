@@ -103,7 +103,7 @@ describe("B2-2 consent capture", () => {
     const link = AdelanteEHR.listAdvocateLinks()[0] ?? AdelanteEHR.createAdvocateInvitation({ patientId: patient().id, advocateName: "Fictional Helper", invitationSentTo: "helper@example.test", invitationChannel: "email", designatedBy: "patient" as never });
     const before = advocateOwnReleaseStatus(link.id);
     expect(before).toBe("none");
-    const cap = runAction("consent_record_capture", staff, AdelanteEHR.getPatient(link.patientId), { args: [{ draft: draft({ patientId: link.patientId, consentType: "advocate_release", recipients: [{ kind: "person", name: "Helper", directoryRef: link.id }] }), method: "e_sign", signer: "Test Person", relationship: "patient", attested: true, actor: storeActor }] });
+    const cap = runAction("consent_record_capture", staff, AdelanteEHR.getPatient(link.patientId), { args: [{ draft: draft({ patientId: link.patientId, consentType: "advocate_release", part2Elements: allElements, recipients: [{ kind: "person", name: "Helper", directoryRef: link.id }] }), method: "e_sign", signer: "Test Person", relationship: "patient", attested: true, actor: storeActor }] });
     expect(cap.ok ? "" : cap.reason).toBe("");
     expect(advocateOwnReleaseStatus(link.id)).toBe("active");
     expect(advocateOwnReleaseStatus("not-a-link")).toBe("none");
