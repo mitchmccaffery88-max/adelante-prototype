@@ -45,6 +45,7 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/chartActions.ts": 4,
   "src/lib/chartOrders.ts": 1,
   "src/lib/consentAudit.ts": 1,
+  "src/lib/consentCapture.ts": 2,
   "src/lib/consentForms.ts": 19,
   "src/lib/ehr.ts": 42,
   "src/lib/hie.ts": 4,

@@ -414,3 +414,11 @@ Total lines: 342. Unclassified: 0.
 | consentCovers (typed-record coverage check, live, not wired into any gate until B2-4) | src/lib/ehr.ts:12723 | reader / ledger | Only new entry-point line; pin test regex gains `consentCovers` and `src/lib/ehr.ts` count 41 → 42 |
 | createConsentRecord `extension` (typed fields, supersede within type + recipient) | src/lib/ehr.ts:12749-12790 | writer / ledger | Existing line, no new pin |
 | Validation + types | src/lib/consentRecordModel.ts | pure | No entry-point names; not pinned |
+
+## B2-2 additions
+
+| File:line | Kind | Reads / writes |
+|---|---|---|
+| src/lib/consentCapture.ts:125 | writer | `createConsentRecord` with a typed extension and empty legacy `sections` (staff capture, paper upload, patient e-sign) |
+| src/lib/consentCapture.ts:297 | reader | `listConsentRecords` — typed records only (history, patient "My forms", advocate own-release status); not a gate |
+| src/lib/consentForms.ts:381 | writer (unchanged count) | `migrateLegacyConsents` now skips only when an UNTYPED record exists, so typed records never suppress the legacy migration. Identical for all existing data. |
