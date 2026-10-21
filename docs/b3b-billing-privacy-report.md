@@ -9,7 +9,7 @@
 
 ## Required before/after inventory
 
-**IMPLEMENTED — FULL VALIDATION IN PROGRESS:** all named billing boundaries, including mounted BillingWorkspaceTiles, receive projected inputs for billing audiences. Nonbilling selectors return original store records.
+**IMPLEMENTED — VALIDATION STOP (BEHAVIOURAL ASSERTION):** all named billing boundaries, including mounted BillingWorkspaceTiles, receive projected inputs for billing audiences. Nonbilling selectors return original store records.
 
 | Surface / source | Before: received fields | Implemented after: received fields |
 |---|---|---|
@@ -155,3 +155,23 @@ Coverage rows are derived/sorted by the existing coverageWorklistRows first, the
 - Screenshots visually inspected: group reference only; signed provider/date; receipts/balances and denied look retained. Temporary images are under /tmp/browser.
 
 Full validation follows after the required restart. Nothing published.
+
+## Full validation result — STOP, no test or access/audit changes
+
+- Required supervised dev-server restart completed before full units.
+- Full units: **2,900/2,900**, 361 files, **EXIT 0** (149.78s).
+- Exclusive background full browser suite: **216 passed / 1 failed**, 41.3m, polled continuously to literal **EXIT 1** before any closeout work. NEW B3b tests 3/3 and existing B3a tests 3/3 passed inside this run. No retries or concurrent validation.
+- Failure is an existing **behaviour/audit assertion**, outside the third-stop source-adapter delegation and outside the named flake exceptions; stopped without changing it, audit logic, permissions or production code.
+
+### Exact file / line / current / proposed
+
+- `e2e/staffSlowLoadLanding8c2.spec.ts:31`
+- Current: `expect(denied.length).toBe(1);`
+- Observed: `denied.length === 0` after the throttled denied deep link already reached `/worklist`; snapshot shows Cathy / clinical coordinator.
+- Proposed diagnostic only (NOT applied; requires delegation): wait for the expected existing audit using `await expect.poll(async () => page.evaluate(() => (window as W).__adelante.AdelanteEHR.listAuditEvents({}).filter((a: W) => a.action === "nav_access_denied").length)).toBe(1);` before the existing audit read/assertions. This preserves the exact audit count/actor assertions, but changes synchronization in an older behaviour test, so it is not covered by the source-only pre-approval. Do not treat the missing audit as an accepted flake or loosen the value to zero.
+- Alternative: approval for a diagnostic standalone rerun/rollback comparison before proposing a correction. No rerun performed after the required full-suite last validation step.
+- The changed B3b files do not modify navGuard, roles, shared clinical stores or the coordinator route; parity verifies those sources byte-identical. That alone does not establish the failure's cause.
+
+Screenshot restoration against b1d3c414 is recorded in docs/b3b-evidence/screenshot-restoration.json; all rollback e2e screenshots compare byte-identical. Full failure summary retained in docs/b3b-evidence/full-browser-summary.txt.
+
+B3b is implemented but **not validated complete**. Remaining blocker: resolve the existing slow-load audit assertion under explicit approval, then repeat required final validation. Nothing published.
