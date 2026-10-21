@@ -55,6 +55,7 @@ import { calendarSync } from "@/lib/vendors/calendarSync";
 import { addThreadParticipant, canMessageStaff, flagThreadSud, markMentionDone, markThreadRead, postThreadMessage, reopenStaffThread, resolveStaffThread, startStaffThread } from "@/lib/staffThreads";
 import { addStaffMemberWithReason, deactivateStaffMember, reactivateStaffMember, updateStaffMember } from "@/lib/staffLifecycle";
 import { canAuthorContent, canPublishContent, saveContentDraft, submitContentForReview, publishContent, returnContentForChanges, retireContent, discardContentDraft } from "@/lib/contentPublishing";
+import { captureConsentRecord, uploadPaperConsent, requestConsentESign, patientSignConsent } from "@/lib/consentCapture";
 import { sendForms, resendCurrent, buildIntakePacket, createFormDraft, editForm, submitForLegalReview, approveForm, publishForm, revokeForm, signChecked, declineForm, setChecked } from "@/lib/consentForms";
 import { RESTRICT_ROLES, COMPLIANCE_ROLES, roleHasChartEntry, setRecordRestricted, openRestrictedChart, acknowledgeRestrictedOpen } from "@/lib/chartAccess";
 import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";
