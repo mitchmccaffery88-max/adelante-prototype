@@ -48,6 +48,8 @@ export interface ConsentSignature {
   recordedAt: string;
   recordedBy: { staffId?: string; staffName: string; role: string };
   witness?: string;
+  /** §B2-2 verbal assent only: the exact words read to the person (who heard it = recordedBy, when = recordedAt). */
+  assentWording?: string;
 }
 
 export interface ConsentDocumentRef {

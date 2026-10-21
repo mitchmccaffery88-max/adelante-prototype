@@ -378,7 +378,7 @@ export function migrateLegacyConsents(patientId: string): boolean {
   if (migrated.has(patientId)) return false;
   migrated.add(patientId);
   const p = AdelanteEHR.getPatient(patientId);
-  if (!p || AdelanteEHR.listConsentRecords(p.id).length) return false;
+  if (!p || AdelanteEHR.listConsentRecords(p.id).some((r) => !r.consentType)) return false; // §B2-2: typed records never skip migration
   const st = AdelanteEHR.getConsentState(p.id);
   const sections: ConsentRecordSection[] = [
     { category: "sud_treatment", authorized: Boolean(st.part2Sud) },

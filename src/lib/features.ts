@@ -18,7 +18,8 @@ export type FeatureId =
   | "payments_simulated"
   | "scribe_simulated"
   | "llm_simulated"
-  | "calendar_sync_simulated";
+  | "calendar_sync_simulated"
+  | "consent_upload_simulated";
 
 export interface FeatureFlag {
   id: FeatureId;
@@ -152,6 +153,14 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     id: "calendar_sync_simulated",
     description: "Calendar sync (Google / Microsoft 365) is a mock: nothing is read from or written to an external calendar.",
     owner: "Clinical operations",
+    default: true,
+    scope: "global",
+    simulated: true,
+  },
+  {
+    id: "consent_upload_simulated",
+    description: "Paper consent upload is a mock: the scanned file is not stored in a real document system (only its name and a reference are recorded).",
+    owner: "Privacy & compliance",
     default: true,
     scope: "global",
     simulated: true,
