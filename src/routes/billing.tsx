@@ -1,3 +1,4 @@
+import { billingAppointments, billingPatients, billingClaims, billingLaneFor as laneFor, type BillingPatient, type BillingAppointment } from "@/lib/billingProjection";
 import { StatTile } from "@/components/ui/stat-tile";
 import { claimWeeklyProjection } from "@/lib/billingSparkline";
 import { StaffTable } from "@/components/staff/StaffTable";
@@ -27,7 +28,7 @@ import {
   type ClaimState,
 } from "@/lib/ehr-ext";
 import { toast } from "sonner";
-import { LANE_LABEL, LANE_ORDER, laneFor, type LaneKey } from "@/lib/billingLane";
+import { LANE_LABEL, LANE_ORDER, type LaneKey } from "@/lib/billingLane";
 import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { ClaimSignatureLine } from "@/components/billing/ClaimSignatureLine";
@@ -75,14 +76,14 @@ const BILLING_STATUSES: BillingStatus[] = BILLING_STATUS_ROWS.map((r) => r.statu
 interface BillingRow {
   key: string;
   date: string;
-  patient?: Patient;
+  patient?: Patient | BillingPatient;
   clinicianId: string;
   lane: LaneKey;
-  appt?: Appointment;
+  appt?: Appointment | BillingAppointment;
   claim?: Claim;
 }
 
-export function noClaimLabel(appt: Appointment): string {
+export function noClaimLabel(appt: Pick<Appointment, "status">): string {
   if (appt.status === "attended") return "Not documented";
   return "No claim — not billable";
 }
@@ -110,13 +111,13 @@ function BillingPage() {
   const confirmation = useConfirmDialog();
   const [tab, setTab] = useState<Tab>("claims");
   const [entity, setEntity] = useState<"bagga_npi" | "adelante">("adelante");
-  const appointments = useEhr(() => AdelanteEHR.listAppointments());
-  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const appointments = useEhr(() => billingAppointments());
+  const patients = useEhr(() => billingPatients());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
 
   const { role } = useActingStaff();
   const canWrite = canAccess(role, "billing").level === "write";
-  const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
+  const claims = useEhrExt(() => billingClaims());
   const statusCounts = useMemo(() => billingStatusCounts(claims), [claims]);
 
   const rows = useMemo<BillingRow[]>(() => {

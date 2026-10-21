@@ -4,6 +4,7 @@ import { AdelanteEHRExt, type Claim } from "./ehr-ext";
 import { getActingRole, getActingStaff, type StaffRole } from "./roles";
 import { staffPatientLabel, viewerCanOpenChart } from "./staffPatientLabel";
 import { gateMessageFor } from "./dmcOdsReadiness";
+import { laneFor as originalLaneFor } from "./billingLane";
 import { billingWorkspace, claimBlockLabel } from "./billingWorkspace";
 
 export const billingAudience = (role: StaffRole) => role === "billing" || role === "billing_coordinator";
@@ -57,3 +58,5 @@ export function billingBlockedAttempts() {
   return billingAudience(getActingRole()) ? records.map(e => ({ id: e.id, patientId: e.patientId, detail: { service: e.detail?.service, reasonCode: e.detail?.reasonCode, reason: e.detail?.reason } })) : records;
 }
 export function billingArrangement(patientId: string) { return AdelanteEHR.getPatient(patientId)?.paymentArrangement; }
+
+export function billingLaneFor(input: { claim?: Claim; appt?: Appointment | BillingAppointment; patient?: Patient | BillingPatient }) { return originalLaneFor(input as Parameters<typeof originalLaneFor>[0]); }
