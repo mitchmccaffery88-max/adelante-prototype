@@ -27,8 +27,8 @@ function consentParitySnapshot() {
   });
 }
 
-const staff = { role: "clinical_coordinator" as const, staffId: "s-cc", staffName: "Coordinator Test" };
-const storeActor = { role: "clinical_coordinator" as const, staffId: "s-cc", name: "Coordinator Test" };
+const staff = { role: "ecm_provider" as const, staffId: "s-ecm", staffName: "ECM Test" };
+const storeActor = { role: "ecm_provider" as const, staffId: "s-ecm", name: "ECM Test" };
 const allElements = Object.fromEntries(PART2_ELEMENT_KEYS.map((k) => [k, true]));
 const patient = () => AdelanteEHR.listPatients()[2]!;
 const draft = (over: Partial<CaptureDraft> = {}): CaptureDraft => ({
@@ -111,7 +111,7 @@ describe("B2-2 consent capture", () => {
   });
 
   it("new keys are gated exactly like the consent_form_* keys", () => {
-    const roles = ["clinician", "billing", "peer_specialist", "clinical_coordinator", "sys_admin", "medical_assistant"] as const;
+    const roles = ["ecm_provider", "therapist", "billing", "peer_specialist", "clinical_coordinator", "sys_admin", "medical_assistant"] as const;
     for (const role of roles) {
       const a = { role };
       expect(chartAction("consent_record_capture").allowed(a, undefined).state).toBe(chartAction("consent_form_revoke").allowed(a, undefined).state);
