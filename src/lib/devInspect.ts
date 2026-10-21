@@ -14,6 +14,10 @@ export function installDevInspect(navigate?: (to: string) => void) {
     setActingStaff,
     // In-memory only; resets on reload, so the product default (OFF) is untouched.
     setInFacilityEnabled,
+    billingScenario: async (rehearsal = false) => {
+      const scenario = await import("@/lib/billingLifecycleScenario");
+      return rehearsal ? scenario.buildBillingLifecycleScenario({ complete: false }) : scenario.loadBillingLifecycleScenario();
+    },
     go: (to: string) => navigate?.(to),
     j: null as unknown,
     /** §C5 Same module instances the app uses (a bare "/src/..." import can duplicate them). */

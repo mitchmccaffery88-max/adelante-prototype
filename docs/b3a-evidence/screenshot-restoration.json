@@ -1,0 +1,24 @@
+{
+  "rollback": "2f56b883487b7d927a7c63d080bfc14459173a40",
+  "inspected": 246,
+  "restored": [
+    "e2e/screenshots/access-bell-anita.png",
+    "e2e/screenshots/access-compliance.png",
+    "e2e/screenshots/access-peer-chart.png",
+    "e2e/screenshots/adel-history-shared.png",
+    "e2e/screenshots/adel-history-staff.png",
+    "e2e/screenshots/advocate-active-en.png",
+    "e2e/screenshots/calendars-coordinator.png",
+    "e2e/screenshots/calendars-luis-es.png",
+    "e2e/screenshots/content-adel-es.png",
+    "e2e/screenshots/content-careplan.png",
+    "e2e/screenshots/continuity-anita.png",
+    "e2e/screenshots/continuity-coverage.png",
+    "e2e/screenshots/continuity-luis-es.png",
+    "e2e/screenshots/continuity-reassign.png",
+    "e2e/screenshots/p2-emergency-unlock.png",
+    "e2e/screenshots/u2-anita-needs-action.png",
+    "e2e/screenshots/u2-coordinator-thread.png"
+  ],
+  "all_byte_identical": true
+}

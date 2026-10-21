@@ -22,6 +22,7 @@ import {
   demoScenarioPatientId,
 } from "@/lib/ehr";
 import { setActingRole } from "@/lib/roles";
+import { loadBillingLifecycleScenario } from "@/lib/billingLifecycleScenario";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -54,9 +55,15 @@ type DemoStateId =
   | "general_population"
   | "rosa"
   | "marcus"
-  | "kayla";
+  | "kayla"
+  | "billing_lifecycle";
 
 const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: string }> = {
+  billing_lifecycle: {
+    group: "Billing",
+    label: "Billing: full claim lifecycle",
+    hint: "Simulated · paid, patient receipt, denied, reversed write-off, unsigned note, sliding fee and documentation-ready claim",
+  },
   no_record: {
     group: "Sign-up",
     label: "1 · New sign-up, no record",
@@ -156,6 +163,7 @@ const ORDER: DemoStateId[] = [
   "rosa",
   "marcus",
   "kayla",
+  "billing_lifecycle",
 ];
 
 /** Every patient scenario here must also be a case in apply() (see test). */
@@ -279,7 +287,7 @@ export function DemoStateSwitcher() {
       if (patient.id === demoScenarioPatientId(k)) return k;
     return null;
   })();
-  const active = selectedState === inferredActive ? selectedState : null;
+  const active = selectedState === "billing_lifecycle" ? selectedState : selectedState === inferredActive ? selectedState : null;
 
   function apply(state: DemoStateId) {
     try {
@@ -292,6 +300,12 @@ export function DemoStateSwitcher() {
         window.dispatchEvent(new Event("adelante:advocate-session"));
       }
       switch (state) {
+        case "billing_lifecycle": {
+          loadBillingLifecycleScenario();
+          setActingRole("billing");
+          navigate({ to: "/billing" });
+          break;
+        }
         case "no_record": {
           clearAdvocateSession();
           clearPatientSession();

@@ -1,12 +1,14 @@
-# B3 — Seeded end-to-end claims: diagnostic stop
+# B3a — Seeded end-to-end claims
 
 ## Checkpoint and outcome
 
 - Rollback recorded before B3 edits: `2f56b883487b7d927a7c63d080bfc14459173a40`, the “Collected CalAIM decision” documentation checkpoint after DMC source checkpoint `615a3ac8`.
-- **STOP before scenario, application or test implementation.** The requested strict billing payload narrowing intersects existing payment reconciliation and county reporting workflows. No billing rules, rates, states, permissions, default seeds, denied styling or tests were changed. Nothing published.
-- Only this report and the B3 roadmap entry changed. No restart, unit suite or browser suite was run: implementation was stopped during read-only inventory, not completed or validated. Previous DMC totals are not B3 validation.
+- Mitch superseded the diagnostic stop with B3a approval. B3b privacy narrowing remains separate; no billing rules, rates, states, role visibility, default seeds, denied styling or existing tests changed. Nothing published.
+- Implemented the separate opt-in QA scenario plus NEW unit and browser tests. Final validation is recorded below; prior DMC totals are not B3a validation.
 
-## Decisions needed to unblock
+## Diagnostic questions — resolved by Mitch for B3a
+
+Retain the financial fields; preserve county exports; stable keys resolve generated IDs without injection; partial is a patient receipt with unchanged claim state; paid is the existing transition with no payer-remittance ledger; assert exactly one registry success and one lifecycle audit per transition. The following original inventory records why these decisions were requested, not unresolved approval items.
 
 1. **Financial reconciliation fields:** the strict P1 allowlist excludes payment method, receipt/reference, recorder attribution and void reason. These are used by the existing receipt/payment/void workflow (`PatientBalance.tsx:24–165`, `OpsActionLauncher.tsx:263–276`). Simply removing them loses reconciliation and void-review information. Approve a narrow financial-field extension or an alternative authorized workflow before removing them.
 2. **County reporting layout:** the active ISL builder includes `care_continuum`, funding classification and service references; adjacent client-level reporting files include episode/substance fields. Removing these changes existing reporting layouts (`countyReporting.ts:280,302–329,537–577`). Decide their separate reporting boundary rather than treating them as ordinary claim payloads. No new reporting access is proposed.
@@ -30,7 +32,16 @@
 | Patient responsibility | `ehr-ext.ts:1307–1350,1357–1433` | Arrangement, patient receipt and payment void; payments do not change claim state. |
 | DMC-ODS necessity | `dmcOdsReadiness.ts:33–111`; `asamFlow.ts:24–61`; `ehr.ts:10172–10312` | Final signed/cosigned ASAM plus linked SUD diagnosis in existing window; billing sees generic block only. |
 
-Blocked is a refusal, not a synthetic claim state. Paid is terminal. Scenario branches require separate encounters. The separate QA scenario was **not registered or created** after the stop.
+Blocked is a refusal, not a synthetic claim state. Paid is terminal. Each branch has a separate fictional patient and encounter; omitted DOB/CIN/contact identifiers. `billingLifecycleScenario.ts` provides stable keys over generated IDs and idempotent loading. The UI option is `Billing: full claim lifecycle`; default seeds do not invoke it. Rehearsal cohorts use the same public builder without terminal transitions so the browser can exercise the real actions without resetting records.
+
+## Implemented B3a
+
+- Branch keys: paid, receipt_balance, denied, writeoff_reversed, blocked, sliding_fee, dmc_ods.
+- Existing public creators and registry paths: patient_create_anyway/createPatient; payment_arrangement/setPaymentArrangement; consent_purpose_set/staffSetConsent; schedule_visit/bookAppointment; visit_attended/markAppointmentAttended; progress_note/addProgressNote + signProgressNote; claim_correct/correctClaim; claim_status/transitionClaim; payment_record/recordPatientPayment.
+- The existing ASAM action now references public saveAsamDraft, signAsam and cosignAsam methods; its role/patient gate is unchanged. The fictional trainee's assessment is signed and cosigned by its assigned therapist, outpatient only, F15.20 linked to the assessment. A separate attended treatment encounter is corrected to H0004/DMC-ODS and passes the unchanged necessity gate. Signing ASAM creates its existing H0001 assessment claim as a store-owned lifecycle output; it is not an injected branch encounter.
+- Rate-derived examples: 90834 self-pay $165.00; half patient receipt $82.50 leaves $82.50 and submitted status; sliding fee $82.50; H0004 3 × $41.25 = $123.75. Paid branch records full patient responsibility via the public receipt API, then uses the existing paid transition (no insurer remittance invented).
+- NEW `billingLifecycleB3.test.ts`: creators spied, stable keys/generated IDs, rate×units, balances/states, final cosigned ASAM/linked diagnosis, registry ASAM events, and idempotent loading.
+- NEW `claimLifecycleB3.spec.ts`: both billing roles select the actual QA option, walk seven rehearsal branches through real UI, check dual audits for each transition and reason stops, receipt/readback/state preservation, denied class unchanged, unsigned Ready refusal, both current CSV headers and safe content, table axe and peer denial. Development inspection remains behind the existing compile-time DEV/E2E boundary.
 
 ## Payload inventory — received versus rendered
 
@@ -70,7 +81,7 @@ No dedicated claim-detail route was found; inventory includes the amount, correc
 
 Superbill and good-faith estimate are unimplemented registry entries (`chartActions.ts:1174–1185`), not real exports. Rates/codes/managed-care-plan/credentialing tabs are reference administration; they do not justify receiving whole patient records. Billing's ISL export description (`billing.tsx:473–474`) differs from its active builder; no copy or format change made.
 
-## Potential safe narrowings — not applied after the stop
+## B3b deferred — not implemented in B3a
 
 - Billing-specific read projections, retaining explicit action IDs and minimal allowed financial fields, could remove clinical patient subgraphs without altering shared clinical stores.
 - Remove other attendees and group topic from billing group popovers; preserve individual claim processing.
@@ -81,4 +92,12 @@ Superbill and good-faith estimate are unimplemented registry entries (`chartActi
 
 ## Validation and closeout
 
-Read-only source inventory establishes the stop; no runtime claim flow or downstream CSV consumer was verified. No scenario tests exist yet, no suite totals are claimed, and no screenshots were generated or changed. B3 remains blocked on the decisions above. Final checkpoint is reported in chat after managed checkpointing; no manual Git state changes were made.
+Completed in the approved order:
+
+1. Finished all code/test edits, then restarted the supervised dev server.
+2. Full units: **2,895/2,895, 360 files, EXIT 0** (145.16s), including the production hook-free test and NEW builder 2/2. Existing tests unchanged.
+3. Exclusive FULL browser: `E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1`, background and polling only until **214/214, 38.0m, literal EXIT 0**. NEW spec 3/3 also passed inside the full run. No retries, flake exceptions, concurrent validation or test edits during the run.
+4. Restored 17 tracked screenshots against `2f56b883`; all **246 rollback images byte-identical**. Restoration inventory: `docs/b3a-evidence/screenshot-restoration.json`. Both B3a screenshots reviewed and retained separately.
+5. Report/roadmap finalized. Validated source checkpoint `64c144ab6cb1ace58d2247fd8dd2be6874ce6853`; managed final closeout SHA reported in chat. No publishing or manual Git state changes.
+
+B3b remains deferred exactly as listed above; no privacy narrowing, standalone-date fix, county-format change or permission widening was included in B3a. Insurer remittance remains a post-MVP gap.
