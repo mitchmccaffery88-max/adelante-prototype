@@ -29,3 +29,5 @@ Subdirectories have their own AGENTS.md (`src/lib/`, `src/components/`) — read
 - Staff shell and demo controls render role-dependent content only after the acting role is known; no access decision, redirect or audit runs before it; no role/clock output in server render. Why: demo role lives in browser storage.
 - Browser suite: --workers=1 against dev server :8080. Why: parallel runs cause false timeouts.
 - Personal quick-action preferences are presentation-only device settings in quickActionPrefs, read after hydration and scoped to the acting staff identity, with no registry mutation or audit; selection uses existing launcher inventories and role-assignment/registry gates; current-role items without a local handler are omitted, and other-role items remain disabled until switched. Content launcher IDs are shared in quickActions. Why: preferences cannot grant access, reroute handlers or touch patient records.
+
+- Billing-only reads use billingProjection allowlists at UI ingestion boundaries; non-billing reads retain original records and store gates. Why: clinical graphs and signature provenance cannot reach claims-only presentation.
