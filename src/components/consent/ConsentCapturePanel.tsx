@@ -1,0 +1,239 @@
+// §B2-2 — staff capture of typed consent records in the chart's Consents
+// section: record (in-person e-sign or verbal assent where allowed), upload a
+// paper copy (Simulated) or send for patient e-sign, plus the typed-record
+// history. Every write goes through runAction. Draft — pending counsel.
+import { useState } from "react";
+import { toast } from "sonner";
+import { Lock } from "lucide-react";
+import { useEhr, type Patient } from "@/lib/ehr";
+import { useActingStaff } from "@/lib/roles";
+import { runAction, confirmationFor } from "@/lib/actions/runAction";
+import { chartAction } from "@/lib/chartActions";
+import {
+  CAPTURE_DRAFT_LABEL,
+  CONSENT_TYPE_LABEL,
+  UPLOAD_SIMULATED_LABEL,
+  consentRecordHistory,
+  listESignRequests,
+  type CaptureDraft,
+  type HistoryRow,
+} from "@/lib/consentCapture";
+import {
+  PART2_ELEMENT_KEYS,
+  PART2_ELEMENT_LABELS,
+  VERBAL_ASSENT_REFERRER_PURPOSE,
+  isPart2Type,
+  verbalAssentAllowed,
+  type ConsentType,
+  type Part2ElementKey,
+} from "@/lib/consentRecordModel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { StatusChip } from "@/components/ui/status-chip";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+
+type Mode = "capture" | "upload" | "esign";
+const TYPES = Object.keys(CONSENT_TYPE_LABEL) as ConsentType[];
+const STATUS_WORD: Record<HistoryRow["status"], string> = { active: "Active", expired: "Expired", revoked: "Revoked", superseded: "Superseded", legacy_unverified: "Legacy: unverified" };
+const METHOD_WORD = { e_sign: "E-signature", wet_sign_upload: "Paper upload", verbal_assent: "Verbal assent" } as const;
+const field = "mt-1 block min-h-9 w-full rounded-sm border border-input bg-background px-2 text-sm";
+
+export function ConsentCapturePanel({ patient }: { patient: Patient }) {
+  const acting = useActingStaff();
+  const actor = { role: acting.role, staffId: acting.staffId, staffName: acting.staffName };
+  const storeActor = { role: acting.role, ...(acting.staffId ? { staffId: acting.staffId } : {}), name: acting.staffName ?? acting.role };
+  const snap = JSON.parse(useEhr(() => JSON.stringify({ rows: consentRecordHistory(patient.id), waiting: listESignRequests(patient.id).filter((r) => r.status === "waiting").length }))) as { rows: HistoryRow[]; waiting: number };
+  const can = (id: string) => chartAction(id).allowed(actor, patient).state !== "hidden";
+  const [mode, setMode] = useState<Mode | null>(null);
+  const [view, setView] = useState<string | null>(null);
+  const viewing = snap.rows.find((r) => r.id === view);
+  const showCapture = can("consent_record_capture");
+  const showUpload = can("consent_record_upload");
+  const showSend = can("consent_record_request_esign");
+
+  return (
+    <section className="space-y-3 rounded-md border border-border p-3" data-testid="consent-capture-panel">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-semibold">Consent records</h3>
+          <p className="text-[14px] text-muted-foreground">{CAPTURE_DRAFT_LABEL}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {showSend && <Button size="sm" variant="outline" onClick={() => setMode("esign")} data-testid="consent-send-esign">Send for e-sign</Button>}
+          {showUpload && <Button size="sm" variant="outline" onClick={() => setMode("upload")} data-testid="consent-upload">Upload paper copy</Button>}
+          {showCapture && <Button size="sm" onClick={() => setMode("capture")} data-testid="consent-capture">Record a consent</Button>}
+        </div>
+      </div>
+      {snap.waiting > 0 && <p className="text-[14px]" data-testid="consent-esign-waiting"><StatusChip lang="en" state="team" label={`Waiting on patient: ${snap.waiting} to sign`} /></p>}
+      {snap.rows.length === 0 ? (
+        <p className="text-[14px] text-muted-foreground">No typed consent records yet.</p>
+      ) : (
+        <ol className="divide-y text-[14px]" data-testid="consent-history">
+          {snap.rows.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5" data-testid={`consent-history-${r.consentType}`}>
+              <button type="button" className="text-left text-primary underline" onClick={() => setView(r.id)}>
+                {CONSENT_TYPE_LABEL[r.consentType].en} · {r.recipients.map((x) => x.name).join(", ")} · v{r.document?.version ?? 1}
+              </button>
+              <span className="flex items-center gap-2">
+                {r.simulatedUpload && <StatusChip lang="en" state="simulated" label="Simulated" />}
+                <StatusChip lang="en" state={r.status === "active" ? "done" : "closed"} label={STATUS_WORD[r.status]} data-testid={`consent-status-${r.id}`} />
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <Sheet open={!!mode} onOpenChange={(o) => !o && setMode(null)}>
+        <SheetContent className="overflow-y-auto">
+          {mode && <CaptureForm mode={mode} patient={patient} onDone={(ok, msg, id) => { if (ok) { toast.success(confirmationFor(id, msg)); setMode(null); } else toast.error(msg); }} run={(id, via, args) => runAction(id, actor, patient, { via, args })} storeActor={storeActor} />}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={!!viewing} onOpenChange={(o) => !o && setView(null)}>
+        <SheetContent className="overflow-y-auto">
+          {viewing && (
+            <>
+              <SheetHeader><SheetTitle>{CONSENT_TYPE_LABEL[viewing.consentType].en}</SheetTitle></SheetHeader>
+              <dl className="mt-2 grid grid-cols-2 gap-1 text-[14px]" data-testid="consent-record-detail">
+                <dt>Status</dt><dd>{STATUS_WORD[viewing.status]}</dd>
+                <dt>Recipients</dt><dd>{viewing.recipients.map((x) => `${x.name} (${x.kind})`).join(", ")}</dd>
+                <dt>Purpose</dt><dd>{viewing.purpose ?? "—"}</dd>
+                <dt>Covers</dt><dd>{viewing.items.join(", ")}</dd>
+                <dt>In force</dt><dd>{viewing.effectiveDate} → {viewing.expirationDate ?? viewing.expiresOnEvent ?? "—"}</dd>
+                <dt>Method</dt><dd>{viewing.method ? METHOD_WORD[viewing.method] : "—"}</dd>
+                <dt>Signer</dt><dd>{viewing.signer} ({viewing.relationship})</dd>
+                <dt>Signed</dt><dd>{viewing.signedAt?.slice(0, 10)}</dd>
+                <dt>Recorded by</dt><dd>{viewing.recordedBy}</dd>
+                {viewing.witness && (<><dt>Witness</dt><dd>{viewing.witness}</dd></>)}
+                {viewing.assentWording && (<><dt>Words read</dt><dd>{viewing.assentWording}</dd></>)}
+                <dt>Template</dt><dd>{viewing.document?.formKey} v{viewing.document?.version}</dd>
+                <dt>Document hash</dt><dd className="break-all font-mono">{viewing.document?.documentHash}</dd>
+                {viewing.document?.uploadRef && (<><dt>Paper copy</dt><dd>{UPLOAD_SIMULATED_LABEL}</dd></>)}
+                {viewing.supersedesId && (<><dt>Replaces</dt><dd className="font-mono">{viewing.supersedesId}</dd></>)}
+                <dt>Disclosures</dt><dd data-testid="consent-linked-disclosures">{viewing.disclosureIds.length ? viewing.disclosureIds.join(", ") : "None linked yet"}</dd>
+              </dl>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+    </section>
+  );
+}
+
+function CaptureForm({ mode, patient, run, onDone, storeActor }: {
+  mode: Mode;
+  patient: Patient;
+  storeActor: { role: string; staffId?: string; name: string };
+  run: (id: string, via: string, args: unknown[]) => { ok: boolean; reason?: string };
+  onDone: (ok: boolean, msg: string, id: string) => void;
+}) {
+  const [type, setType] = useState<ConsentType>("hipaa_authorization");
+  const [recipient, setRecipient] = useState("");
+  const [kind, setKind] = useState<"person" | "org">("org");
+  const [purpose, setPurpose] = useState("");
+  const [enrolledOnly, setEnrolledOnly] = useState(false);
+  const [items, setItems] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [endEvent, setEndEvent] = useState("");
+  const [elements, setElements] = useState<Partial<Record<Part2ElementKey, boolean>>>({});
+  const [method, setMethod] = useState<"e_sign" | "verbal_assent">("e_sign");
+  const [signer, setSigner] = useState(`${patient.firstName} ${patient.lastName}`);
+  const [relationship, setRelationship] = useState<"patient" | "guardian" | "proxy">("patient");
+  const [attested, setAttested] = useState(false);
+  const [wording, setWording] = useState("");
+  const [witness, setWitness] = useState("");
+  const [signedOn, setSignedOn] = useState("");
+  const [fileName, setFileName] = useState("");
+  const part2 = isPart2Type(type);
+  const purposeCode = type === "referrer_authorization" && enrolledOnly ? VERBAL_ASSENT_REFERRER_PURPOSE : undefined;
+  const verbalOk = verbalAssentAllowed(type, purposeCode);
+  const draft: CaptureDraft = {
+    patientId: patient.id,
+    consentType: type,
+    recipients: recipient.trim() ? [{ kind, name: recipient.trim() }] : [],
+    purpose,
+    ...(purposeCode ? { purposeCode } : {}),
+    items: items.split(",").map((s) => s.trim()).filter(Boolean),
+    ...(endDate ? { expiresOn: endDate } : {}),
+    ...(endEvent.trim() ? { expiresOnEvent: endEvent.trim() } : {}),
+    ...(part2 ? { part2Elements: elements } : {}),
+  };
+  const title = mode === "capture" ? "Record a consent" : mode === "upload" ? "Upload a signed paper consent" : "Send a consent for e-sign";
+  const submit = () => {
+    const effMethod = verbalOk ? method : "e_sign";
+    const r =
+      mode === "capture"
+        ? run("consent_record_capture", "captureConsentRecord", [{ draft, method: effMethod, signer, relationship, attested, ...(effMethod === "verbal_assent" ? { assentWording: wording } : {}), ...(witness.trim() ? { witness } : {}), actor: storeActor }])
+        : mode === "upload"
+          ? run("consent_record_upload", "uploadPaperConsent", [{ draft, signer, relationship, signedOn, fileName, ...(witness.trim() ? { witness } : {}), actor: storeActor }])
+          : run("consent_record_request_esign", "requestConsentESign", [{ draft, actor: storeActor }]);
+    const id = mode === "capture" ? "consent_record_capture" : mode === "upload" ? "consent_record_upload" : "consent_record_request_esign";
+    onDone(r.ok, r.ok ? (mode === "esign" ? "Sent — the patient sees it in Forms to sign" : "Consent recorded") : r.reason ?? "Couldn't save.", id);
+  };
+  return (
+    <div className="space-y-3 text-sm" data-testid={`consent-form-${mode}`}>
+      <SheetHeader><SheetTitle>{title}</SheetTitle></SheetHeader>
+      <p className="text-[14px] text-muted-foreground">{CAPTURE_DRAFT_LABEL}{mode === "upload" ? ` · ${UPLOAD_SIMULATED_LABEL}` : ""}</p>
+      <label className="block">Consent type
+        <select className={field} value={type} onChange={(e) => { setType(e.target.value as ConsentType); setMethod("e_sign"); }} aria-label="Consent type">
+          {TYPES.map((t) => <option key={t} value={t}>{CONSENT_TYPE_LABEL[t].en}</option>)}
+        </select>
+      </label>
+      <div className="grid grid-cols-3 gap-2">
+        <label className="col-span-2 block">Recipient<Input className="mt-1" aria-label="Recipient" value={recipient} maxLength={120} onChange={(e) => setRecipient(e.target.value)} /></label>
+        <label className="block">Kind
+          <select className={field} value={kind} onChange={(e) => setKind(e.target.value as "person" | "org")} aria-label="Recipient kind"><option value="org">Organization</option><option value="person">Person</option></select>
+        </label>
+      </div>
+      <label className="block">Purpose<Input className="mt-1" aria-label="Purpose" value={purpose} maxLength={200} onChange={(e) => setPurpose(e.target.value)} /></label>
+      {type === "referrer_authorization" && (
+        <label className="flex min-h-9 items-center gap-2"><Checkbox checked={enrolledOnly} onCheckedChange={(v) => setEnrolledOnly(v === true)} aria-label="Enrolled update only" /> Only the &quot;enrolled on &lt;date&gt;&quot; update</label>
+      )}
+      <label className="block">Information covered (comma separated)<Input className="mt-1" aria-label="Information covered" value={items} maxLength={300} onChange={(e) => setItems(e.target.value)} /></label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block">Ends on<Input className="mt-1" type="date" aria-label="Ends on" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></label>
+        <label className="block">Or ends when<Input className="mt-1" aria-label="Ends when" value={endEvent} maxLength={120} onChange={(e) => setEndEvent(e.target.value)} /></label>
+      </div>
+      {part2 && (
+        <fieldset className="rounded-sm border border-border p-2" data-testid="part2-checklist">
+          <legend className="px-1 font-semibold">Part 2 required elements · Draft — pending counsel</legend>
+          {PART2_ELEMENT_KEYS.map((k) => (
+            <label key={k} className="flex min-h-9 items-center gap-2"><Checkbox checked={!!elements[k]} onCheckedChange={(v) => setElements((e) => ({ ...e, [k]: v === true }))} aria-label={PART2_ELEMENT_LABELS[k]} /> {PART2_ELEMENT_LABELS[k]}</label>
+          ))}
+          <p className="mt-1 text-[14px] text-muted-foreground"><Lock className="mr-1 inline size-4 align-text-bottom" aria-hidden="true" />Needs an e-signature or an uploaded wet signature. Includes the redisclosure notice.</p>
+        </fieldset>
+      )}
+      {mode !== "esign" && (
+        <>
+          {mode === "capture" && verbalOk && (
+            <label className="block">How it was given
+              <select className={field} value={method} onChange={(e) => setMethod(e.target.value as "e_sign" | "verbal_assent")} aria-label="Signature method"><option value="e_sign">E-signature in person</option><option value="verbal_assent">Verbal assent</option></select>
+            </label>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block">Signer<Input className="mt-1" aria-label="Signer" value={signer} maxLength={100} onChange={(e) => setSigner(e.target.value)} /></label>
+            <label className="block">Signing as
+              <select className={field} value={relationship} onChange={(e) => setRelationship(e.target.value as typeof relationship)} aria-label="Signing as"><option value="patient">Patient</option><option value="guardian">Guardian</option><option value="proxy">Legal representative</option></select>
+            </label>
+          </div>
+          {mode === "capture" && method === "verbal_assent" && verbalOk && (
+            <label className="block">Exact words read to the person<Textarea className="mt-1" aria-label="Exact words read" value={wording} maxLength={600} onChange={(e) => setWording(e.target.value)} /></label>
+          )}
+          {mode === "upload" && (
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">Date on the paper<Input className="mt-1" type="date" aria-label="Date on the paper" value={signedOn} onChange={(e) => setSignedOn(e.target.value)} /></label>
+              <label className="block">Scanned file<Input className="mt-1" type="file" aria-label="Scanned file" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")} /></label>
+            </div>
+          )}
+          <label className="block">Witness (optional)<Input className="mt-1" aria-label="Witness" value={witness} maxLength={100} onChange={(e) => setWitness(e.target.value)} /></label>
+          {mode === "capture" && (
+            <label className="flex min-h-9 items-center gap-2"><Checkbox checked={attested} onCheckedChange={(v) => setAttested(v === true)} aria-label="Attestation" /> {method === "verbal_assent" && verbalOk ? "I read these exact words and heard the person agree." : "The signer typed their name and agreed in front of me."}</label>
+          )}
+        </>
+      )}
+      <Button className="w-full" onClick={submit} data-testid="consent-form-submit">{mode === "esign" ? "Send to patient" : "Save consent record"}</Button>
+    </div>
+  );
+}
