@@ -33,7 +33,9 @@ No behaviour, value, access or audit assertion in any existing test was touched.
 
 ## Parity proof (enforcement off)
 
-`consentGateSnapshot` (NEW test hook in consentLifecycle.ts) captures everything an EXISTING gate reads — `isConsentCategoryAuthorized` × 4 categories, `activeConsentRecord` id, `getConsentState` — for every seeded patient under a pinned clock (2026-10-21T12:00:00Z), before and after exercising revoke + renew + an expired record. Byte-identical. The B2-1 typed-record coverage check is deliberately excluded from the snapshot (it is a new reader, not a gate; B2-1's own tests pin it).
+`consentGateSnapshot` (NEW test hook in consentLifecycle.ts) captures everything an EXISTING gate reads — `isConsentCategoryAuthorized` × 4 categories, `activeConsentRecord` id, `getConsentState` — for every seeded patient under a pinned clock (2026-10-21T12:00:00Z), before and after exercising revoke + renew + an expired record. Byte-identical.
+
+Mitch's decision (Oct 21): `consentCovers` is deliberately EXCLUDED from the snapshot. It is supposed to change on revoke/renew — parity applies only to the gate reads today's surfaces use. Verified: no production surface reads `consentCovers` — the only references are its definition (src/lib/ehr.ts:12723) and the rollback adapter comment (src/test/consentB2Approved.ts). It stays unwired until B2-4.
 
 ## New tests
 
