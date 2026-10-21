@@ -210,3 +210,10 @@ No B3b-changed module is imported on that path. `src/routes/case-manager.tsx:1,2
 ### Assessment
 
 The test passes 3/3 standalone on current code AND 3/3 on the rollback, and no B3b code path is involved. The single full-suite failure (0 audits instead of 1) did not reproduce in six standalone runs. Per Mitch's instruction this is reported and STOPPED here: the test is an audit assertion, is not on the flake list, and no rerun of the full suite or test change has been made. Awaiting Mitch's decision.
+
+## Final validation (Oct 21, Mitch-directed rerun)
+- Run 1 (full, --workers=1, :8080): 216 passed / 1 failed (staffSlowLoadLanding8c2.spec.ts:31, 0 audits), EXIT 1.
+- Standalone staffSlowLoadLanding8c2: current 3/3 PASS (39.3s, 32.6s, 33.0s); rollback b1d3c414 3/3 PASS (33.8s, 56.6s, 32.1s).
+- Run 2 (dev server restarted, full, --workers=1, :8080, alone): 217 passed, 41.2m, EXIT 0.
+- After column above is as implemented. Screenshots restored against b1d3c414.
+- Separate read-only finding logged as roadmap item "Audit: denied-navigation audit under slow load": guard logic writes the audit before redirecting (RouteAccessGuard.tsx:37 then :61); audits are in memory only (ehr.ts:6977), so a full page reload after the redirect loses it. Fix proposed, not implemented.
