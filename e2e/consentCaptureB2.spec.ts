@@ -111,7 +111,8 @@ test("B2-2 patient e-sign in Spanish at 390px", async ({ page }) => {
     return r.ok;
   }, pid);
   expect(sent).toBe(true);
-  await go(page, "/home");
+  await go(page, "/profile");
+  await page.getByRole("button", { name: "Cambiar idioma a español" }).click();
   const card = page.getByTestId("patient-consent-esign");
   await expect(card).toBeVisible();
   await expect(card).toContainText("Formularios de consentimiento de tu equipo");
@@ -125,6 +126,6 @@ test("B2-2 patient e-sign in Spanish at 390px", async ({ page }) => {
   await expect(card).toBeHidden();
   expect(await succeeded(page, "consent_record_patient_sign")).toBe(n + 1);
   expect((await typed(page, pid)).find((r) => r.type === "sms_reminder")).toMatchObject({ method: "e_sign", status: "active" });
-  await go(page, "/profile");
-  await expect(page.getByTestId("my-consent-records")).toBeVisible();
+  await expect(page.getByTestId("my-consent-records")).toContainText("Mis formularios");
+  await axe(page, "my-consent-records");
 });
