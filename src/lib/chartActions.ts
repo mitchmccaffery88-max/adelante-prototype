@@ -416,7 +416,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     label: { en: "ASAM assessment", es: "Evaluación ASAM" },
     group: "clinical",
     sectionId: "asam",
-    store: refs(["asamPanel", () => undefined]),
+    store: refs(["asamPanel", () => undefined],
+      ["saveAsamDraft", (...a: Parameters<typeof AdelanteEHR.saveAsamDraft>) => AdelanteEHR.saveAsamDraft(...a)],
+      ["signAsam", (...a: Parameters<typeof AdelanteEHR.signAsam>) => AdelanteEHR.signAsam(...a)],
+      ["cosignAsam", (...a: Parameters<typeof AdelanteEHR.cosignAsam>) => AdelanteEHR.cosignAsam(...a)]),
     allowed: ({ role, staffId }, p) => {
       if (!roleSeesAsamSection(role, p)) return hide("Not available for your role.");
       if (!inList(ASAM_AUTHOR_ROLES, role)) return hide("Your role can view, not author, an ASAM.");

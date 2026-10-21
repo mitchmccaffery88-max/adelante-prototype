@@ -1,4 +1,5 @@
 # Architecture rules (src/lib and the screens that call it)
+- Billing lifecycle QA is opt-in, resolves stable keys to public-generated IDs, and routes ASAM public save/sign/cosign methods through the existing ASAM registry gate. Why: fixtures cannot bypass mutations or alter default seeds and permissions.
 
 - Quick-action Task defaults select the dashboard twin without a patient and chart entry with one, before the unchanged registry gate. Why: retain the approved action without duplicate twins.
 
