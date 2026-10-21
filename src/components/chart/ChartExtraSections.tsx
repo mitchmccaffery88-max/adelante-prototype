@@ -1,5 +1,6 @@
 import { ConsentFormsPanel } from "@/components/consent/ConsentFormsPanel";
 import { ConsentCapturePanel } from "@/components/consent/ConsentCapturePanel";
+import { ConsentGapsPanel } from "@/components/consent/ConsentGapWorklist";
 // §Chart turn 4 finish — Consents, Audit trail and Weekly review as chart
 // sub-sections. Each reuses an existing component / reader and its own gate.
 import { Link } from "@tanstack/react-router";
@@ -21,6 +22,7 @@ export function ChartConsents({ patient }: { patient: Patient }) {
   return (
     <div className="space-y-2">
       <ConsentFormsPanel patient={patient} />
+      <ConsentGapsPanel patientId={patient.id} />
       <ConsentCapturePanel patient={patient} />
       <ConsentRecordsPanel patient={patient} />
       <AiConsentCard patient={patient} mode="staff" />

@@ -33,6 +33,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusChip } from "@/components/ui/status-chip";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { REVOKE_WORDING_DRAFT, type RevokeMethod } from "@/lib/consentLifecycle";
 
 type Mode = "capture" | "upload" | "esign";
 const TYPES = Object.keys(CONSENT_TYPE_LABEL) as ConsentType[];
@@ -48,10 +50,38 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
   const can = (id: string) => chartAction(id).allowed(actor, patient).state !== "hidden";
   const [mode, setMode] = useState<Mode | null>(null);
   const [view, setView] = useState<string | null>(null);
+  const [renew, setRenew] = useState<HistoryRow | null>(null);
+  const [revokeMethod, setRevokeMethod] = useState<RevokeMethod>("written");
+  const confirm = useConfirmDialog();
   const viewing = snap.rows.find((r) => r.id === view);
   const showCapture = can("consent_record_capture");
   const showUpload = can("consent_record_upload");
   const showSend = can("consent_record_request_esign");
+  const showRenew = can("consent_record_renew");
+  const showRevoke = can("consent_record_revoke");
+  const askRevoke = (r: HistoryRow) =>
+    confirm.ask({
+      title: `Revoke: ${CONSENT_TYPE_LABEL[r.consentType].en}`,
+      description: REVOKE_WORDING_DRAFT,
+      confirmLabel: "Revoke consent",
+      keepLabel: "Keep it",
+      reasonLabel: "Note (optional)",
+      children: (
+        <label className="block text-sm">How the person asked
+          <select className={field} value={revokeMethod} onChange={(e) => setRevokeMethod(e.target.value as RevokeMethod)} aria-label="Revocation method">
+            <option value="written">In writing</option>
+            <option value="e_sign">E-sign / portal</option>
+            <option value="oral">Told to staff</option>
+          </select>
+        </label>
+      ),
+      onConfirm: (reason) => {
+        const r2 = runAction("consent_record_revoke", actor, patient, { via: "revokeTypedConsent", args: [{ recordId: r.id, method: revokeMethod, note: reason, actor: storeActor }] });
+        if (r2.ok) toast.success(confirmationFor("consent_record_revoke", "Consent revoked — it stays in the history"));
+        else toast.error(r2.reason);
+        return r2.ok;
+      },
+    });
 
   return (
     <section className="space-y-3 rounded-md border border-border p-3" data-testid="consent-capture-panel">
@@ -76,9 +106,11 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
               <button type="button" className="text-left text-primary underline" onClick={() => setView(r.id)}>
                 {CONSENT_TYPE_LABEL[r.consentType].en} · {r.recipients.map((x) => x.name).join(", ")} · v{r.document?.version ?? 1}
               </button>
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-2">
                 {r.simulatedUpload && <StatusChip lang="en" state="simulated" label="Simulated" />}
                 <StatusChip lang="en" state={r.status === "active" ? "done" : "closed"} label={STATUS_WORD[r.status]} data-testid={`consent-status-${r.id}`} />
+                {r.status === "active" && showRenew && <Button size="sm" variant="outline" onClick={() => setRenew(r)} data-testid={`consent-renew-${r.id}`}>Renew</Button>}
+                {r.status === "active" && showRevoke && <Button size="sm" variant="outline" onClick={() => askRevoke(r)} data-testid={`consent-revoke-${r.id}`}>Revoke</Button>}
               </span>
             </li>
           ))}
@@ -90,6 +122,13 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
           {mode && <CaptureForm mode={mode} patient={patient} onDone={(ok, msg, id) => { if (ok) { toast.success(confirmationFor(id, msg)); setMode(null); } else toast.error(msg); }} run={(id, via, args) => runAction(id, actor, patient, { via, args })} storeActor={storeActor} />}
         </SheetContent>
       </Sheet>
+
+      <Sheet open={!!renew} onOpenChange={(o) => !o && setRenew(null)}>
+        <SheetContent className="overflow-y-auto">
+          {renew && <CaptureForm mode="capture" patient={patient} renewFrom={renew} onDone={(ok, msg, id) => { if (ok) { toast.success(confirmationFor(id, msg)); setRenew(null); } else toast.error(msg); }} run={(id, via, args) => runAction(id, actor, patient, { via, args })} storeActor={storeActor} />}
+        </SheetContent>
+      </Sheet>
+      {confirm.dialog}
 
       <Sheet open={!!viewing} onOpenChange={(o) => !o && setView(null)}>
         <SheetContent className="overflow-y-auto">
@@ -122,19 +161,21 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
   );
 }
 
-function CaptureForm({ mode, patient, run, onDone, storeActor }: {
+function CaptureForm({ mode, patient, run, onDone, storeActor, renewFrom }: {
   mode: Mode;
   patient: Patient;
   storeActor: { role: string; staffId?: string; name: string };
   run: (id: string, via: string, args: unknown[]) => { ok: boolean; reason?: string };
   onDone: (ok: boolean, msg: string, id: string) => void;
+  /** §B2-3 — when set, the form renews this record: terms are fixed from it. */
+  renewFrom?: HistoryRow;
 }) {
-  const [type, setType] = useState<ConsentType>("hipaa_authorization");
-  const [recipient, setRecipient] = useState("");
-  const [kind, setKind] = useState<"person" | "org">("org");
-  const [purpose, setPurpose] = useState("");
+  const [type, setType] = useState<ConsentType>(renewFrom?.consentType ?? "hipaa_authorization");
+  const [recipient, setRecipient] = useState(renewFrom?.recipients.map((x) => x.name).join(", ") ?? "");
+  const [kind, setKind] = useState<"person" | "org">(renewFrom?.recipients[0]?.kind ?? "org");
+  const [purpose, setPurpose] = useState(renewFrom?.purpose ?? "");
   const [enrolledOnly, setEnrolledOnly] = useState(false);
-  const [items, setItems] = useState("");
+  const [items, setItems] = useState(renewFrom?.items.join(", ") ?? "");
   const [endDate, setEndDate] = useState("");
   const [endEvent, setEndEvent] = useState("");
   const [elements, setElements] = useState<Partial<Record<Part2ElementKey, boolean>>>({});
@@ -160,9 +201,14 @@ function CaptureForm({ mode, patient, run, onDone, storeActor }: {
     ...(endEvent.trim() ? { expiresOnEvent: endEvent.trim() } : {}),
     ...(part2 ? { part2Elements: elements } : {}),
   };
-  const title = mode === "capture" ? "Record a consent" : mode === "upload" ? "Upload a signed paper consent" : "Send a consent for e-sign";
+  const title = renewFrom ? "Renew this consent" : mode === "capture" ? "Record a consent" : mode === "upload" ? "Upload a signed paper consent" : "Send a consent for e-sign";
   const submit = () => {
     const effMethod = verbalOk ? method : "e_sign";
+    if (renewFrom) {
+      const r = run("consent_record_renew", "renewTypedConsent", [{ recordId: renewFrom.id, ...(endDate ? { expiresOn: endDate } : {}), ...(endEvent.trim() ? { expiresOnEvent: endEvent.trim() } : {}), method: effMethod, signer, relationship, attested, ...(effMethod === "verbal_assent" ? { assentWording: wording } : {}), ...(witness.trim() ? { witness } : {}), actor: storeActor }]);
+      onDone(r.ok, r.ok ? "Renewed — the old version stays in the history" : r.reason ?? "Couldn't save.", "consent_record_renew");
+      return;
+    }
     const r =
       mode === "capture"
         ? run("consent_record_capture", "captureConsentRecord", [{ draft, method: effMethod, signer, relationship, attested, ...(effMethod === "verbal_assent" ? { assentWording: wording } : {}), ...(witness.trim() ? { witness } : {}), actor: storeActor }])
@@ -176,6 +222,16 @@ function CaptureForm({ mode, patient, run, onDone, storeActor }: {
     <div className="space-y-3 text-sm" data-testid={`consent-form-${mode}`}>
       <SheetHeader><SheetTitle>{title}</SheetTitle></SheetHeader>
       <p className="text-[14px] text-muted-foreground">{CAPTURE_DRAFT_LABEL}{mode === "upload" ? ` · ${UPLOAD_SIMULATED_LABEL}` : ""}</p>
+      {renewFrom ? (
+        <dl className="space-y-1 rounded-sm border border-border p-2 text-[14px]" data-testid="renew-terms">
+          <div><dt className="inline font-semibold">Type: </dt><dd className="inline">{CONSENT_TYPE_LABEL[renewFrom.consentType].en}</dd></div>
+          <div><dt className="inline font-semibold">Recipients: </dt><dd className="inline">{renewFrom.recipients.map((x) => x.name).join(", ")}</dd></div>
+          <div><dt className="inline font-semibold">Purpose: </dt><dd className="inline">{renewFrom.purpose}</dd></div>
+          <div><dt className="inline font-semibold">Covers: </dt><dd className="inline">{renewFrom.items.join(", ")}</dd></div>
+          <p className="text-muted-foreground">Same terms as the record it replaces{part2 ? ", including the Part 2 checklist and redisclosure notice" : ""}. Set a new end date or event below.</p>
+        </dl>
+      ) : (
+        <>
       <label className="block">Consent type
         <select className={field} value={type} onChange={(e) => { setType(e.target.value as ConsentType); setMethod("e_sign"); }} aria-label="Consent type">
           {TYPES.map((t) => <option key={t} value={t}>{CONSENT_TYPE_LABEL[t].en}</option>)}
@@ -192,11 +248,13 @@ function CaptureForm({ mode, patient, run, onDone, storeActor }: {
         <label className="flex min-h-9 items-center gap-2"><Checkbox checked={enrolledOnly} onCheckedChange={(v) => setEnrolledOnly(v === true)} aria-label="Enrolled update only" /> Only the &quot;enrolled on &lt;date&gt;&quot; update</label>
       )}
       <label className="block">Information covered (comma separated)<Input className="mt-1" aria-label="Information covered" value={items} maxLength={300} onChange={(e) => setItems(e.target.value)} /></label>
+        </>
+      )}
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Ends on<Input className="mt-1" type="date" aria-label="Ends on" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></label>
         <label className="block">Or ends when<Input className="mt-1" aria-label="Ends when" value={endEvent} maxLength={120} onChange={(e) => setEndEvent(e.target.value)} /></label>
       </div>
-      {part2 && (
+      {part2 && !renewFrom && (
         <fieldset className="rounded-sm border border-border p-2" data-testid="part2-checklist">
           <legend className="px-1 font-semibold">Part 2 required elements · Draft — pending counsel</legend>
           {PART2_ELEMENT_KEYS.map((k) => (

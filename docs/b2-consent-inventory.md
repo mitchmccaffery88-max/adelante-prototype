@@ -422,3 +422,11 @@ Total lines: 342. Unclassified: 0.
 | src/lib/consentCapture.ts:125 | writer | `createConsentRecord` with a typed extension and empty legacy `sections` (staff capture, paper upload, patient e-sign) |
 | src/lib/consentCapture.ts:297 | reader | `listConsentRecords` — typed records only (history, patient "My forms", advocate own-release status); not a gate |
 | src/lib/consentForms.ts:381 | writer (unchanged count) | `migrateLegacyConsents` now skips only when an UNTYPED record exists, so typed records never suppress the legacy migration. Identical for all existing data. |
+
+## B2-3 additions
+
+| File:line | Kind | Reads / writes |
+|---|---|---|
+| src/lib/consentLifecycle.ts | reader | `listConsentRecords` (typed-record lookup), `isConsentCategoryAuthorized` / `activeConsentRecord` / `getConsentState` / `consentCovers` — test-only parity snapshot `consentGateSnapshot`; not a gate |
+| src/lib/ehr.ts (`revokeTypedConsentRecord`) | writer | Revokes a TYPED record in place (status + `revocation` extension); writes NO domain audit — the registry action is the single event |
+| src/lib/consentCapture.ts (`requestSelfReSign`) | reader | `listConsentRecords` — builds a self-service e-sign request from an expired record's own terms |
