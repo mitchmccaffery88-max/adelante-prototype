@@ -79,3 +79,49 @@ The workspace helper must preserve the existing eligibility-due rows via a safe 
 - Focused existing checks: `roleDashboardParity9c2.test.ts` 19/19 and `billingParity9a3.test.tsx` 9/9, total 28/28. Latest automatic check: build OK at 02:51:19 UTC.
 - Not complete: OpsWorkspace boundary; NEW projection/browser tests; seeded pinned-clock clinician/sys_admin parity; final restart/full units/full exclusive browser suite; screenshot restoration and final closeout. No full validation was started and nothing published.
 - Reviewer's suggestion to remove provider name is rejected: Mitch explicitly authorizes `Signed / Cosigned by <provider> on <date>`.
+
+## Oct 21 second-stop approval — third existing-test STOP
+
+The OpsWorkspace-only exact-once adapter and its three declarations are approved. Implementation is stopped before further production/test edits because the newly required reuse of `billingWorkspace` on projected coverage inputs conflicts with two additional byte-identical assertions. Neither assertion is covered by the approved inventory adapter. Rollback remains `b1d3c414de160babe95c541483a610853cb3e076`.
+
+### Current / proposed production text
+
+`src/lib/billingWorkspace.ts:36`:
+```ts
+// Current
+export function billingWorkspace(role: StaffRole, claims: Claim[] = AdelanteEHRExt.listClaims()): BillingWorkspace {
+// Proposed
+export function billingWorkspace(role: StaffRole, claims: Claim[] = AdelanteEHRExt.listClaims(), coverageRows: CoverageWorklistRow[] = coverageWorklistRows()): BillingWorkspace {
+```
+
+`src/lib/billingWorkspace.ts:44`:
+```ts
+// Current
+    eligibilityDue: coverageWorklistRows().filter((r) => ELIGIBILITY_DUE.includes(r.state)),
+// Proposed
+    eligibilityDue: coverageRows.filter((r) => ELIGIBILITY_DUE.includes(r.state)),
+```
+
+These two substitutions permit the original workspace computations to consume projected coverage worklist rows without copying any list/filter logic. Existing callers retain the original default; the billing-only helper would supply safe projected coverage rows and projected claims. No rates, gates, state rules, exports or clinical-store changes are proposed. Avoid global mocks or store monkey-patching to inject inputs into production.
+
+### Conflicting existing tests: exact current / proposed
+
+1. `src/components/__tests__/roleDashboardParity9c2.test.ts:31–32` includes `src/lib/billingWorkspace.ts` in its byte-identical source list.
+```ts
+// Current line 32
+    expect(readFileSync(path, "utf8")).toBe(withApprovedP3(path, old(path)));
+// Proposed (requires approval)
+    expect(readFileSync(path, "utf8")).toBe(withApprovedBillingWorkspaceB3b(path, withApprovedP3(path, old(path))));
+```
+
+2. `src/lib/__tests__/billingParity9a3.test.tsx:13,19` includes the same file in `SELECTORS`.
+```ts
+// Current line 19
+  it.each(SELECTORS)("%s is byte-identical to rollback", (p) => expect(readFileSync(p, "utf8")).toBe(old(p)));
+// Proposed (requires approval)
+  it.each(SELECTORS)("%s is byte-identical to rollback", (p) => expect(readFileSync(p, "utf8")).toBe(withApprovedBillingWorkspaceB3b(p, old(p))));
+```
+
+Proposed NEW `src/test/billingWorkspaceB3bApproved.ts` would apply **only** the two production substitutions above, **only** to `src/lib/billingWorkspace.ts`, requiring each anchor exactly once and returning every other file unchanged. Both tests would import that adapter. This is distinct from the approved OpsWorkspace inventory adapter and the billing.tsx-only adapter; it removes no comparisons and leaves all other source bytes pinned.
+
+No additional production files or existing tests were edited after discovering this conflict. No full validation or browser suite was started. Pending: approved OpsWorkspace adapter/comparison, safe coverage inputs and workspace ID/count parity for both billing roles on both seeds, new privacy and browser tests, clinician/sys_admin parity, restart/full validation/screenshot restoration/closeout SHA. The partial helper's empty eligibility list remains an acknowledged unfinished implementation, not a validated change. Nothing published.
