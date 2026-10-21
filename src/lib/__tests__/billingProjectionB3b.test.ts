@@ -9,6 +9,7 @@ import { buildBillingLifecycleScenario } from "@/lib/billingLifecycleScenario";
 import { billingWorkspace } from "@/lib/billingWorkspace";
 import { laneFor } from "@/lib/billingLane";
 import { billingAppointments, billingPatients, billingClaims, billingOpsWorkspace, billingCoverageRows, billingClaimInput, billingLaneFor, billingBlockedAttempts } from "@/lib/billingProjection";
+import { withApprovedConsentB2 } from "@/test/consentB2Approved";
 
 const claimKeys = "id encounterId patientId clinicianId state updatedAt serviceDate serviceCode program programSource codeSource unitsSource units minutes rateId rateCentsPerUnit rateStatus chargeCents noRateReason denialReason taxonomy supervisingStaffId arrangementMissing payerId copayCents deductibleCents coinsuranceBps payerPortionCents patientPortionCents patientPaidCents patientBalanceCents overpaidReview voidBlocked history duplicateReview patientPayments billingReviewFlag billingSignature documentationBlock billingBlock".split(" ");
 const paymentKeys = "id amountCents receivedOn method reference recordedById recordedByName recordedByRole recordedAt voidedAt voidedById voidedByName voidReason".split(" ");
@@ -92,7 +93,7 @@ describe("B3b pinned-clock billing privacy and workspace parity", () => {
       if (!raw[0]) throw new Error("Missing claim");
       expect(billingClaimInput(raw[0])).toBe(raw[0]);
       for (const path of ["src/routes/clinician.tsx", "src/routes/admin.tsx", "src/lib/ehr.ts", "src/lib/ehr-ext.ts", "src/lib/roles.ts", "src/lib/chartAccess.ts", "src/lib/countyReporting.ts"]) {
-        expect(readFileSync(path, "utf8")).toBe(execFileSync("git", ["show", `b1d3c414:${path}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
+        expect(readFileSync(path, "utf8")).toBe(withApprovedConsentB2(path, execFileSync("git", ["show", `b1d3c414:${path}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })));
       }
     });
   }
