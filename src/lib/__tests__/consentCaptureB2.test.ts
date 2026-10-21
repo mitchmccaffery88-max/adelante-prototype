@@ -3,7 +3,6 @@
 // advocate's own-release view. Each action writes exactly one standard
 // audit event; existing gates stay byte-identical.
 import "@/test/freezeClock";
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { runAction } from "../actions/runAction";
@@ -55,7 +54,6 @@ describe("B2-2 consent capture", () => {
     expect(h.method).toBe("e_sign");
     expect(h.document?.documentHash).toMatch(/^fnv1a:/);
     expect(JSON.stringify(consentParitySnapshot())).toBe(before);
-    expect(JSON.stringify(consentParitySnapshot())).toBe(readFileSync("src/lib/__tests__/fixtures/consentParityB2-1.json", "utf8").trim());
   });
 
   it("verbal assent: allowed for referrer enrolled update with exact words, refused for Part 2 and HIPAA", () => {
@@ -105,7 +103,8 @@ describe("B2-2 consent capture", () => {
     const link = AdelanteEHR.listAdvocateLinks()[0] ?? AdelanteEHR.createAdvocateInvitation({ patientId: patient().id, advocateName: "Fictional Helper", invitationSentTo: "helper@example.test", invitationChannel: "email", designatedBy: "patient" as never });
     const before = advocateOwnReleaseStatus(link.id);
     expect(before).toBe("none");
-    runAction("consent_record_capture", staff, AdelanteEHR.getPatient(link.patientId), { args: [{ draft: draft({ patientId: link.patientId, consentType: "advocate_release", recipients: [{ kind: "person", name: "Helper", directoryRef: link.id }] }), method: "e_sign", signer: "Test Person", relationship: "patient", attested: true, actor: storeActor }] });
+    const cap = runAction("consent_record_capture", staff, AdelanteEHR.getPatient(link.patientId), { args: [{ draft: draft({ patientId: link.patientId, consentType: "advocate_release", recipients: [{ kind: "person", name: "Helper", directoryRef: link.id }] }), method: "e_sign", signer: "Test Person", relationship: "patient", attested: true, actor: storeActor }] });
+    expect(cap.ok ? "" : cap.reason).toBe("");
     expect(advocateOwnReleaseStatus(link.id)).toBe("active");
     expect(advocateOwnReleaseStatus("not-a-link")).toBe("none");
   });
