@@ -13,7 +13,7 @@ export function consentParitySnapshot() {
   return AdelanteEHR.listPatients().map((p, i) => {
     const a = AdelanteEHR.activeConsentRecord(p.id);
     return {
-      id: p.id.startsWith("p") ? p.id : `#${i}`, // generated seed ids are random per run
+      id: /^(p\d+|p-demo-.*)$/.test(p.id) ? p.id : `#${i}`, // generated seed ids are random per run
       active: a ? { id: a.id, formType: a.formType, status: a.status, sections: a.sections } : null,
       cats: CATS.map((c) => AdelanteEHR.isConsentCategoryAuthorized(p.id, c)),
       state: AdelanteEHR.getConsentState(p.id),
