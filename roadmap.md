@@ -2,11 +2,13 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## B3b — Billing privacy narrowing (Oct 21) — STOPPED FOR ADDITIONAL APPROVAL
+## B3b — Billing privacy narrowing (Oct 21) — THIRD EXISTING-TEST STOP
 - Rollback: b1d3c414de160babe95c541483a610853cb3e076; B3a accepted 2409b85c
 - [x] Inventory and old-test stop checks; asam allowed block / permission snapshot byte-identical to 2f56b883
 - [x] Mitch delegated approval: exact /billing selector adapter only; preserve all other inventory bindings.
-- [ ] Partial projection/group/signature/name implementation applied; STOP: OpsWorkspace.tsx:44–46 mounted whole-record reads are separately pinned. Approve only three expected declarations; preserve eligibility work. Exact current/proposed in B3b report.
+- [x] Second-stop delegation approved: NEW OpsWorkspace-only exact-once adapter for three declarations; all other inventory bindings pinned.
+- [ ] Apply approved OpsWorkspace adapter and finish projection/group/signature/name boundaries. BLOCKED: reusing billingWorkspace on safe coverage inputs requires two source substitutions pinned by roleDashboardParity9c2.test.ts:32 and billingParity9a3.test.tsx:19; exact current/proposed in B3b report. No further test changes authorized.
+- [ ] Reuse original workspace computations with safe coverage inputs; pinned-clock default/B3a claim and patient ID/count parity for billing and billing_coordinator; STOP on differences.
 - [ ] NEW projection / lifecycle browser tests and pinned-clock clinician / sys_admin parity
 - [ ] Restart → full units → exclusive background full browser :8080 --workers=1, poll literal EXIT last
 - [ ] Restore screenshots; docs/b3b-billing-privacy-report.md before/after fields; final SHA
