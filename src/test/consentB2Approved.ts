@@ -111,6 +111,41 @@ const B2: [string, string][] = [
       ...(ext ?? {}),
     };`,
   ],
+  // 10. §B2-3 — typed-record revocation store method (no domain audit; the registry action is the one event)
+  [
+    `    emit();
+    return rec;
+  },
+  /**
+   * §ASCMI disclosure trail — fired when consent-gated content is actually`,
+    `    emit();
+    return rec;
+  },
+  /**
+   * §B2-3 — revoke a TYPED consent record. Writes NO domain audit: the
+   * registry action (consent_record_revoke / consent_record_patient_revoke)
+   * is the single audit event for the write. Nothing is deleted.
+   */
+  revokeTypedConsentRecord(
+    recordId: string,
+    input: { by: string; role: string; method: "portal" | "in_person" | "phone" | "written"; reason: string; onBehalfOfPatient: boolean },
+  ): ConsentRecord {
+    const rec = consentRecords.find((r) => r.id === recordId);
+    if (!rec) throw new Error("Consent record not found.");
+    if (!rec.consentType) throw new Error("Only typed consent records use this flow.");
+    if (rec.status === "revoked") throw new Error("This record is already revoked.");
+    const at = new Date().toISOString();
+    rec.status = "revoked";
+    rec.revokedAt = at;
+    rec.revokedBy = input.by;
+    rec.revocationReason = input.reason;
+    rec.revocation = { by: input.by, at, method: input.method, reason: input.reason, onBehalfOfPatient: input.onBehalfOfPatient };
+    emit();
+    return rec;
+  },
+  /**
+   * §ASCMI disclosure trail — fired when consent-gated content is actually`,
+  ],
 ];
 
 /** Rollback text with only the approved B2-1 substitutions applied (each must match exactly once). */

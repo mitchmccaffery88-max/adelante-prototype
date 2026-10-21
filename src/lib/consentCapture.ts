@@ -236,6 +236,39 @@ export function listESignRequests(patientId: string): ESignRequest[] {
   return eSignRequests.filter((r) => r.patientId === patientId).map((r) => ({ ...r }));
 }
 
+/**
+ * §B2-3 — the patient asks to sign an EXPIRED typed record again. Builds a
+ * self-service e-sign request from the record's own terms; the patient then
+ * signs it through the same patientSignConsent path as staff-sent requests.
+ */
+export function requestSelfReSign(recordId: string): ESignRequest {
+  const rec = AdelanteEHR.listConsentRecords().find((r) => r.id === recordId);
+  if (!rec || !rec.consentType) throw new Error("Consent record not found.");
+  if (rec.patientId !== AdelanteEHR.getCurrentPatientId()) throw new Error("You can only sign your own forms again.");
+  if (effectiveConsentStatus(rec) === "active" && !rec.revocation) throw new Error("This consent is still in effect.");
+  const draft: CaptureDraft = {
+    patientId: rec.patientId,
+    consentType: rec.consentType,
+    recipients: (rec.recipients ?? []).map((r) => ({ ...r })),
+    purpose: rec.purpose ?? "",
+    ...(rec.purposeCode ? { purposeCode: rec.purposeCode } : {}),
+    items: [...(rec.items ?? [])],
+    ...(rec.expiresOnEvent ? { expiresOnEvent: rec.expiresOnEvent } : {}),
+    ...(isPart2Type(rec.consentType) ? { part2Elements: { ...rec.part2Elements } } : {}),
+  };
+  const r: ESignRequest = {
+    id: `cesr_${Date.now().toString(36)}_${(seq++).toString(36)}`,
+    patientId: rec.patientId,
+    draft,
+    sentBy: { role: "patient", name: "Patient (self-service)" },
+    sentAt: new Date().toISOString(),
+    status: "waiting",
+  };
+  eSignRequests.push(r);
+  AdelanteEHR._emit(); // the request list is module-local; tell subscribers to re-read
+  return { ...r };
+}
+
 /** The patient signs their own request: typed name + attestation (same mechanism as Forms to sign). */
 export function patientSignConsent(input: { requestId: string; typedName: string; attested: boolean; language: "en" | "es" }): ConsentRecord {
   const r = eSignRequests.find((x) => x.id === input.requestId);
