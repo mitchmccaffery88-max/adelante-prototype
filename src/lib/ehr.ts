@@ -12729,7 +12729,7 @@ export const AdelanteEHR = {
       if (r.patientId !== patientId || r.consentType !== q.type) return false;
       if (r.needsReviewAfterMerge || r.legacyUnverified || r.expiryEventOccurredAt) return false;
       if (effectiveConsentStatus(r, at) !== "active") return false;
-      if (r.signature?.method === "verbal_assent" && !verbalAssentAllowed(r.consentType, r.purposeCode)) return false;
+      if (r.signature?.method === "verbal_assent" && !verbalAssentAllowed(q.type, r.purposeCode)) return false;
       if (q.recipient) {
         const want = q.recipient.trim().toLowerCase();
         if (!r.recipients?.some((x) => (x.directoryRef ?? "").toLowerCase() === want || x.name.trim().toLowerCase() === want)) return false;
