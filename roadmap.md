@@ -652,8 +652,8 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 
 ## B2 — complete consent record (approved Oct 21)
 - [x] B2-0 inventory freeze — rollback ee589ba2; docs/b2-consent-inventory.md; NEW src/lib/__tests__/consentInventoryB2.test.ts; no behaviour change
-- [ ] B2-1 model extension (multi-active per type + recipient, consentCovers) — BLOCKED: implemented, new tests green; four session-written parity tests pin ehr.ts byte-identical (see docs/b2-1-report.md); awaiting adapter approval
-- [ ] B2-2 capture / e-sign EN-ES / paper upload / history
+- [x] B2-1 model extension (multi-active per type + recipient, consentCovers) — rollback a2601c9f; approved adapter src/test/consentB2Approved.ts; units 2,909/2,909; browser 217/217 EXIT 0; 17 screenshots restored (docs/b2-1-report.md)
+- [ ] B2-2 capture / e-sign EN-ES / paper upload / history — IN PROGRESS (rollback = B2-1 final SHA)
 - [ ] B2-3 revoke / renew / expiry / missing-expired staff view
 - [ ] B2-4 enforcement switch
 - [ ] B2-5 migration to legacyUnverified (report affected patients first)
