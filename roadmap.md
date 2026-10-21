@@ -2,7 +2,10 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## B3b — Billing privacy narrowing (Oct 21) — BEHAVIOURAL TEST STOP
+## Audit: denied-navigation audit under slow load (NEW, Oct 21) — investigate only, not implemented
+- [ ] Read-only finding: guard logic cannot skip the audit (only redirect source is RouteAccessGuard.tsx:37 audit then :61 navigate in the same effect; role restored at module init roles.ts:1557/1566; lastWarned de-dupe is per-mount and only suppresses repeats). Gap: audit events live only in memory (ehr.ts:6977 appendAudit → auditEvents); any full page reload after the redirect (e.g. dev-server dependency re-optimisation) wipes it and the reloaded /worklist triggers no new denial → 0 events. Real gap possible: yes (prototype storage). Proposed app-only fix, awaiting approval: persist nav_access_denied (and other access audits) to sessionStorage and rehydrate on load, until production immutable storage.
+
+## B3b — Billing privacy narrowing (Oct 21) — COMPLETE
 - Rollback: b1d3c414de160babe95c541483a610853cb3e076; B3a accepted 2409b85c
 - [x] Inventory and old-test stop checks; asam allowed block / permission snapshot byte-identical to 2f56b883
 - [x] Mitch delegated approval: exact /billing selector adapter only; preserve all other inventory bindings.
@@ -11,7 +14,7 @@
 - [x] Original workspace computations reused with safe coverage rows; every list ID/order/count/reason matches for billing and billing_coordinator on default and B3a seeds under pinned clock.
 - [x] NEW projection privacy units 5/5, lifecycle privacy browser 3/3; clinician / sys_admin selectors/workspaces and shared clinical sources unchanged.
 - [x] Restart → full units 2,900/2,900 EXIT 0 → exclusive full browser :8080 --workers=1, polled to literal EXIT 1: 216 passed / 1 failed (41.3m).
-- [ ] BLOCKED: e2e/staffSlowLoadLanding8c2.spec.ts:31 failed once in the full suite (0 nav_access_denied audits). Mitch-directed diagnosis: 3/3 PASS standalone on current code (:8080) and 3/3 PASS on rollback b1d3c414 archive (:8090); no B3b-changed module is imported on the /case-manager → /worklist path (PageNewLauncher → DashboardActionLauncher, not Ops*). Full evidence in docs/b3b-billing-privacy-report.md. STOPPED; awaiting Mitch's decision (audit assertion, not on flake list).
+- [x] RESOLVED by Mitch-directed rerun (217/217 EXIT 0): e2e/staffSlowLoadLanding8c2.spec.ts:31 failed once in the full suite (0 nav_access_denied audits). Mitch-directed diagnosis: 3/3 PASS standalone on current code (:8080) and 3/3 PASS on rollback b1d3c414 archive (:8090); no B3b-changed module is imported on the /case-manager → /worklist path (PageNewLauncher → DashboardActionLauncher, not Ops*). Full evidence in docs/b3b-billing-privacy-report.md. STOPPED; awaiting Mitch's decision (audit assertion, not on flake list).
 - [x] Rollback screenshots restored byte-identically; report implemented field table, exact adapter lines and behaviour stop documented.
 - [ ] Final successful closeout SHA awaits resolution of the behaviour-test blocker; current checkpoint reported separately.
 - Narrowing only; no publishing, reconciliation/export/denied-look/rule/permission changes; stop on workflow or existing-test conflict.
