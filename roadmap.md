@@ -2,11 +2,11 @@
 - [x] Read-only content inventory export (scripts/export-content-inventory.ts) for Cathy's audit template.
 # Roadmap
 
-## B3b — Billing privacy narrowing (Oct 21) — IN PROGRESS
+## B3b — Billing privacy narrowing (Oct 21) — STOPPED FOR ADDITIONAL APPROVAL
 - Rollback: b1d3c414de160babe95c541483a610853cb3e076; B3a accepted 2409b85c
 - [x] Inventory and old-test stop checks; asam allowed block / permission snapshot byte-identical to 2f56b883
 - [x] Mitch delegated approval: exact /billing selector adapter only; preserve all other inventory bindings.
-- [ ] Billing-safe read projection; own-claim group reference; billing-safe signature; admin claims name policy
+- [ ] Partial projection/group/signature/name implementation applied; STOP: OpsWorkspace.tsx:44–46 mounted whole-record reads are separately pinned. Approve only three expected declarations; preserve eligibility work. Exact current/proposed in B3b report.
 - [ ] NEW projection / lifecycle browser tests and pinned-clock clinician / sys_admin parity
 - [ ] Restart → full units → exclusive background full browser :8080 --workers=1, poll literal EXIT last
 - [ ] Restore screenshots; docs/b3b-billing-privacy-report.md before/after fields; final SHA

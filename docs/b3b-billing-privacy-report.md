@@ -9,7 +9,7 @@
 
 ## Required before/after inventory
 
-**STOP before production edits:** an existing source-parity assertion pins the wide `/billing` reads. All “after” fields below are proposed, not implemented.
+**PARTIALLY IMPLEMENTED — SECOND STOP:** the approved `/billing` adapter and target projections are applied, but the mounted BillingWorkspaceTiles still receives whole records. The table remains proposed until that boundary and validation are complete.
 
 | Surface / source | Before: received fields | Proposed after: received fields |
 |---|---|---|
@@ -34,3 +34,48 @@ Claim financial fields retained include method, reference, recorder and void rea
 ## Validation
 
 Blocked by the existing-test stop above: NEW projection and browser tests; pinned-clock seeded clinician / sys_admin parity; restart; full units; exclusive background full browser suite on :8080 with one worker polled to literal EXIT; screenshot restoration; closeout. No production edits means no screenshot changes to restore. Nothing published.
+
+## Oct 21 delegated approval — applied test changes
+
+`src/components/__tests__/roleDashboardParity9c2.test.ts`, original line 5 insertion:
+- Old: no billing adapter import.
+- New: `import { withApprovedBillingB3b } from "@/test/billingB3bApproved";`
+
+Original line 28 (now 29):
+- Old: `expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedP3(path, old(path))));`
+- New: `expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedBillingB3b(path, withApprovedP3(path, old(path)))));`
+
+The NEW adapter returns every non-`src/routes/billing.tsx` input byte-identically and requires every anchor exactly once. Only these selectors change:
+```text
+const appointments = useEhr(() => AdelanteEHR.listAppointments());
+→ const appointments = useEhr(() => billingAppointments());
+const patients = useEhr(() => AdelanteEHR.listPatients());
+→ const patients = useEhr(() => billingPatients());
+const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
+→ const claims = useEhrExt(() => billingClaims());
+```
+No row-declaration substitutions were necessary: the existing row construction now receives projected inputs. All row expressions, IDs, handlers and KPI calculations remain unchanged.
+
+## Second existing-test STOP — mounted workspace ingestion
+
+The approved adapter is **billing.tsx only**. `roleDashboardParity9c2.test.ts` also pins `src/components/ops/OpsWorkspace.tsx` (original line 8, now 9), through the same comparison (original line 28, now 29), and the variable inventory (original lines 18–19, now 19–20). BillingWorkspaceTiles is mounted on `/billing`; its current reads bypass the new boundary.
+
+Exact production declarations requiring a separately approved expected-expression adapter:
+
+| Source | Current | Proposed |
+|---|---|---|
+| `src/components/ops/OpsWorkspace.tsx:44` | `const claims = useEhrExt(() => AdelanteEHRExt.listClaims());` | `const claims = useEhrExt(() => billingClaims());` |
+| `src/components/ops/OpsWorkspace.tsx:45` | `const patients = useEhr(() => AdelanteEHR.listPatients());` | `const patients = useEhr(() => billingPatients());` |
+| `src/components/ops/OpsWorkspace.tsx:46` | `const ws = billingWorkspace(role, claims);` | `const ws = billingOpsWorkspace(role, claims);` |
+
+Proposed test extension: a NEW exact-once OpsWorkspace-specific adapter for only those three declarations, composed at the comparison; the existing billing-only adapter stays billing-only. Every other inventory record/expression remains pinned. OpsWorkspace has NOT been edited; no test assertion has been loosened and no additional failure was induced.
+
+The workspace helper must preserve the existing eligibility-due rows via a safe coverage worklist projection rather than the current unfinished empty eligibility list; do not claim parity or completion before this is corrected and validated. This unfinished helper is not a completed workflow change.
+
+## Partial implementation and verification
+
+- Added billingProjection allowlists: patient identity/claim coverage, appointment session data, claim/financial fields; history retains only at/state for existing dates/sparklines, no signature trace/notes. Payments retain every B3a reconciliation field.
+- Applied boundary to billing/admin-claims and OpsActionLauncher claim/patient forms; amount/balance components narrow inputs; billing signature shows provider/date without note link/attestation; billing group popover shows only own reference; nonbilling display branches retained.
+- Focused existing checks: `roleDashboardParity9c2.test.ts` 19/19 and `billingParity9a3.test.tsx` 9/9, total 28/28. Latest automatic check: build OK at 02:51:19 UTC.
+- Not complete: OpsWorkspace boundary; NEW projection/browser tests; seeded pinned-clock clinician/sys_admin parity; final restart/full units/full exclusive browser suite; screenshot restoration and final closeout. No full validation was started and nothing published.
+- Reviewer's suggestion to remove provider name is rejected: Mitch explicitly authorizes `Signed / Cosigned by <provider> on <date>`.
