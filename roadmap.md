@@ -11,7 +11,7 @@
 - [x] Original workspace computations reused with safe coverage rows; every list ID/order/count/reason matches for billing and billing_coordinator on default and B3a seeds under pinned clock.
 - [x] NEW projection privacy units 5/5, lifecycle privacy browser 3/3; clinician / sys_admin selectors/workspaces and shared clinical sources unchanged.
 - [x] Restart → full units 2,900/2,900 EXIT 0 → exclusive full browser :8080 --workers=1, polled to literal EXIT 1: 216 passed / 1 failed (41.3m).
-- [ ] BLOCKED: e2e/staffSlowLoadLanding8c2.spec.ts:31 expects one nav_access_denied audit, observed zero; behaviour/audit assertion outside adapter delegation. No test/production change or unapproved retry. Await diagnostic/test synchronization approval; then repeat final validation.
+- [ ] BLOCKED: e2e/staffSlowLoadLanding8c2.spec.ts:31 failed once in the full suite (0 nav_access_denied audits). Mitch-directed diagnosis: 3/3 PASS standalone on current code (:8080) and 3/3 PASS on rollback b1d3c414 archive (:8090); no B3b-changed module is imported on the /case-manager → /worklist path (PageNewLauncher → DashboardActionLauncher, not Ops*). Full evidence in docs/b3b-billing-privacy-report.md. STOPPED; awaiting Mitch's decision (audit assertion, not on flake list).
 - [x] Rollback screenshots restored byte-identically; report implemented field table, exact adapter lines and behaviour stop documented.
 - [ ] Final successful closeout SHA awaits resolution of the behaviour-test blocker; current checkpoint reported separately.
 - Narrowing only; no publishing, reconciliation/export/denied-look/rule/permission changes; stop on workflow or existing-test conflict.
