@@ -656,7 +656,8 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] B2-2 capture / e-sign EN-ES / paper upload / history — rollback 7d973925; units 2,917/2,917; browser 219/219 EXIT 0 (docs/b2-2-report.md)
 - [x] B2-3 revoke / renew / expiry / missing-expiring view — COMPLETE Oct 22; rollback 945a6ba8; additive, enforcement OFF; units 2,925/2,925; full one-worker browser 222/222, zero failures, literal EXIT 0 (26.6m); 17 screenshots restored, all 21 byte-identical to rollback; plan identical to cd1f4bb0; regression at consentCaptureB2:88 fixed (row button collision). See docs/b2-3-report.md and docs/b2-3-evidence/. No publish; B2-4/5/6 untouched.
 - [x] B2-6 consent audit events + disclosure links — COMPLETE Oct 22; rollback 5c335b7e; additive, enforcement OFF; per-action audit counts unchanged, consent.expired the only new entry; pinned parity vs rollback byte-identical; units 2,936/2,936; full browser 222/223 EXIT 1, sole failure staffNewAudit8a2:29 timeout (flake exception, 3/3 standalone); 17 screenshots restored, 0 differ. See docs/b2-6-report.md. No publish; B2-4/5 untouched.
-- [ ] B2-4 enforcement switch
+- [x] B2-4 enforcement switch (Option A) — Oct 22; rollback 0089ca4f; probe: 0 changes under A (7 under B), 0 typed seeded records; typed grants narrowed to type+recipient+purpose(+item); matrix vs rollback zero diffs incl. external-recipient records; emergency path hash + behaviour identical; units 2,950/2,950; browser 224/224 EXIT 0; 17 screenshots restored. See docs/b2-4-report.md. No publish.
+- [ ] B2-4 held: asamReporting.ts:92 switch — blocked on approval of one exact-once adapter in src/test/privacyP3Approved.ts (file pinned by 9a-2/9a-3/9c-2)
 - [ ] B2-5 migration to legacyUnverified (report affected patients first)
 - [ ] B2-6 audit + disclosure links
 - [ ] Audit: denied-navigation audit under slow load — moved to backend / immutable-audit phase (no sessionStorage)

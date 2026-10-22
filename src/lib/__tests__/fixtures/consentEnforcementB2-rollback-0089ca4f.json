@@ -1,0 +1,3633 @@
+{
+ "seed": {
+  "label": "default seed",
+  "asamCohort": [],
+  "asamMode": [
+   [
+    "billing",
+    null
+   ],
+   [
+    "billing_coordinator",
+    null
+   ],
+   [
+    "cf_care_manager",
+    null
+   ],
+   [
+    "clinical_coordinator",
+    null
+   ],
+   [
+    "clinical_trainee",
+    null
+   ],
+   [
+    "community_health_worker",
+    null
+   ],
+   [
+    "credentialing_coordinator",
+    null
+   ],
+   [
+    "ecm_provider",
+    null
+   ],
+   [
+    "lvn",
+    "full"
+   ],
+   [
+    "medical_assistant",
+    null
+   ],
+   [
+    "nurse_rn",
+    "full"
+   ],
+   [
+    "peer_specialist",
+    null
+   ],
+   [
+    "physician",
+    "full"
+   ],
+   [
+    "pmhnp",
+    "full"
+   ],
+   [
+    "sud_counselor",
+    "full"
+   ],
+   [
+    "sys_admin",
+    null
+   ],
+   [
+    "therapist",
+    "full"
+   ]
+  ],
+  "patients": [
+   {
+    "id": "p1",
+    "cats": "1110000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "Consent record x702oegp (Part 2 disclosure)",
+     "Consent record x702oegp",
+     "Consent record x702oegp (advocate disclosure)",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "Consent record x702oegp (Part 2 disclosure)",
+     "Consent record x702oegp (Part 2 disclosure)"
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p2",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p3",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p4",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-refusal",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-mar-seed",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-mar-seed-es",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "anivy5jd",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "hm23fsrb",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "zl6gd22q",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "bs7ag5t6",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "doe0mxaq",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "1xe6ewut",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "g36von6f",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "fytz7rkz",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   }
+  ],
+  "referrals": [
+   {
+    "id": "skgvaq7d",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r3",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r2",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r1",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   }
+  ]
+ },
+ "billing": [
+  "paid",
+  "receipt_balance",
+  "denied",
+  "writeoff_reversed",
+  "blocked",
+  "sliding_fee",
+  "dmc_ods"
+ ],
+ "afterBilling": {
+  "label": "billing lifecycle QA scenario",
+  "asamCohort": [],
+  "asamMode": [
+   [
+    "billing",
+    null
+   ],
+   [
+    "billing_coordinator",
+    null
+   ],
+   [
+    "cf_care_manager",
+    null
+   ],
+   [
+    "clinical_coordinator",
+    null
+   ],
+   [
+    "clinical_trainee",
+    null
+   ],
+   [
+    "community_health_worker",
+    null
+   ],
+   [
+    "credentialing_coordinator",
+    null
+   ],
+   [
+    "ecm_provider",
+    null
+   ],
+   [
+    "lvn",
+    "full"
+   ],
+   [
+    "medical_assistant",
+    null
+   ],
+   [
+    "nurse_rn",
+    "full"
+   ],
+   [
+    "peer_specialist",
+    null
+   ],
+   [
+    "physician",
+    "full"
+   ],
+   [
+    "pmhnp",
+    "full"
+   ],
+   [
+    "sud_counselor",
+    "full"
+   ],
+   [
+    "sys_admin",
+    null
+   ],
+   [
+    "therapist",
+    "full"
+   ]
+  ],
+  "patients": [
+   {
+    "id": "p1",
+    "cats": "1110000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "Consent record x702oegp (Part 2 disclosure)",
+     "Consent record x702oegp",
+     "Consent record x702oegp (advocate disclosure)",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "Consent record x702oegp (Part 2 disclosure)",
+     "Consent record x702oegp (Part 2 disclosure)"
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p2",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p3",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p4",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-refusal",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-mar-seed",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-mar-seed-es",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "anivy5jd",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "hm23fsrb",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "zl6gd22q",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "bs7ag5t6",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "doe0mxaq",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "1xe6ewut",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "g36von6f",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "fytz7rkz",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "esuydlf0",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "soc4ycbr",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "n4ozzlw9",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "9sq0g4y9",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "s1ksyhji",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p18z31el",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "wdrnowx2",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   }
+  ],
+  "referrals": [
+   {
+    "id": "skgvaq7d",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r3",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r2",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r1",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   }
+  ]
+ },
+ "captured": [
+  {
+   "pid": "p1",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "p2",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "p3",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "p4",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "p-demo-refusal",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "p-demo-mar-seed",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "p-demo-mar-seed-es",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "anivy5jd",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "hm23fsrb",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "zl6gd22q",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "bs7ag5t6",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "doe0mxaq",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "1xe6ewut",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "g36von6f",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "fytz7rkz",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "esuydlf0",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "soc4ycbr",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "n4ozzlw9",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "9sq0g4y9",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "s1ksyhji",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "p18z31el",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "pid": "wdrnowx2",
+   "ok": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  }
+ ],
+ "afterExternal": {
+  "label": "external-recipient typed records",
+  "asamCohort": [],
+  "asamMode": [
+   [
+    "billing",
+    null
+   ],
+   [
+    "billing_coordinator",
+    null
+   ],
+   [
+    "cf_care_manager",
+    null
+   ],
+   [
+    "clinical_coordinator",
+    null
+   ],
+   [
+    "clinical_trainee",
+    null
+   ],
+   [
+    "community_health_worker",
+    null
+   ],
+   [
+    "credentialing_coordinator",
+    null
+   ],
+   [
+    "ecm_provider",
+    null
+   ],
+   [
+    "lvn",
+    "full"
+   ],
+   [
+    "medical_assistant",
+    null
+   ],
+   [
+    "nurse_rn",
+    "full"
+   ],
+   [
+    "peer_specialist",
+    null
+   ],
+   [
+    "physician",
+    "full"
+   ],
+   [
+    "pmhnp",
+    "full"
+   ],
+   [
+    "sud_counselor",
+    "full"
+   ],
+   [
+    "sys_admin",
+    null
+   ],
+   [
+    "therapist",
+    "full"
+   ]
+  ],
+  "patients": [
+   {
+    "id": "p1",
+    "cats": "1110000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "Consent record x702oegp (Part 2 disclosure)",
+     "Consent record x702oegp",
+     "Consent record x702oegp (advocate disclosure)",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "Consent record x702oegp (Part 2 disclosure)",
+     "Consent record x702oegp (Part 2 disclosure)"
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p2",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p3",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p4",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-refusal",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-mar-seed",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p-demo-mar-seed-es",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "anivy5jd",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "hm23fsrb",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "zl6gd22q",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "bs7ag5t6",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "doe0mxaq",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "1xe6ewut",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "g36von6f",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "fytz7rkz",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": true
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "esuydlf0",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "soc4ycbr",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "n4ozzlw9",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "9sq0g4y9",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "s1ksyhji",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "p18z31el",
+    "cats": "0000000000000",
+    "state": {
+     "part2Sud": false,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:No substance-use treatment consent is on file for this person, so this can't be shared.",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:noneL:000",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:noneL:000",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:noneL:000",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   },
+   {
+    "id": "wdrnowx2",
+    "cats": "1000000000000",
+    "state": {
+     "part2Sud": true,
+     "ecmShare": false,
+     "sms": false
+    },
+    "coordinator": "000000000",
+    "disclosure": [
+     "Internal program use — 42 CFR 2.12(c)(3)",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "Consent on file (legacy flag)",
+     "no:No substance-use disclosure consent covers this advocate, so this can't be shared.",
+     "no:No Part 2 disclosure consent names this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first.",
+     "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+    ],
+    "roles": [
+     "billing:noneL:000",
+     "billing_coordinator:noneL:000",
+     "cf_care_manager:noneL:000",
+     "clinical_coordinator:noneL:000",
+     "clinical_trainee:read:111",
+     "community_health_worker:noneL:000",
+     "credentialing_coordinator:noneL:000",
+     "ecm_provider:read:101",
+     "lvn:read:111",
+     "medical_assistant:noneL:000",
+     "nurse_rn:read:111",
+     "peer_specialist:read:111",
+     "physician:read:111",
+     "pmhnp:read:111",
+     "sud_counselor:read:111",
+     "sys_admin:noneL:000",
+     "therapist:read:111"
+    ]
+   }
+  ],
+  "referrals": [
+   {
+    "id": "skgvaq7d",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r3",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r2",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   },
+   {
+    "id": "r1",
+    "d": [
+     "{\"send\":true,\"message\":\"receipt\",\"recordClassSud\":false}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: no authorization on file\"}",
+     "{\"send\":false,\"held\":\"Held: decline reasons and outcomes are never shared with referrers\"}"
+    ]
+   }
+  ]
+ },
+ "emergency": [
+  {
+   "pid": "p1",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "p1",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "p1",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "p2",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "p2",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "p2",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "p3",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "p3",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "p3",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "p4",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "p4",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "p4",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "p-demo-refusal",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "p-demo-refusal",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "p-demo-refusal",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "p-demo-mar-seed",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "p-demo-mar-seed",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "p-demo-mar-seed",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "p-demo-mar-seed-es",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "p-demo-mar-seed-es",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "p-demo-mar-seed-es",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "anivy5jd",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "anivy5jd",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "anivy5jd",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "hm23fsrb",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "hm23fsrb",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "hm23fsrb",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "zl6gd22q",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "zl6gd22q",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "zl6gd22q",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "bs7ag5t6",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "bs7ag5t6",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "bs7ag5t6",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "doe0mxaq",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "doe0mxaq",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "doe0mxaq",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "1xe6ewut",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "1xe6ewut",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "1xe6ewut",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "g36von6f",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "g36von6f",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "g36von6f",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "fytz7rkz",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "fytz7rkz",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "fytz7rkz",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "esuydlf0",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "esuydlf0",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "esuydlf0",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "soc4ycbr",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "soc4ycbr",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "soc4ycbr",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "n4ozzlw9",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "n4ozzlw9",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "n4ozzlw9",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "9sq0g4y9",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "9sq0g4y9",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "9sq0g4y9",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "s1ksyhji",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "s1ksyhji",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "s1ksyhji",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "p18z31el",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "p18z31el",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "p18z31el",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  },
+  {
+   "pid": "wdrnowx2",
+   "none": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "active": {
+    "grant": {
+     "patientId": "wdrnowx2",
+     "staffId": "s-cc1",
+     "reason": "medical_emergency",
+     "detail": "Matrix",
+     "start": "2026-10-22T11:59:00.000Z",
+     "end": "2026-10-22T13:00:00.000Z",
+     "disclosureId": "dl-matrix"
+    },
+    "items": "111111110"
+   },
+   "expired": {
+    "grant": null,
+    "items": "000000000"
+   },
+   "ended": {
+    "patientId": "wdrnowx2",
+    "staffId": "s-cc1",
+    "reason": "audit_evaluation",
+    "detail": "Matrix",
+    "reference": "A-1",
+    "start": "2026-10-22T11:59:00.000Z",
+    "end": "2026-10-22T13:00:00.000Z",
+    "disclosureId": "dl-matrix"
+   },
+   "afterEnd": {
+    "grant": null,
+    "items": "000000000"
+   }
+  }
+ ]
+}

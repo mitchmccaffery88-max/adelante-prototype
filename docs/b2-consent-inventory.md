@@ -433,3 +433,13 @@ Total lines: 342. Unclassified: 0.
 
 ## B2-6 (Oct 22)
 - src/lib/ehr.ts entry-point lines 42 → 44: `consentCoveringRecordId` (doc line + its `consentCovers` call) — read-only disclosure link, not a gate. src/lib/part2Disclosure.ts calls it through `linkEntry` after each decision.
+
+## B2-4 — enforcement switch (Option A)
+
+| File | Class | Change |
+|---|---|---|
+| src/lib/consentGate.ts | gate (new) | The one consent gate: a typed record applies only on type + recipient + purpose (+ item for part2_specific_written) and then decides via `consentCovers`; otherwise today's source answers. Pin: 8 entry-point lines. |
+| src/lib/ehr.ts | wrapper | `isConsentCategoryAuthorized` is a wrapper over `consentGate`; the pre-B2-4 body is `_consentCategoryToday`; ledger registered at end of file. Entry-point count 44 → 45 (wrapper comment). |
+| src/lib/coordinatorSudAccess.ts | gate | :30 counseling notes and :32 Part 2 consent read `consentGate`; legacy flags answer only when no typed record applies. Emergency functions byte-identical. Counts unchanged (legacy 2). |
+| src/lib/referrerUpdateGate.ts | gate | Part 2 named-recipient and referrer authorization read `consentGate` with the referrer's own name; existing stores answer otherwise. Counts unchanged (2). |
+| src/lib/asamReporting.ts | gate (held) | :92 switch held: the file is pinned byte-identical by 9a-2/9a-3/9c-2 parity tests without an approved adapter. Reads today's flags unchanged. |

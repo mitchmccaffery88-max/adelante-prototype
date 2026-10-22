@@ -1,6 +1,7 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { disclose } from "./part2Disclosure";
 import { recipientKey, validateConsentExtension, verbalAssentAllowed, type ConsentRecordExtension, type ConsentType } from "./consentRecordModel";
+import { categoryNeed, consentGate, registerConsentLedger } from "./consentGate";
 import { consentEventDetail, createEventDetail, type ConsentEventName } from "./consentEvents";
 import { allergiesNotRecorded, findAllergyMatches, requiresCuresCheck } from "./orderSafety";
 import {
@@ -12700,6 +12701,17 @@ export const AdelanteEHR = {
    * with no code path needing to be told to stop.
    */
   isConsentCategoryAuthorized(
+    patientId: string,
+    category: ConsentCategory,
+    at = new Date(),
+  ): boolean {
+    // §B2-4 — wrapper: an applicable typed record (program recipient + purpose) decides via consentCovers; otherwise today's source (Option A).
+    const need = categoryNeed(category);
+    const today = () => AdelanteEHR._consentCategoryToday(patientId, category, at);
+    return need ? consentGate(patientId, need, today, at) : today();
+  },
+  /** §B2-4 — the pre-B2-4 answer (untyped record, then legacy flag). Removed in B2-5. */
+  _consentCategoryToday(
     patientId: string,
     category: ConsentCategory,
     at = new Date(),
@@ -26843,3 +26855,6 @@ try {
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] tracking history", e);
 }
+
+// §B2-4 — the one consent gate reads this ledger.
+registerConsentLedger(AdelanteEHR);
