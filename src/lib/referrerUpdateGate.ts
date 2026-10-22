@@ -6,6 +6,7 @@ import { listEpisodes } from "./outpatientCare";
 import { logReferrerStatusDisclosure, part2ConsentNamesRecipient, type DisclosureActor } from "./part2Disclosure";
 import { getActingRole, getActingStaff } from "./roles";
 import { heldReferrerUpdates, referrerAuthorizationFor } from "./referrerAuthorizationStore";
+import { consentGate } from "./consentGate";
 import {
   authorizationActive, decideReferrerUpdate, referrerDisplayName, referrerTypeOf,
   type ReferrerDecision, type ReferrerEvent,
@@ -23,11 +24,16 @@ export function referralIsSud(r: Referral): boolean {
 export function referrerDecisionFor(r: Referral, event: ReferrerEvent): ReferrerDecision {
   const type = referrerTypeOf(r.referrerType);
   const sud = referralIsSud(r);
+  // §B2-4: a typed record decides only when it names THIS referrer; otherwise today's stores (Option A).
+  const named = [r.referrerName, r.referringAgency].filter((x): x is string => !!x && !!x.trim());
+  const pid = r.enrolledPatientId;
+  const part2Need = { types: ["part2_specific_written"] as const, recipients: named, item: "referral_status" };
+  const authNeed = { types: ["referrer_authorization"] as const, recipients: named, purposes: event === "enrolled" ? ["enrolled_update", "status_updates"] : ["status_updates"] };
   return decideReferrerUpdate(event, {
     type,
     sud,
-    part2ConsentNamed: sud && part2ConsentNamesRecipient(r.enrolledPatientId, { name: r.referrerName, organization: r.referringAgency }),
-    authorized: authorizationActive(referrerAuthorizationFor(r.id), referrerDisplayName(r)),
+    part2ConsentNamed: sud && (pid && named.length ? consentGate(pid, part2Need, () => part2ConsentNamesRecipient(r.enrolledPatientId, { name: r.referrerName, organization: r.referringAgency })) : part2ConsentNamesRecipient(r.enrolledPatientId, { name: r.referrerName, organization: r.referringAgency })),
+    authorized: pid && named.length ? consentGate(pid, authNeed, () => authorizationActive(referrerAuthorizationFor(r.id), referrerDisplayName(r))) : authorizationActive(referrerAuthorizationFor(r.id), referrerDisplayName(r)),
   });
 }
 

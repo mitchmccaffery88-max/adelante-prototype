@@ -48,7 +48,8 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/consentCapture.ts": 3,
   "src/lib/consentForms.ts": 19,
   "src/lib/consentLifecycle.ts": 4,
-  "src/lib/ehr.ts": 44, // §B2-6 +2: consentCoveringRecordId doc line + its consentCovers call (disclosure link, read-only)
+  "src/lib/consentGate.ts": 8, // §B2-4 new: the one consent gate (ledger interface, consentCovers call, docs)
+  "src/lib/ehr.ts": 45, // §B2-6 +2: consentCoveringRecordId doc line + its consentCovers call (disclosure link, read-only); §B2-4 +1: wrapper comment naming consentCovers
   "src/lib/hie.ts": 4,
   "src/lib/identityDemoSeed.ts": 1,
   "src/lib/outpatientCare.ts": 4,

@@ -172,6 +172,21 @@ const B2: [string, string][] = [
     "      if (q.item && r.items && !r.items.includes(q.item)) return false;\n      return true;\n    });\n  },\n",
     "      if (q.item && r.items && !r.items.includes(q.item)) return false;\n      return true;\n    });\n  },\n  /**\n   * \u00a7B2-6 \u2014 read-only: the typed record that covers a use, or null. Decided by\n   * consentCovers (same predicate); used only to LINK disclosures, never to\n   * block or allow one. Enforcement is B2-4.\n   */\n  consentCoveringRecordId(\n    patientId: string,\n    q: { type: ConsentType; recipient?: string; purpose?: string; item?: string; at?: Date },\n  ): string | null {\n    if (!AdelanteEHR.consentCovers(patientId, q)) return null;\n    const at = q.at ?? new Date();\n    const want = q.recipient?.trim().toLowerCase();\n    const rec = consentRecords.find((r) =>\n      r.patientId === patientId && r.consentType === q.type &&\n      !r.needsReviewAfterMerge && !r.legacyUnverified && !r.expiryEventOccurredAt &&\n      effectiveConsentStatus(r, at) === \"active\" &&\n      !(r.signature?.method === \"verbal_assent\" && !verbalAssentAllowed(q.type, r.purposeCode)) &&\n      (!want || !!r.recipients?.some((x) => (x.directoryRef ?? \"\").toLowerCase() === want || x.name.trim().toLowerCase() === want)) &&\n      (!q.purpose || r.purposeCode === q.purpose || r.purpose === q.purpose) &&\n      (!q.item || !r.items || r.items.includes(q.item)));\n    return rec?.id ?? null;\n  },\n  /** \u00a7B2-6 \u2014 append a disclosure id to a typed record's disclosureIds (link only; no audit, no access change). */\n  linkConsentDisclosure(recordId: string, disclosureId: string): void {\n    const rec = consentRecords.find((r) => r.id === recordId);\n    if (!rec) return;\n    if (!rec.disclosureIds) rec.disclosureIds = [];\n    if (!rec.disclosureIds.includes(disclosureId)) rec.disclosureIds.push(disclosureId);\n  },\n",
   ],
+  // B2-4.1 consentGate import
+  [
+    'type ConsentType } from "./consentRecordModel";\n',
+    'type ConsentType } from "./consentRecordModel";\nimport { categoryNeed, consentGate, registerConsentLedger } from "./consentGate";\n',
+  ],
+  // B2-4.2 isConsentCategoryAuthorized becomes a wrapper over the unchanged pre-B2-4 body
+  [
+    "  isConsentCategoryAuthorized(\n    patientId: string,\n    category: ConsentCategory,\n    at = new Date(),\n  ): boolean {\n",
+    "  isConsentCategoryAuthorized(\n    patientId: string,\n    category: ConsentCategory,\n    at = new Date(),\n  ): boolean {\n    // \u00a7B2-4 \u2014 wrapper: an applicable typed record (program recipient + purpose) decides via consentCovers; otherwise today's source (Option A).\n    const need = categoryNeed(category);\n    const today = () => AdelanteEHR._consentCategoryToday(patientId, category, at);\n    return need ? consentGate(patientId, need, today, at) : today();\n  },\n  /** \u00a7B2-4 \u2014 the pre-B2-4 answer (untyped record, then legacy flag). Removed in B2-5. */\n  _consentCategoryToday(\n    patientId: string,\n    category: ConsentCategory,\n    at = new Date(),\n  ): boolean {\n",
+  ],
+  // B2-4.3 ledger registration (end of file)
+  [
+    '  if (typeof console !== "undefined") console.warn("[demo seed] tracking history", e);\n}\n',
+    '  if (typeof console !== "undefined") console.warn("[demo seed] tracking history", e);\n}\n\n// \u00a7B2-4 \u2014 the one consent gate reads this ledger.\nregisterConsentLedger(AdelanteEHR);\n',
+  ],
 ];
 
 /** Rollback text with only the approved B2-1 substitutions applied (each must match exactly once). */
