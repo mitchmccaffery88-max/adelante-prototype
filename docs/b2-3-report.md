@@ -62,4 +62,12 @@ Mitch's decision (Oct 21): `consentCovers` is deliberately EXCLUDED from the sna
 - Fix: removed them from the row (so it has one button again, as in B2-2) and added them to the record-detail sheet after `consent-record-detail`, for active records under the same showRenew/showRevoke gates. Testids, handlers, registry calls, ConfirmDialog and audits are unchanged; the detail sheet closes before the renew sheet or confirm dialog opens.
 - Spec (approved, this batch, navigation only): e2e/consentLifecycleB2.spec.ts:60 and :73 now open the record detail first and click the button through `page.getByTestId` (the sheet is portalled outside the panel). No assertion was changed. consentCaptureB2.spec.ts was not edited.
 - Patient side: MyConsentRecords rows have a revoke button, but no B2-2 spec clicks a bare button in them, so they are unaffected.
-- After the fix: both consent specs 5/5; dev server restarted; full units 2,925/2,925 EXIT 0; full browser suite /tmp/b23b-browser.log — result pending at time of writing.
+- After the fix: both consent specs 5/5; dev server restarted; full units 2,925/2,925 EXIT 0; full browser suite completed as recorded below.
+
+## Final closeout — Oct 22
+
+- Previous log and process were absent. Per Mitch's Oct 22 instruction, relaunched once, alone, in the background: `E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1`, with the exit code appended to `/tmp/b23b-browser.log`.
+- Kept the turn open and polled in three nine-minute windows until the literal final line **EXIT 0** appeared: **222 passed (26.6m), zero failures**. Both B2-2 capture tests and all three B2-3 lifecycle tests passed in this full run.
+- Restored 17 regenerated screenshots against `945a6ba8f92d8c496ad8287e7edaa9a3439a5850`; all 21 rollback screenshots verified byte-identical. Evidence: `docs/b2-3-evidence/screenshot-restoration.json` and `docs/b2-3-evidence/full-browser-summary.txt`.
+- `.lovable/plan.md` remains exactly as at `cd1f4bb0` (verified with an empty diff).
+- B2-3 complete. This closeout changes documentation and restores screenshot artifacts only; no app code or test assertions changed. Nothing published; B2-4/5/6 not started, enforcement remains OFF.
