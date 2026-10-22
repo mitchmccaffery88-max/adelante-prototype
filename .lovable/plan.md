@@ -170,3 +170,95 @@ Option A: none lose access in B2-4. Re-capture moves to B2-5: for the patients l
 
 ### Hard stops (checked during build)
 Any WIDENS cell in the generated matrix; any emergency-path diff; probe count differing from §0; any test edit beyond the pre-approved pins and adapters; any patient losing access in a way Decision 1 does not explain. Validation as for every batch: restart, full units, full one-worker browser run to the literal EXIT line, screenshots restored against 0089ca4f, report, roadmap, SHA. No publish. B2-5 waits for approval.
+
+## B2-5 plan
+
+**Docs only; not implemented or approved to build.** B24d closed B2-4 green: 224/224, 31.5m, literal EXIT 0; no flake exception. Draft — pending clinical sign-off and counsel. Decision 1: legacy flags grant nothing; migrate them to non-granting `legacyUnverified` records. Re-capture only independently needed demo access through signed typed records and real store functions/registry. Preserve outpatient default, neutral audit text, Part 2 masking and cohort guard 11.
+
+### a. Before/after access table
+
+Compare current B2-4 to two separately measured stages: **migration alone**, then **migration plus proposed signed demo captures**. No positive capture is assumed approved. Before build, pin Date/PRNG, inventory actual store rows and generate every patient × roster role × surface cell, including flags-only, untyped, revoked/expired/merge-held records. Never replace historical rollback fixtures with current output.
+
+The accepted store-only probe had 15 patients, seven flag-only grants and one untyped seed (`ehr.ts:6469–6488`). A fresh read-only staff UI probe after demo initialization has 20 patients and **five untyped records across four patients**: Daniel M. (two), Victor Hale, Jordan Vega, Tomás Reyes. The additional rows are real demo-store writes, not extra flag-only patients. Evidence under `/tmp/browser/b24d/roster/consent-roster.json`; generated IDs are referenced by patient + source, not hardcoded. No signed form copies were found for those four patients. Re-run both scopes before migration; different counts/provenance → STOP and report.
+
+Role/surface keys (apply each key to **every patient row** below; same includes already-denied roles):
+- **G:** `sud_treatment` category / derived Part 2 state, plus every class currently `consent_gated`: screeners_sud (ECM provider, peer specialist, clinical trainee); sud_treatment class (therapist, clinical trainee, ECM provider, peer specialist, billing); SUD group-note/chart/export/autofill consumers using their unchanged role matrix. See `roles.ts:214–234,303–311,873–880,935–943`. This does not grant billing clinical data; existing downstream privacy holds stay on top.
+- **D:** SUD HIE receive/release (`hie.ts:120,154,173,181`), county/outbound treatment-consent prerequisites, and MOUD/order gate (`chartOrders.ts:194`), only for roles already authorized for those operations. Non-SUD reads remain same; every outbound SUD transfer still uses `disclose()` and named recipient/purpose checks.
+- **C:** coordinator B-item view, counseling notes, ASAM coordinator/sys_admin consent cohort and totals: same denied/empty by default for all seven (no coordinator flags seeded); no treatment-only capture grants care-coordination or counseling access. Other roles' existing unconditional clinical reads, denied roles and sys_admin names remain same; totals stay suppressed below 11.
+- **O:** telehealth booking/join, group confidentiality, advocate release/invites, AI recording, referrer updates, voluntary PO/legal disclosure: same for seven flag-only patients where already denied; their separate signed scope is not created by a treatment capture. Required/mandatory PO tier remains unchanged. Non-SUD/private-self-tracking/member gates remain same.
+
+| Patient | G migration only | D migration only | C | O | After proposed capture |
+|---|---|---|---|---|---|
+| p3 Marcus L. | narrows | narrows where treatment consent is required | same | same | same as before for G/D only if independent SUD demo needs capture (b); never restore coordinator cohort |
+| p4 Alicia Serrano | narrows | narrows where applicable | same | same | stays narrowed; anxiety/advocate demo is not Part 2 authorization |
+| p-demo-refusal Alicia R. | narrows | narrows where applicable | same | same | stays narrowed; psychiatric-refusal flow does not need SUD sharing |
+| p-demo-mar-seed Marcus Whitfield | narrows | narrows where applicable | same | same | stays narrowed; in-facility MAR demo remains OFF by default |
+| p-demo-mar-seed-es Lucía Moreno | narrows | narrows where applicable | same | same | stays narrowed; Spanish refusal demo is not SUD consent |
+| Luis Camacho (original sud_consented persona, not matching duplicate) | narrows | narrows | same | same | proposed signed treatment capture restores only G/D to same as before |
+| Jasmine Holt (combination persona) | narrows | narrows | same | same | proposed signed treatment capture restores only G/D to same as before |
+| p1 Daniel M.: cr-seed-1 superseded; active “in person — consent tab” | intended same only after provenance-verified conversion; otherwise narrows → STOP | same only for verified original scopes; otherwise STOP | same | mental_health/case_coordination and named legal scopes must stay same if verified; cannot inherit them from a new treatment form | verification gap, see c; no invented backdated signature |
+| Victor Hale: active “intake (legacy)” | same denied | same denied | same | HIPAA category would narrow if legacy boolean is removed; flag-derived provenance explains it under Decision 1, list explicitly | no signed-copy evidence; non-granting legacy record |
+| Jordan Vega: active “in person — consent tab” (legal_part2_disclosure) | same denied | same denied for treatment; named legal disclosure may narrow | same | legal/referrer voluntary scopes may narrow → STOP if not explained by a flag | source-only legal row cannot be silently verified |
+| Tomás Reyes: active “Front desk (demo)”, needsReviewAfterMerge | same denied | same denied | same | same held; mental-health section must not bypass merge review | keep merge hold, no recapture to defeat it |
+
+**WIDENS:** no proposed authorized cell above is WIDENS relative to the pre-migration baseline. Restoring a subset of an existing treatment grant by explicitly signed demo capture is “same”, not permission to open a previously denied scope. A newly visible row, recipient, counseling item, cohort patient or below-11 total is WIDENS → STOP. All roles not named by G/D retain their original role gate; evaluate the complete roster rather than inferring grants from a patient's boolean.
+
+### b. Independent demo need and proposed re-captures
+
+| Patient | Independent source / need | Proposal |
+|---|---|---|
+| Marcus L. | overdue ASAM task + incomplete CalOMS discharge (`ehr.ts:26454–26467`), co-occurring SUD medication narrative (:26557–26560) | Proposed treatment-only capture if the demonstrated consent-gated task/share path requires it; preserve no-coordinator-consent / <11 reporting. Document that path before capture; clinical unconditional access alone does not justify restoring all gated roles. |
+| Alicia Serrano | anxiety/advocate-patient example (`ehr.ts:26562–26566`) | No Part 2 recapture proposed. Stays narrowed. |
+| Alicia R. | psychiatric refusal/sertraline fixture (`ehr.ts:5660–5766`) | No Part 2 recapture. Stays narrowed. |
+| Marcus Whitfield / Lucía Moreno | MAR refusal demos (`ehr.ts:25630–25657,25715–25738`) | No Part 2 recapture. Both stay narrowed; do not enable in-facility. |
+| Luis Camacho | named sud_consented persona (:26218,26268); signed ASAM (:26388–26407), buprenorphine/refill/CURES (:26582–26591) | Proposed treatment-only signed capture before SUD seed writes that need consent; identity-match duplicate is not granted. |
+| Jasmine Holt | combination persona (:26219,26269); counselor ASAM awaiting cosign (:26408–26427); naltrexone (:26592–26598) | Proposed treatment-only signed capture before consent-dependent SUD seed writes; cosign workflow unchanged. |
+| Daniel / Jordan / Victor / Tomás | untyped provenance or merge hold, not blanket permission | Resolve c first; do not grant back solely to pass a demo/test. |
+
+Each proposed treatment capture: `part2_tpo_single`, recipient `{kind:"org", name:"Adelante", directoryRef:"adelante-program"}`, purpose/purposeCode `treatment`, method **e_sign**, fictional person's own signer/relationship, attestation, complete Draft Part 2 checklist and existing form version/hash/redisclosure fields. Use `runAction("consent_record_capture", …)` → existing capture/store (`consentCapture.ts:88–139,144+`), authorized actor, one registry audit; no direct flag setter or array push. No `care_coordination` purpose, counseling release, external recipient, legal or advocate scope piggybacks. Capture dates are real demo capture dates, not fabricated historic signatures. Expected extra seed events/IDs must be itemized; audit-count test conflicts STOP.
+
+### c. Untyped pre-B2 migration and provenance stop
+
+Verified untyped form records migrate through an idempotent registry/store action, retaining signer, signature method/time, original statuses/expiry/revocation, merge holds and disclosure links. Resolve **the exact signed copy + original form version**; verify `textHash(fullText)` against that copy, attach versionId/version/hash, and map only the signed categories and evidenced recipients/purpose/items. `consentForms.ts:301–335` already records signed copies, but carries prior sections (:306–316): a later form signature does NOT verify every carried-forward section. Never sign today's template on behalf of yesterday's patient or infer authorization from `source`, `signedAt`, checkbox-only attestation or a bare `createConsentRecord`.
+
+Flag-only `migrateLegacyConsents` (`consentForms.ts:377–390`) becomes non-granting `legacyUnverified`; no guessed signature/hash. Future real signing should produce typed evidence through existing form actions, preserving cancellation/renewal/supersession rules and recipient-specific keys.
+
+**Found blocking provenance gaps:** Daniel's cr-seed-1 is checkbox_only with no version/hash; its active legal demo replacement carries old sections but no signed copy (`outpatientCare.ts:307–319`). Jordan's legal row has the same gap. Victor's migration row is explicitly flag-derived. Tomás's AB133 is untyped (not typed despite its formType), has no form hash/version and remains merge-held (`identityDemoSeed.ts:51–60`). **No plan claims these rows are verified.** Build must stop for Mitch's provenance/capture decision before converting Daniel/Jordan to verified or causing unexplained narrowing. Preserve historical rows, never invent verification. The generic original plan “existing records migrate as verified” is conditional on this evidence, not an automatic grant. Also inventory future untyped writers: form sign/revoke, scribe grant/withdraw (`scribe.ts:243,266`), legal grant/revoke and identity seed; stop on any unmapped writer.
+
+### d. Expected existing-test stops — current / proposed
+
+**No edits authorized here.** These are source-review predictions, not failures observed by a B2-5 run. Every proposed positive-fixture replacement is a STOP for approval; it must preserve a legitimate authorized-flow check AND add flag-only denial, never grant solely to pass. Source-pinned adapters and historical matrices are not waived. File paths below are in `src/lib/__tests__/` unless stated.
+
+| File:line | Current | Proposed / check disposition |
+|---|---|---|
+| consentEnforcementB2.test.ts:39–41 | Option A p3 flag grants | flag-only false; tighten; use isolated patient so proposed demo seed cannot hide denial |
+| consentRecords.test.ts:10–25,59,88–95,108–139 | bare untyped helper grants, revoke/expiry/disclosure checks | approved evidence-backed typed fixture for positive lifecycle + untyped denial; keep revocation/expiry/exact disclosure assertions; STOP pending fixture approval |
+| myWorkPart2Screeners.test.ts:38–51,73–80 | untyped grantSud enables peer rows | typed treatment fixture only with approval; keep positive/negative/MH-row assertions, add flag-only denial |
+| dataExchange.test.ts:31–40,55–60 | setConsent true releases HIE / edits active untyped grant | flag alone remains held/false (tighten); separately test valid scoped capture/release, keep rejection/masking checks; no early-return skip |
+| screenerPart2Store.test.ts:49–63 | false/true/false flag toggles peer access | false for flag-only; approved typed capture/revoke restores genuine positive lifecycle; keep denied-role and MH assertions |
+| privacyP1.test.ts:73–79,108–115 | coordination flags define cohort and positive standard-note access | flag-only excluded; approved care_coordination typed fixtures for legitimate positive policy test, separate treatment consent if needed; keep 10/11 threshold and counseling denial |
+| privacyP2.test.ts:16,20–49 | TPO/specific/counseling flags grant B/release | flag-only denies; approved typed coordination item lists / separate counseling release; keep exact B ceiling, group/no-other-role checks; emergency :64–89 unchanged |
+| privacyP2Surfaces.test.ts:21–24; privacyP3SysAdminCohort.test.ts:18–26 | flag fixtures provide visible content / 11-person totals | approved typed positive fixtures plus flag-only denial; keep every withheld marker/no-name/11/<11 assertion; STOP if consent created merely to refill cohort |
+| privacyP3EndAccess.test.ts:23 | noConsent removes flags | ensure no typed grant in emergency-negative fixture; keep all expiry/own-grant/exact-audit assertions; no source emergency edits |
+| careMessageFlagMatrix.test.ts:32–38,42–73,92–138 | flag enables CM/peer locks/alerts | keep neutral message/clinical unconditional checks; tighten flag-only access, require approved valid-consent fixture for positive states |
+| advocateNeedReferrals.test.ts:89–139 | flag plus authority unmasks some SUD referrals | flag-only denied; preserve HIPAA masking/independent authority boundaries; STOP any positive fixture that grants a broader advocate scope |
+| sdohReferralConsentAttribution.test.ts:21+,52–64 | bare untyped record permits sensitive referral | evidence-backed authorized fixture + untyped denial; keep attribution, category sensitivity and all non-sensitive behavior |
+| groupEnrollmentTelehealthConsent.test.ts:23+,62–105 | untyped telehealth section unlocks enrollment/list | approved typed telehealth fixture / signed-form migration; keep virtual gate, enrollment and self-book checks |
+| poDisclosure.test.ts:16+,83–110; part2DisclosureAccessLog.test.ts | untyped voluntary/named disclosure grants | evidence-backed recipient/purpose fixture only; mandatory tier remains byte-identical; no broad TPO substitution for named disclosure |
+| consentWorkflow.test.ts:179–187,192–199 | legacy migration one row; signed form then revoke | retain idempotence; assert legacyUnverified/no grant (tighten); real signed-copy path remains positive/revocable, not bare-source verification |
+| consentAuditB2.test.ts:88–98,146–161 | bare form-like source / legacy labels | keep exact audit metadata/link checks; no inference of verified access from source text; STOP unexpected count or disclosure changes |
+| consentInventoryB2.test.ts:9–54; src/test/consentB2Approved.ts; src/test/privacyP3Approved.ts:27–28 | exact reader counts/source substitutions | enumerate exact current→proposed reader lines, keep inventory and exact-once checks; new adapters require Mitch, never broad strip/allowlist |
+| consentEnforcementB2Matrix.test.ts:51–58; consentAuditB2Parity.test.ts:36–45 | rollback equality of pre-migration gates/disclosures | retain immutable archived baseline; intentional migration differences will STOP; propose separate B2-5 expected-delta matrix, not regenerated rollback or weakened equality |
+| roleDashboardParity9c2 / statTileParity9a2 / billingParity9a3 | approved source pins and original values | stop at any source/value change; keep cohort/suppression/access assertions, request exact adapter only when justified |
+
+Further guarded candidates from the original inventory: part2SimulatedHardening.test.ts:49–94 (merge re-confirmation cannot verify a missing form), privacyP3Referrer.test.ts:33–41,90 (named recipient / neutral holds), consentAuditView, consentPublishReason, section4part2, intakeConsentReprompt.test.ts:11–34 and browser crossRole/consentWorkflow/consentSigningClearance/coordinatorEmergencyP2. Capture missing exact current/proposed lines at the first failure and STOP; do not label speculation a verified failure or claim the list proves completeness. Real form signatures migrate without widening; pure publication/privacy/flag-storage checks (recoveryStartDate:47–74, sdohNeedThread:87–97,173–185, asam/asamVisit) are expected unchanged unless they authorize access. section4part1.test.ts:13's derived-consent true after a flag is a potential tightening stop, not a storage-only exemption. No assertion, retry, timeout or named-flake change.
+
+### e. Emergency and counseling unchanged
+
+Keep emergency functions, grant Map, four-hour constant, coordinatorSudEmergency module and emergency OR term byte-identical to B2-4; compare pinned behavior/audit/disclosure for none/active/expired/ended/other actor/other patient. Migration never terminates or extends a grant. Emergency unlocks existing B items, never counseling notes. Counseling requires a separately signed `counseling_notes_release`, correct program/team recipient and `care_coordination` purpose; legacy release boolean, TPO or specific-written treatment record never substitutes. No demo counseling release proposed.
+
+### f. Hard stops and validation
+
+STOP on any WIDENS cell; any narrowing not explained by Decision 1; absent/mismatched original signature/form-version/hash; unknown scope/recipient/purpose; new roster/untyped counts; inherited-category “verification”; merge-hold bypass; emergency source/behavior/audit difference; cohort below-11 exposure; test loosening, skips, back-grants solely to pass, or any existing test edit beyond a newly approved exact change. Daniel/Jordan provenance and legacy historical parity expectations require decisions **before implementation**.
+
+After explicit B2-5 build approval and resolution of stops: record fresh rollback SHA; migration through real registry/store only; NEW concrete flag-denial/provenance/idempotence/expected-delta tests; restart → full units → exclusive FULL background browser --workers=1 :8080 to literal EXIT → restore rollback screenshots → report/roadmap/final SHA. Named flakes remain only contentWiring:47 / staffNewAudit8a2:29 / auditTables8b3:13, accepted solely when one is the SOLE failure followed by 3/3 standalone; :33 is NOT named. No publishing. Stop now: plan only, no B2-5 code.
