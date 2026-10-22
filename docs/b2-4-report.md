@@ -53,4 +53,5 @@ Switching this line edits src/lib/asamReporting.ts. That file is pinned byte-ide
 - Dev server restarted; build OK.
 - Full units: 2,950 / 2,950 across 370 files, EXIT 0.
 - New spec standalone: 1/1.
-- Full browser: see roadmap / closing note.
+- Full browser (one worker, :8080, background, nothing else running): **224 passed / 224, 37.2m, literal `EXIT 0`**. No flake exception used.
+- Screenshots: 17 regenerated tracked images restored from 0089ca4f; 0 differ.
