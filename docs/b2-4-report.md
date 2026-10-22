@@ -51,6 +51,24 @@ Switching this line edits src/lib/asamReporting.ts. That file is pinned byte-ide
 - **STOP per Mitch's “Any diff → STOP.”** The approved switch remains applied but unvalidated. Restart/full units/full browser/screenshot restoration were not started. Previous §8 results belong to the earlier B2-4 validation, not this continuation. Preview diagnostic after this edit reported build OK.
 - B2-5 plan was not appended and no B2-5 implementation or publishing occurred. Checkpoint after the source edits: `50518ef219a7da28f947f79816715ad6a4fe6383`; managed closeout documentation may create a later SHA.
 
+### B2-4 ASAM continuation — diagnosis and harness fix (Oct 22, delegated)
+**1. The diff is ID-only.** Current matrix (`B24_MATRIX_WRITE`) vs the old rollback fixture, with every value under `id` / `pid` / `*Id` / `*Ids` keys and the record token in `"Consent record <id>"` refs removed: 3,633 vs 3,633 lines, **0 differing lines**. Every raw difference (14 `pid`, 14 `id`, 14 `patientId`, 15 `"Consent record <id>"` refs) is a generated ID; every access, cohort, mode, category, coordinator, disclosure-decision, referrer-decision and emergency value is identical.
+
+**Why the ID sequence changed — not the ASAM import.** The ID sequence varies between runs of identical code: the unmodified rollback (`git archive 0089ca4f`, harness copied in) produced two different raw outputs across seven runs, and current code produced two across three (MD5s in /tmp/b24c). Instrumenting `Math.random` with caller stacks (scratch copy of the rollback, deleted) showed 920 draws per run in every run, identical except for the position of draws from `src/lib/ehr.ts:9481` — the simulated SMS delivery-failure roll inside a real `setTimeout(…, 1400)` (ehr.ts:9480; the matrix pins only `Date`, not timers). That callback fires at a wall-clock moment, so it interleaves with the `uid()` ID generator (ehr.ts:4472) at varying points and shifts every later generated ID. No `node_modules` caller draws. The value only decides a simulated SMS notification's delivered/failed state; no consent, access, cohort or disclosure decision reads it or any generated ID's characters, which the zero non-ID diff above confirms. `hlydgyve` is simply one all-letter outcome of that shift; the old regex canonicalizer only caught tokens containing a digit.
+
+**2. Harness edit (this-batch test, delegated).** `src/lib/__tests__/consentEnforcementB2Matrix.test.ts:25-31`
+- Current: `canon(text)` replaced every 8-character `[a-z0-9]` token containing a digit (`/\b(?=[a-z]*\d)[a-z0-9]{8}\b/g`) with `<idN>`.
+- Proposed/applied (now :25-47): `canon(text)` parses the JSON and walks it; any value under an `id` / `pid` / `*Id` / `*Ids` key (each element of an `*Ids` array) and the record ID in the `"Consent record <id>"` ref prefix (part2Disclosure.ts:196) become `<idN>` in order of first appearance; `null` stays literal; every other value is compared literally with the same `toBe` on the full serialized document. No field removed, no equality relaxed, no retries or timeouts.
+- Fixture regenerated on `git archive 0089ca4f` with this harness only (never current code): `consentEnforcementB2-rollback-0089ca4f.json`, SHA-256 `c98ea8c5…c2bf0b`.
+- Negative check: flipping one access category bit in the fixture makes the test fail; restored.
+
+**3. Validation.**
+- Matrix test vs regenerated fixture: 5/5 consecutive passes.
+- Dev server restarted. Full units: **2,950 / 2,950 across 370 files, EXIT 0**.
+- Full browser (one worker, :8080, background, nothing else running): **223 passed, 1 failed, 224 total, 47.2m, literal `EXIT 1`** (/tmp/b24b-browser.log). The failure: `e2e/auditTables8b3.spec.ts:13` (action-audit-feed on /admin-permissions as sys_admin), "Test timeout of 30000ms exceeded", no assertion mismatch. It is **not** a named flake exception. Standalone afterwards: 2 of 3 passed (29.5s pass, 32.4s timeout, 27.3s pass) — the test runs at the edge of its 30s budget. /admin-permissions does not read asamReporting. Not retried further, timeout not changed, test not edited.
+- Screenshots: 17 regenerated tracked images restored from 0089ca4f; 0 differ.
+- **Not fully green → B2-5 plan NOT appended**, per "only if all of that is green". Decision needed on auditTables8b3:13.
+
 ## 7. Test edits
 - consentInventoryB2.test.ts (pre-approved): ehr.ts 44 → 45 (the wrapper comment names consentCovers); new pin `src/lib/consentGate.ts: 8`. The coordinatorSudAccess.ts, referrerUpdateGate.ts and asamReporting.ts counts are unchanged.
 - src/test/consentB2Approved.ts (pre-approved): three exact-once ehr.ts substitutions (B2-4.1 import, B2-4.2 wrapper hunk, B2-4.3 ledger registration).
