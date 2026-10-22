@@ -23,7 +23,7 @@ A typed record **applies** to a gate only when its type, recipient and purpose m
 | Coordinator counseling notes (:30) | counseling_notes_release only (TPO/specific never apply) | as above | care_coordination | — | `sudCounselingNotesRelease === true` |
 | Referrer Part 2 named consent (referrerUpdateGate) | part2_specific_written | the referrer's own name / agency only | — | referral_status | legal-disclosure ledger naming the recipient |
 | Referrer authorization (referrerUpdateGate) | referrer_authorization | the referrer's own name / agency only | enrolled: enrolled_update or status_updates; other events: status_updates | — | referrer authorization store |
-| ASAM cohort (asamReporting.ts:92) | **held, see §6** | — | — | — | unchanged |
+| ASAM cohort (asamReporting.ts:93) | part2_tpo_single; part2_specific_written | program / care-coordination team | care_coordination | diagnoses (specific only) | `!!p.sudCoordinationConsent && p.consents.part2Sud` (Option A) |
 
 A record naming an external recipient (for example "Valley Clinic") never applies to an internal gate. External and referrer gates match only their named recipient. Verbal-assent limits are enforced inside `consentCovers`.
 
@@ -40,7 +40,7 @@ A record naming an external recipient (for example "Valley Clinic") never applie
 - Source: the bodies of coordinatorEmergencyFor, validateCoordinatorEmergency, saveCoordinatorEmergencyGrant and endCoordinatorEmergencyGrant hash identically (SHA-256) to rollback. The grant Map and the 4-hour constant are unchanged, coordinatorSudEmergency.ts is identical, and the `|| !!coordinatorEmergencyFor(...)` term is present.
 - Behaviour: the matrix covers no grant, active, expired, ended and after-end for every patient, identical to rollback. Active grants open the 8 B items and never counseling notes.
 
-## 6. Hard stop — asamReporting.ts:92 held
+## 6. ASAM continuation and timing investigation (historical stops retained)
 Switching this line edits src/lib/asamReporting.ts. That file is pinned byte-identical by roleDashboardParity9c2 (rollback aff263ff), statTileParity9a2 and billingParity9a3, through `withApprovedP3`. The pre-approved edits for B2-4 are limited to consentInventoryB2 pins and consentB2Approved ehr.ts substitutions, so it needs an adapter outside that list. The line is reverted to rollback and still reads today's flags. Its behaviour is identical to the switched version under Option A, because no seeded typed record applies. Approval needed: one exact-once substitution for asamReporting.ts (an import line and the `.filter` line calling `consentGate(p.id, coordinatorNeed("diagnoses"), () => <today's expression>)`) in `src/test/privacyP3Approved.ts`.
 
 ### B2-4 ASAM continuation — approved Oct 22, stopped at matrix
@@ -142,3 +142,12 @@ The bullets below describe the original pre-ASAM run. The fresh ASAM closeout at
 
 ### B24d authorization — Mitch, Oct 22
 Rerun the full browser suite once after restart, alone, background --workers=1 on :8080, and wait for literal EXIT in `/tmp/b24d-browser.log`. `auditTables8b3:33` is explicitly **NOT** added to the named flake list. Only EXIT 0 or a sole named failure followed by 3/3 standalone passes is green. Any other failure is STOP, followed only by :33 timing investigation (5 standalone runs each on current and git-archive 5c335b7e :8091, with per-step timings). Existing tests, assertions, timeouts and retries remain unchanged. Green conditionally permits rollback screenshot restoration, B2-4 closeout and appending the docs-only B2-5 plan; no B2-5 code or publishing.
+
+### B24d closeout — GREEN, Oct 22
+- Restarted the supervised dev server; :8080 answered before launch. :8090/:8091 were inactive. §6 timing work and scratch-spec cleanup were already complete.
+- Ran the **FULL browser suite once**, alone, background: `E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1`, followed by `echo "EXIT $?"`, logging to `/tmp/b24d-browser.log`. Polled until the literal final line appeared: **224 passed / 224, 31.5 minutes, EXIT 0**. No named-flake exception, standalone rerun or :33 investigation was needed.
+- `auditTables8b3:13` action-audit-feed passed in **17.6s**; `auditTables8b3:33` coordinator masked audit passed in **10.6s**. :33 remains NOT named. No test, timeout, retry, assertion or app source changed in this rerun.
+- The latest full-unit evidence remains **2,950/2,950, EXIT 0** from the approved continuation; no new unit run was requested. Matrix vs independently archived 0089ca4f remains green (5/5), ID-only proof accepted, emergency source/behavior identical. Preview signal: latest observed build entry **build OK**.
+- Restored **17 regenerated tracked screenshots** against `git archive 0089ca4f`; preserved generated evidence in `/tmp/browser/b24d/regenerated/`. All **248 rollback bitmap images** (246 PNG + 2 JPG), plus 17 SVGs, checked byte-identical: **0 differences**. Restoration evidence: `/tmp/browser/b24d/screenshot-restoration.json`. No archive server or timing scratch spec was created in B24d.
+- **B2-4 including the ASAM continuation is closed green.** Previous STOP runs remain historical evidence, not waived successes. Conditional next step is docs-only B2-5 planning, not implementation or publishing.
+- Validated pre-restoration checkpoint: `a11eaefa77d7d41d5e346e8043d96544cf19afa6`. Managed closeout SHA is reported in chat after documentation is saved; no manual Git state changes.
