@@ -109,14 +109,33 @@ The documents case used its existing empty-state branch in all six runs, so desk
 **Cleanup and stop:** Both temporary archive process groups were stopped; HTTP checks confirmed :8090 and :8091 no longer answer, while :8080 still answers. The scratch `audit-timing.spec.ts` and its temporary Playwright config were deleted. Raw logs/JSON remain only under `/tmp`. Only this report and the roadmap changed. B2-5 plan remains unappended pending Mitch's classification of `auditTables8b3:13`; no B2-5 implementation or publishing occurred.
 
 ## 7. Test edits
+### Named browser flake classification — Mitch, Oct 22
+`auditTables8b3:13` joins `contentWiring:47` and `staffNewAudit8a2:29`. A run is accepted under this rule only if that named test is the **SOLE failure** and then passes **3/3 standalone**. All assertions, timeouts and retries remain unchanged. Anything else is a hard stop. The earlier 2/3 standalone result does not meet this rule; a fresh full-suite run is required below. Timing investigation and cleanup in §6 are complete; B2-5 planning remains conditional on the new validation.
+
 - consentInventoryB2.test.ts (pre-approved): ehr.ts 44 → 45 (the wrapper comment names consentCovers); new pin `src/lib/consentGate.ts: 8`. The coordinatorSudAccess.ts, referrerUpdateGate.ts and asamReporting.ts counts are unchanged.
 - src/test/consentB2Approved.ts (pre-approved): three exact-once ehr.ts substitutions (B2-4.1 import, B2-4.2 wrapper hunk, B2-4.3 ledger registration).
 - New: consentEnforcementB2.test.ts (13), consentEnforcementB2External.test.ts (1), consentEnforcementB2Matrix.test.ts (1) + fixture, e2e/consentEnforcementB2.spec.ts (1; external record stays locked, coordinator-team TPO opens, counseling stays hidden, revoke locks, axe).
 - docs/b2-consent-inventory.md: B2-4 section added. No other existing test touched.
 
 ## 8. Validation
+The bullets below describe the original pre-ASAM run. The fresh ASAM closeout attempt and its stop are recorded immediately afterward.
 - Dev server restarted; build OK.
 - Full units: 2,950 / 2,950 across 370 files, EXIT 0.
 - New spec standalone: 1/1.
 - Full browser (one worker, :8080, background, nothing else running): **224 passed / 224, 37.2m, literal `EXIT 0`**. No flake exception used.
 - Screenshots: 17 regenerated tracked images restored from 0089ca4f; 0 differ.
+
+### Fresh B2-4 closeout attempt — Oct 22, STOP (B24c)
+- Requested restart completed: supervised :8080 Vite restarted and answered before launching the suite. Completed §6 timing work remained unchanged; :8090/:8091 were inactive and the scratch spec absent.
+- FULL browser suite ran once, alone, in the background: `E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1`, with `echo "EXIT $?"` appended to `/tmp/b24c-browser.log`. Waited in nine-minute chunks until the literal **EXIT 1** appeared.
+- **222 passed / 2 failed / 224 total, 49.9 minutes.**
+
+| Failure | Duration | Observed failure location | Rule disposition |
+|---|---:|---|---|
+| `e2e/auditTables8b3.spec.ts:13` — action-audit-feed | 35.7s | 30,000ms test timeout while `phoneTable` read the table width (`e2e/helpers/staffTables8b2.ts:28`, called at spec :30) | Named, but **not the sole failure**; cannot accept |
+| `e2e/auditTables8b3.spec.ts:33` — clinical coordinator masked audit / brief-row denial / billing denial | 32.5s | 30,000ms test timeout during the phone axe scan (`e2e/helpers/staffTables8b2.ts:21`, via :30, called at spec :47) | **Not named**; stop |
+
+- No access/privacy/a11y assertion mismatch was reported, but the unfinished checks are not passes. No classification is inferred for :33. No standalone reruns: two failures already disqualify the sole-failure exception, regardless of any later standalone result.
+- **Hard stop holds. B2-4 ASAM continuation is not closed green.** No app, test, assertion, retry or timeout changes were made. No new full-unit run was requested in this closeout; the prior 2,950/2,950 result remains the last full-unit evidence.
+- Cleanup only: preserved both failure traces/error contexts and regenerated images under `/tmp/browser/b24c/`, then restored 17 tracked images from 0089ca4f. All **248 rollback images checked, 0 differences**. This restoration is not a green closeout.
+- B2-5 plan was **not appended**, and no B2-5 code or publishing occurred. The remaining blocker is Mitch's decision on this two-failure run, including the unclassified :33 failure. Pre-closeout-document checkpoint: `eceb29aed79eb40676a6d1e4d771ea7b43ee49e0`; managed documentation/screenshot cleanup may produce a later SHA.
