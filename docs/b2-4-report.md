@@ -69,6 +69,45 @@ Switching this line edits src/lib/asamReporting.ts. That file is pinned byte-ide
 - Screenshots: 17 regenerated tracked images restored from 0089ca4f; 0 differ.
 - **Not fully green → B2-5 plan NOT appended**, per "only if all of that is green". Decision needed on auditTables8b3:13.
 
+### Audit timing investigation — completed Oct 22 (docs only)
+
+**Accepted finding:** Mitch accepted no B2 regression: the earlier five-run medians were within approximately 1 second across current / 0089ca4f / 5c335b7e, and 0089ca4f also timed out once at 33.2 seconds. This does **not** classify `auditTables8b3.spec.ts:13` as a named flake or waive its stop.
+
+**Method:** The prior sandbox's scratch files and archive servers were absent on this request, so both archives were recreated under `/tmp/browser/b24-timing/` from `git archive`. Current source checkpoint: `84e1f95eeffe40c9387240c76347cb00b9ab40a9`. The scratch spec copied the four existing audit-table cases and added timing marks only, retaining every assertion and helper, the existing 2-second wait, 30-second test budget, 15-second assertion budget, zero retries, 1280×1800 desktop and 390×1800 phone viewports. Existing global setup warmed each server. Two repetitions per case per version ran sequentially with one worker, in version order current (:8080), 0089ca4f (:8090), 5c335b7e (:8091). No existing test, timeout or retry was edited. Temporary archive caches were separate; :8080 was neither restarted nor changed.
+
+All **24/24 cases passed**, with **8/8 and literal EXIT 0 for each version**. These two-sample diagnostic timings are supplementary evidence, not a rerun or replacement of the stopped full suite. Boot includes navigation and waiting for the demo hook plus issuing the role/route change; the separate table-visible step includes remaining rendering and reading row IDs. Phone timing retains the existing helper as one unit (resize, visible/width checks, then axe). Total includes Playwright overhead, so it is not exactly the sum of marked steps.
+
+#### Action-audit-feed per-step timings (seconds)
+
+| Version | Run | Boot/navigation | Existing wait | Table visible + IDs | Source projection | Parity assertions | Desktop axe | Phone resize + checks + axe | Total | Result |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| Current | 1 | 5.985 | 2.003 | 0.810 | 0.003 | 0.003 | 4.843 | 4.886 | 18.624 | Pass |
+| Current | 2 | 7.123 | 2.002 | 0.719 | 0.003 | 0.002 | 4.714 | 5.253 | 19.935 | Pass |
+| 0089ca4f | 1 | 8.019 | 2.003 | 1.689 | 0.003 | 0.003 | 6.301 | 7.145 | 25.271 | Pass |
+| 0089ca4f | 2 | 7.559 | 2.003 | 1.909 | 0.003 | 0.005 | 5.416 | 6.006 | 23.020 | Pass |
+| 5c335b7e | 1 | 7.153 | 2.002 | 1.526 | 0.011 | 0.003 | 5.631 | 7.863 | 24.304 | Pass |
+| 5c335b7e | 2 | 8.539 | 2.004 | 1.226 | 0.006 | 0.006 | 8.347 | 8.728 | 28.959 | Pass |
+
+#### All four audit cases: two-run median total (seconds)
+
+| Case | Current | 0089ca4f | 5c335b7e | Passes per version |
+|---|---:|---:|---:|---|
+| admin-audit-table | 13.984 | 14.668 | 14.696 | 2/2 each |
+| documents-audit-table | 9.451 | 10.802 | 10.786 | 2/2 each |
+| consent-audit-table | 11.192 | 13.713 | 12.318 | 2/2 each |
+| action-audit-feed | 19.280 | 24.146 | 26.632 | 2/2 each |
+
+The documents case used its existing empty-state branch in all six runs, so desktop/phone axe was not reached there; it was not forced to mount an empty table. Full per-step records for every case, including these branch differences, remain in `/tmp/browser/b24-timing/timings.json` and `current-timing.log`, `0089ca4f-timing.log`, `5c335b7e-timing.log` in the same directory.
+
+**Findings:**
+- Action-feed desktop and phone accessibility work together took 9.729–17.075 seconds and was the largest combined measured cost; boot/navigation took 5.985–8.539 seconds. Source projection and parity checks were milliseconds. This identifies where time is spent without proving the cause of the earlier full-suite timeout.
+- Current was not materially slower: its action-feed median was 4.866 seconds below 0089ca4f and 7.352 seconds below 5c335b7e in these samples, and it had no failures. This is consistent with the accepted no-regression conclusion, not a claim of an app speedup or equal timings in this new small sample. Sequential order, environment load and only two samples limit comparisons.
+- `/admin-permissions` reads action-category audit events at `src/routes/admin-permissions.tsx:68`, filters at :82, and renders `StaffTable` at :207–249. It does not call `consentCovers`, `consentCoveringRecordId` or `linkConsentDisclosure` per row or per render.
+- Consent linking happens when a disclosure is created: `src/lib/part2Disclosure.ts:163–175` performs the lookup/link, invoked at :285 and :334; `src/lib/ehr.ts:12760–12765` delegates the covering-record lookup to `consentCovers`. It is not audit-feed rendering work.
+- The approved ASAM filter at `src/lib/asamReporting.ts:91–93` is not read by the admin-permissions route. No app-side performance fix is justified by the requested regression criteria; none was applied or proposed for approval.
+
+**Cleanup and stop:** Both temporary archive process groups were stopped; HTTP checks confirmed :8090 and :8091 no longer answer, while :8080 still answers. The scratch `audit-timing.spec.ts` and its temporary Playwright config were deleted. Raw logs/JSON remain only under `/tmp`. Only this report and the roadmap changed. B2-5 plan remains unappended pending Mitch's classification of `auditTables8b3:13`; no B2-5 implementation or publishing occurred.
+
 ## 7. Test edits
 - consentInventoryB2.test.ts (pre-approved): ehr.ts 44 → 45 (the wrapper comment names consentCovers); new pin `src/lib/consentGate.ts: 8`. The coordinatorSudAccess.ts, referrerUpdateGate.ts and asamReporting.ts counts are unchanged.
 - src/test/consentB2Approved.ts (pre-approved): three exact-once ehr.ts substitutions (B2-4.1 import, B2-4.2 wrapper hunk, B2-4.3 ledger registration).
