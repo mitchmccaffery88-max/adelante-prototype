@@ -655,7 +655,7 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [x] B2-1 model extension (multi-active per type + recipient, consentCovers) — rollback a2601c9f; approved adapter src/test/consentB2Approved.ts; units 2,909/2,909; browser 217/217 EXIT 0; 17 screenshots restored (docs/b2-1-report.md)
 - [x] B2-2 capture / e-sign EN-ES / paper upload / history — rollback 7d973925; units 2,917/2,917; browser 219/219 EXIT 0 (docs/b2-2-report.md)
 - [x] B2-3 revoke / renew / expiry / missing-expiring view — COMPLETE Oct 22; rollback 945a6ba8; additive, enforcement OFF; units 2,925/2,925; full one-worker browser 222/222, zero failures, literal EXIT 0 (26.6m); 17 screenshots restored, all 21 byte-identical to rollback; plan identical to cd1f4bb0; regression at consentCaptureB2:88 fixed (row button collision). See docs/b2-3-report.md and docs/b2-3-evidence/. No publish; B2-4/5/6 untouched.
-- [ ] B2-6 consent audit events + disclosure links — IN PROGRESS Oct 22; rollback 5c335b7e; additive, enforcement OFF; see docs/b2-6-report.md.
+- [x] B2-6 consent audit events + disclosure links — COMPLETE Oct 22; rollback 5c335b7e; additive, enforcement OFF; per-action audit counts unchanged, consent.expired the only new entry; pinned parity vs rollback byte-identical; units 2,936/2,936; full browser 222/223 EXIT 1, sole failure staffNewAudit8a2:29 timeout (flake exception, 3/3 standalone); 17 screenshots restored, 0 differ. See docs/b2-6-report.md. No publish; B2-4/5 untouched.
 - [ ] B2-4 enforcement switch
 - [ ] B2-5 migration to legacyUnverified (report affected patients first)
 - [ ] B2-6 audit + disclosure links

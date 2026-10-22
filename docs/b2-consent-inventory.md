@@ -430,3 +430,6 @@ Total lines: 342. Unclassified: 0.
 | src/lib/consentLifecycle.ts | reader | `listConsentRecords` (typed-record lookup), `isConsentCategoryAuthorized` / `activeConsentRecord` / `getConsentState` / `consentCovers` — test-only parity snapshot `consentGateSnapshot`; not a gate |
 | src/lib/ehr.ts (`revokeTypedConsentRecord`) | writer | Revokes a TYPED record in place (status + `revocation` extension); writes NO domain audit — the registry action is the single event |
 | src/lib/consentCapture.ts (`requestSelfReSign`) | reader | `listConsentRecords` — builds a self-service e-sign request from an expired record's own terms |
+
+## B2-6 (Oct 22)
+- src/lib/ehr.ts entry-point lines 42 → 44: `consentCoveringRecordId` (doc line + its `consentCovers` call) — read-only disclosure link, not a gate. src/lib/part2Disclosure.ts calls it through `linkEntry` after each decision.

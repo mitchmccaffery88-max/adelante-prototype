@@ -56,4 +56,9 @@ No other existing test changed.
 - `e2e/consentAuditB2.spec.ts` (1): registry capture → disclose → record detail lists the link; billing on /consent-audit sees the program ID, not the name; axe on both.
 
 ## 7. Validation
-See the closing section below (filled after the full runs).
+- Dev server restarted after the last edit; build OK.
+- Full units: **2,936 / 2,936 passed, 367 files, EXIT 0**.
+- New spec standalone: 1/1. New unit files: 11/11 three consecutive runs.
+- Full browser suite (`E2E_BASE_URL=http://localhost:8080`, `--workers=1`, background, `/tmp/b26-browser.log`): **222 passed, 1 failed, 223 total, 43.7m, literal `EXIT 1`**. The only failure: `e2e/staffNewAudit8a2.spec.ts:29` (therapist /clinician + New), a 30s test timeout with no assertion mismatch — the named flake exception. Per its recorded rule (sole failure + 3/3 standalone passes), it was rerun standalone: 3/3 passed (29.4s, 27.2s, 25.5s). This is not a fully green 223/223 run. The new `consentAuditB2.spec.ts` passed inside the full run.
+- Screenshots: 17 regenerated tracked images restored from 5c335b7e; 0 differ.
+- Not published. B2-4 / B2-5 not started.
