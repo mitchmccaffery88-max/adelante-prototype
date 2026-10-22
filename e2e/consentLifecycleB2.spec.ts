@@ -57,7 +57,8 @@ test("B2-3 staff revoke and renew in the chart Consents section", async ({ page 
   // Revoke the HIPAA record through the ConfirmDialog
   const hipaa = (await typed(page, pid)).find((r) => r.type === "hipaa_authorization")!;
   const nRev = await succeeded(page, "consent_record_revoke");
-  await panel.getByTestId(`consent-revoke-${hipaa.id}`).click();
+  await panel.getByTestId("consent-history-hipaa_authorization").getByRole("button").click();
+  await page.getByTestId(`consent-revoke-${hipaa.id}`).click();
   const dialog = page.getByRole("alertdialog");
   await expect(dialog).toContainText("Revoke: HIPAA authorization");
   await dialog.getByLabel("Revocation method").selectOption("written");
@@ -70,7 +71,8 @@ test("B2-3 staff revoke and renew in the chart Consents section", async ({ page 
   // Renew the telehealth record: old superseded, new active and linked
   const tele = (await typed(page, pid)).find((r) => r.type === "telehealth")!;
   const nRen = await succeeded(page, "consent_record_renew");
-  await panel.getByTestId(`consent-renew-${tele.id}`).click();
+  await panel.getByTestId("consent-history-telehealth").getByRole("button").click();
+  await page.getByTestId(`consent-renew-${tele.id}`).click();
   const sheet = page.getByRole("dialog");
   await expect(sheet.getByTestId("renew-terms")).toContainText("Telehealth");
   await sheet.getByLabel("Ends on").fill("2028-10-21");

@@ -53,3 +53,13 @@ Mitch's decision (Oct 21): `consentCovers` is deliberately EXCLUDED from the sna
 ## App fix found during validation
 
 `requestSelfReSign` pushed to the module-local e-sign request list without notifying subscribers, so the patient's sign card didn't render until an unrelated store change. Added `AdelanteEHR._emit()` (the existing store notification hook) after the push. No behaviour or access change.
+
+## Regression found in full run (consentCaptureB2.spec.ts:45) — root cause and fix
+
+- Error: `strict mode violation: getByTestId('consent-capture-panel').getByTestId('consent-history-telehealth').getByRole('button') resolved to 3 elements` at e2e/consentCaptureB2.spec.ts:88.
+- Standalone: current 5e568659 FAIL 3/3 (11.9s, 10.6s, 10.8s; traces /tmp/cur{1,2,3}/…/trace.zip); rollback 945a6ba8 git-archive copy on :8091 PASS 3/3 (12.4s, 11.2s, 11.3s). Cause: a B2-3 regression, not timing or test order.
+- Current (before fix): ConsentCapturePanel.tsx:112–113 put Renew/Revoke buttons inside each active history row, next to the record link.
+- Fix: removed them from the row (so it has one button again, as in B2-2) and added them to the record-detail sheet after `consent-record-detail`, for active records under the same showRenew/showRevoke gates. Testids, handlers, registry calls, ConfirmDialog and audits are unchanged; the detail sheet closes before the renew sheet or confirm dialog opens.
+- Spec (approved, this batch, navigation only): e2e/consentLifecycleB2.spec.ts:60 and :73 now open the record detail first and click the button through `page.getByTestId` (the sheet is portalled outside the panel). No assertion was changed. consentCaptureB2.spec.ts was not edited.
+- Patient side: MyConsentRecords rows have a revoke button, but no B2-2 spec clicks a bare button in them, so they are unaffected.
+- After the fix: both consent specs 5/5; dev server restarted; full units 2,925/2,925 EXIT 0; full browser suite /tmp/b23b-browser.log — result pending at time of writing.
