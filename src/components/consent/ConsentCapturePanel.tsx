@@ -27,6 +27,7 @@ import {
   type ConsentType,
   type Part2ElementKey,
 } from "@/lib/consentRecordModel";
+import { CHANNEL_LABEL, getDisclosureEntry } from "@/lib/part2Disclosure";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -149,7 +150,14 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
                 <dt>Document hash</dt><dd className="break-all font-mono">{viewing.document?.documentHash}</dd>
                 {viewing.document?.uploadRef && (<><dt>Paper copy</dt><dd>{UPLOAD_SIMULATED_LABEL}</dd></>)}
                 {viewing.supersedesId && (<><dt>Replaces</dt><dd className="font-mono">{viewing.supersedesId}</dd></>)}
-                <dt>Disclosures</dt><dd data-testid="consent-linked-disclosures">{viewing.disclosureIds.length ? viewing.disclosureIds.join(", ") : "None linked yet"}</dd>
+                <dt>Disclosures</dt><dd data-testid="consent-linked-disclosures">{viewing.disclosureIds.length ? (
+                  <ul className="space-y-1">
+                    {viewing.disclosureIds.map((id) => {
+                      const d = getDisclosureEntry(id);
+                      return <li key={id} data-testid={`consent-linked-disclosure-${id}`}><span className="font-mono">{id}</span>{d ? ` · ${CHANNEL_LABEL[d.channel]} · ${d.at.slice(0, 10)} · ${d.recipient.type}` : ""}</li>;
+                    })}
+                  </ul>
+                ) : "None linked yet"}</dd>
               </dl>
               {viewing.status === "active" && (showRenew || showRevoke) && (
                 <div className="mt-3 flex flex-wrap gap-2">

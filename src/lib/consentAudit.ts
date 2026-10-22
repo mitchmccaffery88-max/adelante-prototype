@@ -25,6 +25,7 @@ export function categoriesForAuditEvent(event: AuditEvent): ConsentCategory[] {
 export const CONSENT_AUDIT_EVENT_TYPES = [
   { value: "consent_record_created", label: "Consent captured" },
   { value: "consent_record_revoked", label: "Consent revoked" },
+  { value: "consent_record_expired", label: "Consent expired" },
   { value: "consent_gated_content_disclosed", label: "Disclosure" },
   { value: "granted", label: "Legacy toggle — granted" },
   { value: "revoked", label: "Legacy toggle — revoked" },

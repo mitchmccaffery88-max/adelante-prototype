@@ -110,3 +110,4 @@ Patient lessons, exercises, recovery and toolkit screens use `.patient-theme`; s
 - Staff-facing patient names and unsigned-work rows in operations tables use `viewerCanOpenChart` / `staffPatientLabel` (`staffPatientLabel.ts`) on top of `chartEntryFor`; Part 2 note rows use `noteGateClass` + `canAccess`. Why: queues can never show more than the chart would.
 
 - Billing-only reads use billingProjection allowlists at UI ingestion boundaries; non-billing reads retain original records and store gates. Why: clinical graphs and signature provenance cannot reach claims-only presentation.
+- Consent event names (`src/lib/consentEvents.ts`) ride on the audit entry each consent write already makes; only `consent.expired` adds an entry (first expired read, once per record). Disclosure-log entries link a typed record read-only through `consentCovers`; the link never decides a disclosure. Why: audit counts and disclosure decisions stay unchanged until enforcement.

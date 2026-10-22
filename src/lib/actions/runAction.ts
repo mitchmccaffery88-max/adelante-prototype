@@ -119,6 +119,7 @@ function write(
   flags: Record<string, boolean>,
   storeName?: string,
   simulated?: boolean,
+  extra?: Record<string, unknown>,
 ): AuditEvent {
   return AdelanteEHR.recordActionEvent({
     action: name,
@@ -138,6 +139,7 @@ function write(
       ...(storeName ? { storeFn: storeName } : {}),
       ...(simulated ? { simulated: true } : {}),
       timestamp: new Date().toISOString(),
+      ...(extra ?? {}),
     },
   });
 }
@@ -195,9 +197,10 @@ export function runAction<T = unknown>(
     return { ok: true, value: value as T, outcome: "cosign_routed", event };
   }
   const auditReason = auditSafeReason(input.auditReason, patient);
+  const meta = entry.successAuditMeta?.(value);
   const event = sim
-    ? write("action.succeeded", actionId, actor, patient, "simulated", auditReason ?? "Simulated — no live connection.", flags, store.name, true)
-    : write("action.succeeded", actionId, actor, patient, "succeeded", auditReason, flags, store.name);
+    ? write("action.succeeded", actionId, actor, patient, "simulated", auditReason ?? "Simulated — no live connection.", flags, store.name, true, meta)
+    : write("action.succeeded", actionId, actor, patient, "succeeded", auditReason, flags, store.name, undefined, meta);
   return { ok: true, value: value as T, outcome: "succeeded", event };
 }
 

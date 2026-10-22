@@ -146,6 +146,32 @@ const B2: [string, string][] = [
   /**
    * §ASCMI disclosure trail — fired when consent-gated content is actually`,
   ],
+  // §B2-6 (Mitch, Oct 22) — additive consent event metadata + disclosure-link lookup.
+  // B2-6.1
+  [
+    "import { recipientKey, validateConsentExtension, verbalAssentAllowed, type ConsentRecordExtension, type ConsentType } from \"./consentRecordModel\";\n",
+    "import { recipientKey, validateConsentExtension, verbalAssentAllowed, type ConsentRecordExtension, type ConsentType } from \"./consentRecordModel\";\nimport { consentEventDetail, createEventDetail, type ConsentEventName } from \"./consentEvents\";\n",
+  ],
+  // B2-6.2
+  [
+    "    extension?: ConsentRecordExtension;\n  }): ConsentRecord {",
+    "    extension?: ConsentRecordExtension;\n    /** \u00a7B2-6 \u2014 neutral consent event name for the existing audit entry (derived when omitted). */\n    consentEvent?: ConsentEventName;\n  }): ConsentRecord {",
+  ],
+  // B2-6.3
+  [
+    "        categories: rec.sections.filter((s) => s.authorized).map((s) => s.category),\n      },\n    });",
+    "        categories: rec.sections.filter((s) => s.authorized).map((s) => s.category),\n        ...createEventDetail(rec, input.capturedBy.role, input.consentEvent, prior?.id),\n      },\n    });",
+  ],
+  // B2-6.4
+  [
+    "      detail: { consentRecordId: rec.id, formType: rec.formType, reason: rec.revocationReason },",
+    "      detail: { consentRecordId: rec.id, formType: rec.formType, reason: rec.revocationReason, ...consentEventDetail({ name: \"consent.revoked\", rec, actorRole: input.role }) },",
+  ],
+  // B2-6.5
+  [
+    "      if (q.item && r.items && !r.items.includes(q.item)) return false;\n      return true;\n    });\n  },\n",
+    "      if (q.item && r.items && !r.items.includes(q.item)) return false;\n      return true;\n    });\n  },\n  /**\n   * \u00a7B2-6 \u2014 read-only: the typed record that covers a use, or null. Decided by\n   * consentCovers (same predicate); used only to LINK disclosures, never to\n   * block or allow one. Enforcement is B2-4.\n   */\n  consentCoveringRecordId(\n    patientId: string,\n    q: { type: ConsentType; recipient?: string; purpose?: string; item?: string; at?: Date },\n  ): string | null {\n    if (!AdelanteEHR.consentCovers(patientId, q)) return null;\n    const at = q.at ?? new Date();\n    const want = q.recipient?.trim().toLowerCase();\n    const rec = consentRecords.find((r) =>\n      r.patientId === patientId && r.consentType === q.type &&\n      !r.needsReviewAfterMerge && !r.legacyUnverified && !r.expiryEventOccurredAt &&\n      effectiveConsentStatus(r, at) === \"active\" &&\n      !(r.signature?.method === \"verbal_assent\" && !verbalAssentAllowed(q.type, r.purposeCode)) &&\n      (!want || !!r.recipients?.some((x) => (x.directoryRef ?? \"\").toLowerCase() === want || x.name.trim().toLowerCase() === want)) &&\n      (!q.purpose || r.purposeCode === q.purpose || r.purpose === q.purpose) &&\n      (!q.item || !r.items || r.items.includes(q.item)));\n    return rec?.id ?? null;\n  },\n  /** \u00a7B2-6 \u2014 append a disclosure id to a typed record's disclosureIds (link only; no audit, no access change). */\n  linkConsentDisclosure(recordId: string, disclosureId: string): void {\n    const rec = consentRecords.find((r) => r.id === recordId);\n    if (!rec) return;\n    if (!rec.disclosureIds) rec.disclosureIds = [];\n    if (!rec.disclosureIds.includes(disclosureId)) rec.disclosureIds.push(disclosureId);\n  },\n",
+  ],
 ];
 
 /** Rollback text with only the approved B2-1 substitutions applied (each must match exactly once). */

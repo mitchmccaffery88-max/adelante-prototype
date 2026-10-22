@@ -96,6 +96,7 @@ export function renewTypedConsent(input: {
     ...(input.assentWording ? { assentWording: input.assentWording } : {}),
     ...(input.witness?.trim() ? { witness: input.witness.trim() } : {}),
     actor: input.actor,
+    consentEvent: "consent.renewed",
   });
 }
 
