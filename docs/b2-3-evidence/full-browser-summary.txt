@@ -1,0 +1,8 @@
+Command: E2E_BASE_URL=http://localhost:8080 bunx playwright test --workers=1
+Log: /tmp/b23b-browser.log
+Full suite run alone in background, polled within one turn to literal EXIT.
+222 passed (26.6m)
+Failures: 0
+B2-2 consentCaptureB2.spec.ts: 2 passed
+B2-3 consentLifecycleB2.spec.ts: 3 passed
+EXIT 0
