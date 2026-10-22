@@ -109,8 +109,6 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
               <span className="flex flex-wrap items-center gap-2">
                 {r.simulatedUpload && <StatusChip lang="en" state="simulated" label="Simulated" />}
                 <StatusChip lang="en" state={r.status === "active" ? "done" : "closed"} label={STATUS_WORD[r.status]} data-testid={`consent-status-${r.id}`} />
-                {r.status === "active" && showRenew && <Button size="sm" variant="outline" onClick={() => setRenew(r)} data-testid={`consent-renew-${r.id}`}>Renew</Button>}
-                {r.status === "active" && showRevoke && <Button size="sm" variant="outline" onClick={() => askRevoke(r)} data-testid={`consent-revoke-${r.id}`}>Revoke</Button>}
               </span>
             </li>
           ))}
@@ -153,6 +151,12 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
                 {viewing.supersedesId && (<><dt>Replaces</dt><dd className="font-mono">{viewing.supersedesId}</dd></>)}
                 <dt>Disclosures</dt><dd data-testid="consent-linked-disclosures">{viewing.disclosureIds.length ? viewing.disclosureIds.join(", ") : "None linked yet"}</dd>
               </dl>
+              {viewing.status === "active" && (showRenew || showRevoke) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {showRenew && <Button size="sm" variant="outline" onClick={() => { const r = viewing; setView(null); setRenew(r); }} data-testid={`consent-renew-${viewing.id}`}>Renew</Button>}
+                  {showRevoke && <Button size="sm" variant="outline" onClick={() => { const r = viewing; setView(null); askRevoke(r); }} data-testid={`consent-revoke-${viewing.id}`}>Revoke</Button>}
+                </div>
+              )}
             </>
           )}
         </SheetContent>
