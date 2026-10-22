@@ -11,6 +11,7 @@
 // Non-SUD disclosures pass straight through (no notice, no log entry).
 import { AdelanteEHR, LEGAL_DISCLOSURE_CONSENT_CATEGORY } from "./ehr";
 import { validateCoordinatorEmergency } from "./coordinatorSudAccess";
+import type { ConsentType } from "./consentRecordModel";
 
 // Legal disclosure records live in outpatientCare.ts, which registers its
 // reader here (no import: avoids an ehr → outpatientCare load cycle).
@@ -127,6 +128,8 @@ export interface DisclosureLogEntry {
   emergencyReference?: string;
   accessStart?: string;
   accessEnd?: string;
+  /** §B2-6 — typed consent record covering this disclosure (read-only link), or null = legacy. */
+  consentRecordId?: string | null;
 }
 
 export type DisclosureResult =
@@ -135,6 +138,50 @@ export type DisclosureResult =
 
 const log: DisclosureLogEntry[] = [];
 let seq = 0;
+
+// ------------------------------------------------------------------ §B2-6 disclosure links
+// Read-only: which typed record covers a logged disclosure. NEVER blocks,
+// allows or changes a disclosure (enforcement is B2-4). Draft — pending counsel.
+export const NO_TYPED_RECORD_LABEL = "No typed record (legacy)";
+const LINK_TYPES: Record<RecipientType, ConsentType[]> = {
+  advocate: ["advocate_release"],
+  legal: ["legal_part2_disclosure", "part2_specific_written"],
+  provider: ["part2_specific_written", "part2_tpo_single"],
+  hie: ["part2_specific_written", "part2_tpo_single"],
+  other: ["part2_specific_written", "part2_tpo_single"],
+  internal: ["part2_tpo_single"],
+  county: ["part2_tpo_single"],
+  patient: [],
+};
+/** The consent types a disclosure could be covered by (first match wins). */
+export function linkTypesFor(channel: DisclosureEntryChannel, recipientType: RecipientType): ConsentType[] {
+  if (channel === "coordinator_emergency") return [];
+  if (channel === "referrer_update") return ["referrer_authorization"];
+  return LINK_TYPES[recipientType] ?? [];
+}
+type DisclosureEntryChannel = DisclosureChannel | "coordinator_emergency";
+function linkEntry(entry: DisclosureLogEntry): void {
+  const at = new Date(entry.at);
+  let id: string | null = null;
+  for (const type of linkTypesFor(entry.channel, entry.recipient.type)) {
+    for (const recipient of [entry.recipient.name, entry.recipient.organization].filter((x): x is string => !!x && !!x.trim())) {
+      id = AdelanteEHR.consentCoveringRecordId(entry.patientId, { type, recipient, purpose: entry.purpose, at });
+      if (id) break;
+    }
+    if (id) break;
+  }
+  entry.consentRecordId = id;
+  if (id) AdelanteEHR.linkConsentDisclosure(id, entry.id);
+}
+/** Link label for a disclosure entry. */
+export function disclosureLinkLabel(entry: Pick<DisclosureLogEntry, "consentRecordId">): string {
+  return entry.consentRecordId ? `Consent record ${entry.consentRecordId}` : NO_TYPED_RECORD_LABEL;
+}
+/** One logged disclosure by id (copy), for the consent record detail / consent audit view. */
+export function getDisclosureEntry(id: string): DisclosureLogEntry | undefined {
+  const e = log.find((x) => x.id === id);
+  return e ? { ...e, recipient: { ...e.recipient }, recordClasses: [...e.recordClasses] } : undefined;
+}
 
 const norm = (s: string) => s.trim().toLowerCase();
 
@@ -235,6 +282,7 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
     emergency,
     ...(emergency ? { complianceReview: "pending" as const, emergencyReason, emergencyDetail: req.emergency?.detail, emergencyReference: req.emergency?.reference, accessStart: req.emergency?.start, accessEnd: req.emergency?.end } : {}),
   };
+  linkEntry(entry);
   log.unshift(entry);
   AdelanteEHR._recordAudit({
     category: "disclosure",
@@ -283,6 +331,7 @@ export function logReferrerStatusDisclosure(input: {
     consentRef: input.consentRef, recordClasses: input.sud ? ["SUD referral information"] : [],
     patientId: input.patientId, channel: "referrer_update", simulated: !!input.simulated, emergency: false,
   };
+  linkEntry(entry);
   log.unshift(entry);
   AdelanteEHR._recordAudit({ category: "disclosure", action: "referrer_status_disclosure", patientId: input.patientId,
     actorId: input.actor.staffId ?? input.actor.name, actorRole: input.actor.role,

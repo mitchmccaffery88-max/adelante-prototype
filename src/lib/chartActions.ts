@@ -57,6 +57,10 @@ import { addStaffMemberWithReason, deactivateStaffMember, reactivateStaffMember,
 import { canAuthorContent, canPublishContent, saveContentDraft, submitContentForReview, publishContent, returnContentForChanges, retireContent, discardContentDraft } from "@/lib/contentPublishing";
 import { captureConsentRecord, uploadPaperConsent, requestConsentESign, patientSignConsent } from "@/lib/consentCapture";
 import { renewTypedConsent, revokeTypedConsent } from "@/lib/consentLifecycle";
+import { consentEventDetail } from "@/lib/consentEvents";
+import type { ConsentRecord } from "@/lib/ehr";
+/** §B2-6 — typed revoke writes no domain audit, so consent.revoked rides on the registry success entry. */
+const typedRevokeMeta = (v: unknown) => { const r = v as ConsentRecord; return r?.id ? { consentRecordId: r.id, ...consentEventDetail({ name: "consent.revoked", rec: r, actorRole: r.revocation?.onBehalfOfPatient ? "staff" : "patient" }) } : undefined; };
 import { sendForms, resendCurrent, buildIntakePacket, createFormDraft, editForm, submitForLegalReview, approveForm, publishForm, revokeForm, signChecked, declineForm, setChecked } from "@/lib/consentForms";
 import { RESTRICT_ROLES, COMPLIANCE_ROLES, roleHasChartEntry, setRecordRestricted, openRestrictedChart, acknowledgeRestrictedOpen } from "@/lib/chartAccess";
 import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";
@@ -112,6 +116,8 @@ export interface ChartAction {
   simulated?: boolean;
   /** Domain disclosure event is the single success audit for an emergency unlock. */
   successAuditFromStore?: boolean;
+  /** §B2-6 — neutral metadata merged into the EXISTING success audit (no extra entry). */
+  successAuditMeta?: (value: unknown) => Record<string, unknown> | undefined;
   /** §Turn 6 — shown in the billing / admin / coordinator "+ New" (OpsActionLauncher). */
   opsMenu?: boolean;
   /** Shown disabled in "+ New" with this label (roadmap item, not built). */
@@ -151,8 +157,8 @@ export const CHART_ACTIONS: ChartAction[] = [
   { id: "consent_record_request_esign", label: { en: "Send a consent for e-sign", es: "Enviar consentimiento para firmar" }, group: "admin", menu: false, sectionId: "consents", check: "roleHasChartEntry", store: refs(["requestConsentESign", requestConsentESign]), allowed: ({ role }) => roleHasChartEntry(role) ? ok() : hide("Only care-team roles with chart entry can send forms.") },
   { id: "consent_record_patient_sign", label: { en: "Sign my consent", es: "Firmar mi consentimiento" }, group: "care", menu: false, check: "patient self only", store: refs(["patientSignConsent", patientSignConsent]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Only the patient signs their own form.") },
   // §B2-3 — revoke / renew typed records (additive; enforcement stays off until B2-4).
-  { id: "consent_record_revoke", label: { en: "Revoke a consent", es: "Revocar consentimiento" }, group: "admin", menu: false, sectionId: "consents", check: "consent_ledger write", store: refs(["revokeTypedConsent", revokeTypedConsent]), allowed: ({ role }) => canAccess(role, "consent_ledger").level === "write" ? ok() : hide("Your role can read the consent ledger but can't change it.") },
-  { id: "consent_record_patient_revoke", label: { en: "Revoke my consent", es: "Revocar mi consentimiento" }, group: "care", menu: false, check: "patient self only", store: refs(["revokeTypedConsent", revokeTypedConsent]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Only the patient revokes their own consent.") },
+  { id: "consent_record_revoke", label: { en: "Revoke a consent", es: "Revocar consentimiento" }, group: "admin", menu: false, sectionId: "consents", check: "consent_ledger write", store: refs(["revokeTypedConsent", revokeTypedConsent]), successAuditMeta: typedRevokeMeta, allowed: ({ role }) => canAccess(role, "consent_ledger").level === "write" ? ok() : hide("Your role can read the consent ledger but can't change it.") },
+  { id: "consent_record_patient_revoke", label: { en: "Revoke my consent", es: "Revocar mi consentimiento" }, group: "care", menu: false, check: "patient self only", store: refs(["revokeTypedConsent", revokeTypedConsent]), successAuditMeta: typedRevokeMeta, allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Only the patient revokes their own consent.") },
   { id: "consent_record_renew", label: { en: "Renew a consent", es: "Renovar consentimiento" }, group: "admin", menu: false, sectionId: "consents", check: "consent_ledger write", store: refs(["renewTypedConsent", renewTypedConsent]), allowed: ({ role }) => canAccess(role, "consent_ledger").level === "write" ? ok() : hide("Your role can read the consent ledger but can't change it.") },
   // §Access A1 — Restricted record (Draft — pending exec RBAC review).
   { id: "chart_restrict", label: { en: "Restricted record", es: "Restricted record" }, group: "admin", menu: false, check: "RESTRICT_ROLES", store: refs(["setRecordRestricted", setRecordRestricted]), allowed: ({ role }) => RESTRICT_ROLES.includes(role) ? ok() : hide("Only sys_admin or the clinical coordinator can restrict a record.") },

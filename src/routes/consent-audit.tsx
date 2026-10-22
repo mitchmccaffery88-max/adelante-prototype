@@ -28,6 +28,7 @@ import {
   CONSENT_AUDIT_EVENT_TYPES,
 } from "@/lib/consentAudit";
 import { Check, X } from "lucide-react";
+import { disclosureLinkLabel, getDisclosureEntry } from "@/lib/part2Disclosure";
 
 const copy = {
   all: "All",
@@ -40,6 +41,7 @@ const copy = {
     "Actor",
     "Categories",
     "Advocate gates",
+    "Linked consent",
     "Detail",
   ],
 };
@@ -284,8 +286,25 @@ function ConsentAuditPage() {
         },
       },
       {
-        id: "c6",
+        id: "c-link",
         label: copy.consent_audit_tableColumns[6],
+        testId: "consent-audit-link-cell",
+        cell: (r) => {
+          const id = r.event.detail?.["disclosureLogId"];
+          if (typeof id !== "string" || !r.event.patientId) return <>—</>;
+          const d = getDisclosureEntry(id);
+          if (!d) return <>—</>;
+          return (
+            <>
+              <div>{staffPatientLabel({ role, staffId: getActingStaff()?.id }, r.event.patientId)}</div>
+              <div className="text-muted-foreground">{disclosureLinkLabel(d)}</div>
+            </>
+          );
+        },
+      },
+      {
+        id: "c6",
+        label: copy.consent_audit_tableColumns[7],
         cell: (r) => {
           return (
             <>

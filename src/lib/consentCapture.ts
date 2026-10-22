@@ -7,6 +7,7 @@
 import { AdelanteEHR, effectiveConsentStatus, type ConsentRecord, type ConsentRecordStatus } from "./ehr";
 import { canAccess, type StaffRole } from "./roles";
 import { roleHasChartEntry } from "./chartAccess";
+import { CONSENT_EXPIRED_AUDIT_ACTION, consentEventDetail, type ConsentEventName } from "./consentEvents";
 import { publishedForm, textHash, type FormKey } from "./consentForms";
 import {
   isPart2Type,
@@ -118,7 +119,7 @@ function extensionFor(d: CaptureDraft, signature: NonNullable<ConsentRecordExten
   };
 }
 
-function write(d: CaptureDraft, ext: ConsentRecordExtension, capturedBy: { staffId?: string; staffName: string; role: string }, source: string): ConsentRecord {
+function write(d: CaptureDraft, ext: ConsentRecordExtension, capturedBy: { staffId?: string; staffName: string; role: string }, source: string, consentEvent?: ConsentEventName): ConsentRecord {
   const errors = validateConsentExtension(ext);
   if (errors.length) throw new Error(errors.join(" "));
   const today = new Date().toISOString().slice(0, 10);
@@ -134,6 +135,7 @@ function write(d: CaptureDraft, ext: ConsentRecordExtension, capturedBy: { staff
     sections: [],
     capturedBy,
     extension: ext,
+    ...(consentEvent ? { consentEvent } : {}),
   });
 }
 
@@ -149,6 +151,8 @@ export function captureConsentRecord(input: {
   assentWording?: string;
   witness?: string;
   actor: Actor;
+  /** §B2-6 — renew passes "consent.renewed"; otherwise derived. */
+  consentEvent?: ConsentEventName;
 }): ConsentRecord {
   assertLedgerWriter(input.actor);
   baseChecks(input.draft);
@@ -169,7 +173,7 @@ export function captureConsentRecord(input: {
     ...(input.witness?.trim() ? { witness: input.witness.trim() } : {}),
     ...(input.method === "verbal_assent" ? { assentWording: input.assentWording!.trim() } : {}),
   });
-  return write(input.draft, ext, staffBy(input.actor), input.method === "verbal_assent" ? "verbal assent — consents section" : "in person — consents section");
+  return write(input.draft, ext, staffBy(input.actor), input.method === "verbal_assent" ? "verbal assent — consents section" : "in person — consents section", input.consentEvent);
 }
 
 /** Paper wet-signature scan. Simulated: the file is not stored anywhere real. */
@@ -325,14 +329,33 @@ function statusOf(r: ConsentRecord, at: Date): TypedStatus {
   return effectiveConsentStatus(r, at);
 }
 
+// §B2-6 — consent.expired: no action causes expiry, so the FIRST read that finds
+// a typed record expired writes exactly one neutral audit entry (idempotent per
+// record). Reads for a future date never emit. Quiet write: no re-render loop.
+const expiredNoted = new Set<string>();
+function noteExpiredOnRead(r: ConsentRecord, status: TypedStatus, at: Date): void {
+  if (status !== "expired" || expiredNoted.has(r.id) || at.getTime() > Date.now()) return;
+  expiredNoted.add(r.id);
+  AdelanteEHR._recordAuditQuiet({
+    category: "consent",
+    action: CONSENT_EXPIRED_AUDIT_ACTION,
+    patientId: r.patientId,
+    actorId: "system",
+    actorRole: "system",
+    detail: { consentRecordId: r.id, ...consentEventDetail({ name: "consent.expired", rec: r, actorRole: "system" }) },
+  });
+}
+
 /** Typed records only (untyped history stays in the existing ledger panel). Newest first. */
 export function consentRecordHistory(patientId: string, at = new Date()): HistoryRow[] {
   return AdelanteEHR.listConsentRecords(patientId)
     .filter((r) => r.consentType)
-    .map((r) => ({
+    .map((r) => ({ r, status: statusOf(r, at) }))
+    .map(({ r, status }) => (noteExpiredOnRead(r, status, at), { r, status }))
+    .map(({ r, status }) => ({
       id: r.id,
       consentType: r.consentType!,
-      status: statusOf(r, at),
+      status,
       recipients: r.recipients ?? [],
       ...(r.purpose ? { purpose: r.purpose } : {}),
       items: r.items ?? [],
@@ -381,4 +404,5 @@ export function advocateOwnReleaseStatus(linkId: string, at = new Date()): Advoc
 /** Test hook. */
 export function _resetConsentCapture(): void {
   eSignRequests.length = 0;
+  expiredNoted.clear();
 }

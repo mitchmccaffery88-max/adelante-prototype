@@ -1,6 +1,7 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { disclose } from "./part2Disclosure";
 import { recipientKey, validateConsentExtension, verbalAssentAllowed, type ConsentRecordExtension, type ConsentType } from "./consentRecordModel";
+import { consentEventDetail, createEventDetail, type ConsentEventName } from "./consentEvents";
 import { allergiesNotRecorded, findAllergyMatches, requiresCuresCheck } from "./orderSafety";
 import {
   crisisTriggeringScores,
@@ -12739,6 +12740,35 @@ export const AdelanteEHR = {
       return true;
     });
   },
+  /**
+   * §B2-6 — read-only: the typed record that covers a use, or null. Decided by
+   * consentCovers (same predicate); used only to LINK disclosures, never to
+   * block or allow one. Enforcement is B2-4.
+   */
+  consentCoveringRecordId(
+    patientId: string,
+    q: { type: ConsentType; recipient?: string; purpose?: string; item?: string; at?: Date },
+  ): string | null {
+    if (!AdelanteEHR.consentCovers(patientId, q)) return null;
+    const at = q.at ?? new Date();
+    const want = q.recipient?.trim().toLowerCase();
+    const rec = consentRecords.find((r) =>
+      r.patientId === patientId && r.consentType === q.type &&
+      !r.needsReviewAfterMerge && !r.legacyUnverified && !r.expiryEventOccurredAt &&
+      effectiveConsentStatus(r, at) === "active" &&
+      !(r.signature?.method === "verbal_assent" && !verbalAssentAllowed(q.type, r.purposeCode)) &&
+      (!want || !!r.recipients?.some((x) => (x.directoryRef ?? "").toLowerCase() === want || x.name.trim().toLowerCase() === want)) &&
+      (!q.purpose || r.purposeCode === q.purpose || r.purpose === q.purpose) &&
+      (!q.item || !r.items || r.items.includes(q.item)));
+    return rec?.id ?? null;
+  },
+  /** §B2-6 — append a disclosure id to a typed record's disclosureIds (link only; no audit, no access change). */
+  linkConsentDisclosure(recordId: string, disclosureId: string): void {
+    const rec = consentRecords.find((r) => r.id === recordId);
+    if (!rec) return;
+    if (!rec.disclosureIds) rec.disclosureIds = [];
+    if (!rec.disclosureIds.includes(disclosureId)) rec.disclosureIds.push(disclosureId);
+  },
   createConsentRecord(input: {
     patientId: string;
     formType: ConsentFormType;
@@ -12752,6 +12782,8 @@ export const AdelanteEHR = {
     capturedBy: { staffId?: string; staffName: string; role: string };
     supersedesId?: string;
     extension?: ConsentRecordExtension;
+    /** §B2-6 — neutral consent event name for the existing audit entry (derived when omitted). */
+    consentEvent?: ConsentEventName;
   }): ConsentRecord {
     if (!patients.some((p) => p.id === input.patientId)) throw new Error("Patient not found.");
     if (!input.attested) throw new Error("Attestation is required to capture a consent record.");
@@ -12805,6 +12837,7 @@ export const AdelanteEHR = {
         expirationDate: rec.expirationDate,
         supersedesId: rec.supersedesId,
         categories: rec.sections.filter((s) => s.authorized).map((s) => s.category),
+        ...createEventDetail(rec, input.capturedBy.role, input.consentEvent, prior?.id),
       },
     });
     emit();
@@ -12829,7 +12862,7 @@ export const AdelanteEHR = {
       patientId: rec.patientId,
       actorId: input.revokedBy,
       actorRole: input.role,
-      detail: { consentRecordId: rec.id, formType: rec.formType, reason: rec.revocationReason },
+      detail: { consentRecordId: rec.id, formType: rec.formType, reason: rec.revocationReason, ...consentEventDetail({ name: "consent.revoked", rec, actorRole: input.role }) },
     });
     emit();
     return rec;
