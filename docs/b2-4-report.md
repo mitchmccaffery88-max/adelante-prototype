@@ -109,6 +109,9 @@ The documents case used its existing empty-state branch in all six runs, so desk
 **Cleanup and stop:** Both temporary archive process groups were stopped; HTTP checks confirmed :8090 and :8091 no longer answer, while :8080 still answers. The scratch `audit-timing.spec.ts` and its temporary Playwright config were deleted. Raw logs/JSON remain only under `/tmp`. Only this report and the roadmap changed. B2-5 plan remains unappended pending Mitch's classification of `auditTables8b3:13`; no B2-5 implementation or publishing occurred.
 
 ## 7. Test edits
+### Named browser flake classification — Mitch, Oct 22
+`auditTables8b3:13` joins `contentWiring:47` and `staffNewAudit8a2:29`. A run is accepted under this rule only if that named test is the **SOLE failure** and then passes **3/3 standalone**. All assertions, timeouts and retries remain unchanged. Anything else is a hard stop. The earlier 2/3 standalone result does not meet this rule; a fresh full-suite run is required below. Timing investigation and cleanup in §6 are complete; B2-5 planning remains conditional on the new validation.
+
 - consentInventoryB2.test.ts (pre-approved): ehr.ts 44 → 45 (the wrapper comment names consentCovers); new pin `src/lib/consentGate.ts: 8`. The coordinatorSudAccess.ts, referrerUpdateGate.ts and asamReporting.ts counts are unchanged.
 - src/test/consentB2Approved.ts (pre-approved): three exact-once ehr.ts substitutions (B2-4.1 import, B2-4.2 wrapper hunk, B2-4.3 ledger registration).
 - New: consentEnforcementB2.test.ts (13), consentEnforcementB2External.test.ts (1), consentEnforcementB2Matrix.test.ts (1) + fixture, e2e/consentEnforcementB2.spec.ts (1; external record stays locked, coordinator-team TPO opens, counseling stays hidden, revoke locks, axe).

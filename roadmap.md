@@ -651,6 +651,7 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [ ] Full browser suite: 214/215, EXIT 1 — staffSlowLoadLanding8c2.spec.ts:31 saw 0 nav_access_denied audits under 6x CPU throttle; guard/audit path byte-identical to rollback b1d3c414 (verified via git diff). Units 2,907/2,907 green; new billingPrivacyB3b spec 3/3. Stopped per stop rule; awaiting Mitch: rerun or investigate.
 
 ## B2 — complete consent record (approved Oct 21)
+- Named browser flake rule (Mitch, Oct 22): contentWiring:47, staffNewAudit8a2:29 and auditTables8b3:13 only; accepted solely when ONE full-suite failure is a named test and it subsequently passes 3/3 standalone. Assertions, timeouts and retries unchanged; anything else triggers the stop rule.
 - [x] B2-0 inventory freeze — rollback ee589ba2; docs/b2-consent-inventory.md; NEW src/lib/__tests__/consentInventoryB2.test.ts; no behaviour change
 - [x] B2-1 model extension (multi-active per type + recipient, consentCovers) — rollback a2601c9f; approved adapter src/test/consentB2Approved.ts; units 2,909/2,909; browser 217/217 EXIT 0; 17 screenshots restored (docs/b2-1-report.md)
 - [x] B2-2 capture / e-sign EN-ES / paper upload / history — rollback 7d973925; units 2,917/2,917; browser 219/219 EXIT 0 (docs/b2-2-report.md)
