@@ -1,6 +1,6 @@
-﻿# B2-5 — pre-build STOP (Oct 23)
+﻿# B2-5 — build STOP (Oct 23)
 
-Rollback recorded before edits: **99a8b776587a9096492d3ee07293eccee1806580** (accepted B2-4 + plan-only checkpoint). B2-4 remains closed green at 4a3811ff, 224/224 EXIT 0. No publishing. No B2-5 app or test changes applied.
+Rollback recorded before edits: **99a8b776587a9096492d3ee07293eccee1806580** (accepted B2-4 + plan-only checkpoint). B2-4 remains closed green at 4a3811ff, 224/224 EXIT 0. No publishing. Sections 1–6 retain the historical pre-build stop; the authorized resume and new stop are in §7. Partial source is applied, not validated or complete.
 
 ## 1. Required pre-edit roster probes — MATCH
 
@@ -55,3 +55,42 @@ Audit-count additions alone do not authorize these other retained changes. No ba
 ## 6. Validation and status
 
 No full-unit or B2-5 browser run was launched because the pre-build STOP was reached; no `/tmp/b25-browser.log` process is running and no EXIT result is claimed. B2-4's accepted 224/224 remains historical evidence only. No migration code, app source, emergency source/module or tests changed, so no screenshots were generated/restored in this stopped batch. Changes are only authorization memory, roadmap and this report. Final documentation checkpoint is reported in chat. Resume requires the two decisions above; do not publish.
+
+## 7. Authorized resume — new unlisted-difference STOP
+
+### Fresh pre-edit probes
+
+Recreated read-only scratch probes under `/tmp/browser/b25` because earlier temporary artifacts were absent. Both ran before application edits and passed: store **15 patients / 7 flag-only / 1 untyped**; staff UI **20 / 7 / 5 untyped across four patients**, no signature extensions/documents/signed copies; Tomás's merge hold remains. Names and sources match §1 exactly. Store `EXIT 0`, UI `EXIT 0`.
+
+### Partial source, not a completed migration
+
+- `consentMigration.ts` queues only authorized captures until the existing registry runner is ready; legacy-history marking has a sys_admin registry entry. Treatment requests are Marcus L., Luis Camacho and Jasmine Holt only, program recipient, treatment purpose, no counseling/coordination/external grants.
+- ONE `part2_named_org` form definition with Draft counsel/Spanish-review labels; workflow uses the existing author/review/approve/publish actions. Legal mapping added in `consentCapture.ts`. This is prototype FNV text hashing, not production cryptographic storage.
+- Daniel request: Porterville Community Resource Center (fictional), Reentry coordination, outreach slice `Social needs (SDOH)`, `Appointments`, `Minimal clinical summary` (`carePartners.ts` original :35,:274–286). Jordan request: named residential provider, Referral for treatment, SUD referral information (original `outpatientCare.ts:249–251,395–406`). Victor/Tomás no capture requests.
+- Legacy fallback in `consentGate` no longer grants. Bare untyped creations carry legacyUnverified; legacy history keeps existing statuses and merge holds.
+- Source remains incomplete: named legal disclosure lookup/readback and signed-form compatibility have not been completed; the narrow captures and seed audit inventory are not claimed fully verified. No expected-delta file or adapter has been applied.
+
+### STOP: billing is outside the permitted transform list
+
+Two focused unchanged parity tests ran: **0/2, EXIT 1**. Current-only diagnostic snapshots were then written to `/tmp/browser/b25/current-matrix.json` and `current-audit.json`, never to immutable fixtures. Both diagnostic writers completed `EXIT 0` (this is snapshot collection, not passing parity).
+
+| Snapshot field | Immutable baseline | Current | Classification |
+|---|---|---|---|
+| Enforcement `billing` | `[paid, receipt_balance, denied, writeoff_reversed, blocked, sliding_fee, dmc_ods]` | `error: Not available for your role.` | Unlisted workflow change — STOP |
+| Audit `billing` | same seven keys | same error | Unlisted workflow change — STOP |
+
+`billingLifecycleScenario.ts:48–49` grants only a bare Part 2 flag through `consent_purpose_set`; :51–52 then requests the clinical trainee's ASAM draft through the real registry. The removed fallback now correctly refuses that flag-only access. Changing the seven-key success result to an error is not access true→false, denial-derived **disclosure** membership, same-access provenance replacement, or itemized new seed audits. An adapter cannot hide it.
+
+Proposed, **not applied**: retain the existing independently documented DMC QA flow, assert its flag alone denies, then replace its positive consent fixture with a current signed scope-minimal program-treatment capture through `consent_record_capture`, with a full checklist and current form version/hash. This needs explicit authority for this application-side QA scenario: the delegated rule covers existing **test** fixture edits, and the approved default recapture list names only five people. No additional QA patient was granted access merely to obtain a passing test. Its added capture events and any cohort effect would also need exact itemization and parity review.
+
+Matrix roster counts remain 15 seed / 22 after billing; captured and emergency arrays remain 22 each. Coordinator cohort remains empty at all three checkpoints. These facts do not make full parity green.
+
+### Edit ledger, audits and validation
+
+- Existing test edits: **none**. Baselines, assertions, retries, timeouts, pinned adapters and emergency tests unchanged.
+- Expected transforms: **none applied**; billing difference is explicitly refused, not listed as an allowed transform.
+- Seed events: audit snapshot consent count changes **11→15** in the partial state; not yet independently itemized, so no count expectation was edited. Final form/capture/migration event ledger is pending; do not treat this delta as approved.
+- Emergency module SHA-256 current and rollback match: `24e9fc9d83ceb9e071635080adb6c655f98b41ca66c2ad258beae7ad9922f24c`. `coordinatorSudAccess.ts` has no edits; emergency functions/map/constant remain untouched. Full behavior parity is not claimed because the full snapshots fail.
+- Latest automatic preview signal: **build OK** at 12:41:04 UTC. No manual build/typecheck.
+- NEW unit/e2e migration tests, full unit run, restart/full browser run to `/tmp/b25-browser.log`, screenshot restoration and final successful closeout remain **not done**. No full-browser process was launched; no literal full-suite EXIT is claimed. Scratch probes generated no screenshots; immutable screenshot files were not changed.
+- STOP holds pending the application-side DMC QA-fixture authority above. No publishing.
