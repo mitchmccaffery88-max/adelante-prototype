@@ -21,6 +21,7 @@ vi.hoisted(() => {
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { enforcementMatrix } from "@/test/consentEnforcementB2Scenario";
+import { applyDelta, type DeltaEntry } from "@/test/b25ExpectedDelta";
 
 // IDs are canonicalized BY KEY, never by pattern: a value under an id / pid /
 // *Id / *Ids key (including every element of an *Ids array), and the record ID
@@ -47,6 +48,7 @@ function canon(text: string): string {
 }
 
 const FIXTURE = "src/lib/__tests__/fixtures/consentEnforcementB2-rollback-0089ca4f.json";
+const DELTA = "src/lib/__tests__/fixtures/b25-expected-delta.json";
 
 describe("B2-4 access matrix against rollback 0089ca4f", () => {
   it("every patient x role x surface is identical (default seed, QA scenario, external records, emergency states)", () => {
@@ -55,6 +57,10 @@ describe("B2-4 access matrix against rollback 0089ca4f", () => {
       writeFileSync(process.env.B24_MATRIX_WRITE, snap);
       return;
     }
-    expect(canon(snap)).toBe(canon(readFileSync(FIXTURE, "utf8")));
+    // B2-5: the immutable baseline with EXACTLY the listed transforms i–iv applied.
+    const delta = JSON.parse(readFileSync(DELTA, "utf8")).matrix as DeltaEntry[];
+    expect(delta.length).toBe(113);
+    const expected = applyDelta(JSON.parse(readFileSync(FIXTURE, "utf8")), delta);
+    expect(canon(snap)).toBe(canon(JSON.stringify(expected, null, 1)));
   });
 });

@@ -21,6 +21,7 @@ vi.hoisted(() => {
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { paritySnapshot } from "@/test/consentAuditB2Scenario";
+import { applyDelta, type DeltaEntry } from "@/test/b25ExpectedDelta";
 
 function canon(text: string): string {
   const seen = new Map<string, string>();
@@ -31,6 +32,7 @@ function canon(text: string): string {
 }
 
 const FIXTURE = "src/lib/__tests__/fixtures/consentAuditB2-rollback-5c335b7e.json";
+const DELTA = "src/lib/__tests__/fixtures/b25-expected-delta.json";
 
 describe("B2-6 parity against rollback 5c335b7e", () => {
   it("disclosure decisions, entries, audits and gate reads are byte-identical (new fields stripped)", () => {
@@ -42,6 +44,10 @@ describe("B2-6 parity against rollback 5c335b7e", () => {
     // Random 8-char record tokens are canonicalised by first appearance: async
     // module loads can shift the PRNG sequence between runs; everything else
     // is compared byte-for-byte.
-    expect(canon(snap)).toBe(canon(readFileSync(FIXTURE, "utf8")));
+    // B2-5: the immutable baseline with EXACTLY the listed transforms i–iv applied.
+    const delta = JSON.parse(readFileSync(DELTA, "utf8")).audit as DeltaEntry[];
+    expect(delta.length).toBe(81);
+    const expected = applyDelta(JSON.parse(readFileSync(FIXTURE, "utf8")), delta);
+    expect(canon(snap)).toBe(canon(JSON.stringify(expected, null, 1)));
   });
 });
