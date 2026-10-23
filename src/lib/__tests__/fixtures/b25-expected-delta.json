@@ -1,0 +1,3472 @@
+{
+ "rollbacks": {
+  "matrix": "0089ca4f",
+  "audit": "5c335b7e"
+ },
+ "note": "B2-5 expected delta. Transforms i–iv only (Mitch, Oct 23). Baselines immutable; entries apply to them in order.",
+ "matrix": [
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1110000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "disclosure",
+    1
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "disclosure",
+    3
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (advocate disclosure)",
+   "after": "no:No substance-use disclosure consent covers this advocate, so this can't be shared."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "disclosure",
+    5
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "disclosure",
+    6
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "seed",
+    "patients",
+    0,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "seed",
+    "patients",
+    2,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "seed",
+    "patients",
+    3,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "seed",
+    "patients",
+    3,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia Serrano",
+   "path": [
+    "seed",
+    "patients",
+    3,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "seed",
+    "patients",
+    3,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "seed",
+    "patients",
+    3,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "seed",
+    "patients",
+    3,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "seed",
+    "patients",
+    4,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "seed",
+    "patients",
+    4,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia R.",
+   "path": [
+    "seed",
+    "patients",
+    4,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "seed",
+    "patients",
+    4,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "seed",
+    "patients",
+    4,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "seed",
+    "patients",
+    4,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "seed",
+    "patients",
+    5,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "seed",
+    "patients",
+    5,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "seed",
+    "patients",
+    5,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "seed",
+    "patients",
+    5,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "seed",
+    "patients",
+    5,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "seed",
+    "patients",
+    5,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "seed",
+    "patients",
+    6,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "seed",
+    "patients",
+    6,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Lucía Moreno",
+   "path": [
+    "seed",
+    "patients",
+    6,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "seed",
+    "patients",
+    6,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "seed",
+    "patients",
+    6,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "seed",
+    "patients",
+    6,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "iii",
+   "patient": "Luis Camacho",
+   "path": [
+    "seed",
+    "patients",
+    10,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new02"
+  },
+  {
+   "transform": "iii",
+   "patient": "Jasmine Holt",
+   "path": [
+    "seed",
+    "patients",
+    11,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new03"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1110000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "disclosure",
+    1
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "disclosure",
+    3
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (advocate disclosure)",
+   "after": "no:No substance-use disclosure consent covers this advocate, so this can't be shared."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "disclosure",
+    5
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "disclosure",
+    6
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterBilling",
+    "patients",
+    0,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "afterBilling",
+    "patients",
+    2,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterBilling",
+    "patients",
+    3,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterBilling",
+    "patients",
+    3,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterBilling",
+    "patients",
+    3,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterBilling",
+    "patients",
+    3,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterBilling",
+    "patients",
+    3,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterBilling",
+    "patients",
+    3,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterBilling",
+    "patients",
+    4,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterBilling",
+    "patients",
+    4,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia R.",
+   "path": [
+    "afterBilling",
+    "patients",
+    4,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterBilling",
+    "patients",
+    4,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterBilling",
+    "patients",
+    4,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterBilling",
+    "patients",
+    4,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterBilling",
+    "patients",
+    5,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterBilling",
+    "patients",
+    5,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterBilling",
+    "patients",
+    5,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterBilling",
+    "patients",
+    5,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterBilling",
+    "patients",
+    5,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterBilling",
+    "patients",
+    5,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterBilling",
+    "patients",
+    6,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterBilling",
+    "patients",
+    6,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterBilling",
+    "patients",
+    6,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterBilling",
+    "patients",
+    6,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterBilling",
+    "patients",
+    6,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterBilling",
+    "patients",
+    6,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "iii",
+   "patient": "Luis Camacho",
+   "path": [
+    "afterBilling",
+    "patients",
+    10,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new02"
+  },
+  {
+   "transform": "iii",
+   "patient": "Jasmine Holt",
+   "path": [
+    "afterBilling",
+    "patients",
+    11,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new03"
+  },
+  {
+   "transform": "iii",
+   "patient": "Fictional QA billing patient #7",
+   "path": [
+    "afterBilling",
+    "patients",
+    21,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new04"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1110000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "disclosure",
+    1
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "disclosure",
+    3
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (advocate disclosure)",
+   "after": "no:No substance-use disclosure consent covers this advocate, so this can't be shared."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "disclosure",
+    5
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "disclosure",
+    6
+   ],
+   "op": "set",
+   "before": "Consent record v5qyiwvi (Part 2 disclosure)",
+   "after": "no:The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "afterExternal",
+    "patients",
+    0,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "afterExternal",
+    "patients",
+    2,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterExternal",
+    "patients",
+    3,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterExternal",
+    "patients",
+    3,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterExternal",
+    "patients",
+    3,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterExternal",
+    "patients",
+    3,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterExternal",
+    "patients",
+    3,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "afterExternal",
+    "patients",
+    3,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterExternal",
+    "patients",
+    4,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterExternal",
+    "patients",
+    4,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia R.",
+   "path": [
+    "afterExternal",
+    "patients",
+    4,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterExternal",
+    "patients",
+    4,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterExternal",
+    "patients",
+    4,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "afterExternal",
+    "patients",
+    4,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterExternal",
+    "patients",
+    5,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterExternal",
+    "patients",
+    5,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterExternal",
+    "patients",
+    5,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterExternal",
+    "patients",
+    5,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterExternal",
+    "patients",
+    5,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "afterExternal",
+    "patients",
+    5,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterExternal",
+    "patients",
+    6,
+    "cats"
+   ],
+   "op": "set",
+   "before": "1000000000000",
+   "after": "0000000000000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterExternal",
+    "patients",
+    6,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterExternal",
+    "patients",
+    6,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "no:No substance-use treatment consent is on file for this person, so this can't be shared."
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterExternal",
+    "patients",
+    6,
+    "roles",
+    4
+   ],
+   "op": "set",
+   "before": "clinical_trainee:read:111",
+   "after": "clinical_trainee:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterExternal",
+    "patients",
+    6,
+    "roles",
+    7
+   ],
+   "op": "set",
+   "before": "ecm_provider:read:101",
+   "after": "ecm_provider:noneL:000"
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "afterExternal",
+    "patients",
+    6,
+    "roles",
+    11
+   ],
+   "op": "set",
+   "before": "peer_specialist:read:111",
+   "after": "peer_specialist:noneL:000"
+  },
+  {
+   "transform": "iii",
+   "patient": "Luis Camacho",
+   "path": [
+    "afterExternal",
+    "patients",
+    10,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new02"
+  },
+  {
+   "transform": "iii",
+   "patient": "Jasmine Holt",
+   "path": [
+    "afterExternal",
+    "patients",
+    11,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new03"
+  },
+  {
+   "transform": "iii",
+   "patient": "Fictional QA billing patient #7",
+   "path": [
+    "afterExternal",
+    "patients",
+    21,
+    "disclosure",
+    2
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new04"
+  }
+ ],
+ "audit": [
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "uncovered",
+    0,
+    "out",
+    1
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-2",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Outside Clinic",
+      "type": "provider"
+     },
+     "purpose": "Referral for treatment",
+     "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p1",
+     "channel": "referral_out",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "uncovered",
+    0,
+    "out",
+    2
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-3",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Tulare County",
+      "type": "county"
+     },
+     "purpose": "County reporting",
+     "consentRef": "Consent record wlu108pw",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p1",
+     "channel": "county_report",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "No substance-use treatment consent is on file for this person, so this can't be shared."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "uncovered",
+    0,
+    "out",
+    3
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-4",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Helper",
+      "type": "advocate"
+     },
+     "purpose": "Advocate share",
+     "consentRef": "Consent record wlu108pw (advocate disclosure)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p1",
+     "channel": "advocate_share",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "No substance-use disclosure consent covers this advocate, so this can't be shared."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "uncovered",
+    0,
+    "out",
+    6
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-6",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Valley HIE",
+      "type": "hie"
+     },
+     "purpose": "Treatment",
+     "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p1",
+     "channel": "hie_share",
+     "simulated": true,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+   }
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "uncovered",
+    2,
+    "out",
+    2,
+    "entry",
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia Serrano",
+   "path": [
+    "uncovered",
+    3,
+    "out",
+    2
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-19",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Tulare County",
+      "type": "county"
+     },
+     "purpose": "County reporting",
+     "consentRef": "Consent on file (legacy flag)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p4",
+     "channel": "county_report",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "No substance-use treatment consent is on file for this person, so this can't be shared."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia R.",
+   "path": [
+    "uncovered",
+    4,
+    "out",
+    2
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-24",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Tulare County",
+      "type": "county"
+     },
+     "purpose": "County reporting",
+     "consentRef": "Consent on file (legacy flag)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p-demo-refusal",
+     "channel": "county_report",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "No substance-use treatment consent is on file for this person, so this can't be shared."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "uncovered",
+    5,
+    "out",
+    2
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-29",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Tulare County",
+      "type": "county"
+     },
+     "purpose": "County reporting",
+     "consentRef": "Consent on file (legacy flag)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p-demo-mar-seed",
+     "channel": "county_report",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "No substance-use treatment consent is on file for this person, so this can't be shared."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Lucía Moreno",
+   "path": [
+    "uncovered",
+    6,
+    "out",
+    2
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-34",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Tulare County",
+      "type": "county"
+     },
+     "purpose": "County reporting",
+     "consentRef": "Consent on file (legacy flag)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p-demo-mar-seed-es",
+     "channel": "county_report",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "No substance-use treatment consent is on file for this person, so this can't be shared."
+   }
+  },
+  {
+   "transform": "iii",
+   "patient": "Luis Camacho",
+   "path": [
+    "uncovered",
+    10,
+    "out",
+    2,
+    "entry",
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new02"
+  },
+  {
+   "transform": "iii",
+   "patient": "Jasmine Holt",
+   "path": [
+    "uncovered",
+    11,
+    "out",
+    2,
+    "entry",
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new03"
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "covered",
+    0,
+    "out",
+    1
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-73",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Outside Clinic",
+      "type": "provider"
+     },
+     "purpose": "Referral for treatment",
+     "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p1",
+     "channel": "referral_out",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "covered",
+    0,
+    "out",
+    2
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-74",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Tulare County",
+      "type": "county"
+     },
+     "purpose": "County reporting",
+     "consentRef": "Consent record wlu108pw",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p1",
+     "channel": "county_report",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "No substance-use treatment consent is on file for this person, so this can't be shared."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "covered",
+    0,
+    "out",
+    3
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-75",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Helper",
+      "type": "advocate"
+     },
+     "purpose": "Advocate share",
+     "consentRef": "Consent record wlu108pw (advocate disclosure)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p1",
+     "channel": "advocate_share",
+     "simulated": false,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "No substance-use disclosure consent covers this advocate, so this can't be shared."
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "covered",
+    0,
+    "out",
+    6
+   ],
+   "op": "set",
+   "before": {
+    "ok": true,
+    "notice": "42 CFR Part 2 redisclosure notice (Draft wording — pending counsel review): This record, which has been disclosed to you, is protected by federal confidentiality rules (42 CFR part 2). These rules prohibit you from using or disclosing this record, or testimony that describes the information contained in this record, in any civil, criminal, administrative, or legislative proceedings against the patient, unless authorized by the consent of the patient or by a court order that meets 42 CFR part 2. The federal rules also prohibit any other use or disclosure of this record unless expressly permitted by the written consent of the patient or as otherwise permitted by 42 CFR part 2. A general authorization for the release of medical or other information is NOT sufficient for this purpose.",
+    "entry": {
+     "id": "dl-77",
+     "at": "2026-10-22T12:00:00.000Z",
+     "actorName": "Parity Staff",
+     "actorId": "s-parity",
+     "actingRole": "therapist",
+     "recipient": {
+      "name": "Valley HIE",
+      "type": "hie"
+     },
+     "purpose": "Treatment",
+     "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "patientId": "p1",
+     "channel": "hie_share",
+     "simulated": true,
+     "emergency": false
+    }
+   },
+   "after": {
+    "ok": false,
+    "reason": "The person hasn't signed a consent that lets us share substance-use records with this recipient. Record the consent first."
+   }
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "covered",
+    2,
+    "out",
+    2,
+    "entry",
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "log",
+    3,
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "log",
+    11
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-77",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Valley HIE",
+     "type": "hie"
+    },
+    "purpose": "Treatment",
+    "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p1",
+    "channel": "hie_share",
+    "simulated": true,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "log",
+    13
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-75",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Helper",
+     "type": "advocate"
+    },
+    "purpose": "Advocate share",
+    "consentRef": "Consent record wlu108pw (advocate disclosure)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p1",
+    "channel": "advocate_share",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "log",
+    14
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-74",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Tulare County",
+     "type": "county"
+    },
+    "purpose": "County reporting",
+    "consentRef": "Consent record wlu108pw",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p1",
+    "channel": "county_report",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "log",
+    15
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-73",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Outside Clinic",
+     "type": "provider"
+    },
+    "purpose": "Referral for treatment",
+    "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p1",
+    "channel": "referral_out",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "iii",
+   "patient": "Jasmine Holt",
+   "path": [
+    "log",
+    32,
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new03"
+  },
+  {
+   "transform": "iii",
+   "patient": "Luis Camacho",
+   "path": [
+    "log",
+    37,
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new02"
+  },
+  {
+   "transform": "ii",
+   "patient": "Lucía Moreno",
+   "path": [
+    "log",
+    54
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-34",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Tulare County",
+     "type": "county"
+    },
+    "purpose": "County reporting",
+    "consentRef": "Consent on file (legacy flag)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p-demo-mar-seed-es",
+    "channel": "county_report",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "log",
+    59
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-29",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Tulare County",
+     "type": "county"
+    },
+    "purpose": "County reporting",
+    "consentRef": "Consent on file (legacy flag)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p-demo-mar-seed",
+    "channel": "county_report",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia R.",
+   "path": [
+    "log",
+    64
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-24",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Tulare County",
+     "type": "county"
+    },
+    "purpose": "County reporting",
+    "consentRef": "Consent on file (legacy flag)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p-demo-refusal",
+    "channel": "county_report",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia Serrano",
+   "path": [
+    "log",
+    69
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-19",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Tulare County",
+     "type": "county"
+    },
+    "purpose": "County reporting",
+    "consentRef": "Consent on file (legacy flag)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p4",
+    "channel": "county_report",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "log",
+    74,
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "log",
+    82
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-6",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Valley HIE",
+     "type": "hie"
+    },
+    "purpose": "Treatment",
+    "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p1",
+    "channel": "hie_share",
+    "simulated": true,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "log",
+    84
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-4",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Helper",
+     "type": "advocate"
+    },
+    "purpose": "Advocate share",
+    "consentRef": "Consent record wlu108pw (advocate disclosure)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p1",
+    "channel": "advocate_share",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "log",
+    85
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-3",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Tulare County",
+     "type": "county"
+    },
+    "purpose": "County reporting",
+    "consentRef": "Consent record wlu108pw",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p1",
+    "channel": "county_report",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "log",
+    86
+   ],
+   "op": "remove",
+   "before": {
+    "id": "dl-2",
+    "at": "2026-10-22T12:00:00.000Z",
+    "actorName": "Parity Staff",
+    "actorId": "s-parity",
+    "actingRole": "therapist",
+    "recipient": {
+     "name": "Outside Clinic",
+     "type": "provider"
+    },
+    "purpose": "Referral for treatment",
+    "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+    "recordClasses": [
+     "SUD treatment notes"
+    ],
+    "patientId": "p1",
+    "channel": "referral_out",
+    "simulated": false,
+    "emergency": false
+   },
+   "after": null
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "disclosureAudits",
+    6,
+    "detail",
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    19,
+    "detail",
+    "consentRecordId"
+   ],
+   "op": "delete",
+   "before": "wlu108pw",
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    20
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p1",
+    "detail": {
+     "disclosureLogId": "dl-77",
+     "channel": "hie_share",
+     "recipientType": "hie",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+     "consentRecordId": "wlu108pw",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "Treatment",
+     "simulated": true
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p1",
+    "detail": {
+     "channel": "hie_share",
+     "recipientType": "hie",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": true
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    21,
+    "detail",
+    "consentRecordId"
+   ],
+   "op": "delete",
+   "before": "wlu108pw",
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    23
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p1",
+    "detail": {
+     "disclosureLogId": "dl-75",
+     "channel": "advocate_share",
+     "recipientType": "advocate",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent record wlu108pw (advocate disclosure)",
+     "consentRecordId": "wlu108pw",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "Advocate share",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p1",
+    "detail": {
+     "channel": "advocate_share",
+     "recipientType": "advocate",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    24
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p1",
+    "detail": {
+     "disclosureLogId": "dl-74",
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent record wlu108pw",
+     "consentRecordId": "wlu108pw",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "County reporting",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p1",
+    "detail": {
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    25
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p1",
+    "detail": {
+     "disclosureLogId": "dl-73",
+     "channel": "referral_out",
+     "recipientType": "provider",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+     "consentRecordId": "wlu108pw",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "Referral for treatment",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p1",
+    "detail": {
+     "channel": "referral_out",
+     "recipientType": "provider",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    26,
+    "detail",
+    "consentRecordId"
+   ],
+   "op": "delete",
+   "before": "wlu108pw",
+   "after": null
+  },
+  {
+   "transform": "iii",
+   "patient": "Jasmine Holt",
+   "path": [
+    "disclosureAudits",
+    60,
+    "detail",
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new03"
+  },
+  {
+   "transform": "iii",
+   "patient": "Luis Camacho",
+   "path": [
+    "disclosureAudits",
+    69,
+    "detail",
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new02"
+  },
+  {
+   "transform": "ii",
+   "patient": "Lucía Moreno",
+   "path": [
+    "disclosureAudits",
+    105
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p-demo-mar-seed-es",
+    "detail": {
+     "disclosureLogId": "dl-34",
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent on file (legacy flag)",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "County reporting",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p-demo-mar-seed-es",
+    "detail": {
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "disclosureAudits",
+    114
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p-demo-mar-seed",
+    "detail": {
+     "disclosureLogId": "dl-29",
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent on file (legacy flag)",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "County reporting",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p-demo-mar-seed",
+    "detail": {
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia R.",
+   "path": [
+    "disclosureAudits",
+    123
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p-demo-refusal",
+    "detail": {
+     "disclosureLogId": "dl-24",
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent on file (legacy flag)",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "County reporting",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p-demo-refusal",
+    "detail": {
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Alicia Serrano",
+   "path": [
+    "disclosureAudits",
+    132
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p4",
+    "detail": {
+     "disclosureLogId": "dl-19",
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent on file (legacy flag)",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "County reporting",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p4",
+    "detail": {
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "iii",
+   "patient": "Marcus L.",
+   "path": [
+    "disclosureAudits",
+    141,
+    "detail",
+    "consentRef"
+   ],
+   "op": "set",
+   "before": "Consent on file (legacy flag)",
+   "after": "Consent record b25new01"
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    154,
+    "detail",
+    "consentRecordId"
+   ],
+   "op": "delete",
+   "before": "wlu108pw",
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    155
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p1",
+    "detail": {
+     "disclosureLogId": "dl-6",
+     "channel": "hie_share",
+     "recipientType": "hie",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+     "consentRecordId": "wlu108pw",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "Treatment",
+     "simulated": true
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p1",
+    "detail": {
+     "channel": "hie_share",
+     "recipientType": "hie",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": true
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    156,
+    "detail",
+    "consentRecordId"
+   ],
+   "op": "delete",
+   "before": "wlu108pw",
+   "after": null
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    158
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p1",
+    "detail": {
+     "disclosureLogId": "dl-4",
+     "channel": "advocate_share",
+     "recipientType": "advocate",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent record wlu108pw (advocate disclosure)",
+     "consentRecordId": "wlu108pw",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "Advocate share",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p1",
+    "detail": {
+     "channel": "advocate_share",
+     "recipientType": "advocate",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    159
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p1",
+    "detail": {
+     "disclosureLogId": "dl-3",
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent record wlu108pw",
+     "consentRecordId": "wlu108pw",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "County reporting",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p1",
+    "detail": {
+     "channel": "county_report",
+     "recipientType": "county",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    160
+   ],
+   "op": "set",
+   "before": {
+    "action": "part2_disclosure",
+    "patientId": "p1",
+    "detail": {
+     "disclosureLogId": "dl-2",
+     "channel": "referral_out",
+     "recipientType": "provider",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "consentRef": "Consent record wlu108pw (Part 2 disclosure)",
+     "consentRecordId": "wlu108pw",
+     "categories": [
+      "sud_treatment"
+     ],
+     "purpose": "Referral for treatment",
+     "simulated": false
+    }
+   },
+   "after": {
+    "action": "part2_disclosure_blocked",
+    "patientId": "p1",
+    "detail": {
+     "channel": "referral_out",
+     "recipientType": "provider",
+     "recordClasses": [
+      "SUD treatment notes"
+     ],
+     "simulated": false
+    }
+   }
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "disclosureAudits",
+    161,
+    "detail",
+    "consentRecordId"
+   ],
+   "op": "delete",
+   "before": "wlu108pw",
+   "after": null
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesBefore",
+    0,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesBefore",
+    0,
+    "cats",
+    1
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesBefore",
+    0,
+    "cats",
+    2
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesBefore",
+    0,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesBefore",
+    0,
+    "active"
+   ],
+   "op": "set",
+   "before": "wlu108pw",
+   "after": null
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "gatesBefore",
+    3,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "gatesBefore",
+    3,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "gatesBefore",
+    4,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "gatesBefore",
+    4,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "gatesBefore",
+    5,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "gatesBefore",
+    5,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "gatesBefore",
+    6,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "gatesBefore",
+    6,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesAfter",
+    0,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesAfter",
+    0,
+    "cats",
+    1
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesAfter",
+    0,
+    "cats",
+    2
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesAfter",
+    0,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "ii",
+   "patient": "Daniel M.",
+   "path": [
+    "gatesAfter",
+    0,
+    "active"
+   ],
+   "op": "set",
+   "before": "wlu108pw",
+   "after": null
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "gatesAfter",
+    3,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia Serrano",
+   "path": [
+    "gatesAfter",
+    3,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "gatesAfter",
+    4,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Alicia R.",
+   "path": [
+    "gatesAfter",
+    4,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "gatesAfter",
+    5,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Marcus Whitfield",
+   "path": [
+    "gatesAfter",
+    5,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "gatesAfter",
+    6,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "Lucía Moreno",
+   "path": [
+    "gatesAfter",
+    6,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "iv",
+   "patient": "(seed)",
+   "path": [
+    "consentAuditCount"
+   ],
+   "op": "set",
+   "before": 11,
+   "after": 15,
+   "events": [
+    "consent.captured legal_part2_disclosure — Daniel M. → Porterville Community Resource Center (fictional), sys_admin seed",
+    "consent.captured part2_tpo_single — Marcus L. → Adelante program, treatment, sys_admin seed",
+    "consent.captured part2_tpo_single — Luis Camacho → Adelante program, treatment, sys_admin seed",
+    "consent.captured part2_tpo_single — Jasmine Holt → Adelante program, treatment, sys_admin seed"
+   ]
+  }
+ ]
+}

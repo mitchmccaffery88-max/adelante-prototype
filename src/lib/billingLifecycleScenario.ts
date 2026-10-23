@@ -5,6 +5,7 @@ import { getActingRole, getActingStaff, setActingStaff, type StaffRole } from "@
 import { attestationStatement, buildAttestationRecord } from "@/lib/attestation";
 import { ASAM_DIMENSIONS, type AsamAssessment } from "@/lib/asam";
 import { demoLocalDayAt } from "@/lib/demoTime";
+import { PART2_ELEMENT_KEYS } from "@/lib/consentRecordModel";
 
 /** Opt-in only. Keys are stable; all record IDs come from public creators. */
 export const BILLING_LIFECYCLE_KEYS = ["paid", "receipt_balance", "denied", "writeoff_reversed", "blocked", "sliding_fee", "dmc_ods"] as const;
@@ -44,9 +45,19 @@ export function buildBillingLifecycleScenario(options: { complete?: boolean } = 
       acting("s-bill1", "billing");
       action("payment_arrangement", "setPaymentArrangement", patient, patient.id, key === "sliding_fee" ? "sliding_fee" : "self_pay");
       if (key === "dmc_ods") {
+        // B2-5: flags grant nothing. One signed treatment-only Part 2 capture
+        // (program recipient), signed by this fictional patient today.
         acting("s-cm1", "ecm_provider");
-        action("consent_purpose_set", "staffSetConsent", patient, patient.id, "part2Sud", true,
-          { role: "ecm_provider", staffId: "s-cm1", staffName: "Luz Herrera" }, "Simulated QA consent");
+        action("consent_record_capture", "captureConsentRecord", patient, {
+          draft: {
+            patientId: patient.id, consentType: "part2_tpo_single",
+            recipients: [{ kind: "org", name: "Adelante", directoryRef: "adelante-program" }],
+            purpose: "treatment", purposeCode: "treatment", items: ["SUD treatment information"],
+            part2Elements: Object.fromEntries(PART2_ELEMENT_KEYS.map(k => [k, true])), expiresOnEvent: "Patient revokes this consent",
+          },
+          method: "e_sign", signer: `${patient.firstName} ${patient.lastName}`, relationship: "patient", attested: true,
+          actor: { role: "ecm_provider", staffId: "s-cm1", name: "Luz Herrera" },
+        });
         // These are the existing public ASAM panel paths, not internal writes.
         const author = acting("s-tr1", "clinical_trainee");
         const draft = action<AsamAssessment>("asam", "saveAsamDraft", patient, patient.id, {
