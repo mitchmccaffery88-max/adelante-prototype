@@ -135,3 +135,42 @@ Untyped section records and typed records are two separate models: `activeConsen
 
 Decision needed: (a) allow one extra itemized capture audit per live action (second typed record), or (b) keep these writers untyped with signature provenance attached, or (c) other.
 Not run: test edits, browser suite, screenshots, final SHA. Emergency module untouched; no counseling release; <11 unchanged; no publish.
+
+## 10. Option (b) and gate consistency — applied; historical assertion STOP
+
+The Oct 23 option (b) decision resolves §9. Live untyped records remain live; migration history and flags never answer. Sequential disclosure-ID placeholders are explicitly confirmed as transform (ii).
+
+### Writer mapping
+
+| Writer | Applied provenance / scope | Audit behavior |
+|---|---|---|
+| `scribe.ts:243–264` grant | Existing typed-name signature, e_sign, actual capture time/recorder; untyped, same sections; no hash invented | Existing create + scribe + registry events retained; new test asserts exactly 3 |
+| `scribe.ts` withdrawal | Existing withdrawal identity/time retained; no new signature invented for withdrawal | Unchanged |
+| `ConsentRecordsPanel.tsx:86–105` | Existing typed-name attestation becomes signature extension; live untyped same sections; no document/hash | Unchanged create path |
+| `outpatientCare.ts:318` legal grant | Existing patient signature and recorder/time attached; live untyped same sections; no document/hash | Existing create/legal audits unchanged |
+| `outpatientCare.ts` revocation | Existing patient/actor withdrawal metadata retained; no new signature invented | Unchanged |
+| `DemoStateSwitcher.tsx:245–264` | Existing fictional Demo Patient signature/recorder/time attached; same live untyped ROI scope | Same create path; source contains no consent flag writer |
+| `consentForms.ts:324–329` | Real form signature and document retained; advocate attestation keeps its real advocate relationship in frozen SignedCopy, not falsely relabelled patient/guardian/proxy | Unchanged |
+
+`consentGate.ts:60–70` never calls historical callbacks (some read flags). Applicable typed records decide; otherwise an explicitly mapped live section answers via `_consentCategoryToday`. Category needs map only their existing section scopes. Coordinator/counseling scopes have no matching section category and retain typed-only evidence; no new scope mapping was invented. `part2Disclosure.ts:210–214` applies the same precedence to named legal decisions. `outpatientCare.ts:227–232` applies it to the HLOC send blocker as well, restoring live legal walkthroughs without bypassing revoked typed evidence.
+
+### Validation evidence
+
+- Restarted preview, full units: **32 failed / 2,928 passed, literal EXIT 1**, `/tmp/b25-units-current.log`. These are the existing flag-positive, inventory/count and old source/snapshot assertions; this run preceded the HLOC blocker consistency fix.
+- Final focused run: **19/19, 6 files, literal EXIT 0**, `/tmp/b25-live-verified.log`: new live-record tests (2), migration (8), billing QA (2), clinicalCoreB (5), immutable matrix (1), immutable audit parity (1). Both original baseline files remain untouched; named legal and billing parity pass with the approved transforms.
+- New live test exercises actual registry actions, signature readback, no invented document, flag-callback denial, migrated-history denial and revoked typed precedence over still-live untyped evidence. Existing clinicalCoreB HLOC walkthrough now passes unchanged.
+- Emergency module diff vs 99a8b776 is **0 bytes**; current SHA-256 `287dec2c2898dcb227e76aaecb418eb175230d5ea41ed38428ab41a12e01907a`. Earlier §7 hash is historical, not this checkout's current hash. No emergency tests edited. No counseling release/cohort restoration.
+- Latest preview signal: **build OK**, 17:35:04 UTC. Missing Supabase client dependency restored; no database changes or project rebind performed.
+
+### Test edit ledger for this batch
+
+| File:line | Before | After | Keep/tighten |
+|---|---|---|---|
+| `consentMigrationB2.test.ts:39` (new B2-5 test) | Invalid category `legal_disclosure` | Actual category `legal_part2_disclosure` | Tighten: tests the real legal category denial; no assertion removed |
+| `consentLiveB25.test.ts` (NEW) | No live consistency tests | Two real-action tests, flag/history-alone denials, exact existing 3-event scribe count, live signature readback, typed revoked precedence | Additive; no old assertions changed |
+
+### STOP: older immutable gate snapshot requires a separately enumerated migration delta
+
+`consentRecordModelB2.test.ts:38–41` requires every seeded gate to equal the immutable `consentParityB2-1.json` (a2601c9f-era baseline) literally. This includes flag-only positive grants for Alicia Serrano/Alicia R./Marcus Whitfield/Lucía Moreno, which Mitch requires to deny. Keeping that literal positive assertion requires restoring prohibited grants; replacing/skipping it or updating its baseline violates the keep/tighten rule. The explicit expected-delta authority so far names the 0089ca4f/5c335b7e parity snapshots, not this additional a2601c9f snapshot. No edit made to this test or its baseline. **STOP before remaining fixture edits/full browser validation.** Proposed resolution: permit an additional exact enumerated narrowing/provenance delta for this historical snapshot, preserving its immutable baseline and every unrelated field.
+
+Full browser suite was not started; no `/tmp/b25-browser.log` EXIT or successful closeout is claimed. Screenshots were not generated/restored this batch. Backend follow-up recorded, not implemented. Supabase config confirms existing connected ref `bnvukmpmwuhftvjpnwqi`; the tools available do not establish its display name is Adelante Pathways Beta, so no name match or new connection is claimed. No publishing.
