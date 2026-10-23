@@ -32,7 +32,8 @@ export function referrerDecisionFor(r: Referral, event: ReferrerEvent): Referrer
   return decideReferrerUpdate(event, {
     type,
     sud,
-    part2ConsentNamed: sud && (pid && named.length ? consentGate(pid, part2Need, () => part2ConsentNamesRecipient(r.enrolledPatientId, { name: r.referrerName, organization: r.referringAgency })) : part2ConsentNamesRecipient(r.enrolledPatientId, { name: r.referrerName, organization: r.referringAgency })),
+    // today = a live legal-disclosure row naming this referrer, only while the live (non-legacy) legal section is on.
+    part2ConsentNamed: sud && (pid && named.length ? consentGate(pid, part2Need, () => part2ConsentNamesRecipient(pid, { name: r.referrerName, organization: r.referringAgency }) && AdelanteEHR.hasLegalDisclosureConsent(pid)) : part2ConsentNamesRecipient(r.enrolledPatientId, { name: r.referrerName, organization: r.referringAgency })),
     authorized: pid && named.length ? consentGate(pid, authNeed, () => authorizationActive(referrerAuthorizationFor(r.id), referrerDisplayName(r))) : authorizationActive(referrerAuthorizationFor(r.id), referrerDisplayName(r)),
   });
 }
