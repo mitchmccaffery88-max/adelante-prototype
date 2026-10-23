@@ -49,8 +49,8 @@ export function ensureNamedPart2Form(): void {
 
 /** Refuse invented provenance: migration never verifies or signs old history. */
 export function migrateUnprovenConsents(input: { patientId: string; verify?: boolean; actor: { role: StaffRole; staffId: string; name: string } }): number {
-  if (input.actor.role !== SYSTEM_MIGRATION_ACTOR_ROLE) throw new Error("Only the system consent migration can mark legacy consent history.");
   if (input.verify) throw new Error("A migration cannot invent a signed copy, form version or hash.");
+  if (input.actor.role !== SYSTEM_MIGRATION_ACTOR_ROLE) throw new Error("Only the system consent migration can mark legacy consent history.");
   return AdelanteEHR.markLegacyConsentsUnverified(input.patientId);
 }
 
