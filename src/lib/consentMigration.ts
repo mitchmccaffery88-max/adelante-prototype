@@ -10,6 +10,7 @@ type Runner = <T>(id: string, actor: RunActor, patient: ReturnType<typeof Adelan
 const actor = { role: "sys_admin" as const, staffId: "s-admin1", staffName: "Adelante System Admin" };
 const storeActor = { role: "sys_admin" as const, staffId: "s-admin1", name: "Adelante System Admin" };
 let runner: Runner | undefined;
+let registryReady = false;
 const pending: CaptureDraft[] = [];
 const captured = new Set<string>();
 
@@ -62,7 +63,6 @@ export function requestDemoConsentCapture(draft: CaptureDraft): void {
   capture(draft);
 }
 
-let registryReady = false;
 /** Called by runAction.ts once the runner exists; seeds only when the action registry is also loaded. */
 export function registerConsentMigrationRunner(run: Runner): void {
   runner = run;
