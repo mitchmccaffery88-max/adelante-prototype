@@ -187,6 +187,32 @@ const B2: [string, string][] = [
     '  if (typeof console !== "undefined") console.warn("[demo seed] tracking history", e);\n}\n',
     '  if (typeof console !== "undefined") console.warn("[demo seed] tracking history", e);\n}\n\n// \u00a7B2-4 \u2014 the one consent gate reads this ledger.\nregisterConsentLedger(AdelanteEHR);\n',
   ],
+  // B2-5 (Mitch, Oct 23) — legacy flags grant nothing; legacyUnverified migration.
+  // B2-5.1 typedRecordApplies import
+  [
+    'import { categoryNeed, consentGate, registerConsentLedger } from "./consentGate";\n',
+    'import { categoryNeed, consentGate, registerConsentLedger, typedRecordApplies } from "./consentGate";\n',
+  ],
+  // B2-5.2 activeConsentRecord skips legacyUnverified
+  [
+    '      (r) => r.patientId === patientId && !r.consentType && !r.needsReviewAfterMerge && effectiveConsentStatus(r, at) === "active",',
+    '      (r) => r.patientId === patientId && !r.consentType && !r.legacyUnverified && !r.needsReviewAfterMerge && effectiveConsentStatus(r, at) === "active",',
+  ],
+  // B2-5.3 the wrapper falls back to today's source only when no typed record applies
+  [
+    "    return need ? consentGate(patientId, need, today, at) : today();\n  },",
+    "    // B2-5: with no applicable typed record, only a live post-migration record answers (never a flag).\n    return need && typedRecordApplies(patientId, need) ? consentGate(patientId, need, today, at) : today();\n  },",
+  ],
+  // B2-5.4 _consentCategoryToday drops the flag fallback; markLegacyConsentsUnverified added
+  [
+    '    const has = consentRecords.some((r) => r.patientId === patientId && !r.consentType && !r.needsReviewAfterMerge);\n    if (!has) {\n      // Legacy fallback: patients with no structured record yet.\n      const p = patients.find((x) => x.id === patientId);\n      if (!p) return false;\n      if (category !== "sud_treatment") return false;\n      return p.consentState?.part2Sud ?? p.consents.part2Sud;\n    }\n    const rec = AdelanteEHR.activeConsentRecord(patientId, at);\n    if (!rec) return false;\n    return Boolean(rec.sections.find((s) => s.category === category)?.authorized);\n  },',
+    '    // B2-5: flags and records present at migration (legacyUnverified) grant\n    // nothing; live writes after migration keep today\'s scope. Carried-forward\n    // sections cannot come from an unverified record (activeConsentRecord skips them).\n    const rec = AdelanteEHR.activeConsentRecord(patientId, at);\n    if (!rec || rec.legacyUnverified) return false;\n    return Boolean(rec.sections.find((s) => s.category === category)?.authorized);\n  },\n  /** Migration retains every historical field and merge hold; it never verifies. */\n  markLegacyConsentsUnverified(patientId: string): number {\n    let count = 0;\n    for (const rec of consentRecords) {\n      if (rec.patientId !== patientId || rec.consentType || rec.legacyUnverified) continue;\n      rec.legacyUnverified = true;\n      count++;\n    }\n    return count;\n  },',
+  ],
+  // B2-5.5 seeded legacy-toggle records are born legacyUnverified
+  [
+    '          source: "legacy consent toggle",\n          signedAt: new Date().toISOString(),',
+    '          source: "legacy consent toggle",\n          legacyUnverified: true,\n          signedAt: new Date().toISOString(),',
+  ],
 ];
 
 /** Rollback text with only the approved B2-1 substitutions applied (each must match exactly once). */
