@@ -7,6 +7,7 @@ import { AdelanteEHR, type Patient } from "./ehr";
 import type { StaffRole } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
 import { disclose, registerLegalDisclosureSource, type Part2RecordClass } from "./part2Disclosure";
+import { requestDemoConsentCapture } from "./consentMigration";
 
 export type EpisodeProgram = "outpatient_mh" | "outpatient_sud" | "ecm";
 export const EPISODE_PROGRAM_LABEL: Record<EpisodeProgram, string> = {
@@ -222,7 +223,7 @@ export function createHlocReferral(input: {
 }
 /** Why sending is blocked, or undefined. Outside SUD provider needs a legal Part 2 disclosure consent. */
 export function hlocSendBlocker(r: HlocReferral): string | undefined {
-  if (r.outsideSudProvider && !AdelanteEHR.hasLegalDisclosureConsent(r.patientId))
+  if (r.outsideSudProvider && !AdelanteEHR.consentCovers(r.patientId, { type: "legal_part2_disclosure", recipient: r.destination, purpose: "Referral for treatment", item: "SUD referral information" }))
     return "Sending to an outside SUD provider needs the patient's 42 CFR Part 2 disclosure consent. Record it first.";
   return undefined;
 }
@@ -402,7 +403,8 @@ export function seedOutpatientCareDemo(): void {
       } catch {
         /* expected: blocked, audited */
       }
-      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: r.destination, purpose: "Referral to residential treatment" });
+      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: r.destination, purpose: "Referral for treatment" });
+      requestDemoConsentCapture({ patientId: jordan.id, consentType: "legal_part2_disclosure", recipients: [{ kind: "org", name: r.destination }], purpose: "Referral for treatment", items: ["SUD referral information"] });
       advanceHlocReferral(r.id, "sent", REYES);
     });
 }

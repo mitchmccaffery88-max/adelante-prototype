@@ -37,7 +37,8 @@ export type FormKey =
   | "po_release"
   | "advocate_patient"
   | "advocate_attestation"
-  | "ai_recording";
+  | "ai_recording"
+  | "part2_named_org";
 export type SignatureMethod = "checkbox" | "typed_name" | "drawn";
 export type FormStatus = "draft" | "legal_review" | "approved" | "published" | "retired";
 type Bi = { en: string; es: string };
@@ -387,12 +388,13 @@ export function migrateLegacyConsents(patientId: string): boolean {
   ];
   if (!sections.some((s) => s.authorized) && !p.consents?.hipaa) return false;
   if (p.consents?.hipaa) sections.push({ category: "hipaa_authorization", authorized: true });
-  AdelanteEHR.createConsentRecord({ patientId: p.id, formType: "NonAB133", source: "intake (legacy)", signedByName: `${p.firstName} ${p.lastName}`, attested: true, effectiveDate: (p.consents?.signedAt ?? new Date().toISOString()).slice(0, 10), sections, capturedBy: { staffName: "Migration", role: "system" } });
+  AdelanteEHR.createConsentRecord({ patientId: p.id, formType: "NonAB133", source: "intake (legacy)", signedByName: `${p.firstName} ${p.lastName}`, attested: true, effectiveDate: (p.consents?.signedAt ?? new Date().toISOString()).slice(0, 10), sections, capturedBy: { staffName: "Migration", role: "system" }, extension: { legacyUnverified: true } });
   return true;
 }
 
 // ------------------------------------------------------------------ revoke
 export const CARE_IMPACT: Record<FormKey, Bi> = {
+  part2_named_org: { en: "Sharing with this named organization stops.", es: "Dejas de compartir con esta organización. (Borrador — pendiente de revisión de traducción)" },
   hipaa: { en: "Without this, care can't start or continue at Adelante.", es: "Sin esto, la atención no puede empezar ni continuar en Adelante. (Borrador)" },
   telehealth: { en: "Your visits will be in person only.", es: "Sus visitas serán solo en persona. (Borrador)" },
   portal: { en: "Staff will help you with forms and messages instead of the app.", es: "El personal le ayudará con formularios y mensajes en lugar de la app. (Borrador)" },

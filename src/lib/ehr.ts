@@ -12692,7 +12692,7 @@ export const AdelanteEHR = {
    */
   activeConsentRecord(patientId: string, at = new Date()): ConsentRecord | undefined {
     return consentRecords.find(
-      (r) => r.patientId === patientId && !r.consentType && !r.needsReviewAfterMerge && effectiveConsentStatus(r, at) === "active",
+      (r) => r.patientId === patientId && !r.consentType && !r.legacyUnverified && !r.needsReviewAfterMerge && effectiveConsentStatus(r, at) === "active",
     );
   },
   /**
@@ -12716,17 +12716,21 @@ export const AdelanteEHR = {
     category: ConsentCategory,
     at = new Date(),
   ): boolean {
-    const has = consentRecords.some((r) => r.patientId === patientId && !r.consentType && !r.needsReviewAfterMerge);
-    if (!has) {
-      // Legacy fallback: patients with no structured record yet.
-      const p = patients.find((x) => x.id === patientId);
-      if (!p) return false;
-      if (category !== "sud_treatment") return false;
-      return p.consentState?.part2Sud ?? p.consents.part2Sud;
-    }
+    // B2-5: only independently signed form records can serve the remaining
+    // category callers. Old flags and unproven sections grant nothing.
     const rec = AdelanteEHR.activeConsentRecord(patientId, at);
-    if (!rec) return false;
+    if (!rec || !rec.signature || !rec.document || rec.legacyUnverified) return false;
     return Boolean(rec.sections.find((s) => s.category === category)?.authorized);
+  },
+  /** Migration retains every historical field and merge hold; it never verifies. */
+  markLegacyConsentsUnverified(patientId: string): number {
+    let count = 0;
+    for (const rec of consentRecords) {
+      if (rec.patientId !== patientId || rec.consentType || rec.legacyUnverified) continue;
+      rec.legacyUnverified = true;
+      count++;
+    }
+    return count;
   },
   /**
    * §B2-1 — does a typed record cover this use, evaluated live (no caching)?
@@ -12832,6 +12836,7 @@ export const AdelanteEHR = {
       status: "active",
       supersedesId: input.supersedesId ?? prior?.id,
       sections: input.sections,
+      ...(!ext?.consentType && !ext?.signature ? { legacyUnverified: true } : {}),
       ...(ext ?? {}),
     };
     consentRecords.unshift(rec);
@@ -13003,6 +13008,7 @@ export const AdelanteEHR = {
           patientId: p.id,
           formType: "NonAB133",
           source: "legacy consent toggle",
+          legacyUnverified: true,
           signedAt: new Date().toISOString(),
           signedBy: { name: `${p.firstName} ${p.lastName}`, relationship: "patient" },
           attestationMethod: "checkbox_only",

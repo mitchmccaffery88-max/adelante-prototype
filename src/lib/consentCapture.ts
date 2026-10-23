@@ -27,6 +27,7 @@ export const UPLOAD_SIMULATED_LABEL = "Simulated — paper copy is not stored in
 /** Template (published form) behind each type, where one exists. */
 export const TEMPLATE_FOR: Partial<Record<ConsentType, FormKey>> = {
   part2_tpo_single: "part2",
+  legal_part2_disclosure: "part2_named_org",
   hipaa_authorization: "hipaa",
   telehealth: "telehealth",
   group_confidentiality: "group",

@@ -10,6 +10,7 @@ import { AdelanteEHR, type AuditEvent, type Patient } from "@/lib/ehr";
 import { chartAction, REGISTRY_VERSION, type ChartAction, type ChartActor } from "@/lib/chartActions";
 import { featureFlag, isFeatureEnabled, SIMULATED_LABEL, type FeatureId } from "@/lib/features";
 import { SUD_MEDICATION_NAMES } from "@/lib/sudMedClassifier";
+import { registerConsentMigrationRunner } from "@/lib/consentMigration";
 
 export const ACTION_EVENTS = ["action.succeeded", "action.blocked", "action.cosign_routed"] as const;
 export type ActionEventName = (typeof ACTION_EVENTS)[number];
@@ -232,3 +233,5 @@ export function recordBlockedAttempt(actionId: string, actor: RunActor, patient?
   const r = runAction(actionId, actor, patient);
   return r.ok ? null : r.reason;
 }
+
+registerConsentMigrationRunner(runAction);
