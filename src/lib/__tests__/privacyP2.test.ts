@@ -6,6 +6,7 @@ import { runAction } from "@/lib/actions/runAction";
 import { listDisclosureLog } from "@/lib/part2Disclosure";
 import { COORDINATOR_SUD_ITEMS, coordinatorSudCanRead, coordinatorNoteCanRead, coordinatorEmergencyFor, validateCoordinatorEmergency, _resetCoordinatorEmergencyForTests } from "@/lib/coordinatorSudAccess";
 import { coordinatorSudView } from "@/lib/coordinatorSudView";
+import { captureCoordination, captureCounselingRelease, freshTestPatient } from "@/test/typedConsentCapture";
 
 const coord = { role: "clinical_coordinator" as const, staffId: "p2-actor" };
 const first = () => {
@@ -17,12 +18,25 @@ const patient = (consent?: "tpo" | "specific_written", release?: boolean): Patie
 afterEach(() => { vi.useRealTimers(); _resetCoordinatorEmergencyForTests(); _resetChartAccessForTests(); });
 
 describe("Privacy P2 — minimum-necessary consent and release", () => {
+  // B2-5 ledger (tighten): positive flag fixtures replaced by real typed
+  // captures (runAction("consent_record_capture"), care-coordination scope);
+  // each test also asserts that the flag alone grants nothing.
+  const typedFor = (consent?: "tpo" | "specific_written", release?: boolean): Patient => {
+    const p = freshTestPatient("P2");
+    if (consent) captureCoordination(p.id, consent === "tpo" ? "part2_tpo_single" : "part2_specific_written", [...COORDINATOR_SUD_ITEMS]);
+    if (release) captureCounselingRelease(p.id);
+    return AdelanteEHR.getPatient(p.id)!;
+  };
+  const flagOnly = (consent?: "tpo" | "specific_written", release?: boolean): Patient => ({ ...freshTestPatient("P2flag"), sudCoordinationConsent: consent, sudCounselingNotesRelease: release });
   it.each(["tpo", "specific_written"] as const)("%s permits exactly each B item", (consent) => {
-    for (const item of COORDINATOR_SUD_ITEMS) expect(coordinatorSudCanRead(coord, patient(consent), item)).toBe(true);
-    expect(coordinatorSudCanRead(coord, patient(consent), "counseling_notes")).toBe(false);
-    expect(canAccess(coord.role, "screeners_sud", patient(consent)).level).toBe("none");
-    expect(canAccess(coord.role, "group_notes", patient(consent))).toEqual(canAccess(coord.role, "group_notes", patient()));
-    expect(coordinatorNoteCanRead(coord, patient(consent), { category: "group" })).toBe(false);
+    const flag = flagOnly(consent, true);
+    for (const item of [...COORDINATOR_SUD_ITEMS, "counseling_notes" as const]) expect(coordinatorSudCanRead(coord, flag, item)).toBe(false);
+    const p = typedFor(consent);
+    for (const item of COORDINATOR_SUD_ITEMS) expect(coordinatorSudCanRead(coord, p, item)).toBe(true);
+    expect(coordinatorSudCanRead(coord, p, "counseling_notes")).toBe(false);
+    expect(canAccess(coord.role, "screeners_sud", p).level).toBe("none");
+    expect(canAccess(coord.role, "group_notes", p)).toEqual(canAccess(coord.role, "group_notes", patient()));
+    expect(coordinatorNoteCanRead(coord, p, { category: "group" })).toBe(false);
   });
   it("no consent hides all B items", () => {
     for (const item of COORDINATOR_SUD_ITEMS) expect(coordinatorSudCanRead(coord, patient(), item)).toBe(false);
@@ -31,22 +45,32 @@ describe("Privacy P2 — minimum-necessary consent and release", () => {
   });
   it("counseling is blocked without its separate release, and allowed with it", () => {
     const n = { restrictedTier: "psychotherapy_notes" as const };
-    expect(coordinatorNoteCanRead(coord, patient("tpo"), n)).toBe(false);
-    expect(coordinatorNoteCanRead(coord, patient("specific_written", false), n)).toBe(false);
-    expect(coordinatorNoteCanRead(coord, patient(undefined, true), n)).toBe(true);
-    expect(canAccess(coord.role, "psychotherapy_notes", patient(undefined, true)).level).toBe("read");
+    expect(coordinatorNoteCanRead(coord, flagOnly(undefined, true), n)).toBe(false);
+    expect(canAccess(coord.role, "psychotherapy_notes", flagOnly(undefined, true)).level).not.toBe("read");
+    expect(coordinatorNoteCanRead(coord, typedFor("tpo"), n)).toBe(false);
+    expect(coordinatorNoteCanRead(coord, typedFor("specific_written", false), n)).toBe(false);
+    const released = typedFor(undefined, true);
+    expect(coordinatorNoteCanRead(coord, released, n)).toBe(true);
+    expect(canAccess(coord.role, "psychotherapy_notes", released).level).toBe("read");
   });
   it("never opens group narrative or ordinary non-SUD notes", () => {
-    expect(coordinatorNoteCanRead(coord, patient("tpo"), { category: "group" })).toBe(false);
-    expect(coordinatorNoteCanRead(coord, patient("tpo"), { category: "medical" })).toBe(false);
-    expect(coordinatorNoteCanRead(coord, patient("tpo"), { category: "sud" })).toBe(true);
+    expect(coordinatorNoteCanRead(coord, flagOnly("tpo"), { category: "sud" })).toBe(false);
+    const p = typedFor("tpo");
+    expect(coordinatorNoteCanRead(coord, p, { category: "group" })).toBe(false);
+    expect(coordinatorNoteCanRead(coord, p, { category: "medical" })).toBe(false);
+    expect(coordinatorNoteCanRead(coord, p, { category: "sud" })).toBe(true);
   });
   it("other roles get no new item-policy or counseling grant", () => {
-    const before = STAFF_ROLES.map(({ key }) => [key, canAccess(key, "screeners_sud", patient()).level, canAccess(key, "psychotherapy_notes", patient()).level]);
-    const after = STAFF_ROLES.map(({ key }) => [key, canAccess(key, "screeners_sud", patient("tpo", true)).level, canAccess(key, "psychotherapy_notes", patient("tpo", true)).level]);
-    expect(after.filter((row, i) => JSON.stringify(row) !== JSON.stringify(before[i])).map((row) => row[0])).toEqual(["clinical_coordinator"]);
+    const none = typedFor();
+    const flag = flagOnly("tpo", true);
+    const full = typedFor("tpo", true);
+    const row = (key: (typeof STAFF_ROLES)[number]["key"], p: Patient) => [key, canAccess(key, "screeners_sud", p).level, canAccess(key, "psychotherapy_notes", p).level];
+    const before = STAFF_ROLES.map(({ key }) => row(key, none));
+    expect(STAFF_ROLES.map(({ key }) => row(key, flag))).toEqual(before);
+    const after = STAFF_ROLES.map(({ key }) => row(key, full));
+    expect(after.filter((r, i) => JSON.stringify(r) !== JSON.stringify(before[i])).map((r) => r[0])).toEqual(["clinical_coordinator"]);
     for (const { key } of STAFF_ROLES.filter((r) => r.key !== "clinical_coordinator")) {
-      expect(coordinatorSudCanRead({ role: key }, patient("tpo", true), "diagnoses")).toBe(false);
+      expect(coordinatorSudCanRead({ role: key }, full, "diagnoses")).toBe(false);
     }
   });
 });

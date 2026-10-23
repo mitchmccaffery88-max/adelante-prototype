@@ -48,3 +48,13 @@ export function revokeTypedConsentForTest(rec: ConsentRecord): void {
   });
   if (!r.ok) throw new Error(r.reason);
 }
+let freshN = 0;
+/** A fresh fictional patient created through the real registry action. */
+export function freshTestPatient(label = "Typed"): ReturnType<typeof AdelanteEHR.createPatient> {
+  const n = ++freshN;
+  const r = runAction("patient_create_anyway", admin, undefined, {
+    via: "createPatient", args: [{ firstName: label, lastName: `Consent fixture ${n}`, dob: `1985-0${(n % 9) + 1}-${String((n % 27) + 1).padStart(2, "0")}` }],
+  });
+  if (!r.ok) throw new Error(r.reason);
+  return r.value as ReturnType<typeof AdelanteEHR.createPatient>;
+}
