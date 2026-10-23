@@ -45,7 +45,7 @@ export function validateEntry(e: DeltaEntry): void {
   const b = e.before, a = e.after;
   switch (e.transform) {
     case "i":
-      if (!NARROWED.includes(e.patient)) bad("narrowing for an unlisted patient");
+      if (!NARROWED.includes(e.patient) && !NARROWED_B21.includes(e.patient)) bad("narrowing for an unlisted patient");
       if (e.op !== "set") bad("i is a value change");
       if (b === true && a === false) return;
       if (typeof b === "string" && typeof a === "string" && (/^[01]+$/.test(b) ? bitsNarrow(b, a) : roleNarrow(b, a))) return;
