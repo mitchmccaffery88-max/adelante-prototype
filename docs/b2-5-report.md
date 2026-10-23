@@ -195,7 +195,7 @@ consentGate callers and their `today` source:
 
 Flag writers checked: no app code writes `sudCoordinationConsent` / `sudCounselingNotesRelease` (only the type at `ehr.ts:1671–1673` and readers), so no STOP.
 
-New tests: `src/lib/__tests__/b25MitchDefects.test.ts` (12 cases: each revoke method on record + audit; panel capture unblocks send and writes disclosure; legacy-only stays blocked; Jordan typed sends; gate calls today; typed decides incl. revoked; live referrer authorization authorizes "enrolled", legacy-only holds).
+New tests: `src/components/__tests__/revokeMethodField.test.tsx` (3 cases: the live select sends each chosen method on confirm) and `src/lib/__tests__/b25MitchDefects.test.ts` (10 cases: each revoke method on record + audit; panel capture unblocks send and writes disclosure; legacy-only stays blocked; Jordan typed sends; gate calls today; typed decides incl. revoked; live referrer authorization authorizes "enrolled", legacy-only holds).
 Focused run (`/tmp/b25-defects.log`): 125/126 — both immutable parity tests (matrix, audit), consentRecordModelB2, clinicalCoreB, 9a2/9c2 parity, P3 referrer, asamReporting, migration all green. Sole failure: `consentEnforcementB2.test.ts` "Option A" — the already-listed, not-yet-rewritten flag-fixture test.
 
 **Stopped before** the remaining test rewrites and full validation: making `consent_legacy_migrate` hidden for every role blocks the migration itself (`consentMigration.ts:81` runs it through runAction as sys_admin) and the new `consentLiveB25.test.ts:35–38`, which expects it to succeed. Needs Mitch's choice of how the migration runs.
