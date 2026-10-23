@@ -9,6 +9,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { canAccess } from "@/lib/roles";
+import { captureTreatment, revokeTypedConsentForTest } from "@/test/typedConsentCapture";
 
 const GENERIC_BODY = "A patient sent a message to their care team.";
 const VISIBILITY_COPY = /A message needs your review/;
@@ -29,8 +30,16 @@ function diff(pid: string, run: () => void) {
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
+// B2-5 ledger (tighten): consent ON is a real typed treatment capture through
+// runAction("consent_record_capture"); OFF revokes it through the registry and
+// clears the legacy flag. The flag alone never un-gates (see the denial case).
 function setConsentOn(pid: string, on: boolean) {
-  AdelanteEHR.setConsent(pid, "part2Sud", on);
+  const active = AdelanteEHR.listConsentRecords(pid).filter((r) => r.consentType === "part2_tpo_single" && r.purposeCode === "treatment" && r.status === "active");
+  if (on && !active.length) captureTreatment(pid);
+  if (!on) {
+    for (const r of active) revokeTypedConsentForTest(r);
+    AdelanteEHR.setConsent(pid, "part2Sud", false);
+  }
 }
 
 describe("Part 2 flag notification matrix", () => {
@@ -51,6 +60,17 @@ describe("Part 2 flag notification matrix", () => {
     expect(canAccess("peer_specialist", "screeners_sud", gated).locked).toBe(true);
     expect(canAccess("therapist", "screeners_sud", gated).locked).toBe(false);
     expect(canAccess("pmhnp", "screeners_sud", gated).locked).toBe(false);
+  });
+
+  it("flag alone: the legacy part2Sud flag without a typed record keeps the case manager gated", () => {
+    const p = patient();
+    setConsentOn(p.id, false);
+    AdelanteEHR.setConsent(p.id, "part2Sud", true);
+    expect(AdelanteEHR.getPatient(p.id)!.consents.part2Sud).toBe(true);
+    expect(canAccess("ecm_provider", "screeners_sud", AdelanteEHR.getPatient(p.id)!).locked).toBe(true);
+    const rows = diff(p.id, () => AdelanteEHR.sendPatientMessage(p.id, "sensitive", true));
+    expect(rows.length).toBe(2);
+    AdelanteEHR.setConsent(p.id, "part2Sud", false);
   });
 
   // ---- Patient self-flag at send time ----
