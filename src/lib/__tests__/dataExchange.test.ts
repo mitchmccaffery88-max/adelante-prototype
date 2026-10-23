@@ -4,6 +4,7 @@ import { _resetHieForTests, hieChartView, listHeldHieRecords, releaseHeldHieReco
 import { _resetDataExchangeForTests, confirmMatch, disclosureCsv, listIncomingEvents, listMatchQueue, rejectMatch, seedDataExchangeDemo } from "../dataExchange";
 import { resolveNavAccess } from "../navGuard";
 import { STAFF_ROLES } from "../roles";
+import { captureTreatment } from "@/test/typedConsentCapture";
 
 const pid = (n: string) => AdelanteEHR.listPatients().find((p) => p.firstName === n)!.id;
 const admin = { name: "Priya", role: "clinical_coordinator" };
@@ -34,7 +35,10 @@ describe("data exchange hub", () => {
     expect(held).toBeTruthy();
     expect(hieChartView(j, "therapist").encounters.some((e) => e.sud)).toBe(false);
     expect(() => releaseHeldHieRecord(held.id, admin)).toThrow();
+    // B2-5 ledger (tighten): the flag alone still leaves it held; a real typed treatment capture releases it.
     AdelanteEHR.setConsent(j, "part2Sud", true);
+    expect(() => releaseHeldHieRecord(held.id, admin)).toThrow();
+    captureTreatment(j);
     releaseHeldHieRecord(held.id, admin);
     expect(listHeldHieRecords().some((h) => h.id === held.id)).toBe(false);
     expect(hieChartView(j, "physician").encounters.some((e) => e.id === held.id)).toBe(true);

@@ -3,7 +3,16 @@
 // for anyone whose SUD axis resolves masked.
 import { describe, expect, it } from "vitest";
 import { activateAhcdForTest } from "./helpers/ahcdTestActivation";
-import { AdelanteEHR, type ConsentCategory } from "@/lib/ehr";
+import { AdelanteEHR, Part2ConsentRequiredError, type ConsentCategory } from "@/lib/ehr";
+import { captureTreatment, freshTestPatient } from "@/test/typedConsentCapture";
+
+// B2-5: a flag-only fresh patient is refused a Part 2 sensitive referral.
+function expectFlagOnlyRefused() {
+  const f = freshTestPatient("Adv");
+  AdelanteEHR.setConsent(f.id, "part2Sud", true);
+  expect(AdelanteEHR.getPatient(f.id)!.consents.part2Sud).toBe(true);
+  expect(() => AdelanteEHR.addResourceReferral(f.id, { category: "recovery_meetings", provider: "Sunrise Group" }, actor)).toThrow(Part2ConsentRequiredError);
+}
 import type { StaffRole } from "@/lib/roles";
 import {
   ADVOCATE_SUD_DISCLOSURE_CATEGORY,
@@ -113,6 +122,11 @@ describe("advocate sees referrals alongside needs", () => {
     const p = cleanPatient(2);
     AdelanteEHR.setConsent(p.id, "part2Sud", true);
     const need = addNeed(p.id, "Wants a group");
+    // B2-5 ledger (tighten): the flag alone is refused; the referral needs a
+    // real typed treatment capture (runAction("consent_record_capture")).
+    expectFlagOnlyRefused();
+    if (!AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment")) captureTreatment(p.id);
+    expect(AdelanteEHR.listConsentRecords(p.id).some((r) => r.consentType === "part2_tpo_single" && r.purposeCode === "treatment" && r.status === "active")).toBe(true);
     AdelanteEHR.addResourceReferral(
       p.id,
       { category: "recovery_meetings", provider: "Sunrise Group", sdohItemId: need.id },
@@ -130,6 +144,11 @@ describe("advocate sees referrals alongside needs", () => {
     const p = cleanPatient(3);
     AdelanteEHR.setConsent(p.id, "part2Sud", true);
     const need = addNeed(p.id, "Wants a group");
+    // B2-5 ledger (tighten): the flag alone is refused; the referral needs a
+    // real typed treatment capture (runAction("consent_record_capture")).
+    expectFlagOnlyRefused();
+    if (!AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment")) captureTreatment(p.id);
+    expect(AdelanteEHR.listConsentRecords(p.id).some((r) => r.consentType === "part2_tpo_single" && r.purposeCode === "treatment" && r.status === "active")).toBe(true);
     AdelanteEHR.addResourceReferral(
       p.id,
       { category: "recovery_meetings", provider: "Sunrise Group", sdohItemId: need.id },

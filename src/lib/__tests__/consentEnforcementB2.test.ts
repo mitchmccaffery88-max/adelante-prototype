@@ -36,8 +36,11 @@ const coordTeam = [{ kind: "org", name: "Adelante care coordination team" }];
 const sud = (pid: string) => AdelanteEHR.isConsentCategoryAuthorized(pid, "sud_treatment");
 
 describe("B2-4 precedence", () => {
-  it("Option A: a legacy-flag patient keeps today's answer when no typed record applies", () => {
-    expect(sud("p3")).toBe(true); // legacy flag, no untyped record
+  // B2-5 ledger (tighten): the Option A premise was revoked by decision 1 —
+  // a legacy flag alone grants nothing when no typed record applies.
+  it("flag alone: a legacy-flag patient is denied when no typed record applies", () => {
+    expect(AdelanteEHR.getPatient("p3")!.consents.part2Sud).toBe(true); // flag still set
+    expect(sud("p3")).toBe(false);
     expect(sud("p2")).toBe(false);
   });
 

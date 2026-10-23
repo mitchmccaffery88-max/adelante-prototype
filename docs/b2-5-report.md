@@ -199,3 +199,71 @@ New tests: `src/components/__tests__/revokeMethodField.test.tsx` (3 cases: the l
 Focused run (`/tmp/b25-defects.log`): 125/126 — both immutable parity tests (matrix, audit), consentRecordModelB2, clinicalCoreB, 9a2/9c2 parity, P3 referrer, asamReporting, migration all green. Sole failure: `consentEnforcementB2.test.ts` "Option A" — the already-listed, not-yet-rewritten flag-fixture test.
 
 **Stopped before** the remaining test rewrites and full validation: making `consent_legacy_migrate` hidden for every role blocks the migration itself (`consentMigration.ts:81` runs it through runAction as sys_admin) and the new `consentLiveB25.test.ts:35–38`, which expects it to succeed. Needs Mitch's choice of how the migration runs.
+
+## 11. System migration actor and completion (Mitch, Oct 23)
+
+Status: **B2-5 completed** (not on hold, not stopped). Nothing published.
+
+### System actor for `consent_legacy_migrate`
+- `consentMigration.ts`: new non-staff constant `SYSTEM_MIGRATION_ACTOR_ROLE = "system_consent_migration"` (modelled on `PATIENT_ACTOR_ROLE`), actor `systemMigrationActor` (staffId `system-consent-migration`, name "System (consent migration)"). Not in `STAFF_ROLES`/`STAFF_ROSTER`, so not selectable in the role switcher and not assignable.
+- `chartActions.ts` `consent_legacy_migrate`: allowed only for that role AND staffId; hidden for all 17 staff roles incl. sys_admin. Audit metadata: `actorDisplay: "System (consent migration)"`, `recordsMarked: <count>`.
+- Store `migrateUnprovenConsents` refuses any actor but the system role (provenance check first, then actor).
+- Seed (`seedConsentMigration`) runs the action through `runAction` with the system actor; every other seed step (form publish, demo captures) keeps its existing sys_admin actor and checks.
+- runAction snapshot: +17 lines, all `"consent_legacy_migrate": "hidden"`, 0 removed (verified by diff).
+
+### Access table (seeded patients)
+| Patient | Before (pre-B2-5) | After |
+|---|---|---|
+| Daniel M. | flag + unproven untyped | legacyUnverified; one typed legal disclosure to Porterville CRC, "Reentry coordination", outreach items |
+| Jordan Vega | flag + unproven untyped | legacyUnverified; one typed legal disclosure to Tulare Recovery House, "Referral for treatment" |
+| Victor Hale | unproven untyped | legacyUnverified; no re-capture |
+| Tomás Reyes | unproven untyped | legacyUnverified; no re-capture; merge hold unchanged |
+| Luis Camacho, Jasmine Holt, Marcus L. | flag | typed part2_tpo_single, Adelante program, treatment only, e-sign, full checklist |
+| Alicia Serrano, Alicia R., Marcus Whitfield, Lucía Moreno | flag | narrowed: flag grants nothing |
+| Coordinator cohort | flags | empty (no care-coordination capture, no counseling release) |
+
+### Live-source list (consentGate `today` per caller)
+As in "Defects fixed" above; unchanged this batch. No caller reads a flag or a legacyUnverified record.
+
+### Test-edit ledger (this batch; all keep/tighten, no assertion/timeout/retry removed; emergency tests untouched)
+| File | Edit | Kind |
+|---|---|---|
+| consentLiveB25.test.ts | migration via system actor; every staff role incl. sys_admin denied; audit shows "System (consent migration)" + recordsMarked 1 | tighten |
+| consentMigrationB2.test.ts | sys_admin and therapist refused by the store; provenance refusal kept for both actors | tighten |
+| consentEnforcementB2.test.ts | "Option A" rewritten as flag-alone denial (flag still set, gate false) | tighten |
+| consentInventoryB2.test.ts | asamReporting 1→0, coordinatorSudAccess 2→0, ehr flags 16→15, billingLifecycleScenario 1→0, ehr entry 45→46, consentMigration +1 — reason per line; docs inventory updated | pin |
+| consentPublishReason.test.ts | 10→11 published; added: exactly one `part2_named_org` | pin + tighten |
+| runAction snapshot | +17 hidden lines only | additive |
+| privacyP1.test.ts | coordinator note: flag alone denied; typed care_coordination capture grants | tighten |
+| privacyP2.test.ts | TPO/specific/release from typed captures on fresh patients; flag-alone denial per test; other-roles parity also asserted for flag-only | tighten |
+| privacyP2Surfaces.test.ts | consented fixtures from typed captures; new flag-alone surface denial test; emergency test untouched | tighten |
+| privacyP3SysAdminCohort.test.ts | cohort from test-local typed care_coordination captures; flags count 0; 10 → hidden, 11 → totals; no-name and <11 assertions unchanged | tighten |
+| outpatientMeds.test.ts | Luis's consent is the seeded typed treatment capture (registry loaded); flag-only patient denied | tighten |
+| dmcOdsReadiness.test.ts | registry loaded; flag-only patient denied for ecm_provider | tighten |
+| dataExchange.test.ts | flag alone keeps record held; typed treatment capture releases | tighten |
+| careMessageFlagMatrix.test.ts | consent ON = typed treatment capture, OFF = registry revoke; new flag-alone case keeps CM gated (2 notifications) | tighten |
+| screenerPart2Store.test.ts | flag alone throws; typed treatment capture allows; capture revoked after | tighten |
+| advocateNeedReferrals.test.ts | flag-only fresh patient: Part2ConsentRequiredError (new denial); positive referral path uses typed treatment capture | tighten |
+
+Shared helper: `src/test/typedConsentCapture.ts` (captures and revokes only through `runAction`).
+
+Note on advocateNeedReferrals: the refusal comes from `addResourceReferral`, which needs **treatment** scope (`sud_treatment`). No gate reads a typed `advocate_release` record for advocate masking (that gate reads the live `advocate_sud_disclosure` section, already written by the test's real store call), so an `advocate_release` capture would not exercise anything. The exact scope used is treatment. Flagged for Mitch.
+
+### Transforms
+Only i (true→false narrowings incl. the 14 `b21` entries), ii (denial consequences), iii (same-access provenance), iv (itemized seed audits). No widening.
+
+### Validation
+- Full units: 2,978/2,978, 375 files, EXIT 0 (`/tmp/b25-units.log`). Typecheck clean.
+- Dev server restarted. Full browser suite: see section 12.
+
+## 12. Full browser suite — STOP (named-flake rule not satisfied)
+
+- Restarted dev server; FULL suite once, alone, background, `--workers=1`, E2E_BASE_URL=http://localhost:8080: **221 passed, 3 failed, 56.1m, literal `EXIT 1`** in `/tmp/b25-browser.log` (prior green run B24d took 31.5m).
+- Failures (all 30s test timeouts, none an assertion):
+  1. `auditTables8b3.spec.ts:13` action-audit-feed — named; `newPage` timeout inside axe.
+  2. `contentInventoryTables8b2.spec.ts:5` — **NOT named**; `page.evaluate` timeout inside axe (`helpers/staffTables8b2.ts:21`).
+  3. `staffNewAudit8a2.spec.ts:29` therapist — named; click timeout on a + New option.
+- The named-flake rule needs a SOLE named failure; three failures including an unnamed one = hard stop. Not accepted.
+- Diagnostic only (not acceptance): the three specs standalone, once, `--workers=1` on :8080 → 7/7 passed, EXIT 0 (`/tmp/b25-diag.log`). None of the three touches consent gates.
+- No test, timeout, retry or app change made after the run. Screenshots: 17 files restored from 99a8b776; diff vs rollback now empty.
+- Needed from Mitch: either authorize one more full-suite run, or another decision on these three timeouts.

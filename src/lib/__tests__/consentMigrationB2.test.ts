@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import "@/lib/actions/runAction";
-import { migrateUnprovenConsents, seedConsentMigration } from "@/lib/consentMigration";
+import { migrateUnprovenConsents, seedConsentMigration, SYSTEM_MIGRATION_ACTOR_ROLE } from "@/lib/consentMigration";
 import { seedOutpatientCareDemo } from "@/lib/outpatientCare";
 import { PARTNER_CLUSTERS } from "@/lib/carePartners";
 import { coordinatorConsentedPatients } from "@/lib/asamReporting";
@@ -94,8 +94,12 @@ describe("B2-5 consent migration", () => {
   });
 
   it("refuses invented provenance and non-admin migration", () => {
+    const SYSTEM = { role: SYSTEM_MIGRATION_ACTOR_ROLE, staffId: "system-consent-migration", name: "System (consent migration)" };
+    expect(() => migrateUnprovenConsents({ patientId: "p1", verify: true, actor: SYSTEM })).toThrow(/cannot invent/);
     expect(() => migrateUnprovenConsents({ patientId: "p1", verify: true, actor: SYS })).toThrow(/cannot invent/);
-    expect(() => migrateUnprovenConsents({ patientId: "p1", actor: { ...SYS, role: "therapist" as never } })).toThrow(/Only sys_admin/);
+    // B2-5 ledger (tighten): sys_admin and every staff role are refused by the store too.
+    expect(() => migrateUnprovenConsents({ patientId: "p1", actor: SYS })).toThrow(/Only the system consent migration/);
+    expect(() => migrateUnprovenConsents({ patientId: "p1", actor: { ...SYS, role: "therapist" as never } })).toThrow(/Only the system consent migration/);
     expect(AdelanteEHR.listConsentRecords("p1").filter((r) => !r.consentType).every((r) => r.legacyUnverified)).toBe(true);
   });
 

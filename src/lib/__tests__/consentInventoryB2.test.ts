@@ -14,10 +14,10 @@ const LEGACY_FLAG_READERS: Record<string, number> = {
   "src/components/chart/CoordinatorSudPanel.tsx": 1,
   "src/components/clinical/recordSections.tsx": 1,
   "src/lib/adelBrief.ts": 1,
-  "src/lib/asamReporting.ts": 1,
+  // B2-5: asamReporting.ts 1→0 (cohort no longer reads sudCoordinationConsent; today = () => false).
   "src/lib/consentForms.ts": 3,
-  "src/lib/coordinatorSudAccess.ts": 2,
-  "src/lib/ehr.ts": 16,
+  // B2-5: coordinatorSudAccess.ts 2→0 (coordination/counseling flags no longer read; today = () => false).
+  "src/lib/ehr.ts": 15, // B2-5 16→15: getConsentState no longer falls back to the consents.part2Sud flag
   "src/lib/onboarding.ts": 1,
   "src/routes/consent.tsx": 1,
   "src/routes/intake.tsx": 2,
@@ -39,7 +39,7 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/adelBrief.ts": 2,
   "src/lib/adelBriefCheck.ts": 1,
   "src/lib/advocateInviteDelivery.ts": 2,
-  "src/lib/billingLifecycleScenario.ts": 1,
+  // B2-5: billingLifecycleScenario.ts 1→0 (staffSetConsent flag write replaced by a consent_record_capture action).
   "src/lib/bookingFlow.ts": 3,
   "src/lib/carePartners.ts": 2,
   "src/lib/chartActions.ts": 4,
@@ -48,8 +48,9 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/consentCapture.ts": 3,
   "src/lib/consentForms.ts": 19,
   "src/lib/consentLifecycle.ts": 4,
+  "src/lib/consentMigration.ts": 1, // B2-5 new: listConsentRecords read to find live untyped records to mark legacyUnverified
   "src/lib/consentGate.ts": 8, // §B2-4 new: the one consent gate (ledger interface, consentCovers call, docs)
-  "src/lib/ehr.ts": 45, // §B2-6 +2: consentCoveringRecordId doc line + its consentCovers call (disclosure link, read-only); §B2-4 +1: wrapper comment naming consentCovers
+  "src/lib/ehr.ts": 46, // B2-5 +1: comment that unverified records are skipped by activeConsentRecord; §B2-6 +2: consentCoveringRecordId doc line + its consentCovers call (disclosure link, read-only); §B2-4 +1: wrapper comment naming consentCovers
   "src/lib/hie.ts": 4,
   "src/lib/identityDemoSeed.ts": 1,
   "src/lib/outpatientCare.ts": 4,

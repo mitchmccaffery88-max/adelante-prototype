@@ -4,10 +4,16 @@ import { AdelanteEHR, type ConsentRecord } from "./ehr";
 import { PART2_ELEMENT_KEYS } from "./consentRecordModel";
 import { publishedForm, type FormVersion } from "./consentForms";
 import type { CaptureDraft } from "./consentCapture";
+import type { StaffRole } from "./roles";
 import type { RunActor, RunInput, RunResult } from "./actions/runAction";
 
 type Runner = <T>(id: string, actor: RunActor, patient: ReturnType<typeof AdelanteEHR.getPatient>, input: RunInput) => RunResult<T>;
 const actor = { role: "sys_admin" as const, staffId: "s-admin1", staffName: "Adelante System Admin" };
+/** Non-staff system actor (modelled on PATIENT_ACTOR_ROLE). Not in STAFF roles, not selectable, not assignable. */
+export const SYSTEM_MIGRATION_ACTOR_ROLE = "system_consent_migration" as StaffRole;
+export const SYSTEM_MIGRATION_ACTOR_LABEL = "System (consent migration)";
+export const systemMigrationActor = { role: SYSTEM_MIGRATION_ACTOR_ROLE, staffId: "system-consent-migration", staffName: SYSTEM_MIGRATION_ACTOR_LABEL };
+const systemStoreActor = { role: SYSTEM_MIGRATION_ACTOR_ROLE, staffId: "system-consent-migration", name: SYSTEM_MIGRATION_ACTOR_LABEL };
 const storeActor = { role: "sys_admin" as const, staffId: "s-admin1", name: "Adelante System Admin" };
 let runner: Runner | undefined;
 let registryReady = false;
@@ -26,9 +32,9 @@ export const NAMED_PART2_FORM: Omit<FormVersion, "id" | "version" | "status" | "
   part2: { recipient: "Named organization only", what: "Listed items only", why: "Specified purpose only" },
 };
 
-function invoke<T>(id: string, via: string, args: unknown[], patientId?: string): T {
+function invoke<T>(id: string, via: string, args: unknown[], patientId?: string, as: RunActor = actor): T {
   if (!runner || !registryReady) throw new Error("Consent migration registry is not ready.");
-  const result = runner<T>(id, actor, patientId ? AdelanteEHR.getPatient(patientId) : undefined, { via, args, auditReason: "B2-5 approved demo consent migration — Draft pending counsel" });
+  const result = runner<T>(id, as, patientId ? AdelanteEHR.getPatient(patientId) : undefined, { via, args, auditReason: "B2-5 approved demo consent migration — Draft pending counsel" });
   if (!result.ok) throw new Error(result.reason);
   return result.value;
 }
@@ -42,9 +48,9 @@ export function ensureNamedPart2Form(): void {
 }
 
 /** Refuse invented provenance: migration never verifies or signs old history. */
-export function migrateUnprovenConsents(input: { patientId: string; verify?: boolean; actor: typeof storeActor }): number {
-  if (input.actor.role !== "sys_admin") throw new Error("Only sys_admin can migrate legacy consent history.");
+export function migrateUnprovenConsents(input: { patientId: string; verify?: boolean; actor: { role: StaffRole; staffId: string; name: string } }): number {
   if (input.verify) throw new Error("A migration cannot invent a signed copy, form version or hash.");
+  if (input.actor.role !== SYSTEM_MIGRATION_ACTOR_ROLE) throw new Error("Only the system consent migration can mark legacy consent history.");
   return AdelanteEHR.markLegacyConsentsUnverified(input.patientId);
 }
 
@@ -78,7 +84,7 @@ export function seedConsentMigration(): void {
   if (!runner || !registryReady) return;
   for (const p of AdelanteEHR.listPatients()) {
     if (AdelanteEHR.listConsentRecords(p.id).some(r => !r.consentType && !r.legacyUnverified))
-      invoke("consent_legacy_migrate", "migrateUnprovenConsents", [{ patientId: p.id, actor: storeActor }], p.id);
+      invoke("consent_legacy_migrate", "migrateUnprovenConsents", [{ patientId: p.id, actor: systemStoreActor }], p.id, systemMigrationActor);
   }
   for (const [first, last] of [["Marcus", "L."], ["Luis", "Camacho"], ["Jasmine", "Holt"]]) {
     const p = AdelanteEHR.listPatients().find(p => p.firstName === first && p.lastName === last);

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
 import { consentGate } from "@/lib/consentGate";
+import { systemMigrationActor, SYSTEM_MIGRATION_ACTOR_ROLE, SYSTEM_MIGRATION_ACTOR_LABEL } from "@/lib/consentMigration";
+import { STAFF_ROLES } from "@/lib/roles";
 
 const actor = { role: "sys_admin" as const, staffId: "s-admin1", staffName: "Adelante System Admin" };
 const storeActor = { role: actor.role, staffId: actor.staffId, name: actor.staffName };
@@ -32,10 +34,22 @@ describe("B2-5 live untyped consistency", () => {
     expect(AdelanteEHR.activeConsentRecord(p.id)?.signature?.signer).toBe("Live Consent QA");
     expect(AdelanteEHR.activeConsentRecord(p.id)?.document).toBeUndefined();
     expect(consentGate(p.id, need, () => false)).toBe(true);
-    const migrate = runAction("consent_legacy_migrate", actor, p, {
-      via: "migrateUnprovenConsents", args: [{ patientId: p.id, actor: storeActor }],
+    // B2-5 ledger (tighten): every staff role, sys_admin included, is denied; only the system actor migrates.
+    for (const { key: role } of STAFF_ROLES) {
+      const denied = runAction("consent_legacy_migrate", { role, staffId: "s-admin1", staffName: "Staff" }, p, {
+        via: "migrateUnprovenConsents", args: [{ patientId: p.id, actor: { role, staffId: "s-admin1", name: "Staff" } }],
+      });
+      expect(denied.ok, role).toBe(false);
+    }
+    expect(consentGate(p.id, need, () => false)).toBe(true);
+    const sysStore = { role: SYSTEM_MIGRATION_ACTOR_ROLE, staffId: systemMigrationActor.staffId, name: SYSTEM_MIGRATION_ACTOR_LABEL };
+    const migrate = runAction("consent_legacy_migrate", systemMigrationActor, p, {
+      via: "migrateUnprovenConsents", args: [{ patientId: p.id, actor: sysStore }],
     });
     expect(migrate.ok).toBe(true);
+    const ev = AdelanteEHR.listAuditEvents().find(e => e.action === "action.succeeded" && (e.detail as Record<string, unknown>)?.actionId === "consent_legacy_migrate" && e.patientId === p.id);
+    expect((ev?.detail as Record<string, unknown>)?.actorDisplay).toBe("System (consent migration)");
+    expect((ev?.detail as Record<string, unknown>)?.recordsMarked).toBe(1);
     expect(consentGate(p.id, need, () => true)).toBe(false);
   });
 
