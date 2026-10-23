@@ -1,7 +1,7 @@
 // §B2-5 — consent migration (Mitch, Oct 23). Flags and unproven pre-B2
 // records grant nothing; only the listed demo needs are re-captured as signed
 // typed records through the real registry action. Draft — pending counsel.
-import "@/test/freezeClock";
+// Real clock: the seed captures are signed at module load, never backdated.
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import "@/lib/actions/runAction";
