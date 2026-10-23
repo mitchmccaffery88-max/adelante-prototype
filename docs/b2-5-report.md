@@ -94,3 +94,24 @@ Matrix roster counts remain 15 seed / 22 after billing; captured and emergency a
 - Latest automatic preview signal: **build OK** at 12:41:04 UTC. No manual build/typecheck.
 - NEW unit/e2e migration tests, full unit run, restart/full browser run to `/tmp/b25-browser.log`, screenshot restoration and final successful closeout remain **not done**. No full-browser process was launched; no literal full-suite EXIT is claimed. Scratch probes generated no screenshots; immutable screenshot files were not changed.
 - STOP holds pending the application-side DMC QA-fixture authority above. No publishing.
+## 8. Billing QA capture applied; NEW STOP — unmapped post-B2 consent writers (Oct 23)
+
+### Done under the latest authorization
+- `billingLifecycleScenario.ts` DMC-ODS fictional patient: flag write replaced by ONE `runAction("consent_record_capture")` (ecm_provider), `part2_tpo_single`, recipient Adelante program, purpose treatment, e_sign, full checklist, patient signer, real date, current form version/hash, before ASAM/claim steps. All seven billing keys, amounts, states, payments and per-transition audit counts equal the immutable baselines; the patient is not in the coordinator cohort.
+- Parity: matrix and audit parity both GREEN against the untouched 0089ca4f / 5c335b7e fixtures with transforms i–iv. The only extra handling in `consentAuditB2Parity.test.ts` (`canon`) maps sequential disclosure-log IDs `dl-<n>`, under the `id` / `disclosureLogId` keys only, to placeholders by first appearance. This is a dependent disclosure-ID consequence of the listed (ii) denials, which no longer use a number. Every other value stays literal. **Mitch to confirm** this counts as (ii).
+- `part2Disclosure.ts`: a named legal disclosure (legacy legal row) now also needs the signed typed `legal_part2_disclosure` record with the same recipient and purpose. The legacy category alone grants nothing. This keeps Jordan's Tulare send and Daniel's Porterville link working with no widening (parity green).
+- Import-order fix: the migration seed now runs only once the action registry (`chartActions.ts`, end of module) and the runner (`runAction.ts`) are both ready. Before, 19 suites failed with "Unknown action".
+- NEW tests passing: `consentMigrationB2.test.ts` (8) and `billingLifecycleB25.test.ts` (2: flag alone grants nothing, ASAM draft refused; one signed treatment-only record; not in the cohort).
+
+### STOP: real (non-seed) consent writers are unmapped
+`ehr.ts` `createConsentRecord` currently marks every untyped record without a signature extension as `legacyUnverified`, and `isConsentCategoryAuthorized` needs `signature` + `document`. That also narrows records written TODAY by real workflows, not only pre-B2 history:
+- `consentForms.ts:309` signOne. The patient's own signed form has a frozen signed copy with versionId/textHash, but the record carries no extension, and it carries prior sections forward (:306–316).
+- `scribe.ts:243,266` (AI recording grant/withdraw), `ConsentRecordsPanel.tsx:86` (staff entry), `consentForms.ts:423` (revocation), `outpatientCare.ts:299,311`, `DemoStateSwitcher.tsx:245`.
+Plan §c: "stop on any unmapped writer". Measured: full units 116 failed / 2,844 passed. A probe that turns off only this writer rule leaves 57 failures, so about 59 come from the writer rule alone (advocate ROI, scribe, form signing, telehealth). The other 57 are the flag/untyped fixtures and pinned `ehr.ts` byte-parity adapters that the plan table expects.
+
+Decision needed (proposal, not applied):
+1. Form signing (`signOne`) attaches its real provenance (signature e_sign/typed, document formKey/versionId/version/textHash from the signed copy), and grants ONLY the categories of that form version. Carried-forward sections from an unverified prior stay non-granting.
+2. Scribe, staff panel, revocation and outpatient legal writers: each is either mapped to a typed record through `consent_record_capture`, or stays non-granting (needs an explicit decision per writer).
+3. Then the remaining ~57 test edits under the keep/tighten rule, and the pinned-parity adapters as additive exact-once substitutions.
+
+Not run: full browser suite, screenshot restore, final SHA. Emergency module untouched; no counseling release; <11 unchanged; no publish.
