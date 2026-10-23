@@ -212,10 +212,12 @@ export function part2ConsentFor(
       return has("advocate_sud_disclosure" as never) || has(LEGAL_DISCLOSURE_CONSENT_CATEGORY)
         ? { ok: true, ref: `${recRef} (advocate disclosure)` }
         : { ok: false, reason: "No substance-use disclosure consent covers this advocate, so this can't be shared." };
-    case "county":
-      return has("sud_treatment")
-        ? { ok: true, ref: recRef }
-        : { ok: false, reason: "No substance-use treatment consent is on file for this person, so this can't be shared." };
+    case "county": {
+      if (!has("sud_treatment")) return { ok: false, reason: "No substance-use treatment consent is on file for this person, so this can't be shared." };
+      // B2-5: cite the signed typed record that grants, never a legacy flag.
+      const typed = rec ? null : AdelanteEHR.consentCoveringRecordId(patientId, { type: "part2_tpo_single", recipient: "adelante-program", purpose: "treatment" });
+      return { ok: true, ref: typed ? `Consent record ${typed}` : recRef };
+    }
     case "legal":
       if (legal && has(LEGAL_DISCLOSURE_CONSENT_CATEGORY)) return { ok: true, ref: `Legal disclosure ${legal.id}` };
       return { ok: false, reason: "No Part 2 disclosure consent names this recipient. Record the consent first." };
