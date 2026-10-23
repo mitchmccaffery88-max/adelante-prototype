@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import { AdelanteEHR, demoScenarioPatientId, isSudMedicationName } from "@/lib/ehr";
 import { asamTaskDueLabel, asamTaskState } from "@/lib/asam";
 import { roleSeesAsam } from "@/lib/asamReporting";
+// B2-5: load the registry so the approved demo treatment capture (runAction("consent_record_capture")) exists.
+import "@/lib/actions/runAction";
+import "@/lib/chartActions";
+import { freshTestPatient } from "@/test/typedConsentCapture";
 
 describe("ASAM task due/overdue label", () => {
   const now = new Date("2026-09-25T12:00:00Z");
@@ -65,6 +69,11 @@ describe("ECM case manager and protected medications (draft pending compliance r
     const p = AdelanteEHR.getPatient(id)!;
     const bn = AdelanteEHR.listMedications(id).find((m) => /buprenorphine/i.test(m.name))!;
     expect(isSudMedicationName(bn.name)).toBe(true);
+    // B2-5 ledger (tighten): consent on file is Luis's real typed treatment capture, not the flag.
+    expect(AdelanteEHR.listConsentRecords(id).filter((r) => r.consentType === "part2_tpo_single" && r.purposeCode === "treatment" && r.status === "active")).toHaveLength(1);
+    const flagOnly = freshTestPatient("Meds");
+    flagOnly.consents.part2Sud = true;
+    expect(roleSeesAsam("ecm_provider", AdelanteEHR.getPatient(flagOnly.id))).toBe(false); // flag alone grants nothing
     expect(roleSeesAsam("ecm_provider", p)).toBe(true); // consent on file…
     expect(roleSeesSudMedication("ecm_provider", p)).toBe(false); // …still withheld
     expect(roleSeesSudMedication("pmhnp", p)).toBe(true);
