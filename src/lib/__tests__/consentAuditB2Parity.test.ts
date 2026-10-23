@@ -25,6 +25,14 @@ import { applyDelta, type DeltaEntry } from "@/test/b25ExpectedDelta";
 
 function canon(text: string): string {
   const seen = new Map<string, string>();
+  // B2-5: sequential disclosure-log IDs ("dl-<n>") under the id /
+  // disclosureLogId keys only, by first appearance — a denied (transform ii)
+  // disclosure no longer consumes a number. Every other value stays literal.
+  const dl = new Map<string, string>();
+  text = text.replace(/"(id|disclosureLogId)": "(dl-\d+)"/g, (_m, k: string, v: string) => {
+    if (!dl.has(v)) dl.set(v, `<dl${dl.size}>`);
+    return `"${k}": "${dl.get(v)}"`;
+  });
   return text.replace(/\b(?=[a-z]*\d)[a-z0-9]{8}\b/g, (t) => {
     if (!seen.has(t)) seen.set(t, `<id${seen.size}>`);
     return seen.get(t)!;
