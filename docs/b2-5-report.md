@@ -255,3 +255,15 @@ Only i (true→false narrowings incl. the 14 `b21` entries), ii (denial conseque
 ### Validation
 - Full units: 2,978/2,978, 375 files, EXIT 0 (`/tmp/b25-units.log`). Typecheck clean.
 - Dev server restarted. Full browser suite: see section 12.
+
+## 12. Full browser suite — STOP (named-flake rule not satisfied)
+
+- Restarted dev server; FULL suite once, alone, background, `--workers=1`, E2E_BASE_URL=http://localhost:8080: **221 passed, 3 failed, 56.1m, literal `EXIT 1`** in `/tmp/b25-browser.log` (prior green run B24d took 31.5m).
+- Failures (all 30s test timeouts, none an assertion):
+  1. `auditTables8b3.spec.ts:13` action-audit-feed — named; `newPage` timeout inside axe.
+  2. `contentInventoryTables8b2.spec.ts:5` — **NOT named**; `page.evaluate` timeout inside axe (`helpers/staffTables8b2.ts:21`).
+  3. `staffNewAudit8a2.spec.ts:29` therapist — named; click timeout on a + New option.
+- The named-flake rule needs a SOLE named failure; three failures including an unnamed one = hard stop. Not accepted.
+- Diagnostic only (not acceptance): the three specs standalone, once, `--workers=1` on :8080 → 7/7 passed, EXIT 0 (`/tmp/b25-diag.log`). None of the three touches consent gates.
+- No test, timeout, retry or app change made after the run. Screenshots: 17 files restored from 99a8b776; diff vs rollback now empty.
+- Needed from Mitch: either authorize one more full-suite run, or another decision on these three timeouts.
