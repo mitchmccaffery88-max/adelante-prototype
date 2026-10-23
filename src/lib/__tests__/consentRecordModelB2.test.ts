@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR, type ConsentCategory } from "../ehr";
 import { PART2_ELEMENT_KEYS, PART2_CHECKLIST_DRAFT_LABEL, validateConsentExtension, type ConsentRecordExtension } from "../consentRecordModel";
+import { applyDelta, type DeltaEntry } from "@/test/b25ExpectedDelta";
 
 const CATS: ConsentCategory[] = ["sud_treatment", "mental_health", "case_coordination", "billing"] as ConsentCategory[];
 
