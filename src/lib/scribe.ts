@@ -247,6 +247,11 @@ export function grantAiRecordingConsent(input: GrantAiConsentInput) {
     signedByName: input.signedByName,
     relationship: input.relationship,
     attested: input.attested,
+    signature: {
+      method: "e_sign", signer: input.signedByName, relationship: input.relationship ?? "patient",
+      signedAt: new Date().toISOString(), recordedAt: new Date().toISOString(),
+      recordedBy: input.capturedBy,
+    },
     effectiveDate: effectiveOn,
     sections: [
       ...carrySections(p.id),
