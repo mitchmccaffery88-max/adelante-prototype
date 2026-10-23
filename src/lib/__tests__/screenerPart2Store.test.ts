@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR, Part2AccessError } from "@/lib/ehr";
 import { isPart2Screener, scoreScreener, screenerByKey } from "@/lib/screeners";
 import { setActingRole } from "@/lib/roles";
+import { captureTreatment, revokeTypedConsentForTest } from "@/test/typedConsentCapture";
 
 const patient = AdelanteEHR.listPatients()[0]!;
 
@@ -54,11 +55,17 @@ describe("the store itself refuses unauthorized Part 2 reads", () => {
   });
 
   it("allows a consent_gated role once the real consent is granted", () => {
+    // B2-5 ledger (tighten): the flag alone grants nothing; a real typed treatment capture does.
     AdelanteEHR.setConsent(patient.id, "part2Sud", true);
+    expect(() =>
+      AdelanteEHR.getScreenerResult(patient.id, "audit", { kind: "staff", role: "peer_specialist" }),
+    ).toThrow(Part2AccessError);
+    const rec = captureTreatment(patient.id);
     expect(
       AdelanteEHR.getScreenerResult(patient.id, "audit", { kind: "staff", role: "peer_specialist" })
         ?.key,
     ).toBe("audit");
+    revokeTypedConsentForTest(rec);
     AdelanteEHR.setConsent(patient.id, "part2Sud", false);
   });
 
