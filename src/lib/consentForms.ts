@@ -321,7 +321,9 @@ function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, 
     ...(prior ? { supersedesId: prior.id } : {}),
     // B2-5 — real provenance from the signed copy (typed provenance, same scope).
     extension: {
-      signature: { method: "e_sign", signer: (input.typedName ?? input.signerName).trim(), relationship, signedAt: input.at, recordedAt: input.at, recordedBy: { staffName: input.channel === "in_person" ? r.sentBy.name : "Patient (self-signed)", role: input.channel === "in_person" ? "in_person" : "patient" } },
+      // Advocate attestation provenance remains in its frozen SignedCopy;
+      // do not falsely label an advocate as a patient, guardian or proxy.
+      ...(relationship === "advocate" ? {} : { signature: { method: "e_sign" as const, signer: (input.typedName ?? input.signerName).trim(), relationship, signedAt: input.at, recordedAt: input.at, recordedBy: { staffName: input.channel === "in_person" ? r.sentBy.name : "Patient (self-signed)", role: input.channel === "in_person" ? "in_person" : "patient" } } }),
       document: { formKey: v.key, versionId: v.id, version: v.version, documentHash: textHash(text) },
     },
   });
