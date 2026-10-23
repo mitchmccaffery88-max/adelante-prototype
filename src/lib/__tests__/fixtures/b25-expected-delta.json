@@ -1,7 +1,8 @@
 {
  "rollbacks": {
   "matrix": "0089ca4f",
-  "audit": "5c335b7e"
+  "audit": "5c335b7e",
+  "b21": "a2601c9f"
  },
  "note": "B2-5 expected delta. Transforms i–iv only (Mitch, Oct 23). Baselines immutable; entries apply to them in order.",
  "matrix": [
@@ -3467,6 +3468,176 @@
     "consent.captured part2_tpo_single — Luis Camacho → Adelante program, treatment, sys_admin seed",
     "consent.captured part2_tpo_single — Jasmine Holt → Adelante program, treatment, sys_admin seed"
    ]
+  }
+ ],
+ "b21": [
+  {
+   "transform": "i",
+   "patient": "p3",
+   "path": [
+    2,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p3",
+   "path": [
+    2,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p4",
+   "path": [
+    3,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p4",
+   "path": [
+    3,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p-demo-refusal",
+   "path": [
+    4,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p-demo-refusal",
+   "path": [
+    4,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p-demo-mar-seed",
+   "path": [
+    5,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p-demo-mar-seed",
+   "path": [
+    5,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p-demo-mar-seed-es",
+   "path": [
+    6,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "p-demo-mar-seed-es",
+   "path": [
+    6,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "#10",
+   "path": [
+    10,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "#10",
+   "path": [
+    10,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "#11",
+   "path": [
+    11,
+    "cats",
+    0
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
+  },
+  {
+   "transform": "i",
+   "patient": "#11",
+   "path": [
+    11,
+    "state",
+    "part2Sud"
+   ],
+   "op": "set",
+   "before": true,
+   "after": false
   }
  ]
 }
