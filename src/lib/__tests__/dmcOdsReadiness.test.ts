@@ -91,7 +91,7 @@ describe("10d-3 export", () => {
     // B2-5 ledger (tighten): the flag alone grants nothing; exported rows come only from typed treatment captures.
     const flagOnly = freshTestPatient("Dmc");
     flagOnly.consents.part2Sud = true;
-    expect(roleSeesAsamB25("therapist", AdelanteEHR.getPatient(flagOnly.id))).toBe(false);
+    expect(roleSeesAsamB25("ecm_provider", AdelanteEHR.getPatient(flagOnly.id))).toBe(false);
     const out = exportDmcOdsCsv({ staffId: "s-th1", role: "therapist" })!;
     expect(out.rowCount).toBeGreaterThan(0);
     expect(out.csv.split("\n")[0]).toMatch(/^Episode ID,/);
