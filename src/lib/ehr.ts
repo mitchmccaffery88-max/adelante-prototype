@@ -1,7 +1,7 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { disclose } from "./part2Disclosure";
 import { recipientKey, validateConsentExtension, verbalAssentAllowed, type ConsentRecordExtension, type ConsentType } from "./consentRecordModel";
-import { categoryNeed, consentGate, registerConsentLedger } from "./consentGate";
+import { categoryNeed, consentGate, registerConsentLedger, typedRecordApplies } from "./consentGate";
 import { consentEventDetail, createEventDetail, type ConsentEventName } from "./consentEvents";
 import { allergiesNotRecorded, findAllergyMatches, requiresCuresCheck } from "./orderSafety";
 import {
