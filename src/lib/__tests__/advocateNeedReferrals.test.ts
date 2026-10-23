@@ -3,7 +3,8 @@
 // for anyone whose SUD axis resolves masked.
 import { describe, expect, it } from "vitest";
 import { activateAhcdForTest } from "./helpers/ahcdTestActivation";
-import { AdelanteEHR, type ConsentCategory } from "@/lib/ehr";
+import { AdelanteEHR, Part2ConsentRequiredError, type ConsentCategory } from "@/lib/ehr";
+import { captureTreatment } from "@/test/typedConsentCapture";
 import type { StaffRole } from "@/lib/roles";
 import {
   ADVOCATE_SUD_DISCLOSURE_CATEGORY,
@@ -113,6 +114,10 @@ describe("advocate sees referrals alongside needs", () => {
     const p = cleanPatient(2);
     AdelanteEHR.setConsent(p.id, "part2Sud", true);
     const need = addNeed(p.id, "Wants a group");
+    // B2-5 ledger (tighten): the flag alone is refused; the referral needs a
+    // real typed treatment capture (runAction("consent_record_capture")).
+    expect(() => AdelanteEHR.addResourceReferral(p.id, { category: "recovery_meetings", provider: "Sunrise Group", sdohItemId: need.id }, actor)).toThrow(Part2ConsentRequiredError);
+    captureTreatment(p.id);
     AdelanteEHR.addResourceReferral(
       p.id,
       { category: "recovery_meetings", provider: "Sunrise Group", sdohItemId: need.id },
@@ -130,6 +135,10 @@ describe("advocate sees referrals alongside needs", () => {
     const p = cleanPatient(3);
     AdelanteEHR.setConsent(p.id, "part2Sud", true);
     const need = addNeed(p.id, "Wants a group");
+    // B2-5 ledger (tighten): the flag alone is refused; the referral needs a
+    // real typed treatment capture (runAction("consent_record_capture")).
+    expect(() => AdelanteEHR.addResourceReferral(p.id, { category: "recovery_meetings", provider: "Sunrise Group", sdohItemId: need.id }, actor)).toThrow(Part2ConsentRequiredError);
+    captureTreatment(p.id);
     AdelanteEHR.addResourceReferral(
       p.id,
       { category: "recovery_meetings", provider: "Sunrise Group", sdohItemId: need.id },
