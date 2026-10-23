@@ -7,6 +7,11 @@ vi.hoisted(() => {
 afterAll(() => vi.useRealTimers());
 import { AdelanteEHR, demoScenarioPatientId } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
+// B2-5: load the registry so the approved demo treatment captures (runAction("consent_record_capture")) exist.
+import "@/lib/actions/runAction";
+import "@/lib/chartActions";
+import { freshTestPatient } from "@/test/typedConsentCapture";
+import { roleSeesAsam as roleSeesAsamB25 } from "@/lib/asamReporting";
 import { setActingRole, setActingStaff, type StaffRole } from "@/lib/roles";
 function actAs(role: string, staffId: string) {
   setActingStaff(staffId);
@@ -83,6 +88,10 @@ describe("10d-3 export", () => {
     expect(dmcOdsExportRows("ecm_provider")).toBeNull();
     expect(dmcOdsExportRows("billing")).toBeNull();
     expect(exportDmcOdsCsv({ staffId: "s-bill1", role: "billing" })).toBeNull();
+    // B2-5 ledger (tighten): the flag alone grants nothing; exported rows come only from typed treatment captures.
+    const flagOnly = freshTestPatient("Dmc");
+    flagOnly.consents.part2Sud = true;
+    expect(roleSeesAsamB25("therapist", AdelanteEHR.getPatient(flagOnly.id))).toBe(false);
     const out = exportDmcOdsCsv({ staffId: "s-th1", role: "therapist" })!;
     expect(out.rowCount).toBeGreaterThan(0);
     expect(out.csv.split("\n")[0]).toMatch(/^Episode ID,/);
