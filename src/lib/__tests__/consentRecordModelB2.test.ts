@@ -37,9 +37,26 @@ function typed(ext: ConsentRecordExtension, over: { expirationDate?: string } = 
 }
 
 describe("B2-1 parity with rollback", () => {
-  it("activeConsentRecord / isConsentCategoryAuthorized / getConsentState are byte-identical for every seeded patient", () => {
-    const golden = readFileSync("src/lib/__tests__/fixtures/consentParityB2-1.json", "utf8");
-    expect(JSON.stringify(consentParitySnapshot())).toBe(golden.trim());
+  it("activeConsentRecord / isConsentCategoryAuthorized / getConsentState match the immutable fixture with exactly the B2-5 delta applied", () => {
+    const golden = JSON.parse(readFileSync("src/lib/__tests__/fixtures/consentParityB2-1.json", "utf8"));
+    // B2-5: the immutable baseline with EXACTLY the listed transform-i
+    // narrowings applied (the seven flag-only patients; flags grant nothing).
+    const delta = JSON.parse(readFileSync("src/lib/__tests__/fixtures/b25-expected-delta.json", "utf8")).b21 as DeltaEntry[];
+    expect(delta.length).toBe(14);
+    expect(JSON.stringify(consentParitySnapshot())).toBe(JSON.stringify(applyDelta(golden, delta)));
+  });
+
+  it("a legacy flag alone grants nothing after migration", () => {
+    // The seven flag-only patients still carry consents.part2Sud === true in
+    // storage, yet every gate denies: flags and legacyUnverified records never
+    // answer. (#10/#11 are positional fixture ids: Luis Camacho, Jasmine Holt.)
+    const byName = (first: string, last: string) => AdelanteEHR.listPatients().find((p) => p.firstName === first && p.lastName === last)!;
+    const flagOnly = ["p3", "p4", "p-demo-refusal", "p-demo-mar-seed", "p-demo-mar-seed-es", byName("Luis", "Camacho").id, byName("Jasmine", "Holt").id];
+    for (const id of flagOnly) {
+      expect(AdelanteEHR.getPatient(id)!.consents.part2Sud).toBe(true);
+      expect(AdelanteEHR.isConsentCategoryAuthorized(id, "sud_treatment")).toBe(false);
+      expect(AdelanteEHR.getConsentState(id).part2Sud).toBe(false);
+    }
   });
 });
 
