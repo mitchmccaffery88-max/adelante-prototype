@@ -41,3 +41,10 @@ export const captureCounselingRelease = (pid: string) =>
   captureTypedConsent(pid, { type: "counseling_notes_release", recipient: CARE_COORDINATION, purpose: "care_coordination", items: ["Counseling notes"] });
 export const captureTreatment = (pid: string) =>
   captureTypedConsent(pid, { type: "part2_tpo_single", recipient: ADELANTE_PROGRAM, purpose: "treatment", items: ["SUD treatment information"] });
+/** Revoke a test-local capture through the real registry action (test isolation). */
+export function revokeTypedConsentForTest(rec: ConsentRecord): void {
+  const r = runAction("consent_record_revoke", admin, AdelanteEHR.getPatient(rec.patientId), {
+    via: "revokeTypedConsent", args: [{ recordId: rec.id, method: "written", note: "Test isolation", actor: storeAdmin }],
+  });
+  if (!r.ok) throw new Error(r.reason);
+}

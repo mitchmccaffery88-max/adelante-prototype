@@ -8,6 +8,7 @@ import { canSeeNavEntry, staffNavForRole } from "@/lib/navSections";
 import { hasSudReportingAccess } from "@/lib/sudReportingAccess";
 import { asamAccessMode, aggregatePatients } from "@/lib/asamReporting";
 import { buildNoteDraft } from "@/lib/adelDrafts";
+import { captureCoordination, revokeTypedConsentForTest } from "@/test/typedConsentCapture";
 
 const BILLING: StaffRole[] = ["billing", "billing_coordinator"];
 const navPaths = (r: StaffRole) => staffNavForRole(r).map((e) => (e as { path?: string; to?: string }).path ?? (e as { to?: string }).to);
@@ -111,8 +112,12 @@ describe("Privacy P1 rule 5 + addendum C — generated note draft filters notes"
   it("a standard SUD note reaches the coordinator only with consent on file", () => {
     const p = withNote("sud");
     expect(planText(p, "clinical_coordinator")).not.toContain("PRIVATE-P1-PLAN");
+    // B2-5 ledger (tighten): the flag alone grants nothing; a real typed capture does.
     p.sudCoordinationConsent = "tpo";
+    expect(planText(p, "clinical_coordinator")).not.toContain("PRIVATE-P1-PLAN");
+    const rec = captureCoordination(p.id);
     expect(planText(p, "clinical_coordinator")).toContain("PRIVATE-P1-PLAN");
+    revokeTypedConsentForTest(rec);
   });
 });
 
