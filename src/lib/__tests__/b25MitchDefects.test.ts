@@ -2,6 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
+import { seedOutpatientCareDemo } from "@/lib/outpatientCare";
+import { referrerDisplayName } from "@/lib/referrerPolicy";
 import { consentGate } from "@/lib/consentGate";
 import { revokeTypedConsent, type RevokeMethod } from "@/lib/consentLifecycle";
 import {
@@ -44,9 +46,9 @@ describe("Defect 1 — revoke method is saved as chosen", () => {
       expect(r.ok, r.ok ? "" : r.reason).toBe(true);
       const saved = AdelanteEHR.listConsentRecords(p.id).find((x) => x.id === rec.id)!;
       expect(saved.revocation?.method).toBe(expected[m]);
-      const events = AdelanteEHR.listAuditEvents().slice(0, AdelanteEHR.listAuditEvents().length - before);
-      const all = JSON.stringify([...events, ...AdelanteEHR.listAuditEvents().slice(before)]);
-      expect(all).toContain(`"${m}"`);
+      const ev = AdelanteEHR.listAuditEvents().filter((e) => JSON.stringify(e).includes(rec.id) && e.action === "action.succeeded");
+      expect(AdelanteEHR.listAuditEvents().length).toBeGreaterThan(before);
+      expect(ev.some((e) => (e.detail as Record<string, unknown> | undefined)?.revocationMethod === expected[m])).toBe(true);
     });
   }
   it("the store refuses nothing silently: the mapping is exhaustive", () => {
@@ -59,7 +61,7 @@ describe("Defect 1 — revoke method is saved as chosen", () => {
 
 describe("Defect 2 — HLOC send uses the shared precedence", () => {
   const draft = (pid: string, destination: string) =>
-    createHlocReferral({ patientId: pid, target: "residential", reason: "QA", urgency: "routine", destination, outsideSudProvider: true, actor: clin });
+    createHlocReferral({ patientId: pid, target: "residential", reason: "QA referral reason", urgency: "routine", destination, outsideSudProvider: true, actor: clin });
 
   it("a consent recorded through the blocked-send panel unblocks the send and writes its disclosure", () => {
     const p = fresh();
@@ -85,11 +87,14 @@ describe("Defect 2 — HLOC send uses the shared precedence", () => {
   });
 
   it("an applicable typed record decides (seeded Jordan still sends)", () => {
+    seedOutpatientCareDemo();
     const jordan = AdelanteEHR.listPatients().find((p) => p.firstName === "Jordan" && p.lastName === "Vega");
     expect(jordan).toBeDefined();
     const r = listHlocReferrals(jordan!.id).find((x) => x.outsideSudProvider);
     expect(r).toBeDefined();
     expect(hlocSendBlocker(r!)).toBeUndefined();
+    expect(r!.status).toBe("sent");
+    expect(AdelanteEHR.listConsentRecords(jordan!.id).some((x) => x.consentType === "legal_part2_disclosure" && x.purpose === "Referral for treatment")).toBe(true);
   });
 });
 
@@ -126,7 +131,7 @@ describe("Defect 3 — live referrer authorization (ReferrerAuthorizationCard wr
     // Legacy-only: mark everything unverified; no live authorization → held.
     AdelanteEHR.markLegacyConsentsUnverified(p.id);
     expect(referrerDecisionFor(ref, "enrolled").send).toBe(false);
-    recordReferrerAuthorization(r.id, "yes", "Jo");
+    recordReferrerAuthorization(r.id, "yes", referrerDisplayName(ref));
     const d = referrerDecisionFor(ref, "enrolled");
     expect(d.send, JSON.stringify(d)).toBe(true);
   });
