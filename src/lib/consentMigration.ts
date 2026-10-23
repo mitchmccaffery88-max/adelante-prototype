@@ -4,7 +4,7 @@ import { AdelanteEHR, type ConsentRecord } from "./ehr";
 import { PART2_ELEMENT_KEYS } from "./consentRecordModel";
 import { publishedForm, type FormVersion } from "./consentForms";
 import type { CaptureDraft } from "./consentCapture";
-import type { StaffRole } from "./ehr";
+import type { StaffRole } from "./roles";
 import type { RunActor, RunInput, RunResult } from "./actions/runAction";
 
 type Runner = <T>(id: string, actor: RunActor, patient: ReturnType<typeof AdelanteEHR.getPatient>, input: RunInput) => RunResult<T>;

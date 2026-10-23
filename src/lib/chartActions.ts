@@ -58,7 +58,7 @@ import { canAuthorContent, canPublishContent, saveContentDraft, submitContentFor
 import { captureConsentRecord, uploadPaperConsent, requestConsentESign, patientSignConsent } from "@/lib/consentCapture";
 import { renewTypedConsent, revokeTypedConsent } from "@/lib/consentLifecycle";
 import { consentEventDetail } from "@/lib/consentEvents";
-import { consentMigrationRegistryReady, migrateUnprovenConsents } from "@/lib/consentMigration";
+import { consentMigrationRegistryReady, migrateUnprovenConsents, SYSTEM_MIGRATION_ACTOR_ROLE, SYSTEM_MIGRATION_ACTOR_LABEL, systemMigrationActor } from "@/lib/consentMigration";
 import type { ConsentRecord } from "@/lib/ehr";
 /** §B2-6 — typed revoke writes no domain audit, so consent.revoked rides on the registry success entry. */
 const typedRevokeMeta = (v: unknown) => { const r = v as ConsentRecord; return r?.id ? { consentRecordId: r.id, ...consentEventDetail({ name: "consent.revoked", rec: r, actorRole: r.revocation?.onBehalfOfPatient ? "staff" : "patient" }), revocationMethod: r.revocation?.method } : undefined; };
