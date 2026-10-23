@@ -26,6 +26,9 @@ const P3: Record<string, [string, string][]> = {
       '// Privacy P3 (Mitch, Oct 20) — sys_admin: de-identified totals only, same consent-only cohort.\nexport const TOTALS_ONLY_ROLES: StaffRole[] = ["clinical_coordinator", "sys_admin"];'],
     ['export function coordinatorConsentedPatients(): Patient[] {\n  return AdelanteEHR.listPatients().filter((p) => !!p.sudCoordinationConsent && p.consents.part2Sud);\n}',
       'import { consentGate, coordinatorNeed } from "@/lib/consentGate";\nexport function coordinatorConsentedPatients(): Patient[] {\n  return AdelanteEHR.listPatients().filter((p) => consentGate(p.id, coordinatorNeed("diagnoses"), () => !!p.sudCoordinationConsent && p.consents.part2Sud));\n}'],
+    // B2-5 (Mitch review, Oct 23) — additive: the flag-reading live answer becomes () => false.
+    ['consentGate(p.id, coordinatorNeed("diagnoses"), () => !!p.sudCoordinationConsent && p.consents.part2Sud));',
+      'consentGate(p.id, coordinatorNeed("diagnoses"), () => false));'],
   ],
 };
 

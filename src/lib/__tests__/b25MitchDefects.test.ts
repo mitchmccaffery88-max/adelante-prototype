@@ -8,6 +8,8 @@ import {
   advanceHlocReferral, createHlocReferral, hlocSendBlocker, listHlocReferrals, recordLegalDisclosureConsent,
 } from "@/lib/outpatientCare";
 import { listDisclosureLog } from "@/lib/part2Disclosure";
+import { recordReferrerAuthorization } from "@/lib/referrerAuthorizationStore";
+import { referrerDecisionFor } from "@/lib/referrerUpdateGate";
 
 const admin = { role: "sys_admin" as const, staffId: "s-admin1", staffName: "Adelante System Admin" };
 const storeAdmin = { role: admin.role, staffId: admin.staffId, name: admin.staffName };
@@ -67,10 +69,10 @@ describe("Defect 2 — HLOC send uses the shared precedence", () => {
     // Exactly what CareEpisodesPanel's ConsentCapture records.
     recordLegalDisclosureConsent(p.id, clin, "Defect QA", { recipient: r.destination, purpose: "Referral — Residential" });
     expect(hlocSendBlocker(r)).toBeUndefined();
-    const logBefore = listDisclosureLog(p.id).length;
+    const logBefore = listDisclosureLog({ patientId: p.id }).length;
     advanceHlocReferral(r.id, "sent", clin);
     expect(listHlocReferrals(p.id).find((x) => x.id === r.id)?.status).toBe("sent");
-    expect(listDisclosureLog(p.id).length).toBe(logBefore + 1);
+    expect(listDisclosureLog({ patientId: p.id }).length).toBe(logBefore + 1);
   });
 
   it("a legacyUnverified-only record keeps it blocked", () => {
@@ -107,5 +109,25 @@ describe("Defect 3 — consentGate calls the live answer when no typed record ap
     expect(consentGate(p.id, aiNeed, () => false)).toBe(true);
     revokeTypedConsent({ recordId: rec.id, method: "written", actor: storeAdmin });
     expect(consentGate(p.id, aiNeed, () => true)).toBe(false);
+  });
+});
+
+describe("Defect 3 — live referrer authorization (ReferrerAuthorizationCard write)", () => {
+  const make = (pid: string) => AdelanteEHR.createReferral({
+    firstName: "Rae", lastName: `Live ${pid}`, referringAgency: "Hope CBO", referrerName: "Jo", referrerPhone: "+15555550101",
+    referralSource: "community_based_organization", consentToContact: false, channel: "public", referrerType: "community_org", enrolledPatientId: pid,
+  } as unknown as Parameters<typeof AdelanteEHR.createReferral>[0]);
+
+  it("an authorization recorded live authorizes the enrolled update; none (flag/legacy only) holds it", () => {
+    const p = fresh();
+    const r = make(p.id);
+    const ref = AdelanteEHR.listReferrals().find((x) => x.id === r.id)!;
+    expect(ref.enrolledPatientId).toBe(p.id);
+    // Legacy-only: mark everything unverified; no live authorization → held.
+    AdelanteEHR.markLegacyConsentsUnverified(p.id);
+    expect(referrerDecisionFor(ref, "enrolled").send).toBe(false);
+    recordReferrerAuthorization(r.id, "yes", "Jo");
+    const d = referrerDecisionFor(ref, "enrolled");
+    expect(d.send, JSON.stringify(d)).toBe(true);
   });
 });
