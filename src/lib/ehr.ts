@@ -12716,10 +12716,11 @@ export const AdelanteEHR = {
     category: ConsentCategory,
     at = new Date(),
   ): boolean {
-    // B2-5: only independently signed form records can serve the remaining
-    // category callers. Old flags and unproven sections grant nothing.
+    // B2-5: flags and records present at migration (legacyUnverified) grant
+    // nothing; live writes after migration keep today's scope. Carried-forward
+    // sections cannot come from an unverified record (activeConsentRecord skips them).
     const rec = AdelanteEHR.activeConsentRecord(patientId, at);
-    if (!rec || !rec.signature || !rec.document || rec.legacyUnverified) return false;
+    if (!rec || rec.legacyUnverified) return false;
     return Boolean(rec.sections.find((s) => s.category === category)?.authorized);
   },
   /** Migration retains every historical field and merge hold; it never verifies. */
@@ -12836,7 +12837,6 @@ export const AdelanteEHR = {
       status: "active",
       supersedesId: input.supersedesId ?? prior?.id,
       sections: input.sections,
-      ...(!ext?.consentType && !ext?.signature ? { legacyUnverified: true } : {}),
       ...(ext ?? {}),
     };
     consentRecords.unshift(rec);
