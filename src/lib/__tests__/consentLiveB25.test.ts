@@ -35,7 +35,7 @@ describe("B2-5 live untyped consistency", () => {
     expect(AdelanteEHR.activeConsentRecord(p.id)?.document).toBeUndefined();
     expect(consentGate(p.id, need, () => false)).toBe(true);
     // B2-5 ledger (tighten): every staff role, sys_admin included, is denied; only the system actor migrates.
-    for (const role of STAFF_ROLES) {
+    for (const { key: role } of STAFF_ROLES) {
       const denied = runAction("consent_legacy_migrate", { role, staffId: "s-admin1", staffName: "Staff" }, p, {
         via: "migrateUnprovenConsents", args: [{ patientId: p.id, actor: { role, staffId: "s-admin1", name: "Staff" } }],
       });
