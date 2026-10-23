@@ -12708,7 +12708,8 @@ export const AdelanteEHR = {
     // §B2-4 — wrapper: an applicable typed record (program recipient + purpose) decides via consentCovers; otherwise today's source (Option A).
     const need = categoryNeed(category);
     const today = () => AdelanteEHR._consentCategoryToday(patientId, category, at);
-    return need ? consentGate(patientId, need, today, at) : today();
+    // B2-5: with no applicable typed record, only a live post-migration record answers (never a flag).
+    return need && typedRecordApplies(patientId, need) ? consentGate(patientId, need, today, at) : today();
   },
   /** §B2-4 — the pre-B2-4 answer (untyped record, then legacy flag). Removed in B2-5. */
   _consentCategoryToday(
