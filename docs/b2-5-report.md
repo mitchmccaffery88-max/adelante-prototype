@@ -267,3 +267,18 @@ Only i (true→false narrowings incl. the 14 `b21` entries), ii (denial conseque
 - Diagnostic only (not acceptance): the three specs standalone, once, `--workers=1` on :8080 → 7/7 passed, EXIT 0 (`/tmp/b25-diag.log`). None of the three touches consent gates.
 - No test, timeout, retry or app change made after the run. Screenshots: 17 files restored from 99a8b776; diff vs rollback now empty.
 - Needed from Mitch: either authorize one more full-suite run, or another decision on these three timeouts.
+
+## 13. Authorized rerun (Mitch, Oct 23) — STOP
+
+- No stray processes; dev server restarted; FULL suite once, alone, background, `--workers=1`, :8080: **223 passed, 1 failed, 45.0m, literal `EXIT 1`** (`/tmp/b25b-browser.log`). contentInventoryTables8b2:5 passed.
+- Sole failure: `auditTables8b3:13` action-audit-feed (named), 30s test timeout.
+- Standalone 3x: pass (44.8s), **fail** (timeout), pass (47.2s). 2/3 — the rule needs 3/3, so this is not green. STOP.
+- Investigation only, no edits. Same steps timed 5x (seconds; Python Playwright with the same axe-core):
+
+| Build | goto | app ready | nav | wait | rows | axe 1280 | axe 390 | total |
+|---|---|---|---|---|---|---|---|---|
+| current (:8080) | 0.43–0.57 | 5.5–7.2 | 0.3–0.5 | 2.0 | 1.1–1.7 | 4.5–6.3 | 5.2–7.3 | 20.3–24.1 |
+| 99a8b776 copy (:8091) | 0.42–1.93 | 6.2–6.8 (first, cold: 38.4) | 0.4–0.6 | 2.0 | 1.4–1.9 | 5.2–6.2 | 5.4–7.1 | 21.8–23.8 (first: 56.9) |
+
+- Reading: current is no slower than the rollback; both use about 20–24s of the 30s budget, mostly app startup plus two axe passes. A timing-budget issue present at 99a8b776 too, not a B2-5 regression.
+- Screenshots restored against 99a8b776. B2 not marked complete.
