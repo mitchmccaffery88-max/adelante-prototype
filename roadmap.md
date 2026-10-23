@@ -668,3 +668,6 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [ ] B2-5 migration to legacyUnverified (report affected patients first)
 - [ ] B2-6 audit + disclosure links
 - [ ] Audit: denied-navigation audit under slow load — moved to backend / immutable-audit phase (no sessionStorage)
+- [x] B2-5: Mitch-review defects fixed (revoke method, HLOC precedence, consentGate today) with regression tests.
+- [ ] B2-5: `consent_legacy_migrate` hidden for all roles — blocked: conflicts with the seed migration runner; awaiting Mitch.
+- [ ] B2-5: remaining flag-fixture test rewrites, full units, full browser, screenshots, final SHA — after the above.
