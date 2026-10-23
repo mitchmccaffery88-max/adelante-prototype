@@ -670,4 +670,4 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [ ] Audit: denied-navigation audit under slow load — moved to backend / immutable-audit phase (no sessionStorage)
 - [x] B2-5: Mitch-review defects fixed (revoke method, HLOC precedence, consentGate today) with regression tests.
 - [x] B2-5: `consent_legacy_migrate` runs as the non-staff system migration actor; hidden for all 17 staff roles (snapshot +17 hidden only).
-- [ ] B2-5: rewrites, Option A, pins done; units 2978/2978 EXIT 0; full browser 221/224 EXIT 1 (3 timeouts, one unnamed: contentInventoryTables8b2:5) — STOP, awaiting Mitch on a rerun; screenshots restored.
+- [ ] B2-5: rerun 223/224 EXIT 1; sole failure auditTables8b3:13 passed only 2/3 standalone — STOP; timing shows the same ~20–24s at 99a8b776. Awaiting Mitch.
