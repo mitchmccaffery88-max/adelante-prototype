@@ -310,10 +310,12 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
   const sections = [...(prior?.sections ?? []).filter((s) => s.category !== "legal_part2_disclosure"), { category: "legal_part2_disclosure" as const, authorized: true }];
   AdelanteEHR.createConsentRecord({
     patientId, formType: prior?.formType ?? "AB133", source: "in person — consent tab", signedByName, attested: true,
+    extension: {
     signature: {
       method: "e_sign", signer: signedByName, relationship: "patient",
       signedAt: new Date().toISOString(), recordedAt: new Date().toISOString(),
       recordedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
+    },
     },
     effectiveDate: new Date().toISOString().slice(0, 10), sections, capturedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
   });

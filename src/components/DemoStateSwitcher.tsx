@@ -249,10 +249,12 @@ function ensureCollateralRoi(patientId: string): void {
     signedByName: "Demo Patient",
     relationship: "patient",
     attested: true,
+    extension: {
     signature: {
       method: "e_sign", signer: "Demo Patient", relationship: "patient",
       signedAt: new Date().toISOString(), recordedAt: new Date().toISOString(),
       recordedBy: { staffName: "Demo setup", role: "cf_care_manager" },
+    },
     },
     effectiveDate: new Date().toISOString().slice(0, 10),
     sections,
