@@ -90,7 +90,7 @@ export type AsamAccessMode = "full" | "totals";
 /** Patients with a TPO or specific written SUD consent on file (addendum A1/A2). */
 import { consentGate, coordinatorNeed } from "@/lib/consentGate";
 export function coordinatorConsentedPatients(): Patient[] {
-  return AdelanteEHR.listPatients().filter((p) => consentGate(p.id, coordinatorNeed("diagnoses"), () => !!p.sudCoordinationConsent && p.consents.part2Sud));
+  return AdelanteEHR.listPatients().filter((p) => consentGate(p.id, coordinatorNeed("diagnoses"), () => false));
 }
 
 /** Role-level: "full" (rows + totals), "totals" (aggregate only), or null (hidden). */

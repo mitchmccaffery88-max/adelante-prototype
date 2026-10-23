@@ -61,7 +61,7 @@ import { consentEventDetail } from "@/lib/consentEvents";
 import { consentMigrationRegistryReady, migrateUnprovenConsents } from "@/lib/consentMigration";
 import type { ConsentRecord } from "@/lib/ehr";
 /** §B2-6 — typed revoke writes no domain audit, so consent.revoked rides on the registry success entry. */
-const typedRevokeMeta = (v: unknown) => { const r = v as ConsentRecord; return r?.id ? { consentRecordId: r.id, ...consentEventDetail({ name: "consent.revoked", rec: r, actorRole: r.revocation?.onBehalfOfPatient ? "staff" : "patient" }) } : undefined; };
+const typedRevokeMeta = (v: unknown) => { const r = v as ConsentRecord; return r?.id ? { consentRecordId: r.id, ...consentEventDetail({ name: "consent.revoked", rec: r, actorRole: r.revocation?.onBehalfOfPatient ? "staff" : "patient" }), revocationMethod: r.revocation?.method } : undefined; };
 import { sendForms, resendCurrent, buildIntakePacket, createFormDraft, editForm, submitForLegalReview, approveForm, publishForm, revokeForm, signChecked, declineForm, setChecked } from "@/lib/consentForms";
 import { RESTRICT_ROLES, COMPLIANCE_ROLES, roleHasChartEntry, setRecordRestricted, openRestrictedChart, acknowledgeRestrictedOpen } from "@/lib/chartAccess";
 import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";

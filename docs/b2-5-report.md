@@ -174,3 +174,28 @@ The Oct 23 option (b) decision resolves §9. Live untyped records remain live; m
 `consentRecordModelB2.test.ts:38–41` requires every seeded gate to equal the immutable `consentParityB2-1.json` (a2601c9f-era baseline) literally. This includes flag-only positive grants for Alicia Serrano/Alicia R./Marcus Whitfield/Lucía Moreno, which Mitch requires to deny. Keeping that literal positive assertion requires restoring prohibited grants; replacing/skipping it or updating its baseline violates the keep/tighten rule. The explicit expected-delta authority so far names the 0089ca4f/5c335b7e parity snapshots, not this additional a2601c9f snapshot. No edit made to this test or its baseline. **STOP before remaining fixture edits/full browser validation.** Proposed resolution: permit an additional exact enumerated narrowing/provenance delta for this historical snapshot, preserving its immutable baseline and every unrelated field.
 
 Full browser suite was not started; no `/tmp/b25-browser.log` EXIT or successful closeout is claimed. Screenshots were not generated/restored this batch. Backend follow-up recorded, not implemented. Supabase config confirms existing connected ref `bnvukmpmwuhftvjpnwqi`; the tools available do not establish its display name is Adelante Pathways Beta, so no name match or new connection is claimed. No publishing.
+
+## Defects fixed (Mitch's review, Oct 23)
+
+1. **Revoke method ignored** — `ConsentCapturePanel.tsx`: the method now lives in `RevokeMethodField`'s own state and is read through a ref inside `onConfirm`; the select is live. The only other field in that dialog is the note, already owned by ConfirmDialog. `chartActions.ts` `typedRevokeMeta` adds `revocationMethod` to the `action.succeeded` metadata. Patient side checked: `ConsentWithdrawSheet` / `PatientSignedForms` have no captured-at-ask pattern and no method field.
+2. **HLOC send blocker** — `outpatientCare.ts hlocSendBlocker`: an applicable typed record (destination + "Referral for treatment") decides; otherwise `hasLegalDisclosureConsent` (live, non-legacy untyped legal section) answers. No hidden literal purpose is required of staff.
+3. **consentGate discarded `today`** — `consentGate.ts`: with no applicable typed record, a need with `liveCategory` reads the live non-legacy section; otherwise `today()` is called.
+
+consentGate callers and their `today` source:
+| Caller | today |
+|---|---|
+| `coordinatorSudAccess.ts:33` counseling | `() => false` (no live untyped writer; flag no longer read) |
+| `coordinatorSudAccess.ts:39` coordination | `() => false` (no live untyped writer; flag no longer read) |
+| `asamReporting.ts:93` cohort | `() => false` (additive exact-once substitution added in `privacyP3Approved.ts`) |
+| `referrerUpdateGate.ts:36` Part 2 named | live legal-disclosure row naming the referrer AND live non-legacy legal section |
+| `referrerUpdateGate.ts:37` authorization | live `referrerAuthorizationFor` (ReferrerAuthorizationCard writes) |
+| `ehr.ts isConsentCategoryAuthorized` | `_consentCategoryToday` (live, non-legacy record only) |
+| `part2Disclosure.ts:210` | liveCategory `legal_part2_disclosure` (live non-legacy) + matching legal row |
+| `outpatientCare.ts hlocSendBlocker` | `hasLegalDisclosureConsent` (live non-legacy) |
+
+Flag writers checked: no app code writes `sudCoordinationConsent` / `sudCounselingNotesRelease` (only the type at `ehr.ts:1671–1673` and readers), so no STOP.
+
+New tests: `src/components/__tests__/revokeMethodField.test.tsx` (3 cases: the live select sends each chosen method on confirm) and `src/lib/__tests__/b25MitchDefects.test.ts` (10 cases: each revoke method on record + audit; panel capture unblocks send and writes disclosure; legacy-only stays blocked; Jordan typed sends; gate calls today; typed decides incl. revoked; live referrer authorization authorizes "enrolled", legacy-only holds).
+Focused run (`/tmp/b25-defects.log`): 125/126 — both immutable parity tests (matrix, audit), consentRecordModelB2, clinicalCoreB, 9a2/9c2 parity, P3 referrer, asamReporting, migration all green. Sole failure: `consentEnforcementB2.test.ts` "Option A" — the already-listed, not-yet-rewritten flag-fixture test.
+
+**Stopped before** the remaining test rewrites and full validation: making `consent_legacy_migrate` hidden for every role blocks the migration itself (`consentMigration.ts:81` runs it through runAction as sys_admin) and the new `consentLiveB25.test.ts:35–38`, which expects it to succeed. Needs Mitch's choice of how the migration runs.

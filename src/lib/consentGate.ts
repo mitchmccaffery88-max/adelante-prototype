@@ -58,11 +58,13 @@ export function typedRecordApplies(patientId: string, n: GateNeed): boolean {
  * caller's current source answers.
  */
 export function consentGate(patientId: string, n: GateNeed, today: () => boolean, at?: Date): boolean {
-  // The historical callbacks include flag readers. Never consult them.
-  void today;
+  // No applicable typed record: the live answer decides. A need with a
+  // liveCategory reads the live, non-legacy section; otherwise the caller's
+  // `today` answers. Every caller's `today` reads ONLY live, non-legacy
+  // sources — never flags or legacyUnverified records (B2-5).
   if (!ledger) return false;
   if (!typedRecordApplies(patientId, n))
-    return n.liveCategory ? ledger._consentCategoryToday?.(patientId, n.liveCategory as never, at) ?? false : false;
+    return n.liveCategory ? ledger._consentCategoryToday?.(patientId, n.liveCategory as never, at) ?? false : today();
   const l = ledger;
   const recs = l.listConsentRecords(patientId).filter((r) => applies(r, n));
   return n.types.some((type) => n.recipients.some((recipient) =>
