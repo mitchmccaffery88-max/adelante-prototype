@@ -52,7 +52,9 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
   const [mode, setMode] = useState<Mode | null>(null);
   const [view, setView] = useState<string | null>(null);
   const [renew, setRenew] = useState<HistoryRow | null>(null);
-  const [revokeMethod, setRevokeMethod] = useState<RevokeMethod>("written");
+  // The dialog's request is captured once at ask(); the live selection lives
+  // in RevokeMethodField's own state and is read through this ref on confirm.
+  const revokeMethod = useRef<RevokeMethod>("written");
   const confirm = useConfirmDialog();
   const viewing = snap.rows.find((r) => r.id === view);
   const showCapture = can("consent_record_capture");
@@ -60,29 +62,23 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
   const showSend = can("consent_record_request_esign");
   const showRenew = can("consent_record_renew");
   const showRevoke = can("consent_record_revoke");
-  const askRevoke = (r: HistoryRow) =>
+  const askRevoke = (r: HistoryRow) => {
+    revokeMethod.current = "written";
     confirm.ask({
       title: `Revoke: ${CONSENT_TYPE_LABEL[r.consentType].en}`,
       description: REVOKE_WORDING_DRAFT,
       confirmLabel: "Revoke consent",
       keepLabel: "Keep it",
       reasonLabel: "Note (optional)",
-      children: (
-        <label className="block text-sm">How the person asked
-          <select className={field} value={revokeMethod} onChange={(e) => setRevokeMethod(e.target.value as RevokeMethod)} aria-label="Revocation method">
-            <option value="written">In writing</option>
-            <option value="e_sign">E-sign / portal</option>
-            <option value="oral">Told to staff</option>
-          </select>
-        </label>
-      ),
+      children: <RevokeMethodField initial="written" onChange={(m) => { revokeMethod.current = m; }} />,
       onConfirm: (reason) => {
-        const r2 = runAction("consent_record_revoke", actor, patient, { via: "revokeTypedConsent", args: [{ recordId: r.id, method: revokeMethod, note: reason, actor: storeActor }] });
+        const r2 = runAction("consent_record_revoke", actor, patient, { via: "revokeTypedConsent", args: [{ recordId: r.id, method: revokeMethod.current, note: reason, actor: storeActor }] });
         if (r2.ok) toast.success(confirmationFor("consent_record_revoke", "Consent revoked — it stays in the history"));
         else toast.error(r2.reason);
         return r2.ok;
       },
     });
+  };
 
   return (
     <section className="space-y-3 rounded-md border border-border p-3" data-testid="consent-capture-panel">
