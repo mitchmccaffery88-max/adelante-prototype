@@ -18,6 +18,11 @@ export interface DeltaEntry {
 export const NARROWED = ["Daniel M.", "Alicia Serrano", "Alicia R.", "Marcus Whitfield", "Lucía Moreno"];
 /** Same access, now cited from a signed typed record. */
 export const RECAPTURED = ["Marcus L.", "Luis Camacho", "Jasmine Holt", "Fictional QA billing patient #7"];
+/** consentParityB2-1.json identifiers for the seven flag-only patients. That
+ * fixture keys generated seed ids by listPatients index: #10 = Luis Camacho,
+ * #11 = Jasmine Holt. In that isolated store test the action registry is
+ * never loaded, so the B2-5 re-captures do not run and all seven narrow. */
+export const NARROWED_B21 = ["p3", "p4", "p-demo-refusal", "p-demo-mar-seed", "p-demo-mar-seed-es", "#10", "#11"];
 
 const LEVEL = { none: 0, read: 1, write: 2 } as Record<string, number>;
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
