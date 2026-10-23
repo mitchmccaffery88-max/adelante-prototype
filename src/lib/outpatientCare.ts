@@ -222,13 +222,16 @@ export function createHlocReferral(input: {
   audit("hloc_referral_drafted", input.patientId, input.actor, { referralId: r.id, target: r.target, urgency: r.urgency, sudRelated: r.sudRelated });
   return r;
 }
-/** Why sending is blocked, or undefined. Outside SUD provider needs a legal Part 2 disclosure consent. */
+/** Why sending is blocked, or undefined. Outside SUD provider needs a legal Part 2 disclosure consent.
+ * Same precedence as every gate: an applicable typed record (this destination,
+ * "Referral for treatment") decides; otherwise the live, non-legacy untyped
+ * legal disclosure consent answers (hasLegalDisclosureConsent). Flags and
+ * legacyUnverified records never answer. */
 export function hlocSendBlocker(r: HlocReferral): string | undefined {
   if (r.outsideSudProvider && !consentGate(r.patientId, {
     types: ["legal_part2_disclosure", "part2_specific_written"], recipients: [r.destination],
     purposes: ["Referral for treatment"], item: "SUD referral information",
-    liveCategory: "legal_part2_disclosure",
-  }, () => false))
+  }, () => AdelanteEHR.hasLegalDisclosureConsent(r.patientId)))
     return "Sending to an outside SUD provider needs the patient's 42 CFR Part 2 disclosure consent. Record it first.";
   return undefined;
 }

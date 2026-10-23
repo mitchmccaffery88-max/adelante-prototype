@@ -29,13 +29,14 @@ export function coordinatorSudCanRead(viewer: SudViewer, patient: Patient | unde
   if (viewer.role !== "clinical_coordinator" || !patient) return false;
   // Separate release only. Neither general consent nor break-glass grants counseling.
   // §B2-4: a counseling_notes_release record decides; Part 2 TPO/specific never applies here.
-  if (item === "counseling_notes") return consentGate(patient.id, COUNSELING_NEED, () => patient.sudCounselingNotesRelease === true, new Date(now));
+  // B2-5: no live untyped writer exists for these scopes; the flags grant nothing.
+  if (item === "counseling_notes") return consentGate(patient.id, COUNSELING_NEED, () => false, new Date(now));
   if (!(COORDINATOR_SUD_ITEMS as readonly string[]).includes(item)) return false;
   return coordinatorPart2Consent(patient, item, now) || !!coordinatorEmergencyFor(viewer, patient.id, now);
 }
 /** §B2-4 — coordinator Part 2 consent (program / care-coordination recipient, care-coordination purpose). Option A: no applicable typed record -> today's flag. */
 export function coordinatorPart2Consent(patient: Patient, item: string, now = Date.now()): boolean {
-  return consentGate(patient.id, coordinatorNeed(item), () => patient.sudCoordinationConsent === "tpo" || patient.sudCoordinationConsent === "specific_written", new Date(now));
+  return consentGate(patient.id, coordinatorNeed(item), () => false, new Date(now));
 }
 export function coordinatorNoteCanRead(viewer: SudViewer, patient: Patient | undefined, note: Partial<ProgressNote>, now = Date.now()): boolean {
   if (note.restrictedTier === "psychotherapy_notes") return coordinatorSudCanRead(viewer, patient, "counseling_notes", now);
