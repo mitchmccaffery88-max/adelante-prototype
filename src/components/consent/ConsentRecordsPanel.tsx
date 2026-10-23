@@ -89,6 +89,13 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
         source,
         signedByName,
         attested,
+        extension: {
+    signature: {
+          method: "e_sign", signer: signedByName, relationship: "patient",
+          signedAt: new Date().toISOString(), recordedAt: new Date().toISOString(),
+          recordedBy: { staffId, staffName, role },
+    },
+        },
         effectiveDate,
         expirationDate: expirationDate || undefined,
         sections: CONSENT_CATEGORIES.map((c) => ({

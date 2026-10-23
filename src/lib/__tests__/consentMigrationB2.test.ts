@@ -36,7 +36,7 @@ describe("B2-5 consent migration", () => {
     expect(untyped.length).toBeGreaterThan(0);
     expect(untyped.every((r) => r.legacyUnverified === true)).toBe(true);
     expect(AdelanteEHR.activeConsentRecord("p1")).toBeUndefined();
-    for (const c of ["sud_treatment", "mental_health", "case_coordination", "legal_disclosure"] as const)
+    for (const c of ["sud_treatment", "mental_health", "case_coordination", "legal_part2_disclosure"] as const)
       expect(AdelanteEHR.isConsentCategoryAuthorized("p1", c)).toBe(false);
     const t = typed("p1");
     expect(t).toHaveLength(1);

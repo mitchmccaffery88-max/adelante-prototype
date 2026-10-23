@@ -8,6 +8,7 @@ import type { StaffRole } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
 import { disclose, registerLegalDisclosureSource, type Part2RecordClass } from "./part2Disclosure";
 import { requestDemoConsentCapture } from "./consentMigration";
+import { consentGate } from "./consentGate";
 
 export type EpisodeProgram = "outpatient_mh" | "outpatient_sud" | "ecm";
 export const EPISODE_PROGRAM_LABEL: Record<EpisodeProgram, string> = {
@@ -223,7 +224,11 @@ export function createHlocReferral(input: {
 }
 /** Why sending is blocked, or undefined. Outside SUD provider needs a legal Part 2 disclosure consent. */
 export function hlocSendBlocker(r: HlocReferral): string | undefined {
-  if (r.outsideSudProvider && !AdelanteEHR.consentCovers(r.patientId, { type: "legal_part2_disclosure", recipient: r.destination, purpose: "Referral for treatment", item: "SUD referral information" }))
+  if (r.outsideSudProvider && !consentGate(r.patientId, {
+    types: ["legal_part2_disclosure", "part2_specific_written"], recipients: [r.destination],
+    purposes: ["Referral for treatment"], item: "SUD referral information",
+    liveCategory: "legal_part2_disclosure",
+  }, () => false))
     return "Sending to an outside SUD provider needs the patient's 42 CFR Part 2 disclosure consent. Record it first.";
   return undefined;
 }
@@ -310,6 +315,13 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
   const sections = [...(prior?.sections ?? []).filter((s) => s.category !== "legal_part2_disclosure"), { category: "legal_part2_disclosure" as const, authorized: true }];
   AdelanteEHR.createConsentRecord({
     patientId, formType: prior?.formType ?? "AB133", source: "in person — consent tab", signedByName, attested: true,
+    extension: {
+    signature: {
+      method: "e_sign", signer: signedByName, relationship: "patient",
+      signedAt: new Date().toISOString(), recordedAt: new Date().toISOString(),
+      recordedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
+    },
+    },
     effectiveDate: new Date().toISOString().slice(0, 10), sections, capturedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
   });
   const d: LegalDisclosure = {

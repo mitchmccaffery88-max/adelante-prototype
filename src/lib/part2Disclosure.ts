@@ -12,6 +12,7 @@
 import { AdelanteEHR, LEGAL_DISCLOSURE_CONSENT_CATEGORY } from "./ehr";
 import { validateCoordinatorEmergency } from "./coordinatorSudAccess";
 import type { ConsentType } from "./consentRecordModel";
+import { consentGate } from "./consentGate";
 
 // Legal disclosure records live in outpatientCare.ts, which registers its
 // reader here (no import: avoids an ehr → outpatientCare load cycle).
@@ -204,10 +205,13 @@ export function part2ConsentFor(
       // Recipient AND purpose must match the recorded legal disclosure.
       (!purpose || !d.purpose || norm(d.purpose) === norm(purpose)),
   );
-  // B2-5: a named legal disclosure still needs its signed typed record
-  // (same recipient AND purpose); the legacy category alone grants nothing.
-  const legalOk = !!legal && (has(LEGAL_DISCLOSURE_CONSENT_CATEGORY) ||
-    !!AdelanteEHR.consentCoveringRecordId(patientId, { type: "legal_part2_disclosure", recipient: legal.recipient, purpose: purpose ?? legal.purpose }));
+  // Applicable typed evidence decides, including a revoked/expired denial.
+  // Otherwise only a live untyped legal section answers, never old history.
+  const legalOk = !!legal && consentGate(patientId, {
+    types: ["legal_part2_disclosure", "part2_specific_written"],
+    recipients: [legal.recipient], purposes: [purpose ?? legal.purpose ?? ""],
+    liveCategory: LEGAL_DISCLOSURE_CONSENT_CATEGORY,
+  }, () => false);
   switch (recipient.type) {
     case "internal":
       // Communications within the program's own treatment team (42 CFR 2.12(c)(3)).

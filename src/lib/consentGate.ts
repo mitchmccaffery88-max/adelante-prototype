@@ -2,8 +2,8 @@
 // (consentCovers) first; a typed record only APPLIES to a gate when its type,
 // recipient and purpose (and, for part2_specific_written, its item list)
 // match what the gate needs. A record naming an external recipient never
-// applies to an internal gate. When no typed record applies, today's source
-// answers (Option A, until the B2-5 migration). Draft — pending clinical
+// applies to an internal gate. When no typed record applies, only a live
+// untyped section record answers; flags never do. Draft — pending clinical
 // and counsel sign-off.
 import type { ConsentType } from "./consentRecordModel";
 
@@ -14,6 +14,7 @@ interface LedgerRecord {
 export interface ConsentLedger {
   listConsentRecords(patientId?: string): LedgerRecord[];
   consentCovers(patientId: string, q: { type: ConsentType; recipient?: string; purpose?: string; item?: string; at?: Date }): boolean;
+  _consentCategoryToday?(patientId: string, category: never, at?: Date): boolean;
 }
 let ledger: ConsentLedger | undefined;
 /** Registered once by ehr.ts; avoids an import cycle. */
@@ -30,6 +31,8 @@ export interface GateNeed {
   /** Required purpose (purposeCode or purpose, exact). Undefined = gate has no purpose requirement. */
   purposes?: readonly string[];
   item?: string;
+  /** Existing section category, when the live section model has this scope. */
+  liveCategory?: string;
 }
 
 const low = (s: string) => s.trim().toLowerCase();
@@ -55,9 +58,11 @@ export function typedRecordApplies(patientId: string, n: GateNeed): boolean {
  * caller's current source answers.
  */
 export function consentGate(patientId: string, n: GateNeed, today: () => boolean, at?: Date): boolean {
-  // B2-5: a flag or bare untyped record is never evidence of consent.
+  // The historical callbacks include flag readers. Never consult them.
   void today;
-  if (!ledger || !typedRecordApplies(patientId, n)) return false;
+  if (!ledger) return false;
+  if (!typedRecordApplies(patientId, n))
+    return n.liveCategory ? ledger._consentCategoryToday?.(patientId, n.liveCategory as never, at) ?? false : false;
   const l = ledger;
   const recs = l.listConsentRecords(patientId).filter((r) => applies(r, n));
   return n.types.some((type) => n.recipients.some((recipient) =>
@@ -68,9 +73,9 @@ export function consentGate(patientId: string, n: GateNeed, today: () => boolean
 
 /** Internal needs for the legacy category API (isConsentCategoryAuthorized). */
 export const CATEGORY_NEEDS: Partial<Record<string, GateNeed>> = {
-  sud_treatment: { types: ["part2_tpo_single"], recipients: PROGRAM_RECIPIENTS, purposes: ["treatment"] },
-  telehealth_services: { types: ["telehealth"], recipients: PROGRAM_RECIPIENTS, purposes: ["telehealth"] },
-  group_confidentiality_ack: { types: ["group_confidentiality"], recipients: PROGRAM_RECIPIENTS, purposes: ["group_confidentiality"] },
+  sud_treatment: { types: ["part2_tpo_single"], recipients: PROGRAM_RECIPIENTS, purposes: ["treatment"], liveCategory: "sud_treatment" },
+  telehealth_services: { types: ["telehealth"], recipients: PROGRAM_RECIPIENTS, purposes: ["telehealth"], liveCategory: "telehealth_services" },
+  group_confidentiality_ack: { types: ["group_confidentiality"], recipients: PROGRAM_RECIPIENTS, purposes: ["group_confidentiality"], liveCategory: "group_confidentiality_ack" },
 };
 /** No recipient is known at the category call sites for external-disclosure
  * categories, so no typed record applies there; named-recipient gates
