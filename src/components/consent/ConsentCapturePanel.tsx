@@ -2,7 +2,7 @@
 // section: record (in-person e-sign or verbal assent where allowed), upload a
 // paper copy (Simulated) or send for patient e-sign, plus the typed-record
 // history. Every write goes through runAction. Draft — pending counsel.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Lock } from "lucide-react";
 import { useEhr, type Patient } from "@/lib/ehr";
@@ -301,5 +301,19 @@ function CaptureForm({ mode, patient, run, onDone, storeActor, renewFrom }: {
       )}
       <Button className="w-full" onClick={submit} data-testid="consent-form-submit">{mode === "esign" ? "Send to patient" : "Save consent record"}</Button>
     </div>
+  );
+}
+
+/** Owns the live method selection inside the revoke dialog. */
+export function RevokeMethodField({ initial, onChange }: { initial: RevokeMethod; onChange: (m: RevokeMethod) => void }) {
+  const [value, setValue] = useState<RevokeMethod>(initial);
+  return (
+    <label className="block text-sm">How the person asked
+      <select className={field} value={value} onChange={(e) => { const m = e.target.value as RevokeMethod; setValue(m); onChange(m); }} aria-label="Revocation method">
+        <option value="written">In writing</option>
+        <option value="e_sign">E-sign / portal</option>
+        <option value="oral">Told to staff</option>
+      </select>
+    </label>
   );
 }
