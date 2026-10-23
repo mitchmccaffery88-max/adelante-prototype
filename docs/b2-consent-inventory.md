@@ -443,3 +443,6 @@ Total lines: 342. Unclassified: 0.
 | src/lib/coordinatorSudAccess.ts | gate | :30 counseling notes and :32 Part 2 consent read `consentGate`; legacy flags answer only when no typed record applies. Emergency functions byte-identical. Counts unchanged (legacy 2). |
 | src/lib/referrerUpdateGate.ts | gate | Part 2 named-recipient and referrer authorization read `consentGate` with the referrer's own name; existing stores answer otherwise. Counts unchanged (2). |
 | src/lib/asamReporting.ts | gate (held) | :92 switch held: the file is pinned byte-identical by 9a-2/9a-3/9c-2 parity tests without an approved adapter. Reads today's flags unchanged. |
+
+## B2-5 addition
+- `src/lib/consentMigration.ts` — 1 entry-point line (listConsentRecords, to find live untyped records the system migration marks legacyUnverified).
