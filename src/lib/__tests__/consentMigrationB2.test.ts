@@ -56,7 +56,8 @@ describe("B2-5 consent migration", () => {
       expect(t[0]).toMatchObject({ consentType: "part2_tpo_single", purpose: "treatment", purposeCode: "treatment", items: ["SUD treatment information"] });
       expect(t[0].recipients).toEqual([{ kind: "org", name: "Adelante", directoryRef: "adelante-program" }]);
       expect(t[0].signature).toMatchObject({ method: "e_sign", signer: `${p.firstName} ${p.lastName}`, relationship: "patient" });
-      expect(t[0].signature?.signedAt.slice(0, 10)).toBe(new Date().toISOString().slice(0, 10));
+      // Never backdated: signed when it was recorded.
+      expect(t[0].signature?.signedAt).toBe(t[0].signature?.recordedAt);
       expect(t[0].document?.versionId).toBe(publishedForm("part2")?.id);
       expect(AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment")).toBe(true);
       expect(AdelanteEHR.consentCovers(p.id, { type: "part2_tpo_single", recipient: "adelante-program", purpose: "care_coordination" })).toBe(false);
