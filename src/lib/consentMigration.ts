@@ -26,7 +26,7 @@ export const NAMED_PART2_FORM: Omit<FormVersion, "id" | "version" | "status" | "
 };
 
 function invoke<T>(id: string, via: string, args: unknown[], patientId?: string): T {
-  if (!runner) throw new Error("Consent migration registry is not ready.");
+  if (!runner || !registryReady) throw new Error("Consent migration registry is not ready.");
   const result = runner<T>(id, actor, patientId ? AdelanteEHR.getPatient(patientId) : undefined, { via, args, auditReason: "B2-5 approved demo consent migration — Draft pending counsel" });
   if (!result.ok) throw new Error(result.reason);
   return result.value;
@@ -58,18 +58,24 @@ function capture(draft: CaptureDraft): void {
 }
 
 export function requestDemoConsentCapture(draft: CaptureDraft): void {
-  if (!runner) { pending.push(draft); return; }
+  if (!runner || !registryReady) { pending.push(draft); return; }
   capture(draft);
 }
 
-/** Called only once the real registry is initialized; no timer/import-time I/O. */
+let registryReady = false;
+/** Called by runAction.ts once the runner exists; seeds only when the action registry is also loaded. */
 export function registerConsentMigrationRunner(run: Runner): void {
   runner = run;
-  seedConsentMigration();
+  if (registryReady) seedConsentMigration();
+}
+/** Called once at the end of chartActions.ts (the registry), breaking the import-order race. */
+export function consentMigrationRegistryReady(): void {
+  registryReady = true;
+  if (runner) seedConsentMigration();
 }
 
 export function seedConsentMigration(): void {
-  if (!runner) return;
+  if (!runner || !registryReady) return;
   for (const p of AdelanteEHR.listPatients()) {
     if (AdelanteEHR.listConsentRecords(p.id).some(r => !r.consentType && !r.legacyUnverified))
       invoke("consent_legacy_migrate", "migrateUnprovenConsents", [{ patientId: p.id, actor: storeActor }], p.id);

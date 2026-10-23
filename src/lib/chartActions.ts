@@ -58,7 +58,7 @@ import { canAuthorContent, canPublishContent, saveContentDraft, submitContentFor
 import { captureConsentRecord, uploadPaperConsent, requestConsentESign, patientSignConsent } from "@/lib/consentCapture";
 import { renewTypedConsent, revokeTypedConsent } from "@/lib/consentLifecycle";
 import { consentEventDetail } from "@/lib/consentEvents";
-import { migrateUnprovenConsents } from "@/lib/consentMigration";
+import { consentMigrationRegistryReady, migrateUnprovenConsents } from "@/lib/consentMigration";
 import type { ConsentRecord } from "@/lib/ehr";
 /** §B2-6 — typed revoke writes no domain audit, so consent.revoked rides on the registry success entry. */
 const typedRevokeMeta = (v: unknown) => { const r = v as ConsentRecord; return r?.id ? { consentRecordId: r.id, ...consentEventDetail({ name: "consent.revoked", rec: r, actorRole: r.revocation?.onBehalfOfPatient ? "staff" : "patient" }) } : undefined; };
@@ -1529,3 +1529,6 @@ export function sectionHasAction(sectionId: string, actor: ChartActor, patient?:
     (a) => a.sectionId === sectionId && !a.pending && a.allowed(actor, patient).state !== "hidden",
   );
 }
+
+// B2-5: the registry is complete; queued consent migration may now run.
+consentMigrationRegistryReady();
