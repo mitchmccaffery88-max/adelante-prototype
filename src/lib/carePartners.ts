@@ -12,6 +12,7 @@ import { AdelanteEHR, type Patient } from "@/lib/ehr";
 import type { StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { recordLegalDisclosureConsent } from "@/lib/outpatientCare";
+import { requestDemoConsentCapture } from "@/lib/consentMigration";
 import { disclose, part2ConsentFor, type Part2RecordClass } from "@/lib/part2Disclosure";
 
 export const CARE_PARTNER_DRAFT_LABEL = "Draft — pending clinical sign-off";
@@ -282,6 +283,7 @@ export function seedCarePartnersDemo(): void {
     "Daniel M.",
     { recipient: "Porterville Community Resource Center (fictional)", purpose: DEMO_PARTNER_CONSENT.purpose },
   );
+  requestDemoConsentCapture({ patientId: "p1", consentType: "legal_part2_disclosure", recipients: [{ kind: "org", name: "Porterville Community Resource Center (fictional)" }], purpose: DEMO_PARTNER_CONSENT.purpose, items: [...PARTNER_CLUSTERS.outreach.slice] });
 }
 export const DEMO_PARTNER_CONSENT = { patientId: "p1", orgId: "cp-cbo", purpose: "Reentry coordination" } as const;
 seedCarePartnersDemo();

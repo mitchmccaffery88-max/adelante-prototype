@@ -55,7 +55,9 @@ export function typedRecordApplies(patientId: string, n: GateNeed): boolean {
  * caller's current source answers.
  */
 export function consentGate(patientId: string, n: GateNeed, today: () => boolean, at?: Date): boolean {
-  if (!ledger || !typedRecordApplies(patientId, n)) return today();
+  // B2-5: a flag or bare untyped record is never evidence of consent.
+  void today;
+  if (!ledger || !typedRecordApplies(patientId, n)) return false;
   const l = ledger;
   const recs = l.listConsentRecords(patientId).filter((r) => applies(r, n));
   return n.types.some((type) => n.recipients.some((recipient) =>
