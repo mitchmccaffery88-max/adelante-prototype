@@ -282,3 +282,10 @@ Only i (true→false narrowings incl. the 14 `b21` entries), ii (denial conseque
 
 - Reading: current is no slower than the rollback; both use about 20–24s of the 30s budget, mostly app startup plus two axe passes. A timing-budget issue present at 99a8b776 too, not a B2-5 regression.
 - Screenshots restored against 99a8b776. B2 not marked complete.
+
+## 14. Mitch-approved timeout change (Oct 23)
+
+- `e2e/auditTables8b3.spec.ts:13` before: action-audit-feed inherited the 30,000ms per-test default. After: `:14` conditionally calls `test.setTimeout(60_000)` only when `id === "action-audit-feed"`.
+- Timing evidence (§13): current 20.3–24.1s and 99a8b776 21.8–23.8s warm, using about 20–24s of the same 30s budget; startup and the two axe passes dominate. No B2-5 regression found.
+- No assertions, axe passes (1280 and 390), retries, waits, other tests or other timeouts changed. The case stays on the named-flake list; acceptance still requires a sole named failure followed by 3/3 standalone passes.
+- Authorized next validation: restart, FULL browser suite once, alone, background, `--workers=1`, :8080, literal exit in `/tmp/b25c-browser.log`. Result pending.

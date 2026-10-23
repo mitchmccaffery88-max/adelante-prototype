@@ -670,4 +670,5 @@ Preserved rollback: e231f0dd8e26acd460acee64ee0f1535480d687c.
 - [ ] Audit: denied-navigation audit under slow load — moved to backend / immutable-audit phase (no sessionStorage)
 - [x] B2-5: Mitch-review defects fixed (revoke method, HLOC precedence, consentGate today) with regression tests.
 - [x] B2-5: `consent_legacy_migrate` runs as the non-staff system migration actor; hidden for all 17 staff roles (snapshot +17 hidden only).
-- [ ] B2-5: rerun 223/224 EXIT 1; sole failure auditTables8b3:13 passed only 2/3 standalone — STOP; timing shows the same ~20–24s at 99a8b776. Awaiting Mitch.
+- [x] B2-5: rerun 223/224 EXIT 1; sole failure auditTables8b3:13 passed only 2/3 standalone — historical STOP; timing shows the same ~20–24s at 99a8b776.
+- [ ] B2-5: Mitch-approved timeout change (Oct 23), action-audit-feed only 30s→60s; restart and full isolated one-worker browser run to literal EXIT in /tmp/b25c-browser.log, then green closeout and screenshot restoration. Named-flake rule unchanged.
