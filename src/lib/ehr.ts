@@ -1,7 +1,7 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { disclose } from "./part2Disclosure";
 import { recipientKey, validateConsentExtension, verbalAssentAllowed, type ConsentRecordExtension, type ConsentType } from "./consentRecordModel";
-import { categoryNeed, consentGate, registerConsentLedger } from "./consentGate";
+import { categoryNeed, consentGate, registerConsentLedger, typedRecordApplies } from "./consentGate";
 import { consentEventDetail, createEventDetail, type ConsentEventName } from "./consentEvents";
 import { allergiesNotRecorded, findAllergyMatches, requiresCuresCheck } from "./orderSafety";
 import {
@@ -12708,7 +12708,8 @@ export const AdelanteEHR = {
     // §B2-4 — wrapper: an applicable typed record (program recipient + purpose) decides via consentCovers; otherwise today's source (Option A).
     const need = categoryNeed(category);
     const today = () => AdelanteEHR._consentCategoryToday(patientId, category, at);
-    return need ? consentGate(patientId, need, today, at) : today();
+    // B2-5: with no applicable typed record, only a live post-migration record answers (never a flag).
+    return need && typedRecordApplies(patientId, need) ? consentGate(patientId, need, today, at) : today();
   },
   /** §B2-4 — the pre-B2-4 answer (untyped record, then legacy flag). Removed in B2-5. */
   _consentCategoryToday(
@@ -12716,10 +12717,11 @@ export const AdelanteEHR = {
     category: ConsentCategory,
     at = new Date(),
   ): boolean {
-    // B2-5: only independently signed form records can serve the remaining
-    // category callers. Old flags and unproven sections grant nothing.
+    // B2-5: flags and records present at migration (legacyUnverified) grant
+    // nothing; live writes after migration keep today's scope. Carried-forward
+    // sections cannot come from an unverified record (activeConsentRecord skips them).
     const rec = AdelanteEHR.activeConsentRecord(patientId, at);
-    if (!rec || !rec.signature || !rec.document || rec.legacyUnverified) return false;
+    if (!rec || rec.legacyUnverified) return false;
     return Boolean(rec.sections.find((s) => s.category === category)?.authorized);
   },
   /** Migration retains every historical field and merge hold; it never verifies. */
@@ -12836,7 +12838,6 @@ export const AdelanteEHR = {
       status: "active",
       supersedesId: input.supersedesId ?? prior?.id,
       sections: input.sections,
-      ...(!ext?.consentType && !ext?.signature ? { legacyUnverified: true } : {}),
       ...(ext ?? {}),
     };
     consentRecords.unshift(rec);

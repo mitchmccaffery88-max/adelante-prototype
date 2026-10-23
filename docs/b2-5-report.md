@@ -115,3 +115,23 @@ Decision needed (proposal, not applied):
 3. Then the remaining ~57 test edits under the keep/tighten rule, and the pinned-parity adapters as additive exact-once substitutions.
 
 Not run: full browser suite, screenshot restore, final SHA. Emergency module untouched; no counseling release; <11 unchanged; no publish.
+
+## 9. Writer scope applied; NEW STOP — typed mapping conflicts (Oct 23)
+
+### Applied under decisions 0–2
+- Decision 0: `dl-<n>` by-key placeholders under `id` / `disclosureLogId` only — kept as already implemented in `consentAuditB2Parity.test.ts`.
+- Decision 1: `ehr.ts` `createConsentRecord` no longer auto-marks new writes `legacyUnverified`. Only `markLegacyConsentsUnverified` (records present when the migration runs) and flag-derived rows (`ehr.ts` ~:13011, `consentForms.ts` `migrateLegacyConsents`) are marked.
+- `isConsentCategoryAuthorized`: with no applicable typed record, only a live non-legacy record answers; flags never do. `activeConsentRecord` skips legacyUnverified records, so sections can never be carried forward from an unverified record.
+- Form signing (`consentForms.ts` signOne): record now carries the signed copy's real signature (e_sign, signer, signedAt) and document (formKey, versionId, version, textHash). Same categories, same single audit.
+- Full units after this: 32 failed / 2,928 passed (was 116). Remaining failures are the flag/untyped fixtures and pinned `ehr.ts` byte-parity adapters the plan expected; no test edited yet.
+
+### STOP: four writers cannot become typed records with the SAME scope and audit
+Untyped section records and typed records are two separate models: `activeConsentRecord` (category gate) only reads untyped records, and typed records supersede only per type + recipient. So:
+- Scribe grant/withdraw (`scribe.ts:243,266`), staff entry (`ConsentRecordsPanel.tsx:86`), outpatient legal rows (`outpatientCare.ts:299,311`) and DemoStateSwitcher (`:245`):
+  - making the existing record typed removes its sections (incl. carried-forward categories) from the category gate — narrows scope;
+  - adding a second typed record alongside adds one more `consent_record_created` audit per action — changes the audit count.
+- These writers currently keep granting exactly today's scope (untyped, not legacyUnverified) — not silently non-granting, but not typed either.
+- Exception to flag: outpatient `recordLegalDisclosureConsent` with recipient/purpose — `part2Disclosure.ts` named legal sends need the typed named-org record, so for patients other than Jordan/Daniel that walkthrough is now blocked until mapped.
+
+Decision needed: (a) allow one extra itemized capture audit per live action (second typed record), or (b) keep these writers untyped with signature provenance attached, or (c) other.
+Not run: test edits, browser suite, screenshots, final SHA. Emergency module untouched; no counseling release; <11 unchanged; no publish.

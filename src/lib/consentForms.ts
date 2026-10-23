@@ -306,6 +306,8 @@ function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, 
   const prior = AdelanteEHR.activeConsentRecord(p.id);
   const keep = (prior?.sections ?? []).filter((s) => !v.categories.includes(s.category));
   const endsOn = v.durationDays ? new Date(+new Date(input.at) + v.durationDays * DAY).toISOString().slice(0, 10) : undefined;
+  const text = `${v.title[lang]}\n\n${v.body[lang]}`;
+  const relationship = relationshipOverride ?? input.relationship ?? "patient";
   const rec = AdelanteEHR.createConsentRecord({
     patientId: p.id,
     formType: prior?.formType ?? "NonAB133",
@@ -317,6 +319,11 @@ function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, 
     sections: [...keep, ...v.categories.map((c): ConsentRecordSection => ({ category: c, authorized: true }))],
     capturedBy: { staffName: input.channel === "in_person" ? `In person (sent by ${r.sentBy.name})` : "Patient (self-signed)", role: input.channel === "in_person" ? "in_person" : "patient" },
     ...(prior ? { supersedesId: prior.id } : {}),
+    // B2-5 — real provenance from the signed copy (typed provenance, same scope).
+    extension: {
+      signature: { method: "e_sign", signer: (input.typedName ?? input.signerName).trim(), relationship, signedAt: input.at, recordedAt: input.at, recordedBy: { staffName: input.channel === "in_person" ? r.sentBy.name : "Patient (self-signed)", role: input.channel === "in_person" ? "in_person" : "patient" } },
+      document: { formKey: v.key, versionId: v.id, version: v.version, documentHash: textHash(text) },
+    },
   });
   if (v.key === "sms") AdelanteEHR.setConsent(p.id, "sms", true, "form signed");
   if (v.key === "part2") AdelanteEHR.setConsent(p.id, "part2Sud", true, "form signed");
@@ -324,7 +331,6 @@ function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, 
   if (v.key === "advocate_patient") void import("./advocateInviteDelivery").then((m) => m.deliverConsentedAdvocateInvitations(p.id)).catch(() => undefined);
   // A newer signature of the same form supersedes the older copy.
   for (const c of copies) if (c.patientId === p.id && c.formKey === v.key && !ends.has(c.id)) ends.set(c.id, { endedAt: input.at, reason: "superseded" });
-  const text = `${v.title[lang]}\n\n${v.body[lang]}`;
   const copy: SignedCopy = Object.freeze({
     id: id("csc"), requestId: r.id, patientId: p.id, formKey: v.key, versionId: v.id, version: v.version, title: v.title[lang], language: lang, fullText: text, textHash: textHash(text), signatureMethod: v.signatureMethod,
     signerName: (input.typedName ?? input.signerName).trim(), relationship: relationshipOverride ?? input.relationship ?? "patient", signedAt: input.at, channel: input.channel ?? "portal", sentBy: r.sentBy.name, consentRecordId: rec.id,
