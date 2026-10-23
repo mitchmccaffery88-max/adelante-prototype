@@ -8,6 +8,7 @@ Standing rules — apply to ALL work, every change, any folder:
 - Cohort guard 11 on all aggregates.
 - Outpatient only: in-facility behind `inFacilityEnabled()`, off by default.
 - Demo seeds only through real store functions.
+- B2-5 consent migration queues scoped demo captures until the registry runner is ready; legacy-history marking uses the migration registry entry, and named-form publication uses the existing form actions. Why: initialization must not bypass registry checks, invent historical signatures or duplicate captures.
 
 - Member status chips are presentation-only and display existing record labels; shared clinical components opt in through existing audience/actor boundaries. Patient help opens the existing sheet in CrisisHeader; advocate header help is a direct 988 phone link. Spanish translation-review notice is owned once by the member shell. Member text-button wrapping is scoped to member shells/overlays, preserves square icon controls, and Home tiles must shrink to available width. Why: member presentation cannot change staff rendering, permissions, lifecycle rules or expose patient help to advocates.
 
