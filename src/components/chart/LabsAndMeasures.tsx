@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Chart redesign turn 2 — lab orders, screener requests and metabolic
 // measures: the three drawer forms and their Tracking panel. Every write goes
@@ -70,6 +71,7 @@ export function LabOrderForm({ patientId, onDone }: { patientId: string; onDone:
   return (
     <div className="space-y-3" data-testid="lab-order-form">
       <Badge variant="outline" className="text-xs">{LAB_PLACEHOLDER_LABEL}</Badge>
+      <SimulatedBadge flag="placeholder_lab" />
       <div className="space-y-1">
         <Label htmlFor="lab-test">Test</Label>
         <select id="lab-test" className={selectCls} value={testId} onChange={(e) => setTestId(e.target.value)}>
@@ -220,6 +222,7 @@ export function LabsAndMeasuresTracking({ patientId, role }: { patientId: string
       <div className="rounded-md border p-3 space-y-2" data-testid="tracking-labs">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="flex-1 text-sm font-medium text-navy">Labs</h4>
+          <SimulatedBadge flag="placeholder_lab" />
           <Badge variant="outline" className="text-[10px]">{LAB_PLACEHOLDER_LABEL}</Badge>
         </div>
         {labs.length === 0 ? (

@@ -18,6 +18,7 @@ import { upcomingContacts } from "@/lib/reminders";
 import { runReminderSweep } from "@/hooks/useReminderSweep";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { simulatedSurfaceLabel } from "@/lib/features";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -632,6 +633,8 @@ function VendorStatusCard() {
         <h3 className="font-display text-lg text-navy flex min-w-0 items-center gap-2">
           <ShieldCheck className="h-4 w-4 shrink-0 text-teal" /> Integrated vendors
         </h3>
+        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>
+        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("telehealth_simulated")}</Badge>
         <div className="flex flex-wrap items-center gap-2">
           <Link to="/disclosure-log" className="text-[11px] text-teal underline underline-offset-2" data-testid="admin-disclosure-log-link">Disclosure &amp; access log</Link>{" "}
           <Link to="/provider-reference" className="text-[11px] text-teal underline underline-offset-2" data-testid="admin-provider-ref-link">

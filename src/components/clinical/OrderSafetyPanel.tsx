@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { CircleAlert } from "lucide-react";
 // §B1/B2 — allergy cross-check, NKDA prompt and the CURES/PDMP step on a
 // draft order. The store (`orderSigningBlocker`) enforces the same rules.
@@ -90,6 +91,7 @@ export function OrderSafetyPanel({ order, patientId }: { order: MedOrder; patien
             CURES check required ({deaScheduleOf(order) ?? "controlled"})
           </div>
           <p className="rounded bg-muted px-2 py-1 text-muted-foreground">{CURES_PLACEHOLDER_LABEL}</p>
+          <SimulatedBadge flag="cures_placeholder" />
           {order.curesCheck ? (
             <p>
               {order.curesCheck.emergencyOverride ? "Emergency override" : CURES_RESULT_LABEL[order.curesCheck.result]} · checked{" "}

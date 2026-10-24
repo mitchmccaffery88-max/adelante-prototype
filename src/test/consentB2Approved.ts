@@ -220,6 +220,18 @@ const B2: [string, string][] = [
 // substitutions and their acting-staff declarations (noShowActor pre-existed).
 // Additive, exact-once; anything else must still match byte-for-byte.
 const FRI: Record<string, [string, string][]> = {
+  "src/routes/billing.tsx": [
+    ["import { StatusChip } from \"@/components/ui/status-chip\";", "import { StatusChip } from \"@/components/ui/status-chip\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { simulatedSurfaceLabel } from \"@/lib/features\";"],
+    ["          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>", "          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>\n          <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"payments_simulated\")}</Badge>\n          <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"caloms_export_simulated\")}</Badge>"],
+  ],
+  "src/routes/admin.tsx": [
+    ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { simulatedSurfaceLabel } from \"@/lib/features\";"],
+    ["          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>", "          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"erx_simulated\")}</Badge>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"telehealth_simulated\")}</Badge>"],
+  ],
+  "src/components/ops/OpsWorkspace.tsx": [
+    ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { simulatedSurfaceLabel } from \"@/lib/features\";"],
+    ["    <section className=\"space-y-3\" data-testid=\"billing-workspace\">", "    <section className=\"space-y-3\" data-testid=\"billing-workspace\">\n      <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"payments_simulated\")}</Badge>"],
+  ],
   "src/routes/clinician.tsx": [
     // Batch SL: Mitch-approved Oct 24, presentation only, exact-once.
     ['import { Badge } from "@/components/ui/badge";\n', 'import { Badge } from "@/components/ui/badge";\nimport { simulatedSurfaceLabel } from "@/lib/features";\n'],

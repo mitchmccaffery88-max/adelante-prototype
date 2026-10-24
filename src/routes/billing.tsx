@@ -3,6 +3,8 @@ import { StatTile } from "@/components/ui/stat-tile";
 import { claimWeeklyProjection } from "@/lib/billingSparkline";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
+import { Badge } from "@/components/ui/badge";
+import { simulatedSurfaceLabel } from "@/lib/features";
 const tableCopy = { claims: "Claims worklist", isl: "ISL encounters", credentials: "Credentialing" };
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { confirmedAction } from "@/components/staff/confirmed-action";
@@ -274,6 +276,8 @@ function BillingPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
+          <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("payments_simulated")}</Badge>
+          <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("caloms_export_simulated")}</Badge>
           <p className="text-sm text-muted-foreground">
             Tulare County pilot · 7 funding lanes tracked separately from billing status.
           </p>
