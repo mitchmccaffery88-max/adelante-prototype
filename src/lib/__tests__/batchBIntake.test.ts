@@ -121,9 +121,22 @@ describe("B2 referral chase tasks", () => {
     const banned = /charge|substance|sud|opioid|alcohol|treatment|2026-10-01/i;
     const audits = AdelanteEHR.listAuditEvents().filter((e) => (e.detail as { referralId?: string } | undefined)?.referralId === r.id && /chase|referral_chase/.test(`${e.action} ${JSON.stringify(e.detail)}`));
     expect(audits.length).toBeGreaterThan(0);
-    for (const e of audits) expect(JSON.stringify(e.detail)).not.toMatch(banned);
+    // Mitch-approved test edit (Oct 24): the referral id is a random
+    // Math.random().toString(36) string that can contain letters like "sud".
+    // Strip only that exact literal id from the scanned text before the
+    // privacy regex runs; the regex and everything else are unchanged.
+    const stripId = (s: string) => s.split(r.id).join("");
+    for (const e of audits) {
+      const scanned = stripId(JSON.stringify(e.detail));
+      expect(scanned.length).toBeGreaterThan(0);
+      expect(scanned).not.toMatch(banned);
+    }
     const notes = AdelanteEHR.listNotifications().filter((n) => n.subject === "Referral details to follow up");
     expect(notes.length).toBeGreaterThan(0);
-    for (const n of notes) expect(`${n.subject} ${n.body}`).not.toMatch(banned);
+    for (const n of notes) {
+      const scanned = stripId(`${n.subject} ${n.body}`);
+      expect(scanned.length).toBeGreaterThan(0);
+      expect(scanned).not.toMatch(banned);
+    }
   });
 });
