@@ -1,17 +1,14 @@
 # Roadmap
 
-## Batch SL (Mitch approved, Oct 24) — HARD STOP on non-named billing phone layout failure (Oct 24 rd9c fix: 945→873, still > 844; stopped)
-Rollback: `0eff6798065e7362df8141759a99463e06005c9c`. No publishing.
-- [x] Additive integration labels, bilingual member presentation and 15-flag source/audit inventory; approved exact-once adapter ledger saved.
-- [x] NEW 34 unit cases pass; four NEW 390px axe spot checks pass; existing assertions/pins unchanged.
-- [x] Only approved staffNewAudit8a2 timeout change; one added line (30s → 60s).
-- [x] Initial full units 3037/3037; supervised restart; post-restart full units 3036/3037, EXIT 1.
-- [x] Mitch accepted Oct 24 exact-generated-ID-only removal in batchBIntake.test.ts before unchanged privacy regex, both proofs 13/13, and full units 3,037/3,037 (historical accepted results; not rerun this continuation).
-- [x] Full browser via setsid alone --workers=1 :8080 completed to literal EXIT 1: 227 passed / 1 failed, 48.6m; log and trace copied immediately to docs/sl-evidence/closeout-browser.txt and closeout-failures/.
-- [ ] STOP: e2e/roleDashboards9c.spec.ts:15:5 billing above-fold at 390, assertion :27:36 expected <=844, received 945. Non-named failure; no rerun or fix. Await authorization to investigate/correct billing presentation with tests/config unchanged; accepted browser validation, screenshot restoration and successful final SHA/closeout remain blocked.
-- [x] Oct 24 contentInventoryTables8b2:5: reproduced 10/10 passes (current median 17.1s, max 23.0s; rollback 0089ca4f median 17.2s, max 18.9s); 60s rule not met, no change. Mitch accepted no-change outcome and authorized closeout validation; any repeat inventory failure requires STOP, no rerun.
-- [x] 19:48 authorization: supervised restart and fresh full units 3,037/3,037, 378/378 files, EXIT 0 (208.93s); evidence closeout-units.txt.
-- [x] All 248 actual rollback image assets byte-identical; zero restoration writes. Report/evidence recorded; nothing published.
+## Batch SL (Mitch approved, Oct 24) — COMPLETE
+Original rollback: `0eff6798065e7362df8141759a99463e06005c9c`; Shorten, else move step rollback: `1b8717718da5c27256905e50388e0edd51e307ee`. Nothing published.
+- [x] Bilingual integration labels, all 15 simulated flags, audit contracts, approved exact-once adapter ledger.
+- [x] Mitch-approved batchBIntake literal-ID-only edit and accepted 13/13 proofs; historical stops and two missing-E2E_BASE_URL launches documented.
+- [x] Scoped staffNewAudit8a2 timeout approved Oct 24; inventory investigation no-change outcome retained. Named inventory exception is timeout only.
+- [x] Shorten, else move: shortened text alone still 873 > 844; approved phone-only placement after billing-kpis passes all 10 dashboard cases plus denial case; label checks pass 4/4. Existing tests/config unchanged except approved this-session label text.
+- [x] Restart → full units 3,037/3,037 → full browser via setsid :8080 one worker, literal EXIT 0, 228/228 (42.0m); log/results immediately preserved; no flake exception used.
+- [x] Exactly one billing label verified at phone/desktop; summary bottom 815 at 390×844; desktop label placement unchanged.
+- [x] Restored 17 screenshots; all 248 rollback image assets byte-identical to 0eff6798. Report, changed-line ledger and evidence complete; final managed SHA read for closing response.
 
 ## Done
 - B2 consent model (B2-1 … B2-6, B2-5 migration with system actor) — COMPLETE, final SHA c421de0a, browser 224/224. Follow-ups recorded: backend-phase typed-writer conversion; "advocate_release has no gate reader; decide in backend phase".
@@ -27,4 +24,4 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 ## Follow-ups outside this batch
 - Backend phase: convert live untyped consent writers to typed records.
 - Backend phase: "advocate_release has no gate reader; decide in backend phase".
-- staffNewAudit8a2 timeout was unchanged in Friday cleanup; Mitch approved the scoped change Oct 24 in Batch SL (applied, validation pending).
+- staffNewAudit8a2 timeout was unchanged in Friday cleanup; Mitch approved the scoped change Oct 24 in Batch SL (applied and fully validated).

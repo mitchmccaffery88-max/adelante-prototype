@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { SIMULATED_LABEL } from "@/lib/features";
 
 /** Billing home only: one compact label for payments, claims and the state export (Mitch, Oct 24). */
-export function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payment processed, claim transmitted, or report sent to the state`; }
+export function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payments, claims or state reports sent`; }
 import { countyReminders } from "@/lib/countyReporting";
 
 type TileId = "action" | "pipeline" | "payments";
@@ -59,8 +59,8 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
   const actionCount = ws.blocked.length + ws.holds.length + ws.eligibilityDue.length + reminders.length;
 
   return (
-    <section className="space-y-3" data-testid="billing-workspace">
-      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{billingHomeSimulatedLabel()}</Badge>
+    <section className="flex flex-col gap-3 sm:block sm:space-y-3" data-testid="billing-workspace">
+      <Badge variant="outline" className="order-1 max-w-full whitespace-normal text-sm sm:order-none">{billingHomeSimulatedLabel()}</Badge>
       <div className="flex gap-2 overflow-x-auto [&>button]:shrink-0" data-testid="billing-today-strip">
         <StripCount testId="strip-blocked" label="Claims blocked" n={ws.blocked.length} onClick={() => set("action", true)} />
         <StripCount testId="strip-ready" label="Ready to send" n={ws.ready.length} onClick={() => set("pipeline", true)} />
@@ -69,6 +69,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
         <StripCount testId="strip-holds" label="Duplicate holds" n={ws.holds.length} onClick={() => set("action", true)} />
       </div>
       {summary}
+      <div className="order-2 space-y-3 sm:contents">
       <Tile id="action" title="Needs my action" summary={`${actionCount} items`} open={open.action} onOpenChange={(v) => set("action", v)}>
         {reminders.length > 0 && (
           <ul className="mb-3 divide-y text-sm" data-testid="county-reminders">
@@ -122,6 +123,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
           {!ws.paymentsToPost.length && <li className="py-1.5 text-muted-foreground">Nothing to post.</li>}
         </ul>
       </Tile>
+      </div>
     </section>
   );
 }
