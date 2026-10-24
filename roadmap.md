@@ -8,7 +8,7 @@ Rollback: `0eff6798065e7362df8141759a99463e06005c9c`. No publishing.
 - [x] Initial full units 3037/3037; supervised restart; post-restart full units 3036/3037, EXIT 1.
 - [x] Mitch accepted Oct 24 exact-generated-ID-only removal in batchBIntake.test.ts before unchanged privacy regex, both proofs 13/13, and full units 3,037/3,037 (historical accepted results; not rerun this continuation).
 - [ ] Full browser via setsid alone --workers=1 :8080 to literal EXIT /tmp/sl-browser.log, desktop rendering evidence, successful final SHA/closeout — previous run failed per chat; its log/EXIT are unavailable and no new run is authorized before the timeout evidence prerequisite.
-- [ ] BLOCKED Oct 24 conditional contentInventoryTables8b2:5 investigation: original /tmp/sl-browser.log, test-results and trace are absent; timeout-only/no-failed-check prerequisite cannot be verified. Need original evidence or authorization to reproduce it before five timings on current :8080 and archive 0089ca4f :8091 and any conditional scoped 60s edit. No Playwright/preview processes remain; no source/test changes or reruns in this continuation.
+- [ ] STOPPED Oct 24 contentInventoryTables8b2:5: reproduced 10/10 passes (current median 17.1s, max 23.0s; rollback 0089ca4f median 17.2s, max 18.9s); 60s rule not met, no change. Awaiting Mitch on next step.
 - [x] All 248 actual rollback image assets byte-identical; zero restoration writes. Report/evidence recorded; nothing published.
 
 ## Done

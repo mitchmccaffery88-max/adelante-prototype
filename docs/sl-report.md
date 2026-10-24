@@ -165,3 +165,15 @@ index 9052f3a2..1d868c9c 100644
 ## Remaining tasks
 
 Full browser suite via setsid alone --workers=1 :8080 to /tmp/sl-browser.log literal EXIT, named-flake adjudication if needed, rendered desktop evidence, final successful SHA and closeout remain unperformed. Stop checkpoint SHA recorded separately in chat; this is NOT successful completion. New spot-check setup initially used an absent/unreachable old refill card and wrong language aria-label; only NEW test setup was corrected to existing Review refill dialog, billing role and actual Spanish control. No app behavior changed to satisfy those tests.
+
+## contentInventoryTables8b2:5 — reproduced evidence (Oct 24, authorized substitution for missing original trace)
+Standalone, --workers=1 --trace=on --retries=0, config unchanged. Logs: docs/sl-evidence/ci-timing/.
+| Run | Current :8080 (HEAD 47732788) | Archive 0089ca4f :8091 |
+|---|---|---|
+| 1 | 23.0s pass | 17.8s pass |
+| 2 | 19.4s pass | 17.2s pass |
+| 3 | 17.1s pass | 15.1s pass |
+| 4 | 15.4s pass | 17.1s pass |
+| 5 | 15.2s pass | 18.9s pass |
+| Median | 17.1s | 17.2s |
+No failures, so no trace to classify. Decision rule (median ≥20s or any run ≥25s on both builds) NOT met: STOP. No timeout change applied; no full suite, screenshot restore or closeout run. Archive server stopped.
