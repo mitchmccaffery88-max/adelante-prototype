@@ -1,8 +1,44 @@
-# Batch SL — implementation delivered, validation HARD STOP
+# Batch SL — closeout validation HARD STOP on non-named billing layout failure
 
 Mitch approved labels and delegated additive presentation-only adapters Oct 24. No publishing. Original rollback: `0eff6798065e7362df8141759a99463e06005c9c`. Resume HEAD observed before work: `1da5f8c066dd0b5ea9dd8cc2b7f295e186937c3e`.
 
-## Validation stop (Oct 24)
+## Latest closeout validation (Oct 24, authorized 19:48 UTC)
+
+- Starting code HEAD: `fe95a8318aa65ca48c5ca65c765b5ca0f59496ad`. No application, test or config changes in this validation continuation; `contentInventoryTables8b2.spec.ts` remains byte-identical to rollback. Nothing published.
+- Supervised dev-server restart completed; full units **3,037/3,037**, **378/378 files**, **208.93s**, literal **EXIT 0**. Preserved in `docs/sl-evidence/closeout-units.txt`.
+- Launched the exact approved setsid command with `E2E_BASE_URL=http://localhost:8080`, `--workers=1`, alone. Polled in nine-minute chunks without ending before the literal result. Full browser suite: **227 passed / 1 failed**, **48.6m**, literal **EXIT 1**.
+- Immediately after EXIT, copied `/tmp/sl-browser.log` to `docs/sl-evidence/closeout-browser.txt` and all retained test results (including failure trace and error context) to `docs/sl-evidence/closeout-failures/`.
+- **STOP:** `e2e/roleDashboards9c.spec.ts:15:5`, “9c-2 billing action and summary above fold 390”; actual assertion failure at **:27:36**. Current requirement: `expect(box.y + box.height).toBeLessThanOrEqual(height)`. Expected **<=844**, received **945** at the 390×844 viewport. This is a failed layout check, not a timeout, and is not a named flake. No standalone rerun or fix was attempted. Proposed next step, subject to authorization: inspect the preserved trace to identify which billing action/summary region exceeds the screen and scope a presentation-only correction; preserve the existing assertion, viewport, timeouts and config. No exact source fix proposed without that investigation.
+- Failure trace: `docs/sl-evidence/closeout-failures/roleDashboards9c-9c-2-bill-7a07d--and-summary-above-fold-390-chromium/trace.zip`; adjacent `error-context.md` retained. No Playwright/preview process remained after EXIT.
+- Inventory test **passed (21.4s)**; no timeout change, and it remains outside the named-flake list. The four NEW simulation-label/390px axe checks passed (**10.9s, 9.1s, 7.2s, 8.9s**). Approved staff New test passed for coordinator **20.5s** and therapist **25.9s**; action-audit-feed passed **30.4s**. No named-flake exception was exercised.
+- Screenshot restoration and successful batch closeout were conditional on acceptance and therefore **not performed**. Previous 248-image comparison below is historical, not a post-run restoration. Batch remains open; only a stop checkpoint SHA can be recorded. Latest harness signal: build OK.
+
+### Mitch-approved test edit (Oct 24): batchBIntake literal generated ID
+
+`src/lib/__tests__/batchBIntake.test.ts`, rollback :124/:127 → current :123–135: before, audit details and notification text were scanned directly by `banned`; after, `const stripId = (s: string) => s.split(r.id).join("")` removes only the literal store-generated referral ID before those same regex checks. Nonempty scanned text is also asserted. The regex `/charge|substance|sud|opioid|alcohol|treatment|2026-10-01/i` remains unchanged; no word boundaries or broader scrubber were introduced.
+
+```ts
+// Before
+for (const e of audits) expect(JSON.stringify(e.detail)).not.toMatch(banned);
+for (const n of notes) expect(`${n.subject} ${n.body}`).not.toMatch(banned);
+// After (both loops use this exact literal-ID removal)
+const stripId = (s: string) => s.split(r.id).join("");
+const scanned = stripId(JSON.stringify(e.detail)); // notification loop: stripId(`${n.subject} ${n.body}`)
+expect(scanned.length).toBeGreaterThan(0);
+expect(scanned).not.toMatch(banned);
+```
+
+Mitch explicitly accepted both historical proofs **13/13**: generated ID `317ksud2` no longer causes a false privacy match, while actual `SUD` text still fails the unchanged check. The original proof file/log is not retained in this sandbox; these results are **user-accepted historical evidence**, not independently rerun or reproduced in this continuation. Fresh full units above passed the current test without any further edits.
+
+### Two failed browser launches: missing E2E_BASE_URL
+
+Prior chat records two unsuccessful launches without `E2E_BASE_URL`. `playwright.config.ts:24` defaults to :4173; **:29–32** starts `bun run preview:e2e` when the variable is absent, instead of using the already-running :8080 dev server. `e2e/global-setup.ts:18` waits for `window.__adelante`. Original failed-launch logs are not retained; the config verifies the wrong-server selection, not every historical runtime detail. This closeout used the explicit :8080 setting and completed global setup and all 228 tests.
+
+### Timing evidence substitution and no-change outcome
+
+Mitch authorized fresh 5× current / 5× archive evidence with traces in place of the unavailable original failure trace. The table at the end records 10/10 passes, medians **17.1s / 17.2s**, maxima **23.0s / 18.9s**; the conditional 60s rule was not met. The original timing report references `ci-timing/`, which is not present in this sandbox; table values are historical accepted evidence, not this run's timing. At 19:48 Mitch accepted the no-change outcome and authorized current-code closeout with no test/config changes. Current full-suite inventory result is freshly preserved above. No archive server was started in this continuation.
+
+## Historical validation stops (Oct 24)
 
 ### Oct 24 18:37 UTC conditional timeout investigation — evidence stop
 
