@@ -69,7 +69,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
         <StripCount testId="strip-holds" label="Duplicate holds" n={ws.holds.length} onClick={() => set("action", true)} />
       </div>
       {summary}
-      <div className="order-2 contents sm:order-none">
+      <div className="order-2 space-y-3 sm:contents">
       <Tile id="action" title="Needs my action" summary={`${actionCount} items`} open={open.action} onOpenChange={(v) => set("action", v)}>
         {reminders.length > 0 && (
           <ul className="mb-3 divide-y text-sm" data-testid="county-reminders">
