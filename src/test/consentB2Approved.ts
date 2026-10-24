@@ -223,8 +223,8 @@ const FRI: Record<string, [string, string][]> = {
   "src/routes/billing.tsx": [
     ["import { StatusChip } from \"@/components/ui/status-chip\";", "import { StatusChip } from \"@/components/ui/status-chip\";\nimport { Badge } from \"@/components/ui/badge\";"],
     // Batch SL roleDashboards9c fix (Mitch, Oct 24): one combined billing-home label.
-    ["import { BillingWorkspaceTiles } from \"@/components/ops/OpsWorkspace\";", "import { BillingWorkspaceTiles, BILLING_HOME_SIMULATED_LABEL } from \"@/components/ops/OpsWorkspace\";"],
-    ["          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>", "          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>\n          {!canWrite && <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{BILLING_HOME_SIMULATED_LABEL}</Badge>}"],
+    ["import { BillingWorkspaceTiles } from \"@/components/ops/OpsWorkspace\";", "import { BillingWorkspaceTiles, billingHomeSimulatedLabel } from \"@/components/ops/OpsWorkspace\";"],
+    ["          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>", "          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>\n          {!canWrite && <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{billingHomeSimulatedLabel()}</Badge>}"],
   ],
   "src/routes/admin.tsx": [
     ["          Reminders check automatically while the app is open; send now to run a check\n          immediately.\n        </p>", "          Reminders check automatically while the app is open; send now to run a check\n          immediately.\n        </p>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"notifications_simulated\")}</Badge>"],
@@ -232,8 +232,8 @@ const FRI: Record<string, [string, string][]> = {
     ["          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>", "          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"erx_simulated\")}</Badge>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"telehealth_simulated\")}</Badge>"],
   ],
   "src/components/ops/OpsWorkspace.tsx": [
-    ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { SIMULATED_LABEL } from \"@/lib/features\";\n\n/** Billing home only: one compact label for payments, claims and the state export (Mitch, Oct 24). */\nexport const BILLING_HOME_SIMULATED_LABEL = `${SIMULATED_LABEL} — no payment processed, claim transmitted, or report sent to the state`;"],
-    ["    <section className=\"space-y-3\" data-testid=\"billing-workspace\">", "    <section className=\"space-y-3\" data-testid=\"billing-workspace\">\n      <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{BILLING_HOME_SIMULATED_LABEL}</Badge>"],
+    ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { SIMULATED_LABEL } from \"@/lib/features\";\n\n/** Billing home only: one compact label for payments, claims and the state export (Mitch, Oct 24). */\nexport function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payment processed, claim transmitted, or report sent to the state`; }"],
+    ["    <section className=\"space-y-3\" data-testid=\"billing-workspace\">", "    <section className=\"space-y-3\" data-testid=\"billing-workspace\">\n      <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{billingHomeSimulatedLabel()}</Badge>"],
   ],
   "src/routes/clinician.tsx": [
     ["                <Video className=\"h-4 w-4 mr-1.5\" /> {(t as (k: string) => string)(\"clinJoin\")}\n              </Button>", "                <Video className=\"h-4 w-4 mr-1.5\" /> {(t as (k: string) => string)(\"clinJoin\")}\n              </Button>\n              <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"telehealth_simulated\")}</Badge>"],

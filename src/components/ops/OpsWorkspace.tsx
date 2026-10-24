@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { SIMULATED_LABEL } from "@/lib/features";
 
 /** Billing home only: one compact label for payments, claims and the state export (Mitch, Oct 24). */
-export const BILLING_HOME_SIMULATED_LABEL = `${SIMULATED_LABEL} — no payment processed, claim transmitted, or report sent to the state`;
+export function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payment processed, claim transmitted, or report sent to the state`; }
 import { countyReminders } from "@/lib/countyReporting";
 
 type TileId = "action" | "pipeline" | "payments";
@@ -60,7 +60,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
 
   return (
     <section className="space-y-3" data-testid="billing-workspace">
-      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{BILLING_HOME_SIMULATED_LABEL}</Badge>
+      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{billingHomeSimulatedLabel()}</Badge>
       <div className="flex gap-2 overflow-x-auto [&>button]:shrink-0" data-testid="billing-today-strip">
         <StripCount testId="strip-blocked" label="Claims blocked" n={ws.blocked.length} onClick={() => set("action", true)} />
         <StripCount testId="strip-ready" label="Ready to send" n={ws.ready.length} onClick={() => set("pipeline", true)} />

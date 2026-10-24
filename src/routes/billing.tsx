@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 const tableCopy = { claims: "Claims worklist", isl: "ISL encounters", credentials: "Credentialing" };
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { confirmedAction } from "@/components/staff/confirmed-action";
-import { BillingWorkspaceTiles, BILLING_HOME_SIMULATED_LABEL } from "@/components/ops/OpsWorkspace";
+import { BillingWorkspaceTiles, billingHomeSimulatedLabel } from "@/components/ops/OpsWorkspace";
 import { afbiCounts } from "@/lib/afbiOutreach";
 import { OpsActionLauncher } from "@/components/ops/OpsActionLauncher";
 import { ManagedCarePlansPanel } from "@/components/billing/ManagedCarePlansPanel";
@@ -275,7 +275,7 @@ function BillingPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
-          {!canWrite && <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{BILLING_HOME_SIMULATED_LABEL}</Badge>}
+          {!canWrite && <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{billingHomeSimulatedLabel()}</Badge>}
           <p className="text-sm text-muted-foreground">
             Tulare County pilot · 7 funding lanes tracked separately from billing status.
           </p>
