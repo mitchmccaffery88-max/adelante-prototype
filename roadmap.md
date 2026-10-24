@@ -1,10 +1,10 @@
 # Roadmap
 
-## Batch SL (Mitch approved, Oct 24) — HARD STOP
+## Batch SL (Mitch approved, Oct 24) — RESUMED with delegated adapter approval
 Rollback recorded first: `0eff6798065e7362df8141759a99463e06005c9c`. Do not publish.
-- [ ] Missing bilingual labels and complete surface/audit inventory — blocked: billingProjectionB3b.test.ts:95–96 pins the entire clinician refill surface; needs explicit exact-once label adapter approval. Current/proposed evidence in docs/sl-report.md.
+- [ ] Complete bilingual surface labels and audit inventory; delegated exact-once presentation-only adapter scope approved Oct 24. Preserve pinned existing text and real manual eligibility.
 - [x] Applied only approved staffNewAudit8a2 :29 test-body timeout (30s → 60s), one added line; assertions, waits and retries unchanged. Not rerun yet.
-- [ ] NEW rendered/audit tests and 390px axe spot checks; restart, full units, full browser suite alone with literal EXIT; screenshot restoration and successful final SHA — not started because the hard-stop rule triggered.
+- [ ] NEW rendered/audit tests and 390px axe spot checks; restart, full units, full browser suite alone via setsid to literal EXIT in /tmp/sl-browser.log; restore screenshots against 0eff6798; successful final SHA.
 - [x] Stop report recorded (docs/sl-report.md). No labels, existing assertions, adapters or screenshots changed; nothing published.
 
 ## Done
