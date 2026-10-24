@@ -31,6 +31,7 @@ import {
   type ProgressNote,
 } from "@/lib/ehr";
 import { canSignNotes, isMyCosign } from "@/lib/notes";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { canAccess, supervisorCandidates, useActingStaff, useSupervisionStatus } from "@/lib/roles";
 import {
   Select,
@@ -186,7 +187,7 @@ function AsamCosignSection() {
       <StaffTable rows={visible} rowKey={(r)=>r.asam.id} label="ASAM assessments awaiting LPHA co-signature" testId="asam-cosigns-table" rowTestId={(r)=>`asam-cosign-${r.asam.id}`}
         views={[{id:"current",label:"Needs you",matches:()=>true}]} defaultView="current" emptyState="No ASAM assessments are waiting."
         columns={[
-          {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+          {id:"patient",label:"Patient",sortValue:(r)=>staffPatientLabel({ role, staffId }, r.patient.id),cell:(r)=>staffPatientLabel({ role, staffId }, r.patient.id)},
           {id:"author",label:"Authored by",sortValue:(r)=>r.asam.authoredBy.name,cell:(r)=>`${r.asam.authoredBy.name} (${r.asam.authoredBy.role})`},
           {id:"date",label:"Signed",sortValue:(r)=>r.asam.signedAt ?? "",cell:(r)=>r.asam.signedAt ? <ClientDate value={r.asam.signedAt} /> : "—"},
           {id:"status",label:"Status",cell:()=> <StatusChip lang="en" state={canSignNotes(role) ? "yourturn" : "team"} label="Awaiting LPHA cosign" />},
