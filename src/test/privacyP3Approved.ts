@@ -31,6 +31,8 @@ const P3: Record<string, [string, string][]> = {
       "  // (component continues below)\n  const { t } = useI18n();\n  const rescreenActor = useActingStaff();"],
     ["  const clinicians = AdelanteEHR.listClinicians();\n  if (!clinicianId || outgoing.length === 0) return null;",
       "  const clinicians = AdelanteEHR.listClinicians();\n  const switchActor = useActingStaff();\n  if (!clinicianId || outgoing.length === 0) return null;"],
+    ["                  {p ? `${p.firstName} ${p.lastName}` : r.patientId} · {r.medicationName}",
+      "                  {p ? staffPatientLabel({ role, staffId: actor.staffId }, p.id) : r.patientId} · {r.medicationName}"],
   ],
   "src/components/clinician/WorkspaceDashboard.tsx": [
     ['    { id: "next", label: "Next visit", value: next ? `${new Date(next.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${nextPatient?.firstName ?? "Patient"}` : "None", tile: "schedule" as const, segment: "up_next" as const, zero: !next },',
