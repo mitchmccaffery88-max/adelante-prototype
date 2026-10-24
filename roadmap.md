@@ -8,6 +8,7 @@ Rollback: `0eff6798065e7362df8141759a99463e06005c9c`. No publishing.
 - [x] Initial full units 3037/3037; supervised restart; post-restart full units 3036/3037, EXIT 1.
 - [ ] BLOCKED: unchanged batchBIntake.test.ts:124 regex matches “sud” inside random referralId 317ksud2. Needs Mitch decision; no assertion/fixture/retry change authorized.
 - [ ] Full browser via setsid alone --workers=1 :8080 to literal EXIT /tmp/sl-browser.log, desktop rendering evidence, successful final SHA/closeout — not started due stop.
+- [ ] Oct 24 conditional contentInventoryTables8b2:5 investigation: recover the original failure trace and confirm timeout-only; five timings on current :8080 and archive 0089ca4f :8091 before any scoped 60s change. Original /tmp/sl-browser.log and test-results are absent in this sandbox; prerequisite evidence is currently unavailable.
 - [x] All 248 actual rollback image assets byte-identical; zero restoration writes. Report/evidence recorded; nothing published.
 
 ## Done
