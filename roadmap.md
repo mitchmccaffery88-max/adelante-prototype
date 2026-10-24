@@ -1,5 +1,11 @@
 # Roadmap
 
+## Batch SL (Mitch approved, Oct 24) — IN PROGRESS
+Rollback recorded first: `0eff6798065e7362df8141759a99463e06005c9c`. Do not publish.
+- [ ] Trace all 15 simulated integrations, existing text pins and audit markers; add missing bilingual labels only unless the hard-stop rule triggers.
+- [ ] Apply only the approved staffNewAudit8a2 :29 timeout (30s → 60s); assertions, waits and retries unchanged.
+- [ ] NEW rendered/audit tests and 390px axe spot checks; restart, full units, full browser suite alone with literal EXIT; restore rollback screenshots; report and final SHA.
+
 ## Done
 - B2 consent model (B2-1 … B2-6, B2-5 migration with system actor) — COMPLETE, final SHA c421de0a, browser 224/224. Follow-ups recorded: backend-phase typed-writer conversion; "advocate_release has no gate reader; decide in backend phase".
 

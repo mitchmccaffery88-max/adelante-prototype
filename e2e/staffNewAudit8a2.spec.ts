@@ -27,6 +27,7 @@ const slotButton = (page: Page) => page.getByTestId("staff-new-slot").getByRole(
 
 for (const { staffId, role, name } of ROLES) {
   test(`${role}: every /clinician + New option opens without a stray audit entry`, async ({ page }) => {
+    test.setTimeout(60_000);
     await actAs(page, staffId, role, "/clinician");
     await expect(page).toHaveURL(/\/clinician$/);
     await slotButton(page).click();
