@@ -1,14 +1,15 @@
 # Roadmap
 
-## Batch SL (Mitch approved, Oct 24) — BLOCKED on missing browser failure evidence
+## Batch SL (Mitch approved, Oct 24) — closeout validation authorized 19:48 UTC
 Rollback: `0eff6798065e7362df8141759a99463e06005c9c`. No publishing.
 - [x] Additive integration labels, bilingual member presentation and 15-flag source/audit inventory; approved exact-once adapter ledger saved.
 - [x] NEW 34 unit cases pass; four NEW 390px axe spot checks pass; existing assertions/pins unchanged.
 - [x] Only approved staffNewAudit8a2 timeout change; one added line (30s → 60s).
 - [x] Initial full units 3037/3037; supervised restart; post-restart full units 3036/3037, EXIT 1.
 - [x] Mitch accepted Oct 24 exact-generated-ID-only removal in batchBIntake.test.ts before unchanged privacy regex, both proofs 13/13, and full units 3,037/3,037 (historical accepted results; not rerun this continuation).
-- [ ] Full browser via setsid alone --workers=1 :8080 to literal EXIT /tmp/sl-browser.log, desktop rendering evidence, successful final SHA/closeout — previous run failed per chat; its log/EXIT are unavailable and no new run is authorized before the timeout evidence prerequisite.
-- [ ] STOPPED Oct 24 contentInventoryTables8b2:5: reproduced 10/10 passes (current median 17.1s, max 23.0s; rollback 0089ca4f median 17.2s, max 18.9s); 60s rule not met, no change. Awaiting Mitch on next step.
+- [ ] Full browser via setsid alone --workers=1 :8080 to literal EXIT /tmp/sl-browser.log; preserve log/traces immediately, named-flake rule only; finish report, screenshots and final SHA if accepted. No tests/config changes.
+- [x] Oct 24 contentInventoryTables8b2:5: reproduced 10/10 passes (current median 17.1s, max 23.0s; rollback 0089ca4f median 17.2s, max 18.9s); 60s rule not met, no change. Mitch accepted no-change outcome and authorized closeout validation; any repeat inventory failure requires STOP, no rerun.
+- [x] 19:48 authorization: supervised restart and fresh full units 3,037/3,037, 378/378 files, EXIT 0 (208.93s); evidence closeout-units.txt.
 - [x] All 248 actual rollback image assets byte-identical; zero restoration writes. Report/evidence recorded; nothing published.
 
 ## Done
