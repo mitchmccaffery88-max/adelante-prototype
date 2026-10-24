@@ -9,7 +9,8 @@ for (const [route, selector, text] of [
   ["/admin-vendors", "[data-simulated-flag='erx_simulated']", "Simulated — not sent to a pharmacy"],
 ] as const) {
   test(`SL 390px ${route}: integration label and axe`, async ({ page }) => {
-    await bootTables(page, "s-admin1", "sys_admin", route);
+    await bootTables(page, route === "/billing" ? "s-bill1" : route === "/clinician" ? "s-np1" : "s-admin1", route === "/billing" ? "billing" : route === "/clinician" ? "pmhnp" : "sys_admin", route);
+    if (route === "/clinician") await page.getByRole("button", { name: /Medication/ }).first().click();
     const surface = page.locator(selector).first();
     await expect(surface).toBeVisible();
     await expect(surface).toContainText(text);
@@ -29,8 +30,7 @@ test("SL 390px Spanish medication: pharmacy disclaimer, single review notice and
   });
   const card = page.getByTestId("my-medications-card");
   await expect(card).toBeVisible();
-  const switcher = page.getByRole("button", { name: "Switch language to Spanish" });
-  if (await switcher.count()) await switcher.click();
+  await page.getByRole("button", { name: "Cambiar idioma a español", exact: true }).click();
   await expect(card).toContainText("Simulado — no se envía a una farmacia");
   await expect(page.getByText("Borrador — pendiente de revisión de traducción", { exact: true })).toHaveCount(1);
   expect(await card.evaluate(el => el.getBoundingClientRect().width)).toBeLessThanOrEqual(390);
