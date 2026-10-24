@@ -772,6 +772,7 @@ function ApptCard({
               >
                 <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
               </Button>
+              <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("telehealth_simulated")}</Badge>
               {(() => {
                 const s = AdelanteEHR.getTelehealthSession(a.id);
                 if (!s || s.state === "ended" || s.state === "expired") return null;

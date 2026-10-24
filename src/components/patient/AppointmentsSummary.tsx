@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 // §P1 My Care de-clutter — one cohesive appointments view.
 //
 // My Care had two half-views of the same data: a "Next session" card with a
@@ -136,6 +137,7 @@ export function JoinCallButton({ appt, nextStep = false }: { appt: Appointment; 
         <Button size="sm" variant="outline" className={nextStep ? "min-h-12 border-line-strong bg-surface text-ink-muted disabled:opacity-100" : "min-h-12 disabled:opacity-100"} disabled data-testid="join-call-early">
           <Video className="mr-1.5 h-4 w-4" /> {t("opensAt")} {new Date(+new Date(appt.start) - 15 * 60_000).toLocaleTimeString(lang === "es" ? "es-US" : "en-US", { hour: "numeric", minute: "2-digit" })}
         </Button>
+        {!real && <SimulatedBadge flag="telehealth_simulated" lang={lang} />}
       </span>
     );
   }
@@ -144,7 +146,7 @@ export function JoinCallButton({ appt, nextStep = false }: { appt: Appointment; 
       <a href={url} target="_blank" rel="noreferrer">
         <Video className="mr-1.5 h-4 w-4" /> {real ? sc.join : `${sc.join} (${simulatedSurfaceLabel("telehealth_simulated")})`}
       </a>
-    </Button></span>
+    </Button>{!real && <SimulatedBadge flag="telehealth_simulated" lang={lang} />}</span>
   );
 }
 

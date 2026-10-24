@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { StatusChip } from "@/components/ui/status-chip";
 import { FormsToSign } from "@/components/consent/FormsToSign";
 import { PatientConsentESign } from "@/components/consent/PatientConsentESign";
@@ -476,6 +477,7 @@ function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: str
         )}
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{t("msgSubtitle")}</p>
+      <SimulatedBadge flag="notifications_simulated" lang={AdelanteEHR.getPatient(patientId)?.preferredLanguage === "es" ? "es" : "en"} />
       {/* §Peer messaging — one thread, honest sender identity. There is no
           second peer-only channel: the existing care-team thread already IS
           the member's messaging surface, and splitting it would fragment

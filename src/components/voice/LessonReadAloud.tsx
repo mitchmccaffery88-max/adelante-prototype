@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useEffect } from "react";
 import { Volume2, Square, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export function LessonReadAloud({ text, stepKey, sensitive = false }: { text: st
   }, [text, tapOnly, voice.enabled, voice.speak, voice.stop]);
   return <div className="lesson-voice space-y-2" aria-label={t("playerVoice")}>
     <p className="text-sm text-foreground">{t("playerVoice")}{lang === "es" ? ` · ${t("playerDraft")}` : ""}</p>
+    <SimulatedBadge flag="voice_intake" lang={lang} />
     <div className="flex flex-wrap items-center gap-2">
       <Button variant="outline" className="min-h-11 rounded-full" onClick={() => { voice.setEnabled(true); voice.speak(text, { force: true }); }} aria-label={t("playerListen")}><Volume2 className="mr-2 size-4" />{t("playerListen")}</Button>
       <Button variant="ghost" className="min-h-11" onClick={voice.replay} aria-label={t("playerReplay")}><RotateCcw className="size-4" /></Button>

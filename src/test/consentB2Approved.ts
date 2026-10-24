@@ -225,6 +225,7 @@ const FRI: Record<string, [string, string][]> = {
     ["          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>", "          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>\n          <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"payments_simulated\")}</Badge>\n          <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"caloms_export_simulated\")}</Badge>"],
   ],
   "src/routes/admin.tsx": [
+    ["          Reminders check automatically while the app is open; send now to run a check\n          immediately.\n        </p>", "          Reminders check automatically while the app is open; send now to run a check\n          immediately.\n        </p>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"notifications_simulated\")}</Badge>"],
     ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { simulatedSurfaceLabel } from \"@/lib/features\";"],
     ["          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>", "          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"erx_simulated\")}</Badge>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"telehealth_simulated\")}</Badge>"],
   ],
@@ -233,6 +234,7 @@ const FRI: Record<string, [string, string][]> = {
     ["    <section className=\"space-y-3\" data-testid=\"billing-workspace\">", "    <section className=\"space-y-3\" data-testid=\"billing-workspace\">\n      <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"payments_simulated\")}</Badge>"],
   ],
   "src/routes/clinician.tsx": [
+    ["                <Video className=\"h-4 w-4 mr-1.5\" /> {(t as (k: string) => string)(\"clinJoin\")}\n              </Button>", "                <Video className=\"h-4 w-4 mr-1.5\" /> {(t as (k: string) => string)(\"clinJoin\")}\n              </Button>\n              <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"telehealth_simulated\")}</Badge>"],
     // Batch SL: Mitch-approved Oct 24, presentation only, exact-once.
     ['import { Badge } from "@/components/ui/badge";\n', 'import { Badge } from "@/components/ui/badge";\nimport { simulatedSurfaceLabel } from "@/lib/features";\n'],
     ['          <Video className="h-4 w-4" aria-hidden="true" /> Refill requests\n        </h3>', '          <Video className="h-4 w-4" aria-hidden="true" /> Refill requests\n        </h3>\n        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>'],

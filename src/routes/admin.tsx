@@ -559,6 +559,7 @@ function NotificationHealthCard() {
           Reminders check automatically while the app is open; send now to run a check
           immediately.
         </p>
+        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("notifications_simulated")}</Badge>
         <Button
           size="sm"
           variant="outline"
