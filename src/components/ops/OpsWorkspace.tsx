@@ -14,7 +14,10 @@ import { openOpsAction } from "@/components/ops/OpsActionLauncher";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { simulatedSurfaceLabel } from "@/lib/features";
+import { SIMULATED_LABEL } from "@/lib/features";
+
+/** Billing home only: one compact label for payments, claims and the state export (Mitch, Oct 24). */
+export function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payment processed, claim transmitted, or report sent to the state`; }
 import { countyReminders } from "@/lib/countyReporting";
 
 type TileId = "action" | "pipeline" | "payments";
@@ -57,7 +60,7 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
 
   return (
     <section className="space-y-3" data-testid="billing-workspace">
-      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("payments_simulated")}</Badge>
+      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{billingHomeSimulatedLabel()}</Badge>
       <div className="flex gap-2 overflow-x-auto [&>button]:shrink-0" data-testid="billing-today-strip">
         <StripCount testId="strip-blocked" label="Claims blocked" n={ws.blocked.length} onClick={() => set("action", true)} />
         <StripCount testId="strip-ready" label="Ready to send" n={ws.ready.length} onClick={() => set("pipeline", true)} />

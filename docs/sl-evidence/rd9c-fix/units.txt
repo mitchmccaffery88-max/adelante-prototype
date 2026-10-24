@@ -1,0 +1,501 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/dev-server[39m
+
+ [32m✓[39m src/lib/ehr/__tests__/native-memory.contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 3347[2mms[22m[39m
+       [33m[2m✓[22m[39m createPatient → getPatient round-trips the record [33m 2470[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/roleDashboardParity9c2.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 2850[2mms[22m[39m
+     [33m[2m✓[22m[39m src/routes/clinician.tsx preserves existing bindings [33m 458[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/peerMessaging.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 3557[2mms[22m[39m
+     [33m[2m✓[22m[39m filters the same thread instead of creating a second one [33m 3540[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/crisisEscalationPhase1.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 4211[2mms[22m[39m
+     [33m[2m✓[22m[39m gives flag-only roles a distinct nav entry and never both entries [33m 4163[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryCatalogFinalSweep.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 4082[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the real quality gate on every one of the eighty lessons [33m 3670[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/billingLifecycleB3.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1590[2mms[22m[39m
+     [33m[2m✓[22m[39m uses public creators and stable keys, with rate-derived charges and repeatable states [33m 988[2mms[22m[39m
+     [33m[2m✓[22m[39m reloads the existing cohort rather than adding records [33m 591[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/runAction.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2832[2mms[22m[39m
+     [33m[2m✓[22m[39m every registry action writes exactly one action.* event per attempt, including blocked [33m 2789[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/billingProjectionB3b.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 3080[2mms[22m[39m
+     [33m[2m✓[22m[39m B3a: both billing roles retain every workspace list ID, order, count, reason and lane [33m 560[2mms[22m[39m
+     [33m[2m✓[22m[39m all billing surfaces receive exact allowlists, including nested financial reconciliation [33m 631[2mms[22m[39m
+     [33m[2m✓[22m[39m therapist: pinned-clock selectors, workspace and shared clinical sources are unchanged [33m 880[2mms[22m[39m
+     [33m[2m✓[22m[39m sys_admin: pinned-clock selectors, workspace and shared clinical sources are unchanged [33m 917[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/bellPointerOwnership.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1675[2mms[22m[39m
+     [33m[2m✓[22m[39m one key everywhere; survives syncs; in the owner's My work; closes with the gap; re-raised once [33m 323[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/lessonRatings.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1731[2mms[22m[39m
+     [33m[2m✓[22m[39m point at real existing content for every lesson [33m 1717[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffTable8b1.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 3813[2mms[22m[39m
+   [33m[2m✓[22m[39m pages at exactly 50 without losing the final row [33m 1548[2mms[22m[39m
+   [33m[2m✓[22m[39m sorts concrete numeric values ascending and descending [33m 733[2mms[22m[39m
+   [33m[2m✓[22m[39m counts views only from caller rows and resets paging on selection [33m 401[2mms[22m[39m
+   [33m[2m✓[22m[39m keyboard activation sorts and pages [33m 1013[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/statTileParity9a2.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[33m 2071[2mms[22m[39m
+     [33m[2m✓[22m[39m src/lib/ehr.ts is unchanged since rollback [33m 389[2mms[22m[39m
+ [32m✓[39m src/components/clinical/refusal/__tests__/RefusalFormDialog.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 3281[2mms[22m[39m
+     [33m[2m✓[22m[39m blocks finalize until attestation, patient branch, and nurse signature are complete [33m 1490[2mms[22m[39m
+     [33m[2m✓[22m[39m requires a witness when a patient with no capacity flag declines to sign [33m 542[2mms[22m[39m
+     [33m[2m✓[22m[39m shows the capacity banner and drops the witness requirement when flagged [33m 587[2mms[22m[39m
+     [33m[2m✓[22m[39m falls back to reviewed English with no draft banner when no catalog exists [33m 309[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentInventoryB2.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1506[2mms[22m[39m
+     [33m[2m✓[22m[39m legacy consent flags are read only where the inventory lists them [33m 623[2mms[22m[39m
+     [33m[2m✓[22m[39m consent ledger and separate-store entry points are called only where the inventory lists them [33m 875[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/asamCarePlan.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1989[2mms[22m[39m
+     [33m[2m✓[22m[39m no suggestions while the ASAM is only cosign-pending; they appear after the LPHA co-signs; never auto-activated [33m 491[2mms[22m[39m
+     [33m[2m✓[22m[39m accept / edit / dismiss each go through runAction and audit; dismiss needs a reason; provenance chip [33m 680[2mms[22m[39m
+     [33m[2m✓[22m[39m Part 2: hidden from roles without SUD access; ECM / care manager can't act on them but keep non-SUD goal edits [33m 459[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffDialogs8c1.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 967[2mms[22m[39m
+     [33m[2m✓[22m[39m executes a real Cathy discard once with one registry event and no cancel audit [33m 941[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffTables8b2.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 2213[2mms[22m[39m
+   [33m[2m✓[22m[39m counts and pages only the caller's supplied records, never excluded identities [33m 1576[2mms[22m[39m
+   [33m[2m✓[22m[39m secondary row actions run their original handler once, never a record action on view changes [33m 524[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffTable8b1Closeout.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 9831[2mms[22m[39m
+   [33m[2m✓[22m[39m retains an unsaved task note and open editor across a 50-row page boundary [33m 9742[2mms[22m[39m
+ [32m✓[39m src/components/dashboards/__tests__/kpiRowInteractivity.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 398[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/contentOriginality.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 1406[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the same validation the admin form and the publish path enforce [33m 867[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModuleFourAuthoring.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 890[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the real quality gate on every lesson [33m 432[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the same validation the admin form enforces [33m 387[2mms[22m[39m
+ [32m✓[39m src/components/library/__tests__/playerEngagement.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 2449[2mms[22m[39m
+     [33m[2m✓[22m[39m practice uses semantic matching but skips a lesson with no tag or semantic match [33m 356[2mms[22m[39m
+     [33m[2m✓[22m[39m Start/Pause controls the live countdown and animation phase [33m 545[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModuleFiveAuthoring.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1247[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the real quality gate on every lesson [33m 684[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the same validation the admin form enforces [33m 490[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModuleSevenAuthoring.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 1374[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the real quality gate on every lesson [33m 507[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the same validation the admin form enforces [33m 759[2mms[22m[39m
+ [32m✓[39m src/components/clinical/__tests__/chwBlockBanner.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 4122[2mms[22m[39m
+     [33m[2m✓[22m[39m no_supervising_provider — the CHW was asked and picked nobody [33m 953[2mms[22m[39m
+     [33m[2m✓[22m[39m supervisor_not_lpha — the picked provider is off-tier [33m 517[2mms[22m[39m
+     [33m[2m✓[22m[39m ecm_concurrent — the member is inside an active ECM enrollment window [33m 563[2mms[22m[39m
+     [33m[2m✓[22m[39m daily_unit_cap — the 4-unit / 2-hour day is already spent [33m 508[2mms[22m[39m
+     [33m[2m✓[22m[39m no_service_time — a claim attempt with zero documented minutes [33m 373[2mms[22m[39m
+     [33m[2m✓[22m[39m renders no banner for a note that was never blocked [33m 478[2mms[22m[39m
+     [33m[2m✓[22m[39m renders no banner after a successful (unblocked) claim [33m 727[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/contentCenterFinish.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 26444[2mms[22m[39m
+     [33m[2m✓[22m[39m an edited exercise title reaches craving flow, matching and Adel [33m 326[2mms[22m[39m
+     [33m[2m✓[22m[39m Journey metrics stay suppressed for real counts and populate under the Simulated sample [33m 25803[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/refillDecline8c2.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 2288[2mms[22m[39m
+     [33m[2m✓[22m[39m focuses Keep pending first and writes nothing on cancel [33m 1355[2mms[22m[39m
+     [33m[2m✓[22m[39m requires a reason, then writes exactly one action entry [33m 703[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffConfirmDialog.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1613[2mms[22m[39m
+     [33m[2m✓[22m[39m focuses the safe choice and repeats the verb without destructive styling [33m 793[2mms[22m[39m
+     [33m[2m✓[22m[39m blocks blank reason then confirms once with trimmed reason [33m 446[2mms[22m[39m
+ [32m✓[39m src/components/admin/ResourceVerificationQueue.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 2880[2mms[22m[39m
+     [33m[2m✓[22m[39m defaults to unverified listings and reports counts from the directory [33m 1029[2mms[22m[39m
+     [33m[2m✓[22m[39m verifies and publishes with the same revision attribution and one standard audit event [33m 1561[2mms[22m[39m
+ [32m✓[39m src/components/clinical/__tests__/NoteExport.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 2959[2mms[22m[39m
+     [33m[2m✓[22m[39m shows no export action on draft or cosign_pending notes [33m 1720[2mms[22m[39m
+     [33m[2m✓[22m[39m shows the export action once a note is signed [33m 632[2mms[22m[39m
+     [33m[2m✓[22m[39m hides export for a SUD-masked note and refuses to render its content [33m 599[2mms[22m[39m
+ [32m✓[39m src/components/clinical/__tests__/communityNotesI18n.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1996[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the CHW composer heading in Spanish [33m 400[2mms[22m[39m
+     [33m[2m✓[22m[39m shows the supervising-provider picker with LPHA-tier options only [33m 514[2mms[22m[39m
+     [33m[2m✓[22m[39m surfaces the recorded reason code on the note after a blocked attempt [33m 678[2mms[22m[39m
+ [32m✓[39m src/components/clinical/__tests__/MarCartMode.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1965[2mms[22m[39m
+     [33m[2m✓[22m[39m produces the same administration record from the keyboard as from the grid [33m 1341[2mms[22m[39m
+     [33m[2m✓[22m[39m ignores shortcuts while the nurse is typing a reason [33m 349[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/simulatedLabelsSL.test.tsx [2m([22m[2m34 tests[22m[2m)[22m[33m 732[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/confirmDialogRefusal.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 911[2mms[22m[39m
+     [33m[2m✓[22m[39m shows the thrown reason [33m 764[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffDialogs8c1Coverage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1073[2mms[22m[39m
+     [33m[2m✓[22m[39m Escape closes without running the action and returns focus to the trigger [33m 573[2mms[22m[39m
+     [33m[2m✓[22m[39m integrity refusal keeps the dialog open, content live and writes no success event [33m 465[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModuleTwoAuthoring.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1502[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the real quality gate on every lesson [33m 557[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the same validation the admin form enforces [33m 778[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/selfTracking.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 884[2mms[22m[39m
+     [33m[2m✓[22m[39m no staff or admin surface imports the private store [33m 848[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModuleThreeAuthoring.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1963[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the real quality gate on every lesson [33m 618[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the same validation the admin form enforces [33m 1189[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/exportFilenamesNoNames.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1168[2mms[22m[39m
+   [33m[2m✓[22m[39m note and refusal PDF names use the program ID, never the patient's name or DOB [33m 1087[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/part2SimulatedHardening.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 1315[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModuleEightAuthoring.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 1590[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the real quality gate on every lesson [33m 998[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the same validation the admin form enforces [33m 502[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentEnforcementB2Matrix.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1523[2mms[22m[39m
+     [33m[2m✓[22m[39m every patient x role x surface is identical (default seed, QA scenario, external records, emergency states) [33m 1520[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/billingParity9a3.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 1831[2mms[22m[39m
+     [33m[2m✓[22m[39m src/lib/ehr.ts is byte-identical to rollback [33m 441[2mms[22m[39m
+     [33m[2m✓[22m[39m list and strip show each count; denied keeps its Badge class [33m 520[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModuleSixAuthoring.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 2206[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the real quality gate on every lesson [33m 1064[2mms[22m[39m
+     [33m[2m✓[22m[39m passes the same validation the admin form enforces [33m 901[2mms[22m[39m
+ [32m✓[39m src/components/clinical/refusal/__tests__/NurseRefusalWorklist.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 768[2mms[22m[39m
+     [33m[2m✓[22m[39m lists pending refusal forms across patients [33m 682[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/contentCenterWiring.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1524[2mms[22m[39m
+     [33m[2m✓[22m[39m a clinical housing lesson goes to review, a different reviewer approves, then it is suggested [33m 359[2mms[22m[39m
+     [33m[2m✓[22m[39m finishing the lesson closes the assignment with a source [33m 361[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adelBriefConsistency.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1124[2mms[22m[39m
+     [33m[2m✓[22m[39m every seeded patient × every staff role: no mismatch, no missing source, no leak [33m 563[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/crossRoleJourneys.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 919[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/myPlanAsamGoals.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 1336[2mms[22m[39m
+     [33m[2m✓[22m[39m renders goal + what I'll do steps, never dimension codes or jargon [33m 1329[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase8cEligibility.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 850[2mms[22m[39m
+     [33m[2m✓[22m[39m the mock adapter is not imported by any app file [33m 706[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase7bClaimSingleSource.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 971[2mms[22m[39m
+     [33m[2m✓[22m[39m old parallel paths and scattered amounts are gone [33m 802[2mms[22m[39m
+ [32m✓[39m src/components/library/__tests__/phaseDRendering.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1639[2mms[22m[39m
+     [33m[2m✓[22m[39m paginates through authored parts [33m 592[2mms[22m[39m
+     [33m[2m✓[22m[39m offers stage, toggle and if/then inputs on the library lesson form [33m 879[2mms[22m[39m
+ [32m✓[39m src/components/orders/__tests__/MedicationDoseSection.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 1020[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateOnePath.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 465[2mms[22m[39m
+     [33m[2m✓[22m[39m the old typed-name card and helper are gone; nothing imports them [33m 378[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/group2Pathways.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 802[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentWorkflow.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 515[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adelBriefIncremental.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 811[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentAuditB2Parity.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 929[2mms[22m[39m
+     [33m[2m✓[22m[39m disclosure decisions, entries, audits and gate reads are byte-identical (new fields stripped) [33m 926[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/adminTables8b3.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 1731[2mms[22m[39m
+   [33m[2m✓[22m[39m sessions preserves projected row IDs and order [33m 335[2mms[22m[39m
+   [33m[2m✓[22m[39m all CSV/download function bodies are byte-identical to rollback [33m 995[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentEnforcementB2.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 344[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/scribe.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 362[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/cleanupReschedule.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 395[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartRedesignTurn3.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 559[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/billingLifecycleB25.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 373[2mms[22m[39m
+     [33m[2m✓[22m[39m the DMC-ODS scenario patient holds exactly one signed program-treatment record and stays out of the coordinator cohort [33m 343[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModuleOneAuthoring.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 355[2mms[22m[39m
+[90mstderr[2m | src/components/patient/__tests__/appointmentDirections.test.tsx[2m > [22m[2mappointment directions[2m > [22m[2mrenders a maps search link for a real in-person location
+[22m[39mWarning: A notFoundError was encountered on the route with ID "__root__", but a notFoundComponent option was not configured, nor was a router level defaultNotFoundComponent configured. Consider configuring at least one of these to avoid TanStack Router's overly generic defaultNotFoundComponent (<p>Not Found</p>)
+
+Not implemented: Window's scrollTo() method
+ [32m✓[39m src/lib/__tests__/staffThreads.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 364[2mms[22m[39m
+ [32m✓[39m src/components/patient/__tests__/appointmentDirections.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 423[2mms[22m[39m
+     [33m[2m✓[22m[39m renders a maps search link for a real in-person location [33m 400[2mms[22m[39m
+ [32m✓[39m src/components/documents/__tests__/documentsI18n.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1352[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the heading and status in English by default [33m 841[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the heading, status and download control in Spanish [33m 312[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/revokeMethodField.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1097[2mms[22m[39m
+     [33m[2m✓[22m[39m sends "written" when chosen [33m 544[2mms[22m[39m
+     [33m[2m✓[22m[39m sends "oral" when chosen [33m 409[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/statTile9a.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 1016[2mms[22m[39m
+     [33m[2m✓[22m[39m suppresses aggregate 0 below 11 [33m 642[2mms[22m[39m
+ [32m✓[39m src/components/clinical/__tests__/NoteTemplatePicker.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 535[2mms[22m[39m
+     [33m[2m✓[22m[39m shows title, description and the empty-answers required count [33m 496[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/reentryPhase6.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 742[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/contentBackup.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 713[2mms[22m[39m
+ [32m✓[39m src/components/intake/__tests__/benefitsWording.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 983[2mms[22m[39m
+     [33m[2m✓[22m[39m self-service says you [33m 308[2mms[22m[39m
+     [33m[2m✓[22m[39m third party uses the first name when known [33m 409[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/severityFlags.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 533[2mms[22m[39m
+     [33m[2m✓[22m[39m one flag per result, routed to the assigned clinician only, neutral, shown in header + Brief (checker agrees) [33m 397[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/mergeFinishSimulated.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 466[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/contentPublishing.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 267[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/auditTables8b3.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 708[2mms[22m[39m
+   [33m[2m✓[22m[39m preserves projected event IDs and never passes withheld narrative to cells [33m 684[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffWorkspace8a2.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 602[2mms[22m[39m
+     [33m[2m✓[22m[39m orders gated children, preserving record labels and actions exactly once [33m 570[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/schedulingRights.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 176[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/clinicianWorkspace.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 131[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/sudGoalOrigin.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 281[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/escalations.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 288[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/goalStatusAudit.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 521[2mms[22m[39m
+ [32m✓[39m src/components/clinical/__tests__/TemplateFormSpanish.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 401[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffFormField.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 866[2mms[22m[39m
+     [33m[2m✓[22m[39m waits until blur, links corrective guidance, then clears it [33m 790[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP2Surfaces.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 253[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/workingCalendar.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 285[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/billingTables8b3.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 544[2mms[22m[39m
+   [33m[2m✓[22m[39m claim ids retain exact monetary, units and status projections and numeric sorting [33m 542[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/newActionMenu.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 335[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP2.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 238[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentAuditB2.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 363[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/severityRouting.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 159[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/suppression9a2.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 361[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/newActionMenuSearch.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 171[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/countyReporting.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentLifecycleB2.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/crisisEscalationPhase2.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 84[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/sudTriggers.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/b25MitchDefects.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/referralModel.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 159[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/scribePhase1b.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/accessBatch.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 399[2mms[22m[39m
+     [33m[2m✓[22m[39m no notify() subject/body literal in src/lib names SUD terms, drugs, instruments, scores or Part 2 [33m 314[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/asam.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 477[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/navSections.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 391[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocatePhase4.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 143[2mms[22m[39m
+ [32m✓[39m src/components/dashboards/__tests__/engagementSection.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 264[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/mar.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateNeedReferrals.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 148[2mms[22m[39m
+ [32m✓[39m src/components/clinical/refusal/__tests__/RefusalRiskTextRecord.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 218[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/navGuard.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 417[2mms[22m[39m
+ [32m✓[39m src/components/prerelease/__tests__/PreReleaseTimelineCard.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 370[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupEligibilityCategories.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 266[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/notePdf.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateAhcdActivation.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/staffLifecycle.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/patientMatchingMerge.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 126[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/quickCheckAdherence.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/staffDialogs8c2Parity.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 123[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/reassessment.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentRecords.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/sdohNeedThread.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/cancelNoShow.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/coverageRelease.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 86[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/group1Profile.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/careMessageFlagMatrix.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 130[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupSessions.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 122[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartTheme9b.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m src/routes/__tests__/claimsWorklistUi.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 277[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryI18n.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/staffContentCenter.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 151[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/groupBillingStatus.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 163[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/contentAudiences.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/selfHelpLibrary.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 151[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/dataExchange.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 109[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/needsStep2.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adminGateTightening.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP3EndAccess.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 72[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/preReleasePhase2.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/batchAFoundations.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/batchG.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 105[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/batchBIntake.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 117[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adelBriefAccessLog.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 101[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/credentialAccessStorage.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/components/clinical/__tests__/SupervisionBanner.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/codeRedemption.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/medContinuity.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 185[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/badgeInline.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/referralDispositionPhase4a.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/batchEF.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 119[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartActionsConsistency.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 88[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/contentMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 250[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/screenerPart2Store.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/monthlyCheckIns.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/signupAndEmergencyContacts.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/scribeOwnership.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateGroupD.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 87[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/noMockDashboardNumbers.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adelPrompt.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/preReleaseCapacityIntake.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocatePhase4Expansion.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/refusalPdf.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentMigrationB2.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 63[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase10Screeners.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateBuild2.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/asamVisit.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/reminderSweep.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartRedesignTurn5.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentRecordModelB2.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 104[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/medRecon.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartRedesignTurn2.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/dashboardMetrics.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/landingWebsite.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/twoTierHelper.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 194[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/askAdel.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 140[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/section4part1.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/clinicalCoreB.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/dmcOdsReadiness.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 89[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateFourTierAuthority.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 167[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartTabsDeepLinks.test.ts [2m([22m[2m35 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/staffAlertTransport.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/ecmNoteContent.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 119[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupNotifications.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/preReleaseBuild3.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/supervisionAdmin.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/sdohReferralConsentAttribution.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/routeAccessGuard.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 176[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/refusal.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 110[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/roleArchitectureV3.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/preReleaseBuild5.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryStartDate.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/doseAxes.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartColors9c.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/preReleaseScreeners.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/clinicalCoreA.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 104[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/worklist.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 88[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/unsignedWorkConsolidation.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/templateFieldValidation.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/printRecord.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/partB1Seeking.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/outpatientMeds.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/quickActions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateInviteBuild1.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/documentsGroupE.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryModules.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 156[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP1Owner.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 89[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP3Referrer.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 95[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateMessaging.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/careMessages.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/postEnrollmentPhase4f.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/statTileParity9a.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/crisisTextDetection.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentCaptureB2.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 128[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupTelehealthModality.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/moudContinuity.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 97[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/notificationEvents.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 137[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/publicReferralShell.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/part2DisclosureAccessLog.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/workspaceBatchA.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/quickActionPrefs.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/referralFunnelPhase4g.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentEnforcementB2External.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/preReleaseBuild4.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 126[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/custody.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP3SysAdminCohort.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/reportingPeriods.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/templateSchema.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/taskWork.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase7dGeneralPopulation.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 94[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/needsStep3.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 84[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/protocols.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentLiveB25.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/coordination.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 144[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/noteAutofill.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/preReleaseRelease.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/staffShell8a1.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 97[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupOccurrenceExceptions.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/emotionCheckIn.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/schedulingRules.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 99[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/asamCosignSection8a2.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP1.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 240[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/referralContactCapture.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 60[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/myWorkPart2Screeners.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateSudDisclosureConsent.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 139[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/coverageActionsProvenance.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/inboxQueues.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/missedHandoff.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 93[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupJoinRequests.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase7cRates.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 179[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/notifications.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/noteClockCrisisOwner.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/attestationPrimitive.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/credentialRoster.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/intakeConsentReprompt.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/whatWouldHelp.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/lessonAuthoringPhaseD.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adelHistory.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/contentContainers.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/toolkitAggregation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/voiceAndDisclosure.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase7dFollowups.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/sdohReferralThread.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/bookingWarningSiteClock.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateSelfClaimBlock.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP3Names.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/referralSubmissionAudit.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/documentsPhase5.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/section4part2.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/sdohActivityLog.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/caseloadScope.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 72[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/billingSparkline9a3.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP3NameSweep.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/referralPhase4e.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/sdohResourceMatch.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase7b1SignatureClaim.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/structuredCarePlan.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recordClaimCode.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/populationTrack.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/reminders.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase8bBenefits.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/catalogGovernance.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/schedulingRuleRuns.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/crisisEscalation.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/myWorkStartOfDay.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/assistedSignupCrisisFlag.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/safetyPlan.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/refillAttribution.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupMultiFacilitator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/screenerAuthorException.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP3SysAdmin.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/claimGuard.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/poDisclosure.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/caseloadReview.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/trackingTimeline.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/appointmentConflictProvenance.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/coverageWorklist.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/sdohProvenanceMapping.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/noteVisitLink.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/populationHealth.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/myWork.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/carryoversK.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/coveragePlans.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/cfProxyAudit.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase8aCoverageIntegrity.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/noteTemplateVersioning.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/engagementReporting.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/frontDoor.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/dailymedFallback.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/intakeNeedsReconcile.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/noteAutomations.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adminNavParity.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 100[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/notes.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/opsLauncher.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/templateScope.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/prnMinGap.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/demoScenarioSwitch.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/intakePrefill.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/crisisLanguageCopy.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/advocateLibraryCategory.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/kpiSparkline9a.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupAAccessFixes.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/preReleaseRoster.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/physicianAndRefillSafety.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/cohortGuard.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/patientSearch.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/cosignRouting.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/luisCuresSeed.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/referralPhase4c.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recoveryStages.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/justiceInvolvementGate.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/screenerDrafts.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartTabsTurn4Regroup.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/userNavigationShell.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/intakeHistory.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/weeklyRecap.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/inboxActions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/communityBillingGroupC.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/asamReporting.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/calaim.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/outpatientLens.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adelIntakeScript.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/templateSpanish.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentAuditView.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/caloms.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/orderLifecycle.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/frontDoorEntry.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/billingPhase3.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/communityInquiry.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/hie.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupEnrollmentTelehealthConsent.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/partBQaScenarios.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 92[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recordSectionAsamGate.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/consentPublishReason.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/chartTurn4Finish.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adelDistress.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/phase7aBillingParity.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/patientHomeDashboard.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/patientNavParity.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/clinicalTextGovernance.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/groupMetrics.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/inCrisisNow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/notificationAudience.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/routes/__tests__/caseloadReviewMarkup.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/referralSourcesPhase4.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/auditRedaction.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/demoInboxSeed.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/speakGuard.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/quickActionsBatch3.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/patientNavShellParity.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/notePeekGate.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/intakePhq9CrisisTrigger.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/noteSignClaimMirror.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/populationNavGating.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/billingServiceDate.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/hoursMinutesLeft.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/quickActionTaskContext.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/claimsNavLink.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/privacyP3Bundle.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 187063[2mms[22m[39m
+     [33m[2m✓[22m[39m contains no inspection hook names or symbols [33m 187059[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m378 passed[39m[22m[90m (378)[39m
+[2m      Tests [22m [1m[32m3037 passed[39m[22m[90m (3037)[39m
+[2m   Start at [22m 21:13:41
+[2m   Duration [22m 188.19s[2m (transform 93.10s, setup 0ms, import 928.35s, tests 362.12s, environment 471.48s)[22m
+

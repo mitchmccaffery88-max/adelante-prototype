@@ -213,3 +213,11 @@ Standalone, --workers=1 --trace=on --retries=0, config unchanged. Logs: docs/sl-
 | 5 | 15.2s pass | 18.9s pass |
 | Median | 17.1s | 17.2s |
 No failures, so no trace to classify. Decision rule (median ≥20s or any run ≥25s on both builds) NOT met: STOP. No timeout change applied; no full suite, screenshot restore or closeout run. Archive server stopped.
+
+## roleDashboards9c:27 fix (Mitch decision, Oct 24) — HARD STOP
+Rollback for this step: 7c2de144. Applied presentation-only fix:
+- `src/components/ops/OpsWorkspace.tsx`: import `simulatedSurfaceLabel` → `SIMULATED_LABEL`; new `billingHomeSimulatedLabel()` ("Simulated — no payment processed, claim transmitted, or report sent to the state"); workspace badge now shows it (was payments label).
+- `src/routes/billing.tsx`: two header badges (payments, caloms) → one combined badge shown only when the tile workspace is not rendered (`!canWrite`), so every viewer sees exactly one label; `simulatedSurfaceLabel` import removed; OpsWorkspace import adds `billingHomeSimulatedLabel`.
+- `src/test/consentB2Approved.ts` FRI block: billing.tsx and OpsWorkspace.tsx entries updated to the new exact-once substitutions (this-session adapter). Helper is a function, not a const, so roleDashboardParity9c2 expression inventory stays unchanged.
+- `e2e/simulatedLabelsSL.spec.ts:8`: expected text "Simulated — no payment processed or claim transmitted" → combined label (still proves payments + state export labelled Simulated). No unit-test line needed changing.
+Validation: full units 3,037/3,037 (EXIT 0). Standalone roleDashboards9c + simulatedLabelsSL: 14 passed, **1 failed** — `e2e/roleDashboards9c.spec.ts:27` billing 390: received **873** > 844 (was 945). Evidence: `docs/sl-evidence/rd9c-fix/`. Full browser suite, screenshot restore and final SHA not run. Proposed (needs Mitch): move the single label below billing-kpis on phone, or shorten it to one line (e.g. "Simulated — no payments, claims or state reports sent").

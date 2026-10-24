@@ -1,0 +1,836 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - region "Demo controls" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e9]: Demo
+        - generic [ref=e10]:
+          - 'button "Demo control: QA scenario" [ref=e12]':
+            - img [ref=e13]
+            - generic [ref=e15]: "QA: choose a scenario"
+            - img [ref=e16]
+          - 'button "Demo control: staff role" [ref=e18]':
+            - img [ref=e19]
+            - generic [ref=e31]: "Role: Billing coordinator · Tonya Price"
+            - img [ref=e32]
+    - main [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - button "Open staff navigation" [ref=e37] [cursor=pointer]:
+            - img
+          - link "Adelante home" [ref=e38] [cursor=pointer]:
+            - /url: /
+            - img "Adelante" [ref=e39]
+          - button "Quick jump" [ref=e40] [cursor=pointer]:
+            - img
+          - button "Notifications — 5 unread" [ref=e41]:
+            - img [ref=e42]
+            - generic [ref=e45]: "5"
+          - button "Staff account" [ref=e46] [cursor=pointer]:
+            - img
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - generic [ref=e50]: "Acting as:"
+            - generic [ref=e51]: Billing coordinator · Tonya Price
+            - button "Open create actions" [ref=e52] [cursor=pointer]: + New
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - navigation "Breadcrumb" [ref=e55]:
+                - list [ref=e56]:
+                  - listitem [ref=e57]:
+                    - link "Adelante" [ref=e58] [cursor=pointer]:
+                      - /url: /
+                      - img [ref=e59]
+                      - generic [ref=e62]: Adelante
+                  - listitem [ref=e63]:
+                    - img [ref=e64]
+                    - generic [ref=e66]: Revenue & billing
+                  - listitem [ref=e67]:
+                    - img [ref=e68]
+                    - generic [ref=e70]: Billing
+              - generic [ref=e71]:
+                - img [ref=e72]
+                - generic [ref=e75]: Billing
+            - button "Ask Adel Prototype" [ref=e77]:
+              - img [ref=e78]
+              - text: Ask Adel
+              - generic [ref=e81]: Prototype
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - heading "Billing coordinator" [level=1] [ref=e85]
+                - paragraph [ref=e86]: Tulare County pilot · 7 funding lanes tracked separately from billing status.
+              - generic [ref=e87]:
+                - link "Provider & site reference" [ref=e88] [cursor=pointer]:
+                  - /url: /provider-reference
+                - link "County reporting" [ref=e89] [cursor=pointer]:
+                  - /url: /county-reporting
+                - link "Open claims worklist to" [ref=e90] [cursor=pointer]:
+                  - /url: /admin-claims
+            - generic [ref=e91]:
+              - generic [ref=e92]: Simulated — no payment processed, claim transmitted, or report sent to the state
+              - generic [ref=e93]:
+                - button "7 Claims blocked" [ref=e94]:
+                  - generic [ref=e95]: "7"
+                  - text: Claims blocked
+                - button "0 Ready to send" [ref=e96]:
+                  - generic [ref=e97]: "0"
+                  - text: Ready to send
+                - button "20 Eligibility checks due" [ref=e98]:
+                  - generic [ref=e99]: "20"
+                  - text: Eligibility checks due
+                - button "3 Payments to post" [ref=e100]:
+                  - generic [ref=e101]: "3"
+                  - text: Payments to post
+                - button "2 Duplicate holds" [ref=e102]:
+                  - generic [ref=e103]: "2"
+                  - text: Duplicate holds
+              - region "Billing summary" [ref=e104]:
+                - article [ref=e105]:
+                  - paragraph [ref=e106]: Outstanding
+                  - paragraph [ref=e108]: $165.00
+                  - paragraph [ref=e109]: 1 claims
+                  - figure "Trend, Submitted dollars per week, last 12 weeks" [ref=e111]:
+                    - img "Weekly measurements, Submitted dollars per week, last 12 weeks; gaps are unmeasured or privacy protected" [ref=e112]
+                    - generic [ref=e114]: Submitted dollars per week, last 12 weeks
+                - article [ref=e115]:
+                  - paragraph [ref=e116]: Paid
+                  - paragraph [ref=e118]: $165.00
+                  - paragraph [ref=e119]: 1 claims
+                  - figure "Trend, Paid dollars per week, last 12 weeks" [ref=e121]:
+                    - img "Weekly measurements, Paid dollars per week, last 12 weeks; gaps are unmeasured or privacy protected" [ref=e122]
+                    - generic [ref=e124]: Paid dollars per week, last 12 weeks
+                - generic [ref=e125]:
+                  - generic [ref=e126]: Denied
+                  - generic [ref=e127]: $0.00
+                  - generic [ref=e128]: 0 claims
+                - article [ref=e129]:
+                  - paragraph [ref=e130]: Drafts / write-offs
+                  - paragraph [ref=e132]: "13"
+                  - paragraph [ref=e133]: 13 draft · 0 write-off
+              - generic [ref=e134]:
+                - button "Needs my action 29 items" [expanded] [ref=e135]:
+                  - generic [ref=e136]: Needs my action
+                  - generic [ref=e137]: 29 items
+                  - img [ref=e138]
+                - generic [ref=e140]:
+                  - heading "Blocked claims · 7" [level=2] [ref=e141]
+                  - list [ref=e142]:
+                    - listitem [ref=e143]:
+                      - generic [ref=e144]:
+                        - text: ADL-2026-003 · 2026-10-24
+                        - generic [ref=e145]: "Blocked: clinical documentation incomplete"
+                      - button "Fix" [ref=e146] [cursor=pointer]
+                    - listitem [ref=e147]:
+                      - generic [ref=e148]:
+                        - text: ADL-2026-004 · 2026-10-21
+                        - generic [ref=e149]: "Blocked: payment arrangement not recorded"
+                      - button "Fix" [ref=e150] [cursor=pointer]
+                    - listitem [ref=e151]:
+                      - generic [ref=e152]:
+                        - text: ADL-2026-004 · 2026-10-24
+                        - generic [ref=e153]: "Blocked: payment arrangement not recorded"
+                      - button "Fix" [ref=e154] [cursor=pointer]
+                    - listitem [ref=e155]:
+                      - generic [ref=e156]:
+                        - text: ADL-2026-011 · 2026-10-24
+                        - generic [ref=e157]: "Blocked: no rate on file"
+                      - button "Fix" [ref=e158] [cursor=pointer]
+                    - listitem [ref=e159]:
+                      - generic [ref=e160]:
+                        - text: ADL-2026-003 · 2026-10-23
+                        - generic [ref=e161]: "Blocked: clinical documentation incomplete"
+                      - button "Fix" [ref=e162] [cursor=pointer]
+                    - listitem [ref=e163]:
+                      - generic [ref=e164]:
+                        - text: ADL-2026-012 · 2026-10-24
+                        - generic [ref=e165]: "Blocked: clinical documentation incomplete"
+                      - button "Fix" [ref=e166] [cursor=pointer]
+                    - listitem [ref=e167]:
+                      - generic [ref=e168]:
+                        - text: ADL-2026-004 · 2026-10-23
+                        - generic [ref=e169]: "Blocked: payment arrangement not recorded"
+                      - button "Fix" [ref=e170] [cursor=pointer]
+                  - heading "Duplicate holds · 2" [level=2] [ref=e171]
+                  - list [ref=e172]:
+                    - listitem [ref=e173]:
+                      - generic [ref=e174]:
+                        - text: ADL-2026-020 · 2026-10-24
+                        - generic [ref=e175]: "Held: possible duplicate after merge"
+                      - button "Review" [ref=e176] [cursor=pointer]
+                    - listitem [ref=e177]:
+                      - generic [ref=e178]:
+                        - text: ADL-2026-020 · 2026-10-24
+                        - generic [ref=e179]: "Held: possible duplicate after merge"
+                      - button "Review" [ref=e180] [cursor=pointer]
+                  - heading "Eligibility checks due · 20" [level=2] [ref=e181]
+                  - list [ref=e182]:
+                    - listitem [ref=e183]:
+                      - generic [ref=e184]:
+                        - text: ADL-2026-900
+                        - generic [ref=e185]: never checked
+                    - listitem [ref=e186]:
+                      - generic [ref=e187]:
+                        - text: ADL-2026-004
+                        - generic [ref=e188]: never checked
+                    - listitem [ref=e189]:
+                      - generic [ref=e190]:
+                        - text: ADL-2026-015
+                        - generic [ref=e191]: never checked
+                    - listitem [ref=e192]:
+                      - generic [ref=e193]:
+                        - text: ADL-2026-001
+                        - generic [ref=e194]: never checked
+                    - listitem [ref=e195]:
+                      - generic [ref=e196]:
+                        - text: ADL-2026-018
+                        - generic [ref=e197]: never checked
+                    - listitem [ref=e198]:
+                      - generic [ref=e199]:
+                        - text: ADL-2026-019
+                        - generic [ref=e200]: never checked
+                    - listitem [ref=e201]:
+                      - generic [ref=e202]:
+                        - text: ADL-2026-009
+                        - generic [ref=e203]: never checked
+                    - listitem [ref=e204]:
+                      - generic [ref=e205]:
+                        - text: ADL-2026-012
+                        - generic [ref=e206]: never checked
+                    - listitem [ref=e207]:
+                      - link "All 20 on the eligibility worklist" [ref=e208] [cursor=pointer]:
+                        - /url: /eligibility-worklist
+              - button "Claims pipeline 0 ready to send" [ref=e210]:
+                - generic [ref=e211]: Claims pipeline
+                - generic [ref=e212]: 0 ready to send
+                - img [ref=e213]
+              - button "Payments 3 to post" [ref=e216]:
+                - generic [ref=e217]: Payments
+                - generic [ref=e218]: 3 to post
+                - img [ref=e219]
+            - generic [ref=e221]:
+              - heading "Billing status" [level=2] [ref=e223]
+              - generic [ref=e224]:
+                - button "Draft 13" [ref=e225]:
+                  - generic "Draft" [ref=e227]:
+                    - img [ref=e228]
+                    - generic [ref=e237]: Draft
+                  - generic [ref=e238]: "13"
+                - button "Ready 0" [ref=e239]:
+                  - generic "Ready" [ref=e241]:
+                    - img [ref=e242]
+                    - generic [ref=e251]: Ready
+                  - generic [ref=e252]: "0"
+                - button "Submitted 1" [ref=e253]:
+                  - generic "Submitted" [ref=e255]:
+                    - img [ref=e256]
+                    - generic [ref=e259]: Submitted
+                  - generic [ref=e260]: "1"
+                - button "Paid 1" [ref=e261]:
+                  - generic "Paid" [ref=e263]:
+                    - img [ref=e264]
+                    - generic [ref=e266]: Paid
+                  - generic [ref=e267]: "1"
+                - button "Denied 0" [ref=e268]:
+                  - generic [ref=e269]: Denied
+                  - generic [ref=e271]: "0"
+                - button "Write-off 0" [ref=e272]:
+                  - generic "Write-off" [ref=e274]:
+                    - img [ref=e275]
+                    - generic [ref=e277]: Write-off
+                  - generic [ref=e278]: "0"
+                - button "Partial 0" [ref=e279]:
+                  - generic "Partial" [ref=e281]:
+                    - img [ref=e282]
+                    - generic [ref=e285]: Partial
+                  - generic [ref=e286]: "0"
+              - paragraph [ref=e287]: Counts claim records — the same ones on the Claims worklist and Billing page. Draft covers documented, signed and coded claims. Partial has no payment amount recorded yet.
+            - generic [ref=e288]:
+              - img [ref=e289]
+              - generic [ref=e293]:
+                - generic [ref=e294]: Billing entity
+                - generic [ref=e295]: Contract-type decision unresolved — toggle here for demo.
+              - generic [ref=e296]:
+                - button "Bagga's clinic NPI" [ref=e297]
+                - button "Adelante" [ref=e298]
+            - generic [ref=e299]:
+              - img [ref=e300]
+              - generic [ref=e302]:
+                - generic [ref=e303]: ISL reportable encounters — mandate 1/1/2027
+                - generic [ref=e304]: Uninsured, benefit-exhausted, and restricted-setting encounters are non-billable but county-reportable. An annual export is stubbed on the ISL tab.
+            - generic [ref=e305]:
+              - button "Claims worklist" [ref=e306]
+              - button "ISL (0)" [ref=e307]
+              - button "Code & rate table" [ref=e308]
+              - button "Credentialing" [ref=e309]
+            - generic [ref=e310]:
+              - generic [ref=e311]:
+                - generic [ref=e312]: "Lane:"
+                - combobox "Lane filter" [ref=e313]:
+                  - option "All lanes" [selected]
+                  - option "DMC-ODS"
+                  - option "Specialty MH (county MHP)"
+                  - option "Medi-Cal (FFS / managed care)"
+                  - option "CalAIM ECM / Community Supports"
+                  - option "Medi-Cal (program not set)"
+                  - option "Self-pay"
+                  - option "Sliding fee"
+                  - option "Grant / ISL"
+                  - option "BHSA"
+                  - option "Medicare"
+                  - option "Private insurance"
+                  - option "Commercial (inactive at launch)"
+                  - option "Non-billable"
+                  - option "Coverage type unknown"
+                - generic [ref=e314]: "Status:"
+                - combobox "Status filter" [ref=e315]:
+                  - option "All statuses" [selected]
+                  - option "draft"
+                  - option "ready"
+                  - option "submitted"
+                  - option "paid"
+                  - option "denied"
+                  - option "write off"
+                - button "No rate on file (3)" [ref=e316]
+                - button "Payment arrangement not recorded (3)" [ref=e317]
+                - button "Patient balances (3)" [ref=e318]
+              - generic [ref=e320]:
+                - table "Claims worklist" [ref=e321]:
+                  - rowgroup [ref=e322]:
+                    - row "Charge" [ref=e323]:
+                      - columnheader "Charge" [ref=e324]:
+                        - button "Charge" [ref=e325] [cursor=pointer]:
+                          - text: Charge
+                          - img
+                  - rowgroup [ref=e326]:
+                    - row "Date 10/25/2026 Program ID ADL-2026-002 Clinician Marisol Reyes Lane Medi-Cal (program not set) Charge — Status No claim — not billable Actions" [ref=e327]:
+                      - cell "Date 10/25/2026" [ref=e328]
+                      - cell "Program ID ADL-2026-002" [ref=e329]
+                      - cell "Clinician Marisol Reyes" [ref=e330]
+                      - cell "Lane Medi-Cal (program not set)" [ref=e331]:
+                        - text: Lane
+                        - generic [ref=e332]: Medi-Cal (program not set)
+                      - cell "Charge —" [ref=e333]
+                      - cell "Status No claim — not billable" [ref=e334]:
+                        - text: Status
+                        - generic [ref=e335]: No claim — not billable
+                      - cell "Actions" [ref=e336]: Actions
+                    - row "Date 10/24/2026 Program ID ADL-2026-011 Clinician Marisol Reyes Lane DMC-ODS Charge $123.75 H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25 Simulated — no payment processed or claim transmitted Correct Status Draft Seed data — no note signature coded Actions Mark ready Write off" [ref=e338]:
+                      - cell "Date 10/24/2026" [ref=e339]
+                      - cell "Program ID ADL-2026-011" [ref=e340]
+                      - cell "Clinician Marisol Reyes" [ref=e341]
+                      - cell "Lane DMC-ODS" [ref=e342]:
+                        - text: Lane
+                        - generic [ref=e343]: DMC-ODS
+                      - cell "Charge $123.75 H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25 Simulated — no payment processed or claim transmitted Correct" [ref=e344]:
+                        - text: Charge
+                        - generic [ref=e345]:
+                          - generic [ref=e346]: $123.75
+                          - generic [ref=e347]: H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25
+                          - generic [ref=e349]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e350]
+                      - cell "Status Draft Seed data — no note signature coded" [ref=e351]:
+                        - text: Status
+                        - generic "Draft" [ref=e353]:
+                          - img [ref=e354]
+                          - generic [ref=e356]: Draft
+                        - paragraph [ref=e357]: Seed data — no note signature
+                        - generic [ref=e358]: coded
+                      - cell "Actions Mark ready Write off" [ref=e359]:
+                        - text: Actions
+                        - generic [ref=e361]:
+                          - button "Mark ready" [ref=e362]:
+                            - img [ref=e363]
+                            - text: Mark ready
+                          - button "Write off" [ref=e365]:
+                            - img [ref=e366]
+                            - text: Write off
+                    - row "Date 10/24/2026 Program ID ADL-2026-012 Clinician Marisol Reyes Lane DMC-ODS Charge $123.75 H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25 Simulated — no payment processed or claim transmitted Correct Status Draft Seed data — no note signature coded Actions Mark ready Write off" [ref=e369]:
+                      - cell "Date 10/24/2026" [ref=e370]
+                      - cell "Program ID ADL-2026-012" [ref=e371]
+                      - cell "Clinician Marisol Reyes" [ref=e372]
+                      - cell "Lane DMC-ODS" [ref=e373]:
+                        - text: Lane
+                        - generic [ref=e374]: DMC-ODS
+                      - cell "Charge $123.75 H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25 Simulated — no payment processed or claim transmitted Correct" [ref=e375]:
+                        - text: Charge
+                        - generic [ref=e376]:
+                          - generic [ref=e377]: $123.75
+                          - generic [ref=e378]: H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25
+                          - generic [ref=e380]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e381]
+                      - cell "Status Draft Seed data — no note signature coded" [ref=e382]:
+                        - text: Status
+                        - generic "Draft" [ref=e384]:
+                          - img [ref=e385]
+                          - generic [ref=e387]: Draft
+                        - paragraph [ref=e388]: Seed data — no note signature
+                        - generic [ref=e389]: coded
+                      - cell "Actions Mark ready Write off" [ref=e390]:
+                        - text: Actions
+                        - generic [ref=e392]:
+                          - button "Mark ready" [ref=e393]:
+                            - img [ref=e394]
+                            - text: Mark ready
+                          - button "Write off" [ref=e396]:
+                            - img [ref=e397]
+                            - text: Write off
+                    - 'row "Date 10/24/2026 Program ID ADL-2026-004 Clinician Marisol Reyes Lane Self-pay Charge $165.00 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Payment arrangement not recorded — confirm before billing Set arrangement Choose… Patient owes $165.00 (provisional) Record payment Correct Status Draft Blocked: note not signed documented Actions Awaiting note signature Write off" [ref=e400]':
+                      - cell "Date 10/24/2026" [ref=e401]
+                      - cell "Program ID ADL-2026-004" [ref=e402]
+                      - cell "Clinician Marisol Reyes" [ref=e403]
+                      - cell "Lane Self-pay" [ref=e404]:
+                        - text: Lane
+                        - generic [ref=e405]: Self-pay
+                      - cell "Charge $165.00 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Payment arrangement not recorded — confirm before billing Set arrangement Choose… Patient owes $165.00 (provisional) Record payment Correct" [ref=e406]:
+                        - text: Charge
+                        - generic [ref=e407]:
+                          - generic [ref=e408]: $165.00
+                          - generic [ref=e409]: 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00
+                          - generic [ref=e410]:
+                            - generic [ref=e411]: Simulated — no payment processed or claim transmitted
+                            - generic [ref=e412]:
+                              - img [ref=e413]
+                              - text: Payment arrangement not recorded — confirm before billing
+                            - generic [ref=e415]:
+                              - text: Set arrangement
+                              - combobox "Set arrangement" [ref=e416]:
+                                - option "Choose…" [disabled] [selected]
+                                - option "Self-pay (standard fee)"
+                                - option "Sliding fee"
+                                - option "Grant / ISL-funded (no patient charge)"
+                            - generic [ref=e417]: Patient owes $165.00 (provisional)
+                            - button "Record payment" [ref=e418]
+                          - button "Correct" [ref=e419]
+                      - 'cell "Status Draft Blocked: note not signed documented" [ref=e420]':
+                        - text: Status
+                        - generic "Draft" [ref=e422]:
+                          - img [ref=e423]
+                          - generic [ref=e432]: Draft
+                        - paragraph [ref=e433]: "Blocked: note not signed"
+                        - generic [ref=e434]: documented
+                      - cell "Actions Awaiting note signature Write off" [ref=e435]:
+                        - text: Actions
+                        - generic [ref=e437]:
+                          - generic [ref=e438]: Awaiting note signature
+                          - button "Write off" [ref=e439]:
+                            - img [ref=e440]
+                            - text: Write off
+                    - 'row "Date 10/24/2026 Program ID ADL-2026-003 Clinician Marisol Reyes Lane DMC-ODS Charge $123.75 H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25 Simulated — no payment processed or claim transmitted Correct Status Draft Blocked: note not signed documented Actions Awaiting note signature Write off" [ref=e443]':
+                      - cell "Date 10/24/2026" [ref=e444]
+                      - cell "Program ID ADL-2026-003" [ref=e445]
+                      - cell "Clinician Marisol Reyes" [ref=e446]
+                      - cell "Lane DMC-ODS" [ref=e447]:
+                        - text: Lane
+                        - generic [ref=e448]: DMC-ODS
+                      - cell "Charge $123.75 H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25 Simulated — no payment processed or claim transmitted Correct" [ref=e449]:
+                        - text: Charge
+                        - generic [ref=e450]:
+                          - generic [ref=e451]: $123.75
+                          - generic [ref=e452]: H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25
+                          - generic [ref=e454]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e455]
+                      - 'cell "Status Draft Blocked: note not signed documented" [ref=e456]':
+                        - text: Status
+                        - generic "Draft" [ref=e458]:
+                          - img [ref=e459]
+                          - generic [ref=e468]: Draft
+                        - paragraph [ref=e469]: "Blocked: note not signed"
+                        - generic [ref=e470]: documented
+                      - cell "Actions Awaiting note signature Write off" [ref=e471]:
+                        - text: Actions
+                        - generic [ref=e473]:
+                          - generic [ref=e474]: Awaiting note signature
+                          - button "Write off" [ref=e475]:
+                            - img [ref=e476]
+                            - text: Write off
+                    - 'row "Date 10/24/2026 Program ID ADL-2026-002 Clinician Marisol Reyes Lane Medi-Cal (FFS / managed care) Charge $165.00 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Correct Status Draft Blocked: note not signed documented Actions Awaiting note signature Write off" [ref=e479]':
+                      - cell "Date 10/24/2026" [ref=e480]
+                      - cell "Program ID ADL-2026-002" [ref=e481]
+                      - cell "Clinician Marisol Reyes" [ref=e482]
+                      - cell "Lane Medi-Cal (FFS / managed care)" [ref=e483]:
+                        - text: Lane
+                        - generic [ref=e484]: Medi-Cal (FFS / managed care)
+                      - cell "Charge $165.00 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Correct" [ref=e485]:
+                        - text: Charge
+                        - generic [ref=e486]:
+                          - generic [ref=e487]: $165.00
+                          - generic [ref=e488]: 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00
+                          - generic [ref=e490]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e491]
+                      - 'cell "Status Draft Blocked: note not signed documented" [ref=e492]':
+                        - text: Status
+                        - generic "Draft" [ref=e494]:
+                          - img [ref=e495]
+                          - generic [ref=e504]: Draft
+                        - paragraph [ref=e505]: "Blocked: note not signed"
+                        - generic [ref=e506]: documented
+                      - cell "Actions Awaiting note signature Write off" [ref=e507]:
+                        - text: Actions
+                        - generic [ref=e509]:
+                          - generic [ref=e510]: Awaiting note signature
+                          - button "Write off" [ref=e511]:
+                            - img [ref=e512]
+                            - text: Write off
+                    - 'row "Date 10/24/2026 Program ID ADL-2026-020 Clinician Marisol Reyes Lane Coverage type unknown Charge No rate on file H0001 · 1 × per encounter, corrected by billing Simulated — no payment processed or claim transmitted Correct Status Draft Blocked: note not signed signed Actions Mark coded Write off" [ref=e515]':
+                      - cell "Date 10/24/2026" [ref=e516]
+                      - cell "Program ID ADL-2026-020" [ref=e517]
+                      - cell "Clinician Marisol Reyes" [ref=e518]
+                      - cell "Lane Coverage type unknown" [ref=e519]:
+                        - text: Lane
+                        - generic [ref=e520]: Coverage type unknown
+                      - cell "Charge No rate on file H0001 · 1 × per encounter, corrected by billing Simulated — no payment processed or claim transmitted Correct" [ref=e521]:
+                        - text: Charge
+                        - generic [ref=e522]:
+                          - generic "No payer program on this claim." [ref=e523]:
+                            - img [ref=e524]
+                            - text: No rate on file
+                          - generic [ref=e526]: H0001 · 1 × per encounter, corrected by billing
+                          - generic [ref=e528]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e529]
+                      - 'cell "Status Draft Blocked: note not signed signed" [ref=e530]':
+                        - text: Status
+                        - generic "Draft" [ref=e532]:
+                          - img [ref=e533]
+                          - generic [ref=e535]: Draft
+                        - paragraph [ref=e536]: "Blocked: note not signed"
+                        - generic [ref=e537]: signed
+                      - cell "Actions Mark coded Write off" [ref=e538]:
+                        - text: Actions
+                        - generic [ref=e540]:
+                          - button "Mark coded" [ref=e541]:
+                            - img [ref=e542]
+                            - text: Mark coded
+                          - button "Write off" [ref=e544]:
+                            - img [ref=e545]
+                            - text: Write off
+                    - 'row "Date 10/24/2026 Program ID ADL-2026-020 Clinician Marisol Reyes Lane Coverage type unknown Charge No rate on file H0001 · 1 × per encounter, corrected by billing Simulated — no payment processed or claim transmitted Correct Status Draft Blocked: note not signed signed Actions Mark coded Write off" [ref=e548]':
+                      - cell "Date 10/24/2026" [ref=e549]
+                      - cell "Program ID ADL-2026-020" [ref=e550]
+                      - cell "Clinician Marisol Reyes" [ref=e551]
+                      - cell "Lane Coverage type unknown" [ref=e552]:
+                        - text: Lane
+                        - generic [ref=e553]: Coverage type unknown
+                      - cell "Charge No rate on file H0001 · 1 × per encounter, corrected by billing Simulated — no payment processed or claim transmitted Correct" [ref=e554]:
+                        - text: Charge
+                        - generic [ref=e555]:
+                          - generic "No payer program on this claim." [ref=e556]:
+                            - img [ref=e557]
+                            - text: No rate on file
+                          - generic [ref=e559]: H0001 · 1 × per encounter, corrected by billing
+                          - generic [ref=e561]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e562]
+                      - 'cell "Status Draft Blocked: note not signed signed" [ref=e563]':
+                        - text: Status
+                        - generic "Draft" [ref=e565]:
+                          - img [ref=e566]
+                          - generic [ref=e568]: Draft
+                        - paragraph [ref=e569]: "Blocked: note not signed"
+                        - generic [ref=e570]: signed
+                      - cell "Actions Mark coded Write off" [ref=e571]:
+                        - text: Actions
+                        - generic [ref=e573]:
+                          - button "Mark coded" [ref=e574]:
+                            - img [ref=e575]
+                            - text: Mark coded
+                          - button "Write off" [ref=e577]:
+                            - img [ref=e578]
+                            - text: Write off
+                    - 'row "Date 10/24/2026 Program ID ADL-2026-011 Clinician — Lane Coverage type unknown Charge No rate on file H0001 · 1 × per encounter, corrected by billing Simulated — no payment processed or claim transmitted Correct Status Draft Blocked: note not signed signed Actions Mark coded Write off" [ref=e581]':
+                      - cell "Date 10/24/2026" [ref=e582]
+                      - cell "Program ID ADL-2026-011" [ref=e583]
+                      - cell "Clinician —" [ref=e584]
+                      - cell "Lane Coverage type unknown" [ref=e585]:
+                        - text: Lane
+                        - generic [ref=e586]: Coverage type unknown
+                      - cell "Charge No rate on file H0001 · 1 × per encounter, corrected by billing Simulated — no payment processed or claim transmitted Correct" [ref=e587]:
+                        - text: Charge
+                        - generic [ref=e588]:
+                          - generic "No payer program on this claim." [ref=e589]:
+                            - img [ref=e590]
+                            - text: No rate on file
+                          - generic [ref=e592]: H0001 · 1 × per encounter, corrected by billing
+                          - generic [ref=e594]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e595]
+                      - 'cell "Status Draft Blocked: note not signed signed" [ref=e596]':
+                        - text: Status
+                        - generic "Draft" [ref=e598]:
+                          - img [ref=e599]
+                          - generic [ref=e601]: Draft
+                        - paragraph [ref=e602]: "Blocked: note not signed"
+                        - generic [ref=e603]: signed
+                      - cell "Actions Mark coded Write off" [ref=e604]:
+                        - text: Actions
+                        - generic [ref=e606]:
+                          - button "Mark coded" [ref=e607]:
+                            - img [ref=e608]
+                            - text: Mark coded
+                          - button "Write off" [ref=e610]:
+                            - img [ref=e611]
+                            - text: Write off
+                    - 'row "Date 10/23/2026 Program ID ADL-2026-002 Clinician Kayla Nguyen Lane Medi-Cal (FFS / managed care) Charge $165.00 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Correct Status Draft Blocked: note not signed documented Actions Awaiting note signature Write off" [ref=e614]':
+                      - cell "Date 10/23/2026" [ref=e615]
+                      - cell "Program ID ADL-2026-002" [ref=e616]
+                      - cell "Clinician Kayla Nguyen" [ref=e617]
+                      - cell "Lane Medi-Cal (FFS / managed care)" [ref=e618]:
+                        - text: Lane
+                        - generic [ref=e619]: Medi-Cal (FFS / managed care)
+                      - cell "Charge $165.00 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Correct" [ref=e620]:
+                        - text: Charge
+                        - generic [ref=e621]:
+                          - generic [ref=e622]: $165.00
+                          - generic [ref=e623]: 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00
+                          - generic [ref=e625]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e626]
+                      - 'cell "Status Draft Blocked: note not signed documented" [ref=e627]':
+                        - text: Status
+                        - generic "Draft" [ref=e629]:
+                          - img [ref=e630]
+                          - generic [ref=e639]: Draft
+                        - paragraph [ref=e640]: "Blocked: note not signed"
+                        - generic [ref=e641]: documented
+                      - cell "Actions Awaiting note signature Write off" [ref=e642]:
+                        - text: Actions
+                        - generic [ref=e644]:
+                          - generic [ref=e645]: Awaiting note signature
+                          - button "Write off" [ref=e646]:
+                            - img [ref=e647]
+                            - text: Write off
+                    - 'row "Date 10/23/2026 Program ID ADL-2026-004 Clinician Marisol Reyes Lane Self-pay Charge $165.00 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Payment arrangement not recorded — confirm before billing Set arrangement Choose… Patient owes $165.00 (provisional) Record payment Correct Status Draft Blocked: note not signed documented Actions Awaiting note signature Write off" [ref=e650]':
+                      - cell "Date 10/23/2026" [ref=e651]
+                      - cell "Program ID ADL-2026-004" [ref=e652]
+                      - cell "Clinician Marisol Reyes" [ref=e653]
+                      - cell "Lane Self-pay" [ref=e654]:
+                        - text: Lane
+                        - generic [ref=e655]: Self-pay
+                      - cell "Charge $165.00 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Payment arrangement not recorded — confirm before billing Set arrangement Choose… Patient owes $165.00 (provisional) Record payment Correct" [ref=e656]:
+                        - text: Charge
+                        - generic [ref=e657]:
+                          - generic [ref=e658]: $165.00
+                          - generic [ref=e659]: 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00
+                          - generic [ref=e660]:
+                            - generic [ref=e661]: Simulated — no payment processed or claim transmitted
+                            - generic [ref=e662]:
+                              - img [ref=e663]
+                              - text: Payment arrangement not recorded — confirm before billing
+                            - generic [ref=e665]:
+                              - text: Set arrangement
+                              - combobox "Set arrangement" [ref=e666]:
+                                - option "Choose…" [disabled] [selected]
+                                - option "Self-pay (standard fee)"
+                                - option "Sliding fee"
+                                - option "Grant / ISL-funded (no patient charge)"
+                            - generic [ref=e667]: Patient owes $165.00 (provisional)
+                            - button "Record payment" [ref=e668]
+                          - button "Correct" [ref=e669]
+                      - 'cell "Status Draft Blocked: note not signed documented" [ref=e670]':
+                        - text: Status
+                        - generic "Draft" [ref=e672]:
+                          - img [ref=e673]
+                          - generic [ref=e682]: Draft
+                        - paragraph [ref=e683]: "Blocked: note not signed"
+                        - generic [ref=e684]: documented
+                      - cell "Actions Awaiting note signature Write off" [ref=e685]:
+                        - text: Actions
+                        - generic [ref=e687]:
+                          - generic [ref=e688]: Awaiting note signature
+                          - button "Write off" [ref=e689]:
+                            - img [ref=e690]
+                            - text: Write off
+                    - 'row "Date 10/23/2026 Program ID ADL-2026-003 Clinician Marisol Reyes Lane DMC-ODS Charge $123.75 H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25 Simulated — no payment processed or claim transmitted Correct Status Draft Blocked: note not signed documented Actions Awaiting note signature Write off" [ref=e693]':
+                      - cell "Date 10/23/2026" [ref=e694]
+                      - cell "Program ID ADL-2026-003" [ref=e695]
+                      - cell "Clinician Marisol Reyes" [ref=e696]
+                      - cell "Lane DMC-ODS" [ref=e697]:
+                        - text: Lane
+                        - generic [ref=e698]: DMC-ODS
+                      - cell "Charge $123.75 H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25 Simulated — no payment processed or claim transmitted Correct" [ref=e699]:
+                        - text: Charge
+                        - generic [ref=e700]:
+                          - generic [ref=e701]: $123.75
+                          - generic [ref=e702]: H0004 · DMC-ODS · 3 × 15 min, estimated from schedule @ $41.25
+                          - generic [ref=e704]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e705]
+                      - 'cell "Status Draft Blocked: note not signed documented" [ref=e706]':
+                        - text: Status
+                        - generic "Draft" [ref=e708]:
+                          - img [ref=e709]
+                          - generic [ref=e718]: Draft
+                        - paragraph [ref=e719]: "Blocked: note not signed"
+                        - generic [ref=e720]: documented
+                      - cell "Actions Awaiting note signature Write off" [ref=e721]:
+                        - text: Actions
+                        - generic [ref=e723]:
+                          - generic [ref=e724]: Awaiting note signature
+                          - button "Write off" [ref=e725]:
+                            - img [ref=e726]
+                            - text: Write off
+                    - row "Date 10/22/2026 Program ID ADL-2026-003 Clinician Marisol Reyes Lane Medi-Cal (program not set) Charge — Status No claim — not billable Actions" [ref=e729]:
+                      - cell "Date 10/22/2026" [ref=e730]
+                      - cell "Program ID ADL-2026-003" [ref=e731]
+                      - cell "Clinician Marisol Reyes" [ref=e732]
+                      - cell "Lane Medi-Cal (program not set)" [ref=e733]:
+                        - text: Lane
+                        - generic [ref=e734]: Medi-Cal (program not set)
+                      - cell "Charge —" [ref=e735]
+                      - cell "Status No claim — not billable" [ref=e736]:
+                        - text: Status
+                        - generic [ref=e737]: No claim — not billable
+                      - cell "Actions" [ref=e738]: Actions
+                    - row "Date 10/22/2026 Program ID ADL-2026-011 Clinician Marisol Reyes Lane Coverage type unknown Charge — Status No claim — not billable Actions" [ref=e740]:
+                      - cell "Date 10/22/2026" [ref=e741]
+                      - cell "Program ID ADL-2026-011" [ref=e742]
+                      - cell "Clinician Marisol Reyes" [ref=e743]
+                      - cell "Lane Coverage type unknown" [ref=e744]:
+                        - text: Lane
+                        - generic [ref=e745]: Coverage type unknown
+                      - cell "Charge —" [ref=e746]
+                      - cell "Status No claim — not billable" [ref=e747]:
+                        - text: Status
+                        - generic [ref=e748]: No claim — not billable
+                      - cell "Actions" [ref=e749]: Actions
+                    - row "Date 10/21/2026 Program ID ADL-2026-001 Clinician Marisol Reyes Lane Medi-Cal (FFS / managed care) Charge $165.00 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Status Submitted Seed data — no note signature Actions Mark paid Deny" [ref=e751]:
+                      - cell "Date 10/21/2026" [ref=e752]
+                      - cell "Program ID ADL-2026-001" [ref=e753]
+                      - cell "Clinician Marisol Reyes" [ref=e754]
+                      - cell "Lane Medi-Cal (FFS / managed care)" [ref=e755]:
+                        - text: Lane
+                        - generic [ref=e756]: Medi-Cal (FFS / managed care)
+                      - cell "Charge $165.00 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted" [ref=e757]:
+                        - text: Charge
+                        - generic [ref=e758]:
+                          - generic [ref=e759]: $165.00
+                          - generic [ref=e760]: 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00
+                          - generic [ref=e762]: Simulated — no payment processed or claim transmitted
+                      - cell "Status Submitted Seed data — no note signature" [ref=e763]:
+                        - text: Status
+                        - generic "Submitted" [ref=e765]:
+                          - img [ref=e766]
+                          - generic [ref=e769]: Submitted
+                        - paragraph [ref=e770]: Seed data — no note signature
+                      - cell "Actions Mark paid Deny" [ref=e771]:
+                        - text: Actions
+                        - generic [ref=e773]:
+                          - button "Mark paid" [ref=e774]:
+                            - img [ref=e775]
+                            - text: Mark paid
+                          - button "Deny" [ref=e777]:
+                            - img [ref=e778]
+                            - text: Deny
+                    - 'row "Date 10/21/2026 Program ID ADL-2026-004 Clinician Marisol Reyes Lane Self-pay Charge $165.00 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Payment arrangement not recorded — confirm before billing Set arrangement Choose… Patient owes $165.00 (provisional) Record payment Correct Status Draft Blocked: note not signed documented Actions Awaiting note signature Write off" [ref=e781]':
+                      - cell "Date 10/21/2026" [ref=e782]
+                      - cell "Program ID ADL-2026-004" [ref=e783]
+                      - cell "Clinician Marisol Reyes" [ref=e784]
+                      - cell "Lane Self-pay" [ref=e785]:
+                        - text: Lane
+                        - generic [ref=e786]: Self-pay
+                      - cell "Charge $165.00 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Payment arrangement not recorded — confirm before billing Set arrangement Choose… Patient owes $165.00 (provisional) Record payment Correct" [ref=e787]:
+                        - text: Charge
+                        - generic [ref=e788]:
+                          - generic [ref=e789]: $165.00
+                          - generic [ref=e790]: 90834 · Self-pay · 1 × per encounter, estimated from schedule @ $165.00
+                          - generic [ref=e791]:
+                            - generic [ref=e792]: Simulated — no payment processed or claim transmitted
+                            - generic [ref=e793]:
+                              - img [ref=e794]
+                              - text: Payment arrangement not recorded — confirm before billing
+                            - generic [ref=e796]:
+                              - text: Set arrangement
+                              - combobox "Set arrangement" [ref=e797]:
+                                - option "Choose…" [disabled] [selected]
+                                - option "Self-pay (standard fee)"
+                                - option "Sliding fee"
+                                - option "Grant / ISL-funded (no patient charge)"
+                            - generic [ref=e798]: Patient owes $165.00 (provisional)
+                            - button "Record payment" [ref=e799]
+                          - button "Correct" [ref=e800]
+                      - 'cell "Status Draft Blocked: note not signed documented" [ref=e801]':
+                        - text: Status
+                        - generic "Draft" [ref=e803]:
+                          - img [ref=e804]
+                          - generic [ref=e813]: Draft
+                        - paragraph [ref=e814]: "Blocked: note not signed"
+                        - generic [ref=e815]: documented
+                      - cell "Actions Awaiting note signature Write off" [ref=e816]:
+                        - text: Actions
+                        - generic [ref=e818]:
+                          - generic [ref=e819]: Awaiting note signature
+                          - button "Write off" [ref=e820]:
+                            - img [ref=e821]
+                            - text: Write off
+                    - 'row "Date 10/19/2026 Program ID ADL-2026-002 Clinician James Okafor Lane Medi-Cal (FFS / managed care) Charge $165.00 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Correct Status Draft Blocked: note not signed documented Actions Awaiting note signature Write off" [ref=e824]':
+                      - cell "Date 10/19/2026" [ref=e825]
+                      - cell "Program ID ADL-2026-002" [ref=e826]
+                      - cell "Clinician James Okafor" [ref=e827]
+                      - cell "Lane Medi-Cal (FFS / managed care)" [ref=e828]:
+                        - text: Lane
+                        - generic [ref=e829]: Medi-Cal (FFS / managed care)
+                      - cell "Charge $165.00 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Correct" [ref=e830]:
+                        - text: Charge
+                        - generic [ref=e831]:
+                          - generic [ref=e832]: $165.00
+                          - generic [ref=e833]: 90834 · Medi-Cal (FFS / managed care) · 1 × per encounter, estimated from schedule @ $165.00
+                          - generic [ref=e835]: Simulated — no payment processed or claim transmitted
+                          - button "Correct" [ref=e836]
+                      - 'cell "Status Draft Blocked: note not signed documented" [ref=e837]':
+                        - text: Status
+                        - generic "Draft" [ref=e839]:
+                          - img [ref=e840]
+                          - generic [ref=e849]: Draft
+                        - paragraph [ref=e850]: "Blocked: note not signed"
+                        - generic [ref=e851]: documented
+                      - cell "Actions Awaiting note signature Write off" [ref=e852]:
+                        - text: Actions
+                        - generic [ref=e854]:
+                          - generic [ref=e855]: Awaiting note signature
+                          - button "Write off" [ref=e856]:
+                            - img [ref=e857]
+                            - text: Write off
+                    - row "Date 10/14/2026 Program ID ADL-2026-003 Clinician Marisol Reyes Lane Specialty MH (county MHP) Charge $165.00 90834 · Specialty MH (county MHP) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted Status Paid Seed data — no note signature Actions Closed" [ref=e860]:
+                      - cell "Date 10/14/2026" [ref=e861]
+                      - cell "Program ID ADL-2026-003" [ref=e862]
+                      - cell "Clinician Marisol Reyes" [ref=e863]
+                      - cell "Lane Specialty MH (county MHP)" [ref=e864]:
+                        - text: Lane
+                        - generic [ref=e865]: Specialty MH (county MHP)
+                      - cell "Charge $165.00 90834 · Specialty MH (county MHP) · 1 × per encounter, estimated from schedule @ $165.00 Simulated — no payment processed or claim transmitted" [ref=e866]:
+                        - text: Charge
+                        - generic [ref=e867]:
+                          - generic [ref=e868]: $165.00
+                          - generic [ref=e869]: 90834 · Specialty MH (county MHP) · 1 × per encounter, estimated from schedule @ $165.00
+                          - generic [ref=e871]: Simulated — no payment processed or claim transmitted
+                      - cell "Status Paid Seed data — no note signature" [ref=e872]:
+                        - text: Status
+                        - generic "Paid" [ref=e874]:
+                          - img [ref=e875]
+                          - generic [ref=e877]: Paid
+                        - paragraph [ref=e878]: Seed data — no note signature
+                      - cell "Actions Closed" [ref=e879]:
+                        - text: Actions
+                        - generic [ref=e882]: Closed
+                - navigation "Claims worklist pages" [ref=e883]:
+                  - generic [ref=e884]: Page 1 / 1 · 18
+                  - button "Previous page" [disabled]:
+                    - img
+                  - button "Next page" [disabled]:
+                    - img
+    - region "Crisis support" [ref=e885]:
+      - generic [ref=e886]:
+        - img [ref=e887]
+        - generic [ref=e889]:
+          - text: In crisis? Call or text
+          - link "988" [ref=e890] [cursor=pointer]:
+            - /url: tel:988
+          - text: anytime. Spanish-capable.
+    - contentinfo [ref=e891]:
+      - generic [ref=e892]:
+        - generic [ref=e893]: © 2026 Adelante · Built with care
+        - generic [ref=e894]:
+          - generic [ref=e895]: Demo data · no real PHI
+          - generic [ref=e897]: Demo scenarios · top-right control
+  - region "Notifications alt+T"
+```

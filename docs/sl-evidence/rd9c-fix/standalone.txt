@@ -1,0 +1,52 @@
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+Running 15 tests using 1 worker
+
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓   1 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 therapist action and summary above fold 1280 (14.1s)
+  ✓   2 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 therapist action and summary above fold 390 (13.8s)
+  ✓   3 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 ecm_provider action and summary above fold 1280 (13.1s)
+  ✓   4 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 ecm_provider action and summary above fold 390 (12.0s)
+  ✓   5 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 billing action and summary above fold 1280 (12.7s)
+  ✘   6 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 billing action and summary above fold 390 (8.3s)
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓   7 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 sys_admin action and summary above fold 1280 (15.4s)
+  ✓   8 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 sys_admin action and summary above fold 390 (15.0s)
+  ✓   9 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 credentialing_coordinator action and summary above fold 1280 (11.4s)
+  ✓  10 [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 credentialing_coordinator action and summary above fold 390 (11.3s)
+  ✓  11 [chromium] › e2e/roleDashboards9c.spec.ts:46:1 › 9c-2 billing still cannot see admin tiles (10.4s)
+  ✓  12 [chromium] › e2e/simulatedLabelsSL.spec.ts:11:3 › SL 390px /clinician: integration label and axe (11.1s)
+  ✓  13 [chromium] › e2e/simulatedLabelsSL.spec.ts:11:3 › SL 390px /billing: integration label and axe (12.9s)
+  ✓  14 [chromium] › e2e/simulatedLabelsSL.spec.ts:11:3 › SL 390px /admin-vendors: integration label and axe (11.3s)
+  ✓  15 [chromium] › e2e/simulatedLabelsSL.spec.ts:22:1 › SL 390px Spanish medication: pharmacy disclaimer, single review notice and axe (11.5s)
+
+
+  1) [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 billing action and summary above fold 390 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeLessThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: <= [32m844[39m
+    Received:    [31m873[39m
+
+      25 |         if (!box) return;
+      26 |         expect(box.y).toBeGreaterThanOrEqual(0);
+    > 27 |         expect(box.y + box.height).toBeLessThanOrEqual(height);
+         |                                    ^
+      28 |       }
+      29 |       const axe = await new AxeBuilder({ page }).include('[data-testid="staff-shell"]').analyze();
+      30 |       expect(axe.violations).toEqual([]);
+        at /dev-server/e2e/roleDashboards9c.spec.ts:27:36
+
+    Error Context: test-results/roleDashboards9c-9c-2-bill-7a07d--and-summary-above-fold-390-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/roleDashboards9c-9c-2-bill-7a07d--and-summary-above-fold-390-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/roleDashboards9c-9c-2-bill-7a07d--and-summary-above-fold-390-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/roleDashboards9c.spec.ts:15:5 › 9c-2 billing action and summary above fold 390 
+  14 passed (3.8m)

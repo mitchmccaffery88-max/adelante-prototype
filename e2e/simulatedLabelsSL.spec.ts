@@ -5,7 +5,7 @@ import { bootTables } from "./helpers/staffTables8b2";
 test.use({ viewport: { width: 390, height: 1800 } });
 for (const [route, selector, text] of [
   ["/clinician", "[data-testid='adel-refill-card']", "Simulated — not sent to a pharmacy"],
-  ["/billing", "[data-testid='billing-workspace']", "Simulated — no payment processed or claim transmitted"],
+  ["/billing", "[data-testid='billing-workspace']", "Simulated — no payment processed, claim transmitted, or report sent to the state"],
   ["/admin-vendors", "[data-simulated-flag='erx_simulated']", "Simulated — not sent to a pharmacy"],
 ] as const) {
   test(`SL 390px ${route}: integration label and axe`, async ({ page }) => {
