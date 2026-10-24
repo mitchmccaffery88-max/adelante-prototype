@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr, type GroupJoinRequest } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import { isGroupJoinReviewer, visibleGroupJoinRequests } from "@/lib/groupJoinView";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +48,7 @@ export function GroupJoinRequestsQueue() {
           <ul className="space-y-1 text-xs">
             {done.map((r) => (
               <li key={r.id} className="flex flex-wrap gap-2">
-                <span className="text-navy">{label(r)}</span> <StatusChip lang="en" state={isGroupJoinReviewer(acting.role) ? "yourturn" : "team"} label="Pending" />
+                <span className="text-navy">{label(r, { role: acting.role, staffId: acting.staffId })}</span> <StatusChip lang="en" state={isGroupJoinReviewer(acting.role) ? "yourturn" : "team"} label="Pending" />
                 <StatusChip lang="en" state={r.status === "approved" ? "done" : "closed"} label={r.status === "approved" ? "Approved" : "Declined"} />
                 <span className="text-muted-foreground">
                   {r.resolvedBy}
@@ -62,10 +63,10 @@ export function GroupJoinRequestsQueue() {
   );
 }
 
-function label(r: GroupJoinRequest) {
+function label(r: GroupJoinRequest, viewer: Parameters<typeof staffPatientLabel>[0]) {
   const p = AdelanteEHR.getPatient(r.patientId);
   const g = AdelanteEHR.listGroupSessions().find((x) => x.id === r.sessionId);
-  return `${p ? `${p.firstName} ${p.lastName}` : "Patient"} to ${g?.topic ?? "Group"}`;
+  return `${p ? staffPatientLabel(viewer, p.id) : "Patient"} to ${g?.topic ?? "Group"}`;
 }
 
 function RequestRow({ r }: { r: GroupJoinRequest }) {
@@ -78,7 +79,7 @@ function RequestRow({ r }: { r: GroupJoinRequest }) {
   return (
     <li className="rounded-lg border p-3 space-y-2" data-testid="group-join-row">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-navy">{label(r)}</span> <StatusChip lang="en" state={isGroupJoinReviewer(acting.role) ? "yourturn" : "team"} label="Pending" />
+        <span className="font-medium text-navy">{label(r, { role: acting.role, staffId: acting.staffId })}</span> <StatusChip lang="en" state={isGroupJoinReviewer(acting.role) ? "yourturn" : "team"} label="Pending" />
         <span className="text-xs text-muted-foreground">
           Asked <ClientDate value={r.createdAt} options={{ month: "short", day: "numeric" }} />
           {!eligible && " · not yet group-eligible"}
