@@ -267,6 +267,7 @@ function Section({
   setOpenId: (id: string | null) => void;
   actionable: boolean;
 }) {
+  const { role: secRole, staffId: secStaffId } = useActingStaff();
   return (
     <section className="space-y-2">
       <h2 className="font-display text-sm text-navy">
@@ -275,7 +276,7 @@ function Section({
       <StaffTable rows={rows} rowKey={(r)=>r.note.id} label={title} testId={actionable ? "my-cosigns-table" : "pool-cosigns-table"}
         views={[{id:"current",label:actionable ? "Needs you" : "Current view",matches:()=>true}]} defaultView="current" emptyState={empty}
         columns={[
-          {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+          {id:"patient",label:"Patient",sortValue:(r)=>staffPatientLabel({ role: secRole, staffId: secStaffId }, r.patient.id),cell:(r)=>staffPatientLabel({ role: secRole, staffId: secStaffId }, r.patient.id)},
           {id:"type",label:"Session",sortValue:(r)=>r.note.sessionType,cell:(r)=>r.note.sessionType.replace("_"," ")},
           {id:"author",label:"Signed by",sortValue:(r)=>r.note.signedBy ?? "",cell:(r)=><>{r.note.signedBy}{r.note.signedAt && <> · <ClientDate value={r.note.signedAt} /></>}{r.note.cosignRole?.length ? ` · needs ${r.note.cosignRole.join(" / ")}` : ""}</>},
           {id:"status",label:"Status",cell:(r)=><>{isNoteSudSensitive(r.note) && <StatusChip lang="en" state="restricted" label="42 CFR 2" />}{r.note.authorSource === "ai_draft" && <Badge variant="secondary">Machine draft</Badge>}<StatusChip lang="en" state={actionable ? "yourturn" : "team"} label="Awaiting cosign" /></>},
@@ -434,6 +435,7 @@ function ownerLabel(own: CosignOwnership): string {
 }
 
 function CosignRoutingSection() {
+  const { role: routeRole, staffId: routeStaffId } = useActingStaff();
   const notes = useEhr(() => AdelanteEHR.listNotesAwaitingCosign());
   const asams = useEhr(() => AdelanteEHR.listAsamAwaitingCosign());
   const rows = [
@@ -472,7 +474,7 @@ function CosignRoutingSection() {
         defaultView="current" views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs a supervisor",matches:(r)=>r.own.kind === "needs_supervisor"}]}
         emptyState="Nothing pending."
         columns={[
-          {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+          {id:"patient",label:"Patient",sortValue:(r)=>staffPatientLabel({ role: routeRole, staffId: routeStaffId }, r.patient.id),cell:(r)=>staffPatientLabel({ role: routeRole, staffId: routeStaffId }, r.patient.id)},
           {id:"type",label:"Document",sortValue:(r)=>r.label,cell:(r)=>r.label},
           {id:"author",label:"Author",sortValue:(r)=>r.author,cell:(r)=>r.author},
           {id:"owner",label:"Owner",sortValue:(r)=>ownerLabel(r.own),cell:(r)=>ownerLabel(r.own)},
@@ -519,7 +521,7 @@ function RoutingRow({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-navy">
-            {row.patient.firstName} {row.patient.lastName}
+            {staffPatientLabel({ role, staffId }, row.patient.id)}
             <span className="ml-2 text-sm font-normal text-muted-foreground">{row.label}</span>
           </div>
           <div className="text-sm text-muted-foreground">
@@ -540,7 +542,7 @@ function RoutingRow({
       )}
       <div className="flex flex-col gap-2 sm:flex-row">
         <Select value={to} onValueChange={setTo}>
-          <SelectTrigger className="sm:w-56" aria-label={`Reassign cosign for ${row.patient.firstName}`}>
+          <SelectTrigger className="sm:w-56" aria-label={`Reassign cosign for ${staffPatientLabel({ role, staffId }, row.patient.id)}`}>
             <SelectValue placeholder="Reassign to…" />
           </SelectTrigger>
           <SelectContent>
