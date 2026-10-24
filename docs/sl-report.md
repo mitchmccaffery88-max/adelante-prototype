@@ -4,6 +4,16 @@ Mitch approved labels and delegated additive presentation-only adapters Oct 24. 
 
 ## Validation stop (Oct 24)
 
+### Oct 24 18:37 UTC conditional timeout investigation — evidence stop
+
+- Starting HEAD observed: `8aca8e2f1eb08dd69f57b6508585c03bbf04e188`.
+- No previous browser run remains: process inspection found only the supervised project Vite dev server on :8080, with no Playwright, preview or wrangler process. No process needed termination; the project dev server was preserved.
+- `/tmp/sl-browser.log`, project `test-results/`, and temporary browser artifacts are absent in this sandbox. The retained `docs/sl-evidence/` files contain only the earlier unit and four spot-check results, not the failed inventory-test trace. Independent read-only evidence inspection confirmed this absence.
+- The previous chat reports `contentInventoryTables8b2.spec.ts:5` failing at **32.6s**, but explicitly says the trace was not read and the timeout was unconfirmed. A duration alone does not establish timeout-only or prove that no check failed. No literal EXIT for that run is available.
+- Mitch's prerequisite (read the original failure trace and confirm timeout with no failed check) therefore cannot be satisfied. **STOP: no timing runs, archive server, timeout edit, restart, full units or full browser rerun were performed in this continuation.** The conditional 60s approval has not been exercised; the named-flake list is unchanged.
+- The accepted `batchBIntake` edit and **13/13 proof / 3,037/3,037 unit** results are user-accepted historical evidence, not newly rerun results. The current test contains the exact-ID literal removal; the temporary proof file is not present. Earlier report statements below describe the original checkpoint, not current completion.
+- Needed to resume this conditional decision: the original failed-test trace/log, or explicit authorization to reproduce the failure and use new evidence instead. Nothing published; no application or test source changed in this continuation. Full-suite validation, screenshot restoration, final successful SHA and closeout remain incomplete.
+
 - New tests: **34/34 unit**; four 390px browser/axe spot checks **4/4** (56.4s), covering prescriber refill dialog, billing workspace, vendor label and Spanish member medications with exactly one shell translation-review notice.
 - Initial full units: **3,037/3,037**, 378 files, EXIT 0 (225.26s).
 - Requested supervised restart: Vite ready, localhost :8080 responding. Post-restart full units: **3,036 passed / 1 failed**, 378 files, **EXIT 1** (123.79s).
