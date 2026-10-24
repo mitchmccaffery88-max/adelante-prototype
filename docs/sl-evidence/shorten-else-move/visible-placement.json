@@ -1,0 +1,36 @@
+[
+  {
+    "width": 390,
+    "labelCount": 1,
+    "kpis": {
+      "x": 16,
+      "y": 557,
+      "width": 358,
+      "height": 258
+    },
+    "label": {
+      "x": 16,
+      "y": 827,
+      "width": 358,
+      "height": 46
+    },
+    "url": "http://localhost:8080/billing"
+  },
+  {
+    "width": 1280,
+    "labelCount": 1,
+    "kpis": {
+      "x": 264,
+      "y": 374,
+      "width": 992,
+      "height": 258
+    },
+    "label": {
+      "x": 264,
+      "y": 272,
+      "width": 383.328125,
+      "height": 26
+    },
+    "url": "http://localhost:8080/billing"
+  }
+]
