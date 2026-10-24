@@ -6,6 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import {
   CHANNEL_LABEL,
   DISCLOSURE_LOG_ROLES,
@@ -73,7 +74,7 @@ function DisclosureLogPage() {
   const access = JSON.parse(accessJson) as ReturnType<typeof accessEventsFor>;
   const name = (id: string) => {
     const p = patients.find((x) => x.id === id);
-    return p ? `${p.firstName} ${p.lastName.slice(0, 1)}.` : id;
+    return p ? staffPatientLabel({ role: me.role, staffId: me.staffId }, id) : id;
   };
   const sel = "h-9 rounded-md border border-input bg-background px-2 text-sm";
   return (
@@ -95,7 +96,7 @@ function DisclosureLogPage() {
         </select>
         <select aria-label="Person" className={sel} value={patientId} onChange={(e) => setPatientId(e.target.value)}>
           <option value="">All people</option>
-          {patients.map((p) => <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>)}
+          {patients.map((p) => <option key={p.id} value={p.id}>{staffPatientLabel({ role: me.role, staffId: me.staffId }, p.id)}</option>)}
         </select>
         <label className="flex items-center gap-1 text-sm">
           <input type="checkbox" checked={emergencyOnly} onChange={(e) => setEmergencyOnly(e.target.checked)} /> Emergencies only

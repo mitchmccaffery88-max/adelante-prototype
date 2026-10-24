@@ -2,6 +2,7 @@ import { StatusChip } from "@/components/ui/status-chip";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { HLOC_TARGET_LABEL, hiddenHlocCount, visibleHlocReferrals } from "@/lib/outpatientCare";
 import { CLINICAL_REFERRAL_ROLES } from "@/lib/navSections";
 import { Card } from "@/components/ui/card";
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/clinical-referrals")({
 });
 
 function ReferralList() {
-  const { role, staffName } = useActingStaff();
+  const { role, staffName, staffId } = useActingStaff();
   const rows = useEhr(() => visibleHlocReferrals(role));
   const hidden = hiddenHlocCount(role);
   if (!CLINICAL_REFERRAL_ROLES.has(role))
@@ -38,9 +39,13 @@ function ReferralList() {
         return (
           <Card key={r.id} className="p-3 text-sm space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Link to="/record/$patientId" params={{ patientId: r.patientId }} search={{ section: "episodes" } as never} className="font-medium text-teal">
-                {p ? `${p.firstName} ${p.lastName}` : "Patient"}
-              </Link>
+              {p && viewerCanOpenChart({ role, staffId }, p.id) ? (
+                <Link to="/record/$patientId" params={{ patientId: r.patientId }} search={{ section: "episodes" } as never} className="font-medium text-teal">
+                  {p.firstName} {p.lastName}
+                </Link>
+              ) : (
+                <span className="font-medium">{p ? staffPatientLabel({ role, staffId }, p.id) : "Patient"}</span>
+              )}
               <span>{HLOC_TARGET_LABEL[r.target]}</span>
               <StatusChip lang="en" state={r.status === "admitted" ? "done" : r.status === "closed" || r.status === "declined" ? "closed" : r.status === "drafted" && r.createdBy === staffName ? "yourturn" : "team"} label={r.status} />
               {/* Default per published guidance; pending clinical review (Dr. Bagga) */}
