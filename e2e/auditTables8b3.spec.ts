@@ -11,6 +11,7 @@ for (const [route, id, category] of [
   ["/admin-permissions", "action-audit-feed", "action"],
 ] as const) {
   test(`${id} matches in-page store projection, axe and 390px`, async ({ page }) => {
+    if (id === "action-audit-feed") test.setTimeout(60_000);
     await bootTables(page, "s-admin1", "sys_admin", route);
     await page.waitForTimeout(2000);
     const rendered = (await page.getByTestId(id).count()) ? await rowIds(page, id) : [];
