@@ -20,6 +20,7 @@ import { episodeHeaderLabel, visibleHlocReferrals } from "@/lib/outpatientCare";
 import { reentryDay } from "@/lib/chartBrief";
 import type { RecordSection } from "@/components/clinical/recordSections";
 import { Card } from "@/components/ui/card";
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 
 export function tabsWithSections(sections: RecordSection[], role?: StaffRole) {
   return CHART_TABS.map((t) => ({ ...t, subs: (role ? (x: RecordSection[]) => orderSectionsForRole(t.id, x, role) : (x: RecordSection[]) => x)(t.sections.filter((id) => inFacilityEnabled() || !IN_FACILITY_SECTIONS.includes(id)).map((id) => sections.find((s) => s.id === id)).filter(Boolean) as RecordSection[]) })).filter(
@@ -251,6 +252,9 @@ export function ChartTabPanel({ tab, patientId, focus }: { tab: ReturnType<typeo
                 <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
               </button>
             )}
+            {(s.id === "outside-records" || s.id === "med-recon") && <SimulatedBadge flag="hie_simulated" />}
+            {s.id === "orders" && <SimulatedBadge flag="erx_simulated" />}
+            {s.id === "labs" && <SimulatedBadge flag="placeholder_lab" />}
             {isOpen && <div className={`chart-pane px-4 pb-4 ${single ? "pt-4" : ""}`}>{s.render()}</div>}
           </Card>
         );

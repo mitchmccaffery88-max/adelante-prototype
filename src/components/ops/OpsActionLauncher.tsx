@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { billingClaims, billingPatients, billingAudience, billingOpsWorkspace, billingClaimBlock } from "@/lib/billingProjection";
 import { StaffNewTrigger } from "@/components/StaffDensity";
 import { NewActionMenu } from "@/components/staff/NewActionMenu";
@@ -253,6 +254,7 @@ function StatusForm({ claim, done }: { claim: Claim; done: () => void }) {
   const needs = claimMoveNeedsReason(claim.state, to);
   return (
     <div className="space-y-3" data-testid="ops-status-form">
+      <SimulatedBadge flag="payments_simulated" />
       <p className="text-sm">Now: {claim.state === "denied" ? <Badge variant="outline">{claim.state}</Badge> : <StatusChip lang="en" state={claim.state === "documented" ? "upnext" : claim.state === "submitted" ? "team" : claim.state === "paid" ? "done" : claim.state === "written_off" ? "closed" : canWrite ? "yourturn" : "team"} label={claim.state === "documented" ? "Documented" : claim.state === "signed" || claim.state === "coded" || claim.state === "generated" ? "Ready to send" : claim.state === "submitted" ? "With payer" : claim.state === "partial" ? "Partly paid — review" : claim.state} />}</p>
       <Label>Move to</Label>
       <Select value={to} onValueChange={(v) => setTo(v as ClaimState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{next.map((s) => <SelectItem key={s} value={s}>{s === "generated" && claim.state === "denied" ? "resubmit (ready)" : s}</SelectItem>)}</SelectContent></Select>
@@ -269,6 +271,7 @@ function PaymentForm({ claim, done }: { claim: Claim; done: () => void }) {
   const [ref, setRef] = useState("");
   return (
     <div className="space-y-3">
+      <SimulatedBadge flag="payments_simulated" />
       <Label htmlFor="ops-amt">Amount ($)</Label><Input id="ops-amt" value={amount} onChange={(e) => setAmount(e.target.value)} />
       <Label htmlFor="ops-on">Received on</Label><Input id="ops-on" type="date" value={on} onChange={(e) => setOn(e.target.value)} />
       <Label>Method</Label>
@@ -294,6 +297,7 @@ function EligibilityRun({ patientId }: { patientId: string }) {
   const [msg, setMsg] = useState("");
   return (
     <div className="space-y-2">
+      <SimulatedBadge flag="eligibility_simulated" />
       <Button data-testid="ops-run-eligibility" onClick={() => {
         const r = runAction<{ detail: string }>("eligibility_check", currentRunActor(), AdelanteEHR.getPatient(patientId), { args: [patientId] });
         if (!r.ok) return toast.error(r.reason);
@@ -320,6 +324,7 @@ function ExportPanel() {
   const day = new Date().toISOString().slice(0, 10);
   return (
     <div className="flex flex-wrap gap-2">
+      <SimulatedBadge flag="caloms_export_simulated" />
       <Button variant="outline" onClick={() => { try { download(`isl-${day}.csv`, actFor<string>("isl_export", "exportIslReport", undefined)); toast.success("Simulated — ISL file downloaded (not submitted)"); } catch (e) { toast.error((e as Error).message); } }}>ISL export (CSV)</Button>
       <Button variant="outline" onClick={() => { try { download(`claims-${day}.csv`, actFor<string>("claims_export", "exportClaimsCsv", undefined)); toast.success("Claims file downloaded"); } catch (e) { toast.error((e as Error).message); } }}>Claims export (CSV)</Button>
     </div>
@@ -331,6 +336,7 @@ function ResendPanel() {
   if (!today.failedNotifications.length) return <p className="text-sm text-muted-foreground">No failed notifications.</p>;
   return (
     <ul className="divide-y rounded-md border text-sm">
+      <li className="p-2"><SimulatedBadge flag="notifications_simulated" /></li>
       {today.failedNotifications.map((n) => (
         <li key={n.notificationId} className="flex items-center justify-between p-2">
           <span><span className="font-mono text-xs">{n.programId}</span> · {n.channel} · {n.kind}</span>

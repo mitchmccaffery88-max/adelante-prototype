@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { billingClaimInput, billingArrangement } from "@/lib/billingProjection";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
@@ -29,6 +30,7 @@ export function PatientBalance({ claim: input, canWrite }: { claim: Claim; canWr
   const payments = claim.patientPayments ?? [];
   return (
     <div className="font-sans space-y-0.5 text-[10px]" data-testid="patient-balance">
+      <SimulatedBadge flag="payments_simulated" />
       {claim.arrangementMissing && (
         <div
           data-testid="arrangement-missing"
@@ -128,6 +130,7 @@ function RecordPayment({ claim }: { claim: Claim }) {
       </PopoverTrigger>
       <PopoverContent className="w-72 space-y-2 text-xs">
         <p className="font-medium">Record a payment received</p>
+        <SimulatedBadge flag="payments_simulated" />
         <p className="text-muted-foreground">Balance {DOLLARS(claim.patientBalanceCents)}. No card processing here.</p>
         <label className="block">
           Amount ($)

@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 // §Phase 8c — the chart's eligibility history with a source badge on every
 // record, plus the honest "Check electronically" control.
 import { actResult, actFor } from "@/lib/actions/act";
@@ -26,6 +27,7 @@ export function EligibilityHistoryCard({
     <Card className="p-3 space-y-2" data-testid="eligibility-history">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-xs font-medium uppercase text-muted-foreground">Eligibility history</div>
+        {canCheck && <SimulatedBadge flag="eligibility_simulated" />}
         {canCheck && (
           <Button
             size="sm"

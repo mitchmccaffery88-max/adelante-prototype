@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
 import { isPrescriberRole } from "@/lib/roles";
@@ -803,6 +804,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
 
   return (
     <div className="space-y-4">
+      <SimulatedBadge flag="erx_simulated" />
       {!viewOnly && (
         <Card className="p-4">
           <CatalogPicker onSelect={stage} />

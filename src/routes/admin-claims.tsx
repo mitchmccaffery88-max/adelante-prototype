@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { billingClaims, billingPatients, billingBlockedAttempts, billingAudience, billingDocumentationBlock, type BillingClaim } from "@/lib/billingProjection";
 import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { StaffTable } from "@/components/staff/StaffTable";
@@ -321,6 +322,7 @@ function ClaimsPage() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-navy">Claims worklist</h1>
+          <SimulatedBadge flag="payments_simulated" />
           <p className="text-sm text-muted-foreground">Every encounter's billing lifecycle.</p>
         </div>
         <div className="flex items-center gap-3">

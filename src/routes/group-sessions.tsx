@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 import { CircleAlert } from "lucide-react";
@@ -497,6 +498,7 @@ function GroupDetail({
 
       <Card className="p-4 space-y-3">
         <h3 className="font-display text-sm text-navy">Standing roster</h3>
+        <SimulatedBadge flag="notifications_simulated" />
         {roster.length === 0 && (
           <p className="text-xs text-muted-foreground">Nobody enrolled yet.</p>
         )}

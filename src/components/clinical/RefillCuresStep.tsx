@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { CircleAlert } from "lucide-react";
 // §Refill safety — CURES step on a controlled (DEA II–V) refill. The store
 // (`reviewRefill` with actorRole) enforces the same rule.
@@ -28,6 +29,7 @@ export function RefillCuresStep({ refill }: { refill: RefillRequest }) {
         CURES check required before approval
       </div>
       <p className="rounded bg-muted px-2 py-1 text-muted-foreground">{CURES_PLACEHOLDER_LABEL}</p>
+      <SimulatedBadge flag="cures_placeholder" />
       {c ? (
         <p>
           {c.emergencyOverride ? "Emergency override" : CURES_RESULT_LABEL[c.result]} · checked {c.checkedAt.replace("T", " ")} by {c.by}

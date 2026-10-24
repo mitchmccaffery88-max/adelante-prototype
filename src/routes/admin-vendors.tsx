@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 import { VoiceGuardrailNotice } from "@/components/voice/VoiceGuardrailNotice";
@@ -57,6 +58,8 @@ export const Route = createFileRoute("/admin-vendors")({
           "Live health of integrated telehealth and eRx vendors, session lifecycle, and connection tests.",
       },
       { property: "og:title", content: "Vendor status — Adelante Admin" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content:
@@ -104,6 +107,8 @@ function AdminVendorsPage() {
         <ArrowLeft className="h-3 w-3" /> Back to admin
       </Link>
       <h1 className="font-display text-2xl text-navy">Vendor status</h1>
+      <SimulatedBadge flag="erx_simulated" />
+      <SimulatedBadge flag="telehealth_simulated" />
       <VoiceGuardrailNotice />
       <p className="text-sm text-muted-foreground">
         Adelante Pathways is the EHR of record. Vendors below deliver bounded services (telehealth

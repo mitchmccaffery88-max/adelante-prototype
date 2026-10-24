@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { CircleAlert } from "lucide-react";
 // §Messaging Phase 2 — staff side of the patient's care-team thread.
 import { act, actFor } from "@/lib/actions/act";
@@ -60,6 +61,7 @@ export function StaffMessagesTab({
 
   return (
     <div className="space-y-3">
+      <SimulatedBadge flag="notifications_simulated" />
       <p className="text-xs text-muted-foreground">
         One ongoing thread with this patient. Patient messages are shown verbatim — never
         translated or edited. Bodies are <strong>not</strong> screened automatically for 42 CFR

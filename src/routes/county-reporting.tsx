@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { StatusChip } from "@/components/ui/status-chip";
 import { STAFF_ROLES } from "@/lib/roles";
 // §Batch D — County reporting hub (prototype; nothing is submitted anywhere).
@@ -115,6 +116,7 @@ function CountyReportingPage() {
         <div className="flex flex-wrap gap-2">
           <StatusChip lang="en" state="simulated" label={COUNTY_PROTOTYPE_LABEL} />
           <Badge variant="outline">{COUNTY_SIMULATED_LABEL}</Badge>
+          <SimulatedBadge flag="caloms_export_simulated" />
           <Badge variant="outline">Layouts and rules: {COUNTY_DRAFT_LABEL}</Badge>
           <Badge variant="outline" data-testid="county-preparer">
             CalOMS / TPS preparer: {STAFF_ROLES.find((r) => r.key === COUNTY_PREPARER_ROLE)?.label} (SUD reporting access)

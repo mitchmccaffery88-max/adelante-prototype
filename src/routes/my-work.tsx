@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { PageNewLauncher } from "@/components/staff/PageNewLauncher";
 import { StatusChip } from "@/components/ui/status-chip";
 import { StaffCrisisBanner } from "@/components/staff/StaffCrisisBanner";
@@ -336,6 +337,7 @@ function MyWorkPage() {
 
       {pendingLabRows.length > 0 && (
         <section aria-labelledby="labs-pending-heading" className="space-y-3" data-testid="my-work-labs-pending">
+          <SimulatedBadge flag="placeholder_lab" />
           <SectionHeading
             id="labs-pending-heading"
             icon={CalendarClock}
@@ -417,6 +419,7 @@ function MyWorkPage() {
 
       {isPrescriberRole(actor.role) && (
         <section aria-labelledby="refill-heading" className="space-y-3" data-testid="my-work-refills">
+          <SimulatedBadge flag="erx_simulated" />
           <SectionHeading
             id="refill-heading"
             icon={ClipboardList}

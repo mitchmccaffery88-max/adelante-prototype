@@ -242,6 +242,15 @@ export const VENDOR_FLAGS: Readonly<Record<string, FeatureId>> = {
  * their own (so `confirmationFor` can't label them). Must contain "Simulated".
  */
 export const SIMULATED_SURFACE_LABELS: Partial<Record<FeatureId, string>> = {
+  hie_simulated: `${SIMULATED_LABEL} — no live HIE connection`,
+  placeholder_lab: `${SIMULATED_LABEL} — not sent to a lab`,
+  cures_placeholder: `${SIMULATED_LABEL} — no live CURES query`,
+  eligibility_simulated: `${SIMULATED_LABEL} — no live eligibility check`,
+  erx_simulated: `${SIMULATED_LABEL} — not sent to a pharmacy`,
+  caloms_export_simulated: `${SIMULATED_LABEL} — nothing submitted to the state`,
+  notifications_simulated: `${SIMULATED_LABEL} — no external message is actually sent`,
+  payments_simulated: `${SIMULATED_LABEL} — no payment processed or claim transmitted`,
+  consent_upload_simulated: `${SIMULATED_LABEL} — paper copy is not stored in a real document system`,
   voice_intake: `${SIMULATED_LABEL} speech recognition — no audio is stored`,
   adel_drafts: `${SIMULATED_LABEL} — rule-based draft, not AI`,
   telehealth_simulated: `${SIMULATED_LABEL} video vendor`,
