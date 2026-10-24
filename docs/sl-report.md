@@ -1,4 +1,4 @@
-# Batch SL — closeout validation HARD STOP on non-named billing layout failure
+# Batch SL — COMPLETE: accepted closeout validation
 
 Mitch approved labels and delegated additive presentation-only adapters Oct 24. No publishing. Original rollback: `0eff6798065e7362df8141759a99463e06005c9c`. Resume HEAD observed before work: `1da5f8c066dd0b5ea9dd8cc2b7f295e186937c3e`.
 
@@ -227,3 +227,34 @@ Validation: full units 3,037/3,037 (EXIT 0). Standalone roleDashboards9c + simul
 
 Step rollback observed before edits: `1b8717718da5c27256905e50388e0edd51e307ee`. No publishing.
 Changed lines (initial shortening): `src/components/ops/OpsWorkspace.tsx:20`, `src/test/consentB2Approved.ts:235`, `e2e/simulatedLabelsSL.spec.ts:8`: “Simulated — no payment processed, claim transmitted, or report sent to the state” → exactly “Simulated — no payments, claims or state reports sent”. Placement unchanged pending all 10 dashboard cases. Existing dashboard tests, other tests, timeouts and config unchanged.
+
+### Accepted final validation — Shorten, else move
+
+- Shortening alone: all 10 role/width cases plus the unchanged billing-denial case ran; 10 passed / 1 failed, EXIT 1. Billing 390 still failed only the y-bound at `roleDashboards9c.spec.ts:27` (873 > 844). This triggered Mitch's already-approved phone-only move, not a flake exemption.
+- Phone-only move: below `sm`, the single badge follows `billing-kpis`; at `sm` and above, its original above-strip placement remains. A presentation-only tile wrapper retains existing handlers and gates. No label duplication: one badge in the workspace; the existing `!canWrite` header fallback remains untouched.
+- After the move: all 10 role/width cases plus the unchanged billing-denial case **11/11**, and this-session label spot checks **4/4**; combined **15/15, EXIT 0**. No position assertion needed changing.
+- Supervised dev-server restart followed by full units: **3,037/3,037**, **378/378 files**, **186.07s**, **EXIT 0**.
+- Full browser suite launched alone via setsid, `E2E_BASE_URL=http://localhost:8080`, `--workers=1`; polled through literal **EXIT 0** without ending the turn: **228/228 passed**, **42.0m**. No named-flake exemption exercised. Logs and retained results copied immediately after EXIT to `docs/sl-evidence/shorten-else-move/full-browser.txt` and `full-browser-results/`. Initial shortening failure trace preserved separately in `shortened-failure/`.
+- Named-flake policy remains sole failure + 3/3 standalone for contentWiring:47, staffNewAudit8a2:29, auditTables8b3:13, and contentInventoryTables8b2:5 **timeout only**. The inventory timeout remains unchanged; a failed check remains a stop.
+- Readback through the live billing UI: 390×844 KPI bottom **815**, badge y **827**; 1280×1800 badge y **272**, KPI y **374**. Exactly one matching label at both widths. Phone label is directly after the summary and can be scrolled into full view; desktop placement unchanged. Screenshots inspected; `visible-placement.json` retains concrete bounds.
+- Restored screenshots against `0eff6798065e7362df8141759a99463e06005c9c`: **17 restored**, **248 verified byte-identical**, manifest `shorten-else-move/screenshot-restoration.json`. Newly retained evidence is not a rollback screenshot.
+- Existing `roleDashboards9c.spec.ts`, all other existing tests, timeouts and config are byte-identical to step rollback `1b871771`. Only the explicitly authorized this-session `simulatedLabelsSL.spec.ts:8` text changed. Full units also verify the exact-once FRI adapters and source parity.
+- Existing report sections retain label inventory, batchBIntake before/after + user-accepted 13/13 proofs, missing-E2E_BASE_URL launches (`playwright.config.ts:29`), and the accepted timing/no-timeout-change outcome; those historical proofs are not misrepresented as newly reproduced.
+- Latest harness signal: build OK. No publishing, database, connector, permission, clinical/policy, mutation or audit changes.
+
+### Every changed app/test/adapter line in this step (against 1b871771)
+
+| File / current lines | Before → after |
+|---|---|
+| `src/components/ops/OpsWorkspace.tsx:20` | Old combined text → exactly `Simulated — no payments, claims or state reports sent` via unchanged SIMULATED_LABEL prefix. |
+| `src/components/ops/OpsWorkspace.tsx:62` | `space-y-3` → `flex flex-col gap-3 sm:block sm:space-y-3`. |
+| `src/components/ops/OpsWorkspace.tsx:63` | Badge classes gain `order-1` and `sm:order-none`; same one badge. |
+| `src/components/ops/OpsWorkspace.tsx:72` | Insert `<div className="order-2 space-y-3 sm:contents">` after `{summary}`. |
+| `src/components/ops/OpsWorkspace.tsx:126` | Insert closing `</div>` after the existing tiles; no tile content/handlers changed. |
+| `src/test/consentB2Approved.ts:235` | Exact-once import/helper substitution updates only approved combined text. |
+| `src/test/consentB2Approved.ts:236` | Exact-once section/badge substitution mirrors approved responsive classes. |
+| `src/test/consentB2Approved.ts:237` | Add exact-once `{summary}` → `{summary}` + wrapper opening substitution. |
+| `src/test/consentB2Approved.ts:238` | Add exact-once final Tile/section boundary → same boundary with wrapper closing substitution. |
+| `e2e/simulatedLabelsSL.spec.ts:8` | Matching combined text updated; still proves visible billing-home label at 390px; no other assertion changed. |
+
+Docs, roadmap and memory record this decision; retained logs/traces are evidence only. Final managed SHA is reported in the closing response (read after these documentation writes).
