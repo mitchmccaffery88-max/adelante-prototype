@@ -18,6 +18,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { simulatedSurfaceLabel } from "@/lib/features";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -1156,6 +1157,7 @@ function RefillReviewCardInner() {
         <h3 className="font-display text-base text-navy flex items-center gap-2">
           <Video className="h-4 w-4" aria-hidden="true" /> Refill requests
         </h3>
+        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>
         <p className="mt-2 text-xs text-muted-foreground">
           {effectiveScope === "mine"
             ? "No pending refill requests for your assigned patients."
@@ -1169,6 +1171,7 @@ function RefillReviewCardInner() {
   return (
     <Card className="p-5" data-testid="refill-card">
       <h3 className="font-display text-base text-navy">Refill requests</h3>
+      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>
       {scopeToggle}
       <ul className="mt-3 space-y-3 text-sm">
         {pending.map((r) => {

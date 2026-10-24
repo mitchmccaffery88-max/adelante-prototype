@@ -3,6 +3,7 @@
 Standing rules — apply to ALL work, every change, any folder:
 - Registry + runAction: every mutation is a `CHART_ACTIONS` entry run through `runAction` (role check + one audit event).
 - Simulated: every mock/placeholder integration has `simulated: true` in `features.ts`, audits `simulated: true`, UI says "Simulated".
+- SimulatedBadge presents shared integration labels only; member hosts pass their existing language and shells own the translation-review notice. Why: labels cannot change actions, gates or real manual verification.
 - Part 2: SUD content is hidden (not stubbed) for roles failing the existing checks; notification/audit/task text stays neutral; outbound SUD goes through `disclose()`.
 - Draft: every clinical/policy rule is labelled "Draft — pending clinical sign-off"; Spanish clinical copy marked draft.
 - Cohort guard 11 on all aggregates.

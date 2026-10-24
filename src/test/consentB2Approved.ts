@@ -221,6 +221,10 @@ const B2: [string, string][] = [
 // Additive, exact-once; anything else must still match byte-for-byte.
 const FRI: Record<string, [string, string][]> = {
   "src/routes/clinician.tsx": [
+    // Batch SL: Mitch-approved Oct 24, presentation only, exact-once.
+    ['import { Badge } from "@/components/ui/badge";\n', 'import { Badge } from "@/components/ui/badge";\nimport { simulatedSurfaceLabel } from "@/lib/features";\n'],
+    ['          <Video className="h-4 w-4" aria-hidden="true" /> Refill requests\n        </h3>', '          <Video className="h-4 w-4" aria-hidden="true" /> Refill requests\n        </h3>\n        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>'],
+    ['      <h3 className="font-display text-base text-navy">Refill requests</h3>', '      <h3 className="font-display text-base text-navy">Refill requests</h3>\n      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>'],
     [
       'import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";\n',
       'import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";\nimport { staffPatientLabel } from "@/lib/staffPatientLabel";\n',
