@@ -215,12 +215,65 @@ const B2: [string, string][] = [
   ],
 ];
 
-/** Rollback text with only the approved B2-1 substitutions applied (each must match exactly once). */
+// Friday cleanup (Mitch, Oct 23; adapter pre-approved Oct 24) — patient-name
+// sweep on clinician.tsx: the ONLY changes since b1d3c414 are staffPatientLabel
+// substitutions and their acting-staff declarations (noShowActor pre-existed).
+// Additive, exact-once; anything else must still match byte-for-byte.
+const FRI: Record<string, [string, string][]> = {
+  "src/routes/clinician.tsx": [
+    [
+      'import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";\n',
+      'import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";\nimport { staffPatientLabel } from "@/lib/staffPatientLabel";\n',
+    ],
+    [
+      '  onBack: () => void;\n}) {\n  return (\n    <Card className="p-4">',
+      '  onBack: () => void;\n}) {\n  const headerActor = useActingStaff();\n  return (\n    <Card className="p-4">',
+    ],
+    [
+      "                {patient.firstName} {patient.lastName}",
+      "                {staffPatientLabel({ role: headerActor.role, staffId: headerActor.staffId }, patient.id)}",
+    ],
+    [
+      "                {p.firstName} {p.lastName}",
+      "                {staffPatientLabel({ role: noShowActor.role, staffId: noShowActor.staffId }, p.id)}",
+    ],
+    [
+      "                {p?.firstName} {p?.lastName}",
+      '                {p ? staffPatientLabel({ role: noShowActor.role, staffId: noShowActor.staffId }, p.id) : "Patient"}',
+    ],
+    [
+      "  // (component continues below)\n  const { t } = useI18n();",
+      "  // (component continues below)\n  const { t } = useI18n();\n  const rescreenActor = useActingStaff();",
+    ],
+    [
+      '                <span className="font-medium text-navy">\n                  {r.patient.firstName} {r.patient.lastName}',
+      '                 <span className="font-medium text-navy">\n                  {staffPatientLabel({ role: rescreenActor.role, staffId: rescreenActor.staffId }, r.patient.id)}',
+    ],
+    [
+      "  const clinicians = AdelanteEHR.listClinicians();\n  if (!clinicianId || outgoing.length === 0) return null;",
+      "  const clinicians = AdelanteEHR.listClinicians();\n  const switchActor = useActingStaff();\n  if (!clinicianId || outgoing.length === 0) return null;",
+    ],
+    [
+      "                    {p ? `${p.firstName} ${p.lastName}` : s.patientId}",
+      "                    {p ? staffPatientLabel({ role: switchActor.role, staffId: switchActor.staffId }, p.id) : s.patientId}",
+    ],
+    [
+      "                  {p ? `${p.firstName} ${p.lastName}` : r.patientId} · {r.medicationName}",
+      "                  {p ? staffPatientLabel({ role, staffId: actor.staffId }, p.id) : r.patientId} · {r.medicationName}",
+    ],
+    [
+      "                    {p ? `${p.firstName} ${p.lastName}` : r.patientId}",
+      "                    {p ? staffPatientLabel({ role, staffId: actor.staffId }, p.id) : r.patientId}",
+    ],
+  ],
+};
+
+/** Rollback text with only the approved substitutions applied (each must match exactly once). */
 export function withApprovedConsentB2(path: string, rollbackText: string): string {
-  if (path !== "src/lib/ehr.ts") return rollbackText;
   let s = rollbackText;
-  for (const [from, to] of B2) {
-    if (s.split(from).length !== 2) throw new Error(`Approved B2-1 anchor not found once in ${path}`);
+  const subs = path === "src/lib/ehr.ts" ? B2 : (FRI[path] ?? []);
+  for (const [from, to] of subs) {
+    if (s.split(from).length !== 2) throw new Error(`Approved anchor not found once in ${path}`);
     s = s.replace(from, to);
   }
   return s;
