@@ -16,11 +16,11 @@ Every demo/test-only surface in the published build today, with who can reach it
 | setInFacilityEnabled | `src/lib/features.ts` (overrides map `:170`) | Dev/e2e; runtime toggle | Opens the in-facility features that are off by default (outpatient-only rule) |
 | System migration actor | `src/lib/consentMigration.ts` (`SYSTEM_MIGRATION_ACTOR_ROLE`, label "System (consent migration)") | Not selectable, not assignable; only the seed path calls it | Runs `consent_legacy_migrate` through the registry; hidden for all 17 staff roles |
 
-## (b) Simulated integrations — all 16 FEATURE_FLAGS (`src/lib/features.ts:39-168`, each `simulated: true`)
+## (b) Integration registry — 16 FEATURE_FLAGS, 15 simulated
 
 `in_facility`, `hie_simulated`, `voice_intake`, `adel_drafts`, `placeholder_lab`, `cures_placeholder`, `eligibility_simulated`, `erx_simulated`, `telehealth_simulated`, `caloms_export_simulated`, `notifications_simulated`, `payments_simulated`, `scribe_simulated`, `llm_simulated`, `calendar_sync_simulated`, `consent_upload_simulated`.
 
-"Simulated" label: `SIMULATED_LABEL = "Simulated"` (`features.ts:225`); surfaces render it via `simulatedSurfaceLabel(id)` (`features.ts:252`), e.g. the scribe badge (`agentic.scribe.$patientId.tsx`, `data-testid="scribe-simulated"`), and every tied action is audited with `simulated: true`. Reachable by any role whose screen shows the feature; nothing is sent to a real vendor.
+Correction from closeout source inspection: `in_facility` is `simulated: false` (`features.ts:41–46`), off by default, and is a feature gate rather than a simulated vendor integration. The other 15 entries are `simulated: true`. A registry entry does not prove a visible label or every action's audit coverage. Individual source/label locations and uncertainties are listed in `docs/friday-cleanup-report.md` §5; do not infer a missing label is present. This inventory changes no code.
 
 ## (c) Fictional seed data
 
@@ -37,3 +37,5 @@ Every demo/test-only surface in the published build today, with who can reach it
 
 - Removal of the class-(a) tools is scheduled for real login (recorded in `docs/privacy-p3-report.md` §4); none is removed in this batch.
 - No code was changed for this inventory.
+- Detailed inventory of all 17 selectable QA scenarios, their actions, and individual flag-label evidence: `docs/friday-cleanup-report.md` §5. The six `SCENARIO_KEYS` are not the complete selectable scenario list.
+- Reachability describes source-visible prototype controls, not a live published deployment audit. Controls are mounted in the shared layouts without a development-only gate; the destination screens still have their existing role/session gates. The switcher does not create every seed on each selection: many selections simply choose an existing demo patient and navigate.
