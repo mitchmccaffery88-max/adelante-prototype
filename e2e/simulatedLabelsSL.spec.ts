@@ -4,13 +4,13 @@ import { bootTables } from "./helpers/staffTables8b2";
 
 test.use({ viewport: { width: 390, height: 1800 } });
 for (const [route, selector, text] of [
-  ["/clinician", "[data-testid='refill-card']", "Simulated — not sent to a pharmacy"],
+  ["/clinician", "[data-testid='adel-refill-card']", "Simulated — not sent to a pharmacy"],
   ["/billing", "[data-testid='billing-workspace']", "Simulated — no payment processed or claim transmitted"],
   ["/admin-vendors", "[data-simulated-flag='erx_simulated']", "Simulated — not sent to a pharmacy"],
 ] as const) {
   test(`SL 390px ${route}: integration label and axe`, async ({ page }) => {
     await bootTables(page, route === "/billing" ? "s-bill1" : route === "/clinician" ? "s-np1" : "s-admin1", route === "/billing" ? "billing" : route === "/clinician" ? "pmhnp" : "sys_admin", route);
-    if (route === "/clinician") await page.getByRole("button", { name: /Medication/ }).first().click();
+    if (route === "/clinician") await page.getByRole("button", { name: "Review refill", exact: true }).first().click();
     const surface = page.locator(selector).first();
     await expect(surface).toBeVisible();
     await expect(surface).toContainText(text);
