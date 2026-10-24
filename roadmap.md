@@ -1,6 +1,8 @@
 # Roadmap
 
-## Batch SL (Mitch approved, Oct 24) — HARD STOP on non-named billing phone layout failure (Oct 24 rd9c fix: 945→873, still > 844; stopped)
+## Batch SL (Mitch approved, Oct 24) — Shorten, else move: validation in progress
+Step rollback recorded first: `1b8717718da5c27256905e50388e0edd51e307ee`.
+- [ ] Oct 24 22:55: shorten billing-home label; all 10 dashboard cases; phone-only relocation only if needed; restart/full units/full browser to EXIT; restore screenshots and close report.
 Rollback: `0eff6798065e7362df8141759a99463e06005c9c`. No publishing.
 - [x] Additive integration labels, bilingual member presentation and 15-flag source/audit inventory; approved exact-once adapter ledger saved.
 - [x] NEW 34 unit cases pass; four NEW 390px axe spot checks pass; existing assertions/pins unchanged.

@@ -221,3 +221,9 @@ Rollback for this step: 7c2de144. Applied presentation-only fix:
 - `src/test/consentB2Approved.ts` FRI block: billing.tsx and OpsWorkspace.tsx entries updated to the new exact-once substitutions (this-session adapter). Helper is a function, not a const, so roleDashboardParity9c2 expression inventory stays unchanged.
 - `e2e/simulatedLabelsSL.spec.ts:8`: expected text "Simulated — no payment processed or claim transmitted" → combined label (still proves payments + state export labelled Simulated). No unit-test line needed changing.
 Validation: full units 3,037/3,037 (EXIT 0). Standalone roleDashboards9c + simulatedLabelsSL: 14 passed, **1 failed** — `e2e/roleDashboards9c.spec.ts:27` billing 390: received **873** > 844 (was 945). Evidence: `docs/sl-evidence/rd9c-fix/`. Full browser suite, screenshot restore and final SHA not run. Proposed (needs Mitch): move the single label below billing-kpis on phone, or shorten it to one line (e.g. "Simulated — no payments, claims or state reports sent").
+
+
+## Oct 24 22:55 — Mitch decision: Shorten, else move
+
+Step rollback observed before edits: `1b8717718da5c27256905e50388e0edd51e307ee`. No publishing.
+Changed lines (initial shortening): `src/components/ops/OpsWorkspace.tsx:20`, `src/test/consentB2Approved.ts:235`, `e2e/simulatedLabelsSL.spec.ts:8`: “Simulated — no payment processed, claim transmitted, or report sent to the state” → exactly “Simulated — no payments, claims or state reports sent”. Placement unchanged pending all 10 dashboard cases. Existing dashboard tests, other tests, timeouts and config unchanged.

@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { SIMULATED_LABEL } from "@/lib/features";
 
 /** Billing home only: one compact label for payments, claims and the state export (Mitch, Oct 24). */
-export function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payment processed, claim transmitted, or report sent to the state`; }
+export function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payments, claims or state reports sent`; }
 import { countyReminders } from "@/lib/countyReporting";
 
 type TileId = "action" | "pipeline" | "payments";

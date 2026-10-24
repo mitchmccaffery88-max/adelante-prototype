@@ -232,7 +232,7 @@ const FRI: Record<string, [string, string][]> = {
     ["          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>", "          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"erx_simulated\")}</Badge>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"telehealth_simulated\")}</Badge>"],
   ],
   "src/components/ops/OpsWorkspace.tsx": [
-    ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { SIMULATED_LABEL } from \"@/lib/features\";\n\n/** Billing home only: one compact label for payments, claims and the state export (Mitch, Oct 24). */\nexport function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payment processed, claim transmitted, or report sent to the state`; }"],
+    ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { SIMULATED_LABEL } from \"@/lib/features\";\n\n/** Billing home only: one compact label for payments, claims and the state export (Mitch, Oct 24). */\nexport function billingHomeSimulatedLabel() { return `${SIMULATED_LABEL} — no payments, claims or state reports sent`; }"],
     ["    <section className=\"space-y-3\" data-testid=\"billing-workspace\">", "    <section className=\"space-y-3\" data-testid=\"billing-workspace\">\n      <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{billingHomeSimulatedLabel()}</Badge>"],
   ],
   "src/routes/clinician.tsx": [
