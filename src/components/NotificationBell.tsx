@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 // §Notification feed, Phase 1 — operational alerts only (staff-to-staff,
 // system-generated). In-app only: no email/SMS/push transport exists.
 import { useEffect, useState } from "react";
@@ -110,6 +111,7 @@ export function NotificationBell({
             {isMember && lang === "es" ? "Marcar todo leído" : "Mark all read"}
           </Button>
         </div>
+        <div className="px-3 py-2"><SimulatedBadge flag="notifications_simulated" lang={isMember ? lang : "en"} /></div>
         {!isMember && (
           <div className="flex gap-1 border-b px-2 py-1.5" role="group" aria-label="Notification filter">
             {(["all", "tasks", "updates", "mentions"] as BellFilter[]).map((f) => (

@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { CircleAlert } from "lucide-react";
 // §Clinical documentation Phase 3b — orders_section renderer.
 //
@@ -140,6 +141,7 @@ export function NoteOrdersSection({
     <section className="space-y-3 rounded-md border border-border p-3">
       <div>
         <h5 className="font-display text-sm text-navy">{section.title}</h5>
+        <SimulatedBadge flag="erx_simulated" />
         <p className="text-[11px] text-muted-foreground">
           Orders placed here follow the same validation, lifecycle and attestation as the Orders
           tab. They do not affect the note&apos;s required fields.

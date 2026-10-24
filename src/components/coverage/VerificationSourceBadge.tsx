@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { Badge } from "@/components/ui/badge";
 import type { CoverageVerificationRecord } from "@/lib/ehr";
 import { verificationKind, verificationSourceLabel } from "@/lib/verificationSource";
@@ -10,8 +11,11 @@ const TONE = {
 
 export function VerificationSourceBadge({ record }: { record: CoverageVerificationRecord }) {
   return (
+    <>
+    {record.electronic && <SimulatedBadge flag="eligibility_simulated" />}
     <Badge className={`text-[10px] font-normal ${TONE[verificationKind(record)]}`} data-testid="verification-source">
       {verificationSourceLabel(record)}
     </Badge>
+    </>
   );
 }

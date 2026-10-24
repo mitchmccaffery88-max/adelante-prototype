@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { StatusChip } from "@/components/ui/status-chip";
 // §P1 My Care de-clutter — the real "My medications" list, moved off My Care.
 //
@@ -182,6 +183,7 @@ export function MyMedicationsCard({ patientId }: { patientId: string }) {
     <Card className="p-5" id="my-medications" data-testid="my-medications-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
         <Pill className="h-4 w-4" /> {SCREEN_COPY["ui.6deaed92d12f"][screenLang]} </div>
+      <SimulatedBadge flag="erx_simulated" lang={screenLang} />
       <p className="mt-1 text-xs text-muted-foreground">
         {SCREEN_COPY["ui.7f3e9658d048"][screenLang]} </p>
       {meds.some((m) => m.demo) && (

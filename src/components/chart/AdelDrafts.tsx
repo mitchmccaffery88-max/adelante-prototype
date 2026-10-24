@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { StatusChip } from "@/components/ui/status-chip";
 import { isPrescriberRole } from "@/lib/roles";
 // §Chart redesign turn 5 — "Draft with Adel" surfaces. Adel drafts; a person
@@ -176,6 +177,7 @@ function RefillCard({ refill }: { refill: RefillRequest }) {
     <div className="space-y-2 rounded-lg border p-3 text-sm" data-testid="adel-refill-card">
       {confirmation.dialog}
       <p className="font-medium text-navy">{refill.medicationName}</p>
+      <SimulatedBadge flag="erx_simulated" />
       <StatusChip lang="en" state={refill.status === "approved" || refill.status === "sent_to_pharmacy" ? "done" : refill.status === "denied" ? "closed" : refill.status === "needs_appointment" || isPrescriberRole(role) ? "yourturn" : "team"} label={refill.status === "approved" || refill.status === "sent_to_pharmacy" ? "Sent to pharmacy" : refill.status === "denied" ? `Not refilled${refill.denyReason ? ` — ${refill.denyReason}` : ""}` : refill.status === "needs_appointment" ? "Book a visit first" : "Pending"} />
       <AdelDraftLabel />
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
@@ -235,6 +237,7 @@ export function OutreachDraftPanel({ patientId, reason: fixed }: { patientId: st
   return (
     <div className="space-y-2 rounded-lg border border-gold/50 p-3" data-testid="adel-outreach-panel">
       <AdelDraftLabel />
+      <SimulatedBadge flag="notifications_simulated" lang={lang} />
       <p className="text-xs text-muted-foreground">
         {OUTREACH_REASON_LABEL[reason]} · plain language, no clinical or substance use details.
         {lang === "es" && " Spanish: Draft — pending bilingual review."}
