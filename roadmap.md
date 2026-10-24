@@ -1,11 +1,14 @@
 # Roadmap
 
-## Batch SL (Mitch approved, Oct 24) — RESUMED with delegated adapter approval
-Rollback recorded first: `0eff6798065e7362df8141759a99463e06005c9c`. Do not publish.
-- [ ] Complete bilingual surface labels and audit inventory; delegated exact-once presentation-only adapter scope approved Oct 24. Preserve pinned existing text and real manual eligibility.
-- [x] Applied only approved staffNewAudit8a2 :29 test-body timeout (30s → 60s), one added line; assertions, waits and retries unchanged. Not rerun yet.
-- [ ] NEW rendered/audit tests and 390px axe spot checks; restart, full units, full browser suite alone via setsid to literal EXIT in /tmp/sl-browser.log; restore screenshots against 0eff6798; successful final SHA.
-- [x] Stop report recorded (docs/sl-report.md). No labels, existing assertions, adapters or screenshots changed; nothing published.
+## Batch SL (Mitch approved, Oct 24) — HARD STOP on post-restart unit failure
+Rollback: `0eff6798065e7362df8141759a99463e06005c9c`. No publishing.
+- [x] Additive integration labels, bilingual member presentation and 15-flag source/audit inventory; approved exact-once adapter ledger saved.
+- [x] NEW 34 unit cases pass; four NEW 390px axe spot checks pass; existing assertions/pins unchanged.
+- [x] Only approved staffNewAudit8a2 timeout change; one added line (30s → 60s).
+- [x] Initial full units 3037/3037; supervised restart; post-restart full units 3036/3037, EXIT 1.
+- [ ] BLOCKED: unchanged batchBIntake.test.ts:124 regex matches “sud” inside random referralId 317ksud2. Needs Mitch decision; no assertion/fixture/retry change authorized.
+- [ ] Full browser via setsid alone --workers=1 :8080 to literal EXIT /tmp/sl-browser.log, desktop rendering evidence, successful final SHA/closeout — not started due stop.
+- [x] All 248 actual rollback image assets byte-identical; zero restoration writes. Report/evidence recorded; nothing published.
 
 ## Done
 - B2 consent model (B2-1 … B2-6, B2-5 migration with system actor) — COMPLETE, final SHA c421de0a, browser 224/224. Follow-ups recorded: backend-phase typed-writer conversion; "advocate_release has no gate reader; decide in backend phase".

@@ -1,61 +1,157 @@
-# Batch SL — hard stop before label implementation
+# Batch SL — implementation delivered, validation HARD STOP
 
-Mitch approved Oct 24, 2026. No publishing. Rollback recorded before edits: `0eff6798065e7362df8141759a99463e06005c9c` (Friday final).
+Mitch approved labels and delegated additive presentation-only adapters Oct 24. No publishing. Original rollback: `0eff6798065e7362df8141759a99463e06005c9c`. Resume HEAD observed before work: `1da5f8c066dd0b5ea9dd8cc2b7f295e186937c3e`.
 
-## Status and stop evidence
+## Validation stop (Oct 24)
 
-**STOP: existing exact-source test pins a screen that needs a label.** No label, integration, audit, permission, behavior, fixture, assertion, adapter or screenshot changes were made. No restart, unit run or full browser run was started after this discovery. `/tmp/sl-browser.log` has not been produced by this batch. This is a source-inspection stop, not a claimed test failure.
+- New tests: **34/34 unit**; four 390px browser/axe spot checks **4/4** (56.4s), covering prescriber refill dialog, billing workspace, vendor label and Spanish member medications with exactly one shell translation-review notice.
+- Initial full units: **3,037/3,037**, 378 files, EXIT 0 (225.26s).
+- Requested supervised restart: Vite ready, localhost :8080 responding. Post-restart full units: **3,036 passed / 1 failed**, 378 files, **EXIT 1** (123.79s).
+- **STOP**: `src/lib/__tests__/batchBIntake.test.ts:124` (“uses neutral wording in task, notification and audit text”). Its unchanged `banned` regex at :121 matches `sud` inside randomly generated **referralId `317ksud2`**, not clinical wording. Received metadata: `{"referralId":"317ksud2","missing":["Medi-Cal ID","preferred language","address","prior records","emergency contact"]}`. The assertion serializes the entire detail, including the ID. Test, referral store and ehr.ts are byte-identical to rollback; no existing assertion, fixture, ID generator or retry was changed.
+- No named-flake exemption covers this unit case. No re-run used to reinterpret this red result. Resuming needs Mitch’s decision on the random-ID collision under the new-tests-only constraint.
+- **Full browser suite NOT launched**; `/tmp/sl-browser.log` does not exist. Do not mistake spot checks for full validation. The requested literal EXIT/full-suite closeout remains blocked by this stop.
+- All **248 actual rollback PNG/JPG/JPEG/WebP assets** verified byte-identical; zero needed restoration. Prior report’s “265” count is not reused as evidence. New spot checks do not write baseline screenshots. Manifest in `docs/sl-evidence/screenshot-restoration.json`.
+- Harness latest signal: build OK. No Supabase, database, connector, permission, clinical/policy or integration behavior changes. Nothing published.
 
-`src/lib/__tests__/billingProjectionB3b.test.ts:95–96` compares the entirety of `src/routes/clinician.tsx` against `b1d3c414`, with only `withApprovedConsentB2` transforms. It runs for therapist and sys_admin. `src/test/consentB2Approved.ts:218–278` permits only the already-approved 11 Friday name-label substitutions for this screen; Batch SL has no adapter exception.
+## Flag × surface inventory (source coverage; spot-check rendering scoped above)
 
-The `/clinician` refill surface directly invokes `actFor("refill_decision", "reviewRefill", …)` at `src/routes/clinician.tsx:1213,1267`. The action is tied to **both** `cures_placeholder` and `erx_simulated` (`src/lib/chartActions.ts:261–268`). This screen has no unconditional Simulated label; its CURES child mounts only for `canWrite && refillNeedsCures(r)` at :1238. Adding a label in that child alone cannot label non-controlled refills or the history view.
-
-| File:line | Current | Proposed (NOT applied) |
+| Flag | Trigger/result surfaces and label treatment | Audit path |
 |---|---|---|
-| src/routes/clinician.tsx:1171 | `<h3 className="font-display text-base text-navy">Refill requests</h3>` | Retain heading; append `<Badge variant="outline">{simulatedSurfaceLabel("erx_simulated")}</Badge>` beside it, with required import. Label: “Simulated — not sent to a pharmacy”. |
-| src/routes/clinician.tsx:1155–1157 | Separate history-only refill card/heading without a simulation label | Same eRx badge alongside this heading so results remain labelled when no requests are pending. |
-| src/lib/__tests__/billingProjectionB3b.test.ts:95–96 | Whole clinician source must exactly equal existing approved adapter output | Would require an explicitly approved, additive exact-once presentation-only adapter; assertion must stay unchanged. |
+| hie_simulated | OutsideRecords/HieNotice, HieStatusCard, BriefTab and my-work retain HIE_LABEL; data-exchange retains its existing simulated label. ChartTabView labels outside-records/med-recon summaries outside the open-body conditional. | HIE category auto-stamped in appendAudit; hieAudit real helper regression passes; matching registry flagged. |
+| placeholder_lab | LabOrderForm, LabsAndMeasuresTracking and chart collapsed lab summaries; my-work pending lab section. Existing “Placeholder lab — not sent” preserved; adjacent Simulated lab badge. Manual result values unchanged. | lab_order flag; registry action audit verified. |
+| cures_placeholder | OrderSafetyPanel and RefillCuresStep show adjacent no-live-query badge while preserving CURES_PLACEHOLDER_LABEL. | cures and refill_decision flags; CURES audit regex stamps direct events. |
+| eligibility_simulated | EligibilityHistoryCard electronic control and result notice; VerificationSourceBadge ONLY when record.electronic; OpsActionLauncher electronic run; existing CoverageAtRelease simulated check. Manual CoverageCheckDialog and worklist staff checks are real, untouched. | real electronic click regression confirms not_connected, no verification created, one registry audit + simulated attempted-check audit. |
+| erx_simulated | OrdersTab, NoteOrdersSection, Adel Refills, both clinician refill branches, member MyMedicationsCard, my-work refill section, admin/vendor status. | med_order/refill_decision flags; rx category auto-stamped. |
+| caloms_export_simulated | County reporting header and existing per-report labels; billing header/ISL download context; ops export panel. Actual CSV generation unchanged; claims CSV stays its own workflow. | isl_export/county actions flagged, direct export audit regex. |
+| notifications_simulated | StaffMessagesTab, PatientHome member composer, NotificationBell, Adel outreach, ops resend, admin reminders, group standing roster. Existing ConsentFormsPanel SMS label and group-end confirmation preserved. Labels explicitly say EXTERNAL messages; local in-app storage remains real. | message_patient/resend/group end flags; sender notification/SMS/email audit stamping. |
+| payments_simulated | Billing header/workspace, admin-claims header, PatientBalance/payment popup, ops status/payment forms. Label specifies no payment processed or claim transmitted; real manual recording remains unchanged. | claim/payment/arrangement flags; payment audit stamping. |
+| voice_intake | Existing VoiceBar label preserved plus Spanish explanation; LessonReadAloud shared bilingual badge; existing EmotionCheckIn and FormsToSign bilingual copy retained. | Private browser speech has no chart audit sink; no action invented. Flag-only test explicitly proves no tied registry actions. |
+| adel_drafts | Existing AdelDraftLabel rule-based/not AI wording retained. | real adelDraftAudit helper regression proves simulated metadata via adel_draft category. |
+| telehealth_simulated | Existing JoinCallButton embedded wording retained, bilingual adjacent badge for non-real early/open branches; clinician vendor launch and admin/vendor status badges. Manual group URLs from setGroupVirtualRoom/groupJoinLink stay real/unlabelled. | telehealth/vendor category auto-stamped; no registry mutation invented. |
+| scribe_simulated | ScribeWorkspace capture and result, agentic scribe route, admin-vendors retain established badges. | all flagged scribe registry actions verified. |
+| llm_simulated | AdelBriefSections existing summary badge retained. | real adelSummary/getAdelBrief regression confirms adel_summary_generated simulated true. |
+| calendar_sync_simulated | CalendarSyncCard established badge retained. | calendar_sync_run flagged; audit transport verified. |
+| consent_upload_simulated | ConsentCapturePanel upload and paper-copy viewing retain UPLOAD_SIMULATED_LABEL; shared dictionary now has same explicit explanation. Real typed signatures not labelled uploads. | consent_record_upload flag and existing real upload tests passed unmodified. |
 
-Even one inserted badge changes that exact comparison. No workaround, source stripping, adapter addition, baseline regeneration or existing assertion change was made. Resume requires approval covering the precise label/import substitutions for both refill branches and any further exact-source conflicts found during implementation.
+## Bilingual presentation and boundaries
+
+`SimulatedBadge` uses the existing outline Badge and explicit simulatedSurfaceLabel calls for all 15 flags. Added English entries contain “Simulated”; Spanish draft copy contains “Simulado.” Member hosts pass language; the existing member shell owns the one review marker. Staff remains English; Spanish outreach preview retains its existing local review notice. All labels wrap, use 14px shared presentation and semantic tokens. No stored statuses, existing messages or button words rewritten. Existing HIE/lab/CURES strings preserved rather than aligned. `part2SimulatedHardening.test.ts:118–127` unchanged and passing.
+
+## Audit confirmation scope
+
+No missing successful tied-action simulation metadata found; no app audit fix required. NEW registry transport tests require success (never silently skip) and exactly one simulated standard event for every flagged action, restoring temporary test store stubs. Real electronic click, HIE audit helper, rule-based draft helper and template summary paths additionally exercised. Surface-only voice has no audit by design; no private transcript audit invented. This is not a claim that every integration UI flow was executed end-to-end: full suite is blocked. Existing full unit integration/store suites passed initially; the post-restart sole unit failure above controls closeout.
 
 ## Mitch-approved timeout change (Oct 24)
 
-- `e2e/staffNewAudit8a2.spec.ts:29–30`: the “every /clinician + New option opens without a stray audit entry” test now contains `test.setTimeout(60_000)` as its first statement (new :30). Inherited limit **30s → 60s** only for this test body, instantiated for clinical_coordinator and therapist.
-- Every assertion, wait, retry, other test and global setting is unchanged. Diff against rollback is exactly **one added line**.
-- Evidence: `docs/friday-cleanup-report.md:58` records therapist **26.6s of 30s** and clinical_coordinator **17.1s** in the Friday full run. Therapist used about 89% of the old limit. Historic five-run investigation is summarized at :56; the old cold outlier predates this batch.
-- It stays on the named-flake list. Acceptance still requires sole named failure plus 3/3 standalone passes; no new exception was added.
-- This timeout edit has been inspected against rollback, but has **not** been exercised by a new test run because the label stop was found first.
+`e2e/staffNewAudit8a2.spec.ts:29–30`: only the “every /clinician + New option” test adds `test.setTimeout(60_000)` at :30; inherited 30s → 60s. Friday therapist evidence 26.6s/30s (`docs/friday-cleanup-report.md:58`), coordinator 17.1s. Diff exactly one line; all assertions, waits, retries and other timeouts unchanged. Full-suite exercise remains pending. Sole named failure + 3/3 standalone rule unchanged; unit failure is not covered.
 
-## Flag × surface × label trace (source evidence, not rendered verification)
+## Exact-once adapter ledger
 
-The table records the investigation so far. “Existing” means found in source, not a new browser-render check. The complete every-surface inventory, Spanish copy, rendered tests and action-by-action audit execution remain unfinished.
+Only `src/test/consentB2Approved.ts` per-path FRI map extended. No baseline or existing test assertion edits. Exact current/before/after source lines follow; the full rollback-to-current app diff is in `docs/sl-evidence/presentation-ledger.md`.
 
-| Flag | Traced surfaces | Existing / proposed label |
-|---|---|---|
-| hie_simulated | OutsideRecords.tsx:29–34,103–108; BriefTab.tsx:260–270; ChartTabView.tsx:113,140; my-work.tsx:288,301; data-exchange.tsx:30–32 | Existing HIE_LABEL: “Simulated HIE feed — demo data, no live connection”; derived counts/alerts need review. |
-| placeholder_lab | LabsAndMeasures.tsx:70–73,218–223 | Existing “Placeholder lab — not sent”; proposed “Simulated — not sent to a lab”. |
-| cures_placeholder | OrderSafetyPanel.tsx:83–92; RefillCuresStep.tsx:22–30; clinician.tsx:1238 conditional host | Existing “CURES integration placeholder — no live query”; proposed “Simulated — no live CURES query”. |
-| eligibility_simulated | eligibility-worklist.tsx; electronic eligibility action; eligibility/eligibility.ts:1–21 | Proposed “Simulated — no live eligibility check” beside electronic action/results only. Manual recorded verification is real staff input and must not be relabelled simulated. |
-| erx_simulated | NoteOrdersSection.tsx:61,88; OrdersTab.tsx:585–596; clinician.tsx:1155–1291; admin-vendors.tsx:75–88 | Proposed “Simulated — not sent to a pharmacy”; clinician source pin triggers STOP. Member medication surfaces still need exhaustive tracing. |
-| caloms_export_simulated | OpsActionLauncher.tsx:319–326; county-reporting.tsx:117,170–175 | Existing county simulated header / ISL simulated toast; proposed persistent “Simulated — nothing submitted to the state”. |
-| notifications_simulated | Chart message action; OpsActionLauncher resend; group enrollment end | Proposed “Simulated — no message is actually sent”; exhaustive sender/result inventory remains open. |
-| payments_simulated | OpsWorkspace.tsx:108–115; OpsActionLauncher.tsx:263–279,310–315; PatientBalance.tsx:105–136 | Existing ops simulated confirmations; balance says “No card processing here”. Proposed “Simulated — no payment processed”; full claim-submit inventory remains open. |
-| voice_intake | voice/AdelVoice.tsx:59 | Existing simulatedSurfaceLabel voice label. |
-| adel_drafts | chart/AdelDrafts.tsx:51 | Existing simulatedSurfaceLabel rule-based draft label. |
-| telehealth_simulated | patient/AppointmentsSummary.tsx:145 | Existing simulated video label. |
-| scribe_simulated | ScribeWorkspace.tsx:94,175; agentic.scribe.$patientId.tsx:53 | Existing simulated scribe label. |
-| llm_simulated | chart/AdelBriefSections.tsx:67 | Existing simulated template-summary label. |
-| calendar_sync_simulated | calendar/CalendarSyncCard.tsx:20 | Existing outline Badge with simulatedSurfaceLabel. |
-| consent_upload_simulated | consent/ConsentCapturePanel.tsx:147,232; consentCapture.ts:25 | Existing “Simulated — paper copy is not stored in a real document system”. |
+```ts
+const FRI: Record<string, [string, string][]> = {
+  "src/routes/billing.tsx": [
+    ["import { StatusChip } from \"@/components/ui/status-chip\";", "import { StatusChip } from \"@/components/ui/status-chip\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { simulatedSurfaceLabel } from \"@/lib/features\";"],
+    ["          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>", "          <h1 className=\"font-display text-2xl text-navy\">Billing coordinator</h1>\n          <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"payments_simulated\")}</Badge>\n          <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"caloms_export_simulated\")}</Badge>"],
+  ],
+  "src/routes/admin.tsx": [
+    ["          Reminders check automatically while the app is open; send now to run a check\n          immediately.\n        </p>", "          Reminders check automatically while the app is open; send now to run a check\n          immediately.\n        </p>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"notifications_simulated\")}</Badge>"],
+    ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { simulatedSurfaceLabel } from \"@/lib/features\";"],
+    ["          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>", "          <ShieldCheck className=\"h-4 w-4 shrink-0 text-teal\" /> Integrated vendors\n        </h3>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"erx_simulated\")}</Badge>\n        <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"telehealth_simulated\")}</Badge>"],
+  ],
+  "src/components/ops/OpsWorkspace.tsx": [
+    ["import { Badge } from \"@/components/ui/badge\";", "import { Badge } from \"@/components/ui/badge\";\nimport { simulatedSurfaceLabel } from \"@/lib/features\";"],
+    ["    <section className=\"space-y-3\" data-testid=\"billing-workspace\">", "    <section className=\"space-y-3\" data-testid=\"billing-workspace\">\n      <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"payments_simulated\")}</Badge>"],
+  ],
+  "src/routes/clinician.tsx": [
+    ["                <Video className=\"h-4 w-4 mr-1.5\" /> {(t as (k: string) => string)(\"clinJoin\")}\n              </Button>", "                <Video className=\"h-4 w-4 mr-1.5\" /> {(t as (k: string) => string)(\"clinJoin\")}\n              </Button>\n              <Badge variant=\"outline\" className=\"max-w-full whitespace-normal text-sm\">{simulatedSurfaceLabel(\"telehealth_simulated\")}</Badge>"],
+    // Batch SL: Mitch-approved Oct 24, presentation only, exact-once.
+    ['import { Badge } from "@/components/ui/badge";\n', 'import { Badge } from "@/components/ui/badge";\nimport { simulatedSurfaceLabel } from "@/lib/features";\n'],
+    ['          <Video className="h-4 w-4" aria-hidden="true" /> Refill requests\n        </h3>', '          <Video className="h-4 w-4" aria-hidden="true" /> Refill requests\n        </h3>\n        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>'],
+    ['      <h3 className="font-display text-base text-navy">Refill requests</h3>', '      <h3 className="font-display text-base text-navy">Refill requests</h3>\n      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>'],
 
-## Audit check (source inspection only)
+```
 
-`actionIsSimulated` in `src/lib/actions/runAction.ts:96–99` derives simulation from action metadata or simulated flags. Successful flagged calls write outcome `simulated` and `detail.simulated: true` at :192–203, through write at :122–146. No audit code changed.
+### src/routes/clinician.tsx before/after file:line
+```diff
+diff --git a/src/routes/clinician.tsx b/src/routes/clinician.tsx
+index a8bc8e2b..6dfb203b 100644
+--- a/src/routes/clinician.tsx
++++ b/src/routes/clinician.tsx
+@@ -20,2 +20,3 @@ import { Button } from "@/components/ui/button";
+ import { Badge } from "@/components/ui/badge";
++import { simulatedSurfaceLabel } from "@/lib/features";
+ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+@@ -773,2 +774,3 @@ function ApptCard({
+               </Button>
++              <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("telehealth_simulated")}</Badge>
+               {(() => {
+@@ -1158,2 +1160,3 @@ function RefillReviewCardInner() {
+         </h3>
++        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>
+         <p className="mt-2 text-xs text-muted-foreground">
+@@ -1171,2 +1174,3 @@ function RefillReviewCardInner() {
+       <h3 className="font-display text-base text-navy">Refill requests</h3>
++      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>
+       {scopeToggle}
+```
 
-Traced bindings in `src/lib/chartActions.ts`: med_order :253; refill_decision :262; cures :275; lab_order :405; consent upload :158; scribe :577,599,610,622,633,644; message_patient :745; notification_resend :983; group_enrollment_end :1155; claim/payment actions :867,879,890,902; eligibility_check :914; state exports :929,1267,1298; calendar_sync_run :1057; hie_match_decide :1120. Voice, rule-based drafts, telehealth and template summaries have surface-only flags in this traced registry map; an exhaustive audit-path check is not complete.
+### src/routes/admin.tsx before/after file:line
+```diff
+diff --git a/src/routes/admin.tsx b/src/routes/admin.tsx
+index dd39c4b8..7a76063d 100644
+--- a/src/routes/admin.tsx
++++ b/src/routes/admin.tsx
+@@ -20,2 +20,3 @@ import { Card } from "@/components/ui/card";
+ import { Badge } from "@/components/ui/badge";
++import { simulatedSurfaceLabel } from "@/lib/features";
+ import { Button } from "@/components/ui/button";
+@@ -560,2 +561,3 @@ function NotificationHealthCard() {
+         </p>
++        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("notifications_simulated")}</Badge>
+         <Button
+@@ -634,2 +636,4 @@ function VendorStatusCard() {
+         </h3>
++        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("erx_simulated")}</Badge>
++        <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("telehealth_simulated")}</Badge>
+         <div className="flex flex-wrap items-center gap-2">
+```
 
-Existing guard `src/lib/__tests__/part2SimulatedHardening.test.ts:118–127` additionally requires a literal `simulatedSurfaceLabel("<id>")` use in a component whenever its map entry is defined. Any new map entries must retain this assertion, not modify it. Existing simulation tests are not a substitute for the requested NEW rendered/audit tests.
+### src/routes/billing.tsx before/after file:line
+```diff
+diff --git a/src/routes/billing.tsx b/src/routes/billing.tsx
+index 773b8a5c..7644aca2 100644
+--- a/src/routes/billing.tsx
++++ b/src/routes/billing.tsx
+@@ -5,2 +5,4 @@ import { StaffTable } from "@/components/staff/StaffTable";
+ import { StatusChip } from "@/components/ui/status-chip";
++import { Badge } from "@/components/ui/badge";
++import { simulatedSurfaceLabel } from "@/lib/features";
+ const tableCopy = { claims: "Claims worklist", isl: "ISL encounters", credentials: "Credentialing" };
+@@ -276,2 +278,4 @@ function BillingPage() {
+           <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
++          <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("payments_simulated")}</Badge>
++          <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("caloms_export_simulated")}</Badge>
+           <p className="text-sm text-muted-foreground">
+```
 
-## Remaining work / artifacts
+### src/components/ops/OpsWorkspace.tsx before/after file:line
+```diff
+diff --git a/src/components/ops/OpsWorkspace.tsx b/src/components/ops/OpsWorkspace.tsx
+index 9052f3a2..1d868c9c 100644
+--- a/src/components/ops/OpsWorkspace.tsx
++++ b/src/components/ops/OpsWorkspace.tsx
+@@ -16,2 +16,3 @@ import { Button } from "@/components/ui/button";
+ import { Badge } from "@/components/ui/badge";
++import { simulatedSurfaceLabel } from "@/lib/features";
+ import { countyReminders } from "@/lib/countyReporting";
+@@ -58,2 +59,3 @@ export function BillingWorkspaceTiles({ summary }: { summary?: ReactNode }) {
+     <section className="space-y-3" data-testid="billing-workspace">
++      <Badge variant="outline" className="max-w-full whitespace-normal text-sm">{simulatedSurfaceLabel("payments_simulated")}</Badge>
+       <div className="flex gap-2 overflow-x-auto [&>button]:shrink-0" data-testid="billing-today-strip">
+```
 
-Blocked by the immutable clinician source pin: missing EN/ES labels, complete flag/surface/audit inventory, NEW 15-flag rendered/audit test coverage, NEW 390px axe spot checks, restart/full units/full browser suite, screenshot restoration and successful final SHA. No screenshots were generated or changed, so no restoration is needed at this stop. No publishing, database or connector change.
+## Remaining tasks
+
+Full browser suite via setsid alone --workers=1 :8080 to /tmp/sl-browser.log literal EXIT, named-flake adjudication if needed, rendered desktop evidence, final successful SHA and closeout remain unperformed. Stop checkpoint SHA recorded separately in chat; this is NOT successful completion. New spot-check setup initially used an absent/unreachable old refill card and wrong language aria-label; only NEW test setup was corrected to existing Review refill dialog, billing role and actual Spanish control. No app behavior changed to satisfy those tests.
