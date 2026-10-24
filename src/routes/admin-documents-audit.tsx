@@ -19,7 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EyeOff, FileSearch, Lock } from "lucide-react";
-import { useActingRole } from "@/lib/roles";
+import { useActingRole, useActingStaff } from "@/lib/roles";
+import { viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { canAccess } from "@/lib/roles";
 import { redactAuditEvents } from "@/lib/auditRedaction";
 import { ClientDate } from "@/components/ClientDate";
@@ -85,6 +86,7 @@ const DOCUMENT_ACTIONS = new Set(DOCUMENT_AUDIT_EVENTS.map((e) => e.value));
 
 function DocumentsAuditPage() {
   const [role] = useActingRole();
+  const docStaff = useActingStaff();
   const [patientId, setPatientId] = useState("all");
   const [action, setAction] = useState("all");
 
@@ -144,7 +146,7 @@ function DocumentsAuditPage() {
               <SelectItem value="all">All patients</SelectItem>
               {patients.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.programId} · {p.firstName} {p.lastName}
+                  {p.programId}{viewerCanOpenChart({ role: docStaff.role, staffId: docStaff.staffId }, p.id) ? ` · ${p.firstName} ${p.lastName}` : ""}
                 </SelectItem>
               ))}
             </SelectContent>
