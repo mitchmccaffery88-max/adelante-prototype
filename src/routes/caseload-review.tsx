@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useEhr } from "@/lib/ehr";
 import { useActingStaff, type StaffRole } from "@/lib/roles";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 
 type Actor = { id: string; name: string; role: StaffRole };
 import {
@@ -118,7 +119,7 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
       <Card className="p-4 space-y-2" data-testid={`caseload-row-${row.patient.id}`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <b>
-            {row.patient.firstName} {row.patient.lastName}
+            {staffPatientLabel({ role: actor.role, staffId: actor.id }, row.patient.id)}
           </b>
           <div className="flex flex-wrap gap-1">
             {row.carriedOver && <Badge variant="outline">Carried over</Badge>}

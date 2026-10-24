@@ -2,6 +2,8 @@
 // header. None of them write to the record.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { useActingStaff } from "@/lib/roles";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PrototypeBanner } from "@/components/agentic/PrototypeChrome";
@@ -42,6 +44,7 @@ const DEMOS = [
 
 function AgenticGuidePage() {
   const { patientId } = Route.useSearch();
+  const guideStaff = useActingStaff();
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const selected = patientId ? patients.find((p) => p.id === patientId) : undefined;
   const list = selected ? [selected] : patients.slice(0, 12);
@@ -62,7 +65,7 @@ function AgenticGuidePage() {
       {list.map((p) => (
         <Card key={p.id} className="space-y-2 p-4">
           <p className="font-medium text-navy">
-            {p.firstName} {p.lastName}
+            {staffPatientLabel({ role: guideStaff.role, staffId: guideStaff.staffId }, p.id)}
           </p>
           <div className="flex flex-wrap gap-2">
             {DEMOS.map((d) => (

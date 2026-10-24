@@ -21,6 +21,25 @@ const P3: Record<string, [string, string][]> = {
     ['patientSlot={p ? <Button size="sm" variant="link" onClick={() => onOpenPatient(p.id)}>{p.firstName} {p.lastName}</Button> : null}',
       'patientSlot={p ? (viewerCanOpenChart(labelViewer(), p.id) ? <Button size="sm" variant="link" onClick={() => onOpenPatient(p.id)}>{staffPatientLabel(labelViewer(), p.id)}</Button> : <span className="font-mono text-sm">{p.programId}</span>) : null}'],
   ],
+  // Friday cleanup (Mitch, Oct 23) — name-label sweep: the only inventory-visible
+  // changes in pinned files are these new acting-staff declarations and the
+  // WorkspaceDashboard "Next visit" strip value (name → staffPatientLabel).
+  "src/routes/clinician.tsx": [
+    ["  onBack: () => void;\n}) {\n  return (\n    <Card className=\"p-4\">",
+      "  onBack: () => void;\n}) {\n  const headerActor = useActingStaff();\n  return (\n    <Card className=\"p-4\">"],
+    ["  // (component continues below)\n  const { t } = useI18n();",
+      "  // (component continues below)\n  const { t } = useI18n();\n  const rescreenActor = useActingStaff();"],
+    ["  const clinicians = AdelanteEHR.listClinicians();\n  if (!clinicianId || outgoing.length === 0) return null;",
+      "  const clinicians = AdelanteEHR.listClinicians();\n  const switchActor = useActingStaff();\n  if (!clinicianId || outgoing.length === 0) return null;"],
+    ["                  {p ? `${p.firstName} ${p.lastName}` : r.patientId} · {r.medicationName}",
+      "                  {p ? staffPatientLabel({ role, staffId: actor.staffId }, p.id) : r.patientId} · {r.medicationName}"],
+  ],
+  "src/components/clinician/WorkspaceDashboard.tsx": [
+    ['    { id: "next", label: "Next visit", value: next ? `${new Date(next.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${nextPatient?.firstName ?? "Patient"}` : "None", tile: "schedule" as const, segment: "up_next" as const, zero: !next },',
+      '    { id: "next", label: "Next visit", value: next ? `${new Date(next.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${nextPatient ? staffPatientLabel({ role: acting.role, staffId: acting.staffId }, nextPatient.id) : "Patient"}` : "None", tile: "schedule" as const, segment: "up_next" as const, zero: !next },'],
+    ["function CaseloadTile({ rows }: { rows: ReturnType<typeof attentionCaseload> }) { return <div className=\"divide-y\">{rows.map(({ patient, reasons }) => <div key={patient.id} className=\"flex items-center justify-between gap-3 py-2\"><div className=\"min-w-0\"><p className=\"truncate text-sm font-medium\">{patient.firstName} {patient.lastName}</p>",
+      "function CaseloadTile({ rows }: { rows: ReturnType<typeof attentionCaseload> }) { const caseloadActor = useActingStaff(); return <div className=\"divide-y\">{rows.map(({ patient, reasons }) => <div key={patient.id} className=\"flex items-center justify-between gap-3 py-2\"><div className=\"min-w-0\"><p className=\"truncate text-sm font-medium\">{staffPatientLabel({ role: caseloadActor.role, staffId: caseloadActor.staffId }, patient.id)}</p>"],
+  ],
   "src/lib/asamReporting.ts": [
     ['export const TOTALS_ONLY_ROLES: StaffRole[] = ["clinical_coordinator"];',
       '// Privacy P3 (Mitch, Oct 20) — sys_admin: de-identified totals only, same consent-only cohort.\nexport const TOTALS_ONLY_ROLES: StaffRole[] = ["clinical_coordinator", "sys_admin"];'],

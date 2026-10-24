@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Download, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { useActingRole } from "@/lib/roles";
+import { useActingRole, useActingStaff } from "@/lib/roles";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { ACCESS_LOG_ROLES } from "@/lib/accessLog";
 import { redactAuditEvents } from "@/lib/auditRedaction";
 import { Input } from "@/components/ui/input";
@@ -77,6 +78,7 @@ const CATEGORIES: { value: CatFilter; label: string }[] = [
 
 function AdminAuditPage() {
   const [role] = useActingRole();
+  const auditStaff = useActingStaff();
   const [cat, setCat] = useState<CatFilter>("all");
   const [patientId, setPatientId] = useState<string>("all");
   const [actorRole, setActorRole] = useState<string>("all");
@@ -221,7 +223,7 @@ function AdminAuditPage() {
             <SelectItem value="all">All patients</SelectItem>
             {patients.map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.lastName}, {p.firstName} · {p.id}
+                {staffPatientLabel({ role: auditStaff.role, staffId: auditStaff.staffId }, p.id)} · {p.id}
               </SelectItem>
             ))}
           </SelectContent>

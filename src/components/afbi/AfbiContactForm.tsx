@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScribeWorkspace } from "@/components/scribe/ScribeWorkspace";
 import { canDictateScribe } from "@/lib/scribe";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 
 const chip = (on: boolean) => (on ? "default" : "outline") as "default" | "outline";
 
@@ -71,7 +72,7 @@ export function AfbiContactForm({ patientId, onDone }: { patientId?: string; onD
         </div>
       </div>
       {patient ? (
-        <p className="text-sm">Person: <span className="font-medium">{patient.firstName} {patient.lastName}</span></p>
+        <p className="text-sm">Person: <span className="font-medium">{staffPatientLabel({ role: me.role, staffId: me.staffId }, patient.id)}</span></p>
       ) : (
         <div className="grid grid-cols-[5rem_1fr] gap-2">
           <div className="space-y-1.5"><Label htmlFor="afbi-initials">Initials</Label><Input id="afbi-initials" value={initials} maxLength={4} onChange={(e) => setInitials(e.target.value)} /></div>
@@ -152,7 +153,7 @@ function AfbiLinkList() {
             <>
               <select aria-label="Enrolled patient" className="h-8 rounded-md border bg-background px-2 text-xs" value={pick[c.id] ?? ""} onChange={(e) => setPick((m) => ({ ...m, [c.id]: e.target.value }))}>
                 <option value="">Now enrolled as…</option>
-                {patients.map((p) => <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>)}
+                {patients.map((p) => <option key={p.id} value={p.id}>{staffPatientLabel({ role: me.role, staffId: me.staffId }, p.id)}</option>)}
               </select>
               <Button size="sm" variant="outline" disabled={!pick[c.id]} onClick={() => request(c.id)}>Ask to link</Button>
             </>

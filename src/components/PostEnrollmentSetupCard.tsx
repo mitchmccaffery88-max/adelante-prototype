@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { useActingRole, getActingStaff } from "@/lib/roles";
+import { useActingRole, useActingStaff, getActingStaff } from "@/lib/roles";
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import {
   POST_ENROLLMENT_STALENESS_LABEL,
@@ -78,6 +79,7 @@ function AssignCaseManagerControl({ patientId }: { patientId: string }) {
 
 export function PostEnrollmentSetupCard({ limit, tablePresentation = false }: { limit?: number; tablePresentation?: boolean }) {
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  const setupStaff = useActingStaff();
   const rows = patientsNeedingSetup(patients)
     .map((p) => ({ p, gaps: postEnrollmentGaps(p), stale: postEnrollmentStaleness(p) }))
     .sort((a, b) => (b.stale?.days ?? -1) - (a.stale?.days ?? -1));
@@ -99,7 +101,7 @@ export function PostEnrollmentSetupCard({ limit, tablePresentation = false }: { 
         views={[{id:"current",label:"Current view",matches:()=>true}]} defaultView="current"
         emptyState="Everyone enrolled has a care team, a completed intake and an attended session."
         columns={[
-          {id:"patient",label:"Patient",sortValue:(r)=>`${r.p.firstName} ${r.p.lastName}`,cell:(r)=><Link to="/record/$patientId" params={{patientId:r.p.id}} className="underline">{r.p.firstName} {r.p.lastName}</Link>},
+          {id:"patient",label:"Patient",sortValue:(r)=>staffPatientLabel({ role: setupStaff.role, staffId: setupStaff.staffId }, r.p.id),cell:(r)=>viewerCanOpenChart({ role: setupStaff.role, staffId: setupStaff.staffId }, r.p.id) ? <Link to="/record/$patientId" params={{patientId:r.p.id}} className="underline">{r.p.firstName} {r.p.lastName}</Link> : <span className="font-mono text-sm">{r.p.programId}</span>},
           {id:"gaps",label:"Next steps",cell:(r)=><>{r.gaps.map((g)=><Badge key={g} variant="outline">{POST_ENROLLMENT_STEP_LABEL[g]}</Badge>)}{r.stale && r.stale.state !== "fresh" && <p title={POST_ENROLLMENT_STALENESS_NOTE}>{postEnrollmentStalenessLabel(r.stale)}</p>}</>},
         ]}
         primaryAction={(r)=>!r.p.primaryClinicianId ? <AssignClinicianButton patientId={r.p.id} size="sm" /> : null}
@@ -113,13 +115,17 @@ export function PostEnrollmentSetupCard({ limit, tablePresentation = false }: { 
           {shown.map(({ p, gaps, stale }) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
               <div className="min-w-0">
-                <Link
-                  to="/record/$patientId"
-                  params={{ patientId: p.id }}
-                  className="text-sm font-medium text-navy underline"
-                >
-                  {p.firstName} {p.lastName}
-                </Link>
+                {viewerCanOpenChart({ role: setupStaff.role, staffId: setupStaff.staffId }, p.id) ? (
+                  <Link
+                    to="/record/$patientId"
+                    params={{ patientId: p.id }}
+                    className="text-sm font-medium text-navy underline"
+                  >
+                    {p.firstName} {p.lastName}
+                  </Link>
+                ) : (
+                  <span className="font-mono text-sm">{p.programId}</span>
+                )}
                 <div className="mt-1 flex flex-wrap gap-1">
                   {gaps.map((g) => (
                     <Badge key={g} variant="outline" className="text-[10px]">

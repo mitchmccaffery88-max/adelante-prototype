@@ -22,7 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EyeOff, Users } from "lucide-react";
-import { useActingRole } from "@/lib/roles";
+import { useActingRole, useActingStaff } from "@/lib/roles";
+import { viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { redactAuditEvents } from "@/lib/auditRedaction";
 import { roleSeesGroupJoinRequest } from "@/lib/groupJoinView";
 import { ClientDate } from "@/components/ClientDate";
@@ -77,6 +78,7 @@ const ACTION_SET = new Set<string>(GROUP_AUDIT_ACTIONS.map((a) => a.value));
 
 function GroupAuditPage() {
   const [role] = useActingRole();
+  const groupStaff = useActingStaff();
   const [patientId, setPatientId] = useState("all");
   const [action, setAction] = useState("all");
   // Same `type="date"` + since/until pattern as the admin audit log.
@@ -131,7 +133,7 @@ function GroupAuditPage() {
               <SelectItem value="all">All patients</SelectItem>
               {patients.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.programId} · {p.firstName} {p.lastName}
+                  {p.programId}{viewerCanOpenChart({ role: groupStaff.role, staffId: groupStaff.staffId }, p.id) ? ` · ${p.firstName} ${p.lastName}` : ""}
                 </SelectItem>
               ))}
             </SelectContent>

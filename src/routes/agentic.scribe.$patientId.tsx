@@ -8,6 +8,7 @@ import { z } from "zod";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { chartReviewFacts } from "@/lib/agenticPrototype";
 import { useActingStaff } from "@/lib/roles";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import { canDictateScribe } from "@/lib/scribe";
 import { simulatedSurfaceLabel } from "@/lib/features";
 import { ScribeWorkspace } from "@/components/scribe/ScribeWorkspace";
@@ -43,7 +44,7 @@ function ScribePage() {
   });
   const real = JSON.parse(facts) as { gaps: string[]; rescreens: string[]; next?: string } | null;
   if (!patient) return <div className="mx-auto max-w-3xl px-4 py-10"><EmptyState title="Client not found" description="This record is not available." /></div>;
-  const name = `${patient.firstName} ${patient.lastName}`;
+  const name = staffPatientLabel({ role: staff.role, staffId: staff.staffId }, patient.id);
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
       <Button asChild variant="ghost" size="sm"><Link to="/record/$patientId" params={{ patientId }}><ArrowLeft className="mr-1.5 h-4 w-4" /> Back to chart</Link></Button>

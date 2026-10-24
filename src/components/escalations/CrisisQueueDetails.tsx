@@ -12,6 +12,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type CrisisEscalation } from "@/lib/ehr";
 import { canAccess, canFlagCrisis, canWorkSdohCrisisLane, useActingStaff } from "@/lib/roles";
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { CRISIS_POLICY_DRAFT_LABEL, sweepCrisisSla } from "@/lib/crisisPolicy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ import { Lock, Siren, UserX } from "lucide-react";
 import { CssrsRiskBadge, CssrsStaffControl } from "@/components/screeners/CssrsStaffControl";
 
 export function CrisisQueueDetails({ lane }: { lane?: "sdoh" | "clinical" }) {
-  const { role } = useActingStaff();
+  const { role, staffId: crisisStaffId } = useActingStaff();
   const access = canAccess(role, "crisis_queue");
   // §Crisis Redesign Phase 2 — case management owns the SDOH lane. A role with
   // `sdoh` write and any queue access can claim and resolve SOCIAL-need rows
@@ -148,7 +149,7 @@ export function CrisisQueueDetails({ lane }: { lane?: "sdoh" | "clinical" }) {
         )}
         <StaffTable rows={rows} rowKey={(r)=>r.escalation.id} label="Open crisis details" testId="crisis-resolution-table" defaultView="current" views={[{id:"current",label:"Current view",matches:()=>true}]}
           columns={[
-            {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=><Link to="/record/$patientId" params={{patientId:r.patient.id}} search={{section:"alerts"}}>{r.patient.firstName} {r.patient.lastName}</Link>},
+            {id:"patient",label:"Patient",sortValue:(r)=>staffPatientLabel({ role, staffId: crisisStaffId }, r.patient.id),cell:(r)=>viewerCanOpenChart({ role, staffId: crisisStaffId }, r.patient.id) ? <Link to="/record/$patientId" params={{patientId:r.patient.id}} search={{section:"alerts"}}>{r.patient.firstName} {r.patient.lastName}</Link> : <span className="font-mono text-sm">{r.patient.programId}</span>},
             {id:"status",label:"Status",cell:({escalation})=><><CrisisRetriggerBadge escalation={escalation} /><CrisisOverdueBadge escalation={escalation} />{!canWorkRow(escalation) && <CssrsRiskBadge risk={escalation.cssrsRisk} />}<StatusChip lang="en" state="urgent" label={timeOpenLabel(escalation.triggeredAt)} /></>},
             {id:"detail",label:"Detail",cell:({escalation})=><><CrisisClassification escalation={escalation} /><p>{escalation.triggerDetail}</p>{escalation.retriggers?.map((r,i)=><p key={i}>Further signal <ClientDate value={r.at} /> — {r.detail}</p>)}</>},
             {id:"owner",label:"Flagged by",sortValue:(r)=>r.escalation.triggeredBy,cell:({escalation})=><>{escalation.triggerSource.replace("_"," ")} · flagged by {escalation.triggeredBy} · <ClientDate value={escalation.triggeredAt} /></>},
@@ -174,7 +175,7 @@ export function CrisisQueueDetails({ lane }: { lane?: "sdoh" | "clinical" }) {
  * cross-patient list.
  */
 function MyFlaggedEscalations() {
-  const { staffName } = useActingStaff();
+  const { staffName, role: flagRole, staffId: flagStaffId } = useActingStaff();
   const mine = useEhr(() => AdelanteEHR.listCrisisEscalationsFlaggedBy(staffName));
 
   return (
@@ -189,7 +190,7 @@ function MyFlaggedEscalations() {
       ) : (
         <StaffTable rows={mine} rowKey={(r)=>r.escalation.id} label="Crises you flagged" testId="my-flagged-crises-table" views={[{id:"current",label:"Current view",matches:()=>true}]} defaultView="current"
           columns={[
-            {id:"patient",label:"Patient",sortValue:(r)=>`${r.patient.firstName} ${r.patient.lastName}`,cell:(r)=>`${r.patient.firstName} ${r.patient.lastName}`},
+            {id:"patient",label:"Patient",sortValue:(r)=>staffPatientLabel({ role: flagRole, staffId: flagStaffId }, r.patient.id),cell:(r)=>staffPatientLabel({ role: flagRole, staffId: flagStaffId }, r.patient.id)},
             {id:"status",label:"Status",sortValue:(r)=>r.escalation.status,cell:({escalation})=><StatusChip lang="en" state={escalation.status === "open" ? "urgent" : "done"} label={escalation.status === "open" ? "Open" : "Resolved"} />},
             {id:"date",label:"Flagged",sortValue:(r)=>r.escalation.triggeredAt,cell:({escalation})=><ClientDate value={escalation.triggeredAt} />},
             {id:"disposition",label:"Disposition",cell:({escalation})=>escalation.status === "resolved" ? <>Disposition: {escalation.disposition} — resolved by {escalation.resolvedBy}{escalation.resolvedAt && <ClientDate value={escalation.resolvedAt} />}</> : <>Still open · {timeOpenLabel(escalation.triggeredAt)}</>},
