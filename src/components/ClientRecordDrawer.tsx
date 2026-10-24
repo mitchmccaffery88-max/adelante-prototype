@@ -19,6 +19,7 @@ import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
 import { resolveSectionId, useRecordSections } from "@/components/clinical/recordSections";
+import { RestrictedChartGate } from "@/components/chart/RestrictedChartGate";
 import { Maximize2 } from "lucide-react";
 
 interface Props {
@@ -49,7 +50,7 @@ function DrawerBody({ patientId, initialTab }: { patientId: string; initialTab?:
   const active = sections.find((s) => s.id === tab) ?? sections[0];
 
   return (
-    <>
+    <RestrictedChartGate patientId={patientId}>
       <SheetHeader>
         <SheetTitle className="font-display text-2xl text-navy">
           {patient.firstName} {patient.lastName}
@@ -94,6 +95,6 @@ function DrawerBody({ patientId, initialTab }: { patientId: string; initialTab?:
           </TabsContent>
         )}
       </Tabs>
-    </>
+    </RestrictedChartGate>
   );
 }

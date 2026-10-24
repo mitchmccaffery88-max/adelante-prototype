@@ -5,6 +5,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
+import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { chartReviewFacts, sampleNarrative } from "@/lib/agenticPrototype";
 import {
   PrototypeBanner,
@@ -66,7 +67,7 @@ function GuidedChartReview() {
     );
   }
   const p = facts.patient;
-  const name = `${p.firstName} ${p.lastName}`;
+  const name = staffPatientLabel({ role, staffId }, p.id);
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
@@ -123,7 +124,7 @@ function GuidedChartReview() {
             badge={<SampleBadge label="Sample narrative — illustrative only" />}
           >
             <div className="space-y-2 text-sm leading-relaxed text-foreground">
-              {sampleNarrative(p.firstName).map((para) => (
+              {sampleNarrative(viewerCanOpenChart({ role, staffId }, p.id) ? p.firstName : p.programId).map((para) => (
                 <p key={para.slice(0, 24)}>{para}</p>
               ))}
             </div>
