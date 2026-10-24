@@ -16,6 +16,7 @@ import {
 
 
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import {
   assignmentIdentityFor,
   hasAssignmentIdentity,
@@ -410,7 +411,7 @@ function CaseManagerPage() {
                 {caseload.map((p) => (
                   <TableRow key={p.id} data-state={activeId === p.id ? "selected" : undefined}>
                     <TableCell className="font-medium text-navy">
-                      {p.firstName} {p.lastName}
+                      {staffPatientLabel({ role: acting.role, staffId: acting.staffId }, p.id)}
                     </TableCell>
                     <TableCell className="text-xs font-mono text-muted-foreground">
                       {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
@@ -503,7 +504,7 @@ function CaseManagerPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="font-medium text-navy">
-                        {p.firstName} {p.lastName}
+                        {staffPatientLabel({ role: acting.role, staffId: acting.staffId }, p.id)}
                       </div>
                       <div className="text-xs text-muted-foreground font-mono">
                         CIN: {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
@@ -586,7 +587,7 @@ function CaseManagerPage() {
               <Card className="p-4 flex items-center justify-between gap-3">
                 <div>
                   <div className="font-display text-navy text-lg">
-                    {active.firstName} {active.lastName}
+                    {staffPatientLabel({ role: acting.role, staffId: acting.staffId }, active.id)}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Full record: SDOH, referrals, external coordination, peer notes.
