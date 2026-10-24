@@ -56,6 +56,7 @@ import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { roleSeesAsam, roleSeesSudMedication, SUD_MED_WITHHELD_ROLES, SUD_MED_ACCESS_NOTE } from "@/lib/asamReporting";
 import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";
+import { staffPatientLabel } from "@/lib/staffPatientLabel";
 import {
   assignmentIdentityFor,
   hasAssignmentIdentity,
@@ -564,6 +565,7 @@ function ChartHeader({
   picker: React.ReactNode;
   onBack: () => void;
 }) {
+  const headerActor = useActingStaff();
   return (
     <Card className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -571,7 +573,7 @@ function ChartHeader({
           {patient ? (
             <>
               <div className="font-display text-xl text-navy">
-                {patient.firstName} {patient.lastName}
+                {staffPatientLabel({ role: headerActor.role, staffId: headerActor.staffId }, patient.id)}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span>DOB {patient.dob}</span>
@@ -673,11 +675,11 @@ function ApptCard({
                 onClick={() => onOpenChart(p.id)}
                 className="font-medium text-navy underline-offset-2 hover:underline"
               >
-                {p.firstName} {p.lastName}
+                {staffPatientLabel({ role: noShowActor.role, staffId: noShowActor.staffId }, p.id)}
               </button>
             ) : (
               <div className="font-medium text-navy">
-                {p?.firstName} {p?.lastName}
+                {p ? staffPatientLabel({ role: noShowActor.role, staffId: noShowActor.staffId }, p.id) : "Patient"}
               </div>
             )}
 
@@ -849,6 +851,7 @@ function RescreenDuePanel({
 }) {
   // (component continues below)
   const { t } = useI18n();
+  const rescreenActor = useActingStaff();
   const rows = patients.flatMap((p) =>
     AdelanteEHR.rescreensDue(p.id).map((d) => ({ ...d, patient: p })),
   );
@@ -887,8 +890,8 @@ function RescreenDuePanel({
               className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
             >
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="font-medium text-navy">
-                  {r.patient.firstName} {r.patient.lastName}
+                 <span className="font-medium text-navy">
+                  {staffPatientLabel({ role: rescreenActor.role, staffId: rescreenActor.staffId }, r.patient.id)}
                 </span>
                 · {r.key.toUpperCase()}
                 {latest && (
@@ -948,6 +951,7 @@ function ProviderSwitchAlerts({
   );
   const patients = AdelanteEHR.listPatients();
   const clinicians = AdelanteEHR.listClinicians();
+  const switchActor = useActingStaff();
   if (!clinicianId || outgoing.length === 0) return null;
   const reasonLabel: Record<string, string> = {
     reschedule: "Rescheduled to another provider",
@@ -977,7 +981,7 @@ function ProviderSwitchAlerts({
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="font-medium text-navy">
-                    {p ? `${p.firstName} ${p.lastName}` : s.patientId}
+                    {p ? staffPatientLabel({ role: switchActor.role, staffId: switchActor.staffId }, p.id) : s.patientId}
                   </div>
                   <div className="text-muted-foreground">
                     {reasonLabel[s.reason] ?? s.reason} to {to?.name ?? s.toClinicianId}
@@ -1122,7 +1126,7 @@ function RefillReviewCardInner() {
             return (
               <li key={r.id}>
                 <span className="text-navy dark:text-foreground">
-                  {p ? `${p.firstName} ${p.lastName}` : r.patientId} · {r.medicationName}
+                  {p ? staffPatientLabel({ role, staffId: actor.staffId }, p.id) : r.patientId} · {r.medicationName}
                 </span>{" "}
                 — {r.status === "sent_to_pharmacy"
                   ? "approved, sent to pharmacy"
@@ -1179,7 +1183,7 @@ function RefillReviewCardInner() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-medium text-navy truncate">
-                    {p ? `${p.firstName} ${p.lastName}` : r.patientId}
+                    {p ? staffPatientLabel({ role, staffId: actor.staffId }, p.id) : r.patientId}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {r.medicationName}
