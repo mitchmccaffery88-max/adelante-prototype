@@ -1,30 +1,20 @@
-import { useEffect } from "react";
-import { WebsiteClosing } from "@/components/WebsiteContent";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useI18n } from "@/lib/i18n";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import {
-  ArrowRight,
-  Phone,
-  Video,
-  Brain,
-  HandHeart,
-  ClipboardList,
-  Smartphone,
-  ShieldCheck,
-  HeartHandshake,
-  Sparkles,
-  Sunrise,
-  MessageCircle,
-} from "lucide-react";
-import heroImg from "@/assets/hero-sunrise.jpg";
-import "./website.css";
-
-export function Landing() {
-  const { t } = useI18n();
-  const navigate = useNavigate();
+import { useEffect } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Video, Stethoscope, Route, Sunrise, ClipboardList, Compass, Languages, BadgeCheck, Brain, HeartHandshake, HandHeart, Sparkles, Smartphone, ShieldCheck, ArrowRight, Image, Heart, Building2, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useI18n } from '@/lib/i18n';
+import { siteConfig } from '@/lib/website/siteConfig';
+import { HeroMedia } from './website/HeroMedia';
+import { ReadyBand, LandingActions } from './website/ReadyBand';
+import { JourneyDeck } from './website/JourneyDeck';
+import { ConnectedCare } from './website/ConnectedCare';
+import { AskAdel } from './website/AskAdel';
+import './website/daylight.css';
+const services=[[Video,'website.v2.teletherapy'],[Stethoscope,'website.v2.telepsychiatry'],[Route,'website.v2.recovery'],[Sunrise,'website.v2.reentry.support'],[ClipboardList,'website.v2.coordination'],[Compass,'website.v2.navigation'],[Languages,'website.v2.languages'],[BadgeCheck,'website.v2.cost.body']] as const;
+const benefits=[[Video,'websiteTalk','websiteTalkBody'],[Brain,'websiteMind','websiteMindBody'],[HandHeart,'websiteLife','websiteLifeBody'],[Sparkles,'websiteYourPlan','websiteYourPlanBody'],[Smartphone,'websitePhone','websitePhoneBody'],[HeartHandshake,'websiteCorner','websiteCornerBody']] as const;
+const roles=[['websiteCareTeam','websiteClinicians','websiteCliniciansBody'],['websiteCareTeam','websitePsychiatry','websitePsychiatryBody'],['websiteCareTeam','websiteRecovery','websiteRecoveryBody'],['websiteNavigationTeam','websiteCoordinators','websiteCoordinatorsBody'],['websiteNavigationTeam','websiteReentry','websiteReentryBody'],['websiteResourceTeam','websiteResources','websiteResourcesBody'],['websiteAdvocateTeam','websiteAdvocates','websiteAdvocatesBody']] as const;
+export function Landing(){const {t}=useI18n();const navigate=useNavigate();
   useEffect(() => {
     const redirectLegacy = () => {
       const hash = window.location.hash;
@@ -39,212 +29,19 @@ export function Landing() {
     };
     redirectLegacy();
     window.addEventListener("hashchange", redirectLegacy);
-    return () => window.removeEventListener("hashchange", redirectLegacy);
-  }, [navigate]);
-  return (
-    <div className="bg-background" data-testid="public-landing">
-      {/* Hero */}
-      <section className="website-hero relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src={heroImg}
-            alt={t("websiteHeroAlt")}
-            width={1920}
-            height={1080}
-            className="h-full w-full object-cover"
-          />
-          <div aria-hidden="true" className="website-hero-overlay absolute inset-0" />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-5 sm:px-8 py-20 sm:py-28 lg:py-36">
-          <div className="max-w-2xl text-navy-foreground">
-            <span className="inline-flex items-center gap-2 rounded-full bg-navy-foreground/15 backdrop-blur px-3 py-1 text-xs font-medium">
-              <Sunrise aria-hidden="true" className="h-3.5 w-3.5 text-gold" />{t("websiteHeroEyebrow")}
-            </span>
-            <h1 className="mt-3 font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-normal">
-              {t("websiteHeroHeading")}
-            </h1>
-            <p className="mt-5 text-lg sm:text-xl text-navy-foreground max-w-xl">
-              {t("websiteHeroBody")}
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button
-                asChild
-                size="lg"
-                className="h-12 px-6 text-base"
-              >
-                <Link to="/start/signup">
-                  {t("websiteStart")}
-                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="h-12 px-6 text-base bg-transparent border-navy-foreground/40 text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground"
-              >
-                <Link to="/advocate">{t("websiteHelp")}</Link>
-              </Button>
-            </div>
-            <p className="mt-5 text-sm text-navy-foreground">
-              {t("websiteHeroNote")}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="mx-auto max-w-7xl px-5 sm:px-8 py-20 scroll-mt-40">
-        <div className="text-center max-w-2xl mx-auto">
-          <h2 className="website-heading">{t("websiteHow")}</h2>
-          <p className="mt-3 text-lg text-muted-foreground">
-            {t("websiteHowIntro")}
-          </p>
-        </div>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {[
-            {
-              n: "1",
-              icon: Phone,
-              title: t("websiteConnect"),
-              // E3 — Adel explains questions; it never fills intake in.
-              body: t("landingConnectBody"),
-            },
-            {
-              n: "2",
-              icon: ClipboardList,
-              title: t("websitePlan"),
-              body: t("websitePlanBody"),
-            },
-            {
-              n: "3",
-              icon: ArrowRight,
-              title: t("websiteForward"),
-              body: t("websiteForwardBody"),
-            },
-          ].map((s) => (
-            <Card
-              key={s.n}
-              className="p-7 border-border/60 shadow-none hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-teal/15 text-teal grid place-items-center">
-                  <s.icon aria-hidden="true" className="h-5 w-5" />
-                </div>
-                <span className="font-display text-2xl text-muted-foreground">{s.n}</span>
-              </div>
-              <h3 className="mt-4 font-display text-2xl text-navy">{s.title}</h3>
-              <p className="mt-2 text-base text-muted-foreground leading-relaxed">{s.body}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section id="find-your-fit" className="border-y bg-secondary/40 scroll-mt-40">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-16 sm:py-20">
-          <h2 className="website-heading">{t("websiteFit")}</h2>
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {([
-              [Brain, "websiteAnyone", "websiteAnyoneBody", "/start/signup", "websiteStart"],
-              [Sunrise, "websiteComingHome", "websiteComingHomeBody", "/start/signup", "websiteStart"],
-              [HeartHandshake, "websiteLovedOnes", "websiteLovedOnesBody", "/advocate", "websiteHelp"],
-            ] as const).map(([Icon, title, body, to, label]) => <Card key={title} className="flex flex-col p-6 sm:p-8 border-border/60">
-              <Icon aria-hidden="true" className="h-7 w-7 text-primary" />
-              <h3 className="mt-5 font-display text-xl text-primary">{t(title)}</h3>
-              <p className="mt-3 flex-1 text-lg leading-relaxed text-foreground">{t(body)}</p>
-              <Button asChild className="mt-6 min-h-12 h-auto whitespace-normal py-3"><Link to={to}>{t(label)}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" /></Link></Button>
-            </Card>)}
-          </div>
-        </div>
-      </section>
-
-      {/* What you get */}
-      <section id="what-you-get" className="bg-secondary/50 border-y scroll-mt-40">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-20">
-          <div className="max-w-2xl">
-            <h2 className="website-heading">{t("websiteWhat")}</h2>
-            <p className="mt-3 text-lg text-muted-foreground">
-              {t("websiteWhatIntro")}
-            </p>
-          </div>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                icon: Video,
-                title: t("websiteTalk"),
-                body: t("websiteTalkBody"),
-              },
-              {
-                icon: Brain,
-                title: t("websiteMind"),
-                body: t("websiteMindBody"),
-              },
-              {
-                icon: HandHeart,
-                title: t("websiteLife"),
-                body: t("websiteLifeBody"),
-              },
-              {
-                icon: Sparkles,
-                title: t("websiteYourPlan"),
-                body: t("websiteYourPlanBody"),
-              },
-              {
-                icon: Smartphone,
-                title: t("websitePhone"),
-                body: t("websitePhoneBody"),
-              },
-              {
-                icon: HeartHandshake,
-                title: t("websiteCorner"),
-                body: t("websiteCornerBody"),
-              },
-            ].map((c) => (
-              <Card key={c.title} className="p-6 bg-card border-border/60 shadow-none">
-                <div className="h-11 w-11 rounded-xl bg-gold/25 text-navy grid place-items-center">
-                  <c.icon aria-hidden="true" className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 font-display text-xl text-navy">{c.title}</h3>
-                <p className="mt-2 text-[15px] text-muted-foreground leading-relaxed">{c.body}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust strip */}
-      <section className="bg-secondary/40 border-y">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-          {[
-            { icon: ShieldCheck, text: t("websiteTrustCoverage") },
-            { icon: ShieldCheck, text: t("websiteTrustPrivacy") },
-            { icon: HeartHandshake, text: t("websiteTrustJudgment") },
-            { icon: MessageCircle, text: t("websiteTrustLanguage") },
-          ].map((b) => (
-            <div key={b.text} className="flex items-start gap-3">
-              <span className="h-9 w-9 rounded-full bg-teal/15 text-teal grid place-items-center shrink-0">
-                <b.icon aria-hidden="true" className="h-4 w-4" />
-              </span>
-              <p className="text-foreground pt-1.5 leading-snug">{b.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="faq" className="mx-auto max-w-3xl px-5 sm:px-8 py-16 sm:py-20 scroll-mt-40">
-        <h2 className="website-heading">{t("websiteFaq")}</h2>
-        <Accordion type="single" collapsible className="mt-8">
-          {(["Cost", "Lang", "Video", "Start", "Help", "Crisis"] as const).map((k) => <AccordionItem key={k} value={k}>
-            <AccordionTrigger className="min-h-12 text-left text-lg">{t(`websiteFaq${k}Q`)}</AccordionTrigger>
-            <AccordionContent className="text-base leading-relaxed text-foreground">
-              {k === "Cost" ? <>{t("websiteFaqCostA")} <Link to="/start/signup" className="underline text-primary">{t("websiteFaqCostContact")}</Link> {t("websiteFaqCostTail")}</> : t(`websiteFaq${k}A`)}
-            </AccordionContent>
-          </AccordionItem>)}
-        </Accordion>
-      </section>
-
-      <WebsiteClosing />
-    </div>
-  );
+   return <div className="daylight-landing" data-testid="public-landing">
+ <section aria-labelledby="hero-title" className="daylight-hero website-hero"><svg className="daylight-sunburst" viewBox="-1500 -1500 3000 3000" aria-hidden="true">{Array.from({length:23},(_,i)=>{const angle=(7.5+i*7.5)*Math.PI/180;return <line key={i} x1={240*Math.cos(angle)} y1={-240*Math.sin(angle)} x2={1500*Math.cos(angle)} y2={-1500*Math.sin(angle)}/>;})}</svg><div className="daylight-container daylight-hero-grid"><div className="daylight-hero-copy"><h1 id="hero-title">{t('websiteHeroHeading')}</h1><p>{t('website.v2.hero.lead')}</p></div><HeroMedia mode={siteConfig.heroMedia}/><div className="daylight-hero-actions"><LandingActions/><p className="daylight-hero-note"><ShieldCheck aria-hidden="true"/>{t('websiteHeroNote')}</p></div></div></section>
+ <section id="core-services" aria-labelledby="core-title" className="daylight-band daylight-surface daylight-core"><div className="daylight-container daylight-core-layout"><h2 id="core-title">{t('website.v2.core')}</h2><div className="daylight-services">{services.map(([Icon,key],i)=><Link key={key} to={i===2?'/care/recovery':i===3?'/care/coming-home':i===5?'/directory':i===7?'/cost':'/care/everyday'} className="daylight-service"><span className={`daylight-icon tint-${['path-soft','sunrise-soft','path-faint','surface-sunk'][i%4]}`}><Icon aria-hidden="true"/></span><strong>{t(key)}</strong></Link>)}</div></div></section>
+ <section id="how-it-works" aria-labelledby="how-title" className="daylight-band daylight-path"><div className="daylight-container daylight-how-layout"><div><h2 id="how-title">{t('websiteHow')}</h2><p>{t('websiteHowIntro')}</p><Link to="/how-it-works" className="daylight-quiet">{t('website.v2.how.link')}<ArrowRight aria-hidden="true"/></Link></div><ol className="daylight-steps">{([['websiteConnect','website.v2.connect.body'],['websitePlan','websitePlanBody'],['websiteForward','websiteForwardBody']] as const).map(([title,body],i)=><li key={title}><span className="daylight-step-number">{i+1}</span><h3>{t(title)}</h3><p>{t(body)}</p></li>)}</ol></div></section>
+ {siteConfig.showFootprint&&siteConfig.confirmedFootprint&&<section aria-labelledby="footprint-title" className="daylight-band daylight-canvas"><div className="daylight-container"><h2 id="footprint-title">{t('website.v2.footprint')}</h2><p>{t('website.v2.footprint.body')}</p><dl><dt>{t('website.v2.footprint.clinics')}</dt><dd>{siteConfig.confirmedFootprint.clinics}</dd><dt>{t('website.v2.footprint.services')}</dt><dd>{siteConfig.confirmedFootprint.services}</dd></dl><p>{t('website.v2.footprint.languages')}</p></div></section>}
+ <section id="find-your-fit" aria-labelledby="fit-title" className="daylight-band daylight-sunrise"><div className="daylight-container daylight-fit-layout"><div><h2 id="fit-title">{t('websiteFit')}</h2><div aria-hidden="true" className="daylight-photo"><Image/><span>{t('website.v2.photo')}</span></div></div><div className="daylight-fit-tiles">{([[Brain,'websiteAnyone','websiteAnyoneBody'],[Sunrise,'websiteComingHome','websiteComingHomeBody'],[HeartHandshake,'websiteLovedOnes','websiteLovedOnesBody']] as const).map(([Icon,title,body],i)=><article className="daylight-tile" key={title}><span className="daylight-icon tint-path-soft"><Icon aria-hidden="true"/></span><div><h3>{t(title)}</h3><p>{t(body)}</p><Link className="daylight-quiet" to={i===2?'/referral':'/start/signup'}>{t(i===2?'websiteHelp':'websiteStart')}<ArrowRight aria-hidden="true"/></Link></div></article>)}</div></div></section>
+ <JourneyDeck/>
+ <section id="what" aria-labelledby="what-title" className="daylight-band daylight-sunk"><span id="what-you-get" className="daylight-anchor"/><div className="daylight-container"><h2 id="what-title">{t('websiteWhat')}</h2><p>{t('websiteWhatIntro')}</p><div className="daylight-benefits">{benefits.map(([Icon,title,body])=><article className="daylight-tile" key={title}><span className="daylight-icon tint-path-faint"><Icon aria-hidden="true"/></span><h3>{t(title)}</h3><p>{t(body)}</p></article>)}</div></div></section>
+ <ConnectedCare/>
+ <section id="landing-about" aria-labelledby="about-title" className="daylight-band daylight-canvas"><div className="daylight-container daylight-about-layout"><div><h2 id="about-title">{t('websiteAbout')}</h2><p>{t('websiteMission')}</p><Link className="daylight-quiet" to="/about">{t('websiteAboutNav')}<ArrowRight aria-hidden="true"/></Link></div><ul className="daylight-highlights">{([[Heart,'websiteHighlightCare'],[Building2,'websiteHighlightWalls'],[Sunrise,'websiteHighlightDays']] as const).map(([Icon,key])=><li key={key}><Icon aria-hidden="true"/><strong>{t(key)}</strong></li>)}</ul></div></section>
+ <section id="landing-team" aria-labelledby="team-title" className="daylight-band daylight-sunrise"><div className="daylight-container"><h2 id="team-title">{t('websiteTeam')}</h2><p className="daylight-lead">{t('websiteTeamIntro')}</p><div className="daylight-team-grid">{roles.map(([group,title,body])=><article className="daylight-tile" key={title}><div className="daylight-avatar" aria-hidden="true"><User/></div><p className="daylight-group">{t(group)}</p><h3>{t(title)}</h3><p>{t(body)}</p></article>)}</div><Link className="daylight-quiet" to="/team">{t('websiteTeam')}<ArrowRight aria-hidden="true"/></Link></div></section>
+ <section id="landing-partners" aria-labelledby="partners-title" className="daylight-band daylight-surface"><div className="daylight-container daylight-partner-grid"><article className="daylight-partner tint-path-soft"><h2 id="partners-title">{t('websitePartnersHeading')}</h2><p>{t('websitePartnersBody')}</p><Button asChild variant="outline" className="website-secondary"><Link to="/referral">{t('websiteReferral')}<ArrowRight aria-hidden="true"/></Link></Button></article><article className="daylight-partner tint-surface-sunk"><h2 id="join-title">{t('website.v2.join.title')}</h2><p>{t('website.v2.join.body')}</p><Button asChild variant="outline" className="website-secondary"><Link to="/careers">{t('website.v2.team.promo.cta')}<ArrowRight aria-hidden="true"/></Link></Button></article></div></section>
+ <section id="faq" aria-labelledby="faq-title" className="daylight-band daylight-sunk"><div className="daylight-container daylight-faq"><div className="daylight-privacy" data-testid="website-privacy"><span className="daylight-icon tint-path-soft"><ShieldCheck aria-hidden="true"/></span><p>{t('websitePrivacyLine')}</p></div><h2 id="faq-title">{t('websiteFaq')}</h2><Accordion type="multiple">{(['Cost','Lang','Video','Start','Help','Crisis'] as const).map(k=><AccordionItem key={k} value={k}><AccordionTrigger>{t(`websiteFaq${k}Q`)}</AccordionTrigger><AccordionContent>{k==='Cost'?<>{t('websiteFaqCostA')} <Link to="/contact">{t('websiteFaqCostContact')}</Link> {t('websiteFaqCostTail')}</>:t(`websiteFaq${k}A`)}</AccordionContent></AccordionItem>)}</Accordion><Link className="daylight-quiet" to="/faq">{t('website.v2.faq.all')}<ArrowRight aria-hidden="true"/></Link></div></section>
+ <ReadyBand/><AskAdel/>
+ </div>;
 }
