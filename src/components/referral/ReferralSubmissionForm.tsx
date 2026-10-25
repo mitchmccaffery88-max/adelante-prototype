@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { CheckCircle2, Circle, Lock, Send, ShieldCheck, ArrowLeft, ArrowRight } from "lucide-react";
 import {WebsitePage} from '@/components/website/WebsitePage';
+import type {WebsiteKey} from '@/lib/websiteMenus';
 import { useI18n } from "@/lib/i18n";
 import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
 import { EMPTY_BENEFITS, benefitsAnswers, type BenefitsFormState } from "@/lib/intakeBenefits";
@@ -442,7 +443,7 @@ export function ReferralSubmissionForm({
               value={form.referralSource}
               onValueChange={(v) => setForm({ ...form, referralSource: v as ReferralSource })}
             >
-              <SelectTrigger aria-label="Referral source">
+              <SelectTrigger aria-label={t('website.v2.referral.label.source')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -519,7 +520,7 @@ export function ReferralSubmissionForm({
                 variant={form.justiceInvolved === o.v ? "default" : "outline"}
                 onClick={() => setForm({ ...form, justiceInvolved: o.v })}
               >
-                {o.label}
+                {screenLang==='es'?({yes:'Sí',no:'No',unsure:'No estoy seguro'}[o.v]):o.label}
               </Button>
             ))}
           </div>
@@ -545,7 +546,7 @@ export function ReferralSubmissionForm({
         <div className="rounded-lg border p-4 space-y-3" data-testid="referral-optional-details">
           <div>
             <Label className="text-sm">{SCREEN_COPY["ui.da3042ae0e36"][screenLang]}</Label>
-            <p className="text-xs text-muted-foreground">Leave blank if you don&apos;t know — our team will follow up. (Draft — pending clinical sign-off)</p>
+            <p className="text-xs text-muted-foreground">{t('website.v2.referral.optional')}</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Preferred language">
@@ -560,7 +561,7 @@ export function ReferralSubmissionForm({
             <Field label="Prior behavioral health records">
               <div className="flex flex-wrap gap-2">
                 {([{ v: "available", l: "Available" }, { v: "none_known", l: "None known" }] as const).map((o) => (
-                  <Button key={o.v} type="button" size="sm" variant={form.priorRecords === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, priorRecords: o.v })}>{o.l}</Button>
+                  <Button key={o.v} type="button" size="sm" variant={form.priorRecords === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, priorRecords: o.v })}>{screenLang==='es'?(o.v==='available'?'Disponibles':'No se conocen'):o.l}</Button>
                 ))}
               </div>
             </Field>
@@ -568,7 +569,7 @@ export function ReferralSubmissionForm({
               <Field label="Pending charges">
                 <div className="flex flex-wrap gap-2">
                   {([{ v: "yes", l: "Yes" }, { v: "no", l: "No" }, { v: "unknown", l: "Unknown" }] as const).map((o) => (
-                    <Button key={o.v} type="button" size="sm" variant={form.pendingCharges === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, pendingCharges: o.v })}>{o.l}</Button>
+                    <Button key={o.v} type="button" size="sm" variant={form.pendingCharges === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, pendingCharges: o.v })}>{screenLang==='es'?({yes:'Sí',no:'No',unknown:'No lo sé'}[o.v]):o.l}</Button>
                   ))}
                 </div>
               </Field>
@@ -641,9 +642,12 @@ export function ReferralSubmissionForm({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   const id=useId();
+  const {t}=useI18n();
+  const labels:Record<string,string>={'Your name *':'name','Agency / organization':'agency','Email':'email','Phone':'phone','Phone (skipped)':'skipped','Referral source':'source','First name *':'first','Last name *':'last','Date of birth (or Medi-Cal ID below) *':'birth','Release date (Actual or Expected)':'release','County of release':'county','Preferred language':'language','Address':'address','Emergency contact':'emergency','Prior behavioral health records':'records','Pending charges':'charges'};
+  const key=labels[label];
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm">{label}</Label>
+      <Label htmlFor={id} className="text-sm">{key?t(`website.v2.referral.label.${key}` as WebsiteKey):label}</Label>{label.endsWith('*')&&<span className="public-required"> · {t('website.v2.form.required')}</span>}
       {isValidElement(children)?cloneElement(children as ReactElement<{id?:string}>,{id}):children}
     </div>
   );
