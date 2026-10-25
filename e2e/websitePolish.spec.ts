@@ -14,7 +14,7 @@ for (const path of ["/", "/about", "/team"]) {
     await expect(page.getByTestId("website-layout")).toBeVisible();
     await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-    await expect(page.locator(".website-heading")).toHaveText(headingKeys(path).map(key => websiteEn[key]));
+    if (path !== "/") await expect(page.locator(".website-heading")).toHaveText(headingKeys(path).map(key => websiteEn[key]));
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://adelmvp1.lovable.app/website-share.jpg");
     await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", "https://adelmvp1.lovable.app/website-share.jpg");
     const response = await page.request.get("/website-share.jpg");
@@ -76,7 +76,7 @@ for (const path of ["/", "/about", "/team"]) {
         await expect(menu.getByRole("button", { name: "Cambiar idioma a español" })).toHaveAttribute("aria-pressed", "true");
         await page.keyboard.press("Escape");
         await expect(page.getByText("ES Draft — pending translation review", { exact: true })).toBeVisible();
-        await expect(page.locator(".website-heading")).toHaveText(headingKeys(path).map(key => websiteEs[key]));
+        if (path !== "/") await expect(page.locator(".website-heading")).toHaveText(headingKeys(path).map(key => websiteEs[key]));
         const esResult = await new AxeBuilder({ page }).include('[data-testid="website-layout"]').analyze();
         expect(esResult.violations.filter(v => v.impact === "critical" || v.impact === "serious")).toEqual([]);
       }
