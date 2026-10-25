@@ -29,6 +29,8 @@ export function Landing(){const {t}=useI18n();const navigate=useNavigate();
     };
     redirectLegacy();
     window.addEventListener("hashchange", redirectLegacy);
+    return () => window.removeEventListener("hashchange", redirectLegacy);
+  }, [navigate]);
    return <div className="daylight-landing" data-testid="public-landing">
  <section aria-labelledby="hero-title" className="daylight-hero website-hero"><svg className="daylight-sunburst" viewBox="-1500 -1500 3000 3000" aria-hidden="true">{Array.from({length:23},(_,i)=>{const angle=(7.5+i*7.5)*Math.PI/180;return <line key={i} x1={240*Math.cos(angle)} y1={-240*Math.sin(angle)} x2={1500*Math.cos(angle)} y2={-1500*Math.sin(angle)}/>;})}</svg><div className="daylight-container daylight-hero-grid"><div className="daylight-hero-copy"><h1 id="hero-title">{t('websiteHeroHeading')}</h1><p>{t('website.v2.hero.lead')}</p></div><HeroMedia mode={siteConfig.heroMedia}/><div className="daylight-hero-actions"><LandingActions/><p className="daylight-hero-note"><ShieldCheck aria-hidden="true"/>{t('websiteHeroNote')}</p></div></div></section>
  <section id="core-services" aria-labelledby="core-title" className="daylight-band daylight-surface daylight-core"><div className="daylight-container daylight-core-layout"><h2 id="core-title">{t('website.v2.core')}</h2><div className="daylight-services">{services.map(([Icon,key],i)=><Link key={key} to={i===2?'/care/recovery':i===3?'/care/coming-home':i===5?'/directory':i===7?'/cost':'/care/everyday'} className="daylight-service"><span className={`daylight-icon tint-${['path-soft','sunrise-soft','path-faint','surface-sunk'][i%4]}`}><Icon aria-hidden="true"/></span><strong>{t(key)}</strong></Link>)}</div></div></section>

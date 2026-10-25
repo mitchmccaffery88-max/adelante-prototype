@@ -261,3 +261,6 @@ export const SIMULATED_SURFACE_LABELS: Partial<Record<FeatureId, string>> = {
 export function simulatedSurfaceLabel(id: FeatureId): string {
   return SIMULATED_SURFACE_LABELS[id] ?? SIMULATED_LABEL;
 }
+
+/** Public scripted information only; separate from clinical/admin integration switches. */
+export const WEBSITE_PUBLIC_FEATURES = { askAdelPublic: { simulated: true, description: 'Scripted public answers; no model, message retention, identifiers or clinical mutations.' } } as const;
