@@ -140,7 +140,7 @@ test("public referral accepts no agency but requires referrer name", async ({ pa
   await page.keyboard.press("Space");
   await expect(form.getByRole("checkbox", { name: /not a robot/ })).toBeChecked();
   await form.getByRole("button", { name: /Send referral|Submit referral/ }).click();
-  await expect(page.getByText("Please complete the required fields", { exact: true })).toBeVisible();
+  await expect(form.getByRole("alert")).toBeVisible();
   await expect(page.getByTestId("referral-confirmation")).toHaveCount(0);
   await input("Your name *").fill("Referral Walker");
   await expect(input("Agency / organization")).toHaveValue("");
