@@ -57,6 +57,6 @@ export function installMagnetic(root: Document = document): () => void {
   const r = base;
   el.style.translate = `${magneticOffset(event.clientX, r.left + r.width / 2)}px ${magneticOffset(event.clientY, r.top + r.height / 2)}px`;
  };
- root.addEventListener("pointermove", move, { passive: true }); root.addEventListener("pointerleave", reset);
- return () => { root.removeEventListener("pointermove", move); root.removeEventListener("pointerleave", reset); reset(); };
+ root.addEventListener("pointermove", move, { passive: true }); window.addEventListener("scroll", reset, { passive: true });
+ return () => { root.removeEventListener("pointermove", move); window.removeEventListener("scroll", reset); reset(); };
 }

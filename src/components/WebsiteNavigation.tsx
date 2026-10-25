@@ -15,7 +15,7 @@ export function WebsiteLanguageToggle() {
 }
 export function WebsiteSignIn({ onClick }: { onClick?: () => void }) {
  const { t } = useI18n();
- return <Button asChild variant="outline" className="website-secondary"><Link to="/auth" onClick={onClick}><User aria-hidden="true" />{t("website.v2.signin")}</Link></Button>;
+ return <Button asChild variant="outline" className="website-secondary"><Link to="/auth" onClick={onClick} data-magnetic=""><User aria-hidden="true" />{t("website.v2.signin")}</Link></Button>;
 }
 function CareerLink({ onClick }: { onClick?: () => void }) {
  const { t } = useI18n();
