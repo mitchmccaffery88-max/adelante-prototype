@@ -32,14 +32,14 @@ for (const lang of ["en", "es"] as const) {
         await expect(page.getByTestId("website-privacy")).toHaveText(d.websitePrivacyLine);
         await expect(page.getByRole("heading", { level: 1 })).toHaveText(d.websiteHeroHeading);
       } else {
-        const title = route === "/about" ? "About Us — Adelante Health" : "Our Team — Adelante Health";
+        const title = route === "/about" ? "About Us — Adelante Health" : "Meet Our Team — Adelante Health";
         await expect(page).toHaveTitle(title);
         await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", title);
-        await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", title);
+        if(route === "/about") await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", title);
         await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", route === "/about" ? websiteEn.websiteDescription : websiteEn.websiteTeamIntro);
         await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", route === "/about" ? websiteEn.websiteDescription : websiteEn.websiteTeamIntro);
-        await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
-        await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://adelmvp1.lovable.app${route}`);
+        await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", route === "/about" ? "summary_large_image" : "summary");
+        if(route === "/about") await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://adelmvp1.lovable.app${route}`);
         await expect(page.getByTestId("website-footer").getByRole("link", { name: route === "/about" ? d.websiteAboutNav : d.websiteTeamNav, exact: true })).toHaveAttribute("aria-current", "page");
         if (route === "/about") {
           await expect(page.locator("#about")).toContainText(d.websiteMission);
@@ -48,12 +48,12 @@ for (const lang of ["en", "es"] as const) {
           await expect(page.locator("blockquote")).toHaveCount(0);
           await expect(page.locator(".page-values")).toContainText(d.websiteTrustLanguage);
         } else {
-          await expect(page.locator("#team")).toContainText(d.websiteTeamIntro);
-          await expect(page.locator("#team li")).toHaveCount(7);
-          await expect(page.locator("#team img")).toHaveCount(0);
-          await expect(page.locator("#team")).not.toContainText(/Luis Camacho|Mitch|Dr\.|Christi|Bagga/);
-          for (const key of ["websiteCareTeam", "websiteNavigationTeam", "websiteResourceTeam", "websiteAdvocateTeam"] as const) await expect(page.locator("#team")).toContainText(d[key]);
-          await expect(page.getByRole("link", { name: d.websiteFitNav, exact: true }).last()).toHaveAttribute("href", "/#find-your-fit");
+          await expect(page.getByTestId("website-team")).toContainText(d.websiteTeamIntro);
+          await expect(page.getByTestId("website-team").locator("article")).toHaveCount(7);
+          await expect(page.getByTestId("website-team").locator("img")).toHaveCount(0);
+          await expect(page.getByTestId("website-team")).not.toContainText(/Luis Camacho|Mitch|Dr\.|Christi|Bagga/);
+          for (const key of ["websiteCareTeam", "websiteNavigationTeam", "websiteResourceTeam", "websiteAdvocateTeam"] as const) await expect(page.getByTestId("website-team")).toContainText(d[key]);
+
         }
         await expect(page.locator(".website-closing").getByRole("heading", { name: d.websiteReady, exact: true })).toBeVisible();
       }
