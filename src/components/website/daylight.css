@@ -68,7 +68,7 @@
 .hero-offscreen .daylight-ray-pulses line,.hero-offscreen .daylight-rings circle { animation-play-state:paused; }
 @keyframes daylight-pulse { from { stroke-dashoffset:0; } to { stroke-dashoffset:-2080; } }
 @keyframes daylight-ring { from { transform:scale(.5); opacity:.6; } to { transform:scale(2.6); opacity:0; } }
-@media (max-width:767px) { .daylight-sunburst-clip { -webkit-mask-image:radial-gradient(ellipse 58% 210px at 50% var(--hero-media-center,60%),#000 55%,transparent 100%); mask-image:radial-gradient(ellipse 58% 210px at 50% var(--hero-media-center,60%),#000 55%,transparent 100%); } }
+@media (max-width:767px) { .daylight-sunburst-clip .daylight-sunburst { top:calc(var(--hero-media-center,60%) - 900px); } .daylight-sunburst-clip { -webkit-mask-image:radial-gradient(ellipse 58% 210px at 50% var(--hero-media-center,60%),#000 55%,transparent 100%); mask-image:radial-gradient(ellipse 58% 210px at 50% var(--hero-media-center,60%),#000 55%,transparent 100%); } }
 
 /* 3. Hero entrance: plays once in CSS, so content ends visible without JS */
 .daylight-hero-copy h1,.daylight-hero-copy p,.daylight-hero-actions .daylight-actions,.daylight-hero-note { animation:daylight-up .4s ease-out both; }
