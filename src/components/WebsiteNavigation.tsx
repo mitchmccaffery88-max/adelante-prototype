@@ -40,6 +40,7 @@ export function WebsiteNavigation({ mobile = false }: { mobile?: boolean }) {
  const [open, setOpen] = useState<string | null>(null);
  const [sheetOpen, setSheetOpen] = useState(false);
  const navRef = useRef<HTMLElement>(null);
+ const sheetRef = useRef<HTMLDivElement>(null);
  const underline = useRef<HTMLSpanElement>(null);
  const triggers = useRef(new Map<string, HTMLButtonElement>());
  const location = useRouterState({ select: s => s.location.href });
@@ -67,10 +68,19 @@ export function WebsiteNavigation({ mobile = false }: { mobile?: boolean }) {
   const resize = () => { if (window.innerWidth >= 1024) setSheetOpen(false); };
   window.addEventListener("resize", resize); return () => window.removeEventListener("resize",resize);
  },[mobile]);
+ useEffect(() => {
+  if (!sheetOpen) return;
+  const crisis = document.querySelector(".website-crisis");
+  const measure = () => sheetRef.current?.style.setProperty("--website-crisis-height", `${crisis?.getBoundingClientRect().height ?? 96}px`);
+  const observer = new ResizeObserver(measure);
+  if (crisis) observer.observe(crisis);
+  measure();
+  return () => observer.disconnect();
+ },[sheetOpen]);
  if (mobile) return <div className="website-phone-nav">
   <Dialog.Root open={sheetOpen} onOpenChange={setSheetOpen}>
    <Dialog.Trigger asChild><Button variant="ghost" size="icon" data-early-tap="menu" className="website-menu-button" aria-label={t("website.v2.open")} aria-expanded={sheetOpen}><Menu aria-hidden="true" /></Button></Dialog.Trigger>
-   <Dialog.Portal><Dialog.Overlay className="website-sheet-scrim" /><Dialog.Content id="website-mobile-nav" className="website-menu-sheet" aria-describedby={undefined}>
+   <Dialog.Portal><Dialog.Overlay className="website-sheet-scrim" /><Dialog.Content ref={sheetRef} id="website-mobile-nav" className="website-menu-sheet" aria-describedby={undefined}>
     <div className="website-sheet-header"><Dialog.Title>{t("website.v2.menu")}</Dialog.Title><Dialog.Close asChild><Button variant="ghost" size="icon" className="website-menu-button" aria-label={t("website.v2.close")}><X aria-hidden="true" /></Button></Dialog.Close></div>
     <nav className="website-sheet-scroll" aria-label={t("websiteNavigation")}>{WEBSITE_MENUS.map(menu => <div key={menu.id} className="website-accordion">
       <Button variant="ghost" aria-expanded={open === menu.id} aria-controls={`website-phone-${menu.id}`} onClick={() => setOpen(open === menu.id ? null : menu.id)}>{t(menu.title)}<ChevronDown aria-hidden="true" /></Button>

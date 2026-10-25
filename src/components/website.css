@@ -44,8 +44,8 @@
 .website-nav-underline { position:absolute; height:3px; bottom:0; left:0; width:0; background:var(--path); transition:left 250ms ease-out,width 250ms ease-out; pointer-events:none; }
 .website-nav-scrim { position:fixed; inset:var(--website-header-height) 0 0; z-index:-1; background:color-mix(in oklab,var(--ink) 28%,transparent); }
 .website-mega-panel { position:absolute; left:0; right:0; top:100%; background:var(--surface); border-top:1px solid var(--line); box-shadow:0 16px 48px -12px color-mix(in oklab,var(--ink) 28%,transparent); max-height:calc(100dvh - var(--website-header-height) - var(--website-crisis-height) - var(--website-demo-height)); overflow-y:auto; }
-.website-mega-panel:not([hidden]) { animation:website-drop 150ms ease-out; }
-@keyframes website-drop { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+.website-mega-panel:not([hidden]) { opacity:1; transform:translateY(0); transition:opacity 150ms ease-out,transform 150ms ease-out; }
+@starting-style { .website-mega-panel:not([hidden]) { opacity:0; transform:translateY(-8px); } }
 .website-mega-inner { max-width:1120px; margin:auto; padding:40px 0 44px; display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:28px; }
 .website-menu-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
 .website-mega-inner h3 { font-size:18px; line-height:24px; font-weight:700; padding-bottom:12px; border-bottom:1px solid var(--line); margin-bottom:10px; }
