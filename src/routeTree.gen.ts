@@ -34,6 +34,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as BillingCalaimCodesRouteImport } from './routes/billing-calaim-codes'
 import { Route as CarePartnersRouteImport } from './routes/care-partners'
+import { Route as CareersRouteImport } from './routes/careers'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
 import { Route as CaseloadReviewRouteImport } from './routes/caseload-review'
 import { Route as CheckinRouteImport } from './routes/checkin'
@@ -44,8 +45,10 @@ import { Route as ClinicianCredentialsRouteImport } from './routes/clinician-cre
 import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as ConsentAuditRouteImport } from './routes/consent-audit'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ContentLibraryRouteImport } from './routes/content-library'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
+import { Route as CostRouteImport } from './routes/cost'
 import { Route as CountyReportingRouteImport } from './routes/county-reporting'
 import { Route as CoverageReleaseRouteImport } from './routes/coverage-release'
 import { Route as CravingRouteImport } from './routes/craving'
@@ -58,9 +61,11 @@ import { Route as DmcOdsReadinessRouteImport } from './routes/dmc-ods-readiness'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as EligibilityWorklistRouteImport } from './routes/eligibility-worklist'
 import { Route as EscalationsRouteImport } from './routes/escalations'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as GroupAuditRouteImport } from './routes/group-audit'
 import { Route as GroupSessionsRouteImport } from './routes/group-sessions'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as JourneysRouteImport } from './routes/journeys'
@@ -74,10 +79,13 @@ import { Route as NaloxoneRouteImport } from './routes/naloxone'
 import { Route as NextStepsRouteImport } from './routes/next-steps'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as NurseRouteImport } from './routes/nurse'
+import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as PeerRouteImport } from './routes/peer'
+import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
 import { Route as PreReleaseImportRouteImport } from './routes/pre-release-import'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProviderReferenceRouteImport } from './routes/provider-reference'
 import { Route as QualityComplianceRouteImport } from './routes/quality-compliance'
@@ -114,6 +122,10 @@ import { Route as AdvocateSupportForMyselfRouteImport } from './routes/advocate.
 import { Route as AgenticIndexRouteImport } from './routes/agentic.index'
 import { Route as ApiAdelChatRouteImport } from './routes/api/adel-chat'
 import { Route as ApiAdelRecapRouteImport } from './routes/api/adel-recap'
+import { Route as CareAdvocatesRouteImport } from './routes/care.advocates'
+import { Route as CareComingHomeRouteImport } from './routes/care.coming-home'
+import { Route as CareEverydayRouteImport } from './routes/care.everyday'
+import { Route as CareRecoveryRouteImport } from './routes/care.recovery'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
 import { Route as RescreenKeyRouteImport } from './routes/rescreen.$key'
 import { Route as ResourcesIndexRouteImport } from './routes/resources.index'
@@ -257,6 +269,11 @@ const CarePartnersRoute = CarePartnersRouteImport.update({
   path: '/care-partners',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CareersRoute = CareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CaseManagerRoute = CaseManagerRouteImport.update({
   id: '/case-manager',
   path: '/case-manager',
@@ -307,6 +324,11 @@ const ConsentAuditRoute = ConsentAuditRouteImport.update({
   path: '/consent-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContentLibraryRoute = ContentLibraryRouteImport.update({
   id: '/content-library',
   path: '/content-library',
@@ -315,6 +337,11 @@ const ContentLibraryRoute = ContentLibraryRouteImport.update({
 const CosignInboxRoute = CosignInboxRouteImport.update({
   id: '/cosign-inbox',
   path: '/cosign-inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CostRoute = CostRouteImport.update({
+  id: '/cost',
+  path: '/cost',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CountyReportingRoute = CountyReportingRouteImport.update({
@@ -377,6 +404,11 @@ const EscalationsRoute = EscalationsRouteImport.update({
   path: '/escalations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GroupAuditRoute = GroupAuditRouteImport.update({
   id: '/group-audit',
   path: '/group-audit',
@@ -390,6 +422,11 @@ const GroupSessionsRoute = GroupSessionsRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxRoute = InboxRouteImport.update({
@@ -457,6 +494,11 @@ const NurseRoute = NurseRouteImport.update({
   path: '/nurse',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PatientRoute = PatientRouteImport.update({
   id: '/patient',
   path: '/patient',
@@ -467,6 +509,11 @@ const PeerRoute = PeerRouteImport.update({
   path: '/peer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlatformRoute = PlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PreReleaseRoute = PreReleaseRouteImport.update({
   id: '/pre-release',
   path: '/pre-release',
@@ -475,6 +522,11 @@ const PreReleaseRoute = PreReleaseRouteImport.update({
 const PreReleaseImportRoute = PreReleaseImportRouteImport.update({
   id: '/pre-release-import',
   path: '/pre-release-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -658,6 +710,26 @@ const ApiAdelRecapRoute = ApiAdelRecapRouteImport.update({
   path: '/api/adel-recap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CareAdvocatesRoute = CareAdvocatesRouteImport.update({
+  id: '/care/advocates',
+  path: '/care/advocates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareComingHomeRoute = CareComingHomeRouteImport.update({
+  id: '/care/coming-home',
+  path: '/care/coming-home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareEverydayRoute = CareEverydayRouteImport.update({
+  id: '/care/everyday',
+  path: '/care/everyday',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareRecoveryRoute = CareRecoveryRouteImport.update({
+  id: '/care/recovery',
+  path: '/care/recovery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
   id: '/record/$patientId',
   path: '/record/$patientId',
@@ -775,6 +847,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
   '/care-partners': typeof CarePartnersRoute
+  '/careers': typeof CareersRoute
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
@@ -785,8 +858,10 @@ export interface FileRoutesByFullPath {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
+  '/contact': typeof ContactRoute
   '/content-library': typeof ContentLibraryRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/cost': typeof CostRoute
   '/county-reporting': typeof CountyReportingRoute
   '/coverage-release': typeof CoverageReleaseRoute
   '/craving': typeof CravingRoute
@@ -799,9 +874,11 @@ export interface FileRoutesByFullPath {
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
   '/escalations': typeof EscalationsRoute
+  '/faq': typeof FaqRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/journeys': typeof JourneysRoute
@@ -815,10 +892,13 @@ export interface FileRoutesByFullPath {
   '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
   '/nurse': typeof NurseRoute
+  '/partners': typeof PartnersRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
+  '/platform': typeof PlatformRoute
   '/pre-release': typeof PreReleaseRoute
   '/pre-release-import': typeof PreReleaseImportRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/provider-reference': typeof ProviderReferenceRoute
   '/quality-compliance': typeof QualityComplianceRoute
@@ -853,6 +933,10 @@ export interface FileRoutesByFullPath {
   '/advocate/support-for-myself': typeof AdvocateSupportForMyselfRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
+  '/care/advocates': typeof CareAdvocatesRoute
+  '/care/coming-home': typeof CareComingHomeRoute
+  '/care/everyday': typeof CareEverydayRoute
+  '/care/recovery': typeof CareRecoveryRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/rescreen/$key': typeof RescreenKeyRoute
   '/resources/saved': typeof ResourcesSavedRoute
@@ -898,6 +982,7 @@ export interface FileRoutesByTo {
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
   '/care-partners': typeof CarePartnersRoute
+  '/careers': typeof CareersRoute
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
@@ -908,8 +993,10 @@ export interface FileRoutesByTo {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
+  '/contact': typeof ContactRoute
   '/content-library': typeof ContentLibraryRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/cost': typeof CostRoute
   '/county-reporting': typeof CountyReportingRoute
   '/coverage-release': typeof CoverageReleaseRoute
   '/craving': typeof CravingRoute
@@ -922,9 +1009,11 @@ export interface FileRoutesByTo {
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
   '/escalations': typeof EscalationsRoute
+  '/faq': typeof FaqRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/journeys': typeof JourneysRoute
@@ -938,10 +1027,13 @@ export interface FileRoutesByTo {
   '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
   '/nurse': typeof NurseRoute
+  '/partners': typeof PartnersRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
+  '/platform': typeof PlatformRoute
   '/pre-release': typeof PreReleaseRoute
   '/pre-release-import': typeof PreReleaseImportRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/provider-reference': typeof ProviderReferenceRoute
   '/quality-compliance': typeof QualityComplianceRoute
@@ -973,6 +1065,10 @@ export interface FileRoutesByTo {
   '/advocate/support-for-myself': typeof AdvocateSupportForMyselfRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
+  '/care/advocates': typeof CareAdvocatesRoute
+  '/care/coming-home': typeof CareComingHomeRoute
+  '/care/everyday': typeof CareEverydayRoute
+  '/care/recovery': typeof CareRecoveryRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/rescreen/$key': typeof RescreenKeyRoute
   '/resources/saved': typeof ResourcesSavedRoute
@@ -1020,6 +1116,7 @@ export interface FileRoutesById {
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
   '/care-partners': typeof CarePartnersRoute
+  '/careers': typeof CareersRoute
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
@@ -1030,8 +1127,10 @@ export interface FileRoutesById {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
+  '/contact': typeof ContactRoute
   '/content-library': typeof ContentLibraryRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/cost': typeof CostRoute
   '/county-reporting': typeof CountyReportingRoute
   '/coverage-release': typeof CoverageReleaseRoute
   '/craving': typeof CravingRoute
@@ -1044,9 +1143,11 @@ export interface FileRoutesById {
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
   '/escalations': typeof EscalationsRoute
+  '/faq': typeof FaqRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/journeys': typeof JourneysRoute
@@ -1060,10 +1161,13 @@ export interface FileRoutesById {
   '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
   '/nurse': typeof NurseRoute
+  '/partners': typeof PartnersRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
+  '/platform': typeof PlatformRoute
   '/pre-release': typeof PreReleaseRoute
   '/pre-release-import': typeof PreReleaseImportRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/provider-reference': typeof ProviderReferenceRoute
   '/quality-compliance': typeof QualityComplianceRoute
@@ -1098,6 +1202,10 @@ export interface FileRoutesById {
   '/advocate/support-for-myself': typeof AdvocateSupportForMyselfRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
+  '/care/advocates': typeof CareAdvocatesRoute
+  '/care/coming-home': typeof CareComingHomeRoute
+  '/care/everyday': typeof CareEverydayRoute
+  '/care/recovery': typeof CareRecoveryRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/rescreen/$key': typeof RescreenKeyRoute
   '/resources/saved': typeof ResourcesSavedRoute
@@ -1146,6 +1254,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/billing-calaim-codes'
     | '/care-partners'
+    | '/careers'
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
@@ -1156,8 +1265,10 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/consent-audit'
+    | '/contact'
     | '/content-library'
     | '/cosign-inbox'
+    | '/cost'
     | '/county-reporting'
     | '/coverage-release'
     | '/craving'
@@ -1170,9 +1281,11 @@ export interface FileRouteTypes {
     | '/documents'
     | '/eligibility-worklist'
     | '/escalations'
+    | '/faq'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
+    | '/how-it-works'
     | '/inbox'
     | '/intake'
     | '/journeys'
@@ -1186,10 +1299,13 @@ export interface FileRouteTypes {
     | '/next-steps'
     | '/notes-queue'
     | '/nurse'
+    | '/partners'
     | '/patient'
     | '/peer'
+    | '/platform'
     | '/pre-release'
     | '/pre-release-import'
+    | '/privacy'
     | '/profile'
     | '/provider-reference'
     | '/quality-compliance'
@@ -1224,6 +1340,10 @@ export interface FileRouteTypes {
     | '/advocate/support-for-myself'
     | '/api/adel-chat'
     | '/api/adel-recap'
+    | '/care/advocates'
+    | '/care/coming-home'
+    | '/care/everyday'
+    | '/care/recovery'
     | '/record/$patientId'
     | '/rescreen/$key'
     | '/resources/saved'
@@ -1269,6 +1389,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/billing-calaim-codes'
     | '/care-partners'
+    | '/careers'
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
@@ -1279,8 +1400,10 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/consent-audit'
+    | '/contact'
     | '/content-library'
     | '/cosign-inbox'
+    | '/cost'
     | '/county-reporting'
     | '/coverage-release'
     | '/craving'
@@ -1293,9 +1416,11 @@ export interface FileRouteTypes {
     | '/documents'
     | '/eligibility-worklist'
     | '/escalations'
+    | '/faq'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
+    | '/how-it-works'
     | '/inbox'
     | '/intake'
     | '/journeys'
@@ -1309,10 +1434,13 @@ export interface FileRouteTypes {
     | '/next-steps'
     | '/notes-queue'
     | '/nurse'
+    | '/partners'
     | '/patient'
     | '/peer'
+    | '/platform'
     | '/pre-release'
     | '/pre-release-import'
+    | '/privacy'
     | '/profile'
     | '/provider-reference'
     | '/quality-compliance'
@@ -1344,6 +1472,10 @@ export interface FileRouteTypes {
     | '/advocate/support-for-myself'
     | '/api/adel-chat'
     | '/api/adel-recap'
+    | '/care/advocates'
+    | '/care/coming-home'
+    | '/care/everyday'
+    | '/care/recovery'
     | '/record/$patientId'
     | '/rescreen/$key'
     | '/resources/saved'
@@ -1390,6 +1522,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/billing-calaim-codes'
     | '/care-partners'
+    | '/careers'
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
@@ -1400,8 +1533,10 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/consent-audit'
+    | '/contact'
     | '/content-library'
     | '/cosign-inbox'
+    | '/cost'
     | '/county-reporting'
     | '/coverage-release'
     | '/craving'
@@ -1414,9 +1549,11 @@ export interface FileRouteTypes {
     | '/documents'
     | '/eligibility-worklist'
     | '/escalations'
+    | '/faq'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
+    | '/how-it-works'
     | '/inbox'
     | '/intake'
     | '/journeys'
@@ -1430,10 +1567,13 @@ export interface FileRouteTypes {
     | '/next-steps'
     | '/notes-queue'
     | '/nurse'
+    | '/partners'
     | '/patient'
     | '/peer'
+    | '/platform'
     | '/pre-release'
     | '/pre-release-import'
+    | '/privacy'
     | '/profile'
     | '/provider-reference'
     | '/quality-compliance'
@@ -1468,6 +1608,10 @@ export interface FileRouteTypes {
     | '/advocate/support-for-myself'
     | '/api/adel-chat'
     | '/api/adel-recap'
+    | '/care/advocates'
+    | '/care/coming-home'
+    | '/care/everyday'
+    | '/care/recovery'
     | '/record/$patientId'
     | '/rescreen/$key'
     | '/resources/saved'
@@ -1515,6 +1659,7 @@ export interface RootRouteChildren {
   BillingRoute: typeof BillingRoute
   BillingCalaimCodesRoute: typeof BillingCalaimCodesRoute
   CarePartnersRoute: typeof CarePartnersRoute
+  CareersRoute: typeof CareersRoute
   CaseManagerRoute: typeof CaseManagerRoute
   CaseloadReviewRoute: typeof CaseloadReviewRoute
   CheckinRoute: typeof CheckinRoute
@@ -1525,8 +1670,10 @@ export interface RootRouteChildren {
   ClinicianProfileRoute: typeof ClinicianProfileRoute
   ConsentRoute: typeof ConsentRoute
   ConsentAuditRoute: typeof ConsentAuditRoute
+  ContactRoute: typeof ContactRoute
   ContentLibraryRoute: typeof ContentLibraryRoute
   CosignInboxRoute: typeof CosignInboxRoute
+  CostRoute: typeof CostRoute
   CountyReportingRoute: typeof CountyReportingRoute
   CoverageReleaseRoute: typeof CoverageReleaseRoute
   CravingRoute: typeof CravingRoute
@@ -1539,9 +1686,11 @@ export interface RootRouteChildren {
   DocumentsRoute: typeof DocumentsRoute
   EligibilityWorklistRoute: typeof EligibilityWorklistRoute
   EscalationsRoute: typeof EscalationsRoute
+  FaqRoute: typeof FaqRoute
   GroupAuditRoute: typeof GroupAuditRoute
   GroupSessionsRoute: typeof GroupSessionsRoute
   HomeRoute: typeof HomeRoute
+  HowItWorksRoute: typeof HowItWorksRoute
   InboxRoute: typeof InboxRoute
   IntakeRoute: typeof IntakeRoute
   JourneysRoute: typeof JourneysRoute
@@ -1555,10 +1704,13 @@ export interface RootRouteChildren {
   NextStepsRoute: typeof NextStepsRoute
   NotesQueueRoute: typeof NotesQueueRoute
   NurseRoute: typeof NurseRoute
+  PartnersRoute: typeof PartnersRoute
   PatientRoute: typeof PatientRoute
   PeerRoute: typeof PeerRoute
+  PlatformRoute: typeof PlatformRoute
   PreReleaseRoute: typeof PreReleaseRoute
   PreReleaseImportRoute: typeof PreReleaseImportRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ProviderReferenceRoute: typeof ProviderReferenceRoute
   QualityComplianceRoute: typeof QualityComplianceRoute
@@ -1583,6 +1735,10 @@ export interface RootRouteChildren {
   WorklistRoute: typeof WorklistRoute
   ApiAdelChatRoute: typeof ApiAdelChatRoute
   ApiAdelRecapRoute: typeof ApiAdelRecapRoute
+  CareAdvocatesRoute: typeof CareAdvocatesRoute
+  CareComingHomeRoute: typeof CareComingHomeRoute
+  CareEverydayRoute: typeof CareEverydayRoute
+  CareRecoveryRoute: typeof CareRecoveryRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
   RescreenKeyRoute: typeof RescreenKeyRoute
   AgenticIndexRoute: typeof AgenticIndexRoute
@@ -1769,6 +1925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CarePartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/careers': {
+      id: '/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof CareersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/case-manager': {
       id: '/case-manager'
       path: '/case-manager'
@@ -1839,6 +2002,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsentAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/content-library': {
       id: '/content-library'
       path: '/content-library'
@@ -1851,6 +2021,13 @@ declare module '@tanstack/react-router' {
       path: '/cosign-inbox'
       fullPath: '/cosign-inbox'
       preLoaderRoute: typeof CosignInboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cost': {
+      id: '/cost'
+      path: '/cost'
+      fullPath: '/cost'
+      preLoaderRoute: typeof CostRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/county-reporting': {
@@ -1937,6 +2114,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EscalationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/group-audit': {
       id: '/group-audit'
       path: '/group-audit'
@@ -1956,6 +2140,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbox': {
@@ -2049,6 +2240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NurseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/patient': {
       id: '/patient'
       path: '/patient'
@@ -2063,6 +2261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PeerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/platform': {
+      id: '/platform'
+      path: '/platform'
+      fullPath: '/platform'
+      preLoaderRoute: typeof PlatformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pre-release': {
       id: '/pre-release'
       path: '/pre-release'
@@ -2075,6 +2280,13 @@ declare module '@tanstack/react-router' {
       path: '/pre-release-import'
       fullPath: '/pre-release-import'
       preLoaderRoute: typeof PreReleaseImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -2329,6 +2541,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdelRecapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/care/advocates': {
+      id: '/care/advocates'
+      path: '/care/advocates'
+      fullPath: '/care/advocates'
+      preLoaderRoute: typeof CareAdvocatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/care/coming-home': {
+      id: '/care/coming-home'
+      path: '/care/coming-home'
+      fullPath: '/care/coming-home'
+      preLoaderRoute: typeof CareComingHomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/care/everyday': {
+      id: '/care/everyday'
+      path: '/care/everyday'
+      fullPath: '/care/everyday'
+      preLoaderRoute: typeof CareEverydayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/care/recovery': {
+      id: '/care/recovery'
+      path: '/care/recovery'
+      fullPath: '/care/recovery'
+      preLoaderRoute: typeof CareRecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/record/$patientId': {
       id: '/record/$patientId'
       path: '/record/$patientId'
@@ -2558,6 +2798,7 @@ const rootRouteChildren: RootRouteChildren = {
   BillingRoute: BillingRoute,
   BillingCalaimCodesRoute: BillingCalaimCodesRoute,
   CarePartnersRoute: CarePartnersRoute,
+  CareersRoute: CareersRoute,
   CaseManagerRoute: CaseManagerRoute,
   CaseloadReviewRoute: CaseloadReviewRoute,
   CheckinRoute: CheckinRoute,
@@ -2568,8 +2809,10 @@ const rootRouteChildren: RootRouteChildren = {
   ClinicianProfileRoute: ClinicianProfileRoute,
   ConsentRoute: ConsentRoute,
   ConsentAuditRoute: ConsentAuditRoute,
+  ContactRoute: ContactRoute,
   ContentLibraryRoute: ContentLibraryRoute,
   CosignInboxRoute: CosignInboxRoute,
+  CostRoute: CostRoute,
   CountyReportingRoute: CountyReportingRoute,
   CoverageReleaseRoute: CoverageReleaseRoute,
   CravingRoute: CravingRoute,
@@ -2582,9 +2825,11 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentsRoute: DocumentsRoute,
   EligibilityWorklistRoute: EligibilityWorklistRoute,
   EscalationsRoute: EscalationsRoute,
+  FaqRoute: FaqRoute,
   GroupAuditRoute: GroupAuditRoute,
   GroupSessionsRoute: GroupSessionsRoute,
   HomeRoute: HomeRoute,
+  HowItWorksRoute: HowItWorksRoute,
   InboxRoute: InboxRoute,
   IntakeRoute: IntakeRoute,
   JourneysRoute: JourneysRoute,
@@ -2598,10 +2843,13 @@ const rootRouteChildren: RootRouteChildren = {
   NextStepsRoute: NextStepsRoute,
   NotesQueueRoute: NotesQueueRoute,
   NurseRoute: NurseRoute,
+  PartnersRoute: PartnersRoute,
   PatientRoute: PatientRoute,
   PeerRoute: PeerRoute,
+  PlatformRoute: PlatformRoute,
   PreReleaseRoute: PreReleaseRoute,
   PreReleaseImportRoute: PreReleaseImportRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ProviderReferenceRoute: ProviderReferenceRoute,
   QualityComplianceRoute: QualityComplianceRoute,
@@ -2626,6 +2874,10 @@ const rootRouteChildren: RootRouteChildren = {
   WorklistRoute: WorklistRoute,
   ApiAdelChatRoute: ApiAdelChatRoute,
   ApiAdelRecapRoute: ApiAdelRecapRoute,
+  CareAdvocatesRoute: CareAdvocatesRoute,
+  CareComingHomeRoute: CareComingHomeRoute,
+  CareEverydayRoute: CareEverydayRoute,
+  CareRecoveryRoute: CareRecoveryRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
   RescreenKeyRoute: RescreenKeyRoute,
   AgenticIndexRoute: AgenticIndexRoute,

@@ -19,10 +19,11 @@ for (const lang of ["en", "es"] as const) {
     const footerLinks = await page.getByTestId("website-footer").locator("a").evaluateAll((els) => els.map((el) => [el.textContent, el.getAttribute("href")]));
     for (const route of ["/", "/about", "/team"] as const) {
       if (route !== "/") {
-        await page.getByTestId("website-header").getByRole("link", { name: route === "/about" ? d.websiteAboutNav : d.websiteTeamNav, exact: true }).click();
+        await page.getByTestId("website-footer").getByRole("link", { name: route === "/about" ? d.websiteAboutNav : d.websiteTeamNav, exact: true }).click();
       }
       await expect(page).toHaveURL(new RegExp(`${route === "/" ? "/" : route}$`));
-      await expect(page.getByRole("region", { name: "Crisis support", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", {level:1})).toHaveText(route === "/" ? d.websiteHeroHeading : route === "/about" ? d.websiteAbout : d.websiteTeam);
+      await expect(page.locator(".website-crisis")).toBeVisible();
       expect(await page.getByTestId("website-header").locator("a").evaluateAll((els) => els.map((el) => [el.textContent, el.getAttribute("href")]))).toEqual(headerLinks);
       expect(await page.getByTestId("website-footer").locator("a").evaluateAll((els) => els.map((el) => [el.textContent, el.getAttribute("href")]))).toEqual(footerLinks);
       if (lang === "es") await expect(page.getByText("ES Draft — pending translation review", { exact: true })).toBeVisible();
@@ -38,7 +39,7 @@ for (const lang of ["en", "es"] as const) {
         await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", route === "/about" ? websiteEn.websiteDescription : websiteEn.websiteTeamIntro);
         await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
         await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://adelmvp1.lovable.app${route}`);
-        await expect(page.getByTestId("website-header").locator('[aria-current="page"]')).toHaveText(route === "/about" ? d.websiteAboutNav : d.websiteTeamNav);
+        await expect(page.getByTestId("website-footer").getByRole("link", { name: route === "/about" ? d.websiteAboutNav : d.websiteTeamNav, exact: true })).toHaveAttribute("aria-current", "page");
         if (route === "/about") {
           await expect(page.locator("#about")).toContainText(d.websiteMission);
           await expect(page.locator("#partners")).toContainText(d.websitePartnersBody);
@@ -53,18 +54,19 @@ for (const lang of ["en", "es"] as const) {
           for (const key of ["websiteCareTeam", "websiteNavigationTeam", "websiteResourceTeam", "websiteAdvocateTeam"] as const) await expect(page.locator("#team")).toContainText(d[key]);
           await expect(page.getByRole("link", { name: d.websiteFitNav, exact: true }).last()).toHaveAttribute("href", "/#find-your-fit");
         }
-        await expect(page.getByRole("heading", { name: d.websiteReady, exact: true })).toBeVisible();
+        await expect(page.locator(".website-closing").getByRole("heading", { name: d.websiteReady, exact: true })).toBeVisible();
       }
     }
-    await page.getByTestId("website-header").getByRole("link", { name: d.websiteFaqNav, exact: true }).click();
-    await expect(page).toHaveURL(/\/#faq$/); await anchorAligned(page, "faq");
+    await page.goto("/#faq");
+    await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
+    await anchorAligned(page, "faq");
     const q = page.locator("#faq").getByRole("button", { name: d.websiteFaqCrisisQ });
     await q.focus(); await page.keyboard.press("Enter");
     await expect(q).toHaveAttribute("aria-expanded", "true");
     await expect(page.locator("#faq")).toContainText("988");
     await page.keyboard.press("Enter"); await expect(q).toHaveAttribute("aria-expanded", "false");
     await page.getByTestId("website-footer").getByRole("link", { name: d.websitePartners, exact: true }).click();
-    await expect(page).toHaveURL(/\/about#partners$/); await anchorAligned(page, "partners");
+    await expect(page).toHaveURL(/\/partners$/); await expect(page.getByRole("heading",{level:1})).toHaveText(d["website.v2.partner.title"]);
     await page.getByTestId("website-footer").getByRole("link", { name: d.websiteReferral, exact: true }).click();
     await expect(page).toHaveURL(/\/referral$/);
     await expect(page.getByRole("heading", { name: lang === "es" ? "Sobre ti" : "About you" })).toBeVisible();
@@ -76,7 +78,7 @@ for (const [old, target] of [["about", "/about"], ["team", "/team"], ["partners"
    await page.goto(`/#${old}`);
    await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
    await expect(page).toHaveURL(new RegExp(`${target}$`));
-   await expect(page.getByRole("region", { name: "Crisis support", exact: true })).toBeVisible();
+   await expect(page.locator(".website-crisis")).toBeVisible();
  });
 }
 for (const from of ["/", "/about", "/team"]) {
@@ -85,10 +87,11 @@ for (const from of ["/", "/about", "/team"]) {
    await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
    await page.getByRole("button", { name: "Switch language to English", exact: true }).click();
    for (const [id, name] of [["how-it-works", "How it works"], ["find-your-fit", "Find where you fit"], ["what-you-get", "What you get"], ["faq", "FAQ"]]) {
-     await page.getByTestId("website-header").getByRole("link", { name, exact: true }).click();
+     // Legacy direct links remain working; the Daylight menu destinations have their own pages.
+     await page.goto(`/#${id}`);
      await expect(page).toHaveURL(new RegExp(`/#${id}$`)); await anchorAligned(page, id);
      if (from !== "/") {
-       await page.getByTestId("website-header").getByRole("link", { name: from === "/about" ? "About us" : "Our team", exact: true }).click();
+       await page.getByTestId("website-footer").getByRole("link", { name: from === "/about" ? "About us" : "Our team", exact: true }).click();
        await expect(page).toHaveURL(new RegExp(`${from}$`));
      }
    }
@@ -102,15 +105,18 @@ test("public website mobile menu", async ({ page }) => {
   await page.getByRole("button", { name: "Open website menu" }).click();
   const nav = page.locator("#website-mobile-nav");
    await nav.getByRole("button", { name: "Switch language to English", exact: true }).click();
-   await expect(nav.locator("nav").getByRole("link")).toHaveCount(6);
-  await nav.getByRole("link", { name: "Our team", exact: true }).click();
+   await expect(nav.getByRole("button",{name:"About us",exact:true})).toHaveAttribute("aria-expanded","false");
+   await nav.getByRole("button",{name:"About us",exact:true}).click();
+   await expect(nav.locator("#website-phone-about").getByRole("link")).toHaveCount(5);
+  await nav.getByRole("link", { name: "Meet Our Team", exact: true }).click();
   await expect(page).toHaveURL(/\/team$/);
    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Meet Our Team");
   await expect(nav).toHaveCount(0);
   await page.getByRole("button", { name: "Open website menu" }).click();
-  await expect(nav.locator('[aria-current="page"]')).toHaveText("Our team");
-  await nav.getByRole("link", { name: "FAQ", exact: true }).click();
-  await expect(page).toHaveURL(/\/#faq$/); await anchorAligned(page, "faq");
+  await nav.getByRole("button",{name:"Get care",exact:true}).click();
+  await expect(nav.locator("#website-phone-care")).toBeVisible();
+  await nav.getByRole("link", { name: "FAQ Answers to common questions", exact: true }).click();
+  await expect(page).toHaveURL(/\/faq$/); await expect(page.getByRole("heading",{level:1})).toHaveText("Frequently Asked Questions");
 });
 
 test("public referral accepts no agency but requires referrer name", async ({ page }) => {

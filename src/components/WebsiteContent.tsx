@@ -76,7 +76,7 @@ export function WebsiteTeam() {
             { title: "websiteNavigationTeam", roles: [[ClipboardList, "websiteCoordinators", "websiteCoordinatorsBody"], [Sunrise, "websiteReentry", "websiteReentryBody"]] },
             { title: "websiteResourceTeam", roles: [[Users, "websiteResources", "websiteResourcesBody"]] },
             { title: "websiteAdvocateTeam", roles: [[HeartHandshake, "websiteAdvocates", "websiteAdvocatesBody"]] },
-          ] as const).map((team) => <Card key={team.title} className="p-6 sm:p-8 border-border/60">
+          ] as const).map((team) => <Card id={team.title === "websiteCareTeam" ? "care" : team.title === "websiteNavigationTeam" ? "navigation" : team.title === "websiteResourceTeam" ? "resource" : "advocate"} key={team.title} className="p-6 sm:p-8 border-border/60">
             <h2 className="website-heading">{t(team.title)}</h2>
             <ul className="mt-6 space-y-6">
               {team.roles.map(([Icon, title, body]) => <li key={title} className="flex gap-3">

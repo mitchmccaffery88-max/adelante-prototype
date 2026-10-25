@@ -1,7 +1,9 @@
-/** Supplied public brand artwork; application naming stays separate. */
-export function WebsiteBrand() {
-  return <span className="flex items-center gap-2" data-testid="website-brand">
-    <img src="/brand/adelante-compact.svg" alt="Adelante Health" width="476" height="136" className="h-10 w-auto dark:hidden" />
-    <img src="/brand/adelante-compact-dark.svg" alt="Adelante Health" width="476" height="136" className="hidden h-10 w-auto dark:block" />
+import { useI18n } from "@/lib/i18n";
+/** Public-only live wordmark; symbol paths are unchanged supplied brand artwork. */
+export function WebsiteBrand({ footer = false }: { footer?: boolean }) {
+  const { t } = useI18n();
+  return <span className={`website-brand${footer ? " website-brand-footer" : ""}`} data-testid="website-brand">
+    <img src="/brand/adelante-symbol.svg" alt="" width="120" height="128" />
+    <span><span className="website-wordmark">Adelante Health</span>{footer && <span className="website-tagline">{t("website.v2.tagline")}</span>}</span>
   </span>;
 }

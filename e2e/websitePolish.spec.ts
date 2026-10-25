@@ -24,15 +24,15 @@ for (const path of ["/", "/about", "/team"]) {
     }));
     for (const style of headingStyles) expect(style).toEqual(headingStyles[0]);
     for (const style of headingStyles) expect(style[4]).toBe("none");
-    await expect(page.getByTestId("website-header").locator("nav:visible [aria-current]")).toHaveCount(path === "/" ? 0 : 1);
+    await expect(page.getByTestId("website-header").locator(".website-nav-trigger")).toHaveCount(4);
+    if (path !== "/") await expect(page.getByTestId("website-footer").locator('a[aria-current="page"]')).toHaveCount(1);
     const result = await new AxeBuilder({ page }).include('[data-testid="website-layout"]').analyze();
     expect(result.violations.filter(v => v.impact === "critical" || v.impact === "serious")).toEqual([]);
     if (path === "/") {
       await expect(page.locator(".website-hero")).not.toContainText("Adelante Health");
       for (const id of ["how-it-works", "find-your-fit", "what-you-get", "faq"]) {
-        await page.getByTestId("website-header").locator(`a[href="/#${id}"]`).click();
-        await expect.poll(() => page.getByTestId("website-header").locator("nav:visible [aria-current]").count()).toBe(1);
-        await expect(page.getByTestId("website-header").locator("nav:visible [aria-current]")).toHaveAttribute("href", `/#${id}`);
+        await page.goto(`/#${id}`);
+        await expect(page.locator(`#${id}`)).toBeVisible();
       }
     }
     if (path === "/about") {
