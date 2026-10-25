@@ -1,10 +1,10 @@
 # Roadmap
 
-## Daylight v2 batch 1 — shared public shell
-- [ ] Rebuild public header, click mega-menus, phone sheet, fixed 988 bar and footer using existing tokens.
-- [ ] Preserve existing content and access boundaries; add missing public destinations and auth/start crisis coverage.
-- [ ] Add menu/focus/crisis tests and verify 1280/390 EN/ES, keyboard and reduced motion; report existing-test conflicts.
-- [ ] Record architecture and validation; do not publish.
+## Daylight v2 batch 1 — shared public shell COMPLETE
+- [x] Rebuild public header, click mega-menus, phone sheet, fixed 988 bar and footer using existing tokens.
+- [x] Preserve existing content and access boundaries; add twelve missing public destinations and auth/start crisis coverage. Existing `/resources` retains its member shell; public directory reclassification is outside this public-only batch.
+- [x] New menu/focus/crisis tests and 1280/390 EN/ES, keyboard, Axe and reduced motion verified; public presentation tests updated for new menus/aside/2026 footer. Full units 3,063/3,063; public browser 22/22.
+- [x] Architecture and validation recorded in docs/daylight-v2-batch1-report.md; evidence saved. Nothing published.
 
 ## Batch SL (Mitch approved, Oct 24) — COMPLETE
 Original rollback: `0eff6798065e7362df8141759a99463e06005c9c`; Shorten, else move step rollback: `1b8717718da5c27256905e50388e0edd51e307ee`. Nothing published.
