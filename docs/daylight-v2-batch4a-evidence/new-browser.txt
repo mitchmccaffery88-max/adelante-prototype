@@ -1,0 +1,13 @@
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+Running 6 tests using 1 worker
+
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓  1 [chromium] › e2e/websitePages4a.spec.ts:4:62 › 4a pages 1280 en (36.2s)
+  ✓  2 [chromium] › e2e/websitePages4a.spec.ts:4:62 › 4a pages 1280 es (33.3s)
+  ✓  3 [chromium] › e2e/websitePages4a.spec.ts:4:62 › 4a pages 390 en (32.7s)
+  ✓  4 [chromium] › e2e/websitePages4a.spec.ts:4:62 › 4a pages 390 es (29.4s)
+  ✓  5 [chromium] › e2e/websitePages4a.spec.ts:8:1 › directory deep link filters and anonymous report confirmation (4.6s)
+  ✓  6 [chromium] › e2e/websitePages4a.spec.ts:9:1 › Content Center edits and visibility update shared public listings; reports appear in review queue (17.6s)
+
+  6 passed (2.9m)
