@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { WebsitePlaceholder } from "@/components/WebsitePlaceholder";
+import { JourneyPage } from "@/components/website/JourneyPage";
 import { websiteEn } from "@/lib/i18n.website";
 export const Route = createFileRoute("/care/coming-home")({
  head: () => ({ meta: [
@@ -10,5 +10,5 @@ export const Route = createFileRoute("/care/coming-home")({
   { property: "og:type", content: "website" },
   { name: "twitter:card", content: "summary" },
  ] }),
- component: () => <WebsitePlaceholder title="website.v2.first90" intro="website.v2.coming.body" menu="website.v2.care" anchors={[]} />,
+ component: () => <JourneyPage id="coming-home" />,
 });
