@@ -1,10 +1,11 @@
 # Roadmap
 
-## Daylight v2 batch 4a — shared pages and directory
-- [ ] Build WebsitePage/JourneyPage, four journeys, How it works and About with approved bilingual copy and shared ReadyBand.
-- [ ] Public directory accessor reads shared managed records; showOnPublic/county editor, verified/demo filters, URL filters and anonymous review reports through registry.
-- [ ] Keep patient /resources and gates unchanged; update public directory links only.
-- [ ] Validate unit/public flows, admin-to-public updates, queue reports, EN/ES phone/desktop, accessibility and crisis clearance; document limitations. Do not publish.
+## Daylight v2 batch 4a — shared pages and directory COMPLETE (prototype)
+- [x] WebsitePage/JourneyPage, four journeys, How it works and About with bilingual copy and shared ReadyBand.
+- [x] Public accessor shares managed records; showOnPublic/county editor, verified/demo/URL filters and anonymous registry reports in existing review workspace.
+- [x] Patient /resources and gates unchanged; public directory menu/footer/Adel links use /directory.
+- [x] Full units 3,277/3,277; new browser 6/6; existing public/admin browser 28/28; final landing 5/5. EN/ES phone/desktop, Axe and real admin-to-public/queue flows verified. Report: docs/daylight-v2-batch4a-report.md. Nothing published.
+- Hosted persistence remains a backend-phase follow-up: existing CMS/resource store and public reports are local preview memory, with Simulated report labels.
 
 ## Daylight v2 batch 2 — landing page COMPLETE
 - [x] Thirteen specified bands implemented (footprint hidden), configurable hero and manual journeys.
