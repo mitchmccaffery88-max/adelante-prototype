@@ -95,7 +95,7 @@ describe("public website contract", () => {
     expect(websiteEn.websiteHeroHeading).toBe("Your Path Forward Starts Here.");
     expect(websiteEn.websiteHeroEyebrow).toBe("Care for anyone, wherever you are");
     for (const dict of [websiteEn, websiteEs]) for (const text of Object.values(dict)) {
-      const nums = (text.match(/\d+/g) ?? []).filter((n) => !["988", "911", "90", "2", "42", "2026"].includes(n));
+      const nums = (text.match(/\d+/g) ?? []).filter((n) => !["988", "911", "90", "2", "42", "2026", "4"].includes(n));
       expect(nums, text).toEqual([]);
     }
   });

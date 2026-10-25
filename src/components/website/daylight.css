@@ -3,7 +3,7 @@
 .daylight-container { width:min(1120px,calc(100% - 48px)); margin-inline:auto; }
 .daylight-band { padding-block:96px; position:relative; }
 .daylight-landing section { scroll-margin-top:calc(var(--website-header-height) + var(--website-demo-height) + 16px); }
-.daylight-anchor { position:absolute; top:0; scroll-margin-top:calc(var(--website-header-height) + var(--website-demo-height) + 16px); }
+.daylight-anchor { position:absolute; top:0; width:1px; height:1px; scroll-margin-top:calc(var(--website-header-height) + var(--website-demo-height) + 16px); }
 .daylight-landing h2 { font-size:36px; line-height:42px; font-weight:800; color:var(--ink); margin:0 0 20px; }
 .daylight-landing h3 { font-size:21px; line-height:28px; font-weight:700; margin:16px 0 12px; }
 .daylight-landing p { margin:0 0 20px; }
