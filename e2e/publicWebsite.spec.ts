@@ -49,7 +49,7 @@ for (const lang of ["en", "es"] as const) {
           await expect(page.locator(".page-values")).toContainText(d.websiteTrustLanguage);
         } else {
           await expect(page.getByTestId("website-team")).toContainText(d.websiteTeamIntro);
-          await expect(page.getByTestId("website-team").locator("article")).toHaveCount(7);
+          await expect(page.getByTestId("website-team").locator("#care article,#navigation article,#resource article,#advocate article")).toHaveCount(7);
           await expect(page.getByTestId("website-team").locator("img")).toHaveCount(0);
           await expect(page.getByTestId("website-team")).not.toContainText(/Luis Camacho|Mitch|Dr\.|Christi|Bagga/);
           for (const key of ["websiteCareTeam", "websiteNavigationTeam", "websiteResourceTeam", "websiteAdvocateTeam"] as const) await expect(page.getByTestId("website-team")).toContainText(d[key]);

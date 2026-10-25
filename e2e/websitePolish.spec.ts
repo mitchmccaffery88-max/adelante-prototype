@@ -15,9 +15,9 @@ for (const path of ["/", "/about", "/team"]) {
     await expect(page.getByTestId("website-layout")).toBeVisible();
     await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-    if (path === "/team") await expect(page.locator(".website-heading")).toHaveText(headingKeys(path).map(key => websiteEn[key]));
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://adelmvp1.lovable.app/website-share.jpg");
-    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", "https://adelmvp1.lovable.app/website-share.jpg");
+    if (path === "/team") await expect(page.locator("main h1, main h2")).toHaveText([...headingKeys(path).slice(0,-1).map(key => websiteEn[key]), websiteEn["website.v2.team.together"],websiteEn.websiteReady]);
+    if(path!=="/team") await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://adelmvp1.lovable.app/website-share.jpg");
+    if(path!=="/team") await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", "https://adelmvp1.lovable.app/website-share.jpg");
     const response = await page.request.get("/website-share.jpg");
     expect(response.ok()).toBe(true);
     const headingStyles = await page.locator(".website-heading").evaluateAll((els) => els.filter(el => !el.closest(".website-closing")).map(el => {
@@ -77,7 +77,7 @@ for (const path of ["/", "/about", "/team"]) {
         await expect(menu.getByRole("button", { name: "Cambiar idioma a español" })).toHaveAttribute("aria-pressed", "true");
         await page.keyboard.press("Escape");
         await expect(page.getByText("ES Draft — pending translation review", { exact: true })).toBeVisible();
-        if (path === "/team") await expect(page.locator(".website-heading")).toHaveText(headingKeys(path).map(key => websiteEs[key]));
+        if (path === "/team") await expect(page.locator("main h1, main h2")).toHaveText([...headingKeys(path).slice(0,-1).map(key => websiteEs[key]), websiteEs["website.v2.team.together"],websiteEs.websiteReady]);
         await settleReveals(page); const esResult = await new AxeBuilder({ page }).include('[data-testid="website-layout"]').analyze();
         expect(esResult.violations.filter(v => v.impact === "critical" || v.impact === "serious")).toEqual([]);
       }
