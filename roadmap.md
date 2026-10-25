@@ -44,3 +44,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - Backend phase: convert live untyped consent writers to typed records.
 - Backend phase: "advocate_release has no gate reader; decide in backend phase".
 - staffNewAudit8a2 timeout was unchanged in Friday cleanup; Mitch approved the scoped change Oct 24 in Batch SL (applied and fully validated).
+
+## Daylight v2 batch 3 (motion)
+- [x] Motion layers 3,7,8,9,10,11,13,14,17,18 + ray clipping, reduced-motion stills, tests
+- [ ] /faq and /cost FAQ answers: waiting on FAQ content for those pages (still placeholders)
