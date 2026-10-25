@@ -126,11 +126,13 @@ test("public referral accepts no agency but requires referrer name", async ({ pa
   const form = page.locator("form");
   // Labels in the shared Field wrap an input sibling, not a label-for pair.
   const input = (label: string) => form.locator("label").filter({ hasText: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`) }).locator("..").locator("input");
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
   await input("First name *").fill("OptionalAgency");
   await input("Last name *").fill("PublicWalkthrough");
   await input("Date of birth (or Medi-Cal ID below) *").fill("1989-02-08");
   await form.getByRole("button", { name: "No", exact: true }).click();
   await page.getByTestId("referral-person-email").fill("person@example.org");
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
   await form.getByRole("checkbox", { name: /No reliable phone/ }).focus();
   await page.keyboard.press("Space");
   await expect(form.getByRole("checkbox", { name: /No reliable phone/ })).toBeChecked();
@@ -142,6 +144,8 @@ test("public referral accepts no agency but requires referrer name", async ({ pa
   await expect(page.getByTestId("referral-confirmation")).toHaveCount(0);
   await input("Your name *").fill("Referral Walker");
   await expect(input("Agency / organization")).toHaveValue("");
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
   await form.getByRole("button", { name: /Send referral|Submit referral/ }).click();
   await expect(page.getByTestId("referral-confirmation")).toBeVisible();
   const saved = await page.evaluate(() => {
