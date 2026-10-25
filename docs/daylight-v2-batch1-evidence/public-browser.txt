@@ -1,0 +1,29 @@
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+Running 22 tests using 1 worker
+
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓   1 [chromium] › e2e/publicEarlyTap8a2.spec.ts:4:1 › a language tap before the homepage is interactive still applies; 988 stays a plain link (5.1s)
+  ✓   2 [chromium] › e2e/publicEarlyTap8a2.spec.ts:13:1 › a menu tap before the phone homepage is interactive opens the menu once (3.9s)
+  ✓   3 [chromium] › e2e/publicWebsite.spec.ts:13:3 › public website en: separate pages, shared layout, navigation and copy (11.0s)
+  ✓   4 [chromium] › e2e/publicWebsite.spec.ts:13:3 › public website es: separate pages, shared layout, navigation and copy (12.0s)
+  ✓   5 [chromium] › e2e/publicWebsite.spec.ts:77:2 › legacy public anchor about (3.4s)
+  ✓   6 [chromium] › e2e/publicWebsite.spec.ts:77:2 › legacy public anchor team (3.3s)
+  ✓   7 [chromium] › e2e/publicWebsite.spec.ts:77:2 › legacy public anchor partners (3.0s)
+  ✓   8 [chromium] › e2e/publicWebsite.spec.ts:77:2 › legacy public anchor who-its-for (3.3s)
+  ✓   9 [chromium] › e2e/publicWebsite.spec.ts:85:2 › homepage anchors from / (3.8s)
+  ✓  10 [chromium] › e2e/publicWebsite.spec.ts:85:2 › homepage anchors from /about (6.6s)
+  ✓  11 [chromium] › e2e/publicWebsite.spec.ts:85:2 › homepage anchors from /team (6.5s)
+  ✓  12 [chromium] › e2e/publicWebsite.spec.ts:100:1 › public website mobile menu (5.0s)
+  ✓  13 [chromium] › e2e/publicWebsite.spec.ts:122:1 › public referral accepts no agency but requires referrer name (5.6s)
+  ✓  14 [chromium] › e2e/websiteDaylight.spec.ts:6:2 › Daylight shell 1280 en: menus, focus, clearance and contrast (8.1s)
+  ✓  15 [chromium] › e2e/websiteDaylight.spec.ts:6:2 › Daylight shell 1280 es: menus, focus, clearance and contrast (7.6s)
+  ✓  16 [chromium] › e2e/websiteDaylight.spec.ts:6:2 › Daylight shell 390 en: menus, focus, clearance and contrast (7.2s)
+  ✓  17 [chromium] › e2e/websiteDaylight.spec.ts:6:2 › Daylight shell 390 es: menus, focus, clearance and contrast (8.8s)
+  ✓  18 [chromium] › e2e/websiteDaylight.spec.ts:48:1 › Daylight crisis bar and one public shell on every public destination and entry flow (11.3s)
+  ✓  19 [chromium] › e2e/websiteDaylight.spec.ts:58:1 › Daylight reduced motion and shrinking sticky header (3.2s)
+  ✓  20 [chromium] › e2e/websitePolish.spec.ts:12:3 › public polish and accessibility / (11.5s)
+  ✓  21 [chromium] › e2e/websitePolish.spec.ts:12:3 › public polish and accessibility /about (8.2s)
+  ✓  22 [chromium] › e2e/websitePolish.spec.ts:12:3 › public polish and accessibility /team (8.6s)
+
+  22 passed (2.7m)
