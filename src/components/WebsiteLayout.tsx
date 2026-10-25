@@ -1,96 +1,78 @@
 import { useEarlyTapReplay } from "@/lib/earlyTap";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowUp, Phone, ShieldCheck, User } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ArrowUp, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WebsiteBrand } from "@/components/WebsiteBrand";
-import { WebsiteNavigation } from "@/components/WebsiteNavigation";
+import { WebsiteNavigation, WebsiteLanguageToggle, WebsiteSignIn } from "@/components/WebsiteNavigation";
 import { DemoControlsBar } from "@/components/DemoControlsBar";
 import { useI18n } from "@/lib/i18n";
+import { WEBSITE_FOOTER_LINKS } from "@/lib/websiteMenus";
 import "./website.css";
 
 /** One public shell; application branding and navigation remain separate. */
 export function WebsiteLayout({ children }: { children: ReactNode }) {
-  const { t, lang, setLang } = useI18n();
-  useEarlyTapReplay();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const shellRef = useRef<HTMLDivElement>(null);
-  const crisisRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
-  const [showTop, setShowTop] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>();
-  useEffect(() => {
-    const measure = () => {
-      shellRef.current?.style.setProperty("--website-crisis-height", `${crisisRef.current?.getBoundingClientRect().height ?? 64}px`);
-    };
-    const observer = new ResizeObserver(measure);
-    if (crisisRef.current) observer.observe(crisisRef.current);
-    measure();
-    return () => observer.disconnect();
-  }, []);
-  useEffect(() => {
-    const update = () => {
-      setShowTop((pathname === "/" || pathname === "/team") && window.scrollY > 0 && window.scrollY > Math.min(window.innerHeight, Math.max(0, document.documentElement.scrollHeight - window.innerHeight) / 2));
-      if (pathname !== "/") { setActiveSection(undefined); return; }
-      const offset = Math.max((headerRef.current?.getBoundingClientRect().bottom ?? 160) + 24, window.innerHeight * 0.35);
-      let current: string | undefined;
-      for (const id of ["how-it-works", "find-your-fit", "what-you-get", "faq"]) {
-        const rect = document.getElementById(id)?.getBoundingClientRect();
-        if (rect && rect.top <= offset) current = id;
-      }
-      setActiveSection(current);
-    };
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => { window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
-  }, [pathname]);
-  return <div ref={shellRef} className="patient-theme website-shell min-h-dvh flex flex-col bg-background" data-testid="website-layout" onFocusCapture={(event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target)) return;
-    const barTop = crisisRef.current?.getBoundingClientRect().top;
-    if (barTop !== undefined && target.getBoundingClientRect().bottom > barTop) target.scrollIntoView({ block: "center", behavior: "instant" });
-  }}>
-    <DemoControlsBar />
-    <header ref={headerRef} data-testid="website-header" className="sticky top-10 z-30 border-b bg-background/85 backdrop-blur" tabIndex={-1}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-2 sm:gap-4">
-        <Link to="/" className="flex min-w-0 items-center gap-2"><WebsiteBrand /></Link>
-        <div className="ml-auto flex items-center gap-2">
-          <Button asChild className="min-h-12 px-3 sm:px-4"><Link to="/start/signup">{t("websiteStart")}</Link></Button>
-          <WebsiteNavigation mobile activeSection={activeSection} />
-          <div className="hidden xl:flex items-center gap-1 text-sm text-muted-foreground"><ShieldCheck aria-hidden="true" className="h-4 w-4 text-primary" />HIPAA · 42 CFR Part 2</div>
-          <div className="hidden sm:flex rounded-full bg-secondary p-0.5">
-            <Button variant={lang === "en" ? "default" : "ghost"} data-early-tap="lang-en" onClick={() => setLang("en")} aria-label="Switch language to English" aria-pressed={lang === "en"} className="min-h-12 min-w-12 rounded-full px-2">EN</Button>
-            <Button variant={lang === "es" ? "default" : "ghost"} data-early-tap="lang-es" onClick={() => setLang("es")} aria-label="Cambiar idioma a español" aria-pressed={lang === "es"} className="min-h-12 min-w-12 rounded-full px-2">ES</Button>
-          </div>
-          <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex min-h-12 min-w-12"><Link to="/auth" aria-label={t("navSignIn")}><User aria-hidden="true" className="h-5 w-5" /></Link></Button>
-          <Link to="/auth" className="hidden md:inline-flex text-sm text-primary">{t("navSignIn")}</Link>
-        </div>
-      </div>
-      <WebsiteNavigation activeSection={activeSection} />
-    </header>
-    {lang === "es" && <p className="border-b px-5 py-2 text-sm text-muted-foreground text-center">{t("websiteDraft")}</p>}
-    <main className="flex-1">{children}</main>
-    <div ref={crisisRef} role="region" aria-label="Crisis support" className="fixed inset-x-0 bottom-0 z-50 border-t border-destructive/30 bg-background">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-sm">
-        <Phone aria-hidden="true" className="h-4 w-4 text-destructive shrink-0" /><span><span className="font-semibold text-destructive">{t("crisisInCrisis")}</span> {t("crisisCallText")} <a href="tel:988" className="underline font-semibold">988</a> {t("crisisAnytime")}</span>
-      </div>
+ const { t, lang } = useI18n();
+ useEarlyTapReplay();
+ const shellRef = useRef<HTMLDivElement>(null); const crisisRef = useRef<HTMLElement>(null);
+ const sentinel = useRef<HTMLDivElement>(null); const headerRef = useRef<HTMLElement>(null); const top = useRef<HTMLDivElement>(null);
+ const [compact,setCompact] = useState(false); const [showTop,setShowTop] = useState(false);
+ useEffect(() => {
+  const measure = () => {
+   const shell = shellRef.current; if (!shell) return;
+   shell.style.setProperty("--website-crisis-height",`${crisisRef.current?.getBoundingClientRect().height ?? 48}px`);
+   shell.style.setProperty("--website-demo-height",`${shell.querySelector('[data-testid="demo-controls-bar"]')?.getBoundingClientRect().height ?? 40}px`);
+   shell.style.setProperty("--website-header-height",`${headerRef.current?.getBoundingClientRect().height ?? 156}px`);
+  };
+  const observer = new ResizeObserver(measure);
+  if (crisisRef.current) observer.observe(crisisRef.current); if (headerRef.current) observer.observe(headerRef.current);
+  const demo = shellRef.current?.querySelector('[data-testid="demo-controls-bar"]'); if (demo) observer.observe(demo);
+  measure(); return () => observer.disconnect();
+ },[]);
+ useEffect(() => {
+  const observer = new IntersectionObserver(entries => setCompact(!entries[0]?.isIntersecting));
+  if (sentinel.current) observer.observe(sentinel.current);
+  const update = () => setShowTop(window.scrollY > Math.max(0,document.documentElement.scrollHeight - window.innerHeight)/2 && window.scrollY > 120);
+  window.addEventListener("scroll",update,{passive:true}); window.addEventListener("resize",update); update();
+  return () => { observer.disconnect(); window.removeEventListener("scroll",update); window.removeEventListener("resize",update); };
+ },[]);
+ const backTop = () => {
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top:0,behavior:reduced ? "instant" : "smooth" });
+  if (reduced) { top.current?.focus({preventScroll:true}); return; }
+  const focus = () => { if (window.scrollY <= 1) { top.current?.focus({preventScroll:true}); window.removeEventListener("scroll",focus); } };
+  window.addEventListener("scroll",focus,{passive:true}); focus();
+ };
+ return <div ref={shellRef} className="website-shell" data-testid="website-layout" onFocusCapture={event => {
+  const target=event.target; if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target)) return;
+  const bottom=crisisRef.current?.getBoundingClientRect().top;
+  if (bottom !== undefined && target.getBoundingClientRect().bottom > bottom) target.scrollIntoView({block:"center",behavior:"instant"});
+ }}>
+  <div id="website-top" ref={top} tabIndex={-1} className="website-top" />
+  <a className="website-skip" href="#website-main">{t("website.v2.skip")}</a>
+  <DemoControlsBar />
+  <div ref={sentinel} className="website-sticky-sentinel" aria-hidden="true" />
+  <header ref={headerRef} data-testid="website-header" className={`website-header${compact ? " website-header-compact" : ""}`}>
+   <div className="website-header-row website-container">
+    <Link to="/" aria-label="Adelante home" className="website-brand-link"><WebsiteBrand /></Link>
+    <div className="website-header-actions">
+     <Button asChild className="website-primary"><Link to="/start/signup">{t("websiteStart")}</Link></Button>
+     <span className="website-trust"><ShieldCheck aria-hidden="true" />{t("website.v2.hipaa")}</span>
+     <div className="website-desktop-control"><WebsiteLanguageToggle /></div>
+     <div className="website-desktop-control"><WebsiteSignIn /></div>
+     <WebsiteNavigation mobile />
     </div>
-    <footer data-testid="website-footer" className="border-t bg-secondary/40">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8 py-10 space-y-6 text-sm text-muted-foreground">
-        <nav aria-label={t("websiteNavigation")} className="flex flex-wrap gap-x-5 gap-y-2">
-          <Link to="/about" className="inline-flex min-h-12 items-center hover:text-foreground">{t("websiteAboutNav")}</Link>
-          <Link to="/team" className="inline-flex min-h-12 items-center hover:text-foreground">{t("websiteTeamNav")}</Link>
-          <Link to="/about" hash="partners" hashScrollIntoView={{ behavior: "smooth", block: "start" }} className="inline-flex min-h-12 items-center hover:text-foreground">{t("websitePartners")}</Link>
-          <Link to="/" hash="faq" hashScrollIntoView={{ behavior: "smooth", block: "start" }} className="inline-flex min-h-12 items-center hover:text-foreground">{t("websiteFaqNav")}</Link>
-          <Link to="/referral" className="inline-flex min-h-12 items-center hover:text-foreground">{t("websiteReferral")}</Link>
-        </nav>
-        <div className="flex flex-wrap justify-between gap-3"><span>© {new Date().getFullYear()} {t("websiteBrand")} · {t("websiteBuilt")}</span><span>{t("websiteDemo")}</span></div>
-      </div>
-    </footer>
-    {showTop && <Button variant="outline" className="website-back-top fixed right-4 z-40 min-h-12 bg-background" onClick={() => {
-      headerRef.current?.focus({ preventScroll: true });
-      window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-    }}><ArrowUp aria-hidden="true" />{t("websiteBackTop")}</Button>}
-  </div>;
+   </div>
+   <WebsiteNavigation />
+  </header>
+  {lang === "es" && <p className="website-draft">{t("websiteDraft")}</p>}
+  <main id="website-main" tabIndex={-1}>{children}</main>
+  <aside ref={crisisRef} aria-label={t("website.v2.crisis.label")} className="website-crisis"><div className="website-container">{t("website.v2.crisis.before")} <a href="tel:988">988</a> {t("website.v2.crisis.after")}</div></aside>
+  <footer data-testid="website-footer" className="website-footer">
+   <div className="website-container"><div className="website-footer-main"><Link to="/" aria-label="Adelante home"><WebsiteBrand footer /></Link><nav aria-label={t("websiteNavigation")} className="website-footer-links">{WEBSITE_FOOTER_LINKS.map(link => <Link key={link.to} to={link.to}>{t(link.title)}</Link>)}</nav></div>
+    <div className="website-footer-bottom"><span aria-label={t("websiteBrand")}>{t("website.v2.copyright")}</span><span className="website-footer-trust"><ShieldCheck aria-hidden="true" />{t("website.v2.hipaa")}</span><span>{t("websiteDemo")}</span></div>
+   </div>
+  </footer>
+  {showTop && <Button size="icon" className="website-back-top website-primary" aria-label={t("websiteBackTop")} onClick={backTop}><ArrowUp aria-hidden="true" /></Button>}
+ </div>;
 }
