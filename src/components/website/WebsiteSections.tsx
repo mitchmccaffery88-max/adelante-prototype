@@ -1,0 +1,12 @@
+import type {ReactNode} from 'react';
+import {Link} from '@tanstack/react-router';
+import {ArrowRight,Lock,type LucideIcon} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Accordion,AccordionItem,AccordionTrigger,AccordionContent} from '@/components/ui/accordion';
+import {useI18n} from '@/lib/i18n';
+import type {WebsiteKey} from '@/lib/websiteMenus';
+export function PageBand({id,title,children,tint='surface'}:{id:string;title?:WebsiteKey;children:ReactNode;tint?:'surface'|'sunk'|'canvas'|'path'}){const {t}=useI18n();return <section id={id} aria-labelledby={title?`${id}-title`:undefined} className={`daylight-band daylight-${tint}`}><div className="daylight-container">{title&&<h2 id={`${id}-title`}>{t(title)}</h2>}{children}</div></section>;}
+export function PageTiles({items}:{items:readonly (readonly [LucideIcon,WebsiteKey,WebsiteKey?])[]}){const {t}=useI18n();return <div className="public-tiles">{items.map(([Icon,title,body])=><article className="daylight-tile" key={title}><span className="daylight-icon tint-path-faint"><Icon aria-hidden="true"/></span><h3>{t(title)}</h3>{body&&<p>{t(body)}</p>}</article>)}</div>;}
+export function PrivacyNote(){const {t}=useI18n();return <aside className="page-privacy"><Lock aria-hidden="true"/><div><p>{t('website.v2.partners.consent')}</p><p className="page-draft">{t('website.v2.policy.draft')}</p></div></aside>;}
+export function QuestionList({questions}:{questions:readonly (readonly [WebsiteKey,WebsiteKey])[]}){const {t}=useI18n();return <Accordion type="multiple" className="daylight-faq">{questions.map(([q,a])=><AccordionItem value={q} key={q}><AccordionTrigger>{t(q)}</AccordionTrigger><AccordionContent><p>{t(a)}</p>{q==='website.v2.faq.cost.q'&&<p><Link to="/contact">{t('website.v2.contact')}</Link> {t('websiteFaqCostTail')}</p>}</AccordionContent></AccordionItem>)}</Accordion>;}
+export function PublicCta({title,body,to,search,label}:{title:WebsiteKey;body:WebsiteKey;to:'/contact'|'/platform';search?:{topic:'partnering'};label:WebsiteKey}){const {t}=useI18n();return <aside className="public-cta"><div><h2>{t(title)}</h2><p>{t(body)}</p></div><Button asChild variant="outline" className="website-secondary"><Link to={to} search={search}>{t(label)}<ArrowRight aria-hidden="true"/></Link></Button></aside>;}
