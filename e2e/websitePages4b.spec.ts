@@ -1,0 +1,21 @@
+import {test,expect} from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import {settleReveals} from './helpers/settleReveals';
+const paths=['cost','faq','team','partners','platform','privacy','careers','contact','referral'];
+for(const width of [1280,390])for(const lang of ['en','es'])test(`4b pages ${width} ${lang}`,async({page})=>{
+ test.setTimeout(180000);await page.setViewportSize({width,height:width===390?844:1800});
+ for(const [i,path] of paths.entries()){
+  await page.goto('/'+path);await page.waitForFunction(()=>(window as any).__adelHydrated);
+  if(i===0){if(width===390)await page.getByRole('button',{name:'Open website menu',exact:true}).click();await page.getByRole('button',{name:lang==='es'?'Cambiar idioma a español':'Switch language to English',exact:true}).click();if(width===390)await page.keyboard.press('Escape');}
+  await expect(page.locator('main h1')).toHaveCount(1);await expect(page.locator('.page-breadcrumb [aria-current=page]')).toHaveCount(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width);await settleReveals(page);
+  const axe=await new AxeBuilder({page}).include('main').analyze();expect(axe.violations.filter(v=>v.impact==='serious'||v.impact==='critical')).toEqual([]);
+  if(lang==='es')await expect(page.locator('.website-draft')).toHaveCount(1);
+ }
+});
+test('careers/contact submit through the real registry and read back in demo admin Inbox',async({page})=>{
+ await page.goto('/contact?topic=partnering');await page.waitForFunction(()=>(window as any).__adelHydrated);await expect(page.getByLabel(/What's this about/)).toHaveValue('partnering');await page.getByRole('button',{name:'Send',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await page.getByLabel(/Your name/).fill('Public intake test');await page.getByLabel(/Phone or email/).fill('test@example.org');await page.getByLabel(/^Message/).fill('Please discuss a partnership.');await page.getByRole('button',{name:'Send',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'Thanks'})).toBeVisible();
+ await page.evaluate(()=>(window as any).__adelante.go('/careers'));await expect(page.locator('main h1')).toHaveText('Join Our Team');await page.getByLabel(/^Name/).fill('Career intake test');await page.getByLabel(/Email or phone/).fill('career@example.org');await page.getByLabel(/Role you're interested/).selectOption('peer');await page.getByLabel('Résumé',{exact:true}).setInputFiles({name:'invalid.txt',mimeType:'text/plain',buffer:Buffer.from('text')});await expect(page.getByRole('alert')).toContainText('PDF or DOCX');await page.getByLabel('Résumé',{exact:true}).setInputFiles({name:'resume.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-test')});await page.getByRole('button',{name:'Send',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'Thanks'})).toBeVisible();
+ await page.evaluate(()=>{(window as any).__adelante.setActingStaff('s-sa','sys_admin');(window as any).__adelante.go('/inbox');});await expect(page.getByTestId('website-inbox')).toContainText('Public intake test');await expect(page.getByTestId('website-inbox')).toContainText('Career intake test');await expect(page.getByTestId('website-inbox')).toContainText('resume.pdf');
+ await page.evaluate(()=>{(window as any).__adelante.setActingStaff('s-cc2','clinical_coordinator');});await expect(page.getByTestId('website-inbox')).toHaveCount(0);
+});
+test('team/platform anchor clearance and reduced FAQ stills',async({page})=>{await page.emulateMedia({reducedMotion:'reduce'});for(const [route,ids] of [['team',['care','navigation','resource','advocate']],['platform',['portal','record','adel','practice']]] as const){for(const id of ids){await page.goto(`/${route}#${id}`);await page.waitForFunction(()=>(window as any).__adelHydrated);await expect.poll(()=>page.locator('#'+id).evaluate(el=>Math.abs(el.getBoundingClientRect().top-parseFloat(getComputedStyle(el).scrollMarginTop)))).toBeLessThan(3);}}await page.goto('/faq');await page.getByRole('button',{name:'How much does it cost?',exact:true}).click();const region=page.locator('[role=region][data-state=open]');await expect(region).toBeVisible();expect(await region.evaluate(el=>getComputedStyle(el).animationName)).toBe('none');});
