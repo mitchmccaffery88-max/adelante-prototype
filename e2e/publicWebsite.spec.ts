@@ -22,6 +22,7 @@ for (const lang of ["en", "es"] as const) {
         await page.getByTestId("website-footer").getByRole("link", { name: route === "/about" ? d.websiteAboutNav : d.websiteTeamNav, exact: true }).click();
       }
       await expect(page).toHaveURL(new RegExp(`${route === "/" ? "/" : route}$`));
+      await expect(page.getByRole("heading", {level:1})).toHaveText(route === "/" ? d.websiteHeroHeading : route === "/about" ? d.websiteAbout : d.websiteTeam);
       await expect(page.locator(".website-crisis")).toBeVisible();
       expect(await page.getByTestId("website-header").locator("a").evaluateAll((els) => els.map((el) => [el.textContent, el.getAttribute("href")]))).toEqual(headerLinks);
       expect(await page.getByTestId("website-footer").locator("a").evaluateAll((els) => els.map((el) => [el.textContent, el.getAttribute("href")]))).toEqual(footerLinks);
@@ -53,7 +54,7 @@ for (const lang of ["en", "es"] as const) {
           for (const key of ["websiteCareTeam", "websiteNavigationTeam", "websiteResourceTeam", "websiteAdvocateTeam"] as const) await expect(page.locator("#team")).toContainText(d[key]);
           await expect(page.getByRole("link", { name: d.websiteFitNav, exact: true }).last()).toHaveAttribute("href", "/#find-your-fit");
         }
-        await expect(page.getByRole("heading", { name: d.websiteReady, exact: true })).toBeVisible();
+        await expect(page.locator(".website-closing").getByRole("heading", { name: d.websiteReady, exact: true })).toBeVisible();
       }
     }
     await page.goto("/#faq"); await anchorAligned(page, "faq");
@@ -112,7 +113,7 @@ test("public website mobile menu", async ({ page }) => {
   await page.getByRole("button", { name: "Open website menu" }).click();
   await nav.getByRole("button",{name:"Get care",exact:true}).click();
   await expect(nav.locator("#website-phone-care")).toBeVisible();
-  await nav.getByRole("link", { name: "FAQ", exact: true }).click();
+  await nav.getByRole("link", { name: "FAQ Answers to common questions", exact: true }).click();
   await expect(page).toHaveURL(/\/faq$/); await expect(page.getByRole("heading",{level:1})).toHaveText("Frequently Asked Questions");
 });
 
