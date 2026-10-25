@@ -1,6 +1,6 @@
 import { useEarlyTapReplay } from "@/lib/earlyTap";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ArrowUp, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WebsiteBrand } from "@/components/WebsiteBrand";
@@ -13,6 +13,7 @@ import "./website.css";
 /** One public shell; application branding and navigation remain separate. */
 export function WebsiteLayout({ children }: { children: ReactNode }) {
  const { t, lang } = useI18n();
+ const location = useRouterState({select:s => s.location.href});
  useEarlyTapReplay();
  const shellRef = useRef<HTMLDivElement>(null); const crisisRef = useRef<HTMLElement>(null);
  const sentinel = useRef<HTMLDivElement>(null); const headerRef = useRef<HTMLElement>(null); const top = useRef<HTMLDivElement>(null);
@@ -29,6 +30,15 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   const demo = shellRef.current?.querySelector('[data-testid="demo-controls-bar"]'); if (demo) observer.observe(demo);
   measure(); return () => observer.disconnect();
  },[]);
+ useEffect(() => {
+  if (!compact || !window.location.hash) return;
+  const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+  if (!target) return;
+  const observer = new ResizeObserver(() => target.scrollIntoView({block:"start",behavior:"instant"}));
+  if (headerRef.current) observer.observe(headerRef.current);
+  const timer = window.setTimeout(() => observer.disconnect(),250);
+  return () => { window.clearTimeout(timer); observer.disconnect(); };
+ },[compact,location]);
  useEffect(() => {
   const observer = new IntersectionObserver(entries => setCompact(!entries[0]?.isIntersecting));
   if (sentinel.current) observer.observe(sentinel.current);
