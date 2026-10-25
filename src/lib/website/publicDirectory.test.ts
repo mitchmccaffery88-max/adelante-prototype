@@ -1,0 +1,21 @@
+import {describe,it,expect} from 'vitest';
+import {filterPublicResources,getPublicResources,getPublicCounties,type PublicResource} from './publicDirectory';
+import {statedCounty} from './resourceMetadata';
+import {runAction} from '../actions/runAction';
+import {listPublicResourceReports,publicReportActor,createPublicResourceReport} from './publicResourceReports';
+import {patientBrowsableResources} from '../communityResources';
+import {siteConfig} from './siteConfig';
+const base:PublicResource={id:'fixture',type:'community_resource',name:'Food Place',description:'Food help',city:'Example City',county:'Example',hours:'',phone:'',categoryId:'food',showOnPublic:true,verified:false};
+describe('public directory rules',()=>{
+ it('showOnPublic false is always excluded',()=>expect(filterPublicResources([{...base,showOnPublic:false}],{demo:true})).toHaveLength(0));
+ it('verified is required outside demo',()=>{expect(filterPublicResources([base],{demo:false})).toHaveLength(0);expect(filterPublicResources([{...base,verified:true}],{demo:false})).toHaveLength(1);});
+ it('demo includes unverified but not private resources',()=>expect(filterPublicResources([base,{...base,id:'private',showOnPublic:false}],{demo:true}).map(r=>r.id)).toEqual(['fixture']));
+ it('category maps recovery to existing AA NA category',()=>{expect(filterPublicResources([{...base,categoryId:'recovery_meetings'}],{category:'recovery',demo:true})).toHaveLength(1);expect(filterPublicResources([base],{category:'housing',demo:true})).toHaveLength(0);});
+ it('county exact filter and all areas default',()=>{expect(filterPublicResources([base],{county:'Elsewhere',demo:true})).toHaveLength(0);expect(filterPublicResources([base],{county:'Example',demo:true})).toHaveLength(1);expect(filterPublicResources([base],{demo:true})).toHaveLength(1);});
+ it('query searches name description city with accent normalization',()=>{for(const q of ['food place','help','example city'])expect(filterPublicResources([base],{q,demo:true})).toHaveLength(1);expect(filterPublicResources([base],{q:'absent',demo:true})).toHaveLength(0);});
+ it('only explicitly stated counties backfill; no city inference',()=>{expect(statedCounty({address:'1 Main St, Visalia, CA'})).toBe('');expect(statedCounty({description:'Serving Tulare County'})).toBe('Tulare');expect(statedCounty({county:'',description:'Tulare County'})).toBe('');});
+ it('public reads the same resource ids and facts, plus naloxone',()=>{const member=patientBrowsableResources();const publicRows=getPublicResources({demo:true});const shared=publicRows.find(r=>r.type==='community_resource');expect(shared).toBeDefined();expect(member.find(r=>r.id===shared?.id)?.name).toBe(shared?.name);expect(publicRows.some(r=>r.type==='naloxone_access_point')).toBe(true);expect(getPublicCounties()).toEqual([...getPublicCounties()].sort((a,b)=>a.localeCompare(b)));});
+ it('anonymous report appends once, audits once with no personal fields',()=>{const r=getPublicResources()[0];expect(r).toBeDefined();if(!r)throw new Error('No public listing');const before=listPublicResourceReports().length;const res=runAction('resource_public_report',publicReportActor,undefined,{args:[{actor:publicReportActor,resourceId:r.id,resourceType:r.type,reason:'Closed',note:'Phone wrong 123456789 email@example.com'}]});expect(res.ok).toBe(true);expect(listPublicResourceReports()).toHaveLength(before+1);const row=listPublicResourceReports().at(-1);expect(row?.label).toBe('Public report: Closed');expect(row?.note).not.toContain('123456789');expect(row?.note).not.toContain('email@example.com');expect(Object.keys(row??{}).sort()).toEqual(['createdAt','id','label','note','reason','resourceId','resourceType','simulated'].sort());expect(res.event.detail).not.toHaveProperty('patientId');expect(res.event.detail).not.toHaveProperty('actorId');expect(res.event.detail?.simulated).toBe(true);});
+ it('staff cannot impersonate an anonymous principal',()=>{const r=getPublicResources()[0];if(!r)throw new Error('No public listing');expect(createPublicResourceReport({actor:{role:'sys_admin'},resourceId:r.id,resourceType:r.type,reason:'Closed'}).ok).toBe(false);expect(runAction('resource_public_report',{role:'sys_admin'},undefined).ok).toBe(false);});
+ it('launch demo flag defaults true',()=>expect(siteConfig.publicDirectoryDemo).toBe(true));
+});
