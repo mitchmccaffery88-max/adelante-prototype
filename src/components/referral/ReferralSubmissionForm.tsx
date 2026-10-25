@@ -442,7 +442,7 @@ export function ReferralSubmissionForm({
               value={form.referralSource}
               onValueChange={(v) => setForm({ ...form, referralSource: v as ReferralSource })}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Referral source">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

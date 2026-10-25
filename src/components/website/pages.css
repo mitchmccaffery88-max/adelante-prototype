@@ -14,6 +14,7 @@
 .public-tiles {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:32px;}
 .public-tiles .daylight-tile {border:1px solid var(--line);border-radius:var(--radius-md);}
 .public-tiles .daylight-tile p:last-child {margin-bottom:0;}
+.public-referral form>div:last-child {flex-wrap:wrap;}.public-referral form>div:last-child>p {flex:1 1 100%;}.public-referral h2 {font-size:24px;line-height:30px;}.public-referral form button:focus-visible {outline:3px solid var(--ink);outline-offset:2px;}
 .public-cta {display:flex;align-items:center;justify-content:space-between;gap:32px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:32px;}
 .public-cta h2 {font-size:28px;line-height:34px;}.public-cta p {margin-bottom:0;}.public-cta a {flex-shrink:0;}
 .platform-part {display:grid;grid-template-columns:48px minmax(0,1fr);gap:24px;max-width:880px;}.platform-points {list-style:none;padding:0;margin:24px 0 0;}.platform-points li {display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:72px;border-top:1px solid var(--line);padding:16px 0;}.platform-points li>span:first-child {flex:1;min-width:0;}.platform-coming {font-size:14px;color:var(--ink-muted);}
