@@ -1,6 +1,7 @@
 // Mitch's public website copy, 12 Oct 2026. English is verbatim.
 // ES Draft — pending translation review (all Spanish strings in this module).
 export const websiteEn = {
+ "website.v2.report.simulated": "Simulated — report stays in this preview",
   "website.v2.included": "What's included",
   "website.v2.work": "What you'll work on",
   "website.v2.journey.team": "Your team on this journey",
@@ -381,6 +382,7 @@ export const websiteEn = {
 } as const;
 
 export const websiteEs: Record<keyof typeof websiteEn, string> = {
+ "website.v2.report.simulated": "Simulado — el informe queda en esta vista previa",
   "website.v2.included": "Qué incluye",
   "website.v2.work": "En qué vas a trabajar",
   "website.v2.journey.team": "Tu equipo en este camino",

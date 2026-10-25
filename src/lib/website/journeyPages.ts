@@ -1,4 +1,7 @@
 import {Brain,Sunrise,Route,HeartHandshake,Video,ClipboardList,Users,HandHeart,type LucideIcon} from 'lucide-react';
+import { LIBRARY_CATEGORIES } from '../library';
+import { RECOVERY_MODULES } from '../recovery';
+import { websiteEn } from '../i18n.website';
 import type {WebsiteKey} from '../websiteMenus';
 export type JourneyId='everyday'|'coming-home'|'recovery'|'advocates';
 export type JourneyData={id:JourneyId;title:WebsiteKey;intro:WebsiteKey;who:WebsiteKey;points:WebsiteKey[];tint:string;icon:LucideIcon;topics:{title:WebsiteKey;body:WebsiteKey}[];team:[LucideIcon,WebsiteKey][];path:boolean};
@@ -9,3 +12,5 @@ export const journeyPages:JourneyData[]=[
 {id:'recovery',title:'website.v2.recovery',intro:'website.v2.journey.2.0',who:'website.v2.recovery.who',points:['website.v2.journey.2.1','website.v2.journey.2.2','website.v2.journey.2.3'],tint:'surface-sunk',icon:Route,topics:topics('recovery',9),team:[[HandHeart,'websiteRecovery'],[Brain,'websiteClinicians'],[Video,'websitePsychiatry']],path:true},
 {id:'advocates',title:'website.v2.advocates',intro:'website.v2.journey.3.0',who:'websiteLovedOnesBody',points:['website.v2.journey.3.1','website.v2.journey.3.2','website.v2.journey.3.3'],tint:'path-faint',icon:HeartHandshake,topics:topics('consent',3),team:[[HeartHandshake,'websiteAdvocates'],[Users,'websiteResources'],[ClipboardList,'websiteCoordinators']],path:true}
 ];
+
+export function baselineTopicTitle(key:WebsiteKey):string { const title=websiteEn[key]; return LIBRARY_CATEGORIES.find(c=>c.name===title)?.name ?? RECOVERY_MODULES.find(m=>m.name===title)?.name ?? title; }
