@@ -45,15 +45,16 @@ export function installReveals(root: ParentNode = document): () => void {
 /** Magnetic Sign in / Get started: fine pointers only; translate is clamped so the hit area barely moves. */
 export function installMagnetic(root: Document = document): () => void {
  if (!magneticAllowed()) return () => {};
- let active: HTMLElement | null = null;
- const reset = () => { if (active) { active.style.translate = ""; active.removeAttribute("data-magnetic-active"); } active = null; };
+ let active: HTMLElement | null = null; let base: DOMRect | null = null;
+ const reset = () => { if (active) { active.style.translate = ""; active.removeAttribute("data-magnetic-active"); } active = null; base = null; };
  const move = (event: PointerEvent) => {
   if (event.pointerType !== "mouse") return;
   const el = (event.target as Element | null)?.closest?.<HTMLElement>(MAGNETIC_SELECTOR) ?? null;
   if (el !== active) reset();
   if (!el) return;
+  if (!base) base = el.getBoundingClientRect();
   active = el; el.setAttribute("data-magnetic-active", "");
-  const r = el.getBoundingClientRect();
+  const r = base;
   el.style.translate = `${magneticOffset(event.clientX, r.left + r.width / 2)}px ${magneticOffset(event.clientY, r.top + r.height / 2)}px`;
  };
  root.addEventListener("pointermove", move, { passive: true }); root.addEventListener("pointerleave", reset);
