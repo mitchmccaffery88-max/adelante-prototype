@@ -1,10 +1,11 @@
 # Roadmap
 
 ## Daylight v2 batch 4b — remaining public pages
-- [ ] Cost, grouped FAQ, role-only Team, Partners, Platform, Privacy, Careers and Contact with bilingual copy and shared motion/template.
-- [ ] Referral presentation-only three-step layout; preserve all fields, validation, advocate behavior, robot check and encrypted submission.
-- [ ] Verify platform capabilities/status flag; preview-only careers/contact registry inbox and résumé metadata validation.
-- [ ] Focused unit/referral/browser checks at 1280/390 EN/ES; record changed files, status evidence and limitations. Do not publish.
+- [x] Cost, grouped FAQ, role-only Team, Partners, Platform, Privacy, Careers and Contact with bilingual copy and shared motion/template.
+- [x] Referral three-step presentation; all fields, final validation, advocate URL and robot/store/delivery path preserved. Existing preview storage is not encrypted: public claim corrected, no transport implementation added.
+- [x] Platform capabilities/status flag; preview-only careers/contact registry inbox and résumé metadata validation.
+- [x] Final units 3,297/3,297; 4b/polish browser 9/9; existing public suite 11/11 and 4a 6/6; intake repeat 3/3 after focus-click correction; no-JS visibility all nine pages. Report: docs/daylight-v2-batch4b-report.md. Nothing published.
+- Follow-up blockers: persistent authenticated intake backend and encrypted referral storage; counsel notice/contact and clinic details; native-speaker Spanish review.
 
 ## Daylight v2 batch 4a — shared pages and directory COMPLETE (prototype)
 - [x] WebsitePage/JourneyPage, four journeys, How it works and About with bilingual copy and shared ReadyBand.
@@ -53,4 +54,4 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 
 ## Daylight v2 batch 3 (motion)
 - [x] Motion layers 3,7,8,9,10,11,13,14,17,18 + ray clipping, reduced-motion stills, tests
-- [ ] /faq and /cost FAQ answers: waiting on FAQ content for those pages (still placeholders)
+- [x] /faq and /cost use shared FAQ motion with batch 4b content.
