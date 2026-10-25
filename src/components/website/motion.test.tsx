@@ -68,7 +68,7 @@ describe('hero pause control', () => {
   expect(change).toHaveBeenLastCalledWith(true);
  });
  it('Spanish play label is Reproducir animación', async () => {
-  const { websiteEs } = await import('@/lib/i18n.website') as unknown as { websiteEs?: Record<string, string> };
-  if (websiteEs) expect(websiteEs['website.v2.resume']).toBe('Reproducir animación');
+  const { websiteEs } = await import('@/lib/i18n.website');
+  expect(websiteEs['website.v2.resume']).toBe('Reproducir animación');
  });
 });
