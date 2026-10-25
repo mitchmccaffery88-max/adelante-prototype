@@ -1,5 +1,11 @@
 # Roadmap
 
+## Daylight v2 batch 2 — landing page COMPLETE
+- [x] Thirteen specified bands implemented (footprint hidden), configurable hero and manual journeys.
+- [x] Scripted public Ask Adel with safety/privacy precedence, no raw text retention and anonymous intent counters.
+- [x] /directory public placeholder added without touching patient /resources; legacy anchors retained.
+- [x] EN/ES desktop/phone, keyboard, crisis clearance, Axe and reduced motion verified; full units 3,260/3,260, public browser 27/27. Report: docs/daylight-v2-batch2-report.md. Nothing published.
+
 ## Daylight v2 batch 1 — shared public shell COMPLETE
 - [x] Rebuild public header, click mega-menus, phone sheet, fixed 988 bar and footer using existing tokens.
 - [x] Preserve existing content and access boundaries; add twelve missing public destinations and auth/start crisis coverage. Existing `/resources` retains its member shell; public directory reclassification is outside this public-only batch.

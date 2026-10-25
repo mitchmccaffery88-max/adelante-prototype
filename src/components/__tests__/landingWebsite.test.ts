@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { websiteEn, websiteEs, WEBSITE_NAV } from "@/lib/i18n.website";
 
 const landing = readFileSync("src/components/Landing.tsx", "utf8");
+const ready = readFileSync("src/components/website/ReadyBand.tsx", "utf8");
 const shell = readFileSync("src/components/AppShell.tsx", "utf8");
 const content = readFileSync("src/components/WebsiteContent.tsx", "utf8");
 const layout = readFileSync("src/components/WebsiteLayout.tsx", "utf8");
@@ -75,8 +76,8 @@ describe("public website contract", () => {
     expect(layout).toContain("<WebsiteBrand />");
     expect(layout).toContain('t("websiteBrand")');
     expect(shell).toContain('href="tel:988"');
-    expect(landing).toContain('to="/start/signup"');
-    expect(landing).toContain('to="/advocate"');
+    expect(ready).toContain('to="/start/signup"');
+    expect(ready).toContain('to="/referral"');
     expect(index).toContain("websiteEn.websiteTitle");
     expect(websiteEn.websiteTitle).toBe("Adelante Health — Whole-Person Care, Wherever You Are");
   });
@@ -89,12 +90,12 @@ describe("public website contract", () => {
     expect(content).toContain('id="partners"');
     expect(content).toContain('to="/referral"');
     expect(content).toContain('data-testid="website-privacy"');
-    expect(landing).not.toContain("websitePrivacyLine");
-    expect(landing.indexOf('id="faq"')).toBeLessThan(landing.lastIndexOf("<WebsiteClosing"));
+    expect(landing).toContain("websitePrivacyLine");
+    expect(landing.indexOf('id="faq"')).toBeLessThan(landing.lastIndexOf("<ReadyBand"));
     expect(websiteEn.websiteHeroHeading).toBe("Your Path Forward Starts Here.");
     expect(websiteEn.websiteHeroEyebrow).toBe("Care for anyone, wherever you are");
     for (const dict of [websiteEn, websiteEs]) for (const text of Object.values(dict)) {
-      const nums = (text.match(/\d+/g) ?? []).filter((n) => !["988", "911", "90", "2", "42", "2026"].includes(n));
+      const nums = (text.match(/\d+/g) ?? []).filter((n) => !["988", "911", "90", "2", "42", "2026", "4"].includes(n));
       expect(nums, text).toEqual([]);
     }
   });

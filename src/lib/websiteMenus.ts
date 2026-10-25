@@ -7,7 +7,7 @@ const item = (title: WebsiteKey, to: string, icon: LucideIcon, body?: WebsiteKey
 export const WEBSITE_MENUS: WebsiteMenu[] = [
  { id: "care", title: "website.v2.care", columns: [
   { title: "website.v2.who", links: [item("website.v2.anyone", "/care/everyday", Brain, "website.v2.anyone.body"),item("website.v2.coming", "/care/coming-home", Sunrise, "website.v2.coming.body"),item("website.v2.advocates", "/care/advocates", HeartHandshake,"website.v2.advocates.body")] },
-  { title: "website.v2.journeys", links: [item("website.v2.everyday","/care/everyday",Route,"website.v2.everyday.body"),item("website.v2.first90","/care/coming-home",Route,"website.v2.first90.body"),item("website.v2.recovery","/care/recovery",Route,"website.v2.recovery.body"),item("website.v2.directory","/resources",House,"website.v2.directory.body")] },
+  { title: "website.v2.journeys", links: [item("website.v2.everyday","/care/everyday",Route,"website.v2.everyday.body"),item("website.v2.first90","/care/coming-home",Route,"website.v2.first90.body"),item("website.v2.recovery","/care/recovery",Route,"website.v2.recovery.body"),item("website.v2.directory","/directory",House,"website.v2.directory.body")] },
   { title: "website.v2.howcare", links: [item("website.v2.how","/how-it-works",Footprints,"website.v2.how.body"),item("website.v2.what","/how-it-works",Gift,"website.v2.what.body","what"),item("website.v2.cost","/cost",BadgeCheck,"website.v2.cost.body"),item("website.v2.faq","/faq",CircleHelp,"website.v2.faq.body")] }
  ], promo: { title:"website.v2.care.promo.title", body:"website.v2.care.promo.body",cta:"websiteStart",to:"/start/signup",secondary:true } },
  { id:"team",title:"website.v2.team",intro:"website.v2.team.intro",body:"website.v2.team.body",columns:[

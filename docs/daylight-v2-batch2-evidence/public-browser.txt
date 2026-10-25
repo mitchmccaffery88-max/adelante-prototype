@@ -1,0 +1,34 @@
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+Running 27 tests using 1 worker
+
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓   1 [chromium] › e2e/publicEarlyTap8a2.spec.ts:4:1 › a language tap before the homepage is interactive still applies; 988 stays a plain link (7.3s)
+  ✓   2 [chromium] › e2e/publicEarlyTap8a2.spec.ts:13:1 › a menu tap before the phone homepage is interactive opens the menu once (6.5s)
+  ✓   3 [chromium] › e2e/publicWebsite.spec.ts:13:3 › public website en: separate pages, shared layout, navigation and copy (13.9s)
+  ✓   4 [chromium] › e2e/publicWebsite.spec.ts:13:3 › public website es: separate pages, shared layout, navigation and copy (11.6s)
+  ✓   5 [chromium] › e2e/publicWebsite.spec.ts:78:2 › legacy public anchor about (4.6s)
+  ✓   6 [chromium] › e2e/publicWebsite.spec.ts:78:2 › legacy public anchor team (3.9s)
+  ✓   7 [chromium] › e2e/publicWebsite.spec.ts:78:2 › legacy public anchor partners (4.6s)
+  ✓   8 [chromium] › e2e/publicWebsite.spec.ts:78:2 › legacy public anchor who-its-for (4.3s)
+  ✓   9 [chromium] › e2e/publicWebsite.spec.ts:86:2 › homepage anchors from / (4.7s)
+  ✓  10 [chromium] › e2e/publicWebsite.spec.ts:86:2 › homepage anchors from /about (8.7s)
+  ✓  11 [chromium] › e2e/publicWebsite.spec.ts:86:2 › homepage anchors from /team (8.1s)
+  ✓  12 [chromium] › e2e/publicWebsite.spec.ts:101:1 › public website mobile menu (6.4s)
+  ✓  13 [chromium] › e2e/publicWebsite.spec.ts:123:1 › public referral accepts no agency but requires referrer name (5.9s)
+  ✓  14 [chromium] › e2e/websiteDaylight.spec.ts:6:2 › Daylight shell 1280 en: menus, focus, clearance and contrast (8.1s)
+  ✓  15 [chromium] › e2e/websiteDaylight.spec.ts:6:2 › Daylight shell 1280 es: menus, focus, clearance and contrast (9.7s)
+  ✓  16 [chromium] › e2e/websiteDaylight.spec.ts:6:2 › Daylight shell 390 en: menus, focus, clearance and contrast (10.2s)
+  ✓  17 [chromium] › e2e/websiteDaylight.spec.ts:6:2 › Daylight shell 390 es: menus, focus, clearance and contrast (9.2s)
+  ✓  18 [chromium] › e2e/websiteDaylight.spec.ts:48:1 › Daylight crisis bar and one public shell on every public destination and entry flow (13.5s)
+  ✓  19 [chromium] › e2e/websiteDaylight.spec.ts:58:1 › Daylight reduced motion and shrinking sticky header (4.8s)
+  ✓  20 [chromium] › e2e/websiteLandingDaylight.spec.ts:4:72 › landing 1280 en: bands, journeys, Adel safety and accessibility (8.1s)
+  ✓  21 [chromium] › e2e/websiteLandingDaylight.spec.ts:4:72 › landing 1280 es: bands, journeys, Adel safety and accessibility (10.3s)
+  ✓  22 [chromium] › e2e/websiteLandingDaylight.spec.ts:4:72 › landing 390 en: bands, journeys, Adel safety and accessibility (8.0s)
+  ✓  23 [chromium] › e2e/websiteLandingDaylight.spec.ts:4:72 › landing 390 es: bands, journeys, Adel safety and accessibility (7.9s)
+  ✓  24 [chromium] › e2e/websiteLandingDaylight.spec.ts:17:1 › reduced motion finishes hero without autoplay (4.0s)
+  ✓  25 [chromium] › e2e/websitePolish.spec.ts:12:3 › public polish and accessibility / (11.3s)
+  ✓  26 [chromium] › e2e/websitePolish.spec.ts:12:3 › public polish and accessibility /about (7.1s)
+  ✓  27 [chromium] › e2e/websitePolish.spec.ts:12:3 › public polish and accessibility /team (8.3s)
+
+  27 passed (3.9m)

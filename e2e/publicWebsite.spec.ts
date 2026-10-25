@@ -28,7 +28,8 @@ for (const lang of ["en", "es"] as const) {
       expect(await page.getByTestId("website-footer").locator("a").evaluateAll((els) => els.map((el) => [el.textContent, el.getAttribute("href")]))).toEqual(footerLinks);
       if (lang === "es") await expect(page.getByText("ES Draft — pending translation review", { exact: true })).toBeVisible();
       if (route === "/") {
-        await expect(page.locator("#about, #team, #partners, [data-testid=website-privacy]")).toHaveCount(0);
+        await expect(page.locator("#about, #team, #partners")).toHaveCount(0);
+        await expect(page.getByTestId("website-privacy")).toHaveText(d.websitePrivacyLine);
         await expect(page.getByRole("heading", { level: 1 })).toHaveText(d.websiteHeroHeading);
       } else {
         const title = route === "/about" ? "About Us — Adelante Health" : "Our Team — Adelante Health";

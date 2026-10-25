@@ -56,6 +56,7 @@ import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as DataExchangeRouteImport } from './routes/data-exchange'
+import { Route as DirectoryRouteImport } from './routes/directory'
 import { Route as DisclosureLogRouteImport } from './routes/disclosure-log'
 import { Route as DmcOdsReadinessRouteImport } from './routes/dmc-ods-readiness'
 import { Route as DocumentsRouteImport } from './routes/documents'
@@ -377,6 +378,11 @@ const DashboardsRoute = DashboardsRouteImport.update({
 const DataExchangeRoute = DataExchangeRouteImport.update({
   id: '/data-exchange',
   path: '/data-exchange',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DirectoryRoute = DirectoryRouteImport.update({
+  id: '/directory',
+  path: '/directory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DisclosureLogRoute = DisclosureLogRouteImport.update({
@@ -869,6 +875,7 @@ export interface FileRoutesByFullPath {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/data-exchange': typeof DataExchangeRoute
+  '/directory': typeof DirectoryRoute
   '/disclosure-log': typeof DisclosureLogRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
@@ -1004,6 +1011,7 @@ export interface FileRoutesByTo {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/data-exchange': typeof DataExchangeRoute
+  '/directory': typeof DirectoryRoute
   '/disclosure-log': typeof DisclosureLogRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
@@ -1138,6 +1146,7 @@ export interface FileRoutesById {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/data-exchange': typeof DataExchangeRoute
+  '/directory': typeof DirectoryRoute
   '/disclosure-log': typeof DisclosureLogRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
@@ -1276,6 +1285,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/data-exchange'
+    | '/directory'
     | '/disclosure-log'
     | '/dmc-ods-readiness'
     | '/documents'
@@ -1411,6 +1421,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/data-exchange'
+    | '/directory'
     | '/disclosure-log'
     | '/dmc-ods-readiness'
     | '/documents'
@@ -1544,6 +1555,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/data-exchange'
+    | '/directory'
     | '/disclosure-log'
     | '/dmc-ods-readiness'
     | '/documents'
@@ -1681,6 +1693,7 @@ export interface RootRouteChildren {
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
   DataExchangeRoute: typeof DataExchangeRoute
+  DirectoryRoute: typeof DirectoryRoute
   DisclosureLogRoute: typeof DisclosureLogRoute
   DmcOdsReadinessRoute: typeof DmcOdsReadinessRoute
   DocumentsRoute: typeof DocumentsRoute
@@ -2077,6 +2090,13 @@ declare module '@tanstack/react-router' {
       path: '/data-exchange'
       fullPath: '/data-exchange'
       preLoaderRoute: typeof DataExchangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/directory': {
+      id: '/directory'
+      path: '/directory'
+      fullPath: '/directory'
+      preLoaderRoute: typeof DirectoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/disclosure-log': {
@@ -2820,6 +2840,7 @@ const rootRouteChildren: RootRouteChildren = {
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
   DataExchangeRoute: DataExchangeRoute,
+  DirectoryRoute: DirectoryRoute,
   DisclosureLogRoute: DisclosureLogRoute,
   DmcOdsReadinessRoute: DmcOdsReadinessRoute,
   DocumentsRoute: DocumentsRoute,
