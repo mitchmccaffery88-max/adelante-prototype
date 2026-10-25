@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Daylight public destinations use the existing AppShell public allowlist and WebsiteLayout; existing member resources keep their route and shell, and missing marketing destinations use WebsitePlaceholder with leaf metadata. Why: new public menus must resolve without reclassifying member/staff workflows.
+
 Standing rules — apply to ALL work, every change, any folder:
 - Registry + runAction: every mutation is a `CHART_ACTIONS` entry run through `runAction` (role check + one audit event).
 - Simulated: every mock/placeholder integration has `simulated: true` in `features.ts`, audits `simulated: true`, UI says "Simulated".
