@@ -55,3 +55,4 @@
 .daylight-faq [role=region] { animation:none; }
 
 .daylight-landing .daylight-ready h2 { color:var(--on-gold); }
+.daylight-landing input:focus-visible { outline:3px solid var(--ink); outline-offset:2px; box-shadow:none; }
