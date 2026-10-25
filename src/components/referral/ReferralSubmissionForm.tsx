@@ -7,7 +7,7 @@
 // `variant="staff"` is the same form with the marketing header and the
 // public confirmation screen omitted (staff have the real queue).
 import { REFERRER_TYPES, REFERRER_TYPE_LABELS, REFERRER_TYPE_LABELS_ES, type ReferrerType } from "@/lib/referrerPolicy";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState, isValidElement, cloneElement, type ReactElement } from "react";
 import {
   AdelanteEHR,
   REFERRAL_SOURCE_LABELS,
@@ -640,10 +640,11 @@ export function ReferralSubmissionForm({
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const id=useId();
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
-      {children}
+      <Label htmlFor={id} className="text-sm">{label}</Label>
+      {isValidElement(children)?cloneElement(children as ReactElement<{id?:string}>,{id}):children}
     </div>
   );
 }
