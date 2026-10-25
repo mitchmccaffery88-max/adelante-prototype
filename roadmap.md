@@ -1,10 +1,10 @@
 # Roadmap
 
-## Daylight v2 batch 2 — landing page
-- [ ] Replace landing with the thirteen specified bands (footprint hidden), configurable hero and manual journeys.
-- [ ] Build scripted public Ask Adel with safety/privacy precedence, no text persistence and anonymous intent counters.
-- [ ] Add /directory public placeholder without touching patient /resources; retain legacy anchors.
-- [ ] Validate EN/ES desktop/phone, keyboard, crisis clearance, reduced motion and existing/new tests; document files and limitations. Do not publish.
+## Daylight v2 batch 2 — landing page COMPLETE
+- [x] Thirteen specified bands implemented (footprint hidden), configurable hero and manual journeys.
+- [x] Scripted public Ask Adel with safety/privacy precedence, no raw text retention and anonymous intent counters.
+- [x] /directory public placeholder added without touching patient /resources; legacy anchors retained.
+- [x] EN/ES desktop/phone, keyboard, crisis clearance, Axe and reduced motion verified; full units 3,260/3,260, public browser 27/27. Report: docs/daylight-v2-batch2-report.md. Nothing published.
 
 ## Daylight v2 batch 1 — shared public shell COMPLETE
 - [x] Rebuild public header, click mega-menus, phone sheet, fixed 988 bar and footer using existing tokens.
