@@ -1,0 +1,9 @@
+import type { WebsiteKey } from '../websiteMenus';
+export type CapabilityStatus = 'live' | 'simulated' | 'planned';
+export const platformCapabilities: { id: 'portal'|'record'|'adel'|'practice'; title: WebsiteKey; description: WebsiteKey; points: { key: WebsiteKey; status: CapabilityStatus }[] }[] = [
+ { id:'portal', title:'website.v2.portal', description:'website.v2.system.portal', points:[{key:'website.v2.platform.portal.0',status:'live'},{key:'website.v2.platform.portal.1',status:'live'},{key:'website.v2.platform.portal.2',status:'live'}]},
+ { id:'record', title:'website.v2.record', description:'website.v2.system.record', points:[{key:'website.v2.platform.record.0',status:'live'},{key:'website.v2.platform.record.1',status:'live'},{key:'website.v2.platform.record.2',status:'simulated'}]},
+ { id:'adel', title:'website.v2.adel', description:'website.v2.system.adel', points:[{key:'website.v2.platform.adel.0',status:'simulated'},{key:'website.v2.platform.adel.1',status:'simulated'},{key:'website.v2.platform.adel.2',status:'live'}]},
+ { id:'practice', title:'website.v2.practice', description:'website.v2.system.practice', points:[{key:'website.v2.platform.practice.0',status:'live'},{key:'website.v2.platform.practice.1',status:'live'},{key:'website.v2.platform.practice.2',status:'simulated'}]},
+];
+export function capabilityPresentation(status:CapabilityStatus, showNonLive:boolean) { return status!=='live'&&!showNonLive ? {state:null,label:'website.v2.platform.soon' as const} : {state:status==='live'?'done' as const:status==='simulated'?'simulated' as const:'upnext' as const,label:`website.v2.platform.${status}` as WebsiteKey}; }

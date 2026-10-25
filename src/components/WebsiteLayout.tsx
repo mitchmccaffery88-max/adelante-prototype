@@ -56,9 +56,10 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   window.addEventListener("scroll",focus,{passive:true}); focus();
  };
  return <div ref={shellRef} className="website-shell" data-testid="website-layout" onFocusCapture={event => {
-  const target=event.target; if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target) || !target.matches(":focus-visible")) return;
-  const bottom=crisisRef.current?.getBoundingClientRect().top;
-  if (bottom !== undefined && target.getBoundingClientRect().bottom > bottom) target.scrollIntoView({block:"center",behavior:"instant"});
+  const target=event.target; if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target)) return;
+  // Let the pointer's click finish before correcting focus clearance.
+  window.requestAnimationFrame(()=>{if(document.activeElement!==target)return;const bottom=crisisRef.current?.getBoundingClientRect().top;
+  if (bottom !== undefined && target.getBoundingClientRect().bottom > bottom) target.scrollIntoView({block:"center",behavior:"instant"});});
  }}>
   <div id="website-top" ref={top} tabIndex={-1} className="website-top" />
   <a className="website-skip" href="#website-main">{t("website.v2.skip")}</a>

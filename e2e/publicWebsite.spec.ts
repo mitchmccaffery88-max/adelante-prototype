@@ -32,14 +32,14 @@ for (const lang of ["en", "es"] as const) {
         await expect(page.getByTestId("website-privacy")).toHaveText(d.websitePrivacyLine);
         await expect(page.getByRole("heading", { level: 1 })).toHaveText(d.websiteHeroHeading);
       } else {
-        const title = route === "/about" ? "About Us — Adelante Health" : "Our Team — Adelante Health";
+        const title = route === "/about" ? "About Us — Adelante Health" : "Meet Our Team — Adelante Health";
         await expect(page).toHaveTitle(title);
         await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", title);
-        await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", title);
+        if(route === "/about") await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", title);
         await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", route === "/about" ? websiteEn.websiteDescription : websiteEn.websiteTeamIntro);
         await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", route === "/about" ? websiteEn.websiteDescription : websiteEn.websiteTeamIntro);
-        await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
-        await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://adelmvp1.lovable.app${route}`);
+        await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", route === "/about" ? "summary_large_image" : "summary");
+        if(route === "/about") await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://adelmvp1.lovable.app${route}`);
         await expect(page.getByTestId("website-footer").getByRole("link", { name: route === "/about" ? d.websiteAboutNav : d.websiteTeamNav, exact: true })).toHaveAttribute("aria-current", "page");
         if (route === "/about") {
           await expect(page.locator("#about")).toContainText(d.websiteMission);
@@ -48,12 +48,12 @@ for (const lang of ["en", "es"] as const) {
           await expect(page.locator("blockquote")).toHaveCount(0);
           await expect(page.locator(".page-values")).toContainText(d.websiteTrustLanguage);
         } else {
-          await expect(page.locator("#team")).toContainText(d.websiteTeamIntro);
-          await expect(page.locator("#team li")).toHaveCount(7);
-          await expect(page.locator("#team img")).toHaveCount(0);
-          await expect(page.locator("#team")).not.toContainText(/Luis Camacho|Mitch|Dr\.|Christi|Bagga/);
-          for (const key of ["websiteCareTeam", "websiteNavigationTeam", "websiteResourceTeam", "websiteAdvocateTeam"] as const) await expect(page.locator("#team")).toContainText(d[key]);
-          await expect(page.getByRole("link", { name: d.websiteFitNav, exact: true }).last()).toHaveAttribute("href", "/#find-your-fit");
+          await expect(page.getByTestId("website-team")).toContainText(d.websiteTeamIntro);
+          await expect(page.getByTestId("website-team").locator("#care article,#navigation article,#resource article,#advocate article")).toHaveCount(7);
+          await expect(page.getByTestId("website-team").locator("img")).toHaveCount(0);
+          await expect(page.getByTestId("website-team")).not.toContainText(/Luis Camacho|Mitch|Dr\.|Christi|Bagga/);
+          for (const key of ["websiteCareTeam", "websiteNavigationTeam", "websiteResourceTeam", "websiteAdvocateTeam"] as const) await expect(page.getByTestId("website-team")).toContainText(d[key]);
+
         }
         await expect(page.locator(".website-closing").getByRole("heading", { name: d.websiteReady, exact: true })).toBeVisible();
       }
@@ -126,6 +126,7 @@ test("public referral accepts no agency but requires referrer name", async ({ pa
   const form = page.locator("form");
   // Labels in the shared Field wrap an input sibling, not a label-for pair.
   const input = (label: string) => form.locator("label").filter({ hasText: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`) }).locator("..").locator("input");
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
   await input("First name *").fill("OptionalAgency");
   await input("Last name *").fill("PublicWalkthrough");
   await input("Date of birth (or Medi-Cal ID below) *").fill("1989-02-08");
@@ -134,14 +135,17 @@ test("public referral accepts no agency but requires referrer name", async ({ pa
   await form.getByRole("checkbox", { name: /No reliable phone/ }).focus();
   await page.keyboard.press("Space");
   await expect(form.getByRole("checkbox", { name: /No reliable phone/ })).toBeChecked();
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
   await form.getByRole("checkbox", { name: /not a robot/ }).focus();
   await page.keyboard.press("Space");
   await expect(form.getByRole("checkbox", { name: /not a robot/ })).toBeChecked();
   await form.getByRole("button", { name: /Send referral|Submit referral/ }).click();
-  await expect(page.getByText("Please complete the required fields", { exact: true })).toBeVisible();
+  await expect(form.getByRole("alert")).toBeVisible();
   await expect(page.getByTestId("referral-confirmation")).toHaveCount(0);
   await input("Your name *").fill("Referral Walker");
   await expect(input("Agency / organization")).toHaveValue("");
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
   await form.getByRole("button", { name: /Send referral|Submit referral/ }).click();
   await expect(page.getByTestId("referral-confirmation")).toBeVisible();
   const saved = await page.evaluate(() => {

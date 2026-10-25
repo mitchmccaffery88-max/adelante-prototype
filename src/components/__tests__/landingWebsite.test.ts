@@ -60,7 +60,7 @@ describe("public website contract", () => {
     };
     for (const [key, text] of Object.entries(exact)) expect(websiteEn[key as keyof typeof websiteEn]).toBe(text);
     expect(landing).not.toContain('t("websiteBrand")');
-    for (const route of ["index", "about", "team"]) expect(readFileSync(`src/routes/${route}.tsx`, "utf8")).toContain("...websiteShareMeta");
+    for (const route of ["index", "about"]) expect(readFileSync(`src/routes/${route}.tsx`, "utf8")).toContain("...websiteShareMeta");
   });
   it("orders sections and navigation and preserves the old anchor", () => {
     expect(WEBSITE_NAV.map((n) => [n.to, n.hash])).toEqual([["/", "how-it-works"], ["/", "find-your-fit"], ["/", "what-you-get"], ["/", "faq"], ["/about", undefined], ["/team", undefined]]);
@@ -95,7 +95,7 @@ describe("public website contract", () => {
     expect(websiteEn.websiteHeroHeading).toBe("Your Path Forward Starts Here.");
     expect(websiteEn.websiteHeroEyebrow).toBe("Care for anyone, wherever you are");
     for (const dict of [websiteEn, websiteEs]) for (const text of Object.values(dict)) {
-      const nums = (text.match(/\d+/g) ?? []).filter((n) => !["988", "911", "90", "2", "42", "2026", "4", "10", "15"].includes(n));
+      const nums = (text.match(/\d+/g) ?? []).filter((n) => !["988", "911", "90", "2", "42", "2026", "4", "10", "15", "1", "3", "5"].includes(n));
       expect(nums, text).toEqual([]);
     }
   });

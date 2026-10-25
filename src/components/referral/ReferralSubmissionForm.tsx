@@ -7,7 +7,7 @@
 // `variant="staff"` is the same form with the marketing header and the
 // public confirmation screen omitted (staff have the real queue).
 import { REFERRER_TYPES, REFERRER_TYPE_LABELS, REFERRER_TYPE_LABELS_ES, type ReferrerType } from "@/lib/referrerPolicy";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState, isValidElement, cloneElement, type ReactElement } from "react";
 import {
   AdelanteEHR,
   REFERRAL_SOURCE_LABELS,
@@ -29,7 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, Lock, Send, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Circle, Lock, Send, ShieldCheck, ArrowLeft, ArrowRight } from "lucide-react";
+import {WebsitePage} from '@/components/website/WebsitePage';
+import type {WebsiteKey} from '@/lib/websiteMenus';
 import { useI18n } from "@/lib/i18n";
 import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
 import { EMPTY_BENEFITS, benefitsAnswers, type BenefitsFormState } from "@/lib/intakeBenefits";
@@ -166,6 +168,8 @@ export function ReferralSubmissionForm({
   const staff = variant === "staff";
   const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
+  const [step,setStep]=useState(0);
+  const [publicError,setPublicError]=useState('');
   // B6 — the public "your referrals" list is gone: it showed referred
   // people's names to anyone on a shared computer. Clear the storage key that
   // powered it so nothing lingers from earlier visits.
@@ -217,31 +221,39 @@ export function ReferralSubmissionForm({
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(!staff&&step<2){setStep(current=>current+1);return;}
+    setPublicError('');
     // §Batch B2 (Draft) — only critical fields block; the rest are chased.
     const critical = referralCriticalProblem({ ...form, phone: form.noPhone ? "" : form.phone, cin: benefits.cin ?? "" });
     if (critical) {
+      if(!staff){setPublicError(critical);setStep(1);}
       toast.error(critical);
       return;
     }
     if (!form.referrerName.trim()) {
+      if(!staff){setPublicError('Please complete the required fields');setStep(0);}
       toast.error("Please complete the required fields");
       return;
     }
     const contactProblem = referralContactProblem({ ...form, phone: form.noPhone ? "" : form.phone });
     if (contactProblem) {
+      if(!staff){setPublicError(contactProblem);setStep(contactProblem.startsWith("The person's")?1:0);}
       toast.error(contactProblem);
       return;
     }
     const noPhone = form.noPhone || !form.phone.trim();
     if (!noPhone && !form.consentToContact) {
+      if(!staff)setPublicError('Please confirm consent to contact');
       toast.error("Please confirm consent to contact");
       return;
     }
     if (!form.notARobot) {
+      if(!staff)setPublicError("Please verify you're not a robot");
       toast.error("Please verify you're not a robot");
       return;
     }
     if (benefitsCinProblem(benefits)) {
+      if(!staff){setPublicError('The Medi-Cal ID needs 9 letters or numbers, or leave it blank.');setStep(1);}
       toast.error("The Medi-Cal ID needs 9 letters or numbers, or leave it blank.");
       return;
     }
@@ -331,10 +343,10 @@ export function ReferralSubmissionForm({
 
   if (submitted && !staff) {
     return (
-      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16" data-testid="referral-confirmation">
+      <WebsitePage title="website.v2.referral.title" intro="website.v2.referral.intro" menu="website.v2.partners" ready={false}><section className="daylight-band"><div className="daylight-container public-referral"><div className="mx-auto max-w-2xl px-4 sm:px-6 py-16" data-testid="referral-confirmation">
         <div className="text-center">
           <CheckCircle2 className="h-12 w-12 text-teal mx-auto" />
-          <h1 className="font-display text-3xl text-navy mt-4">{SCREEN_COPY["ui.3452ff7a91dd"][screenLang]}</h1>
+          <h2 className="font-display text-3xl text-navy mt-4">{SCREEN_COPY["ui.3452ff7a91dd"][screenLang]}</h2>
           {confirmation && (
             <p className="mt-2 text-sm text-muted-foreground">
               {SCREEN_COPY["ui.ea10bb628600"][screenLang]}{" "}
@@ -371,17 +383,19 @@ export function ReferralSubmissionForm({
             onClick={() => {
               setSubmitted(false);
               setConfirmation(null);
+              setStep(0);
             }}
           >
             {SCREEN_COPY["ui.45ca7b806143"][screenLang]} </Button>
         </div>
-      </div>
+      </div></div></section></WebsitePage>
     );
   }
 
   const formBody = (
     <form onSubmit={onSubmit} className="space-y-6">
-      <section className="space-y-4">
+      {!staff&&<><ol className="referral-progress">{([0,1,2] as const).map(n=><li key={n} aria-current={step===n?'step':undefined}>{step>n?<CheckCircle2 aria-hidden="true"/>:<Circle aria-hidden="true"/>}{t(`website.v2.referral.step.${n}`)}</li>)}</ol><p className="referral-step-caption" tabIndex={-1} key={step} ref={node=>{if(node&&publicError)node.focus();}}>{t('website.v2.referral.step').replace('{step}',String(step+1))}</p><p className="public-form-note">{t('website.v2.form.required')} · {t('website.v2.form.private')}</p><div aria-live="polite" aria-atomic="true">{publicError&&<p className="public-form-error" role="alert">{screenLang==='es'?t('website.v2.form.error'):publicError}</p>}</div></>}
+      <section className="space-y-4" data-referral-step="0" hidden={!staff&&step!==0}>
         <h2 className="font-display text-lg text-navy">{SCREEN_COPY["ui.5c4698b6e0d6"][screenLang]}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Your name *">
@@ -429,7 +443,7 @@ export function ReferralSubmissionForm({
               value={form.referralSource}
               onValueChange={(v) => setForm({ ...form, referralSource: v as ReferralSource })}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label={t('website.v2.referral.label.source')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -444,7 +458,7 @@ export function ReferralSubmissionForm({
         </div>
       </section>
 
-      <section className="space-y-4 pt-2 border-t">
+      <section className="space-y-4 pt-2 border-t" data-referral-step="1" hidden={!staff&&step!==1}>
         <h2 className="font-display text-lg text-navy">{SCREEN_COPY["ui.74c3a493eaa3"][screenLang]}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="First name *">
@@ -506,7 +520,7 @@ export function ReferralSubmissionForm({
                 variant={form.justiceInvolved === o.v ? "default" : "outline"}
                 onClick={() => setForm({ ...form, justiceInvolved: o.v })}
               >
-                {o.label}
+                {screenLang==='es'?({yes:'Sí',no:'No',unsure:'No estoy seguro'}[o.v]):o.label}
               </Button>
             ))}
           </div>
@@ -532,7 +546,7 @@ export function ReferralSubmissionForm({
         <div className="rounded-lg border p-4 space-y-3" data-testid="referral-optional-details">
           <div>
             <Label className="text-sm">{SCREEN_COPY["ui.da3042ae0e36"][screenLang]}</Label>
-            <p className="text-xs text-muted-foreground">Leave blank if you don&apos;t know — our team will follow up. (Draft — pending clinical sign-off)</p>
+            <p className="text-xs text-muted-foreground">{t('website.v2.referral.optional')}</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Preferred language">
@@ -547,7 +561,7 @@ export function ReferralSubmissionForm({
             <Field label="Prior behavioral health records">
               <div className="flex flex-wrap gap-2">
                 {([{ v: "available", l: "Available" }, { v: "none_known", l: "None known" }] as const).map((o) => (
-                  <Button key={o.v} type="button" size="sm" variant={form.priorRecords === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, priorRecords: o.v })}>{o.l}</Button>
+                  <Button key={o.v} type="button" size="sm" variant={form.priorRecords === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, priorRecords: o.v })}>{screenLang==='es'?(o.v==='available'?'Disponibles':'No se conocen'):o.l}</Button>
                 ))}
               </div>
             </Field>
@@ -555,7 +569,7 @@ export function ReferralSubmissionForm({
               <Field label="Pending charges">
                 <div className="flex flex-wrap gap-2">
                   {([{ v: "yes", l: "Yes" }, { v: "no", l: "No" }, { v: "unknown", l: "Unknown" }] as const).map((o) => (
-                    <Button key={o.v} type="button" size="sm" variant={form.pendingCharges === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, pendingCharges: o.v })}>{o.l}</Button>
+                    <Button key={o.v} type="button" size="sm" variant={form.pendingCharges === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, pendingCharges: o.v })}>{screenLang==='es'?({yes:'Sí',no:'No',unknown:'No lo sé'}[o.v]):o.l}</Button>
                   ))}
                 </div>
               </Field>
@@ -576,7 +590,8 @@ export function ReferralSubmissionForm({
         </label>
       </section>
 
-      <div className="rounded-lg border-2 border-teal/30 bg-teal/5 p-4 space-y-3">
+      <div className="rounded-lg border-2 border-line-strong bg-surface p-4 space-y-3" data-referral-step="2" hidden={!staff&&step!==2}>
+        {!staff&&<h2>{t('website.v2.referral.step.2')}</h2>}
         <div className="flex items-start gap-2 text-sm">
           <Lock className="h-4 w-4 text-teal mt-0.5" />
           <p>
@@ -604,15 +619,16 @@ export function ReferralSubmissionForm({
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-teal" />
-          {SCREEN_COPY["ui.71a2220b52bf"][screenLang]} </p>
-        <Button
+          {staff?SCREEN_COPY["ui.71a2220b52bf"][screenLang]:t('website.v2.referral.preview')} </p>
+        {!staff&&step>0&&<Button type="button" variant="outline" className="website-secondary" onClick={()=>{setPublicError('');setStep(current=>current-1);}}><ArrowLeft aria-hidden="true"/>{t('website.v2.form.back')}</Button>}
+        {!staff&&step<2?<Button type="submit" className="website-primary">{t('website.v2.form.continue')}<ArrowRight aria-hidden="true"/></Button>:<Button
           type="submit"
           size="lg"
           className="bg-navy text-navy-foreground hover:bg-navy/90"
           data-testid="referral-submit"
         >
           <Send className="h-4 w-4 mr-2" />
-          {SCREEN_COPY["ui.719c2be7b5fd"][screenLang]} </Button>
+          {SCREEN_COPY["ui.719c2be7b5fd"][screenLang]} </Button>}
       </div>
     </form>
   );
@@ -620,25 +636,19 @@ export function ReferralSubmissionForm({
   if (staff) return formBody;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
-      <header className="mb-6">
-        <div className="text-xs font-medium uppercase tracking-wider text-teal">
-          {t("navReferrals")}
-        </div>
-        <h1 className="font-display text-3xl text-navy mt-1">{t("refTitle")}</h1>
-        <p className="text-muted-foreground mt-2">{t("refSubtitle")}</p>
-      </header>
-
-      <Card className="p-6">{formBody}</Card>
-    </div>
+    <WebsitePage title="website.v2.referral.title" intro="website.v2.referral.intro" menu="website.v2.partners" ready={false}><section className="daylight-band"><div className="daylight-container public-referral"><div className="max-w-3xl mx-auto">{formBody}</div></div></section></WebsitePage>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const id=useId();
+  const {t}=useI18n();
+  const labels:Record<string,string>={'Your name *':'name','Agency / organization':'agency','Email':'email','Phone':'phone','Phone (skipped)':'skipped','Referral source':'source','First name *':'first','Last name *':'last','Date of birth (or Medi-Cal ID below) *':'birth','Release date (Actual or Expected)':'release','County of release':'county','Preferred language':'language','Address':'address','Emergency contact':'emergency','Prior behavioral health records':'records','Pending charges':'charges'};
+  const key=labels[label];
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
-      {children}
+      <Label htmlFor={id} className="text-sm">{key?t(`website.v2.referral.label.${key}` as WebsiteKey):label}</Label>{label.endsWith('*')&&<span className="public-required"> · {t('website.v2.form.required')}</span>}
+      {isValidElement(children)?cloneElement(children as ReactElement<{id?:string}>,{id}):children}
     </div>
   );
 }

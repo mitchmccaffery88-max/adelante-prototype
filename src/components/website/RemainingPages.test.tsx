@@ -1,0 +1,15 @@
+// @vitest-environment jsdom
+import {it,expect,vi,afterEach} from 'vitest';
+import {render,screen,cleanup,fireEvent} from '@testing-library/react';
+import {PlatformPage,FaqPage,faqGroups} from './RemainingInformationPages';
+import {ContactPage} from './WebsiteForms';
+import {platformCapabilities,capabilityPresentation} from '@/lib/website/platformCapabilities';
+import {siteConfig} from '@/lib/website/siteConfig';
+import {websiteEn} from '@/lib/i18n.website';
+vi.mock('@/lib/i18n',()=>({useI18n:()=>({lang:'en',t:(key:keyof typeof websiteEn)=>websiteEn[key]})}));
+vi.mock('@tanstack/react-router',()=>({Link:({to,hash,search,children,...props}:any)=><a href={to+(search?.topic?'?topic='+search.topic:'')+(hash?'#'+hash:'')} {...props}>{children}</a>}));
+afterEach(cleanup);
+it('all twelve capability statuses render in both disclosure modes',()=>{expect(siteConfig.platformShowNonLive).toBe(true);render(<PlatformPage showNonLive/>);expect(document.querySelectorAll('[data-status=done]')).toHaveLength(8);expect(document.querySelectorAll('[data-status=simulated]')).toHaveLength(4);for(const part of platformCapabilities)for(const point of part.points){const row=document.querySelector(`[data-capability="${point.key}"]`);expect(row?.querySelector('[data-status]')?.getAttribute('data-status')).toBe(point.status==='live'?'done':point.status);}cleanup();render(<PlatformPage showNonLive={false}/>);expect(document.querySelectorAll('[data-status=simulated]')).toHaveLength(0);expect(screen.getAllByText('Coming soon')).toHaveLength(4);expect(document.querySelectorAll('[data-status=done]')).toHaveLength(8);});
+it('planned points have Up next chips or Coming soon, never Live',()=>{expect(capabilityPresentation('planned',true).state).toBe('upnext');expect(capabilityPresentation('planned',false)).toEqual({state:null,label:'website.v2.platform.soon'});});
+it('FAQ renders all six groups and multiple questions may stay open',()=>{render(<FaqPage/>);expect(faqGroups).toHaveLength(6);for(const group of faqGroups)expect(screen.getByRole('heading',{name:websiteEn[group.title],level:2})).toBeTruthy();fireEvent.click(screen.getByRole('button',{name:websiteEn['website.v2.faq.start.q']}));fireEvent.click(screen.getByRole('button',{name:websiteEn['website.v2.faq.video.q']}));expect(screen.getByRole('button',{name:websiteEn['website.v2.faq.start.q']}).getAttribute('aria-expanded')).toBe('true');expect(screen.getByRole('button',{name:websiteEn['website.v2.faq.video.q']}).getAttribute('aria-expanded')).toBe('true');});
+it('contact query preselects partnering and topic changes reveal the correct shortcuts',()=>{render(<ContactPage topic="partnering"/>);const topic=screen.getByLabelText(/What's this about/);expect((topic as HTMLSelectElement).value).toBe('partnering');fireEvent.change(topic,{target:{value:'referral'}});expect(screen.getByRole('link',{name:'This is faster on the referral page'}).getAttribute('href')).toBe('/referral');fireEvent.change(topic,{target:{value:'careers'}});expect(screen.getByRole('link',{name:'This is faster on the careers page'}).getAttribute('href')).toBe('/careers');});
