@@ -1,5 +1,11 @@
 # Roadmap
 
+## Daylight v2 batch 4a — shared pages and directory
+- [ ] Build WebsitePage/JourneyPage, four journeys, How it works and About with approved bilingual copy and shared ReadyBand.
+- [ ] Public directory accessor reads shared managed records; showOnPublic/county editor, verified/demo filters, URL filters and anonymous review reports through registry.
+- [ ] Keep patient /resources and gates unchanged; update public directory links only.
+- [ ] Validate unit/public flows, admin-to-public updates, queue reports, EN/ES phone/desktop, accessibility and crisis clearance; document limitations. Do not publish.
+
 ## Daylight v2 batch 2 — landing page COMPLETE
 - [x] Thirteen specified bands implemented (footprint hidden), configurable hero and manual journeys.
 - [x] Scripted public Ask Adel with safety/privacy precedence, no raw text retention and anonymous intent counters.
