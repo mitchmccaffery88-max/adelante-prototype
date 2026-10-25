@@ -1,0 +1,2 @@
+/** Only explicit county statements are carried forward; city names never imply a county. */
+export function statedCounty(record:{county?:string;address?:string;description?:string;name?:string;what?:string;serviceArea?:string}):string { if(record.county!==undefined)return record.county.trim();const text=[record.address,record.description,record.what,record.serviceArea,record.name].filter(Boolean).join(' ');return text.match(/\b([A-Z][a-z]+(?: [A-Z][a-z]+){0,2}) County\b/)?.[1]?.replace(/^(?:The |Serving |Across |In |For )/,'') ?? ''; }

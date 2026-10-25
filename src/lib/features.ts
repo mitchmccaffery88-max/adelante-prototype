@@ -264,3 +264,5 @@ export function simulatedSurfaceLabel(id: FeatureId): string {
 
 /** Public scripted information only; separate from clinical/admin integration switches. */
 export const WEBSITE_PUBLIC_FEATURES = { askAdelPublic: { simulated: true, description: 'Scripted public answers; no model, message retention, identifiers or clinical mutations.' } } as const;
+/** Anonymous listing reports stay inside this preview's existing review queue. */
+export const PUBLIC_DIRECTORY_REPORT_FEATURE = { simulated: true } as const;

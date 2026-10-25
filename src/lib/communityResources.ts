@@ -28,6 +28,7 @@
 // and its contact-verification workflow; `verifyResource` now publishes
 // through the shared store, so a verification is a real publish with real
 // revision history rather than a private boolean.
+import { statedCounty } from "@/lib/website/resourceMetadata";
 import { getStaffMember, type StaffRole } from "@/lib/roles";
 // Ported Adelante Journey directory listings (generated).
 import { PORTED_RESOURCES } from "@/lib/communityResources.ported";
@@ -80,6 +81,11 @@ export interface ResourceVerification {
 
 export interface CommunityResource {
   id: string;
+  showOnPublic?: boolean;
+  county?: string;
+  city?: string;
+  nameEs?: string;
+  descriptionEs?: string;
   categoryId: string;
   name: string;
   address: string;
@@ -142,6 +148,8 @@ function seed(
     id,
     categoryId,
     name,
+    showOnPublic: true,
+    county: statedCounty({ name, description }),
     // Deliberately empty rather than fabricated: staff SOURCE these, we do not
     // invent Tulare/Kings County addresses and phone numbers.
     address: "",
@@ -181,6 +189,8 @@ function sourced(
     hours,
     description,
     website,
+    showOnPublic: true,
+    county: statedCounty({ name, address, description }),
     placeholder: false,
     verified: false,
     status: "unverified",
@@ -625,6 +635,11 @@ export function verifyResource(input: VerifyInput): VerifyResult {
     hours: current.hours,
     website: current.website,
     categoryId: current.categoryId,
+    showOnPublic: current.showOnPublic ?? true,
+    county: current.county ?? statedCounty(current),
+    city: current.city,
+    nameEs: current.nameEs,
+    descriptionEs: current.descriptionEs,
   });
   resources.set(r.id, r);
   if (!RESOURCE_VERIFIER_ROLES.includes(input.actorRole))
