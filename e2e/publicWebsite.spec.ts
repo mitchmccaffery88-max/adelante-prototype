@@ -132,10 +132,10 @@ test("public referral accepts no agency but requires referrer name", async ({ pa
   await input("Date of birth (or Medi-Cal ID below) *").fill("1989-02-08");
   await form.getByRole("button", { name: "No", exact: true }).click();
   await page.getByTestId("referral-person-email").fill("person@example.org");
-  await form.getByRole("button", {name:"Continue",exact:true}).click();
   await form.getByRole("checkbox", { name: /No reliable phone/ }).focus();
   await page.keyboard.press("Space");
   await expect(form.getByRole("checkbox", { name: /No reliable phone/ })).toBeChecked();
+  await form.getByRole("button", {name:"Continue",exact:true}).click();
   await form.getByRole("checkbox", { name: /not a robot/ }).focus();
   await page.keyboard.press("Space");
   await expect(form.getByRole("checkbox", { name: /not a robot/ })).toBeChecked();
