@@ -54,7 +54,7 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   window.addEventListener("scroll",focus,{passive:true}); focus();
  };
  return <div ref={shellRef} className="website-shell" data-testid="website-layout" onFocusCapture={event => {
-  const target=event.target; if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target)) return;
+  const target=event.target; if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target) || !target.matches(":focus-visible")) return;
   const bottom=crisisRef.current?.getBoundingClientRect().top;
   if (bottom !== undefined && target.getBoundingClientRect().bottom > bottom) target.scrollIntoView({block:"center",behavior:"instant"});
  }}>
