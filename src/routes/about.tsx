@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { WebsiteAbout } from "@/components/WebsiteContent";
+import { AboutPage } from "@/components/website/InformationPages";
 import { websiteEn } from "@/lib/i18n.website";
 import { websiteShareMeta } from "@/lib/websiteMetadata";
 
@@ -19,5 +19,5 @@ export const Route = createFileRoute("/about")({
     ],
     links: [{ rel: "canonical", href: "https://adelmvp1.lovable.app/about" }],
   }),
-  component: WebsiteAbout,
+  component: AboutPage,
 });

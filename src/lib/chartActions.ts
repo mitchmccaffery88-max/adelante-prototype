@@ -1,3 +1,4 @@
+import { canReportPublicResource, createPublicResourceReport } from "@/lib/website/publicResourceReports";
 import { seedSimulatedContentSample } from "@/lib/contentAnalytics";
 import { canBrowseContent } from "@/lib/contentStaff";
 import { markContentReviewed } from "./contentPublishing";
@@ -70,7 +71,7 @@ import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency, endCoordinatorEmergencyNow, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-15.staff-dialogs";
+export const REGISTRY_VERSION = "2026-10-25.public-resource-reports";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -141,6 +142,7 @@ export function cosignRouteLabel(staffId?: string): string {
 }
 
 export const CHART_ACTIONS: ChartAction[] = [
+  { id: "resource_public_report", label: { en: "Report a public listing change", es: "Informar un cambio en un listado público" }, group: "admin", menu: false, needsPatient: false, simulated: true, check: "canReportPublicResource", store: refs(["createPublicResourceReport", createPublicResourceReport]), allowed: actor => canReportPublicResource(actor) ? ok() : hide("Anonymous listing reports only.") },
   { id: "coordinator_emergency_unlock", label: { en: "Emergency access", es: "Acceso de emergencia" }, group: "admin", menu: false, check: "canUnlockCoordinatorEmergency", simulated: true, successAuditFromStore: true, store: refs(["unlockCoordinatorEmergency", unlockCoordinatorEmergency]), allowed: (actor, patient) => canUnlockCoordinatorEmergency(actor, patient?.id) ? ok() : hide("Emergency access is not available for this chart.") },
   // Privacy P3 — "End access now": re-locks the opener's own window early; never widens.
   { id: "coordinator_emergency_end", label: { en: "End access now", es: "Terminar acceso ahora" }, group: "admin", menu: false, check: "canEndCoordinatorEmergency", simulated: true, successAuditFromStore: true, store: refs(["endCoordinatorEmergencyNow", endCoordinatorEmergencyNow]), allowed: (actor, patient) => canEndCoordinatorEmergency(actor, patient?.id) ? ok() : hide("Only the coordinator who opened this emergency window can end it.") },

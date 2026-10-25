@@ -54,6 +54,11 @@ export const NALOXONE_ACCESS_REVIEW = {
 
 export interface NaloxoneAccessPoint {
   id: string;
+  showOnPublic?: boolean;
+  county?: string;
+  hours?: string;
+  nameEs?: string;
+  descriptionEs?: string;
   name: string;
   what: string;
   city?: string;

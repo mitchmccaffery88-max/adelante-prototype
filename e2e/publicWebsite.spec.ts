@@ -43,10 +43,10 @@ for (const lang of ["en", "es"] as const) {
         await expect(page.getByTestId("website-footer").getByRole("link", { name: route === "/about" ? d.websiteAboutNav : d.websiteTeamNav, exact: true })).toHaveAttribute("aria-current", "page");
         if (route === "/about") {
           await expect(page.locator("#about")).toContainText(d.websiteMission);
-          await expect(page.locator("#partners")).toContainText(d.websitePartnersBody);
-          await expect(page.getByTestId("website-privacy")).toHaveText(d.websitePrivacyLine);
+          await expect(page.getByRole("heading",{name:d["website.v2.values"],exact:true})).toBeVisible();
+          await expect(page.locator(".page-values")).toContainText(d.websiteTrustPrivacy);
           await expect(page.locator("blockquote")).toHaveCount(0);
-          await expect(page.locator("#partners").getByRole("link", { name: d.websiteReferral })).toHaveAttribute("href", "/referral");
+          await expect(page.locator(".page-values")).toContainText(d.websiteTrustLanguage);
         } else {
           await expect(page.locator("#team")).toContainText(d.websiteTeamIntro);
           await expect(page.locator("#team li")).toHaveCount(7);

@@ -361,7 +361,7 @@ function FieldEditor({
             id={fieldId}
             aria-describedby={helpId}
             data-testid={`field-${field.key}`}
-            checked={value === true}
+            checked={field.key === "showOnPublic" ? value !== false : value === true}
             onCheckedChange={(v) => set(v === true)}
           />
           <label htmlFor={fieldId} className="text-xs text-muted-foreground">

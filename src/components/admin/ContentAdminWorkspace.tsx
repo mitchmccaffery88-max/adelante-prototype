@@ -1,3 +1,4 @@
+import { statedCounty } from "@/lib/website/resourceMetadata";
 import { StatusChip } from "@/components/ui/status-chip";
 import { ConfirmDialog } from "@/components/staff/confirm-dialog";
 import { FormField } from "@/components/staff/form-field";
@@ -375,7 +376,7 @@ function ManageTab({ version }: { version: number }) {
 
   const open = (id: string, initial: ContentBody) => {
     setOpenId(id);
-    setBody(initial);
+    setBody(typeId === "community_resource" || typeId === "naloxone_access_point" ? { ...initial, showOnPublic: initial.showOnPublic ?? true, county: statedCounty(initial as Parameters<typeof statedCounty>[0]) } : initial);
     setSubmitNote("");
     setReasonAttempted(false);
   };
@@ -562,6 +563,7 @@ function ManageTab({ version }: { version: number }) {
                 Sent back for changes: {entry.returnedNote}
               </p>
             )}
+            {(typeId === "community_resource" || typeId === "naloxone_access_point") && <p className="text-sm text-muted-foreground">Last checked: {typeof (body.verification as { verifiedAt?: string } | undefined)?.verifiedAt === "string" ? <ClientDate value={(body.verification as { verifiedAt: string }).verifiedAt}/> : typeof body.verifiedOn === "string" ? <ClientDate value={body.verifiedOn}/> : "Not yet checked"}</p>}
             <ContentForm descriptor={descriptor} body={body} onChange={setBody} />
             {typeId !== "community_resource" && typeId !== "naloxone_access_point" && (
               <MetaPanel typeId={typeId} body={body} onChange={setBody} />

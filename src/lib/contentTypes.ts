@@ -574,6 +574,11 @@ export const RECOVERY_LESSON_TYPE: ContentTypeDescriptor = {
 // ---------------------------------------------------------------------------
 
 const RESOURCE_FIELDS: ContentField[] = [
+  { key: "showOnPublic", label: "Show on public website", kind: "toggle" },
+  { key: "county", label: "County", kind: "text" },
+  { key: "city", label: "City", kind: "text" },
+  { key: "nameEs", label: "Spanish name", kind: "text" },
+  { key: "descriptionEs", label: "Spanish description", kind: "textarea" },
   {
     key: "categoryId",
     label: "Category",
@@ -623,6 +628,8 @@ export const COMMUNITY_RESOURCE_TYPE: ContentTypeDescriptor = {
   },
   emptyBody: () => ({
     id: "",
+    showOnPublic: true,
+    county: "",
     categoryId: RESOURCE_CATEGORIES[0]?.id ?? "",
     name: "",
     address: "",
@@ -648,6 +655,11 @@ export const COMMUNITY_RESOURCE_TYPE: ContentTypeDescriptor = {
 // ---------------------------------------------------------------------------
 
 const NALOXONE_FIELDS: ContentField[] = [
+  { key: "showOnPublic", label: "Show on public website", kind: "toggle" },
+  { key: "county", label: "County", kind: "text" },
+  { key: "hours", label: "Hours", kind: "text" },
+  { key: "nameEs", label: "Spanish name", kind: "text" },
+  { key: "descriptionEs", label: "Spanish description", kind: "textarea" },
   { key: "name", label: "Where", kind: "text", required: true },
   {
     key: "what",
@@ -675,7 +687,7 @@ export const NALOXONE_ACCESS_TYPE: ContentTypeDescriptor = {
     const p = NALOXONE_ACCESS_POINTS.find((x) => x.id === id);
     return p ? (structuredClone(p) as unknown as ContentBody) : undefined;
   },
-  emptyBody: () => ({ id: "", name: "", what: "", verified: false }),
+  emptyBody: () => ({ id: "", name: "", what: "", verified: false, showOnPublic: true, county: "" }),
   titleOf: (b) => str(b, "name") || "(unnamed access point)",
   validate: (b) => {
     const errors = requireText(b, NALOXONE_FIELDS);

@@ -1,3 +1,4 @@
+import { listPublicResourceReports, subscribePublicReports } from "@/lib/website/publicResourceReports";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Adelante Journey Phase 6 — the STAFF side of the resource directory.
 //
@@ -39,6 +40,7 @@ export function ResourceVerificationQueue({ onEdit }: { onEdit?: (id: string) =>
   const confirmed = resources.filter(isResourceVerified).length;
   const shown = resources.filter((r) => filter === "all" || isResourceVerified(r) === (filter === "verified"));
   const canVerify = RESOURCE_VERIFIER_ROLES.includes(role);
+  const publicReports = JSON.parse(useSyncExternalStore(subscribePublicReports, () => JSON.stringify(listPublicResourceReports()), () => "[]")) as ReturnType<typeof listPublicResourceReports>;
 
   return (
     <section className="space-y-4" data-testid="resource-verification-queue">
@@ -57,6 +59,7 @@ export function ResourceVerificationQueue({ onEdit }: { onEdit?: (id: string) =>
         <p className="text-sm text-muted-foreground" data-testid="resource-confirmed-count">{confirmed} of {resources.length} confirmed</p>
       </div>
       {!canVerify && <p className="text-xs text-muted-foreground">Your role can review these but cannot publish them.</p>}
+      {publicReports.length > 0 && <div data-testid="public-resource-reports" className="space-y-3"><h3 className="text-base font-bold">Public listing reports</h3>{publicReports.map(report => <div key={report.id} className="border rounded-md p-3"><p>{report.label}</p><p className="text-sm text-muted-foreground">Resource: {report.resourceId}</p>{report.note && <p>{report.note}</p>}<StatusChip state="simulated" label="Simulated — local preview report" lang="en"/>{onEdit && report.resourceType === "community_resource" && <Button variant="outline" onClick={() => onEdit(report.resourceId)}>Review listing</Button>}</div>)}</div>}
       <ul className="mt-4 space-y-3">
         {shown.map((r) => (
           <VerifyRow
@@ -132,6 +135,7 @@ function VerifyRow({
           </Badge>
         )}
       </div>
+      <p className="text-sm text-muted-foreground">Last checked: {resource.verification?.verifiedAt ? <ClientDate value={resource.verification.verifiedAt} /> : "Not yet checked"}</p>
       <p className="text-xs text-muted-foreground" data-testid="resource-verifier">
         Verified by {resource.verification?.verifiedBy ?? "—"} · {resource.verification ? <ClientDate value={resource.verification.verifiedAt} /> : "—"}
       </p>
