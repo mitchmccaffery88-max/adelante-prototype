@@ -56,3 +56,65 @@
 
 .daylight-landing .daylight-ready h2 { color:var(--on-gold); }
 .daylight-landing input:focus-visible { outline:3px solid var(--ink); outline-offset:2px; box-shadow:none; }
+
+/* ===== Batch 3 motion layers (helpers in src/lib/website/motion.ts) ===== */
+/* 18. Sunburst: clipped toward media so no ray crosses the text column */
+.daylight-sunburst-clip { position:absolute; inset:0; overflow:hidden; z-index:-1; pointer-events:none; -webkit-mask-image:linear-gradient(to right,transparent 46%,#000 64%); mask-image:linear-gradient(to right,transparent 46%,#000 64%); }
+.daylight-sunburst-clip .daylight-sunburst { z-index:auto; }
+.daylight-rays line { stroke:var(--sunrise-mark); stroke-width:2px; opacity:.16; }
+.daylight-sunburst line { opacity:initial; }
+.daylight-ray-pulses line { stroke:var(--sunrise); stroke-width:3px; opacity:.28; stroke-dasharray:60 2020; stroke-dashoffset:0; animation:daylight-pulse 11s linear infinite both; }
+.daylight-rings circle { fill:none; stroke:var(--sunrise); stroke-width:3px; stroke-opacity:.22; opacity:0; transform-box:fill-box; transform-origin:center; animation:daylight-ring 11s ease-out infinite both; }
+.hero-offscreen .daylight-ray-pulses line,.hero-offscreen .daylight-rings circle { animation-play-state:paused; }
+@keyframes daylight-pulse { from { stroke-dashoffset:0; } to { stroke-dashoffset:-2080; } }
+@keyframes daylight-ring { from { transform:scale(.5); opacity:.6; } to { transform:scale(2.6); opacity:0; } }
+@media (max-width:767px) { .daylight-sunburst-clip { -webkit-mask-image:radial-gradient(ellipse 58% 210px at 50% var(--hero-media-center,60%),#000 55%,transparent 100%); mask-image:radial-gradient(ellipse 58% 210px at 50% var(--hero-media-center,60%),#000 55%,transparent 100%); } }
+
+/* 3. Hero entrance: plays once in CSS, so content ends visible without JS */
+.daylight-hero-copy h1,.daylight-hero-copy p,.daylight-hero-actions .daylight-actions,.daylight-hero-note { animation:daylight-up .4s ease-out both; }
+.daylight-hero-copy p { animation-delay:.1s; } .daylight-hero-actions .daylight-actions { animation-delay:.2s; } .daylight-hero-note { animation-delay:.3s; }
+@keyframes daylight-up { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+/* 9. Section reveals: hidden start state exists only after JS sets data-reveal */
+[data-reveal] { transition:opacity .4s ease-out,transform .4s ease-out; }
+[data-reveal="pending"] { opacity:0; transform:translateY(12px); }
+[data-reveal="shown"] { opacity:1; transform:none; }
+
+/* 7. How it works: steps rise in order, discs fill path from path-soft */
+.daylight-steps li { transition:opacity .4s ease-out,transform .4s ease-out; }
+.daylight-steps li:nth-child(2) { transition-delay:.15s; } .daylight-steps li:nth-child(3) { transition-delay:.3s; }
+.daylight-step-number { transition:background-color .4s ease-out .2s,color .4s ease-out .2s; }
+.daylight-steps li:nth-child(2) .daylight-step-number { transition-delay:.35s; } .daylight-steps li:nth-child(3) .daylight-step-number { transition-delay:.5s; }
+[data-reveal="pending"] .daylight-steps li { opacity:0; transform:translateY(12px); }
+[data-reveal="pending"] .daylight-step-number { background:var(--path-soft); color:var(--path); }
+
+/* 10. Journey deck shuffle */
+.daylight-deck-entering { animation:daylight-deck-rise .35s ease-out both; }
+.daylight-deck-leaving { position:absolute; inset:0; z-index:0; border-radius:24px; border:1px solid var(--line); background:var(--surface); pointer-events:none; transform-origin:top center; animation:daylight-deck-drop .35s ease-out both; }
+.daylight-deck-card { z-index:1; }
+@keyframes daylight-deck-rise { from { transform:translateY(16px) scale(.96); opacity:.6; } to { transform:none; opacity:1; } }
+@keyframes daylight-deck-drop { from { transform:none; opacity:1; } to { transform:translateY(-18px) scale(.92); opacity:0; } }
+
+/* 11 + 13. Tiles and team cards lift */
+.daylight-service,.daylight-benefits .daylight-tile,.daylight-fit-tiles .daylight-tile,.website-page .daylight-tile,.daylight-team-grid .daylight-tile { transition:transform .2s ease-out,box-shadow .2s ease-out; }
+.daylight-service:hover,.daylight-service:focus-visible,.daylight-benefits .daylight-tile:hover,.daylight-benefits .daylight-tile:focus-within,.daylight-fit-tiles .daylight-tile:hover,.daylight-fit-tiles .daylight-tile:focus-within,.website-page .daylight-tile:hover,.website-page .daylight-tile:focus-within,.daylight-team-grid .daylight-tile:hover,.daylight-team-grid .daylight-tile:focus-within { transform:translateY(-2px); box-shadow:0 12px 28px color-mix(in oklab,var(--ink) 14%,transparent); }
+
+/* 14. FAQ answers: 200ms height/opacity */
+.daylight-faq [role=region][data-state=open] { animation:daylight-faq-open .2s ease-out; }
+.daylight-faq [role=region][data-state=closed] { animation:daylight-faq-close .2s ease-out; }
+@keyframes daylight-faq-open { from { height:0; opacity:0; } to { height:var(--radix-accordion-content-height); opacity:1; } }
+@keyframes daylight-faq-close { from { height:var(--radix-accordion-content-height); opacity:1; } to { height:0; opacity:0; } }
+
+/* 17. Magnetic buttons ease back over 200ms */
+[data-magnetic] { transition:translate .2s ease-out; }
+[data-magnetic-active] { transition:translate .08s linear; }
+
+/* Reduced motion: every layer shows its still version */
+@media (prefers-reduced-motion:reduce) {
+ .daylight-ray-pulses,.daylight-rings { display:none; }
+ [data-reveal],[data-reveal="pending"],[data-reveal="pending"] .daylight-steps li { opacity:1!important; transform:none!important; }
+ [data-reveal="pending"] .daylight-step-number { background:var(--path); color:var(--on-path); }
+ .daylight-deck-leaving { display:none; }
+ [data-magnetic] { translate:none!important; }
+ .daylight-service:hover,.daylight-service:focus-visible,.daylight-benefits .daylight-tile:hover,.daylight-benefits .daylight-tile:focus-within,.daylight-fit-tiles .daylight-tile:hover,.daylight-fit-tiles .daylight-tile:focus-within,.website-page .daylight-tile:hover,.website-page .daylight-tile:focus-within,.daylight-team-grid .daylight-tile:hover,.daylight-team-grid .daylight-tile:focus-within { transform:none; }
+}
