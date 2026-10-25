@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { settleReveals } from "./helpers/settleReveals";
 import AxeBuilder from "@axe-core/playwright";
 import { websiteEn, websiteEs } from "../src/lib/i18n.website";
 
@@ -26,7 +27,7 @@ for (const path of ["/", "/about", "/team"]) {
     for (const style of headingStyles) expect(style[4]).toBe("none");
     await expect(page.getByTestId("website-header").locator(".website-nav-trigger")).toHaveCount(4);
     if (path !== "/") await expect(page.getByTestId("website-footer").locator('a[aria-current="page"]')).toHaveCount(1);
-    const result = await new AxeBuilder({ page }).include('[data-testid="website-layout"]').analyze();
+    await settleReveals(page); const result = await new AxeBuilder({ page }).include('[data-testid="website-layout"]').analyze();
     expect(result.violations.filter(v => v.impact === "critical" || v.impact === "serious")).toEqual([]);
     if (path === "/") {
       await expect(page.locator(".website-hero")).not.toContainText("Adelante Health");
@@ -77,7 +78,7 @@ for (const path of ["/", "/about", "/team"]) {
         await page.keyboard.press("Escape");
         await expect(page.getByText("ES Draft — pending translation review", { exact: true })).toBeVisible();
         if (path === "/team") await expect(page.locator(".website-heading")).toHaveText(headingKeys(path).map(key => websiteEs[key]));
-        const esResult = await new AxeBuilder({ page }).include('[data-testid="website-layout"]').analyze();
+        await settleReveals(page); const esResult = await new AxeBuilder({ page }).include('[data-testid="website-layout"]').analyze();
         expect(esResult.violations.filter(v => v.impact === "critical" || v.impact === "serious")).toEqual([]);
       }
     }

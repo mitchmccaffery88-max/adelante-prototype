@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { settleReveals } from "./helpers/settleReveals";
 import AxeBuilder from "@axe-core/playwright";
 import { DAYLIGHT_PUBLIC_ROUTES } from "../src/lib/websiteMenus";
 
@@ -28,7 +29,7 @@ for (const width of [1280,390]) for (const lang of ["en","es"]) {
    expect(await page.locator("body").evaluate(el => getComputedStyle(el).overflow)).toBe("hidden");
   }
   await expect(page.locator(width === 390 ? "#website-phone-care" : "#website-mega-care")).toBeVisible();
-  const axe=await new AxeBuilder({page}).include(width === 390 ? ".website-menu-sheet" : '[data-testid="website-header"]').include(".website-crisis").analyze();
+  await settleReveals(page); const axe=await new AxeBuilder({page}).include(width === 390 ? ".website-menu-sheet" : '[data-testid="website-header"]').include(".website-crisis").analyze();
   expect(axe.violations.filter(v=>v.impact === "serious" || v.impact === "critical")).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({path:`/tmp/browser/daylight/verified-${width}-${lang}.png`});
