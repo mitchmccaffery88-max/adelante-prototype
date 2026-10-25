@@ -29,7 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, Lock, Send, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Circle, Lock, Send, ShieldCheck, ArrowLeft, ArrowRight } from "lucide-react";
+import {WebsitePage} from '@/components/website/WebsitePage';
 import { useI18n } from "@/lib/i18n";
 import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
 import { EMPTY_BENEFITS, benefitsAnswers, type BenefitsFormState } from "@/lib/intakeBenefits";
@@ -166,6 +167,8 @@ export function ReferralSubmissionForm({
   const staff = variant === "staff";
   const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
+  const [step,setStep]=useState(0);
+  const [publicError,setPublicError]=useState('');
   // B6 — the public "your referrals" list is gone: it showed referred
   // people's names to anyone on a shared computer. Clear the storage key that
   // powered it so nothing lingers from earlier visits.
@@ -217,31 +220,39 @@ export function ReferralSubmissionForm({
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(!staff&&step<2){setStep(current=>current+1);return;}
+    setPublicError('');
     // §Batch B2 (Draft) — only critical fields block; the rest are chased.
     const critical = referralCriticalProblem({ ...form, phone: form.noPhone ? "" : form.phone, cin: benefits.cin ?? "" });
     if (critical) {
+      if(!staff){setPublicError(critical);setStep(1);}
       toast.error(critical);
       return;
     }
     if (!form.referrerName.trim()) {
+      if(!staff){setPublicError('Please complete the required fields');setStep(0);}
       toast.error("Please complete the required fields");
       return;
     }
     const contactProblem = referralContactProblem({ ...form, phone: form.noPhone ? "" : form.phone });
     if (contactProblem) {
+      if(!staff){setPublicError(contactProblem);setStep(contactProblem.startsWith("The person's")?1:0);}
       toast.error(contactProblem);
       return;
     }
     const noPhone = form.noPhone || !form.phone.trim();
     if (!noPhone && !form.consentToContact) {
+      if(!staff)setPublicError('Please confirm consent to contact');
       toast.error("Please confirm consent to contact");
       return;
     }
     if (!form.notARobot) {
+      if(!staff)setPublicError("Please verify you're not a robot");
       toast.error("Please verify you're not a robot");
       return;
     }
     if (benefitsCinProblem(benefits)) {
+      if(!staff){setPublicError('The Medi-Cal ID needs 9 letters or numbers, or leave it blank.');setStep(1);}
       toast.error("The Medi-Cal ID needs 9 letters or numbers, or leave it blank.");
       return;
     }
@@ -331,10 +342,10 @@ export function ReferralSubmissionForm({
 
   if (submitted && !staff) {
     return (
-      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16" data-testid="referral-confirmation">
+      <WebsitePage title="website.v2.referral.title" intro="website.v2.referral.intro" menu="website.v2.partners" ready={false}><section className="daylight-band"><div className="daylight-container public-referral"><div className="mx-auto max-w-2xl px-4 sm:px-6 py-16" data-testid="referral-confirmation">
         <div className="text-center">
           <CheckCircle2 className="h-12 w-12 text-teal mx-auto" />
-          <h1 className="font-display text-3xl text-navy mt-4">{SCREEN_COPY["ui.3452ff7a91dd"][screenLang]}</h1>
+          <h2 className="font-display text-3xl text-navy mt-4">{SCREEN_COPY["ui.3452ff7a91dd"][screenLang]}</h2>
           {confirmation && (
             <p className="mt-2 text-sm text-muted-foreground">
               {SCREEN_COPY["ui.ea10bb628600"][screenLang]}{" "}
@@ -371,17 +382,19 @@ export function ReferralSubmissionForm({
             onClick={() => {
               setSubmitted(false);
               setConfirmation(null);
+              setStep(0);
             }}
           >
             {SCREEN_COPY["ui.45ca7b806143"][screenLang]} </Button>
         </div>
-      </div>
+      </div></div></section></WebsitePage>
     );
   }
 
   const formBody = (
     <form onSubmit={onSubmit} className="space-y-6">
-      <section className="space-y-4">
+      {!staff&&<><ol className="referral-progress">{([0,1,2] as const).map(n=><li key={n} aria-current={step===n?'step':undefined}>{step>n?<CheckCircle2 aria-hidden="true"/>:<Circle aria-hidden="true"/>}{t(`website.v2.referral.step.${n}`)}</li>)}</ol><p className="referral-step-caption" tabIndex={-1} key={step} ref={node=>{if(node&&publicError)node.focus();}}>{t('website.v2.referral.step').replace('{step}',String(step+1))}</p><p className="public-form-note">{t('website.v2.form.required')} · {t('website.v2.form.private')}</p><div aria-live="polite" aria-atomic="true">{publicError&&<p className="public-form-error" role="alert">{screenLang==='es'?t('website.v2.form.error'):publicError}</p>}</div></>}
+      <section className="space-y-4" data-referral-step="0" hidden={!staff&&step!==0}>
         <h2 className="font-display text-lg text-navy">{SCREEN_COPY["ui.5c4698b6e0d6"][screenLang]}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Your name *">
@@ -444,7 +457,7 @@ export function ReferralSubmissionForm({
         </div>
       </section>
 
-      <section className="space-y-4 pt-2 border-t">
+      <section className="space-y-4 pt-2 border-t" data-referral-step="1" hidden={!staff&&step!==1}>
         <h2 className="font-display text-lg text-navy">{SCREEN_COPY["ui.74c3a493eaa3"][screenLang]}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="First name *">
@@ -576,7 +589,8 @@ export function ReferralSubmissionForm({
         </label>
       </section>
 
-      <div className="rounded-lg border-2 border-teal/30 bg-teal/5 p-4 space-y-3">
+      <div className="rounded-lg border-2 border-line-strong bg-surface p-4 space-y-3" data-referral-step="2" hidden={!staff&&step!==2}>
+        {!staff&&<h2>{t('website.v2.referral.step.2')}</h2>}
         <div className="flex items-start gap-2 text-sm">
           <Lock className="h-4 w-4 text-teal mt-0.5" />
           <p>
@@ -605,14 +619,15 @@ export function ReferralSubmissionForm({
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-teal" />
           {SCREEN_COPY["ui.71a2220b52bf"][screenLang]} </p>
-        <Button
+        {!staff&&step>0&&<Button type="button" variant="outline" className="website-secondary" onClick={()=>{setPublicError('');setStep(current=>current-1);}}><ArrowLeft aria-hidden="true"/>{t('website.v2.form.back')}</Button>}
+        {!staff&&step<2?<Button type="submit" className="website-primary">{t('website.v2.form.continue')}<ArrowRight aria-hidden="true"/></Button>:<Button
           type="submit"
           size="lg"
           className="bg-navy text-navy-foreground hover:bg-navy/90"
           data-testid="referral-submit"
         >
           <Send className="h-4 w-4 mr-2" />
-          {SCREEN_COPY["ui.719c2be7b5fd"][screenLang]} </Button>
+          {SCREEN_COPY["ui.719c2be7b5fd"][screenLang]} </Button>}
       </div>
     </form>
   );
@@ -620,17 +635,7 @@ export function ReferralSubmissionForm({
   if (staff) return formBody;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
-      <header className="mb-6">
-        <div className="text-xs font-medium uppercase tracking-wider text-teal">
-          {t("navReferrals")}
-        </div>
-        <h1 className="font-display text-3xl text-navy mt-1">{t("refTitle")}</h1>
-        <p className="text-muted-foreground mt-2">{t("refSubtitle")}</p>
-      </header>
-
-      <Card className="p-6">{formBody}</Card>
-    </div>
+    <WebsitePage title="website.v2.referral.title" intro="website.v2.referral.intro" menu="website.v2.partners" ready={false}><section className="daylight-band"><div className="daylight-container public-referral"><div className="max-w-3xl mx-auto">{formBody}</div></div></section></WebsitePage>
   );
 }
 
