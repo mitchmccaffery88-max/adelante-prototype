@@ -1189,6 +1189,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_check_in": "hidden",
     "visit_no_show": "hidden",
     "visit_request_cancel": "allowed",
+    "website_intake_submit": "hidden",
   },
   "credentialing_coordinator": {
     "activity_assignment": "hidden",
@@ -2358,6 +2359,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
     "visit_request_cancel": "allowed",
+    "website_intake_submit": "hidden",
   },
   "physician": {
     "activity_assignment": "allowed",

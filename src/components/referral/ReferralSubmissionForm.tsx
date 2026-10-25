@@ -618,7 +618,7 @@ export function ReferralSubmissionForm({
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-teal" />
-          {SCREEN_COPY["ui.71a2220b52bf"][screenLang]} </p>
+          {staff?SCREEN_COPY["ui.71a2220b52bf"][screenLang]:t('website.v2.referral.preview')} </p>
         {!staff&&step>0&&<Button type="button" variant="outline" className="website-secondary" onClick={()=>{setPublicError('');setStep(current=>current-1);}}><ArrowLeft aria-hidden="true"/>{t('website.v2.form.back')}</Button>}
         {!staff&&step<2?<Button type="submit" className="website-primary">{t('website.v2.form.continue')}<ArrowRight aria-hidden="true"/></Button>:<Button
           type="submit"
