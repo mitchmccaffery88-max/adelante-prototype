@@ -1,3 +1,4 @@
+import { statedCounty } from "@/lib/website/resourceMetadata";
 import { StatusChip } from "@/components/ui/status-chip";
 import { ConfirmDialog } from "@/components/staff/confirm-dialog";
 import { FormField } from "@/components/staff/form-field";
@@ -375,7 +376,7 @@ function ManageTab({ version }: { version: number }) {
 
   const open = (id: string, initial: ContentBody) => {
     setOpenId(id);
-    setBody(initial);
+    setBody(typeId === "community_resource" || typeId === "naloxone_access_point" ? { ...initial, showOnPublic: initial.showOnPublic ?? true, county: statedCounty(initial as Parameters<typeof statedCounty>[0]) } : initial);
     setSubmitNote("");
     setReasonAttempted(false);
   };

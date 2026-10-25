@@ -71,7 +71,7 @@ import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency, endCoordinatorEmergencyNow, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-15.staff-dialogs";
+export const REGISTRY_VERSION = "2026-10-25.public-resource-reports";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
