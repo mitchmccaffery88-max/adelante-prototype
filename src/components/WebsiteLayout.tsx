@@ -31,6 +31,7 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   const demo = shellRef.current?.querySelector('[data-testid="demo-controls-bar"]'); if (demo) observer.observe(demo);
   measure(); return () => observer.disconnect();
  },[]);
+ useEffect(() => { const main=document.getElementById("website-main"); const stopReveals=main?installReveals(main):()=>{}; const stopMagnetic=installMagnetic(); return () => { stopReveals(); stopMagnetic(); }; },[]);
  useEffect(() => {
   if (!compact || !window.location.hash) return;
   const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
