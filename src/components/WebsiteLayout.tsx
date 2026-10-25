@@ -8,6 +8,7 @@ import { WebsiteNavigation, WebsiteLanguageToggle, WebsiteSignIn } from "@/compo
 import { DemoControlsBar } from "@/components/DemoControlsBar";
 import { useI18n } from "@/lib/i18n";
 import { WEBSITE_FOOTER_LINKS } from "@/lib/websiteMenus";
+import { installMagnetic, installReveals } from "@/lib/website/motion";
 import "./website.css";
 
 /** One public shell; application branding and navigation remain separate. */
@@ -30,6 +31,7 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   const demo = shellRef.current?.querySelector('[data-testid="demo-controls-bar"]'); if (demo) observer.observe(demo);
   measure(); return () => observer.disconnect();
  },[]);
+ useEffect(() => { const main=document.getElementById("website-main"); const stopReveals=main?installReveals(main):()=>{}; const stopMagnetic=installMagnetic(); return () => { stopReveals(); stopMagnetic(); }; },[]);
  useEffect(() => {
   if (!compact || !window.location.hash) return;
   const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
@@ -66,7 +68,7 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
    <div className="website-header-row website-container">
     <Link to="/" aria-label="Adelante home" className="website-brand-link"><WebsiteBrand /></Link>
     <div className="website-header-actions">
-     <Button asChild className="website-primary"><Link to="/start/signup">{t("websiteStart")}</Link></Button>
+     <Button asChild className="website-primary"><Link to="/start/signup" data-magnetic="">{t("websiteStart")}</Link></Button>
      <span className="website-trust"><ShieldCheck aria-hidden="true" />{t("website.v2.hipaa")}</span>
      <div className="website-desktop-control"><WebsiteLanguageToggle /></div>
      <div className="website-desktop-control"><WebsiteSignIn /></div>
