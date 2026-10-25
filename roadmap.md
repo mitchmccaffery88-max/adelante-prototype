@@ -1,5 +1,11 @@
 # Roadmap
 
+## Daylight v2 batch 4b — remaining public pages
+- [ ] Cost, grouped FAQ, role-only Team, Partners, Platform, Privacy, Careers and Contact with bilingual copy and shared motion/template.
+- [ ] Referral presentation-only three-step layout; preserve all fields, validation, advocate behavior, robot check and encrypted submission.
+- [ ] Verify platform capabilities/status flag; preview-only careers/contact registry inbox and résumé metadata validation.
+- [ ] Focused unit/referral/browser checks at 1280/390 EN/ES; record changed files, status evidence and limitations. Do not publish.
+
 ## Daylight v2 batch 4a — shared pages and directory COMPLETE (prototype)
 - [x] WebsitePage/JourneyPage, four journeys, How it works and About with bilingual copy and shared ReadyBand.
 - [x] Public accessor shares managed records; showOnPublic/county editor, verified/demo/URL filters and anonymous registry reports in existing review workspace.
