@@ -62,7 +62,6 @@
 .daylight-sunburst-clip { position:absolute; inset:0; overflow:hidden; z-index:-1; pointer-events:none; -webkit-mask-image:linear-gradient(to right,transparent 46%,#000 64%); mask-image:linear-gradient(to right,transparent 46%,#000 64%); }
 .daylight-sunburst-clip .daylight-sunburst { z-index:auto; }
 .daylight-rays line { stroke:var(--sunrise-mark); stroke-width:2px; opacity:.16; }
-.daylight-sunburst line { opacity:initial; }
 .daylight-ray-pulses line { stroke:var(--sunrise); stroke-width:3px; opacity:.28; stroke-dasharray:60 2020; stroke-dashoffset:0; animation:daylight-pulse 11s linear infinite both; }
 .daylight-rings circle { fill:none; stroke:var(--sunrise); stroke-width:3px; stroke-opacity:.22; opacity:0; transform-box:fill-box; transform-origin:center; animation:daylight-ring 11s ease-out infinite both; }
 .hero-offscreen .daylight-ray-pulses line,.hero-offscreen .daylight-rings circle { animation-play-state:paused; }
