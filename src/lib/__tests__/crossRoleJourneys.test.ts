@@ -51,7 +51,9 @@ describe("J1 referral → first visit", () => {
     } as never);
     const t = chaseTaskFor(r.id)!;
     expect(t.status).toBe("open");
-    expect(chaseRowsFor(COORD()).some((x) => x.referral.id === r.id && x.lane === "pool")).toBe(true);
+    // 26 Oct intake role: paperwork routes to intake, clinical scheduling stays coordinator-owned.
+    expect(chaseRowsFor({role:"intake_coordinator",staffId:"s-intake-test"}).some((x) => x.referral.id === r.id && x.lane === "pool")).toBe(true);
+    expect(chaseRowsFor(COORD()).some(x => x.referral.id === r.id)).toBe(false);
     const before = t.missing.length;
     expect(runAction("referral_chase_fill", PEER(), undefined, { args: [PEER(), r.id, { preferredLanguage: "Spanish" }] }).ok).toBe(true);
     expect(chaseTaskFor(r.id)!.missing.length).toBe(before - 1);
