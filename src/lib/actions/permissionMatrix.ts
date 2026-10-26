@@ -2,7 +2,7 @@
 // Used by the Permissions & features page, its CSV export and the committed
 // snapshot test (any permission change shows up as a diff in review).
 import { CHART_ACTIONS, REGISTRY_VERSION, type ChartActionGroup, type ChartActionState } from "@/lib/chartActions";
-import { STAFF_ROLES, canAccess, getStaffMember, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
+import { STAFF_ROLES, canAccess, getStaffMember, staffForRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 import { ACTION_EVENTS } from "@/lib/actions/runAction";
 import { featureSnapshot } from "@/lib/features";
 
@@ -23,7 +23,7 @@ export function permissionMatrix(): MatrixRow[] {
   const rows: MatrixRow[] = [];
   for (const { key: role } of STAFF_ROLES) {
     // A representative staff member for the role (cosign routing reads the supervisor).
-    const staff = STAFF_ROSTER.find((s) => s.role === role);
+    const staff = staffForRole(role)[0];
     const actor = { role, staffId: staff?.id, clinicianId: getStaffMember(staff?.id)?.clinicianId };
     for (const a of CHART_ACTIONS) {
       if (a.pending) continue;
@@ -34,7 +34,7 @@ export function permissionMatrix(): MatrixRow[] {
         label: a.label.en,
         group: a.group,
         state,
-        check: a.check ?? "allowed() → store check",
+        check: `${role === "intake_coordinator" ? "Draft — pending go-live permissions audit; " : ""}${a.check ?? "allowed() → store check"}`,
         events: state === "hidden" ? "action.blocked" : state === "cosign" ? "action.cosign_routed, action.blocked" : "action.succeeded, action.blocked",
         flags: (a.flags ?? []).join(" "),
         store: a.store.map((s) => s.name).join(" / "),
