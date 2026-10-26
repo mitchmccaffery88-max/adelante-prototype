@@ -88,6 +88,7 @@ registerIntakeGroupBoundary(value => {
   const { p } = linked(input.onBehalf?.referralId ?? "");
   if (p.id !== input.patientId || state(input.onBehalf?.referralId ?? "").completedAt || input.note) throw new Error("Active referral group request only.");
   const g = AdelanteEHR.listGroupSessions().find(x => x.id === input.sessionId);
+  if (g?.category === "sud_clinical_preauth" && !AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment")) throw new Error("42 CFR Part 2 — intake/treatment consent required.");
   if (!g || !STAFF_ROSTER.some(s => s.active !== false && s.clinicianId === g.facilitatorId && ["therapist", "pmhnp", "physician", "sud_counselor"].some(role => hasRoleAssignment(s, role as StaffRole)))) throw new Error("Clinical group owner required.");
 });
 export function firstVisitSlots(id: string, kind: FirstVisitKind, actor: IntakeActor, modality: BookingModality) {
