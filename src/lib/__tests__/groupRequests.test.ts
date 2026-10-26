@@ -24,7 +24,7 @@ const row = (pid: string, id: string) => patientGroupCatalog(pid).find((r) => r.
 const run = (id: string, actor: ReturnType<typeof actorOf>, ...args: unknown[]) => runAction(id, actor, undefined, { args: [actor, ...args], auditReason: String(args[args.length - 1]) });
 
 /** A patient with an assigned care manager and primary clinician. */
-const PID = "p3";
+const PID = "p2";
 AdelanteEHR.reassignPrimaryClinician({ patientId: PID, clinicianId: "c1", initiatedBy: "admin", context: "test setup" });
 const cm = () => staffFor((s) => s.caseManagerId === AdelanteEHR.getPatient(PID)!.caseManagerId);
 const clinician = () => staffFor((s) => s.clinicianId === AdelanteEHR.getPatient(PID)!.primaryClinicianId);
@@ -48,13 +48,13 @@ describe("group roster rules", () => {
 
   it("open + requirements met is Join; missing eligibility or approval group is Ask to join", () => {
     expect(row("p1", stress().id)?.action).toBe("join"); // p1 is group-eligible, in person
-    expect(row("p2", stress().id)?.action).toBe("ask"); // eligibility cleared
+    expect(row("p4", stress().id)?.action).toBe("ask"); // not group-eligible
     const sp = demoScenarioPatientId("sud_consented")!;
     expect(row(sp, sud().id)?.action).toBe("ask");
   });
 
   it("the patient never sees which clinical or Part 2 requirement is missing", () => {
-    for (const pid of ["p2", demoScenarioPatientId("sud_consented")!, demoScenarioPatientId("sud_no_consent")!])
+    for (const pid of ["p4", demoScenarioPatientId("sud_consented")!, demoScenarioPatientId("sud_no_consent")!])
       for (const r of patientGroupCatalog(pid))
         for (const need of r.selfNeeds) expect(REQUIREMENTS[need].kind).toBe("self");
   });
