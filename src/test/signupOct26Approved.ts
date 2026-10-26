@@ -71,7 +71,8 @@ const INTAKE_OCT26: [string, string][] = [
 /** Rollback text with only the approved 26 Oct signup substitutions applied (each must match exactly once). */
 export function withApprovedSignupOct26(path: string, rollbackText: string): string {
   let s = rollbackText;
-  const subs = path === "src/lib/ehr.ts" ? SIGNUP_OCT26 : path === "src/lib/roles.ts" ? INTAKE_OCT26 : [];
+  // 26 Oct intake role: only its own landing changes; existing role landings remain exact.
+  const subs = path === "src/lib/ehr.ts" ? SIGNUP_OCT26 : path === "src/lib/roles.ts" ? INTAKE_OCT26 : path === "src/lib/navGuard.ts" ? [["export function safeLandingFor(role: StaffRole): string {", "export function safeLandingFor(role: StaffRole): string {\n  if (role === \"intake_coordinator\") return \"/intake-workspace\";"]] : [];
   for (const [from, to] of subs) {
     if (s.split(from).length !== 2) throw new Error(`Approved anchor not found once in ${path}`);
     s = s.replace(from, to);

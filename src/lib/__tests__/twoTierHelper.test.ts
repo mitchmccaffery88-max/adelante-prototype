@@ -138,8 +138,8 @@ describe("Tier 1 — informal helper is genuinely optional", () => {
 describe("Tier 2 — RBAC gate reuses the existing matrix", () => {
   it("allows exactly the enrollment roles", () => {
     expect([...ASSISTED_SIGNUP_ROLES].sort()).toEqual(
-      // 26 Oct Intake Coordinator owns assisted enrollment.
-      ["cf_care_manager", "ecm_provider", "peer_specialist", "sys_admin", "intake_coordinator"].sort(),
+      // 26 Oct intake is queue-only: existing assisted clinical enrollment roles unchanged.
+      ["cf_care_manager", "ecm_provider", "peer_specialist", "sys_admin"].sort(),
     );
   });
 
