@@ -74,6 +74,9 @@ export function validateFirstVisit(input: BookingInput & { intakeBooking?: Intak
   const config = FIRST_VISITS[kind];
   if (input.serviceType !== config.service || input.allowPatientOverlap || input.asamTaskId || input.requestId) throw new Error("First-visit scope only.");
   if (AdelanteEHR.appointmentsForPatient(p.id).some(a => a.intakeFirstVisit?.kind === kind || (!a.intakeFirstVisit && a.serviceType === config.service))) throw new Error("A first visit of this kind already exists.");
+  const start = Date.parse(input.start);
+  const end = start + input.durationMin * 60000;
+  if (AdelanteEHR.appointmentsForPatient(p.id).some(a => ["scheduled", "checked_in"].includes(a.status) && Date.parse(a.start) < end && Date.parse(a.start) + a.durationMin * 60000 > start)) throw new Error("That time is unavailable. Restricted — other appointment details are not available to Intake.");
   const staff = STAFF_ROSTER.find(s => s.clinicianId === input.clinicianId);
   if (!staff) throw new Error("An active eligible calendar is required.");
   targetFits(staff.id, config.roles);

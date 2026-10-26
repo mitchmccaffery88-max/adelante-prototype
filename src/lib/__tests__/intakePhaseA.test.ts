@@ -63,6 +63,13 @@ describe("26 Oct Phase A — first visit boundary", () => {
     expect(slots.some(s => s.clinicianId === id)).toBe(true);
     expect(slots.some(s => s.clinicianId === "phase-a-wrong-service")).toBe(false);
   });
+  it("a conflict keeps the other visit's clinician and details restricted", () => {
+    const r = referral(); const id = calendar("assessment");
+    const slot = firstVisitSlots(r.id, "assessment", actor, "in_person").find(s => s.clinicianId === id);
+    if (!slot) throw new Error("Slot missing");
+    AdelanteEHR.bookAppointment({ patientId: pid(r), clinicianId: "c2", start: slot.start, durationMin: 60, serviceType: "therapy_individual", modality: "in_person", locationId: "loc-visalia" });
+    expect(() => bookFirstVisit(actor, r.id, { kind: "assessment", clinicianId: id, start: slot.start, modality: "in_person", locationId: "loc-visalia" }, "First visit")).toThrow("That time is unavailable. Restricted — other appointment details are not available to Intake.");
+  });
   it("group request is attributed on behalf, pending clinical approval and creates a Today task", () => {
     const r = referral(); const g = AdelanteEHR.listGroupSessions().find(g => g.category === "skills_education"); if (!g) throw new Error("Group missing");
     const result = requestIntakeGroup(actor, r.id, g.id, "2026-10-27", "Group requested");
