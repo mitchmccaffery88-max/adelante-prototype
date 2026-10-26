@@ -126,8 +126,8 @@ describe("demographics grants", () => {
       credentialing_coordinator: "none",
       nurse_rn: "read",
       lvn: "read",
-      // 26 Oct Intake Coordinator: demographic collection, not clinical editing.
-      intake_coordinator: "write",
+      // 26 Oct Intake Coordinator: identity queue only, no chart demographics grant.
+      intake_coordinator: "none",
     };
     for (const { key } of STAFF_ROLES) {
       if (key === "clinical_coordinator" || key === "sys_admin") continue;

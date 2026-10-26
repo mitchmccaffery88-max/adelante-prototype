@@ -266,23 +266,8 @@ export function identityReviewNeedInfo(actor: IdentityReviewActor, itemId: strin
   if (item.status === "closed") throw new Error("This item is already closed.");
   item.status = "withothers";
   item.history.push({ at: now(), action: "need_more_information", by: actor.staffName ?? actor.staffId ?? "", reason });
-  let taskId: string | undefined;
-  if (item.patientId) {
-    const due = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-    const task = AdelanteEHR.createCaseTask({
-      patientId: item.patientId,
-      assignedTo: actor.staffName ?? actor.staffId ?? "",
-      title: "Contact the person to confirm identity details",
-      detail: "Simulated — no outreach is sent from this prototype.",
-      dueDate: due,
-      taskType: "identity_review_contact",
-      allowedRoles: ["intake_coordinator"],
-      dedupeKey: `identity-review:${item.id}:contact`,
-    });
-    taskId = task?.id;
-    item.contactTaskId = taskId;
-  }
-  audit(item, "identity_review_need_info", actor, taskId ? { taskId } : {});
+  // Intake follow-up stays in this identity queue, never a clinical case task.
+  audit(item, "identity_review_need_info", actor);
   return item;
 }
 
