@@ -31,8 +31,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { Users, CalendarClock, MapPin } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 import { patientGroupLabel } from "@/lib/groupJoinView";
+import { patientGroupCatalog } from "@/lib/groupRequests";
+import { runAction } from "@/lib/actions/runAction";
+import { PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
+import { useI18n } from "@/lib/i18n";
+import { StatusChip } from "@/components/ui/status-chip";
 
 
 export function PatientGroupScheduling({ patientId }: { patientId: string }) {
@@ -140,100 +144,90 @@ export function PatientGroupScheduling({ patientId }: { patientId: string }) {
     </div>
   );
 }
-// §Group join requests — every patient asks; staff review (no silent
-// self-enrollment). SUD groups show category-only wording.
+// 26 Oct (Mitch) — one list of groups the patient may see, each with ONE action:
+// Join (open + every requirement met), Ask to join, or a status. Clinical and
+// Part 2 requirements are never named; only self-actionable items are.
+const GC = {
+  en: {
+    title: "Groups", intro: "Groups you can be part of. Pick one that fits you.", none: "No groups to show right now.",
+    join: "Join", ask: "Ask to join", joined: "You're in this group", requested: "Requested — your care team is checking",
+    sent: "We'll check with your care team. You'll get a message when you're added.",
+    declined: "Your care team will talk with you about other options.",
+    confirm: "Your care team will confirm this group is right for you.",
+    confidentiality_ack: "This group asks everyone to sign a privacy promise. Your care team can send it to you.",
+    telehealth_consent: "This group meets by video. You need to say yes to video visits first. Your care team can send the form.",
+    in_person: "In person", video: "By video", phone: "By phone",
+    en: "English", es: "Spanish", both: "English and Spanish", next: "Next meeting:", tbd: "Next meeting to be set",
+    joinedToast: "You're in the group.",
+  },
+  es: {
+    title: "Grupos", intro: "Grupos en los que puedes participar. Elige uno que te sirva.", none: "No hay grupos para mostrar ahora.",
+    join: "Unirme", ask: "Pedir unirme", joined: "Ya estás en este grupo", requested: "Pedido — tu equipo de cuidado lo está revisando",
+    sent: "Vamos a consultar con tu equipo de cuidado. Recibirás un mensaje cuando te agreguen.",
+    declined: "Tu equipo de cuidado hablará contigo sobre otras opciones.",
+    confirm: "Tu equipo de cuidado confirmará que este grupo es bueno para ti.",
+    confidentiality_ack: "Este grupo pide que todos firmen una promesa de privacidad. Tu equipo de cuidado te la puede enviar.",
+    telehealth_consent: "Este grupo se reúne por video. Primero tienes que decir que sí a las visitas por video. Tu equipo de cuidado te puede enviar el formulario.",
+    in_person: "En persona", video: "Por video", phone: "Por teléfono",
+    en: "Inglés", es: "Español", both: "Inglés y español", next: "Próxima reunión:", tbd: "La próxima reunión aún no tiene fecha",
+    joinedToast: "Ya estás en el grupo.",
+  },
+} as const;
+
 function AskToJoinGroups({ patientId }: { patientId: string }) {
-  const groups = useEhr(() => AdelanteEHR.requestableGroupsForPatient(patientId));
-  const requests = useEhr(() => AdelanteEHR.listGroupJoinRequests({ patientId }));
-  const all = useEhr(() => AdelanteEHR.listGroupSessions());
-  const [openId, setOpenId] = useState<string>();
-  const [note, setNote] = useState("");
+  const { lang } = useI18n();
+  const c = GC[lang === "es" ? "es" : "en"];
+  const rows = useEhr(() => patientGroupCatalog(patientId));
+  const declined = useEhr(() => AdelanteEHR.listGroupJoinRequests({ patientId, status: "declined" }));
+  const [sentId, setSentId] = useState<string>();
+  const actor = { role: PATIENT_ACTOR_ROLE, staffId: patientId, staffName: "Patient (self)" };
+  const act = (id: "patient_group_join" | "patient_group_ask", sessionId: string) => {
+    const r = runAction(id, actor, AdelanteEHR.getPatient(patientId), { args: [actor, patientId, sessionId] });
+    if (!r.ok) { toast.error(r.reason); return; }
+    if (id === "patient_group_ask") setSentId(sessionId); else toast.success(c.joinedToast);
+  };
   return (
     <Card className="p-6 space-y-4" data-testid="ask-to-join">
       <div>
-        <h2 className="font-display text-lg text-navy">Groups you can ask to join</h2>
-        <p className="text-xs text-muted-foreground">
-          Ask to join and your care team will review it with you.
-        </p>
+        <h2 className="font-display text-lg text-navy">{c.title}</h2>
+        <p className="text-sm text-muted-foreground">{c.intro}</p>
       </div>
-      {requests.length > 0 && (
-        <ul className="space-y-1.5" aria-label="Your group requests">
-          {requests.map((r) => {
-            const g = all.find((x) => x.id === r.sessionId);
-            return (
-              <li key={r.id} className="rounded border p-2.5 text-sm" data-testid="my-group-request">
-                <span className="font-medium text-navy">{g ? patientGroupLabel(g) : "Group"}</span>
-                <span className="block text-xs text-muted-foreground">
-                  {r.status === "pending"
-                    ? "Request sent — your care team will review."
-                    : r.status === "approved"
-                      ? "Approved — you're in this group."
-                      : "Not approved this time — your care team can tell you more."}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No other groups to ask about right now.</p>
+      {rows.length === 0 ? (
+        <p className="text-base text-muted-foreground">{c.none}</p>
       ) : (
         <ul className="space-y-3">
-          {groups.map((g) => {
+          {rows.map(({ group: g, action, selfNeeds }) => {
             const next = nextOccurrenceForGroup(g.id);
-            const sud = g.category === "sud_clinical_preauth";
+            const wasDeclined = action === "ask" && declined.some((r) => r.sessionId === g.id);
             return (
-              <li key={g.id} className="rounded-lg border p-3 space-y-2">
-                <span className="font-medium text-navy">{patientGroupLabel(g)}</span>
-                {!sud && g.description && <p className="text-sm text-muted-foreground">{g.description}</p>}
-                {!sud && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <CalendarClock className="h-3.5 w-3.5 text-teal" />
-                    {next ? (
-                      <ClientDate value={next} options={{ weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} />
-                    ) : (
-                      "Next meeting to be scheduled"
-                    )}
-                  </p>
-                )}
-                {!sud && AdelanteEHR.groupVirtualExposure(g.id).virtual && (
-                  <p className="text-xs text-muted-foreground">Meets online.</p>
-                )}
-                {openId === g.id ? (
-                  <div className="space-y-2">
-                    <Textarea
-                      aria-label="Note for your care team (optional)"
-                      placeholder="Anything you'd like your care team to know? (optional)"
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        className="min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
-                        onClick={() => {
-                          try {
-                            AdelanteEHR.requestJoinGroup({ sessionId: g.id, patientId, note });
-                            toast.success("Request sent — your care team will review.");
-                            setOpenId(undefined);
-                            setNote("");
-                          } catch (err) {
-                            toast.error(err instanceof Error ? err.message : "Could not send.");
-                          }
-                        }}
-                      >
-                        Send request
-                      </Button>
-                      <Button size="sm" variant="ghost" className="min-h-11" onClick={() => setOpenId(undefined)}>
-                        Cancel
-                      </Button>
-                    </div>
+              <li key={g.id} className="rounded-lg border p-4 space-y-2" data-testid="patient-group-row" data-action={action}>
+                <span className="font-medium text-navy block">{patientGroupLabel(g)}</span>
+                {g.description && g.category !== "sud_clinical_preauth" && <p className="text-base text-muted-foreground">{g.description}</p>}
+                <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-1.5">
+                  <CalendarClock className="h-4 w-4 text-teal" aria-hidden />
+                  {next ? (<>{c.next} <ClientDate value={next} options={{ weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} /></>) : c.tbd}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {c[g.modality]} · {c[g.language ?? "en"]}
+                </p>
+                {action === "joined" && <StatusChip lang={lang === "es" ? "es" : "en"} state="done" label={c.joined} />}
+                {action === "requested" && (
+                  <div className="space-y-1">
+                    <StatusChip lang={lang === "es" ? "es" : "en"} state="team" label={c.requested} />
+                    {sentId === g.id && <p className="text-base text-foreground" role="status">{c.sent}</p>}
                   </div>
-                ) : (
-                  <Button size="sm" variant="outline" className="min-h-11" onClick={() => setOpenId(g.id)}>
-                    Ask to join
-                  </Button>
                 )}
+                {action === "ask" && (
+                  <div className="space-y-2">
+                    {wasDeclined && <p className="text-sm text-muted-foreground">{c.declined}</p>}
+                    {selfNeeds.map((n) => (
+                      <p key={n} className="text-sm text-muted-foreground">{c[n as "confidentiality_ack" | "telehealth_consent"]}</p>
+                    ))}
+                    <p className="text-sm text-muted-foreground">{c.confirm}</p>
+                    <Button variant="outline" onClick={() => act("patient_group_ask", g.id)}>{c.ask}</Button>
+                  </div>
+                )}
+                {action === "join" && <Button onClick={() => act("patient_group_join", g.id)}>{c.join}</Button>}
               </li>
             );
           })}
