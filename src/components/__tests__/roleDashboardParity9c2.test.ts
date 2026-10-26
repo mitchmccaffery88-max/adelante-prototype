@@ -34,6 +34,6 @@ describe("9c-2 unchanged values, IDs and handlers against rollback", () => {
     expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path))))));
   });
   it.each(["src/lib/roles.ts", "src/lib/chartAccess.ts", "src/lib/navGuard.ts", "src/lib/clinicianWorkspace.ts", "src/lib/billingWorkspace.ts", "src/lib/ehr.ts", "src/lib/ehr-ext.ts", "src/lib/asamReporting.ts", "src/lib/complianceMonitoring.ts", "src/components/ui/stat-tile.tsx", "src/components/billing/BillingStatusSummary.tsx"])("%s keeps selector/access/suppression behavior byte-identical", path => {
-    expect(readFileSync(path, "utf8")).toBe(withApprovedConsentB2(path, withApprovedBillingWorkspaceB3b(path, withApprovedP3(path, old(path)))));
+    expect(readFileSync(path, "utf8")).toBe(withApprovedSignupOct26(path, withApprovedConsentB2(path, withApprovedBillingWorkspaceB3b(path, withApprovedP3(path, old(path))))));
   });
 });

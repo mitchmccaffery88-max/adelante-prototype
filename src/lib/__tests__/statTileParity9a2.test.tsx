@@ -37,7 +37,7 @@ afterEach(cleanup);
 describe("9a-2 selector parity with rollback", () => {
   it.each(SELECTORS)("%s is unchanged since rollback", (path) => {
     const old = execFileSync("git", ["show", `${ROLLBACK}:${path}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-    expect(readFileSync(path, "utf8")).toBe(withApprovedConsentB2(path, withApprovedP3(path, old)));
+    expect(readFileSync(path, "utf8")).toBe(withApprovedSignupOct26(path, withApprovedConsentB2(path, withApprovedP3(path, old))));
   });
 });
 

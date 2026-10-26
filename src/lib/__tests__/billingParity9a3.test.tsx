@@ -20,7 +20,7 @@ const kpiBlock = (src: string) => src.slice(src.indexOf("const kpis = useMemo"),
 afterEach(cleanup);
 
 describe("9a-3 billing selector and export parity", () => {
-  it.each(SELECTORS)("%s is byte-identical to rollback", (p) => expect(readFileSync(p, "utf8")).toBe(withApprovedConsentB2(p, withApprovedBillingWorkspaceB3b(p, old(p)))));
+  it.each(SELECTORS)("%s is byte-identical to rollback", (p) => expect(readFileSync(p, "utf8")).toBe(withApprovedSignupOct26(p, withApprovedConsentB2(p, withApprovedBillingWorkspaceB3b(p, old(p))))));
   it("KPI dollar/count computation on /billing is byte-identical", () => {
     expect(kpiBlock(readFileSync("src/routes/billing.tsx", "utf8"))).toBe(kpiBlock(old("src/routes/billing.tsx")));
   });
