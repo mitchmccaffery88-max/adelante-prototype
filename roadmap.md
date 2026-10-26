@@ -61,14 +61,15 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Website batch 6 preview: simulated sign-in/reset/help; demo patient and staff routing browser checks passed.
 - [x] Seven regression fixes: exact-once EHR adapter covers signup only; role adapter covers explicit intake/additional-role deltas; public actions use named PUBLIC_WEBSITE_ACTIONS allowlist. Final full validation recorded below.
 
-## 26 Oct decisions (Mitch) — IN PROGRESS
+## 26 Oct decisions (Mitch) — COMPLETE (preview)
 - [x] Identity review store: five types; intake/sys_admin reviewers, clinical coordinator view-only; candidate and Part 2 guards; reasoned IDs-only decisions and confirmed claim codes.
 - [x] signupMatch: public_unverified referrals never auto-match; publicReferralResembles added.
 - [x] signupStore: review cases now create Identity review items (not coordinator case tasks); code lockout item; referral claim-code path in claimCode; worklist signup-review block removed.
-- [x] Registry: 5 identity_review_* actions (reviewer-only, Draft check label); snapshot updated.
+- [x] Registry identity-review decisions (reviewer-only, Draft check label); explicit public-action allowlist and scoped permission snapshot updated.
 - [x] Family/friend/self optional DOB, unknown checkbox, approximate age and identityConfidence; professional validation preserved.
 - [x] Identity review/account support routes and Your-turn count badges; separate account-support permission retained.
 - [x] Primary/additional held roles, audited sys_admin management and demo persona; acting-role-only permissions.
 - [x] Narrow intake workspace: public referral/outreach and allowed identity review only. No clinical navigation/tasks, chart grants, booking, consent, eligibility, SDOH or pre-release access; EHR booking/outreach changes reverted.
 - [x] Item/lane/privacy/action and denied-clinical-access tests; actual reviewer decision and coordinator read-only flow checked.
-- [ ] Final FULL unit + FULL public browser runs and counts. No publication.
+- [x] Final FULL units: 3,340/3,340 across 391 files. FULL public browser: 47/47, one worker against :8080, 13.8 minutes; no timeout changes. Earlier overlapping-edit browser run was 45/47; clean final run passes both affected checks. Build OK. No publication.
+- Preview limitations: identity/account-support/sign-in remain simulated/local-memory; account-support page is an empty separate queue, not a live reset service. Hosted persistence, real authentication/delivery and native-speaker Spanish review remain outside this batch.
