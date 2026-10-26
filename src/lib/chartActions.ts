@@ -144,6 +144,15 @@ export function cosignRouteLabel(staffId?: string): string {
   return sup ? `Routes to ${sup.name} for cosign` : "Routes to a cosigner";
 }
 
+/**
+ * 26 Oct (Mitch) — the ONLY registry actions a public website visitor may run
+ * with no staff actor: public signup, public sign-in/reset preview, website
+ * inbox submissions and public report-a-change. Everything else requires a
+ * staff role. (The public referral form submits through the existing referral
+ * store path, not the registry.)
+ */
+export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview", "website_intake_submit", "resource_public_report"] as const;
+
 export const CHART_ACTIONS: ChartAction[] = [
   { id: "website_signup", label: { en: "Continue signup", es: "Continuar registro" }, group: "admin", needsPatient: false, menu: false, flags: ["notifications_simulated"], simulated: true, successAuditFromStore: true, store: refs(["runSignupCommand", runSignupCommand]), allowed: actor => canUseSignup(actor) ? ok() : hide("Public signup only.") },
   { id: "website_auth_preview", label: { en: "Sign-in preview", es: "Vista previa de acceso" }, group: "admin", needsPatient: false, menu: false, flags: ["notifications_simulated"], simulated: true, successAuditFromStore: true, store: refs(["authPreview", authPreview]), allowed: actor => canUseSignup(actor) ? ok() : hide("Public preview only.") },
