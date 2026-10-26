@@ -28,7 +28,7 @@ let txn = 0;
  * 270/271-style stub. Request mapping (documented in docs/eligibility-paths-report.md):
  * 270 NM1*IL ← patient/member reference, NM1*PR ← payer.ediPayerId, DTP*291 ← serviceDate,
  * EQ ← 30 (plan coverage) + MH/AI (behavioral health / SUD). 271 EB segments map to
- * outcome/plan/effective dates/financial/carve-outs below. SIMULATED values only.
+ * outcome/plan/effective dates/financial/carve-outs below. SIMULATED; no amounts are invented.
  */
 export const clearinghouseStubAdapter: CoverageAdapter = {
   channel: "clearinghouse",
@@ -45,7 +45,7 @@ export const clearinghouseStubAdapter: CoverageAdapter = {
       outcome: req.memberRef === "SIM-INACTIVE" ? "inactive" : "active",
       planName: payer?.name,
       effectiveFrom: start,
-      ...(req.path === "private" ? { financial: { copayCents: 3000, deductibleCents: 150000, outOfPocketMaxCents: 600000 } } : {}),
+      // No invented copay/deductible amounts: the stub maps the fields but returns none.
       carveOuts: { behavioralHealth: req.path === "medi_cal", sud: req.path === "medi_cal" || req.path === "county_program" },
     };
   },
@@ -70,12 +70,15 @@ export function selectedAdapter(): CoverageAdapter {
 /** Wraps an adapter call in the configured timeout so a slow payer becomes an error state. */
 export async function runAdapter(adapter: CoverageAdapter, req: CoverageCheckRequest): Promise<CoverageCheckResponse> {
   const ms = getAdapterConfig().clearinghouse.timeoutMs;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       adapter.check(req),
-      new Promise<CoverageCheckResponse>((resolve) => setTimeout(() => resolve({ outcome: "error", errorKind: "timeout", channel: adapter.channel, simulated: adapter.simulated }), ms)),
+      new Promise<CoverageCheckResponse>((resolve) => { timer = setTimeout(() => resolve({ outcome: "error", errorKind: "timeout", channel: adapter.channel, simulated: adapter.simulated }), ms); }),
     ]);
   } catch {
     return { outcome: "error", errorKind: "unreachable", channel: adapter.channel, simulated: adapter.simulated };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
