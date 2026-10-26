@@ -46,7 +46,6 @@ export const CONTACT_FIELDS: readonly DemographicField[] = ["phone", "email", "a
 export const DEMOGRAPHICS_EDITOR_ROLES: readonly StaffRole[] = [
   "ecm_provider",
   "clinical_coordinator",
-  "intake_coordinator",
   "sys_admin",
 ];
 

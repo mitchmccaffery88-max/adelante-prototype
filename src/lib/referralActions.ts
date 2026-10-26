@@ -23,7 +23,6 @@ export const REFERRAL_DISPOSITION_ROLES: readonly StaffRole[] = [
   "ecm_provider",
   "cf_care_manager",
   "clinical_coordinator",
-  "intake_coordinator",
 ];
 
 export const REFERRAL_DECLINE_REASONS = [

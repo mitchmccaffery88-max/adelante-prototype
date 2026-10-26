@@ -185,7 +185,7 @@ const LEVEL_RANK: Record<AccessLevel, number> = {
 
 /** The full registry — every staff-facing surface in the app, gated. */
 export const STAFF_NAV: NavEntry[] = [
-  {id:"intake-workspace", label:"Referral intake", desc:"Front door through first visit", icon: ClipboardList, to:"/intake-workspace", group:"care", gate:{kind:"record_class",anyOf:["assisted_signup"],minLevel:"write"}},
+  {id:"intake-workspace", label:"Referral intake", desc:"Public referral intake", icon: ClipboardList, to:"/intake-workspace", group:"care", gate:{kind:"open"}},
   { id: "identity-review", label: "Identity review", desc: "Record integrity at intake", icon: UserCheck, to: "/admin-identity-review", group: "administration", gate: {kind:"identity_review"}, count: identityReviewYourTurnCount },
   { id: "account-support", label: "Account support", desc: "Sign-in help, resets and lockouts", icon: UserCog, to: "/admin-account-support", group: "administration", gate: {kind:"account_support"}, count: accountSupportYourTurnCount },
   // ----- Care -----
@@ -820,6 +820,9 @@ export const STAFF_NAV: NavEntry[] = [
 
 /** True when `role` clears an entry's gate. No role lists live here. */
 export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
+  // 26 Oct: intake has its own queue, not generic clinical/account navigation.
+  if (role === "intake_coordinator") return entry.id === "intake-workspace" || entry.gate.kind === "identity_review";
+  if (entry.id === "intake-workspace") return false;
   if (!inFacilityEnabled() && (entry.group === "facility" || IN_FACILITY_NAV_IDS.has(entry.id)))
     return false;
   if (entry.gate.kind === "open") return true;
