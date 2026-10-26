@@ -216,6 +216,7 @@ function CaptureForm({ mode, patient, run, onDone, storeActor, renewFrom }: {
   };
   const title = renewFrom ? "Renew this consent" : mode === "capture" ? "Record a consent" : mode === "upload" ? "Upload a signed paper consent" : "Send a consent for e-sign";
   const submit = () => {
+    if (!renewFrom && !purposeCode) { onDone(false, "Choose a purpose.", "consent_record_capture"); return; }
     const effMethod = verbalOk ? method : "e_sign";
     if (renewFrom) {
       const r = run("consent_record_renew", "renewTypedConsent", [{ recordId: renewFrom.id, ...(endDate ? { expiresOn: endDate } : {}), ...(endEvent.trim() ? { expiresOnEvent: endEvent.trim() } : {}), method: effMethod, signer, relationship, attested, ...(effMethod === "verbal_assent" ? { assentWording: wording } : {}), ...(witness.trim() ? { witness } : {}), actor: storeActor }]);
