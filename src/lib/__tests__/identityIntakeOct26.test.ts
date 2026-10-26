@@ -111,7 +111,7 @@ describe("26 Oct intake and identity rules", () => {
     expect(listIdentityReviewItems().find(i=>i.sessionId===session.sessionId && i.type === "link_referral_no_code")?.patientId).toBeTruthy();
   });
   it("incoming referral outreach belongs only to intake", () => {
-    const r=AdelanteEHR.createReferral({...entered,phone:undefined,referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,requestManualOutreach:true,channel:"public"});
+    const r=AdelanteEHR.createReferral({...entered,phone:undefined,referrerPhone:"+15550000003",referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,requestManualOutreach:true,channel:"public"});
     expect(r.outreach?.task?.allowedRoles).toEqual(["intake_coordinator"]);
   });
   it("eligibility and group requests route to billing and clinical review, not identity review", () => {
