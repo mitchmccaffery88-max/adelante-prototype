@@ -1,0 +1,12 @@
+.public-flow { width:100%; max-width:640px; margin:0 auto; padding:24px 16px 48px; font-size:18px; line-height:28px; }
+.public-flow-card { padding:32px; display:flex; flex-direction:column; gap:20px; border-radius:var(--radius-md); background:var(--surface); }
+.public-flow-title { font-size:28px; line-height:34px; font-weight:700; color:var(--path); overflow-wrap:anywhere; }
+.public-flow :is(input,select) { min-height:48px; font-size:18px; line-height:28px; width:100%; border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); padding:8px 12px; }
+.public-flow :is(button,a) { min-height:48px; font-size:16px; white-space:normal; overflow-wrap:anywhere; }
+.public-flow :is(input,select,button,a):focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+.public-flow-primary { width:100%; background:var(--path-action); color:var(--on-path); }
+.public-flow-primary:hover { background:var(--path); }
+.public-flow-choice { display:flex; align-items:flex-start; gap:12px; border:1px solid var(--line-strong); border-radius:var(--radius-md); padding:16px; cursor:pointer; }
+.public-flow-choice:has([data-state="checked"]) { background:var(--path-soft); border-color:var(--path); }
+.public-flow-choice [role="radio"] { width:24px; height:24px; min-height:24px; padding:0; flex-shrink:0; }
+@media(max-width:640px) { .public-flow {padding:16px 8px 40px;} .public-flow-card {padding:24px 16px;} }
