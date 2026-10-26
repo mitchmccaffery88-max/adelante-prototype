@@ -69,8 +69,8 @@ function embeddedLists(p: Patient): [string, Row[]][] {
   return Object.entries(p).filter(([, v]) => Array.isArray(v) && v.every((x) => x && typeof x === "object")) as [string, Row[]][];
 }
 
-function requireMerger(actor: MatchActor) {
-  if (!canReviewMatches(actor.role)) throw new Error("Only a clinical coordinator or system admin can merge records.");
+function requireMerger(actor: MatchActor, intakeReview = false) {
+  if (!canReviewMatches(actor.role) && !(intakeReview && actor.role === "intake_coordinator")) throw new Error("Only an authorized record reviewer can merge records.");
 }
 function audit(action: string, patientId: string, actor: MatchActor, detail: Record<string, unknown>) {
   AdelanteEHR._appendIdentityAudit({ action, patientId, actorId: actor.staffId, actorRole: String(actor.role), detail });
@@ -110,8 +110,8 @@ function duplicatePairs(a: string, b: string): [ClaimRow, ClaimRow][] {
   return out;
 }
 
-export function mergePatients(input: { survivorId: string; otherId: string; reason: string }, actor: MatchActor): MergeRecord {
-  requireMerger(actor);
+export function mergePatients(input: { survivorId: string; otherId: string; reason: string; identityReview?: boolean }, actor: MatchActor): MergeRecord {
+  requireMerger(actor, input.identityReview === true);
   if (!input.reason?.trim()) throw new Error("A reason is required to merge.");
   const summary = previewMerge(input.survivorId, input.otherId);
   const s = AdelanteEHR.getPatient(input.survivorId)!, o = AdelanteEHR.getPatient(input.otherId)!;
@@ -175,7 +175,7 @@ export function mergePatients(input: { survivorId: string; otherId: string; reas
   delete s.possibleDuplicate;
   M().unshift(rec);
   _closeReviewsForMerge(s.id, o.id, id, actor);
-  audit("patient_merged", s.id, actor, { mergeId: id, mergedPatientId: o.id, reason: rec.reason, counts: summary.counts, consentsNeedingReview: summary.consentsNeedingReview, duplicateClaims: summary.duplicateClaims });
+  audit("patient_merged", s.id, actor, input.identityReview ? {mergeId:id,mergedPatientId:o.id} : { mergeId: id, mergedPatientId: o.id, reason: rec.reason, counts: summary.counts, consentsNeedingReview: summary.consentsNeedingReview, duplicateClaims: summary.duplicateClaims });
   AdelanteEHR._emit();
   return rec;
 }

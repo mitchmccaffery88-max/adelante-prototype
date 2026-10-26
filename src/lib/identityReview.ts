@@ -17,6 +17,7 @@ import { canAccess, type StaffRole } from "./roles";
 import { isRestricted } from "./chartAccess";
 import { emailKey, nameKey, phoneKey } from "./signupMatch";
 import { normalizeEnrollmentCode } from "./signup";
+import { mergePatients } from "./patientMerge";
 
 // ---- Referral identity fields (26 Oct) -----------------------------------
 // Public referrals (family, friends, self) often arrive without a reliable
@@ -294,6 +295,21 @@ export function identityReviewMerge(actor: IdentityReviewActor, itemId: string, 
   if (!item.patientId || item.candidatePatientIds.length === 0) throw new Error("There is no second record to merge with.");
   item.history.push({ at: now(), action: "merge_opened", by: actor.staffName ?? actor.staffId ?? "", reason });
   audit(item, "identity_review_merge_opened", actor, { candidatePatientIds: item.candidatePatientIds });
+  return item;
+}
+
+/** Existing merge engine and consent holds, confirmed in the identity-only review view. */
+export function identityReviewMergeConfirmed(actor: IdentityReviewActor, itemId: string, input: {candidatePatientId:string;reason:string;confirmed:boolean}): IdentityReviewItem {
+  requireReviewer(actor);
+  requireReason(input.reason);
+  const item = itemFor(itemId);
+  if (!input.confirmed || item.status === "closed" || !item.patientId || !item.candidatePatientIds.includes(input.candidatePatientId)) throw new Error("Confirm a candidate from this item.");
+  if (identityReviewCompare(item,actor).some(c=>c.restrictedReason)) throw new Error("Restricted records — authorized review required.");
+  if (!actor.staffId) throw new Error("Staff identity required.");
+  const merged = mergePatients({survivorId:input.candidatePatientId,otherId:item.patientId,reason:input.reason,identityReview:true},{role:actor.role,staffId:actor.staffId,name:actor.staffName ?? actor.staffId});
+  item.status="closed";
+  item.history.push({at:now(),action:"merged",by:actor.staffId,reason:input.reason});
+  audit(item,"identity_review_merged",actor,{mergeId:merged.id,candidatePatientId:input.candidatePatientId});
   return item;
 }
 
