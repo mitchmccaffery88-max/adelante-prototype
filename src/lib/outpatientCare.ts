@@ -426,7 +426,7 @@ export function seedOutpatientCareDemo(): void {
       } catch {
         /* expected: blocked, audited */
       }
-      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: r.destination, purpose: "Referral for treatment", purposeCode: PURPOSE_REFERRAL_FOR_TREATMENT });
+      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: r.destination, purpose: "Referral for treatment" });
       requestDemoConsentCapture({ patientId: jordan.id, consentType: "legal_part2_disclosure", recipients: [{ kind: "org", name: r.destination }], purpose: "Referral for treatment", purposeCode: PURPOSE_REFERRAL_FOR_TREATMENT, items: ["SUD referral information"] });
       advanceHlocReferral(r.id, "sent", REYES);
     });
