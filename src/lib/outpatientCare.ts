@@ -1,5 +1,5 @@
 import { PURPOSE_LABEL, PURPOSE_REFERRAL_FOR_TREATMENT, type ConsentPurposeCode } from "./consentPurposes";
-import { PART2_ELEMENT_KEYS } from "./consentRecordModel";
+import { PART2_ELEMENT_KEYS, type Part2Elements } from "./consentRecordModel";
 import { registerSudSignalSource } from "./sudSignal";
 import { STAFF_ROSTER } from "./roles";
 // §B3/B4 — outpatient episodes of care and higher-level-of-care referrals.
@@ -315,7 +315,15 @@ export function revokeLegalDisclosure(id: string, actor: Actor & { staffId?: str
 }
 
 /** For the demo: capture a legal Part 2 disclosure section on top of the active consent record. */
-export function recordLegalDisclosureConsent(patientId: string, actor: Actor & { staffId?: string }, signedByName: string, meta?: { recipient: string; purpose: string; purposeCode?: ConsentPurposeCode; items?: string[] }): void {
+export function recordLegalDisclosureConsent(patientId: string, actor: Actor & { staffId?: string }, signedByName: string, meta?: { recipient: string; purpose: string; purposeCode?: ConsentPurposeCode; items?: string[]; part2Elements?: Part2Elements; expirationDate?: string; expiresOnEvent?: string; signedDate?: string }): void {
+  if (meta?.purposeCode) {
+    assertRole(actor, HLOC_REFERRAL_ROLES, "capture this disclosure consent");
+    if (PART2_ELEMENT_KEYS.some(k => meta.part2Elements?.[k] !== true)) throw new Error("Confirm every required Part 2 element.");
+    if (!meta.recipient.trim() || !meta.items?.length) throw new Error("Recipient and information are required.");
+    if (!meta.expirationDate && !meta.expiresOnEvent?.trim()) throw new Error("An expiration date or event is required.");
+    if (!meta.signedDate || !/^\d{4}-\d{2}-\d{2}$/.test(meta.signedDate) || meta.signedDate > new Date().toISOString().slice(0, 10)) throw new Error("Enter the actual signature date.");
+    if (meta.expirationDate && meta.expirationDate <= new Date().toISOString().slice(0, 10)) throw new Error("Expiration must be in the future.");
+  }
   const prior = AdelanteEHR.activeConsentRecord(patientId);
   const sections = [...(prior?.sections ?? []).filter((s) => s.category !== "legal_part2_disclosure"), { category: "legal_part2_disclosure" as const, authorized: true }];
   AdelanteEHR.createConsentRecord({
@@ -323,17 +331,17 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
     extension: {
     signature: {
       method: "e_sign", signer: signedByName, relationship: "patient",
-      signedAt: new Date().toISOString(), recordedAt: new Date().toISOString(),
+      signedAt: meta?.signedDate ? `${meta.signedDate}T12:00:00Z` : new Date().toISOString(), recordedAt: new Date().toISOString(),
       recordedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
     },
     // Oct 26 — scoped capture: typed to exactly what the send gate checks.
     ...(meta?.purposeCode ? {
       consentType: "legal_part2_disclosure" as const, recipients: [{ kind: "org" as const, name: meta.recipient.trim() }],
       purpose: meta.purpose, purposeCode: meta.purposeCode, items: meta.items ?? ["SUD referral information"],
-      part2Elements: Object.fromEntries(PART2_ELEMENT_KEYS.map((k) => [k, true])), redisclosureNoticeVersion: "redisclosure-notice-v1 (Draft — pending counsel)",
+      part2Elements: { ...meta.part2Elements }, expiresOnEvent: meta.expiresOnEvent?.trim(), redisclosureNoticeVersion: "redisclosure-notice-v1 (Draft — pending counsel)",
     } : {}),
     },
-    effectiveDate: new Date().toISOString().slice(0, 10), sections, capturedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
+    effectiveDate: new Date().toISOString().slice(0, 10), expirationDate: meta?.expirationDate, sections, capturedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
   });
   const d: LegalDisclosure = {
     id: `ld-${disclosures.length + 1}-${Date.now().toString(36)}`, patientId,

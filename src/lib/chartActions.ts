@@ -26,7 +26,7 @@ import { addStructuredGoal, assignToGoal, closeStructuredGoal, dismissSuggestion
 import { addCareTag, canEditTagList, renameCareTag, retireCareTag, saveStaffProfile, setBookingsFrozen, setSiteServices } from "@/lib/staffProfile";
 import { acceptAsamSuggestion, dismissAsamSuggestion, editAsamSuggestion, markAsamGoalReviewed } from "@/lib/asamCarePlan";
 import { canReviewSeverity, reviewSeverityFlag } from "@/lib/severityFlags";
-import { createHlocReferral, dischargeEpisode } from "@/lib/outpatientCare";
+import { createHlocReferral, dischargeEpisode, recordLegalDisclosureConsent } from "@/lib/outpatientCare";
 import { logContact } from "@/lib/caseloadReview";
 import { acceptNoteDraft, sendOutreach } from "@/lib/adelDrafts";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
@@ -143,6 +143,7 @@ export function cosignRouteLabel(staffId?: string): string {
 }
 
 export const CHART_ACTIONS: ChartAction[] = [
+  { id: "hloc_consent_capture", label: { en: "Record disclosure consent", es: "Registrar consentimiento" }, group: "care", menu: false, store: refs(["recordLegalDisclosureConsent", recordLegalDisclosureConsent]), allowed: ({ role }) => HLOC_REFERRAL_ROLES.includes(role) ? ok() : hide("Not available for your role.") },
   {id:'website_intake_submit',label:{en:'Send a website inquiry',es:'Enviar una consulta del sitio'},group:'admin',menu:false,needsPatient:false,simulated:true,check:'canSubmitWebsiteIntake',store:refs(['saveWebsiteIntake',saveWebsiteIntake]),allowed:actor=>canSubmitWebsiteIntake(actor)?ok():hide('Public website intake only.')},
   { id: "resource_public_report", label: { en: "Report a public listing change", es: "Informar un cambio en un listado público" }, group: "admin", menu: false, needsPatient: false, simulated: true, check: "canReportPublicResource", store: refs(["createPublicResourceReport", createPublicResourceReport]), allowed: actor => canReportPublicResource(actor) ? ok() : hide("Anonymous listing reports only.") },
   { id: "coordinator_emergency_unlock", label: { en: "Emergency access", es: "Acceso de emergencia" }, group: "admin", menu: false, check: "canUnlockCoordinatorEmergency", simulated: true, successAuditFromStore: true, store: refs(["unlockCoordinatorEmergency", unlockCoordinatorEmergency]), allowed: (actor, patient) => canUnlockCoordinatorEmergency(actor, patient?.id) ? ok() : hide("Emergency access is not available for this chart.") },

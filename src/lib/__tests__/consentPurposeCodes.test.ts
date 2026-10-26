@@ -74,10 +74,24 @@ describe("migration of text purposes", () => {
 });
 
 describe("HLOC blocked-send panel", () => {
+  it("refuses unchecked required elements before creating any consent or disclosure", () => {
+    const p = fresh();
+    const before = AdelanteEHR.listConsentRecords(p.id).length;
+    for (const missing of PART2_ELEMENT_KEYS) {
+      expect(() => recordLegalDisclosureConsent(p.id, clin, "Codes QA", { recipient: "Destination", purpose: "Referral", purposeCode: "referral_for_treatment", items: ["SUD referral information"], part2Elements: { ...all, [missing]: false }, expiresOnEvent: "Patient revokes", signedDate: "2026-10-26" })).toThrow(/required Part 2/);
+    }
+    expect(AdelanteEHR.listConsentRecords(p.id)).toHaveLength(before);
+  });
+  it("requires an actual signature date and an expiration date or event", () => {
+    const p = fresh();
+    const meta = { recipient: "Destination", purpose: "Referral", purposeCode: "referral_for_treatment" as const, items: ["SUD referral information"], part2Elements: all };
+    expect(() => recordLegalDisclosureConsent(p.id, clin, "Codes QA", meta)).toThrow(/expiration/);
+    expect(() => recordLegalDisclosureConsent(p.id, clin, "Codes QA", { ...meta, expiresOnEvent: "Patient revokes" })).toThrow(/signature date/);
+  });
   it("saves a typed referral_for_treatment record and the disclosure log cites the specific legal disclosure", () => {
     const p = fresh();
     const r = createHlocReferral({ patientId: p.id, target: "residential", reason: "Needs residential", urgency: "routine", destination: "Codes Residential (demo)", outsideSudProvider: true, actor: clin });
-    recordLegalDisclosureConsent(p.id, clin, "Codes QA", { recipient: r.destination, purpose: `Referral — ${HLOC_TARGET_LABEL[r.target]}`, purposeCode: "referral_for_treatment", items: ["SUD referral information"] });
+    recordLegalDisclosureConsent(p.id, clin, "Codes QA", { recipient: r.destination, purpose: `Referral — ${HLOC_TARGET_LABEL[r.target]}`, purposeCode: "referral_for_treatment", items: ["SUD referral information"], part2Elements: all, expiresOnEvent: "Patient revokes", signedDate: new Date().toISOString().slice(0, 10) });
     const typed = AdelanteEHR.listConsentRecords(p.id).filter((x) => x.consentType === "legal_part2_disclosure");
     expect(typed).toHaveLength(1);
     expect(typed[0].purposeCode).toBe("referral_for_treatment");
