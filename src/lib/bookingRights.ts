@@ -70,7 +70,7 @@ export function checkBookingRights(input: {
   firstVisit?: boolean;
 }): BookingCheck {
   const r = bookingRightFor(input.role);
-  if (input.role === "intake_coordinator" && (input.op !== "book" || input.firstVisit !== true || !["care_management","peer_support","intake_assessment","psych_eval","med_management"].includes(input.serviceType ?? ""))) return {ok:false,reason:"Intake schedules first visits only.",next:"Send ongoing or group requests to the clinical coordinator."};
+  if (input.role === "intake_coordinator" && (input.op !== "book" || input.firstVisit !== true || !["case_management","peer_support","intake","med_management"].includes(input.serviceType ?? ""))) return {ok:false,reason:"Intake schedules first visits only.",next:"Send ongoing or group requests to the clinical coordinator."};
   if (r.scope === "none")
     return { ok: false, reason: "Your role does not book visits.", next: "Ask a clinical coordinator to schedule this visit." };
   if (input.op === "reschedule" && !r.reschedule)

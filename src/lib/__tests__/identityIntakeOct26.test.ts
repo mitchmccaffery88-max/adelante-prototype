@@ -7,6 +7,7 @@ import { referralCriticalProblem } from "../referralChase";
 import { referralMatches, publicReferralResembles } from "../signupMatch";
 import { canViewAccountSupport, listAccountSupportItems } from "../accountSupport";
 import { runSignupCommand, signupActor } from "../website/signupStore";
+import { checkBookingRights } from "../bookingRights";
 const entered = {firstName:"OctTest",lastName:"Identity",dob:"1990-01-01",phone:"+15550000001"};
 const intake = {role:"intake_coordinator" as const,staffId:"s-intake-test",staffName:"Intake"};
 const item = () => createIdentityReviewItem({type:"possible_referral_match",source:"sign-up",sessionId:crypto.randomUUID(),entries:entered});
@@ -88,6 +89,11 @@ describe("26 Oct intake and identity rules", () => {
   });
   it("removing an additional role also overrides legacy assignments", () => {
     expect(roleAssignmentsOf({id:"two-role",name:"Demo",role:"sys_admin",roleAssignments:[{role:"sys_admin"},{role:"intake_coordinator"}],additionalRoles:[]}).map(a=>a.role)).toEqual(["sys_admin"]);
+  });
+  it("intake can book a first intake or peer visit, never ongoing care or a group", () => {
+    for (const serviceType of ["intake","peer_support","case_management","med_management"]) expect(checkBookingRights({role:"intake_coordinator",op:"book",inCaseload:false,serviceType,firstVisit:true}).ok).toBe(true);
+    expect(checkBookingRights({role:"intake_coordinator",op:"book",inCaseload:false,serviceType:"intake",firstVisit:false}).ok).toBe(false);
+    expect(checkBookingRights({role:"intake_coordinator",op:"book",inCaseload:false,serviceType:"therapy_group",firstVisit:true}).ok).toBe(false);
   });
   it("intake row writes identity/consents/eligibility, reads SDOH, locks Part2 and denies clinical/billing/admin", () => {
     for (const cls of ["demographics","consent_ledger","eligibility"] as const) expect(canAccess("intake_coordinator",cls).level).toBe("write");

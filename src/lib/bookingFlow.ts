@@ -28,7 +28,7 @@ export function visitTypeLabel(serviceType: ServiceType | undefined, role: Staff
 export function bookableServiceTypes(role: StaffRole) {
   const r = bookingRightFor(role);
   if (r.scope === "none") return [];
-  return AdelanteEHR.listServiceTypes().filter((s) => r.sudVisits || !isSudServiceType(s.id));
+  return AdelanteEHR.listServiceTypes().filter((s) => (r.sudVisits || !isSudServiceType(s.id)) && (role !== "intake_coordinator" || ["case_management","peer_support","intake","med_management"].includes(s.id)));
 }
 
 /** Patients this actor may book for: caseload-scoped roles see their caseload only. */
