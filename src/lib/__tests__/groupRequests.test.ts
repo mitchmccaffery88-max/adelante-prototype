@@ -131,3 +131,15 @@ describe("routing and decisions", () => {
     expect(ev.actorId).toBe(cm().id);
   });
 });
+
+describe("roster join rules", () => {
+  it("only clinical group owners save rules; an approval-type group cannot be made open", () => {
+    const th = staffFor((s) => s.role === "therapist");
+    const ecm = staffFor((s) => s.role === "ecm_provider");
+    const pol = { joinRule: "care_team_approval", audiences: ["sud"], groupType: "dmc_ods_sud", billable: true };
+    expect(run("group_policy_set", actorOf(ecm), sud().id, pol, "Tidy rules").ok).toBe(false);
+    expect(run("group_policy_set", actorOf(th), sud().id, { ...pol, joinRule: "open" }, "Try open").ok).toBe(false);
+    expect(run("group_policy_set", actorOf(th), sud().id, pol, "Confirm rules").ok).toBe(true);
+  });
+});
+
