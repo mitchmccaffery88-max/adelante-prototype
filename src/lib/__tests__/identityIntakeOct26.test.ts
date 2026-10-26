@@ -8,7 +8,8 @@ import { referralMatches, publicReferralResembles } from "../signupMatch";
 import { canViewAccountSupport, listAccountSupportItems } from "../accountSupport";
 import { runSignupCommand, signupActor } from "../website/signupStore";
 import { checkBookingRights } from "../bookingRights";
-import { intakeCommand, intakeHandoffFor } from "../intakeWorkspace";
+import { staffNavForRole } from "../navSections";
+import { roleHasChartEntry } from "../chartAccess";
 const entered = {firstName:"OctTest",lastName:"Identity",dob:"1990-01-01",phone:"+15550000001"};
 const intake = {role:"intake_coordinator" as const,staffId:"s-intake-test",staffName:"Intake"};
 const item = () => createIdentityReviewItem({type:"possible_referral_match",source:"sign-up",sessionId:crypto.randomUUID(),entries:entered});
@@ -91,16 +92,12 @@ describe("26 Oct intake and identity rules", () => {
   it("removing an additional role also overrides legacy assignments", () => {
     expect(roleAssignmentsOf({id:"two-role",name:"Demo",role:"sys_admin",roleAssignments:[{role:"sys_admin"},{role:"intake_coordinator"}],additionalRoles:[]}).map(a=>a.role)).toEqual(["sys_admin"]);
   });
-  it("intake can book a first intake or peer visit, never ongoing care or a group", () => {
-    for (const serviceType of ["intake","peer_support","case_management","med_management"]) expect(checkBookingRights({role:"intake_coordinator",op:"book",inCaseload:false,serviceType,firstVisit:true}).ok).toBe(true);
-    expect(checkBookingRights({role:"intake_coordinator",op:"book",inCaseload:false,serviceType:"intake",firstVisit:false}).ok).toBe(false);
-    expect(checkBookingRights({role:"intake_coordinator",op:"book",inCaseload:false,serviceType:"therapy_group",firstVisit:true}).ok).toBe(false);
-  });
-  it("intake row writes identity/consents/eligibility, reads SDOH, locks Part2 and denies clinical/billing/admin", () => {
-    for (const cls of ["demographics","consent_ledger","eligibility"] as const) expect(canAccess("intake_coordinator",cls).level).toBe("write");
-    expect(canAccess("intake_coordinator","sdoh").level).toBe("read");
-    expect(canAccess("intake_coordinator","screeners_sud")).toMatchObject({locked:true,reason:"42 CFR Part 2 — consent required"});
-    for (const cls of ["meds_erx","therapy_notes","psychotherapy_notes","care_plan","billing","platform_administration","staff_supervision","crisis_queue"] as const) expect(canAccess("intake_coordinator",cls).level).toBe("none");
+  it("intake has no clinical navigation, chart entry, booking or record grants", () => {
+    expect(staffNavForRole("intake_coordinator").map(e=>e.to).sort()).toEqual(["/admin-identity-review","/intake-workspace"]);
+    expect(roleHasChartEntry("intake_coordinator")).toBe(false);
+    expect(checkBookingRights({role:"intake_coordinator",op:"book",inCaseload:false,serviceType:"intake"}).ok).toBe(false);
+    for (const cls of ["demographics","documents","consent_ledger","eligibility","sdoh","worklist","pre_release","meds_erx","therapy_notes","care_plan","billing","account_support"] as const) expect(canAccess("intake_coordinator",cls).level).toBe("none");
+    for (const id of ["task","document_upload","consent_capture","schedule_visit"]) expect(runAction(id,intake,AdelanteEHR.listPatients()[0]).ok).toBe(false);
   });
   it("code lockouts and continuation create their specific identity lanes", () => {
     const draft={...entered,lastName:`Lock${crypto.randomUUID()}`,preferredLanguage:"en" as const,credentialKind:"pin" as const};
@@ -109,27 +106,6 @@ describe("26 Oct intake and identity rules", () => {
     expect(listIdentityReviewItems().find(i=>i.sessionId===session.sessionId && i.type === "code_lockout")).toMatchObject({source:"code attempts",assignee:"intake_coordinator"});
     runSignupCommand(signupActor,{operation:"continue",sessionId:session.sessionId});
     expect(listIdentityReviewItems().find(i=>i.sessionId===session.sessionId && i.type === "link_referral_no_code")?.patientId).toBeTruthy();
-  });
-  it("incoming referral outreach belongs only to intake", () => {
-    const r=AdelanteEHR.createReferral({...entered,phone:undefined,referrerPhone:"+15550000003",referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,requestManualOutreach:true,channel:"public"});
-    expect(r.outreach?.task?.allowedRoles).toEqual(["intake_coordinator"]);
-  });
-  it("eligibility and group requests route to billing and clinical review, not identity review", () => {
-    const p=AdelanteEHR.listPatients()[0];
-    if(!p)throw new Error("Missing patient");
-    const before=listIdentityReviewItems().length;
-    for(const operation of ["eligibility","group"] as const) expect(runAction("intake_command",intake,p,{args:[intake,p.id,{operation,reason:"Requested by person"}]}).ok).toBe(true);
-    expect(AdelanteEHR.listCaseTasks().find(t=>t.patientId===p.id && t.taskType==="intake_eligibility_request")?.allowedRoles).toEqual(["billing","billing_coordinator"]);
-    expect(AdelanteEHR.listCaseTasks().find(t=>t.patientId===p.id && t.taskType==="intake_group_request")?.allowedRoles).toEqual(["clinical_coordinator"]);
-    expect(listIdentityReviewItems()).toHaveLength(before);
-  });
-  it("handoff requires first scheduling and records ids-only assignment provenance", () => {
-    const p=AdelanteEHR.listPatients().find(p=>AdelanteEHR.appointmentsForPatient(p.id).some(a=>a.status==="scheduled" || a.status==="attended"));
-    const cm=AdelanteEHR.listCaseManagers()[0],cl=AdelanteEHR.listClinicians()[0];
-    if(!p || !cm || !cl)throw new Error("Missing fixture");
-    intakeCommand(intake,p.id,{operation:"handoff",reason:"Intake ready for handoff",caseManagerId:cm.id,clinicianId:cl.id});
-    expect(intakeHandoffFor(p.id)).toMatchObject({staffId:intake.staffId,caseManagerId:cm.id,clinicianId:cl.id});
-    expect(AdelanteEHR.listAuditEvents().find(e=>e.action==="intake_handed_off" && e.patientId===p.id)?.detail).toEqual({caseManagerId:cm.id,clinicianId:cl.id});
   });
   it("merge uses the existing engine, requires confirmation, and audits ids only", () => {
     const s=runSignupCommand(signupActor,{operation:"start"});
