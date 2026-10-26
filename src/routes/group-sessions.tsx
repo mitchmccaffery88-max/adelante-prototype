@@ -15,6 +15,7 @@ import { StatusChip } from "@/components/ui/status-chip";
 // BOTH require the care-plan group-eligibility flag first; the store refuses
 // any enrollment without it.
 import { GroupJoinRequestsQueue } from "@/components/groups/GroupJoinRequestsQueue";
+import { GroupJoinRulesEditor } from "@/components/groups/GroupJoinRulesEditor";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
@@ -476,6 +477,7 @@ function GroupDetail({
           </span>
         </div>
         <GroupBillingStatus category={group.category} />
+        <GroupJoinRulesEditor group={group} />
         <p className="text-xs text-muted-foreground">
           {group.serviceType} · {group.modality} · {group.durationMin} min · capacity{" "}
           {group.capacity}

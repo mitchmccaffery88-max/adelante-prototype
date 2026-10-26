@@ -9,6 +9,8 @@ Read sources: **flag** = legacy Patient fields (`consents.*`, `consentState`, `s
 26 Oct intake additions: `src/lib/identityReview.ts` checks current program consent for identity-only referral comparison/linking; `src/lib/intakeWorkspace.ts` uses the same program-consent check to lock restricted referral rows. Neither grants clinical assessment or treatment-content access.
 26 Oct Phase B: `src/lib/intakePhaseB.ts` has four matching lines (existing typed record replacement and resend denials; status-only records; gate-valid status predicate); `src/lib/intakePacket.ts` has one program intake/treatment check. All prior inventory lines/counts remain unchanged. Broad consent grants stay denied.
 
+26 Oct group requests: `src/lib/groupRequests.ts` has three read-only `isConsentCategoryAuthorized` requirement checks (sud_treatment, group_confidentiality_ack, telehealth_services). No consent writes; all prior lines unchanged.
+
 | Gate | File:line | Reads |
 |---|---|---|
 | Central category check (live) | src/lib/ehr.ts:12697 | ledger; LEGACY FALLBACK at :12703-12708 grants `sud_treatment` from flag when no record exists |

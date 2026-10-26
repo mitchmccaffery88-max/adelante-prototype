@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr, type GroupJoinRequest } from "@/lib/ehr";
-import { useActingStaff } from "@/lib/roles";
+import { getStaffMember, useActingStaff } from "@/lib/roles";
 import { isGroupJoinReviewer, visibleGroupJoinRequests } from "@/lib/groupJoinView";
 import { staffPatientLabel } from "@/lib/staffPatientLabel";
+import { FOLLOW_UP_LABELS, GROUP_REQUEST_DRAFT, groupRequestReview, type FollowUpItem } from "@/lib/groupRequests";
+import { runAction } from "@/lib/actions/runAction";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,23 +71,49 @@ function label(r: GroupJoinRequest, viewer: Parameters<typeof staffPatientLabel>
   return `${p ? staffPatientLabel(viewer, p.id) : "Patient"} to ${g?.topic ?? "Group"}`;
 }
 
+const REQ_CHIP = { met: { state: "done", label: "Met" }, not_met: { state: "yourturn", label: "Not met" }, needs_review: { state: "upnext", label: "Needs review" }, locked: { state: "restricted", label: "Restricted" } } as const;
+
 function RequestRow({ r }: { r: GroupJoinRequest }) {
   const acting = useActingStaff();
-  const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
+  const [item, setItem] = useState<FollowUpItem>("confidentiality_form");
   const [blocked, setBlocked] = useState<string | undefined>(r.lastBlocked?.reason);
-  const actor = { name: acting.staffName, role: acting.role, id: acting.staffId };
+  const actor = { role: acting.role, staffId: acting.staffId, staffName: acting.staffName };
+  const review = useEhr(() => groupRequestReview(r.id, acting.role));
   const eligible = AdelanteEHR.isGroupEligible(r.patientId);
+  const requester = r.requestedBy ? getStaffMember(r.requestedBy.staffId)?.name ?? "Staff" : "the patient";
+  const decide = (id: "group_request_approve" | "group_request_not_now" | "group_request_needs_first", ok: string) => {
+    const args = id === "group_request_needs_first" ? [actor, r.id, item, reason] : [actor, r.id, reason];
+    const res = runAction(id, actor, undefined, { args, auditReason: reason });
+    if (!res.ok) { setBlocked(res.reason); return; }
+    setReason(""); toast.success(ok);
+  };
   return (
     <li className="rounded-lg border p-3 space-y-2" data-testid="group-join-row">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-medium text-navy">{label(r, { role: acting.role, staffId: acting.staffId })}</span> <StatusChip lang="en" state={isGroupJoinReviewer(acting.role) ? "yourturn" : "team"} label="Pending" />
         <span className="text-xs text-muted-foreground">
-          Asked <ClientDate value={r.createdAt} options={{ month: "short", day: "numeric" }} />
+          Asked by {requester} <ClientDate value={r.createdAt} options={{ month: "short", day: "numeric" }} />
           {!eligible && " · not yet group-eligible"}
+          {r.followUp && ` · Follow-up: ${FOLLOW_UP_LABELS[r.followUp.item]}`}
         </span>
       </div>
       {r.note && <p className="text-sm text-muted-foreground">“{r.note}”</p>}
+      {review && (
+        <div className="space-y-1" data-testid="group-request-requirements">
+          <p className="text-xs text-muted-foreground">
+            {review.clinicianRequired ? "A clinician approves this group." : "The care manager can approve this group."} {GROUP_REQUEST_DRAFT}
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {review.requirements.map((q) => (
+              <li key={q.id} className="flex items-center gap-1 text-xs">
+                <span>{q.label}</span>
+                <StatusChip lang="en" state={REQ_CHIP[q.status].state} label={q.status === "locked" ? q.reason : REQ_CHIP[q.status].label} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {blocked && (
         <div role="alert" className="rounded border-2 border-input bg-surface-sunk p-2 text-xs text-attention" data-testid="group-join-blocked">
           {blocked}
@@ -98,56 +126,21 @@ function RequestRow({ r }: { r: GroupJoinRequest }) {
           )}
         </div>
       )}
-      {declining ? (
-        <div className="space-y-2">
-          <Textarea
-            aria-label="Reason for declining"
-            placeholder="Reason for declining (required)"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="min-h-11"
-              onClick={() => {
-                try {
-                  AdelanteEHR.declineGroupJoinRequest(r.id, reason, actor);
-                  toast.success("Request declined. The patient was notified.");
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : "Could not decline.");
-                }
-              }}
-            >
-              Confirm decline
-            </Button>
-            <Button size="sm" variant="ghost" className="min-h-11" onClick={() => setDeclining(false)}>
-              Back
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            className="min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
-            onClick={() => {
-              try {
-                AdelanteEHR.approveGroupJoinRequest(r.id, actor);
-                toast.success("Approved and enrolled.");
-              } catch (e) {
-                setBlocked(e instanceof Error ? e.message : "Could not approve.");
-              }
-            }}
-          >
-            Approve
-          </Button>
-          <Button size="sm" variant="outline" className="min-h-11" onClick={() => setDeclining(true)}>
-            Decline
-          </Button>
-        </div>
-      )}
+      <Textarea aria-label="Reason (required)" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" className="min-h-11" onClick={() => decide("group_request_approve", "Approved and added. The patient was messaged.")}>
+          Approve and add
+        </Button>
+        <Button size="sm" variant="outline" className="min-h-11" onClick={() => decide("group_request_not_now", "Marked not right now. The patient was messaged.")}>
+          Not right now
+        </Button>
+        <select aria-label="What is needed first" className="min-h-11 rounded-sm border border-input bg-background px-2 text-sm" value={item} onChange={(e) => setItem(e.target.value as FollowUpItem)}>
+          {Object.entries(FOLLOW_UP_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        <Button size="sm" variant="outline" className="min-h-11" onClick={() => decide("group_request_needs_first", "Follow-up task created. The patient was messaged.")}>
+          Needs something first
+        </Button>
+      </div>
     </li>
   );
 }

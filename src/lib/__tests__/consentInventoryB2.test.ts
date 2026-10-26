@@ -50,7 +50,8 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/consentLifecycle.ts": 4,
   "src/lib/consentMigration.ts": 1, // B2-5 new: listConsentRecords read to find live untyped records to mark legacyUnverified
   "src/lib/consentGate.ts": 8, // §B2-4 new: the one consent gate (ledger interface, consentCovers call, docs)
-  "src/lib/ehr.ts": 46, // B2-5 +1: comment that unverified records are skipped by activeConsentRecord; §B2-6 +2: consentCoveringRecordId doc line + its consentCovers call (disclosure link, read-only); §B2-4 +1: wrapper comment naming consentCovers
+  "src/lib/ehr.ts": 46,
+  "src/lib/groupRequests.ts": 3, // 26 Oct group requests: read-only requirement statuses (Part 2 treatment, confidentiality ack, telehealth); no ledger write. // B2-5 +1: comment that unverified records are skipped by activeConsentRecord; §B2-6 +2: consentCoveringRecordId doc line + its consentCovers call (disclosure link, read-only); §B2-4 +1: wrapper comment naming consentCovers
   "src/lib/hie.ts": 4,
   "src/lib/identityDemoSeed.ts": 1,
   "src/lib/identityReview.ts": 2, // 26 Oct intake: program-consent checks for referral and account identity-only access.
