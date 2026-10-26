@@ -9,7 +9,7 @@ import { StatusChip } from "@/components/ui/status-chip";
 import { runAction, confirmationFor } from "@/lib/actions/runAction";
 import { useEhr } from "@/lib/ehr";
 import { INTAKE_FORMS, INTAKE_PHASE_B_DRAFT, intakeForm, intakeCoverageResult, type IntakeFormKey, type IntakeCaptureInput } from "@/lib/intakePhaseB";
-import { intakePacketChecklist, PACKET_NEEDS, type PacketSource, type StagingRow, type PacketAttachInput, type NeedState } from "@/lib/intakePacket";
+import { intakePacketChecklist, packetSourceChoices, PACKET_NEEDS, type PacketSource, type StagingRow, type PacketAttachInput, type NeedState } from "@/lib/intakePacket";
 import { PART2_ELEMENT_KEYS, PART2_ELEMENT_LABELS, isPart2Type, type Part2Elements } from "@/lib/consentRecordModel";
 import { CONSENT_PURPOSES, type ConsentPurposeCode } from "@/lib/consentPurposes";
 import { type IntakeActor } from "@/lib/intakePhaseA";
@@ -23,6 +23,7 @@ export function IntakePhaseBActions({ actor, referralId, linked, completed }: { 
   const [signedOn, setSignedOn] = useState(""); const [expiresOn, setExpiresOn] = useState(""); const [attested, setAttested] = useState(false); const [elements, setElements] = useState<Part2Elements>({}); const [paper, setPaper] = useState<File>(); const [note, setNote] = useState(""); const [reason, setReason] = useState(""); const [receipt, setReceipt] = useState("");
   const [docType, setDocType] = useState<PacketAttachInput["type"]>("hra"); const [docSource, setDocSource] = useState<PacketSource>("pre_release_packet"); const [classification, setClassification] = useState<PacketAttachInput["classification"]>("unclassified"); const [doc, setDoc] = useState<File>();
   const [need, setNeed] = useState<(typeof PACKET_NEEDS)[number]>("housing");
+  const [sourceRef, setSourceRef] = useState("");
   const json = useEhr(() => JSON.stringify({ packet: intakePacketChecklist(actor, referralId), coverage: intakeCoverageResult(actor, referralId) }));
   const data = JSON.parse(json) as { packet: ReturnType<typeof intakePacketChecklist>; coverage: ReturnType<typeof intakeCoverageResult> };
   const run = (id: string, ...args: unknown[]) => { const r = runAction(id, actor, undefined, { args: [actor, referralId, ...args, reason], auditReason: reason }); if (!r.ok) toast.error(r.reason); else { setReceipt(confirmationFor(id, "Recorded")); toast.success(confirmationFor(id, "Recorded")); } return r.ok; };

@@ -62,6 +62,7 @@ export function intakePacketNeeds(actor: IntakeActor, referralId: string) {
 function referralForPacket(id: string) { const r = AdelanteEHR.listReferrals().find(x => x.id === id); if (!r) throw new Error("Referral unavailable."); return r; }
 export function logIntakePacketNeed(actor: IntakeActor, referralId: string, needId: string, state: NeedState, reason: string) {
   const r = intakeBReferral(actor, referralId, "sdoh_checklist", reason, true);
+  if (r.enrolledPatientId && isRestricted(r.enrolledPatientId)) throw new Error("Restricted record — checklist unavailable.");
   const n = (needs.get(referralId) ?? []).find(x => x.id === needId && referenceValid(r, x));
   if (!n || (n.part2 && !intakeTreatmentConsent(r)) || !["confirmed_still_needed", "resolved", "unknown"].includes(state)) throw new Error("Source-bound checklist item unavailable.");
   n.state = state; AdelanteEHR._emit(); return { referralId, needId };
@@ -85,7 +86,9 @@ export function intakePacketDocuments(actor: IntakeActor, referralId: string) {
 export function packetDocumentContent(actor: IntakeActor, referralId: string, documentId: string) {
   const r = referralForPacket(referralId); const d = (documents.get(referralId) ?? []).find(x => x.id === documentId); if (!d) throw new Error("Document unavailable.");
   const isIntake = canIntakeB(actor, "packet_attach");
-  const handoff = !!r.enrolledPatientId && completed(r.id) && careTeamCanRead(actor, r);
+  const patient = r.enrolledPatientId ? AdelanteEHR.getPatient(r.enrolledPatientId) : undefined;
+  const docAccess = patient ? canAccess(actor.role, "documents", patient) : undefined;
+  const handoff = !!r.enrolledPatientId && completed(r.id) && careTeamCanRead(actor, r) && !!docAccess && !docAccess.locked && docAccess.level !== "none";
   const p = r.enrolledPatientId ? AdelanteEHR.getPatient(r.enrolledPatientId) : undefined;
   if (isIntake && r.enrolledPatientId && isRestricted(r.enrolledPatientId)) throw new Error("Restricted record — packet unavailable.");
   if (!isIntake && !handoff) throw new Error("Assigned care team after intake completion only.");
@@ -97,7 +100,17 @@ export function careTeamPacket(actor: IntakeActor, patientId: string) {
   return AdelanteEHR.listReferrals().filter(r => r.enrolledPatientId === patientId && completed(r.id) && careTeamCanRead(actor, r)).map(r => {
     const p = AdelanteEHR.getPatient(patientId); const sud = p ? canAccess(actor.role, "sud_treatment", p) : undefined;
     const allowed = !!sud && !sud.locked && sud.level !== "none";
-    return { referralId: r.id, needs: (needs.get(r.id) ?? []).filter(n => referenceValid(r, n) && (!n.part2 || allowed)).map(n => ({ kind: n.kind, source: n.source, state: n.state })), documents: (documents.get(r.id) ?? []).filter(d => !d.part2 || allowed).map(d => ({ id: d.id, type: d.type, fileName: d.fileName })) };
+    const sdoh = p ? canAccess(actor.role, "sdoh", p) : undefined; const docs = p ? canAccess(actor.role, "documents", p) : undefined;
+    return { referralId: r.id, needs: sdoh && !sdoh.locked && sdoh.level !== "none" ? (needs.get(r.id) ?? []).filter(n => referenceValid(r, n) && (!n.part2 || allowed)).map(n => ({ kind: n.kind, source: n.source, state: n.state })) : [], documents: docs && !docs.locked && docs.level !== "none" ? (documents.get(r.id) ?? []).filter(d => !d.part2 || allowed).map(d => ({ id: d.id, type: d.type, fileName: d.fileName })) : [] };
   });
+}
+export function packetSourceChoices(actor: IntakeActor, referralId: string, source: PacketSource) {
+  assertIntakeB(actor, "staging_import", "Source references"); const r = referralForPacket(referralId);
+  if (source === "referral_form") return [{ id: `referral:${r.id}`, label: "This referral form" }];
+  return [...(r.intakeStaging?.source === source ? [{ id: r.intakeStaging.sourceRef, label: "Imported referral source" }] : []), ...(documents.get(referralId) ?? []).filter(d => d.source === source && (!d.part2 || intakeTreatmentConsent(r))).map(d => ({ id: d.id, label: d.fileName }))];
+}
+export function intakePacketProgress(actor: IntakeActor, referralId: string) {
+  const packet = intakePacketChecklist(actor, referralId);
+  return { collected: packet.forms.filter(f => f.status === "Collected").length, missing: packet.forms.filter(f => f.status !== "Collected").length, needsLogged: packet.needs.filter(n => n.state !== "unknown").length, needsUnknown: packet.needs.filter(n => n.state === "unknown").length, documents: packet.documents.length };
 }
 export function intakePacketChecklist(actor: IntakeActor, referralId: string) { return { forms: intakeFormsStatus(actor, referralId), needs: intakePacketNeeds(actor, referralId), documents: intakePacketDocuments(actor, referralId) }; }

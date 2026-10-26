@@ -144,5 +144,5 @@ export function careTeamCanRead(actor: IntakeActor, referral: Referral) {
   const entry = pid ? chartEntryFor(actor.role, actor.staffId, pid) : undefined;
   if (!pid || !staff || staff.active === false || !hasRoleAssignment(staff, actor.role) || !entry?.ok || (entry.restricted && !entry.careTeam)) return false;
   const p = AdelanteEHR.getPatient(pid);
-  return !!p && ((staff.caseManagerId && staff.caseManagerId === p.caseManagerId) || (staff.clinicianId && staff.clinicianId === p.primaryClinicianId)) && canAccess(actor.role, "sdoh", p).level !== "none";
+  return !!p && !!((staff.caseManagerId && staff.caseManagerId === p.caseManagerId) || (staff.clinicianId && staff.clinicianId === p.primaryClinicianId));
 }
