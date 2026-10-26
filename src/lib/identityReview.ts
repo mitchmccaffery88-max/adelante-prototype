@@ -365,7 +365,7 @@ const patientView = (p: Patient): IdentityCandidateView => ({
   dob: p.dob,
   phone: p.phone,
   email: p.email,
-  createdAt: p.createdAt,
+  createdAt: p.enrolledAt,
   hasAccount: Boolean(p.signupCredential),
 });
 

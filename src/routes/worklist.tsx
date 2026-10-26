@@ -2,7 +2,6 @@ import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { PageNewLauncher } from "@/components/staff/PageNewLauncher";
 import { StatusChip } from "@/components/ui/status-chip";
-import { signupReviewFor } from "@/lib/website/signupStore";
 // §Worklist Phase A — cross-facility operational task table.
 //
 // Built on the EXISTING `CaseTask` (extended additively), not a parallel task
@@ -150,7 +149,6 @@ function WorklistPage() {
   const scoped = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return tasks.filter((t) => {
-      if (t.taskType === "website_signup_review" && role !== "clinical_coordinator") return false;
       if (facilityRoundsOnly && !isFacilityProtocolRound(t)) return false;
       if (!inFacilityEnabled() && isInFacilityTask(t)) return false;
       if (facilityId !== ANY && t.facilityId !== facilityId) return false;
@@ -371,7 +369,6 @@ function WorklistPage() {
           { id: "c1", label: "Task", sortValue: (t) => t.title, cell: (t) => <>
 
                       {t.title}
-                      {t.taskType === "website_signup_review" && (() => { const review = signupReviewFor({role,staffId}, t.id); return review ? <details className="mt-2"><summary>Signup review — Simulated</summary><p>{review.entries.firstName} {review.entries.lastName}</p><p>Date of birth: {review.entries.dob}</p><p>Phone: {review.entries.phone || "Not entered"}</p><p>Email: {review.entries.email || "Not entered"}</p><p>Referral source: {review.entries.source || "Not entered"}</p></details> : null; })()}
                       {t.taskType && (
                         <span className="block text-muted-foreground">
                           {t.taskType.replace(/_/g, " ")}

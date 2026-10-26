@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
 import { codeIdentityMatches, duplicateDecision, phoneKey, referralMatches, validAge } from "@/lib/signupMatch";
-import { runSignupCommand, signupActor, signupReviewFor, type SignupResult } from "@/lib/website/signupStore";
+import { runSignupCommand, signupActor, type SignupResult } from "@/lib/website/signupStore";
+import { listIdentityReviewItems } from "@/lib/identityReview";
 
 const base = { firstName: "José", lastName: "Peña-Ruiz", dob: "1990-02-03", phone: "(555) 010-0101", email: "A@EXAMPLE.ORG" };
 const draft = (over = {}) => ({ ...base, preferredLanguage: "en" as const, credentialKind: "pin" as const, ...over });
