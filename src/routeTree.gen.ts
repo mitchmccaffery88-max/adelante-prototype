@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdelRouteImport } from './routes/adel'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminAccountSupportRouteImport } from './routes/admin-account-support'
 import { Route as AdminAuditRouteImport } from './routes/admin-audit'
 import { Route as AdminCatalogGovernanceRouteImport } from './routes/admin-catalog-governance'
 import { Route as AdminClaimsRouteImport } from './routes/admin-claims'
@@ -21,6 +22,7 @@ import { Route as AdminCoordinationRouteImport } from './routes/admin-coordinati
 import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
 import { Route as AdminDocumentsAuditRouteImport } from './routes/admin-documents-audit'
 import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
+import { Route as AdminIdentityReviewRouteImport } from './routes/admin-identity-review'
 import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminNoteTemplatesRouteImport } from './routes/admin-note-templates'
 import { Route as AdminPermissionsRouteImport } from './routes/admin-permissions'
@@ -165,6 +167,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAccountSupportRoute = AdminAccountSupportRouteImport.update({
+  id: '/admin-account-support',
+  path: '/admin-account-support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/admin-audit',
   path: '/admin-audit',
@@ -203,6 +210,11 @@ const AdminDocumentsAuditRoute = AdminDocumentsAuditRouteImport.update({
 const AdminFacilitiesRoute = AdminFacilitiesRouteImport.update({
   id: '/admin-facilities',
   path: '/admin-facilities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIdentityReviewRoute = AdminIdentityReviewRouteImport.update({
+  id: '/admin-identity-review',
+  path: '/admin-identity-review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminKpiTargetsRoute = AdminKpiTargetsRouteImport.update({
@@ -832,6 +844,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
+  '/admin-account-support': typeof AdminAccountSupportRoute
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
   '/admin-claims': typeof AdminClaimsRoute
@@ -840,6 +853,7 @@ export interface FileRoutesByFullPath {
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-documents-audit': typeof AdminDocumentsAuditRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-identity-review': typeof AdminIdentityReviewRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-permissions': typeof AdminPermissionsRoute
@@ -969,6 +983,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
+  '/admin-account-support': typeof AdminAccountSupportRoute
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
   '/admin-claims': typeof AdminClaimsRoute
@@ -977,6 +992,7 @@ export interface FileRoutesByTo {
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-documents-audit': typeof AdminDocumentsAuditRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-identity-review': typeof AdminIdentityReviewRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-permissions': typeof AdminPermissionsRoute
@@ -1103,6 +1119,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
+  '/admin-account-support': typeof AdminAccountSupportRoute
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
   '/admin-claims': typeof AdminClaimsRoute
@@ -1111,6 +1128,7 @@ export interface FileRoutesById {
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-documents-audit': typeof AdminDocumentsAuditRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-identity-review': typeof AdminIdentityReviewRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-permissions': typeof AdminPermissionsRoute
@@ -1242,6 +1260,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/adel'
     | '/admin'
+    | '/admin-account-support'
     | '/admin-audit'
     | '/admin-catalog-governance'
     | '/admin-claims'
@@ -1250,6 +1269,7 @@ export interface FileRouteTypes {
     | '/admin-credentialing'
     | '/admin-documents-audit'
     | '/admin-facilities'
+    | '/admin-identity-review'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
     | '/admin-permissions'
@@ -1379,6 +1399,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/adel'
     | '/admin'
+    | '/admin-account-support'
     | '/admin-audit'
     | '/admin-catalog-governance'
     | '/admin-claims'
@@ -1387,6 +1408,7 @@ export interface FileRouteTypes {
     | '/admin-credentialing'
     | '/admin-documents-audit'
     | '/admin-facilities'
+    | '/admin-identity-review'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
     | '/admin-permissions'
@@ -1512,6 +1534,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/adel'
     | '/admin'
+    | '/admin-account-support'
     | '/admin-audit'
     | '/admin-catalog-governance'
     | '/admin-claims'
@@ -1520,6 +1543,7 @@ export interface FileRouteTypes {
     | '/admin-credentialing'
     | '/admin-documents-audit'
     | '/admin-facilities'
+    | '/admin-identity-review'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
     | '/admin-permissions'
@@ -1650,6 +1674,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdelRoute: typeof AdelRoute
   AdminRoute: typeof AdminRoute
+  AdminAccountSupportRoute: typeof AdminAccountSupportRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminCatalogGovernanceRoute: typeof AdminCatalogGovernanceRoute
   AdminClaimsRoute: typeof AdminClaimsRoute
@@ -1658,6 +1683,7 @@ export interface RootRouteChildren {
   AdminCredentialingRoute: typeof AdminCredentialingRoute
   AdminDocumentsAuditRoute: typeof AdminDocumentsAuditRoute
   AdminFacilitiesRoute: typeof AdminFacilitiesRoute
+  AdminIdentityReviewRoute: typeof AdminIdentityReviewRoute
   AdminKpiTargetsRoute: typeof AdminKpiTargetsRoute
   AdminNoteTemplatesRoute: typeof AdminNoteTemplatesRoute
   AdminPermissionsRoute: typeof AdminPermissionsRoute
@@ -1791,6 +1817,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-account-support': {
+      id: '/admin-account-support'
+      path: '/admin-account-support'
+      fullPath: '/admin-account-support'
+      preLoaderRoute: typeof AdminAccountSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-audit': {
       id: '/admin-audit'
       path: '/admin-audit'
@@ -1845,6 +1878,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-facilities'
       fullPath: '/admin-facilities'
       preLoaderRoute: typeof AdminFacilitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-identity-review': {
+      id: '/admin-identity-review'
+      path: '/admin-identity-review'
+      fullPath: '/admin-identity-review'
+      preLoaderRoute: typeof AdminIdentityReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-kpi-targets': {
@@ -2797,6 +2837,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdelRoute: AdelRoute,
   AdminRoute: AdminRoute,
+  AdminAccountSupportRoute: AdminAccountSupportRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminCatalogGovernanceRoute: AdminCatalogGovernanceRoute,
   AdminClaimsRoute: AdminClaimsRoute,
@@ -2805,6 +2846,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCredentialingRoute: AdminCredentialingRoute,
   AdminDocumentsAuditRoute: AdminDocumentsAuditRoute,
   AdminFacilitiesRoute: AdminFacilitiesRoute,
+  AdminIdentityReviewRoute: AdminIdentityReviewRoute,
   AdminKpiTargetsRoute: AdminKpiTargetsRoute,
   AdminNoteTemplatesRoute: AdminNoteTemplatesRoute,
   AdminPermissionsRoute: AdminPermissionsRoute,

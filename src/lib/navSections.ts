@@ -1,4 +1,6 @@
 import { availabilityPageTitle, isBookableRole } from "./staffProfile";
+import { canViewIdentityReviewRole, identityReviewYourTurnCount } from "./identityReview";
+import { canViewAccountSupport, accountSupportYourTurnCount } from "./accountSupport";
 import { canBrowseContent } from "./contentStaff";
 import { hasSudReportingAccess } from "@/lib/sudReportingAccess";
 import { canUseEscalations } from "./escalations";
@@ -110,6 +112,8 @@ export const NAV_GROUP_ORDER: NavGroup[] = [
  *    these earns a RecordClass, switch the gate here and nothing else changes.
  */
 export type NavGate =
+  | { kind: "identity_review" }
+  | { kind: "account_support" }
   | {
       kind: "record_class";
       anyOf: RecordClass[];
@@ -168,6 +172,7 @@ export interface NavEntry {
   search?: Record<string, string>;
   group: NavGroup;
   gate: NavGate;
+  count?: () => number;
 }
 
 const LEVEL_RANK: Record<AccessLevel, number> = {
@@ -180,6 +185,8 @@ const LEVEL_RANK: Record<AccessLevel, number> = {
 
 /** The full registry — every staff-facing surface in the app, gated. */
 export const STAFF_NAV: NavEntry[] = [
+  { id: "identity-review", label: "Identity review", desc: "Record integrity at intake", icon: UserCheck, to: "/admin-identity-review", group: "administration", gate: {kind:"identity_review"}, count: identityReviewYourTurnCount },
+  { id: "account-support", label: "Account support", desc: "Sign-in help, resets and lockouts", icon: UserCog, to: "/admin-account-support", group: "administration", gate: {kind:"account_support"}, count: accountSupportYourTurnCount },
   // ----- Care -----
   { id: "content-library", label: "Content library", desc: "Patient lessons, exercises, Journeys and resources", icon: BookOpen, to: "/content-library", group: "care", gate: { kind: "content_library" } },
   {
@@ -815,6 +822,8 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (!inFacilityEnabled() && (entry.group === "facility" || IN_FACILITY_NAV_IDS.has(entry.id)))
     return false;
   if (entry.gate.kind === "open") return true;
+  if (entry.gate.kind === "identity_review") return canViewIdentityReviewRole(role);
+  if (entry.gate.kind === "account_support") return canViewAccountSupport(role);
   if (entry.gate.kind === "crisis_flag_only")
     return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";
   if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);

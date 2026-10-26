@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin-staff")({
@@ -71,7 +72,7 @@ function AdminStaffPage() {
           views={[{ id: "all", label: "Current view", matches: () => true }, { id: "active", label: "Active", matches: (m) => m.active !== false }, { id: "closed", label: "Deactivated", matches: (m) => m.active === false }]} defaultView="all"
           columns={[
             { id: "name", label: "Name", sortValue: (m) => m.fullName ?? m.name, cell: (m) => m.fullName ?? m.name },
-            { id: "role", label: "Role", sortValue: (m) => STAFF_ROLES.find((r) => r.key === m.role)?.label ?? m.role, cell: (m) => STAFF_ROLES.find((r) => r.key === m.role)?.label ?? m.role },
+            { id: "role", label: "Primary + additional roles", sortValue: (m) => m.role, cell: (m) => [m.role, ...(m.additionalRoles ?? [])].map(role => STAFF_ROLES.find(r => r.key === role)?.label ?? role).join(" · ") },
             { id: "status", label: "Status", sortValue: (m) => m.active === false ? "Deactivated" : "Active", cell: (m) => <StatusChip lang="en" state={m.active === false ? "closed" : "done"} label={m.active === false ? "Deactivated" : "Active"} /> },
           ]}
           primaryAction={(m) => <Button size="sm" variant="outline" aria-label={`${m.active === false ? "Reactivate" : "Deactivate"} ${m.name}`} onClick={() => setDrawer({ kind: m.active === false ? "reactivate" : "deactivate", id: m.id })}>{m.active === false ? "Reactivate" : "Deactivate"}</Button>}
@@ -136,6 +137,7 @@ function EditDrawer({ open, id, onClose, actor }: { open: boolean; id?: string; 
   const m = id ? STAFF_ROSTER.find((s) => s.id === id) : undefined;
   const [role, setRole] = useState<StaffRole | undefined>(m?.role);
   const [sites, setSites] = useState(m?.siteIds?.join(", ") ?? "");
+  const [additionalRoles, setAdditionalRoles] = useState<StaffRole[]>(m?.additionalRoles ?? []);
   const [reason, setReason] = useState("");
   // §Group A #7 — the drawer stays mounted; selecting a different staff
   // member resets role, sites and reason to that member's own values.
@@ -144,6 +146,7 @@ function EditDrawer({ open, id, onClose, actor }: { open: boolean; id?: string; 
     setFormFor(id);
     setRole(m?.role);
     setSites(m?.siteIds?.join(", ") ?? "");
+    setAdditionalRoles(m?.additionalRoles ?? []);
     setReason("");
   }
   if (!m) return null;
@@ -160,11 +163,12 @@ function EditDrawer({ open, id, onClose, actor }: { open: boolean; id?: string; 
             </Select>
           </div>
           <div><Label>Site ids (comma separated)</Label><Input value={sites} onChange={(e) => setSites(e.target.value)} /></div>
+          <fieldset className="space-y-2"><legend className="text-sm font-medium">Additional roles · Draft — pending go-live permissions audit</legend>{STAFF_ROLES.filter(r => r.key !== (role ?? m.role)).map(r => <label key={r.key} className="flex items-center gap-2 text-sm"><Checkbox checked={additionalRoles.includes(r.key)} onCheckedChange={checked => setAdditionalRoles(current => checked ? [...current,r.key] : current.filter(key => key !== r.key))} />{r.label}</label>)}</fieldset>
           <div><Label>Reason</Label><Input value={reason} onChange={(e) => setReason(e.target.value)} /></div>
           <Button
             onClick={() => {
               const siteIds = sites.split(",").map((s) => s.trim()).filter(Boolean);
-              const r = runAction("staff_update", actor, undefined, { args: [actor, { staffId: m.id, role, siteIds, reason }] });
+              const r = runAction("staff_update", actor, undefined, { args: [actor, { staffId: m.id, role, additionalRoles, siteIds, reason }] });
               if (r.ok) { toast.success("Staff member updated"); onClose(); setReason(""); }
               else toast.error(r.reason);
             }}
