@@ -54,6 +54,7 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/hie.ts": 4,
   "src/lib/identityDemoSeed.ts": 1,
   "src/lib/identityReview.ts": 2, // 26 Oct intake: program-consent checks for referral and account identity-only access.
+  "src/lib/intakePhaseA.ts": 1, // 26 Oct Phase A: existing treatment consent reader, referral-only boundary.
   "src/lib/intakeWorkspace.ts": 1, // 26 Oct intake: restricted-referral projection; no clinical-content grant.
   "src/lib/outpatientCare.ts": 4,
   "src/lib/part2Disclosure.ts": 6,
