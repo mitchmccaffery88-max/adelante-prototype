@@ -1,3 +1,5 @@
+import { PURPOSE_LABEL, PURPOSE_REFERRAL_FOR_TREATMENT, type ConsentPurposeCode } from "./consentPurposes";
+import { PART2_ELEMENT_KEYS } from "./consentRecordModel";
 import { registerSudSignalSource } from "./sudSignal";
 import { STAFF_ROSTER } from "./roles";
 // §B3/B4 — outpatient episodes of care and higher-level-of-care referrals.
@@ -230,7 +232,7 @@ export function createHlocReferral(input: {
 export function hlocSendBlocker(r: HlocReferral): string | undefined {
   if (r.outsideSudProvider && !consentGate(r.patientId, {
     types: ["legal_part2_disclosure", "part2_specific_written"], recipients: [r.destination],
-    purposes: ["Referral for treatment"], item: "SUD referral information",
+    purposes: [PURPOSE_REFERRAL_FOR_TREATMENT], item: "SUD referral information",
   }, () => AdelanteEHR.hasLegalDisclosureConsent(r.patientId)))
     return "Sending to an outside SUD provider needs the patient's 42 CFR Part 2 disclosure consent. Record it first.";
   return undefined;
@@ -255,7 +257,7 @@ export function advanceHlocReferral(id: string, to: HlocStatus, actor: Actor, no
       patientId: r.patientId,
       actor: { name: actor.name, role: actor.role },
       recipient: { name: r.destination, type: "provider" },
-      purpose: "Referral for treatment",
+      purpose: PURPOSE_REFERRAL_FOR_TREATMENT,
       channel: "referral_out",
       recordClasses: r.sudRelated ? ["SUD referral information"] : [],
     });
@@ -285,7 +287,7 @@ export function hiddenHlocCount(role: StaffRole | string, patientId?: string): n
 
 /** A legal Part 2 disclosure captured on a referral — recipient, purpose, date. */
 export interface LegalDisclosure {
-  id: string; patientId: string; recipient: string; purpose: string; recordedAt: string;
+  id: string; patientId: string; recipient: string; purpose: string; purposeCode?: string; recordedAt: string;
   recordedBy: string; revokedAt?: string; revokedBy?: string; revokeReason?: string;
 }
 const disclosures: LegalDisclosure[] = [];
@@ -313,7 +315,7 @@ export function revokeLegalDisclosure(id: string, actor: Actor & { staffId?: str
 }
 
 /** For the demo: capture a legal Part 2 disclosure section on top of the active consent record. */
-export function recordLegalDisclosureConsent(patientId: string, actor: Actor & { staffId?: string }, signedByName: string, meta?: { recipient: string; purpose: string }): void {
+export function recordLegalDisclosureConsent(patientId: string, actor: Actor & { staffId?: string }, signedByName: string, meta?: { recipient: string; purpose: string; purposeCode?: ConsentPurposeCode; items?: string[] }): void {
   const prior = AdelanteEHR.activeConsentRecord(patientId);
   const sections = [...(prior?.sections ?? []).filter((s) => s.category !== "legal_part2_disclosure"), { category: "legal_part2_disclosure" as const, authorized: true }];
   AdelanteEHR.createConsentRecord({
@@ -324,12 +326,18 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
       signedAt: new Date().toISOString(), recordedAt: new Date().toISOString(),
       recordedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
     },
+    // Oct 26 — scoped capture: typed to exactly what the send gate checks.
+    ...(meta?.purposeCode ? {
+      consentType: "legal_part2_disclosure" as const, recipients: [{ kind: "org" as const, name: meta.recipient.trim() }],
+      purpose: meta.purpose, purposeCode: meta.purposeCode, items: meta.items ?? ["SUD referral information"],
+      part2Elements: Object.fromEntries(PART2_ELEMENT_KEYS.map((k) => [k, true])), redisclosureNoticeVersion: "2024-part2-final",
+    } : {}),
     },
     effectiveDate: new Date().toISOString().slice(0, 10), sections, capturedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
   });
   const d: LegalDisclosure = {
     id: `ld-${disclosures.length + 1}-${Date.now().toString(36)}`, patientId,
-    recipient: meta?.recipient ?? "Not specified", purpose: meta?.purpose ?? "Referral for treatment",
+    recipient: meta?.recipient ?? "Not specified", purpose: meta?.purpose ?? PURPOSE_LABEL.referral_for_treatment, ...(meta?.purposeCode ? { purposeCode: meta.purposeCode } : {}),
     recordedAt: new Date().toISOString(), recordedBy: actor.name,
   };
   disclosures.push(d);
@@ -418,8 +426,8 @@ export function seedOutpatientCareDemo(): void {
       } catch {
         /* expected: blocked, audited */
       }
-      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: r.destination, purpose: "Referral for treatment" });
-      requestDemoConsentCapture({ patientId: jordan.id, consentType: "legal_part2_disclosure", recipients: [{ kind: "org", name: r.destination }], purpose: "Referral for treatment", items: ["SUD referral information"] });
+      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: r.destination, purpose: "Referral for treatment", purposeCode: PURPOSE_REFERRAL_FOR_TREATMENT });
+      requestDemoConsentCapture({ patientId: jordan.id, consentType: "legal_part2_disclosure", recipients: [{ kind: "org", name: r.destination }], purpose: "Referral for treatment", purposeCode: PURPOSE_REFERRAL_FOR_TREATMENT, items: ["SUD referral information"] });
       advanceHlocReferral(r.id, "sent", REYES);
     });
 }

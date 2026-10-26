@@ -6,6 +6,7 @@
 // untyped section record answers; flags never do. Draft — pending clinical
 // and counsel sign-off.
 import type { ConsentType } from "./consentRecordModel";
+import { purposeCodeForText, purposeCodeOf, isPurposeCode } from "./consentPurposes";
 
 interface LedgerRecord {
   patientId: string; consentType?: ConsentType; recipients?: { name: string; directoryRef?: string }[];
@@ -40,7 +41,11 @@ function applies(r: LedgerRecord, n: GateNeed): boolean {
   if (!r.consentType || !n.types.includes(r.consentType)) return false;
   const want = n.recipients.map(low);
   if (!r.recipients?.some((x) => want.includes(low(x.directoryRef ?? "")) || want.includes(low(x.name)))) return false;
-  if (n.purposes && !n.purposes.some((p) => r.purposeCode === p || r.purpose === p)) return false;
+  // Codes only: the record's code (or exact-text migration) vs the need's code.
+  if (n.purposes) {
+    const have = purposeCodeOf(r);
+    if (!have || !n.purposes.some((p) => (isPurposeCode(p) ? p : purposeCodeForText(p)) === have)) return false;
+  }
   // Specific written consent covers only the items it lists.
   if (r.consentType === "part2_specific_written" && (n.item === undefined || !r.items?.includes(n.item))) return false;
   return true;

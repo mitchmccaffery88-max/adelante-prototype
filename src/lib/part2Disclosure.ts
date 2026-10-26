@@ -1,3 +1,4 @@
+import { purposeCodeForText } from "./consentPurposes";
 // §Batch C1 — the ONE outbound disclosure function for 42 CFR Part 2 content.
 //
 // Every outbound path that can carry SUD-classified information (HIE share,
@@ -203,7 +204,10 @@ export function part2ConsentFor(
       (norm(d.recipient) === norm(recipient.name) ||
         (!!recipient.organization && norm(d.recipient) === norm(recipient.organization))) &&
       // Recipient AND purpose must match the recorded legal disclosure.
-      (!purpose || !d.purpose || norm(d.purpose) === norm(purpose)),
+      // Codes only when both sides map; otherwise exact text (unmapped legacy).
+      (!purpose || !d.purpose || ((d.purposeCode ?? purposeCodeForText(d.purpose)) && purposeCodeForText(purpose)
+        ? (d.purposeCode ?? purposeCodeForText(d.purpose)) === purposeCodeForText(purpose)
+        : norm(d.purpose) === norm(purpose))),
   );
   // Applicable typed evidence decides, including a revoked/expired denial.
   // Otherwise only a live untyped legal section answers, never old history.
