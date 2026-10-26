@@ -9236,6 +9236,7 @@ export const AdelanteEHR = {
         inCaseload: _inStaffCaseload(input.bookedBy!, input.patientId),
         serviceType: input.serviceType,
         asam: !!input.asamTaskId,
+        firstVisit: !appointments.some(a => a.patientId === input.patientId && a.status !== "cancelled"),
       });
       if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
       _assertClinicianFit(input.clinicianId, input.serviceType);

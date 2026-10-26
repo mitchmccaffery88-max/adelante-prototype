@@ -10,6 +10,7 @@ import { myCaseload, type ActingIdentity } from "./myWork";
 import { availableSlots } from "./clinicianAvailability";
 import { isActiveStaff } from "./staffLifecycle";
 import { isBookableClinician } from "./staffProfile";
+import { isRestricted } from "./chartAccess";
 
 export interface BookingActor extends ActingIdentity {
   role: StaffRole;
@@ -35,7 +36,7 @@ export function bookablePatients(actor: BookingActor): Patient[] {
   const r = bookingRightFor(actor.role);
   if (r.scope === "none") return [];
   if (r.scope === "caseload") return myCaseload(actor);
-  return AdelanteEHR.listPatients();
+  return AdelanteEHR.listPatients().filter(p => actor.role !== "intake_coordinator" || (!isRestricted(p.id) && !AdelanteEHR.appointmentsForPatient(p.id).some(a => a.status !== "cancelled")));
 }
 
 const PRESCRIBER_CRED = /PMHNP|\bM\.?D\.?\b|\bD\.?O\.?\b/i;
@@ -76,7 +77,7 @@ export type BookingPrecheck = { ok: true } | { ok: false; reason: string; next: 
 export function precheckBooking(input: { actor: BookingActor; patient?: Patient; serviceType: ServiceType; clinicianId?: string; modality: "video" | "phone" | "in_person"; asam?: boolean }): BookingPrecheck {
   if (!input.patient) return { ok: false, reason: "Pick a patient.", next: "Choose someone from the list." };
   const inCaseload = bookablePatients(input.actor).some((p) => p.id === input.patient!.id);
-  const r = checkBookingRights({ role: input.actor.role, op: "book", inCaseload, serviceType: input.serviceType, asam: input.asam });
+  const r = checkBookingRights({ role: input.actor.role, op: "book", inCaseload, serviceType: input.serviceType, asam: input.asam, firstVisit: !AdelanteEHR.appointmentsForPatient(input.patient.id).some(a=>a.status !== "cancelled") });
   if (!r.ok) return r;
   if (!input.clinicianId) return { ok: false, reason: "Choose whose calendar to book on.", next: "Pick a clinician from the suggestions." };
   if (input.modality !== "in_person" && !AdelanteEHR.isConsentCategoryAuthorized(input.patient.id, TELEHEALTH_CONSENT_CATEGORY))
