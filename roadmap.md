@@ -4,7 +4,7 @@
 - [x] A1 First-of-kind indicated booking and attributed clinician-approved group requests; no general booking/reschedule/details. Conflict refusals contain no other clinician/visit details.
 - [x] A2 Administrative checklist completion, active-roster scoped assignments, existing Today tasks and read-only header care team.
 - [x] A3 Linked crisis wrapper and source-keyed pre-chart triage with tier owners, receipts only for Intake, confirmed later chart linking. No on-call defined: explicit clinical-coordinator fallback gap. Source ingestion uses clinical-only structured capture; no private-answer scanning.
-- [ ] A4 Four real-store demo referrals; allowed/adjacent-denial tests; full units and full public browser counts.
+- [x] A4 Four real-store demo referrals; allowed/adjacent-denial tests; FULL units 3,359/3,359 across 392 files; FULL public browser isolated 47/47, exit 0, 12.9m. Build OK; real UI booking/completion/clinical triage verified. Report: docs/intake-phase-a-report.md. Nothing published.
 - Phase B deferred: consent/paperwork, eligibility, SDOH and staging importer/documents. Do not publish.
 
 ## 26 Oct Intake responsibilities — scoped restoration

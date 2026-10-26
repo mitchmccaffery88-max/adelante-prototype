@@ -44,7 +44,7 @@ Mitch's Phase A supersedes the earlier referral/identity-only narrowing. No gene
 
 ## Validation
 
-FULL units: **3,359/3,359**, **392 files**, exit 0. Build OK. Final public-only isolated run pending. Initial public run: 46/47, Axe context destroyed during navigation. Overlapping full-unit/public rerun: 43/47, four landing timeouts under load (Axe/evaluate/menu); no assertions, retry or timeout changes. Final run uses the same eight public specs, one worker on :8080, no concurrent unit work or code edits.
+FULL units: **3,359/3,359**, **392 files**, exit 0. FULL public browser isolated rerun: **47/47**, exit 0, **12.9 minutes**. Build OK. Initial public run: 46/47, Axe context destroyed during navigation. Overlapping full-unit/public rerun: 43/47, four landing timeouts under load (Axe/evaluate/menu); no assertions, retry or timeout changes. Final run used the same eight public specs, one worker on :8080, no concurrent unit work or code edits; all earlier failed checks passed in the full run. Nothing published.
 
 ## Changed files
 
