@@ -38,6 +38,7 @@ export type StaffRole =
   | "lvn"
   | "billing"
   | "clinical_coordinator"
+  | "intake_coordinator"
   | "credentialing_coordinator"
   | "billing_coordinator"
   | "sys_admin";
@@ -57,12 +58,14 @@ export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
   { key: "lvn", label: "LVN" },
   { key: "billing", label: "Billing coordinator" },
   { key: "clinical_coordinator", label: "Clinical coordinator" },
+  { key: "intake_coordinator", label: "Intake Coordinator" },
   { key: "credentialing_coordinator", label: "Credentialing coordinator" },
   { key: "billing_coordinator", label: "Billing coordinator (expanded)" },
   { key: "sys_admin", label: "System admin" },
 ];
 
 export type RecordClass =
+  | "account_support"
   | "demographics"
   | "screeners_mh"
   | "screeners_sud"
