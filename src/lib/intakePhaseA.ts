@@ -3,7 +3,7 @@ import { AdelanteEHRExt } from "./ehr-ext";
 import { getStaffMember, hasRoleAssignment, STAFF_ROSTER, type StaffRole } from "./roles";
 import { isRestricted } from "./chartAccess";
 import { availableSlots, isWithinAvailability, type BookingModality } from "./clinicianAvailability";
-import { registerIntakeBookingBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
+import { registerIntakeBookingBoundary, registerIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { siteForBlock } from "./workingCalendar";
 import { listSites } from "./providerReference";
 
@@ -29,6 +29,7 @@ export const FIRST_VISITS: Record<FirstVisitKind, { label: string; service: Serv
 declare module "./ehr" {
   interface Referral { intakeServices?: { source: "referral" | "packet"; kinds: FirstVisitKind[] }; }
   interface Appointment { intakeFirstVisit?: { referralId: string; kind: FirstVisitKind }; bookedBy?: { id: string; role: string }; }
+  interface GroupJoinRequest { requestedBy?: { referralId: string; staffId: string; role: StaffRole }; onBehalfOfPatient?: boolean; }
 }
 export const CHECKLIST_KEYS = ["identity_link_checked", "contact_checked", "packet_received", "handoff_ready"] as const;
 export type IntakeChecklist = Record<(typeof CHECKLIST_KEYS)[number], boolean>;
@@ -80,6 +81,15 @@ export function validateFirstVisit(input: BookingInput & { intakeBooking?: Intak
   if (input.modality === "in_person" && (!input.locationId || !AdelanteEHR.locationsForService(config.service).some(l => l.id === input.locationId) || (AdelanteEHR.getClinician(input.clinicianId)?.locationIds && !AdelanteEHR.getClinician(input.clinicianId)?.locationIds?.includes(input.locationId)))) throw new Error("An eligible location is required.");
 }
 registerIntakeBookingBoundary(input => validateFirstVisit(input as BookingInput & { intakeBooking?: IntakeBookingProof }));
+registerIntakeGroupBoundary(value => {
+  const input = value as Parameters<typeof AdelanteEHR.requestJoinGroup>[0];
+  const actor = { role: input.onBehalf?.role as StaffRole, staffId: input.onBehalf?.staffId };
+  assertIntakeActor(actor, "group_request", "Referral group request");
+  const { p } = linked(input.onBehalf?.referralId ?? "");
+  if (p.id !== input.patientId || state(input.onBehalf?.referralId ?? "").completedAt || input.note) throw new Error("Active referral group request only.");
+  const g = AdelanteEHR.listGroupSessions().find(x => x.id === input.sessionId);
+  if (!g || !STAFF_ROSTER.some(s => s.active !== false && s.clinicianId === g.clinicianId && ["therapist", "pmhnp", "physician", "sud_counselor"].some(role => hasRoleAssignment(s, role as StaffRole)))) throw new Error("Clinical group owner required.");
+});
 export function firstVisitSlots(id: string, kind: FirstVisitKind, actor: IntakeActor, modality: BookingModality) {
   if (!indicatedFirstVisits(id, actor).includes(kind)) return [];
   const c = FIRST_VISITS[kind];
@@ -122,6 +132,7 @@ export function markIntakeComplete(actor: IntakeActor, referralId: string, check
 }
 export function requestIntakeGroup(actor: IntakeActor, referralId: string, sessionId: string, dueDate: string, reason: string) {
   assertIntakeActor(actor, "group_request", reason); const { p } = linked(referralId);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate) || !Number.isFinite(Date.parse(dueDate))) throw new Error("First contact due date required.");
   if (state(referralId).completedAt || !actor.staffId) throw new Error("Active intake required.");
   const r = AdelanteEHR.requestJoinGroup({ patientId: p.id, sessionId, onBehalf: { referralId, staffId: actor.staffId, role: actor.role } });
   const g = AdelanteEHR.listGroupSessions().find(x => x.id === sessionId);
