@@ -1,12 +1,12 @@
 import { AdelanteEHR, effectiveConsentStatus, type Referral } from "./ehr";
-import { canIntakeAct, assertIntakeActor, referralForIntake, intakeState, type IntakeActor } from "./intakePhaseA";
+import { canIntakeAct, referralForIntake, intakeState, type IntakeActor } from "./intakePhaseA";
 import { getStaffMember, hasRoleAssignment, STAFF_ROSTER, canAccess } from "./roles";
 import { isRestricted, chartEntryFor } from "./chartAccess";
-import { captureConsentRecord, uploadPaperConsent, TEMPLATE_FOR, type CaptureDraft } from "./consentCapture";
+import { captureConsentRecord, uploadPaperConsent, type CaptureDraft } from "./consentCapture";
 import { sendForms, listRequests, publishedForm, type FormKey } from "./consentForms";
 import { registerIntakeConsentBoundary } from "./intakeConsentBoundary";
 import { isPurposeCode, PURPOSE_LABEL, purposeCodeOf, type ConsentPurposeCode } from "./consentPurposes";
-import { PART2_ELEMENT_KEYS, isPart2Type, type Part2Elements, type ConsentType } from "./consentRecordModel";
+import { PART2_ELEMENT_KEYS, isPart2Type, type Part2Elements } from "./consentRecordModel";
 
 export const INTAKE_PHASE_B_DRAFT = "Draft — pending clinical sign-off";
 export type IntakeBPermission = "paperwork_send" | "paperwork_capture" | "eligibility_request" | "sdoh_checklist" | "staging_import" | "packet_attach";
@@ -70,6 +70,7 @@ registerIntakeConsentBoundary((raw, operation) => {
   const d = i.draft;
   const f = INTAKE_FORMS.find(x => x.type === d?.consentType);
   if (!d || !f || d.patientId !== p.id || i.consentEvent || (operation === "capture" && i.method !== "e_sign")) throw new Error("Intake capture only; no renewal, scope decisions or verbal substitution.");
+  if (AdelanteEHR.listConsentRecords(p.id).some(r => r.consentType === f.type && r.recipients?.some(x => x.directoryRef === "adelante-program") && !r.legacyUnverified)) throw new Error("An existing typed form requires care-team review; Intake cannot renew or replace it.");
   const expected = draftFor(p.id, { formKey: f.key, purposeCode: d.purposeCode as ConsentPurposeCode, signer: i.signer ?? "", relationship: i.relationship ?? "patient", signedOn: i.signedOn ?? "", expiresOn: d.expiresOn ?? "", attested: i.attested === true, elements: d.part2Elements });
   if (JSON.stringify(d) !== JSON.stringify(expected)) throw new Error("Fixed intake form terms only; no scope editing.");
 });
@@ -96,7 +97,7 @@ export function intakeFormsStatus(actor: IntakeActor, referralId: string) {
   const pid = r.enrolledPatientId;
   return INTAKE_FORMS.map(f => {
     const records = pid ? AdelanteEHR.listConsentRecords(pid).filter(rec => rec.consentType === f.type && rec.recipients?.some(x => x.directoryRef === "adelante-program" || x.name === "Adelante")) : [];
-    const rec = records.find(x => effectiveConsentStatus(x) === "active" && !x.revocation && !x.legacyUnverified && (f.purposes as readonly string[]).includes(purposeCodeOf(x) ?? ""));
+    const rec = records.find(x => !x.needsReviewAfterMerge && !x.expiryEventOccurredAt && !x.revocation && !x.legacyUnverified && (f.purposes as readonly string[]).includes(purposeCodeOf(x) ?? "") && AdelanteEHR.consentCovers(pid ?? "", { type: f.type, recipient: "adelante-program", purpose: purposeCodeOf(x) }));
     const latest = records[0];
     const status: IntakeFormStatus = rec ? "Collected" : latest && effectiveConsentStatus(latest) === "expired" ? "Expired" : latest ? "Needs review" : "Missing";
     return { key: f.key, label: f.label, status, date: (rec ?? latest)?.signature?.signedAt?.slice(0, 10), sentOn: pid ? listRequests(pid).find(x => x.formKey === f.key)?.sentAt.slice(0, 10) : undefined };

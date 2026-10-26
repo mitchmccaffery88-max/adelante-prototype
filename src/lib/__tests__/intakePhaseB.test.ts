@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { AdelanteEHRExt } from "../ehr-ext";
-import { canAccess, STAFF_ROSTER } from "../roles";
+import { canAccess, STAFF_ROSTER, canImportPreReleaseRoster } from "../roles";
 import { roleHasChartEntry } from "../chartAccess";
 import { runAction } from "../actions/runAction";
 import { CHART_ACTIONS } from "../chartActions";
@@ -12,7 +12,7 @@ import { captureConsentRecord, uploadPaperConsent } from "../consentCapture";
 import { sendForms } from "../consentForms";
 import { assignIntakeTeam, markIntakeComplete, firstVisitSlots, bookFirstVisit } from "../intakePhaseA";
 const actor = { role: "intake_coordinator" as const, staffId: "s-admin1" };
-const billing = { role: "billing" as const, staffId: "s-b1" };
+const billing = { role: "billing" as const, staffId: "s-bill1" };
 let n = 0;
 function referral(link = true) { const r = AdelanteEHR.createReferral({ firstName: "PhaseB", lastName: `Test${++n}`, dob: "1990-04-12", email: `phase-b-${n}@example.invalid`, referrerName: "Test", referralSource: "other", consentToContact: false, channel: "public", intakeServices: { source: "referral", kinds: ["assessment"] } }); if (link) AdelanteEHR.enrollReferral(r.id, { websiteSignup: true }); return r; }
 function pid(r: ReturnType<typeof referral>) { if (!r.enrolledPatientId) throw new Error("Missing fixture link"); return r.enrolledPatientId; }
@@ -20,10 +20,10 @@ function capture(key: IntakeCaptureInput["formKey"]): IntakeCaptureInput { const
 function run(id: string, referralId: string, ...args: unknown[]) { return runAction(id, actor, undefined, { args: [actor, referralId, ...args, "Intake fixture reason"], auditReason: "Intake fixture reason" }); }
 describe("26 Oct Phase B — narrow paperwork capture", () => {
   it.each(INTAKE_FORMS.map(f => f.key))("sends and captures %s via its purpose picker without adjacent access", key => {
-    const r = referral(); const before = AdelanteEHR.listAuditEvents({ category: "action" }).length;
+    const r = referral(); const actionEvents = () => AdelanteEHR.listAuditEvents({ category: "action" }).filter(e => e.action.startsWith("action.")); const before = actionEvents().length;
     expect(run("intake_form_send", r.id, key).ok).toBe(true);
     expect(run("intake_form_capture", r.id, capture(key)).ok).toBe(true);
-    expect(AdelanteEHR.listAuditEvents({ category: "action" }).length - before).toBe(2);
+    expect(actionEvents().length - before).toBe(2);
     expect(intakeFormsStatus(actor, r.id).find(x => x.key === key)?.status).toBe("Collected");
     expect(canAccess(actor.role, "consent_ledger").level).toBe("none"); expect(roleHasChartEntry(actor.role)).toBe(false);
     for (const id of ["consent_record_revoke", "consent_record_renew", "consent_form_send", "consent_record_capture", "consent_record_upload", "consent_record_request_esign", "consent_purpose_set"]) expect(CHART_ACTIONS.find(a => a.id === id)?.allowed(actor).state).toBe("hidden");
@@ -104,5 +104,5 @@ describe("26 Oct Phase B — source-bound packet and staging", () => {
     expect(careTeamPacket(cm, pid(r))[0]?.needs).toEqual([{ kind: "food", source: "partner_referral", state: "resolved" }]); expect(careTeamPacket(cm, pid(r))[0]?.documents[0]?.fileName).toBe("hra.txt");
     expect(careTeamPacket(actor, pid(r))).toEqual([]); expect(careTeamPacket(billing, pid(r))).toEqual([]); expect(run("intake_sdoh_log", r.id, item?.id, "unknown").ok).toBe(false);
   });
-  it("original pre-release importer and adjacent clinical actions remain denied", () => { for (const id of ["pre_release_import", "eligibility_check", "note", "consent_record_revoke", "consent_record_renew"]) { const a = CHART_ACTIONS.find(a => a.id === id); if (a) expect(a.allowed(actor).state).toBe("hidden"); } expect(canAccess(actor.role, "pre_release").level).toBe("none"); });
+  it("original pre-release importer and adjacent clinical actions remain denied", () => { expect(canImportPreReleaseRoster(actor.role)).toBe(false); for (const id of ["eligibility_check", "consent_record_revoke", "consent_record_renew"]) { const a = CHART_ACTIONS.find(a => a.id === id); if (!a) throw new Error(`Missing adjacent action ${id}`); expect(a.allowed(actor).state).toBe("hidden"); } expect(canAccess(actor.role, "pre_release").level).toBe("none"); });
 });
