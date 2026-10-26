@@ -128,3 +128,9 @@
  [data-magnetic] { translate:none!important; }
  .daylight-service:hover,.daylight-service:focus-visible,.daylight-benefits .daylight-tile:hover,.daylight-benefits .daylight-tile:focus-within,.daylight-fit-tiles .daylight-tile:hover,.daylight-fit-tiles .daylight-tile:focus-within,.website-page .daylight-tile:hover,.website-page .daylight-tile:focus-within,.daylight-team-grid .daylight-tile:hover,.daylight-team-grid .daylight-tile:focus-within { transform:none; }
 }
+/* Oct 26 — phone: symbol on its glow, then the four chips in a 2×2 grid underneath; no chip overlaps the mark. */
+@media(max-width:767px) {
+ .daylight-media-sunrise { height:auto; display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-bottom:64px; }
+ .daylight-media-sunrise .daylight-sun-glow { position:relative; inset:auto; grid-column:1 / -1; height:220px; }
+ .daylight-media-sunrise .daylight-service-chip { position:static; max-width:none; min-width:0; justify-content:flex-start; white-space:normal; }
+}
