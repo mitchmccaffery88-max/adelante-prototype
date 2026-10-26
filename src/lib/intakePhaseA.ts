@@ -36,6 +36,8 @@ export type IntakeChecklist = Record<(typeof CHECKLIST_KEYS)[number], boolean>;
 type IntakeState = { checklist: IntakeChecklist; completedAt?: string; completedBy?: string; assignments: Partial<Record<"care_manager" | "clinician", string>> };
 const states = new Map<string, IntakeState>();
 function state(id: string): IntakeState { return states.get(id) ?? { checklist: { identity_link_checked: false, contact_checked: false, packet_received: false, handoff_ready: false }, assignments: {} }; }
+/** Read-only handoff fact; never grants chart access. */
+export function intakeCompleted(id: string) { return !!state(id).completedAt; }
 export function intakeState(id: string, actor: IntakeActor) { if (!canIntakeAct(actor, "completion")) throw new Error("Intake access required."); const s = state(id); return { ...s, checklist: { ...s.checklist }, assignments: { ...s.assignments } }; }
 export function referralForIntake(id: string, allowRestricted = false): Referral {
   const r = AdelanteEHR.listReferrals().find(x => x.id === id);

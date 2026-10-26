@@ -1,5 +1,6 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { disclose } from "./part2Disclosure";
+import { assertIntakeStagingBoundary } from "./intakeStagingBoundary";
 import { recipientKey, validateConsentExtension, verbalAssentAllowed, type ConsentRecordExtension, type ConsentType } from "./consentRecordModel";
 import { categoryNeed, consentGate, registerConsentLedger, typedRecordApplies } from "./consentGate";
 import { consentEventDetail, createEventDetail, type ConsentEventName } from "./consentEvents";
@@ -8827,11 +8828,13 @@ export const AdelanteEHR = {
     > & {
       referringAgency?: string;
       requestManualOutreach?: boolean;
+      stagingActor?: { role: StaffRole; staffId?: string };
       /** Which form was used. Staff → the acting staff member is resolved here. */
       channel: "staff" | "public";
     },
   ) {
-    const { requestManualOutreach, channel, ...rest } = input;
+    const { requestManualOutreach, channel, stagingActor, ...rest } = input;
+    if (stagingActor) assertIntakeStagingBoundary(rest, stagingActor);
     // Don't trust the UI alone: the referrer phone-or-email rule is enforced
     // here too. Blank strings are normalised away so "   " can't satisfy it.
     rest.referrerPhone = rest.referrerPhone?.trim() || undefined;
@@ -8840,7 +8843,7 @@ export const AdelanteEHR = {
     const personReachable = !!(rest.phone?.trim() || rest.email?.trim());
     if (!referrerHasContact(rest) && !personReachable) throw new Error(REFERRER_CONTACT_REQUIRED_MSG);
     const submittedBy: ReferralSubmitter =
-      channel === "staff" ? { kind: "staff", actor: _referralActor() } : { kind: "external" };
+      stagingActor ? { kind: "staff", actor: { staffId: stagingActor.staffId ?? "", name: "Staging operator", role: stagingActor.role } } : channel === "staff" ? { kind: "staff", actor: _referralActor() } : { kind: "external" };
     // Fallback: no phone, no contact consent, or referrer explicitly requested
     // manual outreach → skip the Twilio welcome-text trigger and queue a
     // manual-call task for the care team instead.
@@ -8890,15 +8893,22 @@ export const AdelanteEHR = {
       detail: {
         referralId: r.id,
         channel,
-        referralSource: r.referralSource,
-        referringAgency: r.referringAgency,
-        referrerName: r.referrerName,
+        ...(!stagingActor ? { referralSource: r.referralSource, referringAgency: r.referringAgency, referrerName: r.referrerName } : { staging: true }),
         referrerContactProvided: [
           ...(r.referrerPhone ? ["phone"] : []),
           ...(r.referrerEmail ? ["email"] : []),
         ],
       },
     });
+    emit();
+    return r;
+  },
+  /** 26 Oct Phase B: referral-only staging writes, no clinical cascade. */
+  updateIntakeStagingReferral(id: string, fields: Partial<Referral>, actor: { role: StaffRole; staffId?: string }): Referral {
+    assertIntakeStagingBoundary(fields, actor);
+    const r = referrals.find(x => x.id === id);
+    if (!r || r.enrolledPatientId || !["submitted", "contacted"].includes(r.status)) throw new Error("Unlinked open staging referral required.");
+    Object.assign(r, fields);
     emit();
     return r;
   },
@@ -13182,6 +13192,8 @@ export const AdelanteEHR = {
       statusConfirmed?: CoverageStatus;
     } & CoverageActor,
   ): { ok: boolean; error?: string } {
+    // 26 Oct Phase B: Intake requests checks; never enters results.
+    if (input.actorRole === "intake_coordinator") return { ok: false, error: "Billing-owned results only." };
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { ok: false, error: "Patient not found." };
     // §Phase 8b — "reported" is reserved for recordIntakeBenefits; a staff
@@ -13258,6 +13270,8 @@ export const AdelanteEHR = {
     response: ElectronicEligibilityDetail,
     input: { actorId: string; actorName: string; actorRole: StaffRole; planList?: { id: string; name: string }[] },
   ): { ok: boolean; error?: string; recordId?: string; spanId?: string; spanAction?: "added" | "updated" | "none"; taskId?: string } {
+    // 26 Oct Phase B: no electronic result-entry capability for Intake.
+    if (input.actorRole === "intake_coordinator") return { ok: false, error: "Billing-owned results only." };
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { ok: false, error: "Patient not found." };
     if (!response.transactionId) return { ok: false, error: "An electronic response needs a transaction id." };

@@ -4,6 +4,7 @@
 // dashboards. This is its dedicated home, following the same shape as the
 // other single-purpose staff queues (/notes-queue, /crisis-queue).
 import { useState } from "react";
+import { IntakeStagingImport } from "@/components/staff/IntakePhaseBActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,8 @@ export const Route = createFileRoute("/referral-queue")({
 });
 
 function ReferralQueuePage() {
-  const { role } = useActingStaff();
+  const actor = useActingStaff();
+  const { role } = actor;
   const access = canAccess(role, "care_coordination");
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
   const [submitOpen, setSubmitOpen] = useState(false);
@@ -85,6 +87,7 @@ function ReferralQueuePage() {
       )}
 
       <ReferralChasePanel />
+      {role === "clinical_coordinator" && <IntakeStagingImport actor={actor} />}
 
       <ReferralTrackerCard referrals={referrals} title="Referral queue" limit={100} tablePresentation />
 

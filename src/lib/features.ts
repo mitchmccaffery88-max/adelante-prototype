@@ -268,3 +268,5 @@ export const WEBSITE_PUBLIC_FEATURES = { askAdelPublic: { simulated: true, descr
 export const PUBLIC_DIRECTORY_REPORT_FEATURE = { simulated: true } as const;
 /** Career/contact capture is preview memory only; no email, file storage or hosted inbox. */
 export const WEBSITE_INBOX_FEATURE = {simulated:true} as const;
+/** Referral-owned files stay in preview memory; never a hosted clinical document system. */
+export const INTAKE_PACKET_FEATURE = { simulated: true } as const;

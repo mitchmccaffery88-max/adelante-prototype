@@ -54,11 +54,14 @@ export function CoverageCheckDialog({
   open,
   onOpenChange,
   actor,
+  onRecord,
 }: {
   patientId: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   actor: { actorId: string; actorRole: StaffRole };
+  /** Dedicated request host may retain the existing form but owns its registry write. */
+  onRecord?: (input: Omit<Parameters<typeof AdelanteEHR.recordCoverageCheck>[1], "actorId" | "actorRole">) => { ok: boolean; error?: string };
 }) {
   const patient = AdelanteEHR.getPatient(patientId);
   const [channel, setChannel] = useState<CoverageCheckChannel>("phone_county");
@@ -70,15 +73,14 @@ export function CoverageCheckDialog({
   const cinOnFile = Boolean(patient?.cin);
 
   function submit() {
-    const res = AdelanteEHR.recordCoverageCheck(patientId, {
+    const fields = {
       channel,
       channelNote,
       result,
       ...(cinOnFile ? {} : { cin }),
       ...(statusConfirmed !== "unchanged" ? { statusConfirmed } : {}),
-      actorId: actor.actorId,
-      actorRole: actor.actorRole,
-    });
+    };
+    const res = onRecord ? onRecord(fields) : AdelanteEHR.recordCoverageCheck(patientId, { ...fields, actorId: actor.actorId, actorRole: actor.actorRole });
     if (!res.ok) {
       toast.error(res.error ?? "Could not record this check.");
       return;
