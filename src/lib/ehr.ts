@@ -13182,6 +13182,8 @@ export const AdelanteEHR = {
       statusConfirmed?: CoverageStatus;
     } & CoverageActor,
   ): { ok: boolean; error?: string } {
+    // 26 Oct Phase B: Intake requests checks; never enters results.
+    if (input.actorRole === "intake_coordinator") return { ok: false, error: "Billing-owned results only." };
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { ok: false, error: "Patient not found." };
     // §Phase 8b — "reported" is reserved for recordIntakeBenefits; a staff
@@ -13258,6 +13260,8 @@ export const AdelanteEHR = {
     response: ElectronicEligibilityDetail,
     input: { actorId: string; actorName: string; actorRole: StaffRole; planList?: { id: string; name: string }[] },
   ): { ok: boolean; error?: string; recordId?: string; spanId?: string; spanAction?: "added" | "updated" | "none"; taskId?: string } {
+    // 26 Oct Phase B: no electronic result-entry capability for Intake.
+    if (input.actorRole === "intake_coordinator") return { ok: false, error: "Billing-owned results only." };
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { ok: false, error: "Patient not found." };
     if (!response.transactionId) return { ok: false, error: "An electronic response needs a transaction id." };

@@ -2,7 +2,7 @@ import { AdelanteEHR, type Referral } from "./ehr";
 import { canAccess } from "./roles";
 import { isRestricted } from "./chartAccess";
 import { canIntakeB, assertIntakeB, intakeBReferral, intakeFormsStatus, careTeamCanRead } from "./intakePhaseB";
-import { intakeState, type IntakeActor } from "./intakePhaseA";
+import { intakeCompleted, type IntakeActor } from "./intakePhaseA";
 
 export const PACKET_SOURCES = ["referral_form", "partner_referral", "pre_release_packet"] as const;
 export type PacketSource = (typeof PACKET_SOURCES)[number];
@@ -87,7 +87,7 @@ export function packetDocumentContent(actor: IntakeActor, referralId: string, do
   if (d.part2 && (isIntake ? !intakeTreatmentConsent(r) : !p || canAccess(actor.role, "sud_treatment", p).locked || canAccess(actor.role, "sud_treatment", p).level === "none")) throw new Error("Part 2 — needs consent covering intake/treatment");
   return { mime: d.mime, dataUrl: d.dataUrl, fileName: d.fileName };
 }
-function completed(id: string) { try { return !!intakeState(id, { role: "intake_coordinator", staffId: "s-admin1" }).completedAt; } catch { return false; } }
+const completed = intakeCompleted;
 export function careTeamPacket(actor: IntakeActor, patientId: string) {
   return AdelanteEHR.listReferrals().filter(r => r.enrolledPatientId === patientId && completed(r.id) && careTeamCanRead(actor, r)).map(r => {
     const p = AdelanteEHR.getPatient(patientId); const sud = p ? canAccess(actor.role, "sud_treatment", p) : undefined;

@@ -122,7 +122,7 @@ export function intakeCoverageResult(actor: IntakeActor, referralId: string): { 
   const req = eligibilityRequests.get(referralId); if (!req) return { status: "Pending" };
   const v = AdelanteEHR.getPatient(req.patientId)?.coverage?.verifications?.find(x => !req.baselineIds.includes(x.id) && !x.reportSource && x.channel !== "reported" && ["billing", "billing_coordinator"].includes(x.checkedByRole));
   if (!v) return { status: "Pending" };
-  const status = v.electronic?.status === "active" || v.statusConfirmed === "active" ? "Active" : v.electronic?.status === "inactive" || ["suspended", "uninsured"].includes(v.statusConfirmed ?? "") ? "Inactive" : v.result === "not_found" ? "Not found" : "Pending";
+  const status = v.electronic?.responseStatus === "active" || v.statusConfirmed === "active" ? "Active" : v.electronic?.responseStatus === "inactive" || ["suspended", "uninsured"].includes(v.statusConfirmed ?? "") ? "Inactive" : v.result === "not_found" ? "Not found" : "Pending";
   return { status, checkedOn: v.checkedAt.slice(0, 10) };
 }
 export function billingIntakeRequests(actor: IntakeActor) {

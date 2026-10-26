@@ -1,6 +1,8 @@
 import { canIntakeAct, bookFirstVisit, assignIntakeTeam, markIntakeComplete, requestIntakeGroup } from "./intakePhaseA";
 import { escalateIntakeSafety, registerIntakeSafetySource, canReviewPreChart, acknowledgePreChart, linkPreChartTriage } from "./intakeTriage";
 import { seedIntakePhaseA } from "./intakePhaseADemo";
+import { canIntakeB, sendIntakeForm, captureIntakeForm, requestIntakeEligibility } from "./intakePhaseB";
+import { importIntakeStaging, ingestPacketNeeds, logIntakePacketNeed, attachIntakePacket } from "./intakePacket";
 import { canSubmitReferral, submitWebsiteReferral } from "@/lib/website/publicReferral";
 import { intakeLogOutreach } from "@/lib/intakeWorkspace";
 import { canReportPublicResource, createPublicResourceReport } from "@/lib/website/publicResourceReports";
@@ -80,7 +82,7 @@ import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency, endCoordinatorEmergencyNow, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-26.intake-phase-a";
+export const REGISTRY_VERSION = "2026-10-26.intake-phase-b";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -159,6 +161,15 @@ export function cosignRouteLabel(staffId?: string): string {
 export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview", "website_intake_submit", "resource_public_report", "website_referral_submit"] as const;
 
 export const CHART_ACTIONS: ChartAction[] = [
+  // 26 Oct Phase B: each permission is referral-scoped; broad grants stay denied.
+  { id: "intake_form_send", label: { en: "Send intake form", es: "Send intake form" }, group: "admin", menu: false, needsPatient: false, flags: ["notifications_simulated"], check: "referral paperwork_send only", store: refs(["sendIntakeForm", sendIntakeForm]), allowed: a => canIntakeB(a, "paperwork_send") ? ok() : hide("Dedicated Intake permission required.") },
+  { id: "intake_form_capture", label: { en: "Capture completed intake form", es: "Capture completed intake form" }, group: "admin", menu: false, needsPatient: false, check: "referral paperwork_capture only", store: refs(["captureIntakeForm", captureIntakeForm]), allowed: a => canIntakeB(a, "paperwork_capture") ? ok() : hide("Dedicated Intake permission required.") },
+  { id: "intake_form_upload", label: { en: "Attest signed paper form", es: "Attest signed paper form" }, group: "admin", menu: false, needsPatient: false, flags: ["consent_upload_simulated"], check: "referral paperwork_capture only", store: refs(["captureIntakeForm", captureIntakeForm]), allowed: a => canIntakeB(a, "paperwork_capture") ? ok() : hide("Dedicated Intake permission required.") },
+  { id: "intake_eligibility_request", label: { en: "Request Medi-Cal status check", es: "Request Medi-Cal status check" }, group: "admin", menu: false, needsPatient: false, check: "referral eligibility_request only", store: refs(["requestIntakeEligibility", requestIntakeEligibility]), allowed: a => canIntakeB(a, "eligibility_request") ? ok() : hide("Dedicated Intake permission required.") },
+  { id: "intake_sdoh_log", label: { en: "Log packet need checklist", es: "Log packet need checklist" }, group: "admin", menu: false, needsPatient: false, check: "source-bound sdoh_checklist only", store: refs(["logIntakePacketNeed", logIntakePacketNeed]), allowed: a => canIntakeB(a, "sdoh_checklist") ? ok() : hide("Dedicated Intake permission required.") },
+  { id: "intake_staging_import", label: { en: "Import referral staging", es: "Import referral staging" }, group: "admin", menu: false, needsPatient: false, check: "referral staging_import only", store: refs(["importIntakeStaging", importIntakeStaging]), allowed: a => canIntakeB(a, "staging_import") ? ok() : hide("Dedicated staging permission required.") },
+  { id: "intake_packet_needs_ingest", label: { en: "Record packet-sourced needs", es: "Record packet-sourced needs" }, group: "admin", menu: false, needsPatient: false, check: "validated referral staging source only", store: refs(["ingestPacketNeeds", ingestPacketNeeds]), allowed: a => canIntakeB(a, "staging_import") ? ok() : hide("Dedicated staging permission required.") },
+  { id: "intake_packet_attach", label: { en: "Attach referral packet document", es: "Attach referral packet document" }, group: "admin", menu: false, needsPatient: false, flags: ["consent_upload_simulated"], check: "referral packet_attach only", store: refs(["attachIntakePacket", attachIntakePacket]), allowed: a => canIntakeB(a, "packet_attach") ? ok() : hide("Dedicated packet permission required.") },
   // 26 Oct Phase A (Mitch): no record-class, generic scheduling or crisis-read grants.
   { id: "intake_first_visit_book", label: { en: "Book first visit", es: "Book first visit" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: dedicated referral-only first_visit", store: refs(["bookFirstVisit", bookFirstVisit]), allowed: actor => canIntakeAct(actor, "first_visit") ? ok() : hide("Intake Coordinator assignment required.") },
   { id: "intake_group_request", label: { en: "Request group placement", es: "Request group placement" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: dedicated referral-only group_request", store: refs(["requestIntakeGroup", requestIntakeGroup]), allowed: actor => canIntakeAct(actor, "group_request") ? ok() : hide("Intake Coordinator assignment required.") },
