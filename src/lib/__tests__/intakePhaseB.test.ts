@@ -82,7 +82,7 @@ describe("26 Oct Phase B — source-bound packet and staging", () => {
     const r = referral(); const p = AdelanteEHR.getPatient(pid(r)); if (!p) throw new Error("Patient missing");
     const before = JSON.stringify(p);
     expect(() => ingestPacketNeeds(actor, r.id, "clinician_note" as never, "note-1", [{ kind: "housing" }], "Source")).toThrow(/source/);
-    expect(run("intake_packet_needs_ingest", r.id, "referral_form", "form-1", [{ kind: "housing" }]).ok).toBe(true);
+    expect(run("intake_packet_needs_ingest", r.id, "referral_form", `referral:${r.id}`, [{ kind: "housing" }]).ok).toBe(true);
     const item = intakePacketNeeds(actor, r.id)[0]; expect(item?.source).toBe("referral_form"); expect(intakePacketNeeds(actor, r.id)).toHaveLength(1);
     expect(run("intake_sdoh_log", r.id, item?.id, "confirmed_still_needed").ok).toBe(true);
     expect(intakePacketNeeds(actor, r.id)[0]?.state).toBe("confirmed_still_needed"); expect(JSON.stringify(p)).toBe(before); expect(canAccess(actor.role, "sdoh").level).toBe("none");
@@ -96,12 +96,12 @@ describe("26 Oct Phase B — source-bound packet and staging", () => {
     expect(roleHasChartEntry(actor.role)).toBe(false);
   });
   it("handoff projects packet checklist/documents only to assigned permitted care team after completion", () => {
-    const r = referral(); run("intake_packet_needs_ingest", r.id, "partner_referral", "roster-1", [{ kind: "food" }]); const item = intakePacketNeeds(actor, r.id)[0]; run("intake_sdoh_log", r.id, item?.id, "resolved");
+    const r = referral(); run("intake_packet_needs_ingest", r.id, `referral_form`, `referral:${r.id}`, [{ kind: "food" }]); const item = intakePacketNeeds(actor, r.id)[0]; run("intake_sdoh_log", r.id, item?.id, "resolved");
     run("intake_packet_attach", r.id, { type: "hra", source: "partner_referral", fileName: "hra.txt", mime: "text/plain", size: 4, dataUrl: "data:text/plain;base64,dGVzdA==", classification: "general" });
     assignIntakeTeam(actor, r.id, "care_manager", "s-cm2", "2026-10-27", "Initial assignment"); assignIntakeTeam(actor, r.id, "clinician", "s-th2", "2026-10-27", "Initial assignment");
     const cm = { role: "ecm_provider" as const, staffId: "s-cm2" }; expect(careTeamPacket(cm, pid(r))).toEqual([]);
     markIntakeComplete(actor, r.id, { identity_link_checked: true, contact_checked: true, packet_received: true, handoff_ready: true }, "Handoff");
-    expect(careTeamPacket(cm, pid(r))[0]?.needs).toEqual([{ kind: "food", source: "partner_referral", state: "resolved" }]); expect(careTeamPacket(cm, pid(r))[0]?.documents[0]?.fileName).toBe("hra.txt");
+    expect(careTeamPacket(cm, pid(r))[0]?.needs).toEqual([{ kind: "food", source: "referral_form", state: "resolved" }]); expect(careTeamPacket(cm, pid(r))[0]?.documents[0]?.fileName).toBe("hra.txt");
     expect(careTeamPacket(actor, pid(r))).toEqual([]); expect(careTeamPacket(billing, pid(r))).toEqual([]); expect(run("intake_sdoh_log", r.id, item?.id, "unknown").ok).toBe(false);
   });
   it("original pre-release importer and adjacent clinical actions remain denied", () => { expect(canImportPreReleaseRoster(actor.role)).toBe(false); for (const id of ["eligibility_check", "consent_record_revoke", "consent_record_renew"]) { const a = CHART_ACTIONS.find(a => a.id === id); if (!a) throw new Error(`Missing adjacent action ${id}`); expect(a.allowed(actor).state).toBe("hidden"); } expect(canAccess(actor.role, "pre_release").level).toBe("none"); });
