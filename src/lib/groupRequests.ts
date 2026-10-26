@@ -224,7 +224,7 @@ function routeAfterRequest(row: GroupJoinRequest) {
   const g = AdelanteEHR.getGroupSession(row.sessionId);
   if (!g) return;
   const { staff, lane } = routeGroupRequest(g, row.patientId);
-  const label = row.protected || isGroupNotificationSensitive(g.category) && g.category === "sud_clinical_preauth" ? "restricted group" : g.topic;
+  const label = row.protected || isGroupNotificationSensitive(g.category) ? "restricted group" : g.topic;
   const taskIds: string[] = [];
   for (const s of staff) {
     const t = AdelanteEHR.createCaseTask({
