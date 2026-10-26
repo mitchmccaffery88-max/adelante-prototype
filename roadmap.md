@@ -93,3 +93,12 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Item/lane/privacy/action and denied-clinical-access tests; actual reviewer decision and coordinator read-only flow checked.
 - [x] Final FULL units: 3,340/3,340 across 391 files. FULL public browser: 47/47, one worker against :8080, 13.8 minutes; no timeout changes. Earlier overlapping-edit browser run was 45/47; clean final run passes both affected checks. Build OK. No publication.
 - Preview limitations: identity/account-support/sign-in remain simulated/local-memory; account-support page is an empty separate queue, not a live reset service. Hosted persistence, real authentication/delivery and native-speaker Spanish review remain outside this batch.
+
+## Group requests and join rules (26 Oct, Mitch) — preview
+- [x] Per-group audiences, join rule, type-owned requirements, billable flag; roster editor on /group-sessions.
+- [x] Patient Groups list: Join / Ask to join / Requested; clinical and Part 2 items never named; EN/ES.
+- [x] Routing to care manager + clinician, Intake / clinical coordinator fallbacks; Today tasks.
+- [x] Decisions: Approve and add, Not right now, Needs something first; portal message each time.
+- [x] Care-team on-behalf requests share the request item; Intake path unchanged.
+- [ ] Patient self-sign for group confidentiality / telehealth consent — blocked: needs Mitch decision on a new consent writer.
+- [ ] Open groups without care-plan eligibility — blocked: eligibility gate kept per standing rule; needs Mitch decision.
