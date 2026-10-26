@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
-import { CHECKLIST_KEYS, FIRST_VISITS, firstVisitSlots, indicatedFirstVisits, intakeRoster, intakeState, type FirstVisitKind, type IntakeActor, type IntakeChecklist } from "@/lib/intakePhaseA";
+import { CHECKLIST_KEYS, FIRST_VISITS, firstVisitSlots, indicatedFirstVisits, intakeRoster, intakeState, intakeGroupChoices, type FirstVisitKind, type IntakeActor, type IntakeChecklist } from "@/lib/intakePhaseA";
 import { intakeSafetyRows, type SafetySource } from "@/lib/intakeTriage";
 const selectClass = "min-h-9 w-full rounded-sm border border-line-strong bg-surface px-2 text-base text-ink";
 export function IntakeSafetyActions({ actor }: { actor: IntakeActor }) {

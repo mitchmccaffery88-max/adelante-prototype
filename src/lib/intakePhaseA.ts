@@ -111,6 +111,11 @@ function firstContactTask(referralId: string, patientId: string, staffId: string
   const s = getStaffMember(staffId); if (!s) throw new Error("Assignee unavailable.");
   return AdelanteEHR.createCaseTask({ patientId, assignedTo: s.caseManagerId ?? s.id, title: `New patient assigned — first contact due by ${dueDate}`, dueDate, taskType: "intake_first_contact", source: "intake_referral", allowedRoles: [s.role], dedupeKey: `intake-contact:${referralId}:${staffId}:${suffix}` });
 }
+export function intakeGroupChoices(actor: IntakeActor, referralId: string) {
+  if (!canIntakeAct(actor, "group_request")) return [];
+  const { p } = linked(referralId);
+  return AdelanteEHR.listGroupSessions().filter(g => g.status !== "cancelled").map(g => ({ id: g.id, label: `Group ${g.id}`, restricted: g.category === "sud_clinical_preauth" && !AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment"), reason: "42 CFR Part 2 — intake/treatment consent required." }));
+}
 export function assignIntakeTeam(actor: IntakeActor, referralId: string, kind: "care_manager" | "clinician", staffId: string, dueDate: string, reason: string) {
   assertIntakeActor(actor, kind === "care_manager" ? "care_manager_assignment" : "clinician_assignment", reason);
   const { p } = linked(referralId); const s = state(referralId);
