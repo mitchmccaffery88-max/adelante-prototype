@@ -395,7 +395,7 @@ function DemoAuthPage({ initialMode = "signin" }: { initialMode?: "signin" | "st
             )}
 
             <div className="space-y-1.5">
-              <Label className="text-sm">{t("authEmail")}</Label>
+              <Label className="text-sm">Work email</Label>
               <Input
                 type="text"
                 autoComplete="username"
