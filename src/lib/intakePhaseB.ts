@@ -65,6 +65,8 @@ registerIntakeConsentBoundary((raw, operation) => {
   const { p } = linked(actor, i.intakeReferralId, operation === "send" ? "paperwork_send" : "paperwork_capture", "Referral paperwork");
   if (operation === "send") {
     if (i.patientId !== p.id || i.advocateId || i.now || i.dueDays || !i.formKeys?.length || i.formKeys.some(k => !INTAKE_FORMS.some(f => f.key === k))) throw new Error("Intake forms for this linked patient only.");
+    const requestedTypes = i.formKeys.map(k => intakeForm(k).type);
+    if (AdelanteEHR.listConsentRecords(p.id).some(r => requestedTypes.includes(r.consentType as (typeof requestedTypes)[number]) && !r.legacyUnverified)) throw new Error("Existing typed form — care-team review required; no Intake renewal.");
     return;
   }
   const d = i.draft;
@@ -138,6 +140,11 @@ export function billingIntakeRequests(actor: IntakeActor) {
   const s = getStaffMember(actor.staffId);
   if (!s || s.active === false || !["billing", "billing_coordinator"].includes(actor.role) || !hasRoleAssignment(s, actor.role)) return [];
   return [...eligibilityRequests.values()].map(r => ({ referralId: r.referralId, patientId: r.patientId, requestedAt: r.requestedAt, taskId: r.taskId }));
+}
+export function recordBillingIntakeCheck(actor: IntakeActor, referralId: string, input: Omit<Parameters<typeof AdelanteEHR.recordCoverageCheck>[1], "actorId" | "actorRole">, reason: string) {
+  const req = billingIntakeRequests(actor).find(r => r.referralId === referralId);
+  if (!req || reason.trim().length < 3 || !actor.staffId) throw new Error("Billing request and reason required.");
+  return AdelanteEHR.recordCoverageCheck(req.patientId, { ...input, actorId: actor.staffId, actorRole: actor.role });
 }
 export function careTeamCanRead(actor: IntakeActor, referral: Referral) {
   const pid = referral.enrolledPatientId; const staff = getStaffMember(actor.staffId);

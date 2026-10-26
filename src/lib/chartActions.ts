@@ -1,7 +1,7 @@
 import { canIntakeAct, bookFirstVisit, assignIntakeTeam, markIntakeComplete, requestIntakeGroup } from "./intakePhaseA";
 import { escalateIntakeSafety, registerIntakeSafetySource, canReviewPreChart, acknowledgePreChart, linkPreChartTriage } from "./intakeTriage";
 import { seedIntakePhaseA } from "./intakePhaseADemo";
-import { canIntakeB, sendIntakeForm, recordIntakeElectronicForm, recordIntakePaperForm, requestIntakeEligibility } from "./intakePhaseB";
+import { canIntakeB, sendIntakeForm, recordIntakeElectronicForm, recordIntakePaperForm, requestIntakeEligibility, recordBillingIntakeCheck } from "./intakePhaseB";
 import { importIntakeStaging, ingestPacketNeeds, logIntakePacketNeed, attachIntakePacket } from "./intakePacket";
 import { canSubmitReferral, submitWebsiteReferral } from "@/lib/website/publicReferral";
 import { intakeLogOutreach } from "@/lib/intakeWorkspace";
@@ -162,6 +162,7 @@ export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview",
 
 export const CHART_ACTIONS: ChartAction[] = [
   // 26 Oct Phase B: each permission is referral-scoped; broad grants stay denied.
+  { id: "billing_intake_check", label: { en: "Record requested coverage check", es: "Record requested coverage check" }, group: "admin", menu: false, needsPatient: false, check: "Billing-owned request only", store: refs(["recordBillingIntakeCheck", recordBillingIntakeCheck]), allowed: a => { const s = getStaffMember(a.staffId); return !!s && s.active !== false && s.role === a.role && ["billing", "billing_coordinator"].includes(a.role) ? ok() : hide("Billing-owned results only."); } },
   { id: "intake_form_send", label: { en: "Send intake form", es: "Send intake form" }, group: "admin", menu: false, needsPatient: false, flags: ["notifications_simulated"], check: "referral paperwork_send only", store: refs(["sendIntakeForm", sendIntakeForm]), allowed: a => canIntakeB(a, "paperwork_send") ? ok() : hide("Dedicated Intake permission required.") },
   { id: "intake_form_capture", label: { en: "Capture completed intake form", es: "Capture completed intake form" }, group: "admin", menu: false, needsPatient: false, check: "referral paperwork_capture only", store: refs(["recordIntakeElectronicForm", recordIntakeElectronicForm]), allowed: a => canIntakeB(a, "paperwork_capture") ? ok() : hide("Dedicated Intake permission required.") },
   { id: "intake_form_upload", label: { en: "Attest signed paper form", es: "Attest signed paper form" }, group: "admin", menu: false, needsPatient: false, flags: ["consent_upload_simulated"], check: "referral paperwork_capture only", store: refs(["recordIntakePaperForm", recordIntakePaperForm]), allowed: a => canIntakeB(a, "paperwork_capture") ? ok() : hide("Dedicated Intake permission required.") },
