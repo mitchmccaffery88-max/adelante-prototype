@@ -416,6 +416,12 @@ export function sweepCoverageReverification(onDate = today()) {
   return created;
 }
 
+/** Billing-run sweep through the registry. */
+export function billingSweepReverification(actor: Actor, reason: string) {
+  assertBilling(actor, reason);
+  return { created: sweepCoverageReverification() };
+}
+
 /** Ready for the patient portal (not mounted yet): plain words, no amounts. */
 export function patientCoverageSummary(patientId: string, lang: "en" | "es" = "en") {
   if (isRestricted(patientId)) return [];

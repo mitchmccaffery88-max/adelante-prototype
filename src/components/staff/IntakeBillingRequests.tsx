@@ -32,6 +32,7 @@ export function IntakeBillingRequests() {
     <section className="space-y-3 border-t border-line pt-4" aria-label="Coverage requests">
       <h2 className="text-xl font-bold">Coverage requests</h2>
       <p className="text-sm text-ink-muted">{COVERAGE_CONFIG_DRAFT}. Adapter: {getAdapterConfig().selected.replace("_", " ")}{getAdapterConfig().clearinghouse.enabled ? "" : " · clearinghouse off until contracted"}</p>
+      <Button variant="outline" disabled={reason.trim().length < 3} onClick={() => run("billing_coverage_recheck", [])}>Create due re-verification tasks</Button>
       <label className="block">Check reason — Required<Textarea value={reason} onChange={(e) => setReason(e.target.value)} /></label>
       {rows.map((r) => (
         <BillingRow key={r.key} row={r} reason={reason} run={run} actorJson={JSON.stringify(actor)} onManual={() => { setReferralId(r.referralId ?? ""); setPatientId(r.patientId); }} manualAllowed={!!r.referralId && intakeIds.has(r.referralId)} />
