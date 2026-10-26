@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { runAction } from "../actions/runAction";
 import { canAccess, getActingRole, getStaffMember, roleAssignmentsOf, setActingStaff } from "../roles";
-import { createIdentityReviewItem, identityReviewConfirm, identityReviewNotSame, identityReviewNeedInfo, identityReviewLink, identityReviewCompare, linkableReferrals, canActOnIdentityReview, canViewIdentityReview, listIdentityReviewItems } from "../identityReview";
+import { createIdentityReviewItem, identityReviewConfirm, identityReviewNotSame, identityReviewNeedInfo, identityReviewLink, identityReviewMergeConfirmed, identityReviewCompare, linkableReferrals, canActOnIdentityReview, canViewIdentityReview, listIdentityReviewItems } from "../identityReview";
 import { referralCriticalProblem } from "../referralChase";
 import { referralMatches, publicReferralResembles } from "../signupMatch";
 import { canViewAccountSupport, listAccountSupportItems } from "../accountSupport";
@@ -130,5 +130,19 @@ describe("26 Oct intake and identity rules", () => {
     intakeCommand(intake,p.id,{operation:"handoff",reason:"Intake ready for handoff",caseManagerId:cm.id,clinicianId:cl.id});
     expect(intakeHandoffFor(p.id)).toMatchObject({staffId:intake.staffId,caseManagerId:cm.id,clinicianId:cl.id});
     expect(AdelanteEHR.listAuditEvents().find(e=>e.action==="intake_handed_off" && e.patientId===p.id)?.detail).toEqual({caseManagerId:cm.id,clinicianId:cl.id});
+  });
+  it("merge uses the existing engine, requires confirmation, and audits ids only", () => {
+    const s=runSignupCommand(signupActor,{operation:"start"});
+    const n=runSignupCommand(signupActor,{operation:"finish",sessionId:s.sessionId,path:"new",draft:{...entered,lastName:`Merge${crypto.randomUUID()}`,preferredLanguage:"en",credentialKind:"pin"}});
+    const t=runSignupCommand(signupActor,{operation:"start"});
+    const m=runSignupCommand(signupActor,{operation:"finish",sessionId:t.sessionId,path:"new",draft:{...entered,lastName:`Other${crypto.randomUUID()}`,preferredLanguage:"en",credentialKind:"pin"}});
+    if(!n.patientId || !m.patientId)throw new Error("Missing accounts");
+    const row=createIdentityReviewItem({type:"possible_duplicate_account",source:"sign-up",patientId:n.patientId,candidatePatientIds:[m.patientId],entries:entered});
+    expect(()=>identityReviewMergeConfirmed(intake,row.id,{candidatePatientId:m.patientId as string,reason:"Confirmed the same identity",confirmed:false})).toThrow(/Confirm/);
+    expect(runAction("identity_review_merge_confirm",intake,undefined,{args:[intake,row.id,{candidatePatientId:m.patientId,reason:"Confirmed the same identity",confirmed:true}]}).ok).toBe(true);
+    expect(AdelanteEHR.getPatient(n.patientId)?.mergedInto).toBe(m.patientId);
+    expect(row.status).toBe("closed");
+    const audit=AdelanteEHR.listAuditEvents().find(e=>e.action==="identity_review_merged" && e.detail?.itemId===row.id);
+    expect(Object.keys(audit?.detail ?? {}).sort()).toEqual(["candidatePatientId","itemId","mergeId"]);
   });
 });
