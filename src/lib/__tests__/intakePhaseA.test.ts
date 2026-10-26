@@ -93,6 +93,8 @@ describe("26 Oct Phase A — safety ownership and restricted receipts", () => {
     expect(receipt.ownerRole).toBe(tier === "amber" ? "ecm_provider" : "therapist");
     expect(AdelanteEHR.listPatients()).toHaveLength(before);
     expect(preChartTodayTasks({ role: "therapist", staffId: "s-th2" }).some(t => t.id === receipt.id)).toBe(true);
+    expect(preChartTodayTasks({ role: "ecm_provider", staffId: "s-cm2" }).some(t => t.id === receipt.id)).toBe(tier === "amber");
+    expect(preChartTriageDetail({ role: "ecm_provider", staffId: "s-cm2" }, receipt.id)).toMatchObject({ restricted: true });
     expect(preChartTriageDetail(actor, receipt.id)).toMatchObject({ restricted: true });
   });
   it("a real signup source escalates without a chart and keeps draft answers out of the receipt", () => {

@@ -82,7 +82,9 @@ export function escalateIntakeSafety(actor: IntakeActor, kind: SafetySource["kin
   AdelanteEHR._emit(); return receipt(item);
 }
 export function preChartTodayTasks(actor: IntakeActor) {
-  if (!canReviewPreChart(actor)) return [];
+  const staff = getStaffMember(actor.staffId);
+  const careOwner = !!staff && staff.active !== false && hasRoleAssignment(staff, actor.role) && ["ecm_provider", "cf_care_manager"].includes(actor.role);
+  if (!canReviewPreChart(actor) && !careOwner) return [];
   return [...triage.values()].filter(i => i.status !== "closed" && (!i.ownerStaffId ? actor.role === "clinical_coordinator" : i.ownerStaffId === actor.staffId || i.summaryStaffId === actor.staffId)).map(i => ({ id: i.id, sourceId: i.source.id, patientId: i.patientId, title: "Clinical triage needed", dueAt: i.at, ownerName: i.ownerName, status: i.status }));
 }
 export function preChartTriageDetail(actor: IntakeActor, id: string) {
