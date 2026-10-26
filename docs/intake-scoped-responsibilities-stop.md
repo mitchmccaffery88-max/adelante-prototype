@@ -1,5 +1,7 @@
 # Intake responsibilities — 26 Oct boundary review
 
+> Historical review, superseded by Mitch's Phase A authorization. First-visit, group, administrative assignment/completion and linked/pre-chart safety adapters are now implemented; see `docs/intake-phase-a-report.md`. Importer/packet/consent/eligibility/SDOH work remains Phase B and is not enabled by Phase A. Counts below describe the earlier unchanged-app review only.
+
 ## Why the prior work was narrowed
 
 The later request explicitly allowed only the Intake workspace, public referral path and identity review, and expressly excluded clinical navigation/tasks, chart entry and writes. That scope instruction—not test cost—caused all seven responsibilities to be dropped. Scheduling, handoff and escalation affected clinical workflows; paperwork, SDOH and packets also needed separate Part 2 boundaries; eligibility needed a billing-only request/result contract. No inherent conflict with the existence of an Intake role was established.
