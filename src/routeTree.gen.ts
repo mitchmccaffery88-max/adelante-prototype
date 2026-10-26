@@ -71,6 +71,7 @@ import { Route as HomeRouteImport } from './routes/home'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
+import { Route as IntakeWorkspaceRouteImport } from './routes/intake-workspace'
 import { Route as JourneysRouteImport } from './routes/journeys'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as LocationCalendarsRouteImport } from './routes/location-calendars'
@@ -455,6 +456,11 @@ const InboxRoute = InboxRouteImport.update({
 const IntakeRoute = IntakeRouteImport.update({
   id: '/intake',
   path: '/intake',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntakeWorkspaceRoute = IntakeWorkspaceRouteImport.update({
+  id: '/intake-workspace',
+  path: '/intake-workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JourneysRoute = JourneysRouteImport.update({
@@ -902,6 +908,7 @@ export interface FileRoutesByFullPath {
   '/how-it-works': typeof HowItWorksRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/intake-workspace': typeof IntakeWorkspaceRoute
   '/journeys': typeof JourneysRoute
   '/library': typeof LibraryRoute
   '/location-calendars': typeof LocationCalendarsRoute
@@ -1040,6 +1047,7 @@ export interface FileRoutesByTo {
   '/how-it-works': typeof HowItWorksRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/intake-workspace': typeof IntakeWorkspaceRoute
   '/journeys': typeof JourneysRoute
   '/library': typeof LibraryRoute
   '/location-calendars': typeof LocationCalendarsRoute
@@ -1177,6 +1185,7 @@ export interface FileRoutesById {
   '/how-it-works': typeof HowItWorksRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/intake-workspace': typeof IntakeWorkspaceRoute
   '/journeys': typeof JourneysRoute
   '/library': typeof LibraryRoute
   '/location-calendars': typeof LocationCalendarsRoute
@@ -1318,6 +1327,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/inbox'
     | '/intake'
+    | '/intake-workspace'
     | '/journeys'
     | '/library'
     | '/location-calendars'
@@ -1456,6 +1466,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/inbox'
     | '/intake'
+    | '/intake-workspace'
     | '/journeys'
     | '/library'
     | '/location-calendars'
@@ -1592,6 +1603,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/inbox'
     | '/intake'
+    | '/intake-workspace'
     | '/journeys'
     | '/library'
     | '/location-calendars'
@@ -1732,6 +1744,7 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   InboxRoute: typeof InboxRoute
   IntakeRoute: typeof IntakeRoute
+  IntakeWorkspaceRoute: typeof IntakeWorkspaceRoute
   JourneysRoute: typeof JourneysRoute
   LibraryRoute: typeof LibraryRoute
   LocationCalendarsRoute: typeof LocationCalendarsRoute
@@ -2221,6 +2234,13 @@ declare module '@tanstack/react-router' {
       path: '/intake'
       fullPath: '/intake'
       preLoaderRoute: typeof IntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intake-workspace': {
+      id: '/intake-workspace'
+      path: '/intake-workspace'
+      fullPath: '/intake-workspace'
+      preLoaderRoute: typeof IntakeWorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/journeys': {
@@ -2895,6 +2915,7 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   InboxRoute: InboxRoute,
   IntakeRoute: IntakeRoute,
+  IntakeWorkspaceRoute: IntakeWorkspaceRoute,
   JourneysRoute: JourneysRoute,
   LibraryRoute: LibraryRoute,
   LocationCalendarsRoute: LocationCalendarsRoute,
