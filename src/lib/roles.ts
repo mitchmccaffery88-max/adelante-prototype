@@ -941,6 +941,8 @@ export function canAccess(
     return { level: allowed ? "read" : "none", locked: !allowed };
   }
   const level = MATRIX[cls]?.[permissionRole(role)] ?? "none";
+  // Intake collects paperwork, never reads assessment scores or treatment content.
+  if (role === "intake_coordinator" && (cls === "screeners_sud" || cls === "sud_treatment")) return {level:"none",locked:true,reason:"42 CFR Part 2 — consent required"};
   if (level === "consent_gated") {
     // LIVE check against the structured ConsentRecord — never cached. Expiry
     // and revocation therefore stop access at the next call, with no other

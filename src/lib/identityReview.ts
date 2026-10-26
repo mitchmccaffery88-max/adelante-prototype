@@ -199,8 +199,8 @@ function candidateAllowed(actor: IdentityReviewActor, referral: Referral): boole
   if (pid && isRestricted(pid)) return false;
   if (referral.substanceUseNeed) {
     if (!patient) return false;
-    const access = canAccess(actor.role, "screeners_sud", patient);
-    if (access.level === "none" || access.locked) return false;
+    // Identity-only review is not a clinical-content grant.
+    if (!AdelanteEHR.isConsentCategoryAuthorized(patient.id,"sud_treatment")) return false;
   }
   return true;
 }
@@ -439,7 +439,7 @@ export function identityReviewCompare(item: IdentityReviewItem, actor?: Identity
     const pid = candidate.kind === "account" ? candidate.id : referral?.enrolledPatientId;
     const patient = pid ? AdelanteEHR.getPatient(pid) : undefined;
     const restricted = pid && isRestricted(pid);
-    const p2 = referral?.substanceUseNeed && (!patient || canAccess(actor.role, "screeners_sud", patient).locked);
+    const p2 = referral && !candidateAllowed(actor,referral);
     return restricted || p2 ? {kind:candidate.kind,id:candidate.id,firstName:"",lastName:"",createdAt:candidate.createdAt,restrictedReason:restricted ? "Restricted record — authorized review required" : "42 CFR Part 2 — intake consent required"} : candidate;
   });
 }
