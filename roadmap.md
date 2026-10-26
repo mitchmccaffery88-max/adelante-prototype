@@ -5,7 +5,7 @@
 - [x] B2 Billing-owned eligibility request and coverage-only readback; no Intake result entry. Real Billing task and registry manual-check host.
 - [x] B3 Validated referral/partner/packet SDOH projection and administrative handoff checklist only; exact source references rechecked.
 - [x] B4 Referral-staging import and referral-owned restricted packet documents; original clinical importer denied. Clinical coordinator staging on existing referral queue.
-- [ ] B5 Boundary/privacy tests, real UI readback, FULL units and isolated FULL public browser; report files/rules/gaps. Do not publish.
+- [x] B5 28 new boundary/privacy tests; real Intake capture/lock/unlock → Billing manual-check → Intake coverage readback, 390px no overflow/no page errors. FULL units 3,387/3,387 (393 files), exit 0; isolated FULL public browser 47/47, exit 0, 10.6m. Build OK; report: docs/intake-phase-b-report.md. No new broad-access stop; simulated storage/delivery, source attestation, non-transactional preview import and external-recipient ROI remain documented gaps. Nothing published.
 
 ## 26 Oct Intake Phase A — dedicated referral adapters
 - [x] A1 First-of-kind indicated booking and attributed clinician-approved group requests; no general booking/reschedule/details. Conflict refusals contain no other clinician/visit details.

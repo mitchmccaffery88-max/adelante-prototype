@@ -58,7 +58,7 @@ Dedicated referral adapters only. No broad chart, consent-ledger, eligibility, S
 ## Full validation
 
 - FULL units: **3,387/3,387**, **393 files**, exit 0.
-- FULL public browser: running isolated eight-spec suite, one worker against :8080; final result will replace this line.
+- FULL public browser: **47/47**, exit 0, **10.6 minutes**, isolated eight-spec suite with one worker against :8080. No concurrent units or application edits; no failed checks, retries or timeout changes.
 - Latest preview build: OK. No retry/timeout changes. Nothing published.
 
 ## Changed files
