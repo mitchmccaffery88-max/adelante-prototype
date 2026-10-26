@@ -1,7 +1,7 @@
 import { canSubmitReferral, submitWebsiteReferral } from "@/lib/website/publicReferral";
 import { intakeLogOutreach } from "@/lib/intakeWorkspace";
 import { canReportPublicResource, createPublicResourceReport } from "@/lib/website/publicResourceReports";
-import { canActOnIdentityReview, identityReviewConfirm, identityReviewLink, identityReviewMerge, identityReviewNeedInfo, identityReviewNotSame } from "@/lib/identityReview";
+import { canActOnIdentityReview, identityReviewConfirm, identityReviewLink, identityReviewMerge, identityReviewMergeConfirmed, identityReviewNeedInfo, identityReviewNotSame } from "@/lib/identityReview";
 import { canUseSignup, runSignupCommand } from "@/lib/website/signupStore";
 import { authPreview } from "@/lib/website/authPreview";
 import {canSubmitWebsiteIntake,saveWebsiteIntake} from '@/lib/website/websiteInbox';
@@ -166,6 +166,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   // 26 Oct (Mitch) — Identity review queue decisions. Reviewer roles are a
   // single Draft setting in identityReview.ts (sys_admin acts, coordinator
   // views); permissions get a full audit before go-live.
+  { id:"identity_review_merge_confirm",label:{en:"Confirm identity merge",es:"Confirmar unión"},group:"admin",menu:false,needsPatient:false,check:"identityReviewerRoles (26 Oct Draft); confirmed candidate",store:refs(["identityReviewMergeConfirmed",identityReviewMergeConfirmed]),allowed:actor=>canActOnIdentityReview(actor)?ok():hide("Identity reviewers only.") },
   { id: "identity_review_link", label: { en: "Link to this referral", es: "Vincular a esta referencia" }, group: "admin", menu: false, needsPatient: false, check: "identityReviewerRoles (Draft — pending executive RBAC review)", store: refs(["identityReviewLink", identityReviewLink]), allowed: actor => canActOnIdentityReview(actor) ? ok() : hide("Identity reviewers only.") },
   { id: "identity_review_not_same", label: { en: "Not the same person", es: "No es la misma persona" }, group: "admin", menu: false, needsPatient: false, check: "identityReviewerRoles (Draft — pending executive RBAC review)", store: refs(["identityReviewNotSame", identityReviewNotSame]), allowed: actor => canActOnIdentityReview(actor) ? ok() : hide("Identity reviewers only.") },
   { id: "identity_review_need_info", label: { en: "Need more information", es: "Se necesita más información" }, group: "admin", menu: false, needsPatient: false, check: "identityReviewerRoles (Draft — pending executive RBAC review)", store: refs(["identityReviewNeedInfo", identityReviewNeedInfo]), allowed: actor => canActOnIdentityReview(actor) ? ok() : hide("Identity reviewers only.") },
