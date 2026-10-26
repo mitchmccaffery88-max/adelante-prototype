@@ -7,6 +7,8 @@
 // anything else must still match byte-for-byte. Each anchor must match
 // exactly once or this throws.
 const SIGNUP_OCT26: [string, string][] = [
+  // 26 Oct Intake Coordinator: incoming referral outreach pool only, clinical permissions unchanged.
+  ['  return roster.map((r) => r.key).filter((role) => canAccess(role, "care_coordination").level === "write");', '  // 26 Oct: incoming referral outreach belongs to intake; clinical work stays separate.\n  return roster.some(r=>r.key === "intake_coordinator") ? ["intake_coordinator"] : [];'],
   // 26 Oct Intake Coordinator: store-level first-visit-only scheduling, existing roles unchanged.
   ['        asam: !!input.asamTaskId,\n', '        asam: !!input.asamTaskId,\n        firstVisit: !appointments.some(a => a.patientId === input.patientId && a.status !== "cancelled"),\n'],
   // 1. enrollReferral signature gains the websiteSignup option
