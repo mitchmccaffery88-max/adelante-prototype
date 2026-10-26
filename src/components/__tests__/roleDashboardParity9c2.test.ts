@@ -31,7 +31,12 @@ function inventory(source: string) {
 
 describe("9c-2 unchanged values, IDs and handlers against rollback", () => {
   it.each(files)("%s preserves existing bindings", path => {
-    expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path))))));
+    // 26 Oct Phase A: one clinical-only triage row host in the existing Today tile; all prior bindings pinned.
+    const baseline = withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path))));
+    const from = 'return <div className="space-y-4">{!secondary &&';
+    const expected = path === "src/components/clinician/WorkspaceDashboard.tsx" ? baseline.replace(from, 'return <div className="space-y-4">{!secondary && <PreChartTriageRows actor={actor} />}{!secondary &&') : baseline;
+    if (path === "src/components/clinician/WorkspaceDashboard.tsx") expect(baseline.split(from)).toHaveLength(2);
+    expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(expected));
   });
   it.each(["src/lib/roles.ts", "src/lib/chartAccess.ts", "src/lib/navGuard.ts", "src/lib/clinicianWorkspace.ts", "src/lib/billingWorkspace.ts", "src/lib/ehr.ts", "src/lib/ehr-ext.ts", "src/lib/asamReporting.ts", "src/lib/complianceMonitoring.ts", "src/components/ui/stat-tile.tsx", "src/components/billing/BillingStatusSummary.tsx"])("%s keeps selector/access/suppression behavior byte-identical", path => {
     expect(readFileSync(path, "utf8")).toBe(withApprovedSignupOct26(path, withApprovedConsentB2(path, withApprovedBillingWorkspaceB3b(path, withApprovedP3(path, old(path))))));
