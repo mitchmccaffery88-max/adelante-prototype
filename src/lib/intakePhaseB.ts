@@ -90,6 +90,14 @@ export function captureIntakeForm(actor: IntakeActor, referralId: string, input:
   if (input.note?.trim()) captureNotes.set(rec.id, input.note.trim()); // administrative note, never gate/audit text
   AdelanteEHR._emit(); return { referralId, recordId: rec.id };
 }
+export function recordIntakeElectronicForm(actor: IntakeActor, referralId: string, input: IntakeCaptureInput, reason: string) {
+  if (input.fileName) throw new Error("Use the simulated paper-upload action.");
+  return captureIntakeForm(actor, referralId, input, reason);
+}
+export function recordIntakePaperForm(actor: IntakeActor, referralId: string, input: IntakeCaptureInput, reason: string) {
+  if (!input.fileName?.trim()) throw new Error("Signed paper file required.");
+  return captureIntakeForm(actor, referralId, input, reason);
+}
 export type IntakeFormStatus = "Collected" | "Missing" | "Expired" | "Needs review";
 export function intakeFormsStatus(actor: IntakeActor, referralId: string) {
   assertIntakeB(actor, "paperwork_capture", "Status projection");

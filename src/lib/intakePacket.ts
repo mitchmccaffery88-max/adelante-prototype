@@ -15,7 +15,10 @@ const needs = new Map<string, Need[]>();
 const documents = new Map<string, PacketDocument[]>();
 let seq = 0;
 function sourceValid(source: string): source is PacketSource { return (PACKET_SOURCES as readonly string[]).includes(source); }
-function referenceValid(r: Referral, n: Need) { return n.referralId === r.id && sourceValid(n.source) && !!n.sourceRef.trim() && !!n.ingestedBy && !!n.ingestedAt && (PACKET_NEEDS as readonly string[]).includes(n.kind); }
+function sourceBound(r: Referral, source: PacketSource, ref: string) {
+  return source === "referral_form" ? ref === `referral:${r.id}` : (r.intakeStaging?.source === source && r.intakeStaging.sourceRef === ref) || (documents.get(r.id) ?? []).some(d => d.id === ref && d.source === source);
+}
+function referenceValid(r: Referral, n: Need) { return n.referralId === r.id && sourceValid(n.source) && sourceBound(r, n.source, n.sourceRef) && !!n.ingestedBy && !!n.ingestedAt && (PACKET_NEEDS as readonly string[]).includes(n.kind); }
 function intakeTreatmentConsent(r: Referral) { return !!r.enrolledPatientId && !isRestricted(r.enrolledPatientId) && AdelanteEHR.isConsentCategoryAuthorized(r.enrolledPatientId, "sud_treatment"); }
 export interface StagingRow { referralId?: string; firstName: string; lastName: string; dob?: string; phone?: string; email?: string; referrerName: string; referrerPhone?: string; referrerEmail?: string; referringAgency?: string; releaseDate?: string; referralReason?: string; sdoh?: { kind: PacketNeedKind; part2?: boolean }[]; }
 const STAGING_FIELDS = ["referralId", "firstName", "lastName", "dob", "phone", "email", "referrerName", "referrerPhone", "referrerEmail", "referringAgency", "releaseDate", "referralReason", "sdoh"];
@@ -44,8 +47,8 @@ export function importIntakeStaging(actor: IntakeActor, source: PacketSource, so
 }
 declare module "./ehr" { interface Referral { intakeStaging?: { source: PacketSource; sourceRef: string; ingestedBy: string; ingestedAt: string; referralReason?: string }; } }
 export function ingestPacketNeeds(actor: IntakeActor, referralId: string, source: PacketSource, sourceRef: string, input: { kind: PacketNeedKind; part2?: boolean }[], reason: string) {
-  intakeBReferral(actor, referralId, "staging_import", reason, true);
-  if (!sourceValid(source) || !sourceRef.trim() || !Array.isArray(input) || input.some(n => !(PACKET_NEEDS as readonly string[]).includes(n.kind) || Object.keys(n).some(k => !["kind", "part2"].includes(k)))) throw new Error("Validated referral/partner/packet source only.");
+  const r = intakeBReferral(actor, referralId, "staging_import", reason, true);
+  if (!sourceValid(source) || !sourceBound(r, source, sourceRef) || !Array.isArray(input) || input.some(n => !(PACKET_NEEDS as readonly string[]).includes(n.kind) || Object.keys(n).some(k => !["kind", "part2"].includes(k)))) throw new Error("Validated referral/partner/packet source reference required.");
   const existing = needs.get(referralId) ?? [];
   for (const n of input) if (!existing.some(x => x.source === source && x.sourceRef === sourceRef && x.kind === n.kind)) existing.push({ id: `packet-need-${++seq}`, kind: n.kind, source, sourceRef, referralId, ingestedBy: actor.staffId ?? "", ingestedAt: new Date().toISOString(), state: "unknown", part2: n.part2 === true });
   needs.set(referralId, existing); AdelanteEHR._emit(); return { referralId };
@@ -53,6 +56,7 @@ export function ingestPacketNeeds(actor: IntakeActor, referralId: string, source
 export function intakePacketNeeds(actor: IntakeActor, referralId: string) {
   if (!canIntakeB(actor, "sdoh_checklist")) return [];
   const r = referralForPacket(referralId);
+  if (r.enrolledPatientId && isRestricted(r.enrolledPatientId)) return [];
   return (needs.get(referralId) ?? []).filter(n => referenceValid(r, n) && (!n.part2 || intakeTreatmentConsent(r))).map(n => ({ id: n.id, kind: n.kind, source: n.source, state: n.state }));
 }
 function referralForPacket(id: string) { const r = AdelanteEHR.listReferrals().find(x => x.id === id); if (!r) throw new Error("Referral unavailable."); return r; }
@@ -74,7 +78,7 @@ export function intakePacketDocuments(actor: IntakeActor, referralId: string) {
   if (!canIntakeB(actor, "packet_attach")) return [];
   const r = referralForPacket(referralId);
   return (documents.get(referralId) ?? []).map(d => {
-    const restricted = d.part2 && !intakeTreatmentConsent(r);
+    const restricted = !!(r.enrolledPatientId && isRestricted(r.enrolledPatientId)) || (d.part2 && !intakeTreatmentConsent(r));
     return restricted ? { id: d.id, type: "restricted" as const, restricted: true, reason: "Part 2 — needs consent covering intake/treatment", attachedAt: d.attachedAt } : { id: d.id, type: d.type, restricted: false, fileName: d.fileName, source: d.source, attachedAt: d.attachedAt, contentAvailable: !!d.dataUrl };
   });
 }
@@ -83,6 +87,7 @@ export function packetDocumentContent(actor: IntakeActor, referralId: string, do
   const isIntake = canIntakeB(actor, "packet_attach");
   const handoff = !!r.enrolledPatientId && completed(r.id) && careTeamCanRead(actor, r);
   const p = r.enrolledPatientId ? AdelanteEHR.getPatient(r.enrolledPatientId) : undefined;
+  if (isIntake && r.enrolledPatientId && isRestricted(r.enrolledPatientId)) throw new Error("Restricted record — packet unavailable.");
   if (!isIntake && !handoff) throw new Error("Assigned care team after intake completion only.");
   if (d.part2 && (isIntake ? !intakeTreatmentConsent(r) : !p || canAccess(actor.role, "sud_treatment", p).locked || canAccess(actor.role, "sud_treatment", p).level === "none")) throw new Error("Part 2 — needs consent covering intake/treatment");
   return { mime: d.mime, dataUrl: d.dataUrl, fileName: d.fileName };
