@@ -2,6 +2,7 @@ import { CircleAlert } from "lucide-react";
 import { PossibleExistingPatientError, SignupNeedsVerificationError } from "@/lib/patientMatching";
 import { SignupVerificationHelp } from "@/components/identity/SignupVerificationHelp";
 import { ExistingPersonStep } from "@/components/identity/ExistingPersonStep";
+import { PublicSignupSteps } from "@/components/frontdoor/PublicSignupSteps";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -298,6 +299,7 @@ export function SignupFlow({ operator, onComplete }: SignupFlowProps) {
   const tier2 = Boolean(operator);
   const [branch, setBranch] = useState<null | "code" | "new">(null);
 
+  if (!operator) return <PublicSignupSteps />;
   if (branch === "new")
     return <NewPatientForm operator={operator} onComplete={onComplete} onBack={() => setBranch(null)} />;
   if (branch === "code")
