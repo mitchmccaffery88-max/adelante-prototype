@@ -11,6 +11,7 @@ export const CONSENT_PURPOSES = [
   { code: "reentry_coordination", label: "Reentry coordination" },
   { code: "telehealth", label: "Telehealth services" },
   { code: "group_confidentiality", label: "Group confidentiality" },
+  { code: "ai_recording", label: "AI session recording" },
 ] as const;
 
 export type ConsentPurposeCode = (typeof CONSENT_PURPOSES)[number]["code"];
