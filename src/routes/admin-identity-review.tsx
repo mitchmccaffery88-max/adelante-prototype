@@ -24,6 +24,9 @@ function IdentityReviewPage() {
   const [how, setHow] = useState("");
   const [code, setCode] = useState("");
   const [mergeCandidate,setMergeCandidate] = useState("");
+  const [confirmedFirst,setConfirmedFirst] = useState("");
+  const [confirmedLast,setConfirmedLast] = useState("");
+  const [confirmedDob,setConfirmedDob] = useState("");
   if (!canViewIdentityReview(actor)) return <p className="flex gap-2 p-6"><Lock />Identity review permission required.</p>;
   const canAct = canActOnIdentityReview(actor);
   const item = items.find(i => i.id === selected);
@@ -44,7 +47,7 @@ function IdentityReviewPage() {
       {id: "source", label: "Source", cell: i => i.source},
       {id: "status", label: "Status", cell: i => <StatusChip lang="en" state={i.status === "withothers" ? "team" : i.status} label={i.status === "yourturn" ? "Your turn" : i.status === "withothers" ? "With others" : "Closed"} />},
       {id: "assignee", label: "Assignee", cell: i => i.assignee === "intake_coordinator" ? "Intake Coordinator" : i.assignee ?? "Unassigned"},
-    ]} primaryAction={i => <Button variant="outline" onClick={() => {setSelected(i.id);setMergeCandidate("");setReason("");setHow("");setCode("");}}>Review</Button>} emptyState={IDENTITY_REVIEW_EMPTY} />
+    ]} primaryAction={i => <Button variant="outline" onClick={() => {setSelected(i.id);setConfirmedFirst("");setConfirmedLast("");setConfirmedDob("");setMergeCandidate("");setReason("");setHow("");setCode("");}}>Review</Button>} emptyState={IDENTITY_REVIEW_EMPTY} />
     {item && <section className="space-y-4 border-t border-line pt-5" key={`${staff.staffId}:${staff.role}:${item.id}`}>
       <h2 className="text-xl font-bold">{IDENTITY_REVIEW_TYPE_LABELS[item.type]}</h2>
       <div className="grid gap-4 md:grid-cols-2"><dl className="space-y-2 border border-line rounded-md p-4"><dt className="font-bold">Sign-up entries</dt>{Object.entries(item.entries).map(([key,value]) => <div key={key}><dt className="text-sm text-ink-muted">{key}</dt><dd className="break-words">{value || "Not provided"}</dd></div>)}</dl>
@@ -56,7 +59,7 @@ function IdentityReviewPage() {
         {mergeCandidate && <div role="dialog" aria-label="Confirm merge" className="w-full border border-line p-4 space-y-3"><p>Keep account {mergeCandidate} and merge account {item.patientId}. Consent evidence stays held for review.</p><Button disabled={reason.trim().length < 3} onClick={()=>{run("identity_review_merge_confirm",{candidatePatientId:mergeCandidate,reason,confirmed:true});setMergeCandidate("");}}>Confirm merge</Button><Button variant="outline" onClick={()=>setMergeCandidate("")}>Cancel</Button></div>}
         <Button variant="outline" disabled={reason.trim().length < 3} onClick={() => run("identity_review_not_same",reason)}>Not the same person</Button>
         <Button variant="outline" disabled={reason.trim().length < 3} onClick={() => run("identity_review_need_info",reason)}>Need more information</Button>
-      </div><label className="block space-y-2">How identity was confirmed — Required<Input value={how} onChange={e => setHow(e.target.value)} /></label><Button variant="outline" disabled={!how.trim() || reason.trim().length < 3 || !item.candidateReferralIds.length && !item.referralId} onClick={() => run("identity_review_confirm",{how,reason})}>Mark identity confirmed by staff</Button></>}
+      </div><label>Confirmed first name — Required<Input value={confirmedFirst} onChange={e=>setConfirmedFirst(e.target.value)} /></label><label>Confirmed last name — Required<Input value={confirmedLast} onChange={e=>setConfirmedLast(e.target.value)} /></label><label>Confirmed date of birth — Required<Input type="date" value={confirmedDob} onChange={e=>setConfirmedDob(e.target.value)} /></label><label className="block space-y-2">How identity was confirmed — Required<Input value={how} onChange={e => setHow(e.target.value)} /></label><Button variant="outline" disabled={!confirmedFirst.trim() || !confirmedLast.trim() || !confirmedDob || !how.trim() || reason.trim().length < 3 || !item.candidateReferralIds.length && !item.referralId} onClick={() => run("identity_review_confirm",{how,reason,firstName:confirmedFirst,lastName:confirmedLast,dob:confirmedDob})}>Mark identity confirmed by staff</Button></>}
       {code && <p className="text-sm">Simulated claim code: <span className="font-mono">{code}</span></p>}
       <Button variant="ghost" onClick={() => setSelected(undefined)}>Close review</Button>
     </section>}

@@ -57,7 +57,7 @@ describe("26 Oct intake and identity rules", () => {
     expect(identityReviewNeedInfo(intake,row.id,"Need DOB confirmation").status).toBe("withothers");
     const r = AdelanteEHR.createReferral({...entered,referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,channel:"public",identityConfidence:"public_unverified"});
     const review = createIdentityReviewItem({type:"public_referral_resemblance",source:"referral",referralId:r.id,entries:entered});
-    const result = identityReviewConfirm(intake,review.id,{how:"Phone call with the person",reason:"Confirmed name and DOB"});
+    const result = identityReviewConfirm(intake,review.id,{...entered,how:"Phone call with the person",reason:"Confirmed name and DOB"});
     expect(result.code.code).toMatch(/^RE-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
     expect(r.identityConfirmedBy?.role).toBe("intake_coordinator");
     expect(r.identityConfidence).toBe("verified_source");
@@ -78,7 +78,7 @@ describe("26 Oct intake and identity rules", () => {
     const row = createIdentityReviewItem({type:"public_referral_resemblance",source:"referral",referralId:r.id,entries:entered});
     expect(identityReviewCompare(row,intake)).toEqual([expect.objectContaining({id:r.id,restrictedReason:"42 CFR Part 2 — intake consent required",firstName:"",lastName:""})]);
     expect(linkableReferrals(row,intake)).toEqual([]);
-    expect(() => identityReviewConfirm(intake,row.id,{how:"Phone",reason:"Identity checked"})).toThrow(/Restricted/);
+    expect(() => identityReviewConfirm(intake,row.id,{...entered,how:"Phone",reason:"Identity checked"})).toThrow(/Restricted/);
     expect(() => identityReviewLink(intake,row.id,{referralId:r.id,reason:"Identity checked"})).toThrow(/Restricted/);
     expect(r.identityConfidence).toBe("public_unverified");
   });
