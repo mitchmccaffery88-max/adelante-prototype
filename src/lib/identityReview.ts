@@ -463,7 +463,7 @@ export function identityReviewCompare(item: IdentityReviewItem, actor?: Identity
     const pid = candidate.kind === "account" ? candidate.id : referral?.enrolledPatientId;
     const patient = pid ? AdelanteEHR.getPatient(pid) : undefined;
     const restricted = pid && isRestricted(pid);
-    const p2 = referral ? !candidateAllowed(actor,referral) : patient?.flags?.sud && !AdelanteEHR.isConsentCategoryAuthorized(patient.id,"sud_treatment");
+    const p2 = referral ? !candidateAllowed(actor,referral) : patient && AdelanteEHR.listProblems(patient.id).some(p=>p.category === "sud") && !AdelanteEHR.isConsentCategoryAuthorized(patient.id,"sud_treatment");
     return restricted || p2 ? {kind:candidate.kind,id:candidate.id,firstName:"",lastName:"",createdAt:candidate.createdAt,restrictedReason:restricted ? "Restricted record — authorized review required" : "42 CFR Part 2 — intake consent required"} : candidate;
   });
 }
