@@ -300,10 +300,13 @@ export function billingRecordInsuranceDetails(
 const insurance = new Map<string, Pick<BillingDetail, "payerId" | "payerName" | "memberId" | "groupNumber" | "subscriberRelationship">>();
 
 /** Run the configured adapter for an insurance/program path. */
-export async function billingRunCoverageCheck(actor: Actor, key: string, input: { payerId?: string; memberRef?: string }, reason: string) {
+// Validation is synchronous so the registry refuses bad calls; only the adapter call is async.
+export function billingRunCoverageCheck(actor: Actor, key: string, input: { payerId?: string; memberRef?: string }, reason: string) {
   const req = reqFor(actor, key, reason);
   if (coveragePath(req.path).processing !== "check" && req.path !== "uninsured_apply") throw new Error("This coverage path has no payer check.");
-  const adapter = selectedAdapter();
+  return runCheck(actor, req, key, selectedAdapter(), input);
+}
+async function runCheck(actor: Actor, req: CoverageRequest, key: string, adapter: ReturnType<typeof selectedAdapter>, input: { payerId?: string; memberRef?: string }) {
   const ins = insurance.get(key);
   const payerId = input.payerId ?? ins?.payerId;
   const res = await runAdapter(adapter, { requestKey: key, patientId: req.patientId, path: req.path, programId: req.programId, payerId, memberRef: input.memberRef ?? ins?.memberId, serviceDate: today() });

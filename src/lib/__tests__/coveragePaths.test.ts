@@ -4,7 +4,7 @@ import { runAction } from "../actions/runAction";
 import { CHART_ACTIONS } from "../chartActions";
 import { canAccess } from "../roles";
 import { intakeCoveragePath, intakeCoverageResult, careTeamRequestCoverage, careTeamCoverage } from "../intakePhaseB";
-import { billingCoverageDetail, coverageProjection, sweepCoverageReverification, patientCoverageSummary, billingRunCoverageCheck } from "../coverageRequests";
+import { billingCoverageDetail, coverageProjection, sweepCoverageReverification, patientCoverageSummary, billingRunCoverageCheck, createCoverageRequest } from "../coverageRequests";
 import { COVERAGE_PATHS, configureEligibilityAdapter, getAdapterConfig, resetEligibilityAdapterConfig, setSlidingTable, getSlidingTable, slidingTierFor, nextCheckDate, setPayers, listPayers, type CoveragePath } from "../eligibility/coverageConfig";
 import { registerCoverageAdapter, selectedAdapter, PAYER_UNREACHABLE } from "../eligibility/coverageAdapters";
 
@@ -66,7 +66,7 @@ describe("26 Oct coverage paths — one request type, many paths", () => {
   it("self-pay records acknowledgment + fee schedule without running a check", () => {
     const r = referral();
     request(r.id, "self_pay");
-    expect(bill("billing_coverage_run", r.id, {}).ok).toBe(true); // runs, but the store refuses a path with no check
+    expect(bill("billing_coverage_run", r.id, {}).ok).toBe(false); // no payer check on self-pay
     expect(bill("billing_coverage_self_pay", r.id, { feeScheduleId: "self_pay_standard", acknowledged: false }).ok).toBe(false);
     expect(bill("billing_coverage_self_pay", r.id, { feeScheduleId: "self_pay_standard", acknowledged: true }).ok).toBe(true);
     const p = intakeCoveragePath(intake, r.id);
@@ -126,7 +126,6 @@ describe("26 Oct coverage paths — one request type, many paths", () => {
     const ct = { role: "billing" as const, staffId: "s-bill1" };
     // a second (care-team style) request for the same person, processed as self-pay
     const key = `patient:${pid}`;
-    const { createCoverageRequest } = require("../coverageRequests") as typeof import("../coverageRequests");
     createCoverageRequest({ key, patientId: pid, path: "self_pay", actor: ct });
     bill("billing_coverage_self_pay", key, { feeScheduleId: "self_pay_standard", acknowledged: true });
     const before = billingCoverageDetail(billing, pid);
