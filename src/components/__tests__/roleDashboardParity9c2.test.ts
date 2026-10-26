@@ -7,6 +7,8 @@ import { withApprovedOpsWorkspaceB3b } from "@/test/opsWorkspaceB3bApproved";
 import { withApprovedBillingWorkspaceB3b } from "@/test/billingWorkspaceB3bApproved";
 import { withApprovedP3 } from "@/test/privacyP3Approved";
 import { withApprovedConsentB2 } from "@/test/consentB2Approved";
+// 26 Oct signup change (Mitch): enrollReferral websiteSignup option — signup/reset/review additions only.
+import { withApprovedSignupOct26 } from "@/test/signupOct26Approved";
 
 const rollback = "aff263ff1aa707d68994b7f175f83aa9d09306fd";
 const files = ["src/routes/clinician.tsx", "src/routes/case-manager.tsx", "src/routes/billing.tsx", "src/routes/admin.tsx", "src/routes/quality-compliance.tsx", "src/components/clinician/WorkspaceDashboard.tsx", "src/components/tasks/TaskQueueCard.tsx", "src/components/ops/OpsWorkspace.tsx"];

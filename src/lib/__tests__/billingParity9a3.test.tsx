@@ -9,6 +9,8 @@ import { AdelanteEHRExt, claimBillingBucket } from "@/lib/ehr-ext";
 import { exportClaimsCsv } from "@/lib/billingWorkspace";
 import { withApprovedBillingWorkspaceB3b } from "@/test/billingWorkspaceB3bApproved";
 import { withApprovedConsentB2 } from "@/test/consentB2Approved";
+// 26 Oct signup change (Mitch): enrollReferral websiteSignup option — signup/reset/review additions only.
+import { withApprovedSignupOct26 } from "@/test/signupOct26Approved";
 
 const ROLLBACK = "7c834669d4f2811e28dac8b50090906873b9b8ad";
 const old = (p: string) => execFileSync("git", ["show", `${ROLLBACK}:${p}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });

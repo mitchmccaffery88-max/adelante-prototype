@@ -13,6 +13,8 @@ import { CatalogResolutionMetricsCard } from "@/components/admin/CatalogResoluti
 import { AdelanteEHR } from "@/lib/ehr";
 import { withApprovedP3 } from "@/test/privacyP3Approved";
 import { withApprovedConsentB2 } from "@/test/consentB2Approved";
+// 26 Oct signup change (Mitch): enrollReferral websiteSignup option — signup/reset/review additions only.
+import { withApprovedSignupOct26 } from "@/test/signupOct26Approved";
 
 const ROLLBACK = "2c463a96f657306af2a3dc4fcf72eb9b39d84cad";
 const SELECTORS = [

@@ -10,6 +10,8 @@ import { billingWorkspace } from "@/lib/billingWorkspace";
 import { laneFor } from "@/lib/billingLane";
 import { billingAppointments, billingPatients, billingClaims, billingOpsWorkspace, billingCoverageRows, billingClaimInput, billingLaneFor, billingBlockedAttempts } from "@/lib/billingProjection";
 import { withApprovedConsentB2 } from "@/test/consentB2Approved";
+// 26 Oct signup change (Mitch): enrollReferral websiteSignup option — signup/reset/review additions only.
+import { withApprovedSignupOct26 } from "@/test/signupOct26Approved";
 
 const claimKeys = "id encounterId patientId clinicianId state updatedAt serviceDate serviceCode program programSource codeSource unitsSource units minutes rateId rateCentsPerUnit rateStatus chargeCents noRateReason denialReason taxonomy supervisingStaffId arrangementMissing payerId copayCents deductibleCents coinsuranceBps payerPortionCents patientPortionCents patientPaidCents patientBalanceCents overpaidReview voidBlocked history duplicateReview patientPayments billingReviewFlag billingSignature documentationBlock billingBlock".split(" ");
 const paymentKeys = "id amountCents receivedOn method reference recordedById recordedByName recordedByRole recordedAt voidedAt voidedById voidedByName voidReason".split(" ");
