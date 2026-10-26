@@ -14,6 +14,8 @@ import { hieAudit } from "@/lib/hie";
 import { adelDraftAudit } from "@/lib/adelDrafts";
 import { getAdelBrief, adelSummary } from "@/lib/adelBrief";
 import { signupActor } from "@/lib/website/signupStore";
+import { websiteIntakeActor } from "@/lib/website/websiteInbox";
+import { publicReportActor } from "@/lib/website/publicResourceReports";
 
 afterEach(cleanup);
 const flags = ["hie_simulated", "voice_intake", "adel_drafts", "placeholder_lab", "cures_placeholder", "eligibility_simulated", "erx_simulated", "telehealth_simulated", "caloms_export_simulated", "notifications_simulated", "payments_simulated", "scribe_simulated", "llm_simulated", "calendar_sync_simulated", "consent_upload_simulated"] as const;
@@ -34,7 +36,8 @@ describe("SL all 15 simulated flags: rendered bilingual label and audit contract
     for (const id of PUBLIC_WEBSITE_ACTIONS) {
       const action = CHART_ACTIONS.find(a => a.id === id);
       if (!action) throw new Error(`Missing public website action ${id}`);
-      expect(action.allowed(signupActor,p).state, id).toBe("allowed");
+      const actor = id === "website_intake_submit" ? websiteIntakeActor : id === "resource_public_report" ? publicReportActor : signupActor;
+      expect(action.allowed(actor,p).state, id).toBe("allowed");
       // The shared referral form retains staff contact access; signup/reset never grant staff access.
       if (id !== "website_referral_submit") expect(STAFF_ROLES.some(r => action.allowed({ role: r.key, staffId: "s-admin1" }, p).state !== "hidden"), id).toBe(false);
     }
