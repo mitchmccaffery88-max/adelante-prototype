@@ -4,6 +4,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { TaskQueueCard } from "@/components/tasks/TaskQueueCard";
 
+// 26 Oct Phase A adds isolated triage rows; this existing paging fixture has no triage items.
+vi.mock("@/components/staff/PreChartTriageRows", () => ({ PreChartTriageRows: () => null }));
+
 vi.mock("@/lib/roles", () => ({ useActingStaff: () => ({ staffId: "staff-one", role: "ecm_provider", staffName: "Test owner" }) }));
 vi.mock("@/lib/staffPatientLabel", () => ({ staffPatientLabel: () => "Client", viewerCanOpenChart: () => false }));
 vi.mock("@/lib/actions/act", () => ({ act: vi.fn(), actFor: vi.fn() }));

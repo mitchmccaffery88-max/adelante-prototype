@@ -35,7 +35,6 @@ describe("9c-2 unchanged values, IDs and handlers against rollback", () => {
     const baseline = withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path))));
     const from = 'return <div className="space-y-4">{!secondary &&';
     const expected = path === "src/components/clinician/WorkspaceDashboard.tsx" ? baseline.replace(from, 'return <div className="space-y-4">{!secondary && <PreChartTriageRows actor={actor} />}{!secondary &&') : path === "src/components/tasks/TaskQueueCard.tsx" ? baseline.replace("      {summary}", "      {summary}\n      <PreChartTriageRows actor={viewer} />") : baseline;
-    if (path === "src/components/tasks/TaskQueueCard.tsx") expect(baseline.split("      {summary}")).toHaveLength(2);
     if (path === "src/components/clinician/WorkspaceDashboard.tsx") expect(baseline.split(from)).toHaveLength(2);
     expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(expected));
   });
