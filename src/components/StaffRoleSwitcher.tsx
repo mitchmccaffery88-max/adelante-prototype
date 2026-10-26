@@ -4,6 +4,8 @@
 // first page that role's own menu offers.
 import { useHydrated, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useEffect } from "react";
+import { seedIntakeStaff } from "@/lib/intakeWorkspace";
 import { ChevronDown, UserCog } from "lucide-react";
 import { STAFF_ROLES, STAFF_ROSTER, roleAssignmentsOf, setActingStaff, useActingStaff, type StaffRole } from "@/lib/roles";
 import { staffNavForRole } from "@/lib/navSections";
@@ -24,6 +26,7 @@ export function StaffRoleSwitcher() {
   const { staffId, role, staffName } = useActingStaff();
   // Saved acting role comes from browser storage: neutral label until hydrated.
   const hydrated = useHydrated();
+  useEffect(seedIntakeStaff, []);
 
   function choose(value: string) {
     // §Batch E — value is "staffId|role": one identity, pick the active role.

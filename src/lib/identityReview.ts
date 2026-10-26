@@ -13,7 +13,8 @@
  * the Supabase schema.
  */
 import { AdelanteEHR, type Patient, type Referral } from "./ehr";
-import type { StaffRole } from "./roles";
+import { canAccess, type StaffRole } from "./roles";
+import { isRestricted } from "./chartAccess";
 import { emailKey, nameKey, phoneKey } from "./signupMatch";
 import { normalizeEnrollmentCode } from "./signup";
 
@@ -366,6 +367,7 @@ export interface IdentityCandidateView {
   identityConfidence?: string;
   createdAt: string;
   hasAccount?: boolean;
+  restrictedReason?: string;
 }
 
 const patientView = (p: Patient): IdentityCandidateView => ({
@@ -396,7 +398,8 @@ const referralView = (r: Referral): IdentityCandidateView => ({
 });
 
 /** Side-by-side compare: the new account plus every candidate record/referral, identity fields only. */
-export function identityReviewCompare(item: IdentityReviewItem): IdentityCandidateView[] {
+export function identityReviewCompare(item: IdentityReviewItem, actor?: IdentityReviewActor): IdentityCandidateView[] {
+  if (!actor || !canViewIdentityReview(actor)) return [];
   const out: IdentityCandidateView[] = [];
   if (item.patientId) {
     const p = AdelanteEHR.getPatient(item.patientId);
@@ -412,7 +415,14 @@ export function identityReviewCompare(item: IdentityReviewItem): IdentityCandida
     const r = AdelanteEHR.listReferrals().find((x) => x.id === id);
     if (r) out.push(referralView(r));
   }
-  return out;
+  return out.map(candidate => {
+    const referral = candidate.kind === "referral" ? AdelanteEHR.listReferrals().find(r => r.id === candidate.id) : undefined;
+    const pid = candidate.kind === "account" ? candidate.id : referral?.enrolledPatientId;
+    const patient = pid ? AdelanteEHR.getPatient(pid) : undefined;
+    const restricted = pid && isRestricted(pid);
+    const p2 = referral?.substanceUseNeed && (!patient || canAccess(actor.role, "screeners_sud", patient).locked);
+    return restricted || p2 ? {kind:candidate.kind,id:candidate.id,firstName:"",lastName:"",createdAt:candidate.createdAt,restrictedReason:restricted ? "Restricted record — authorized review required" : "42 CFR Part 2 — intake consent required"} : candidate;
+  });
 }
 
 /** Candidate referrals a reviewer may link this account to (open, not already enrolled). */
