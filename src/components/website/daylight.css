@@ -33,14 +33,14 @@
 .daylight-journey-controls { grid-column:1; display:flex; align-items:center; gap:16px; margin-top:-28px; }.daylight-journey-controls button { min-width:48px; min-height:48px; border-color:var(--line-strong); }.daylight-dots { display:none; }
 .daylight-benefits { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; margin-top:36px; }.daylight-benefits .daylight-tile p { margin:0; }
 .daylight-connected-layout { display:grid; grid-template-columns:560px minmax(0,1fr); gap:56px; align-items:center; }
-.daylight-hub { position:relative; display:grid; grid-template-columns:240px 240px; column-gap:24px; row-gap:72px; width:504px; margin-inline:auto; }
-.daylight-hub-links span { position:absolute; left:50%; top:50%; background:var(--path); z-index:1; }
+.daylight-hub { position:relative; display:grid; grid-template-columns:240px 240px; column-gap:24px; row-gap:112px; width:504px; margin-inline:auto; }
+.daylight-hub-links { position:absolute; inset:0; pointer-events:none; }.daylight-hub-links span { position:absolute; left:50%; top:50%; background:var(--path); z-index:1; }
 .daylight-hub-links span:nth-child(1) { width:2px; height:32px; transform:translate(-1px,calc(-50% - 132px)); }.daylight-hub-links span:nth-child(2) { width:2px; height:32px; transform:translate(-1px,calc(-50% + 132px)); }
 .daylight-hub-links span:nth-child(3) { width:32px; height:2px; transform:translate(calc(-50% - 132px),-1px); }.daylight-hub-links span:nth-child(4) { width:32px; height:2px; transform:translate(calc(-50% + 132px),-1px); }
 .daylight-hub-center { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:2; width:232px; min-height:232px; border-radius:50%; border:10px solid var(--sunrise-soft); background:var(--surface); display:flex; flex-direction:column; justify-content:center; align-items:center; gap:6px; text-align:center; padding:20px 24px; font-size:16px; line-height:20px; }
 .daylight-hub-center img { height:48px; width:auto; }.daylight-hub-center strong { font-size:16px; line-height:20px; }.daylight-hub-sub { font-size:14px; line-height:18px; color:var(--ink-muted); }
 .daylight-hub-card { position:relative; border:2px solid transparent; border-radius:16px; background:var(--surface); padding:18px; transition:opacity .18s,border-color .18s; color:var(--ink); text-decoration:none; min-width:0; }
-.hub-portal,.hub-record { padding-bottom:64px; }.hub-adel,.hub-practice { padding-top:64px; }
+.hub-portal,.hub-record { padding-bottom:60px; }.hub-adel,.hub-practice { padding-top:60px; }
 .daylight-hub-card svg { color:var(--path); width:24px; height:24px; }.daylight-hub-card h3 { font-size:18px; line-height:24px; margin:8px 0; }.daylight-hub-card p { font-size:14px; line-height:20px; margin:0; }
 .hub-active .daylight-hub-card:not(.active) { opacity:.5; }.daylight-hub-card.active { border-color:var(--path); }
 .daylight-connected-copy .daylight-quiet { display:flex; }
