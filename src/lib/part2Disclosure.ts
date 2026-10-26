@@ -17,7 +17,7 @@ import { consentGate } from "./consentGate";
 
 // Legal disclosure records live in outpatientCare.ts, which registers its
 // reader here (no import: avoids an ehr → outpatientCare load cycle).
-type LegalRow = { id: string; recipient: string; purpose?: string; revokedAt?: string };
+type LegalRow = { id: string; recipient: string; purpose?: string; purposeCode?: string; revokedAt?: string };
 let legalSource: (patientId: string) => LegalRow[] = () => [];
 export function registerLegalDisclosureSource(fn: (patientId: string) => LegalRow[]) {
   legalSource = fn;
