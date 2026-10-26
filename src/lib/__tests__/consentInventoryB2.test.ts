@@ -53,6 +53,8 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/ehr.ts": 46, // B2-5 +1: comment that unverified records are skipped by activeConsentRecord; §B2-6 +2: consentCoveringRecordId doc line + its consentCovers call (disclosure link, read-only); §B2-4 +1: wrapper comment naming consentCovers
   "src/lib/hie.ts": 4,
   "src/lib/identityDemoSeed.ts": 1,
+  "src/lib/identityReview.ts": 1, // 26 Oct intake: program-consent check for identity-only candidate access.
+  "src/lib/intakeWorkspace.ts": 1, // 26 Oct intake: restricted-referral projection; no clinical-content grant.
   "src/lib/outpatientCare.ts": 4,
   "src/lib/part2Disclosure.ts": 6,
   "src/lib/patientBooking.ts": 1,

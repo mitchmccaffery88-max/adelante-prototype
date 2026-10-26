@@ -13,7 +13,7 @@
  * the Supabase schema.
  */
 import { AdelanteEHR, type Patient, type Referral } from "./ehr";
-import { canAccess, type StaffRole } from "./roles";
+import { type StaffRole } from "./roles";
 import { isRestricted } from "./chartAccess";
 import { emailKey, nameKey, phoneKey } from "./signupMatch";
 import { normalizeEnrollmentCode } from "./signup";
