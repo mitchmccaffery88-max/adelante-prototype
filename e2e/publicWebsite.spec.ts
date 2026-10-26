@@ -50,7 +50,9 @@ for (const lang of ["en", "es"] as const) {
         } else {
           await expect(page.getByTestId("website-team")).toContainText(d.websiteTeamIntro);
           await expect(page.getByTestId("website-team").locator("#care article,#navigation article,#resource article,#advocate article")).toHaveCount(7);
-          await expect(page.getByTestId("website-team").locator("img")).toHaveCount(0);
+          // Oct 26 brand correction: ReadyBand has the real symbol; no team portraits.
+          await expect(page.getByTestId("website-team").locator('img:not([src="/brand/adelante-symbol.svg"])')).toHaveCount(0);
+          await expect(page.getByTestId("website-team").locator('img[src="/brand/adelante-symbol.svg"]')).toHaveCount(1);
           await expect(page.getByTestId("website-team")).not.toContainText(/Luis Camacho|Mitch|Dr\.|Christi|Bagga/);
           for (const key of ["websiteCareTeam", "websiteNavigationTeam", "websiteResourceTeam", "websiteAdvocateTeam"] as const) await expect(page.getByTestId("website-team")).toContainText(d[key]);
 

@@ -193,6 +193,26 @@ function requireReason(reason: string): void {
   if (reason.trim().length < 3) throw new Error("Give a reason.");
 }
 
+function candidateAllowed(actor: IdentityReviewActor, referral: Referral): boolean {
+  const pid = referral.enrolledPatientId;
+  const patient = pid ? AdelanteEHR.getPatient(pid) : undefined;
+  if (pid && isRestricted(pid)) return false;
+  if (referral.substanceUseNeed) {
+    if (!patient) return false;
+    const access = canAccess(actor.role, "screeners_sud", patient);
+    if (access.level === "none" || access.locked) return false;
+  }
+  return true;
+}
+function requireCandidate(actor: IdentityReviewActor, item: IdentityReviewItem, id: string): Referral {
+  if (item.referralId !== id && !item.candidateReferralIds.includes(id)) throw new Error("Choose a candidate from this review item.");
+  const referral = AdelanteEHR.listReferrals().find(r => r.id === id);
+  if (!referral || !["submitted", "contacted"].includes(referral.status)) throw new Error("This referral is not open for identity review.");
+  if (!candidateAllowed(actor, referral)) throw new Error("Restricted referral — authorized intake consent required.");
+  if (item.patientId && isRestricted(item.patientId)) throw new Error("Restricted account — authorized review required.");
+  return referral;
+}
+
 // ---- Decisions (each called through a registry action, with a reason) ------
 
 /** Link the account to this referral: claims the referral and marks any live claim code used. */
@@ -205,8 +225,7 @@ export function identityReviewLink(
   requireReason(input.reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
-  const referral = AdelanteEHR.listReferrals().find((r) => r.id === input.referralId);
-  if (!referral) throw new Error("That referral no longer exists.");
+  const referral = requireCandidate(actor, item, input.referralId);
   if (!item.patientId) throw new Error("There is no account to link.");
   const at = now();
   // Prototype write: the referral store exposes field-limited updaters only,
@@ -338,9 +357,9 @@ export function identityReviewConfirm(
   if (!input.how.trim()) throw new Error("Record how identity was confirmed.");
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
-  const referralId = item.referralId ?? item.candidateReferralIds[0];
-  const referral = AdelanteEHR.listReferrals().find((r) => r.id === referralId);
-  if (!referral) throw new Error("That referral no longer exists.");
+  const referralId = item.referralId;
+  if (!referralId) throw new Error("Choose the referral to confirm.");
+  const referral = requireCandidate(actor, item, referralId);
   const at = now();
   referral.identityConfirmedBy = { name: actor.staffName ?? actor.staffId ?? "", role: actor.role, staffId: actor.staffId, at, how: input.how };
   referral.identityConfidence = "verified_source";
@@ -426,15 +445,10 @@ export function identityReviewCompare(item: IdentityReviewItem, actor?: Identity
 }
 
 /** Candidate referrals a reviewer may link this account to (open, not already enrolled). */
-export function linkableReferrals(item: IdentityReviewItem): Referral[] {
+export function linkableReferrals(item: IdentityReviewItem, actor: IdentityReviewActor): Referral[] {
+  if (!canActOnIdentityReview(actor)) return [];
   const ids = new Set([...(item.referralId ? [item.referralId] : []), ...item.candidateReferralIds]);
-  const entries = item.entries;
-  return AdelanteEHR.listReferrals().filter((r) => {
-    if (r.status !== "submitted" && r.status !== "contacted") return false;
-    if (ids.has(r.id)) return true;
-    // A reviewer may also pick an unlisted referral that shares the name.
-    return nameKey(r.firstName) === nameKey(entries.firstName) && nameKey(r.lastName) === nameKey(entries.lastName);
-  });
+  return AdelanteEHR.listReferrals().filter(r => ["submitted", "contacted"].includes(r.status) && ids.has(r.id) && candidateAllowed(actor,r));
 }
 
 /** Identity-field match hints for the compare view (display only). */
