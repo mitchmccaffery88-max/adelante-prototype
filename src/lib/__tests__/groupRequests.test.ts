@@ -24,7 +24,8 @@ const row = (pid: string, id: string) => patientGroupCatalog(pid).find((r) => r.
 const run = (id: string, actor: ReturnType<typeof actorOf>, ...args: unknown[]) => runAction(id, actor, undefined, { args: [actor, ...args], auditReason: String(args[args.length - 1]) });
 
 /** A patient with an assigned care manager and primary clinician. */
-const PID = "p-demo-refusal";
+const PID = "p3";
+AdelanteEHR.reassignPrimaryClinician({ patientId: PID, clinicianId: "c1", initiatedBy: "admin", context: "test setup" });
 const cm = () => staffFor((s) => s.caseManagerId === AdelanteEHR.getPatient(PID)!.caseManagerId);
 const clinician = () => staffFor((s) => s.clinicianId === AdelanteEHR.getPatient(PID)!.primaryClinicianId);
 
@@ -82,10 +83,12 @@ describe("routing and decisions", () => {
     const withRef = AdelanteEHR.listReferrals().find((r) => r.enrolledPatientId && !AdelanteEHR.getPatient(r.enrolledPatientId)?.caseManagerId && !AdelanteEHR.getPatient(r.enrolledPatientId)?.primaryClinicianId)!;
     const a = routeGroupRequest(stress(), withRef.enrolledPatientId!);
     expect(a.lane).toBe("intake");
-    expect(a.staff[0]!.role).toBe("intake_coordinator");
+    expect(a.targets[0]!.role).toBe("intake_coordinator");
     const b = routeGroupRequest(stress(), demoScenarioPatientId("sud_consented")!);
     expect(b.lane).toBe("clinical_coordinator");
-    expect(b.staff[0]!.role).toBe("clinical_coordinator");
+    expect(b.targets[0]!.role).toBe("clinical_coordinator");
+    // An assigned trainee cannot give clinical approval: the clinical coordinator is added.
+    expect(routeGroupRequest(sud(), "p-demo-refusal").targets.map((t) => t.role)).toContain("clinical_coordinator");
   });
 
   it("only a clinician can approve when clinical approval is required", () => {

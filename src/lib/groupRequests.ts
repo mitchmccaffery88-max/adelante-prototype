@@ -207,26 +207,33 @@ function seesPart2(role: StaffRole, pid: string) {
   return a.level !== "none" && !a.locked;
 }
 
-/** Where a request goes. Pure read; used by routing and tests. */
-export function routeGroupRequest(g: GroupSession, pid: string): { staff: StaffMember[]; lane: "care_team" | "intake" | "clinical_coordinator" } {
+/** Where a request goes. Pure read; used by routing and tests. A clinician who cannot approve (e.g. trainee) does not count. */
+export function routeGroupRequest(g: GroupSession, pid: string): { staff: StaffMember[]; targets: { staff: StaffMember; role: StaffRole }[]; lane: "care_team" | "intake" | "clinical_coordinator" } {
   const cm = assignedCareManager(pid);
-  const cl = requiresClinician(g) ? assignedClinician(pid) : undefined;
-  const staff = [cm, cl].filter(active);
-  if (staff.length && (!requiresClinician(g) || cl)) return { staff, lane: "care_team" };
-  const ref = AdelanteEHR.listReferrals().find((r) => r.enrolledPatientId === pid);
-  const fallbackRole: StaffRole = !cm && !cl && ref && !intakeCompleted(ref.id) ? "intake_coordinator" : "clinical_coordinator";
-  const fb = firstHolder(fallbackRole);
-  return { staff: [...staff, ...(fb ? [fb] : [])], lane: staff.length ? "care_team" : fallbackRole === "intake_coordinator" ? "intake" : "clinical_coordinator" };
+  const clAny = requiresClinician(g) ? assignedClinician(pid) : undefined;
+  const cl = clAny && SUD_GROUP_APPROVER_ROLES.includes(clAny.role) ? clAny : undefined;
+  const targets: { staff: StaffMember; role: StaffRole }[] = [];
+  if (cm) targets.push({ staff: cm, role: cm.role });
+  if (cl) targets.push({ staff: cl, role: cl.role });
+  let lane: "care_team" | "intake" | "clinical_coordinator" = "care_team";
+  if (!targets.length || (requiresClinician(g) && !cl)) {
+    const ref = AdelanteEHR.listReferrals().find((r) => r.enrolledPatientId === pid);
+    const role: StaffRole = !cm && !clAny && ref && !intakeCompleted(ref.id) ? "intake_coordinator" : "clinical_coordinator";
+    const fb = firstHolder(role);
+    if (fb) targets.push({ staff: fb, role });
+    if (!cm && !cl) lane = role === "intake_coordinator" ? "intake" : "clinical_coordinator";
+  }
+  return { staff: targets.map((t) => t.staff), targets, lane };
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
 function routeAfterRequest(row: GroupJoinRequest) {
   const g = AdelanteEHR.getGroupSession(row.sessionId);
   if (!g) return;
-  const { staff, lane } = routeGroupRequest(g, row.patientId);
+  const { targets, lane } = routeGroupRequest(g, row.patientId);
   const label = row.protected || isGroupNotificationSensitive(g.category) ? "restricted group" : g.topic;
   const taskIds: string[] = [];
-  for (const s of staff) {
+  for (const { staff: s, role } of targets) {
     const t = AdelanteEHR.createCaseTask({
       patientId: row.patientId,
       assignedTo: s.caseManagerId ?? s.id,
@@ -234,12 +241,12 @@ function routeAfterRequest(row: GroupJoinRequest) {
       dueDate: today(),
       taskType: "group_request",
       source: "group_request",
-      allowedRoles: [s.role],
+      allowedRoles: [role],
       dedupeKey: `group-request:${row.id}:${s.id}`,
     });
     if (t) taskIds.push(t.id);
   }
-  row.routing = { staffIds: staff.map((s) => s.id), taskIds, lane };
+  row.routing = { staffIds: targets.map((t) => t.staff.id), taskIds, lane };
 }
 
 function assertStaffRequest(value: unknown) {
