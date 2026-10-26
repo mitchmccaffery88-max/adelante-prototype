@@ -1,3 +1,4 @@
+import { PublicSignIn } from "@/components/frontdoor/PublicSignIn";
 import { SignupNeedsVerificationError } from "@/lib/patientMatching";
 import { SignupVerificationHelp } from "@/components/identity/SignupVerificationHelp";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -66,14 +67,16 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-function AuthPage() {
+function AuthPage() { return <PublicSignIn demo={<DemoAuthPage />} staff={<DemoAuthPage initialMode="staff" />} />; }
+
+function DemoAuthPage({ initialMode = "signin" }: { initialMode?: "signin" | "staff" }) {
   const { lang: screenLang } = useI18n();
 
   const { t, setLang } = useI18n();
   const navigate = useNavigate();
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
-  const [mode, setMode] = useState<"signin" | "signup" | "staff">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "staff">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
