@@ -90,12 +90,14 @@ describe("26 Oct Phase B — source-bound packet and staging", () => {
   });
   it("clinical needs never appear; validated checklist logging writes no clinical needs", () => {
     const r = referral(); const p = AdelanteEHR.getPatient(pid(r)); if (!p) throw new Error("Patient missing");
+    AdelanteEHR.addSdohItem(p.id, { need: "Clinician-only housing detail", source: "staff_assessed", note: "Private clinical narrative" }, { staffName: "Clinician", role: "therapist" });
     const before = JSON.stringify(p);
     expect(() => ingestPacketNeeds(actor, r.id, "clinician_note" as never, "note-1", [{ kind: "housing" }], "Source")).toThrow(/source/);
     expect(run("intake_packet_needs_ingest", r.id, "referral_form", `referral:${r.id}`, [{ kind: "housing" }]).ok).toBe(true);
     const item = intakePacketNeeds(actor, r.id)[0]; expect(item?.source).toBe("referral_form"); expect(intakePacketNeeds(actor, r.id)).toHaveLength(1);
     expect(run("intake_sdoh_log", r.id, item?.id, "confirmed_still_needed").ok).toBe(true);
     expect(intakePacketNeeds(actor, r.id)[0]?.state).toBe("confirmed_still_needed"); expect(JSON.stringify(p)).toBe(before); expect(canAccess(actor.role, "sdoh").level).toBe("none");
+    expect(JSON.stringify(intakePacketNeeds(actor, r.id))).not.toMatch(/Clinician-only|Private clinical narrative/);
     expect(() => ingestPacketNeeds(actor, r.id, "partner_referral", "invented-source", [{ kind: "housing" }], "Invented source")).toThrow(/source reference/);
   });
   it.each(["part2", "sud_related", "unclassified"] as const)("%s document stays visibly locked then opens with applicable typed treatment consent", classification => {
@@ -116,6 +118,13 @@ describe("26 Oct Phase B — source-bound packet and staging", () => {
     expect(careTeamPacket(actor, pid(r))).toEqual([]); expect(careTeamPacket(billing, pid(r))).toEqual([]); expect(run("intake_sdoh_log", r.id, item?.id, "unknown").ok).toBe(false);
   });
   it("original pre-release importer and adjacent clinical actions remain denied", () => { expect(canImportPreReleaseRoster(actor.role)).toBe(false); for (const id of ["eligibility_check", "consent_record_revoke", "consent_record_renew"]) { const a = CHART_ACTIONS.find(a => a.id === id); if (!a) throw new Error(`Missing adjacent action ${id}`); expect(a.allowed(actor).state).toBe("hidden"); } expect(canAccess(actor.role, "pre_release").level).toBe("none"); });
+  it("Billing completes its requested manual check through the registry, not Intake", () => {
+    const r = referral(); run("intake_eligibility_request", r.id);
+    const fields = { channel: "phone_county", result: "verified", statusConfirmed: "active" };
+    expect(runAction("billing_intake_check", actor, undefined, { args: [actor, r.id, fields, "Checked eligibility"] }).ok).toBe(false);
+    expect(runAction("billing_intake_check", billing, undefined, { args: [billing, r.id, fields, "Checked eligibility"] }).ok).toBe(true);
+    expect(intakeCoverageResult(actor, r.id).status).toBe("Active");
+  });
   it("clinical coordinator can create/update staging referral but no clinical fields or linked identities", () => {
     const cc = { role: "clinical_coordinator" as const, staffId: "s-cc1" };
     const before = JSON.stringify(AdelanteEHR.listPatients());
