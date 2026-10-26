@@ -34,7 +34,7 @@ describe("SL all 15 simulated flags: rendered bilingual label and audit contract
     for (const id of PUBLIC_WEBSITE_ACTIONS) {
       const action = CHART_ACTIONS.find(a => a.id === id);
       if (!action) throw new Error(`Missing public website action ${id}`);
-      expect(action.allowed(signupActor,p).state, id).toBe("enabled");
+      expect(action.allowed(signupActor,p).state, id).toBe("allowed");
       // The shared referral form retains staff contact access; signup/reset never grant staff access.
       if (id !== "website_referral_submit") expect(STAFF_ROLES.some(r => action.allowed({ role: r.key, staffId: "s-admin1" }, p).state !== "hidden"), id).toBe(false);
     }

@@ -5,7 +5,7 @@
 // — the roster already carries `StaffMember.active`; this module is the one
 // audited write path plus the one read helper every picker should share.
 import { AdelanteEHR, worklistStatusFor } from "./ehr";
-import { addStaffMember, STAFF_ROSTER, type StaffMember, type StaffRole } from "./roles";
+import { addStaffMember, roleAssignmentsOf, STAFF_ROSTER, type StaffMember, type StaffRole } from "./roles";
 import { listUnsignedWork } from "./unsignedWork";
 import { listEscalations } from "./escalations";
 
@@ -70,8 +70,10 @@ export function updateStaffMember(actor: LifecycleActor, input: UpdateStaffInput
   const reason = assertReason(input.reason);
   const m = STAFF_ROSTER.find((s) => s.id === input.staffId);
   if (!m) throw new Error("Staff member not found.");
+  const heldRoles = roleAssignmentsOf(m,{includeHidden:true}).map(a=>a.role);
   if (input.role) m.role = input.role;
   if (input.additionalRoles) m.additionalRoles = [...new Set(input.additionalRoles)].filter(role => role !== m.role);
+  else if (input.role) m.additionalRoles = heldRoles.filter(role => role !== m.role);
   if (input.siteIds) m.siteIds = input.siteIds;
   AdelanteEHR.recordActionEvent({
     action: "staff.updated",

@@ -86,6 +86,9 @@ describe("26 Oct intake and identity rules", () => {
     expect(() => identityReviewLink(intake,row.id,{referralId:r.id,reason:"Identity checked"})).toThrow(/candidate/);
     expect(r.status).toBe("submitted");
   });
+  it("removing an additional role also overrides legacy assignments", () => {
+    expect(roleAssignmentsOf({id:"two-role",name:"Demo",role:"sys_admin",roleAssignments:[{role:"sys_admin"},{role:"intake_coordinator"}],additionalRoles:[]}).map(a=>a.role)).toEqual(["sys_admin"]);
+  });
   it("intake row writes identity/consents/eligibility, reads SDOH, locks Part2 and denies clinical/billing/admin", () => {
     for (const cls of ["demographics","consent_ledger","eligibility"] as const) expect(canAccess("intake_coordinator",cls).level).toBe("write");
     expect(canAccess("intake_coordinator","sdoh").level).toBe("read");
