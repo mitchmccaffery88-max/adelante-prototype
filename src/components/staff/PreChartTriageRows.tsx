@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEhr } from "@/lib/ehr";
 import { preChartTodayTasks, preChartTriageDetail } from "@/lib/intakeTriage";
-import type { IntakeActor } from "@/lib/intakePhaseA";
+import { INTAKE_PHASE_A_DRAFT, type IntakeActor } from "@/lib/intakePhaseA";
 import { runAction } from "@/lib/actions/runAction";
 export function PreChartTriageRows({ actor }: { actor: IntakeActor }) {
   const json = useEhr(() => JSON.stringify(preChartTodayTasks(actor)));

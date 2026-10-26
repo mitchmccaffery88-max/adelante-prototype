@@ -33,7 +33,8 @@ export function registerIntakeSafetySource(actor: IntakeActor, input: SourceReco
   if (input.patientId && !AdelanteEHR.getPatient(input.patientId)) throw new Error("Patient link unavailable.");
   const k = keyOf(input.source);
   if (sources.has(k)) throw new Error("Safety source already recorded.");
-  sources.set(k, { ...input, source: { ...input.source } }); AdelanteEHR._emit();
+  const referralPart2 = input.source.kind === "referral" && !!referralForIntake(input.source.id, true).substanceUseNeed;
+  sources.set(k, { ...input, source: { ...input.source, part2: input.source.part2 || referralPart2 } }); AdelanteEHR._emit();
   return { sourceId: input.source.id };
 }
 function sourceFor(kind: SafetySource["kind"], id: string): SourceRecord {
