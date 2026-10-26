@@ -88,7 +88,7 @@ registerIntakeGroupBoundary(value => {
   const { p } = linked(input.onBehalf?.referralId ?? "");
   if (p.id !== input.patientId || state(input.onBehalf?.referralId ?? "").completedAt || input.note) throw new Error("Active referral group request only.");
   const g = AdelanteEHR.listGroupSessions().find(x => x.id === input.sessionId);
-  if (!g || !STAFF_ROSTER.some(s => s.active !== false && s.clinicianId === g.clinicianId && ["therapist", "pmhnp", "physician", "sud_counselor"].some(role => hasRoleAssignment(s, role as StaffRole)))) throw new Error("Clinical group owner required.");
+  if (!g || !STAFF_ROSTER.some(s => s.active !== false && s.clinicianId === g.facilitatorId && ["therapist", "pmhnp", "physician", "sud_counselor"].some(role => hasRoleAssignment(s, role as StaffRole)))) throw new Error("Clinical group owner required.");
 });
 export function firstVisitSlots(id: string, kind: FirstVisitKind, actor: IntakeActor, modality: BookingModality) {
   if (!indicatedFirstVisits(id, actor).includes(kind)) return [];
@@ -136,7 +136,7 @@ export function requestIntakeGroup(actor: IntakeActor, referralId: string, sessi
   if (state(referralId).completedAt || !actor.staffId) throw new Error("Active intake required.");
   const r = AdelanteEHR.requestJoinGroup({ patientId: p.id, sessionId, onBehalf: { referralId, staffId: actor.staffId, role: actor.role } });
   const g = AdelanteEHR.listGroupSessions().find(x => x.id === sessionId);
-  const target = STAFF_ROSTER.find(s => s.active !== false && s.clinicianId === g?.clinicianId);
+  const target = STAFF_ROSTER.find(s => s.active !== false && s.clinicianId === g?.facilitatorId);
   if (target) firstContactTask(referralId, p.id, target.id, dueDate, `group:${r.id}`);
   return { id: r.id, status: r.status };
 }
