@@ -56,4 +56,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Motion layers 3,7,8,9,10,11,13,14,17,18 + ray clipping, reduced-motion stills, tests
 - [x] /faq and /cost use shared FAQ motion with batch 4b content.
 
-- [ ] Website batches 5–6: Get started (/start/signup) and Sign in (/auth). Waiting on Mitch to confirm the STEP 0 match-rule mapping (Oct 26).
+- [ ] Correct HLOC required-element capture and update tests first.
+- [ ] Website batch 5: Get started record codes, contact verification, private duplicate handling and coordinator review using Oct 26 confirmed mappings.
+- [ ] Website batch 6: Simulated sign-in/reset presentation with existing demo/staff routing preserved.
+- [ ] Validate consent, signup, auth and public EN/ES phone/desktop flows; document simulation and limitations. Do not publish.
