@@ -5,10 +5,10 @@ import { runAction } from "./actions/runAction";
 export function seedIntakePhaseA(actor: IntakeActor) {
   if (!canIntakeAct(actor, "completion")) throw new Error("Intake Coordinator required.");
   if (AdelanteEHR.listReferrals().some(r => r.email === "phase-a-new@example.invalid")) return { seeded: false };
-  const make = (firstName: string, suffix: string, extra: Partial<Parameters<typeof AdelanteEHR.createReferral>[0]> = {}) => AdelanteEHR.createReferral({ firstName, lastName: "Demo", dob: "1990-04-12", email: `phase-a-${suffix}@example.invalid`, referringAgency: "Demo referral", referrerName: "Demo referrer", referrerEmail: "demo@example.invalid", referralSource: "clinic", consentToContact: false, channel: "public", identityConfidence: "verified_source", ...extra });
+  const make = (firstName: string, suffix: string, extra: Partial<Parameters<typeof AdelanteEHR.createReferral>[0]> = {}) => AdelanteEHR.createReferral({ firstName, lastName: "Demo", dob: "1990-04-12", email: `phase-a-${suffix}@example.invalid`, referringAgency: "Demo referral", referrerName: "Demo referrer", referrerEmail: "demo@example.invalid", referralSource: "other", consentToContact: false, channel: "public", identityConfidence: "verified_source", ...extra });
   make("Alex", "new");
   const outreach = make("Sam", "outreach"); AdelanteEHR.logReferralOutreachAttempt(outreach.id, { outcome: "no_answer" });
-  const waiting = make("Casey", "paperwork", { dob: undefined, dobUnknown: true, identityConfidence: "public_unverified", referralSource: "family" });
+  const waiting = make("Casey", "paperwork", { dob: undefined, dobUnknown: true, identityConfidence: "public_unverified", referralSource: "self" });
   AdelanteEHR.markReferralContacted(waiting.id);
   const ready = make("Morgan", "ready", { intakeServices: { source: "referral", kinds: ["care_manager", "assessment", "psych_evaluation"] } });
   const pid = AdelanteEHR.enrollReferral(ready.id, { websiteSignup: true });
