@@ -9077,7 +9077,7 @@ export const AdelanteEHR = {
    * source there would change the person's resolved population track, which
    * is a separate concern from recording how they arrived.
    */
-  enrollReferral(id: string, opts?: { createAnyway?: { reason: string; actorId?: string; actorRole?: string } }) {
+  enrollReferral(id: string, opts?: { createAnyway?: { reason: string; actorId?: string; actorRole?: string }; websiteSignup?: boolean }) {
     const r = referrals.find((x) => x.id === id);
     if (!r) return undefined;
     if (r.status === "enrolled") return r.enrolledPatientId;
@@ -9091,7 +9091,7 @@ export const AdelanteEHR = {
       email: r.email,
       referralId: r.id,
       cin: r.cin,
-      matchSource: "referral",
+      matchSource: opts?.websiteSignup ? "website_signup" : "referral",
       ...(opts?.createAnyway ? { createAnyway: opts.createAnyway } : {}),
     });
     if (r.releaseDate) p.releaseDate = r.releaseDate;
@@ -9143,9 +9143,7 @@ export const AdelanteEHR = {
       actorRole: who.role,
       detail: {
         referralId: r.id,
-        referralSource: r.referralSource,
-        referringAgency: r.referringAgency,
-        referrerName: r.referrerName,
+        ...(!opts?.websiteSignup ? { referralSource: r.referralSource, referringAgency: r.referringAgency, referrerName: r.referrerName } : { simulated: true }),
       },
     });
     // §Phase 4f — enrollment used to end here, leaving nobody responsible for

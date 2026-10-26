@@ -13,6 +13,7 @@ import type { StaffRole } from "./roles";
 export type MatchBand = "exact" | "probable" | "possible" | "none";
 export type MatchSource =
   | "self_signup"
+  | "website_signup"
   | "assisted_signup"
   | "staff_create"
   | "caseload_upload"
@@ -54,6 +55,7 @@ export function matchThresholdsDraft() {
 
 export const MATCH_SOURCE_LABEL: Record<MatchSource, string> = {
   self_signup: "Patient sign-up",
+  website_signup: "Patient sign-up",
   assisted_signup: "Assisted sign-up",
   staff_create: "Staff create",
   caseload_upload: "Caseload upload",

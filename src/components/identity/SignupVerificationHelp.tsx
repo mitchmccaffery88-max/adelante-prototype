@@ -34,11 +34,12 @@ const SCREEN_COPY = {
 } as const;
 
 
-export function SignupVerificationHelp({ onBack }: { onBack: () => void }) {
+export function SignupVerificationHelp({ onBack, unframed = false }: { onBack: () => void; unframed?: boolean }) {
   const { lang: screenLang } = useI18n();
+  const Frame = unframed ? "div" : Card;
 
   return (
-    <Card className="space-y-3 p-6" role="status" data-testid="signup-verification-help">
+    <Frame className={unframed ? "space-y-3" : "space-y-3 p-6"} role="status" data-testid="signup-verification-help">
       <p className="font-display text-lg text-navy">{SCREEN_COPY["ui.f4d677dcf715"][screenLang]}</p>
       <p className="text-sm text-muted-foreground">
         {SCREEN_COPY["ui.c58b6ae281aa"][screenLang]} </p>
@@ -51,6 +52,6 @@ export function SignupVerificationHelp({ onBack }: { onBack: () => void }) {
         Si necesitas ayuda en español, llama a la recepción.
       </p>
       <Button variant="outline" onClick={onBack}>{SCREEN_COPY["ui.b52b36b7269f"][screenLang]}</Button>
-    </Card>
+    </Frame>
   );
 }

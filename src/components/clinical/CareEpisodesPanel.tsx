@@ -39,6 +39,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientDate } from "@/components/ClientDate";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PART2_ELEMENT_KEYS, type Part2ElementKey, type Part2Elements } from "@/lib/consentRecordModel";
 
 const sel = "mt-0.5 h-9 w-full rounded-md border bg-background px-2 text-sm";
 
@@ -279,21 +281,35 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
 }
 
 /** Staff capture of the signed 42 CFR Part 2 disclosure form (typed signer + attestation). */
-function ConsentCapture({ patientId, recipient, purpose }: { patientId: string; recipient: string; purpose: string }) {
+export function ConsentCapture({ patientId, recipient, purpose }: { patientId: string; recipient: string; purpose: string }) {
   const { role, staffName, staffId } = useActingStaff();
   const [name, setName] = useState("");
   const [att, setAtt] = useState(false);
+  const [elements, setElements] = useState<Part2Elements>({});
+  const [expirationDate, setExpirationDate] = useState("");
+  const [expiresOnEvent, setExpiresOnEvent] = useState("");
+  const [signedDate, setSignedDate] = useState("");
+  const patient = AdelanteEHR.getPatient(patientId);
+  const labels: Record<Part2ElementKey, string> = { patientName: `Patient name: ${patient?.firstName ?? ""} ${patient?.lastName ?? ""}`, recipients: `Recipient: ${recipient}`, amountAndKind: "Information: SUD referral information", purpose: "Purpose: Referral for treatment", rightToRevoke: "Patient understands the right to revoke", expiration: "Expiration date or event is stated on the consent", signatureAndDate: "Patient signature / attestation and date are present", redisclosureNotice: "Patient received the notice prohibiting redisclosure" };
+  const ready = att && name.trim().length >= 2 && Boolean(signedDate) && Boolean(expirationDate || expiresOnEvent.trim()) && PART2_ELEMENT_KEYS.every(k => elements[k]);
   return (
-    <div className="space-y-1 text-navy">
+    <div className="space-y-3 text-foreground text-sm" data-testid="hloc-consent-capture">
+      <p>Draft — pending clinical sign-off</p>
+      <fieldset className="space-y-2"><legend className="font-semibold">Confirm the required Part 2 elements</legend>
+        {PART2_ELEMENT_KEYS.map(k => <label key={k} className="flex items-start gap-2"><Checkbox checked={Boolean(elements[k])} onCheckedChange={v => setElements(e => ({ ...e, [k]: v === true }))} /><span>{labels[k]}</span></label>)}
+      </fieldset>
+      <Label htmlFor="p2-expiration">Expiration date (or enter an event below)</Label><Input id="p2-expiration" type="date" value={expirationDate} onChange={e => setExpirationDate(e.target.value)} />
+      <Label htmlFor="p2-event">Expiration event</Label><Input id="p2-event" value={expiresOnEvent} onChange={e => setExpiresOnEvent(e.target.value)} />
+      <Label htmlFor="p2-date">Actual signature date — required</Label><Input id="p2-date" type="date" value={signedDate} onChange={e => setSignedDate(e.target.value)} />
       <Label htmlFor="p2-signer" className="text-xs">Patient&apos;s typed signature on the Part 2 disclosure form</Label>
       <Input id="p2-signer" className="h-8" value={name} onChange={(e) => setName(e.target.value)} />
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={att} onChange={(e) => setAtt(e.target.checked)} /> I witnessed the patient sign this disclosure consent
       </label>
-      <Button size="sm" onClick={() => {
+      <Button size="sm" disabled={!ready} onClick={() => {
         try {
           if (!att) throw new Error("Confirm you witnessed the signature.");
-          recordLegalDisclosureConsent(patientId, { name: staffName, role, staffId }, name, { recipient, purpose, purposeCode: PURPOSE_REFERRAL_FOR_TREATMENT, items: ["SUD referral information"] });
+          actFor("hloc_consent_capture", "recordLegalDisclosureConsent", patientId, patientId, { name: staffName, role, staffId }, name, { recipient, purpose, purposeCode: PURPOSE_REFERRAL_FOR_TREATMENT, items: ["SUD referral information"], part2Elements: elements, expirationDate: expirationDate || undefined, expiresOnEvent: expiresOnEvent || undefined, signedDate });
           toast.success("Part 2 disclosure consent recorded");
         } catch (e) {
           toast.error((e as Error).message);
