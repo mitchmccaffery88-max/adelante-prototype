@@ -10,6 +10,7 @@ import { runSignupCommand, signupActor } from "../website/signupStore";
 import { checkBookingRights } from "../bookingRights";
 import { staffNavForRole } from "../navSections";
 import { roleHasChartEntry } from "../chartAccess";
+import { safeLandingFor } from "../navGuard";
 const entered = {firstName:"OctTest",lastName:"Identity",dob:"1990-01-01",phone:"+15550000001"};
 const intake = {role:"intake_coordinator" as const,staffId:"s-intake-test",staffName:"Intake"};
 const item = () => createIdentityReviewItem({type:"possible_referral_match",source:"sign-up",sessionId:crypto.randomUUID(),entries:entered});
@@ -95,6 +96,7 @@ describe("26 Oct intake and identity rules", () => {
   it("intake has no clinical navigation, chart entry, booking or record grants", () => {
     expect(staffNavForRole("intake_coordinator").map(e=>e.to).sort()).toEqual(["/admin-identity-review","/intake-workspace"]);
     expect(roleHasChartEntry("intake_coordinator")).toBe(false);
+    expect(safeLandingFor("intake_coordinator")).toBe("/intake-workspace");
     expect(checkBookingRights({role:"intake_coordinator",op:"book",inCaseload:false,serviceType:"intake"}).ok).toBe(false);
     for (const cls of ["demographics","documents","consent_ledger","eligibility","sdoh","worklist","pre_release","meds_erx","therapy_notes","care_plan","billing","account_support"] as const) expect(canAccess("intake_coordinator",cls).level).toBe("none");
     for (const id of ["task","document_upload","consent_capture","schedule_visit"]) expect(runAction(id,intake,AdelanteEHR.listPatients()[0]).ok).toBe(false);

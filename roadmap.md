@@ -59,13 +59,16 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Correct HLOC required-element capture; store negatives and actual blocked Send → capture → Send browser proof passed.
 - [x] Website batch 5 preview: five steps, record codes, simulated verification, private duplicate handling and coordinator review.
 - [x] Website batch 6 preview: simulated sign-in/reset/help; demo patient and staff routing browser checks passed.
-- [~] Seven failures: 6 resolved (ehr.ts pin delta proven signup-only via src/test/signupOct26Approved.ts exact-once adapter; runAction snapshot additive-only; simulatedLabelsSL now uses named PUBLIC_WEBSITE_ACTIONS allowlist). Full unit + full public browser reruns still pending.
+- [x] Seven regression fixes: exact-once EHR adapter covers signup only; role adapter covers explicit intake/additional-role deltas; public actions use named PUBLIC_WEBSITE_ACTIONS allowlist. Final full validation recorded below.
 
 ## 26 Oct decisions (Mitch) — IN PROGRESS
-- [x] Identity review store (src/lib/identityReview.ts): item types, sys_admin-only reviewer setting (Draft), view/act gates, link/not-same/need-info/merge/confirm decisions with ids-only audits, referral claim codes, compare projection.
+- [x] Identity review store: five types; intake/sys_admin reviewers, clinical coordinator view-only; candidate and Part 2 guards; reasoned IDs-only decisions and confirmed claim codes.
 - [x] signupMatch: public_unverified referrals never auto-match; publicReferralResembles added.
 - [x] signupStore: review cases now create Identity review items (not coordinator case tasks); code lockout item; referral claim-code path in claimCode; worklist signup-review block removed.
 - [x] Registry: 5 identity_review_* actions (reviewer-only, Draft check label); snapshot updated.
-- [ ] Referral form: DOB-optional + "I don't know their date of birth" + approx age for family/friend/self; identityConfidence stored.
-- [ ] Routes /admin-identity-review + /admin-account-support, nav entries with Your-turn count badge, admin gate.
-- [ ] New tests (item creation per event, action audits, view-not-act, lane separation, public_unverified no-OTP); full unit + full public browser runs; report.
+- [x] Family/friend/self optional DOB, unknown checkbox, approximate age and identityConfidence; professional validation preserved.
+- [x] Identity review/account support routes and Your-turn count badges; separate account-support permission retained.
+- [x] Primary/additional held roles, audited sys_admin management and demo persona; acting-role-only permissions.
+- [x] Narrow intake workspace: public referral/outreach and allowed identity review only. No clinical navigation/tasks, chart grants, booking, consent, eligibility, SDOH or pre-release access; EHR booking/outreach changes reverted.
+- [x] Item/lane/privacy/action and denied-clinical-access tests; actual reviewer decision and coordinator read-only flow checked.
+- [ ] Final FULL unit + FULL public browser runs and counts. No publication.
