@@ -36,10 +36,10 @@ export function StaffRoleSwitcher() {
     const staysHere =
       pages.some((e) => e.to === pathname) ||
       (pathname.startsWith("/record/") && pages.length > 0);
-    if (!staysHere) {
+    if (!staysHere || m.role === "intake_coordinator" || id === staffId && m.role !== role) {
       // Sensible home per role, only among pages that role can already see.
       const preferred =
-        m.role === "billing" || m.role === "billing_coordinator"
+        m.role === "intake_coordinator" ? ["/intake-workspace"] : m.role === "billing" || m.role === "billing_coordinator"
           ? ["/billing"]
           : m.role === "nurse_rn" || m.role === "lvn"
             ? ["/nurse", "/my-work"]
