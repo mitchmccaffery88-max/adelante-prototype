@@ -97,9 +97,11 @@ describe("26 Oct intake and identity rules", () => {
   it("sys_admin assigns held roles with one registry event, and sign-in resets to primary", () => {
     const admin=getStaffMember("s-admin1");
     if(!admin)throw new Error("Missing admin");
-    const before=AdelanteEHR.listAuditEvents({category:"action"}).length;
+    const standardEvents=()=>AdelanteEHR.listAuditEvents({category:"action"}).filter(e=>e.action.startsWith("action."));
+    const before=standardEvents().length;
     expect(runAction("staff_update",{role:"sys_admin",staffId:admin.id},undefined,{args:[{role:"sys_admin",staffId:admin.id},{staffId:admin.id,additionalRoles:["intake_coordinator"],reason:"Approved held intake role"}]}).ok).toBe(true);
-    expect(AdelanteEHR.listAuditEvents({category:"action"})).toHaveLength(before+1);
+    expect(standardEvents()).toHaveLength(before+1);
+    expect(AdelanteEHR.listAuditEvents({category:"action"}).find(e=>e.action === "staff.updated" && e.detail?.staffId === admin.id)?.actorRole).toBe("sys_admin");
     setActingStaff(admin.id,"intake_coordinator");
     setActingStaff(admin.id);
     expect(getActingRole()).toBe("sys_admin");
