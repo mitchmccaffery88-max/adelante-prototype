@@ -1,5 +1,11 @@
 # Roadmap
 
+## 26 Oct Intake responsibilities — scoped restoration
+- [ ] Verify seven responsibilities against existing stores and Part 2 gates; stop and identify any unsafe dependency.
+- [ ] Separate permissions and workspace controls: first-visit scheduling/group request; paperwork capture/status; billing request/result; packet SDOH checklist; roster import/referral attachments; completion/assignment; safety escalation.
+- [ ] One allowed-action and adjacent-denial/restriction test per responsibility; preserve chart/navigation and separate account-support denial.
+- [ ] FULL unit and FULL public browser suites; report completed counts. No publication.
+
 ## Daylight v2 batch 4b — remaining public pages
 - [x] Cost, grouped FAQ, role-only Team, Partners, Platform, Privacy, Careers and Contact with bilingual copy and shared motion/template.
 - [x] Referral three-step presentation; all fields, final validation, advocate URL and robot/store/delivery path preserved. Existing preview storage is not encrypted: public claim corrected, no transport implementation added.
