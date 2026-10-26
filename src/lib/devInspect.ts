@@ -19,6 +19,10 @@ export function installDevInspect(navigate?: (to: string) => void) {
       return rehearsal ? scenario.buildBillingLifecycleScenario({ complete: false }) : scenario.loadBillingLifecycleScenario();
     },
     go: (to: string) => navigate?.(to),
+    signup: async () => {
+      const [store, actions, care, disclosure] = await Promise.all([import("@/lib/website/signupStore"), import("@/lib/actions/runAction"), import("@/lib/outpatientCare"), import("@/lib/part2Disclosure")]);
+      return { store, actions, care, disclosure };
+    },
     j: null as unknown,
     /** §C5 Same module instances the app uses (a bare "/src/..." import can duplicate them). */
     content: async () => {

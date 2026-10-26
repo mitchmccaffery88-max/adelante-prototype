@@ -15,6 +15,7 @@ import "./website.css";
 export function WebsiteLayout({ children }: { children: ReactNode }) {
  const { t, lang } = useI18n();
  const location = useRouterState({select:s => s.location.href});
+ const flow = location.split(/[?#]/)[0] === "/start/signup" || location.split(/[?#]/)[0] === "/auth";
  useEarlyTapReplay();
  const shellRef = useRef<HTMLDivElement>(null); const crisisRef = useRef<HTMLElement>(null);
  const sentinel = useRef<HTMLDivElement>(null); const headerRef = useRef<HTMLElement>(null); const top = useRef<HTMLDivElement>(null);
@@ -69,23 +70,25 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
    <div className="website-header-row website-container">
     <Link to="/" aria-label="Adelante home" className="website-brand-link"><WebsiteBrand /></Link>
     <div className="website-header-actions">
+     {!flow && <>
      <Button asChild className="website-primary"><Link to="/start/signup" data-magnetic="">{t("websiteStart")}</Link></Button>
      <span className="website-trust"><ShieldCheck aria-hidden="true" />{t("website.v2.hipaa")}</span>
      <div className="website-desktop-control"><WebsiteLanguageToggle /></div>
      <div className="website-desktop-control"><WebsiteSignIn /></div>
      <WebsiteNavigation mobile />
+     </>}
     </div>
    </div>
-   <WebsiteNavigation />
+   {!flow && <WebsiteNavigation />}
   </header>
   {lang === "es" && <p className="website-draft">{t("websiteDraft")}</p>}
   <main id="website-main" tabIndex={-1}>{children}</main>
   <aside ref={crisisRef} aria-label={t("website.v2.crisis.label")} className="website-crisis"><div className="website-container">{t("website.v2.crisis.before")} <a href="tel:988">988</a> {t("website.v2.crisis.after")}</div></aside>
-  <footer data-testid="website-footer" className="website-footer">
+  {!flow && <footer data-testid="website-footer" className="website-footer">
    <div className="website-container"><div className="website-footer-main"><Link to="/" aria-label="Adelante home"><WebsiteBrand footer /></Link><nav aria-label={t("websiteNavigation")} className="website-footer-links">{WEBSITE_FOOTER_LINKS.map(link => <Link key={link.to} to={link.to}>{t(link.title)}</Link>)}</nav></div>
     <div className="website-footer-bottom"><span aria-label={t("websiteBrand")}>{t("website.v2.copyright")}</span><span className="website-footer-trust"><ShieldCheck aria-hidden="true" />{t("website.v2.hipaa")}</span><span>{t("websiteDemo")}</span></div>
    </div>
-  </footer>
+  </footer>}
   {showTop && <Button size="icon" className="website-back-top website-primary" aria-label={t("websiteBackTop")} onClick={backTop}><ArrowUp aria-hidden="true" /></Button>}
  </div>;
 }

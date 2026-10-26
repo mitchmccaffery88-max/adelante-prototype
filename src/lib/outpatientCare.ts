@@ -320,8 +320,9 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
     assertRole(actor, HLOC_REFERRAL_ROLES, "capture this disclosure consent");
     if (PART2_ELEMENT_KEYS.some(k => meta.part2Elements?.[k] !== true)) throw new Error("Confirm every required Part 2 element.");
     if (!meta.recipient.trim() || !meta.items?.length) throw new Error("Recipient and information are required.");
+    if (signedByName.trim().length < 2) throw new Error("Patient signature is required.");
     if (!meta.expirationDate && !meta.expiresOnEvent?.trim()) throw new Error("An expiration date or event is required.");
-    if (!meta.signedDate || !/^\d{4}-\d{2}-\d{2}$/.test(meta.signedDate) || meta.signedDate > new Date().toISOString().slice(0, 10)) throw new Error("Enter the actual signature date.");
+    if (!meta.signedDate || !/^\d{4}-\d{2}-\d{2}$/.test(meta.signedDate) || Number.isNaN(Date.parse(meta.signedDate)) || new Date(meta.signedDate).toISOString().slice(0,10) !== meta.signedDate || meta.signedDate > new Date().toISOString().slice(0, 10)) throw new Error("Enter the actual signature date.");
     if (meta.expirationDate && meta.expirationDate <= new Date().toISOString().slice(0, 10)) throw new Error("Expiration must be in the future.");
   }
   const prior = AdelanteEHR.activeConsentRecord(patientId);
