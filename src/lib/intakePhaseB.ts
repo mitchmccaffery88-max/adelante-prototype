@@ -1,11 +1,13 @@
 import { AdelanteEHR, effectiveConsentStatus, type Referral } from "./ehr";
 import { canIntakeAct, referralForIntake, intakeState, type IntakeActor } from "./intakePhaseA";
-import { getStaffMember, hasRoleAssignment, STAFF_ROSTER, canAccess } from "./roles";
+import { getStaffMember, hasRoleAssignment, canAccess } from "./roles";
 import { isRestricted, chartEntryFor } from "./chartAccess";
 import { captureConsentRecord, uploadPaperConsent, type CaptureDraft } from "./consentCapture";
 import { sendForms, listRequests, publishedForm, type FormKey } from "./consentForms";
 import { registerIntakeConsentBoundary } from "./intakeConsentBoundary";
 import { isPurposeCode, PURPOSE_LABEL, purposeCodeOf, type ConsentPurposeCode } from "./consentPurposes";
+import { createCoverageRequest, coverageProjection, getCoverageRequest, billingCoverageRequests, type CoverageProjection, type CoverageStatus } from "./coverageRequests";
+import type { CoveragePath } from "./eligibility/coverageConfig";
 import { PART2_ELEMENT_KEYS, isPart2Type, type Part2Elements } from "./consentRecordModel";
 
 export const INTAKE_PHASE_B_DRAFT = "Draft — pending clinical sign-off";
@@ -113,38 +115,46 @@ export function intakeFormsStatus(actor: IntakeActor, referralId: string) {
     return { key: f.key, label: f.label, status, date: (rec ?? latest)?.signature?.signedAt?.slice(0, 10), sentOn: pid ? listRequests(pid).find(x => x.formKey === f.key)?.sentAt.slice(0, 10) : undefined };
   });
 }
-type EligibilityRequest = { referralId: string; patientId: string; requestedAt: string; baselineIds: string[]; taskId: string; billingStaffId: string };
-const eligibilityRequests = new Map<string, EligibilityRequest>();
-export function requestIntakeEligibility(actor: IntakeActor, referralId: string, reason: string) {
+// 26 Oct (Mitch) coverage paths: the same request contract, now with a path.
+export function requestIntakeEligibility(actor: IntakeActor, referralId: string, reason: string, path: CoveragePath = "medi_cal", programId?: string) {
   const { p } = linked(actor, referralId, "eligibility_request", reason);
-  if (eligibilityRequests.has(referralId) && intakeCoverageResult(actor, referralId).status === "Pending") return { referralId, taskId: eligibilityRequests.get(referralId)?.taskId };
-  const owner = STAFF_ROSTER.find(s => s.active !== false && hasRoleAssignment(s, "billing"));
-  if (!owner) throw new Error("No active Billing owner; request not created.");
-  const at = new Date().toISOString();
-  const task = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: owner.id, title: "Medi-Cal status check requested", detail: `Referral reference: ${referralId}`, dueDate: at.slice(0, 10), taskType: "intake_eligibility", source: "intake_referral", allowedRoles: ["billing", "billing_coordinator"], dedupeKey: `intake-eligibility:${referralId}` });
-  if (!task) throw new Error("Billing task unavailable.");
-  eligibilityRequests.set(referralId, { referralId, patientId: p.id, requestedAt: at, baselineIds: (p.coverage?.verifications ?? []).map(v => v.id), taskId: task.id, billingStaffId: owner.id });
-  AdelanteEHR._emit(); return { referralId, taskId: task.id };
+  const r = createCoverageRequest({ key: referralId, referralId, patientId: p.id, path, programId, actor });
+  return { referralId, taskId: r.taskId };
 }
-export function intakeCoverageResult(actor: IntakeActor, referralId: string): { status: "Active" | "Inactive" | "Pending" | "Not found"; checkedOn?: string } {
+/** Coverage-only readback (status + checked date) — Phase B shape. */
+export function intakeCoverageResult(actor: IntakeActor, referralId: string): { status: CoverageStatus; checkedOn?: string } {
+  const p = intakeCoveragePath(actor, referralId);
+  return p.checkedOn ? { status: p.status, checkedOn: p.checkedOn } : { status: p.status };
+}
+/** Coverage-only projection with path label and next-check date; never financial fields. */
+export function intakeCoveragePath(actor: IntakeActor, referralId: string): CoverageProjection {
   assertIntakeB(actor, "eligibility_request", "Coverage projection");
   const r = referralForIntake(referralId, true);
-  if (!r.enrolledPatientId || isRestricted(r.enrolledPatientId)) return { status: "Pending" };
-  const req = eligibilityRequests.get(referralId); if (!req) return { status: "Pending" };
-  const v = AdelanteEHR.getPatient(req.patientId)?.coverage?.verifications?.find(x => !req.baselineIds.includes(x.id) && !x.reportSource && x.channel !== "reported" && ["billing", "billing_coordinator"].includes(x.checkedByRole));
-  if (!v) return { status: "Pending" };
-  const status = v.electronic?.responseStatus === "active" || v.statusConfirmed === "active" ? "Active" : v.electronic?.responseStatus === "inactive" || ["suspended", "uninsured"].includes(v.statusConfirmed ?? "") ? "Inactive" : v.result === "not_found" ? "Not found" : "Pending";
-  return { status, checkedOn: v.checkedAt.slice(0, 10) };
+  if (!r.enrolledPatientId || isRestricted(r.enrolledPatientId) || !getCoverageRequest(referralId)) return { path: "medi_cal", pathLabel: "Medi-Cal", status: "Pending" };
+  return coverageProjection(referralId);
 }
 export function billingIntakeRequests(actor: IntakeActor) {
-  const s = getStaffMember(actor.staffId);
-  if (!s || s.active === false || !["billing", "billing_coordinator"].includes(actor.role) || !hasRoleAssignment(s, actor.role)) return [];
-  return [...eligibilityRequests.values()].map(r => ({ referralId: r.referralId, patientId: r.patientId, requestedAt: r.requestedAt, taskId: r.taskId }));
+  return billingCoverageRequests(actor).filter(r => r.referralId).map(r => ({ referralId: r.referralId!, patientId: r.patientId, requestedAt: r.requestedAt, taskId: r.taskId, path: r.path, pathLabel: r.pathLabel, status: r.status }));
 }
 export function recordBillingIntakeCheck(actor: IntakeActor, referralId: string, input: Omit<Parameters<typeof AdelanteEHR.recordCoverageCheck>[1], "actorId" | "actorRole">, reason: string) {
   const req = billingIntakeRequests(actor).find(r => r.referralId === referralId);
   if (!req || reason.trim().length < 3 || !actor.staffId) throw new Error("Billing request and reason required.");
   return AdelanteEHR.recordCoverageCheck(req.patientId, { ...input, actorId: actor.staffId, actorRole: actor.role });
+}
+/** Care team: request a coverage check where the role already has coverage access (no new grant). */
+export function careTeamRequestCoverage(actor: IntakeActor, patientId: string, path: CoveragePath, reason: string, programId?: string) {
+  const staff = getStaffMember(actor.staffId); const access = canAccess(actor.role, "eligibility");
+  if (!staff || staff.active === false || !hasRoleAssignment(staff, actor.role) || access.level === "none" || access.locked || BILLING_ONLY.includes(actor.role)) throw new Error("Your role can't request coverage checks.");
+  if (reason.trim().length < 3) throw new Error("Give a reason.");
+  const entry = chartEntryFor(actor.role, actor.staffId, patientId);
+  if (!entry?.ok || isRestricted(patientId)) throw new Error("Chart access required.");
+  return createCoverageRequest({ key: `patient:${patientId}`, patientId, path, programId, actor });
+}
+const BILLING_ONLY: string[] = ["billing", "billing_coordinator"];
+export function careTeamCoverage(actor: IntakeActor, patientId: string): CoverageProjection | undefined {
+  const entry = chartEntryFor(actor.role, actor.staffId, patientId);
+  if (!entry?.ok || isRestricted(patientId) || !getCoverageRequest(`patient:${patientId}`)) return undefined;
+  return coverageProjection(`patient:${patientId}`);
 }
 export function careTeamCanRead(actor: IntakeActor, referral: Referral) {
   const pid = referral.enrolledPatientId; const staff = getStaffMember(actor.staffId);

@@ -103,3 +103,11 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] Patient self-sign for group confidentiality / telehealth consent — blocked: needs Mitch decision on a new consent writer.
 - [ ] Open groups without care-plan eligibility — blocked: eligibility gate kept per standing rule; needs Mitch decision.
 - [x] Validation: FULL units 3,399/3,399 (394 files); FULL public browser 47/47 (9.5m, one worker, :8080). Nothing published.
+
+## Eligibility for every coverage path (26 Oct, Mitch) — preview
+- [x] One request type with eight paths; county programs, payers, fee schedules, sliding tiers, re-check cadence are configuration data.
+- [x] Billing processing per path: adapter check (manual / simulated vendor / clearinghouse stub / external-billing seam), insurance details, self-pay, sliding-scale tier, application assistance, path determination, primary/secondary + COB, re-verification tasks.
+- [x] Intake and care-team coverage-only projection (path, status, checked, next check); patient summary ready, not mounted.
+- [x] Clearinghouse Simulated and disabled by default; switch on by configuration only with BAA + vendor + credentials setting.
+- [ ] Approved sliding-scale tier table and fee schedule — waiting on finance sign-off (Draft placeholders in place).
+- [x] Validation: FULL units 3,422/3,422 (395 files); FULL public browser 47/47 (10.8m, one worker, :8080). Nothing published. Report: docs/eligibility-paths-report.md.
