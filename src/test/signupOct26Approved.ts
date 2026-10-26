@@ -1,5 +1,6 @@
 import { withIntakePhaseA } from "./intakePhaseAApproved";
 import { withIntakePhaseB } from "./intakePhaseBApproved";
+import { withGroupRequests } from "./groupRequestsApproved";
 // 26 Oct signup change (Mitch) — the ONLY approved source change to
 // src/lib/ehr.ts for the Get started / Sign in batches: `enrollReferral`
 // gains a `websiteSignup` option so the public signup path records
@@ -79,5 +80,6 @@ export function withApprovedSignupOct26(path: string, rollbackText: string): str
     if (s.split(from).length !== 2) throw new Error(`Approved anchor not found once in ${path}`);
     s = s.replace(from, to);
   }
-  return withIntakePhaseB(path, withIntakePhaseA(path, s));
+  // 26 Oct group requests (Mitch): exact-once additions in groupRequestsApproved.ts.
+  return withGroupRequests(path, withIntakePhaseB(path, withIntakePhaseA(path, s)));
 }
