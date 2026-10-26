@@ -197,7 +197,7 @@ function DemoAuthPage({ initialMode = "signin" }: { initialMode?: "signin" | "st
 
   if (signupHelp) return <SignupVerificationHelp onBack={() => setSignupHelp(false)} />;
   return (
-    <div className="mx-auto max-w-md px-4 sm:px-6 py-10">
+    <div className="auth-demo-panel">
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 rounded-full bg-teal/15 text-teal px-3 py-1 text-xs font-medium">
           <Sparkles className="h-3.5 w-3.5" /> {t("authWelcome")}
@@ -219,7 +219,7 @@ function DemoAuthPage({ initialMode = "signin" }: { initialMode?: "signin" | "st
         )}
       </div>
 
-      <Card className="p-6">
+      <div className="space-y-4">
         {mode === "signin" ? (
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-1.5">
@@ -442,13 +442,12 @@ function DemoAuthPage({ initialMode = "signin" }: { initialMode?: "signin" | "st
             </button>
           )}
           {mode !== "signup" && (
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className="text-teal hover:underline"
+            <Button
+              type="button" variant="link"
+              onClick={() => navigate({to:"/start/signup"})}
             >
               {t("authSwitchToSignUp")}
-            </button>
+            </Button>
           )}
           {mode !== "staff" && (
             <button
@@ -464,7 +463,7 @@ function DemoAuthPage({ initialMode = "signin" }: { initialMode?: "signin" | "st
         <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-2">
           <ShieldCheck className="h-3 w-3 text-teal" /> HIPAA · 42 CFR Part 2
         </p>
-      </Card>
+      </div>
     </div>
   );
 }
