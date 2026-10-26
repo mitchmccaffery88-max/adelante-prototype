@@ -1,5 +1,12 @@
 # Roadmap
 
+## 26 Oct Intake responsibilities — scoped restoration
+- [x] Verify seven responsibilities against existing stores and Part 2 gates; findings in docs/intake-scoped-responsibilities-stop.md.
+- [ ] STOP: existing roster importer writes episodes/coverage/HRSN, not referral packets; existing crisis path requires a patient ID for unlinked referral/signup safety. Requires referral-staging import/attachments and patient-independent triage contracts, not broad grants.
+- [ ] Separate permissions/workspace controls and allowed/adjacent-denial tests remain unimplemented at the requested stop boundary. Existing app access unchanged.
+- [x] FULL units 3,340/3,340, 391 files, exit 0.
+- [x] FULL public browser clean rerun 47/47, exit 0, 13.3 minutes; first run interrupted by the command limit (31 checks passed, not a completed suite). No timeout/retry changes or publication.
+
 ## Daylight v2 batch 4b — remaining public pages
 - [x] Cost, grouped FAQ, role-only Team, Partners, Platform, Privacy, Careers and Contact with bilingual copy and shared motion/template.
 - [x] Referral three-step presentation; all fields, final validation, advocate URL and robot/store/delivery path preserved. Existing preview storage is not encrypted: public claim corrected, no transport implementation added.
