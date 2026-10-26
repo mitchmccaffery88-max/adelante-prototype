@@ -330,7 +330,7 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
     ...(meta?.purposeCode ? {
       consentType: "legal_part2_disclosure" as const, recipients: [{ kind: "org" as const, name: meta.recipient.trim() }],
       purpose: meta.purpose, purposeCode: meta.purposeCode, items: meta.items ?? ["SUD referral information"],
-      part2Elements: Object.fromEntries(PART2_ELEMENT_KEYS.map((k) => [k, true])), redisclosureNoticeVersion: "2024-part2-final",
+      part2Elements: Object.fromEntries(PART2_ELEMENT_KEYS.map((k) => [k, true])), redisclosureNoticeVersion: "redisclosure-notice-v1 (Draft — pending counsel)",
     } : {}),
     },
     effectiveDate: new Date().toISOString().slice(0, 10), sections, capturedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
