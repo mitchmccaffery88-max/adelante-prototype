@@ -34,4 +34,4 @@ No application permissions or clinical stores were changed in this run. The requ
 
 ## Validation
 
-The full unit suite completed with **3,340/3,340 passing**, 391 files, exit 0. The first public run was interrupted by the command's 600-second execution limit after 31 passing checks; it is not counted as a completed suite. A clean detached full public rerun uses the same eight public specs, one worker and no timeout/retry changes. Its final result is recorded in the roadmap once complete.
+The full unit suite completed with **3,340/3,340 passing**, 391 files, exit 0. The first public run was interrupted by the command's 600-second execution limit after 31 passing checks; it is not counted as a completed suite. The clean detached full public rerun completed **47/47 passing**, exit 0, 13.3 minutes, using the same eight public specs, one worker and no timeout/retry changes. Preview build reports OK. These validate the unchanged application, not the unimplemented seven responsibilities.
