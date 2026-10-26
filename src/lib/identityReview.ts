@@ -339,6 +339,9 @@ function mintCode(): string {
 }
 
 export function issueReferralClaimCode(referralId: string, actor: IdentityReviewActor): ReferralClaimCode {
+  requireReviewer(actor);
+  const referral=AdelanteEHR.listReferrals().find(r=>r.id===referralId);
+  if (!referral?.identityConfirmedBy || !referral.dob || !candidateAllowed(actor,referral)) throw new Error("Confirm identity before issuing a claim code.");
   const live = referralClaimCodes.find((c) => c.referralId === referralId && !c.consumedAt && +new Date(c.expiresAt) > Date.now());
   if (live) return live;
   const at = now();
@@ -366,17 +369,22 @@ export function consumeReferralClaimCode(code: ReferralClaimCode): void {
 export function identityReviewConfirm(
   actor: IdentityReviewActor,
   itemId: string,
-  input: { how: string; reason: string },
+  input: { how: string; reason: string; firstName:string;lastName:string;dob:string },
 ): { item: IdentityReviewItem; code: ReferralClaimCode } {
   requireReviewer(actor);
   requireReason(input.reason);
   if (!input.how.trim()) throw new Error("Record how identity was confirmed.");
+  if (!input.firstName.trim() || !input.lastName.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(input.dob) || !Number.isFinite(Date.parse(input.dob)) || Date.parse(input.dob)>=Date.now()) throw new Error("Confirm the person's name and date of birth.");
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   const referralId = item.referralId;
   if (!referralId) throw new Error("Choose the referral to confirm.");
   const referral = requireCandidate(actor, item, referralId);
   const at = now();
+  referral.firstName=input.firstName.trim();
+  referral.lastName=input.lastName.trim();
+  referral.dob=input.dob;
+  referral.dobUnknown=false;
   referral.identityConfirmedBy = { name: actor.staffName ?? actor.staffId ?? "", role: actor.role, staffId: actor.staffId, at, how: input.how };
   referral.identityConfidence = "verified_source";
   const code = issueReferralClaimCode(referral.id, actor);
@@ -455,7 +463,7 @@ export function identityReviewCompare(item: IdentityReviewItem, actor?: Identity
     const pid = candidate.kind === "account" ? candidate.id : referral?.enrolledPatientId;
     const patient = pid ? AdelanteEHR.getPatient(pid) : undefined;
     const restricted = pid && isRestricted(pid);
-    const p2 = referral && !candidateAllowed(actor,referral);
+    const p2 = referral ? !candidateAllowed(actor,referral) : patient?.flags?.sud && !AdelanteEHR.isConsentCategoryAuthorized(patient.id,"sud_treatment");
     return restricted || p2 ? {kind:candidate.kind,id:candidate.id,firstName:"",lastName:"",createdAt:candidate.createdAt,restrictedReason:restricted ? "Restricted record — authorized review required" : "42 CFR Part 2 — intake consent required"} : candidate;
   });
 }
