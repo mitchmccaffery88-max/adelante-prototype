@@ -11,6 +11,7 @@ import { checkBookingRights } from "../bookingRights";
 import { staffNavForRole } from "../navSections";
 import { roleHasChartEntry } from "../chartAccess";
 import { safeLandingFor } from "../navGuard";
+import { updateStaffMember } from "../staffLifecycle";
 const entered = {firstName:"OctTest",lastName:"Identity",dob:"1990-01-01",phone:"+15550000001"};
 const intake = {role:"intake_coordinator" as const,staffId:"s-intake-test",staffName:"Intake"};
 const item = () => createIdentityReviewItem({type:"possible_referral_match",source:"sign-up",sessionId:crypto.randomUUID(),entries:entered});
@@ -92,6 +93,17 @@ describe("26 Oct intake and identity rules", () => {
   });
   it("removing an additional role also overrides legacy assignments", () => {
     expect(roleAssignmentsOf({id:"two-role",name:"Demo",role:"sys_admin",roleAssignments:[{role:"sys_admin"},{role:"intake_coordinator"}],additionalRoles:[]}).map(a=>a.role)).toEqual(["sys_admin"]);
+  });
+  it("sys_admin assigns held roles with one registry event, and sign-in resets to primary", () => {
+    const admin=getStaffMember("s-admin1");
+    if(!admin)throw new Error("Missing admin");
+    const before=AdelanteEHR.listAuditEvents({category:"action"}).length;
+    expect(runAction("staff_update",{role:"sys_admin",staffId:admin.id},undefined,{args:[{role:"sys_admin",staffId:admin.id},{staffId:admin.id,additionalRoles:["intake_coordinator"],reason:"Approved held intake role"}]}).ok).toBe(true);
+    expect(AdelanteEHR.listAuditEvents({category:"action"})).toHaveLength(before+1);
+    setActingStaff(admin.id,"intake_coordinator");
+    setActingStaff(admin.id);
+    expect(getActingRole()).toBe("sys_admin");
+    expect(()=>updateStaffMember(intake,{staffId:admin.id,additionalRoles:[],reason:"Attempt role change"})).toThrow();
   });
   it("intake has no clinical navigation, chart entry, booking or record grants", () => {
     expect(staffNavForRole("intake_coordinator").map(e=>e.to).sort()).toEqual(["/admin-identity-review","/intake-workspace"]);
