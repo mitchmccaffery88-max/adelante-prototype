@@ -2,7 +2,8 @@ import { AdelanteEHR } from '../ehr';
 import type { ChartActor } from '../chartActions';
 import type { StaffRole } from '../roles';
 import { credentialMeta, normalizeEnrollmentCode, type CredentialKind } from '../signup';
-import { attemptsAllowed, codeIdentityMatches, duplicateDecision, emailKey, phoneKey, nameKey, referralMatches, otpAllowed, OTP_RESEND_MS, type SignupIdentity } from '../signupMatch';
+import { attemptsAllowed, codeIdentityMatches, duplicateDecision, emailKey, phoneKey, nameKey, referralMatches, publicReferralResembles, sameIdentity, otpAllowed, OTP_RESEND_MS, type SignupIdentity } from '../signupMatch';
+import { consumeReferralClaimCode, createIdentityReviewItem, referralClaimCodeFor, type IdentityReviewType } from '../identityReview';
 export const signupActor: ChartActor = { role: 'public_signup' as StaffRole };
 export function canUseSignup(actor: ChartActor) { return actor.role === signupActor.role && !actor.staffId && !actor.clinicianId; }
 type Draft = SignupIdentity & { preferredLanguage: 'en'|'es'; credentialKind: CredentialKind; source?: string; helperName?: string };
