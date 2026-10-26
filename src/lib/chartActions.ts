@@ -1,3 +1,6 @@
+import { canIntakeAct, bookFirstVisit, assignIntakeTeam, markIntakeComplete, requestIntakeGroup } from "./intakePhaseA";
+import { escalateIntakeSafety, registerIntakeSafetySource, canReviewPreChart, acknowledgePreChart, linkPreChartTriage } from "./intakeTriage";
+import { seedIntakePhaseA } from "./intakePhaseADemo";
 import { canSubmitReferral, submitWebsiteReferral } from "@/lib/website/publicReferral";
 import { intakeLogOutreach } from "@/lib/intakeWorkspace";
 import { canReportPublicResource, createPublicResourceReport } from "@/lib/website/publicResourceReports";
@@ -77,7 +80,7 @@ import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency, endCoordinatorEmergencyNow, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-25.website-intake";
+export const REGISTRY_VERSION = "2026-10-26.intake-phase-a";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -156,6 +159,16 @@ export function cosignRouteLabel(staffId?: string): string {
 export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview", "website_intake_submit", "resource_public_report", "website_referral_submit"] as const;
 
 export const CHART_ACTIONS: ChartAction[] = [
+  // 26 Oct Phase A (Mitch): no record-class, generic scheduling or crisis-read grants.
+  { id: "intake_first_visit_book", label: { en: "Book first visit", es: "Book first visit" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: dedicated referral-only first_visit", store: refs(["bookFirstVisit", bookFirstVisit]), allowed: actor => canIntakeAct(actor, "first_visit") ? ok() : hide("Intake Coordinator assignment required.") },
+  { id: "intake_group_request", label: { en: "Request group placement", es: "Request group placement" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: dedicated referral-only group_request", store: refs(["requestIntakeGroup", requestIntakeGroup]), allowed: actor => canIntakeAct(actor, "group_request") ? ok() : hide("Intake Coordinator assignment required.") },
+  { id: "intake_team_assign", label: { en: "Assign initial care team", es: "Assign initial care team" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: dedicated referral-only care_manager_assignment", store: refs(["assignIntakeTeam", assignIntakeTeam]), allowed: actor => canIntakeAct(actor, "care_manager_assignment") ? ok() : hide("Intake Coordinator assignment required.") },
+  { id: "intake_complete", label: { en: "Mark intake complete", es: "Mark intake complete" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: dedicated referral-only completion", store: refs(["markIntakeComplete", markIntakeComplete]), allowed: actor => canIntakeAct(actor, "completion") ? ok() : hide("Intake Coordinator assignment required.") },
+  { id: "intake_safety_escalate", label: { en: "Escalate recorded safety flag", es: "Escalate recorded safety flag" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: dedicated referral-only safety_escalation", store: refs(["escalateIntakeSafety", escalateIntakeSafety]), allowed: actor => canIntakeAct(actor, "safety_escalation") ? ok() : hide("Intake Coordinator assignment required.") },
+  { id: "intake_demo_seed", label: { en: "Load intake demo referrals", es: "Load intake demo referrals" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: dedicated referral-only completion", store: refs(["seedIntakePhaseA", seedIntakePhaseA]), allowed: actor => canIntakeAct(actor, "completion") ? ok() : hide("Intake Coordinator assignment required.") },
+  { id: "intake_safety_source", label: { en: "Clinical triage action", es: "Clinical triage action" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: clinical source/owner only", store: refs(["registerIntakeSafetySource", registerIntakeSafetySource]), allowed: actor => canReviewPreChart(actor) ? ok() : hide("Clinical triage only.") },
+  { id: "prechart_triage_acknowledge", label: { en: "Clinical triage action", es: "Clinical triage action" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: clinical source/owner only", store: refs(["acknowledgePreChart", acknowledgePreChart]), allowed: actor => canReviewPreChart(actor) ? ok() : hide("Clinical triage only.") },
+  { id: "prechart_triage_link", label: { en: "Clinical triage action", es: "Clinical triage action" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: clinical source/owner only", store: refs(["linkPreChartTriage", linkPreChartTriage]), allowed: actor => canReviewPreChart(actor) ? ok() : hide("Clinical triage only.") },
   { id: "website_signup", label: { en: "Continue signup", es: "Continuar registro" }, group: "admin", needsPatient: false, menu: false, flags: ["notifications_simulated"], simulated: true, successAuditFromStore: true, store: refs(["runSignupCommand", runSignupCommand]), allowed: actor => canUseSignup(actor) ? ok() : hide("Public signup only.") },
   { id: "website_auth_preview", label: { en: "Sign-in preview", es: "Vista previa de acceso" }, group: "admin", needsPatient: false, menu: false, flags: ["notifications_simulated"], simulated: true, successAuditFromStore: true, store: refs(["authPreview", authPreview]), allowed: actor => canUseSignup(actor) ? ok() : hide("Public preview only.") },
   { id: "website_referral_submit", label: {en:"Send referral",es:"Enviar referencia"}, group:"admin", menu:false, needsPatient:false, check:"named public visitor or referral contact role", store:refs(["submitWebsiteReferral",submitWebsiteReferral]), allowed:actor => canSubmitReferral(actor) ? ok() : hide("Referral submission unavailable.") },
