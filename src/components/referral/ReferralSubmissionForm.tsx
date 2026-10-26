@@ -1,3 +1,6 @@
+import { runAction } from "@/lib/actions/runAction";
+import { currentRunActor } from "@/lib/actions/act";
+import { signupActor } from "@/lib/website/signupStore";
 // §Phase 4d — the ONE referral submission form. Extracted verbatim from the
 // public `/referral` route so staff can record a referral on someone's behalf
 // from inside the EHR without a second implementation of the same fields,
@@ -262,7 +265,8 @@ export function ReferralSubmissionForm({
     const ji = form.justiceInvolved === "yes";
     const reported = benefitsAnswers(benefits, selectedPlanSnapshot(benefits.planId));
     const { cin: reportedCin, ...reportedRest } = reported ?? {};
-    const result = AdelanteEHR.createReferral({
+    const submitActor = staff ? currentRunActor() : signupActor;
+    const submission = runAction<ReturnType<typeof AdelanteEHR.createReferral>>("website_referral_submit", submitActor, undefined, {args:[submitActor, {
       firstName: form.firstName,
       lastName: form.lastName,
       phone: noPhone ? undefined : form.phone,
@@ -291,7 +295,9 @@ export function ReferralSubmissionForm({
       consentToContact: noPhone ? false : form.consentToContact,
       requestManualOutreach: noPhone,
       channel: staff ? "staff" : "public",
-    });
+    }]});
+    if (!submission.ok) { toast.error(submission.reason); return; }
+    const result = submission.value;
     if (!staff) {
       setConfirmation({
         reference: referralReference(result.id),

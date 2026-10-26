@@ -223,6 +223,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "billing_coordinator": {
@@ -426,6 +427,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "cf_care_manager": {
@@ -629,6 +631,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "allowed",
     "website_signup": "hidden",
   },
   "clinical_coordinator": {
@@ -832,6 +835,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "clinical_trainee": {
@@ -1035,6 +1039,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "community_health_worker": {
@@ -1238,6 +1243,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "allowed",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "allowed",
     "website_signup": "hidden",
   },
   "credentialing_coordinator": {
@@ -1441,6 +1447,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "ecm_provider": {
@@ -1644,6 +1651,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "allowed",
     "website_signup": "hidden",
   },
   "intake_coordinator": {
@@ -1847,6 +1855,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "lvn": {
@@ -2050,6 +2059,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "medical_assistant": {
@@ -2253,6 +2263,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "nurse_rn": {
@@ -2456,6 +2467,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "peer_specialist": {
@@ -2659,6 +2671,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "allowed",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "physician": {
@@ -2862,6 +2875,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "allowed",
     "website_signup": "hidden",
   },
   "pmhnp": {
@@ -3065,6 +3079,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "allowed",
     "website_signup": "hidden",
   },
   "sud_counselor": {
@@ -3268,6 +3283,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "allowed",
     "website_signup": "hidden",
   },
   "sys_admin": {
@@ -3471,6 +3487,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "hidden",
     "website_signup": "hidden",
   },
   "therapist": {
@@ -3674,6 +3691,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
+    "website_referral_submit": "allowed",
     "website_signup": "hidden",
   },
 }

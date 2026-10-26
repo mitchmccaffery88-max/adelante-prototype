@@ -1,3 +1,4 @@
+import { canSubmitReferral, submitWebsiteReferral } from "@/lib/website/publicReferral";
 import { canReportPublicResource, createPublicResourceReport } from "@/lib/website/publicResourceReports";
 import { canActOnIdentityReview, identityReviewConfirm, identityReviewLink, identityReviewMerge, identityReviewNeedInfo, identityReviewNotSame } from "@/lib/identityReview";
 import { canUseSignup, runSignupCommand } from "@/lib/website/signupStore";
@@ -149,14 +150,14 @@ export function cosignRouteLabel(staffId?: string): string {
  * 26 Oct (Mitch) — the ONLY registry actions a public website visitor may run
  * with no staff actor: public signup, public sign-in/reset preview, website
  * inbox submissions and public report-a-change. Everything else requires a
- * staff role. (The public referral form submits through the existing referral
- * store path, not the registry.)
+ * staff role. Public referrals retain their existing store behind the registry.
  */
-export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview", "website_intake_submit", "resource_public_report"] as const;
+export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview", "website_intake_submit", "resource_public_report", "website_referral_submit"] as const;
 
 export const CHART_ACTIONS: ChartAction[] = [
   { id: "website_signup", label: { en: "Continue signup", es: "Continuar registro" }, group: "admin", needsPatient: false, menu: false, flags: ["notifications_simulated"], simulated: true, successAuditFromStore: true, store: refs(["runSignupCommand", runSignupCommand]), allowed: actor => canUseSignup(actor) ? ok() : hide("Public signup only.") },
   { id: "website_auth_preview", label: { en: "Sign-in preview", es: "Vista previa de acceso" }, group: "admin", needsPatient: false, menu: false, flags: ["notifications_simulated"], simulated: true, successAuditFromStore: true, store: refs(["authPreview", authPreview]), allowed: actor => canUseSignup(actor) ? ok() : hide("Public preview only.") },
+  { id: "website_referral_submit", label: {en:"Send referral",es:"Enviar referencia"}, group:"admin", menu:false, needsPatient:false, check:"named public visitor or referral contact role", store:refs(["submitWebsiteReferral",submitWebsiteReferral]), allowed:actor => canSubmitReferral(actor) ? ok() : hide("Referral submission unavailable.") },
   { id: "hloc_consent_capture", label: { en: "Record disclosure consent", es: "Registrar consentimiento" }, group: "care", menu: false, store: refs(["recordLegalDisclosureConsent", recordLegalDisclosureConsent]), allowed: ({ role }) => HLOC_REFERRAL_ROLES.includes(role) ? ok() : hide("Not available for your role.") },
   {id:'website_intake_submit',label:{en:'Send a website inquiry',es:'Enviar una consulta del sitio'},group:'admin',menu:false,needsPatient:false,simulated:true,check:'canSubmitWebsiteIntake',store:refs(['saveWebsiteIntake',saveWebsiteIntake]),allowed:actor=>canSubmitWebsiteIntake(actor)?ok():hide('Public website intake only.')},
   { id: "resource_public_report", label: { en: "Report a public listing change", es: "Informar un cambio en un listado público" }, group: "admin", menu: false, needsPatient: false, simulated: true, check: "canReportPublicResource", store: refs(["createPublicResourceReport", createPublicResourceReport]), allowed: actor => canReportPublicResource(actor) ? ok() : hide("Anonymous listing reports only.") },
