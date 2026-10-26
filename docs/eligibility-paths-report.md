@@ -53,4 +53,4 @@ New: `src/lib/eligibility/coverageConfig.ts`, `src/lib/eligibility/coverageAdapt
 Changed: `src/lib/eligibility/adapter.ts` (interface added), `src/lib/intakePhaseB.ts` (request takes a path; projection delegates; care-team request), `src/lib/chartActions.ts` (9 actions, registry version), `src/components/staff/IntakePhaseBActions.tsx` (path picker + coverage-only status), `src/components/staff/IntakeBillingRequests.tsx` (per-path Billing controls), `src/lib/__tests__/__snapshots__/runAction.test.ts.snap` (only the 9 new action rows added), `roadmap.md`, `src/lib/AGENTS.md`.
 
 ## Validation
-See roadmap for final counts.
+FULL units 3,422/3,422 (395 files), exit 0. FULL public browser 47/47 (eight public specs, one worker against :8080, 10.8 min), exit 0. Action snapshot changed only by the 9 new action rows. Nothing published.
