@@ -1129,7 +1129,8 @@ export interface RoleAssignment {
 export function roleAssignmentsOf(m: StaffMember | undefined, opts: { includeHidden?: boolean } = {}): RoleAssignment[] {
   if (!m) return [];
   const legacy = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];
-  const list: RoleAssignment[] = [...legacy, ...(m.additionalRoles ?? []).filter(role => !legacy.some(a => a.role === role)).map(role => ({role}))];
+  // Explicit additionalRoles replaces legacy assignments, so removing a held role really removes it.
+  const list: RoleAssignment[] = m.additionalRoles === undefined ? legacy : [...new Set([m.role, ...m.additionalRoles])].map(role => legacy.find(a => a.role === role) ?? {role});
   return opts.includeHidden ? list : list.filter((a) => !a.inFacility || isFeatureEnabled("in_facility"));
 }
 export function hasRoleAssignment(m: StaffMember | undefined, role: StaffRole, opts: { includeHidden?: boolean } = {}): boolean {

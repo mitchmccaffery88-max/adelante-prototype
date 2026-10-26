@@ -13,6 +13,7 @@ import { STAFF_ROLES, setActingStaff } from "@/lib/roles";
 import { hieAudit } from "@/lib/hie";
 import { adelDraftAudit } from "@/lib/adelDrafts";
 import { getAdelBrief, adelSummary } from "@/lib/adelBrief";
+import { signupActor } from "@/lib/website/signupStore";
 
 afterEach(cleanup);
 const flags = ["hie_simulated", "voice_intake", "adel_drafts", "placeholder_lab", "cures_placeholder", "eligibility_simulated", "erx_simulated", "telehealth_simulated", "caloms_export_simulated", "notifications_simulated", "payments_simulated", "scribe_simulated", "llm_simulated", "calendar_sync_simulated", "consent_upload_simulated"] as const;
@@ -28,12 +29,14 @@ describe("SL all 15 simulated flags: rendered bilingual label and audit contract
   });
   it("the named public website allowlist is exact and each entry permits no staff actor", () => {
     // 26 Oct (Mitch): only these registry actions run with no staff actor.
-    expect([...PUBLIC_WEBSITE_ACTIONS].sort()).toEqual(["resource_public_report", "website_auth_preview", "website_intake_submit", "website_signup"]);
+    expect([...PUBLIC_WEBSITE_ACTIONS].sort()).toEqual(["resource_public_report", "website_auth_preview", "website_intake_submit", "website_referral_submit", "website_signup"]);
     const p = patient();
     for (const id of PUBLIC_WEBSITE_ACTIONS) {
       const action = CHART_ACTIONS.find(a => a.id === id);
       if (!action) throw new Error(`Missing public website action ${id}`);
-      expect(STAFF_ROLES.some(r => action.allowed({ role: r.key, staffId: "s-admin1" }, p).state !== "hidden"), id).toBe(false);
+      expect(action.allowed(signupActor,p).state, id).toBe("enabled");
+      // The shared referral form retains staff contact access; signup/reset never grant staff access.
+      if (id !== "website_referral_submit") expect(STAFF_ROLES.some(r => action.allowed({ role: r.key, staffId: "s-admin1" }, p).state !== "hidden"), id).toBe(false);
     }
   });
   for (const flag of flags) {
