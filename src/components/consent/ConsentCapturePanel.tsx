@@ -27,6 +27,7 @@ import {
   type ConsentType,
   type Part2ElementKey,
 } from "@/lib/consentRecordModel";
+import { CONSENT_PURPOSES, PURPOSE_LABEL, type ConsentPurposeCode } from "@/lib/consentPurposes";
 import { CHANNEL_LABEL, getDisclosureEntry } from "@/lib/part2Disclosure";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -104,6 +105,7 @@ export function ConsentCapturePanel({ patient }: { patient: Patient }) {
                 {CONSENT_TYPE_LABEL[r.consentType].en} · {r.recipients.map((x) => x.name).join(", ")} · v{r.document?.version ?? 1}
               </button>
               <span className="flex flex-wrap items-center gap-2">
+                {r.purposeNeedsReview && <StatusChip lang="en" state="yourturn" label="Purpose needs review" data-testid={`purpose-review-${r.id}`} />}
                 {r.simulatedUpload && <StatusChip lang="en" state="simulated" label="Simulated" />}
                 <StatusChip lang="en" state={r.status === "active" ? "done" : "closed"} label={STATUS_WORD[r.status]} data-testid={`consent-status-${r.id}`} />
               </span>
@@ -181,7 +183,8 @@ function CaptureForm({ mode, patient, run, onDone, storeActor, renewFrom }: {
   const [type, setType] = useState<ConsentType>(renewFrom?.consentType ?? "hipaa_authorization");
   const [recipient, setRecipient] = useState(renewFrom?.recipients.map((x) => x.name).join(", ") ?? "");
   const [kind, setKind] = useState<"person" | "org">(renewFrom?.recipients[0]?.kind ?? "org");
-  const [purpose, setPurpose] = useState(renewFrom?.purpose ?? "");
+  const [purposePick, setPurposePick] = useState<ConsentPurposeCode | "">((renewFrom?.purposeCode as ConsentPurposeCode | undefined) ?? "");
+  const [purposeNote, setPurposeNote] = useState("");
   const [enrolledOnly, setEnrolledOnly] = useState(false);
   const [items, setItems] = useState(renewFrom?.items.join(", ") ?? "");
   const [endDate, setEndDate] = useState("");
@@ -196,7 +199,9 @@ function CaptureForm({ mode, patient, run, onDone, storeActor, renewFrom }: {
   const [signedOn, setSignedOn] = useState("");
   const [fileName, setFileName] = useState("");
   const part2 = isPart2Type(type);
-  const purposeCode = type === "referrer_authorization" && enrolledOnly ? VERBAL_ASSENT_REFERRER_PURPOSE : undefined;
+  // Required picker stores the code; the label (plus optional note) is display text only.
+  const purposeCode: string | undefined = type === "referrer_authorization" && enrolledOnly ? VERBAL_ASSENT_REFERRER_PURPOSE : purposePick || undefined;
+  const purpose = renewFrom ? renewFrom.purpose ?? "" : purposeCode ? `${PURPOSE_LABEL[purposeCode as ConsentPurposeCode]}${purposeNote.trim() ? ` — ${purposeNote.trim()}` : ""}` : "";
   const verbalOk = verbalAssentAllowed(type, purposeCode);
   const draft: CaptureDraft = {
     patientId: patient.id,
@@ -211,6 +216,7 @@ function CaptureForm({ mode, patient, run, onDone, storeActor, renewFrom }: {
   };
   const title = renewFrom ? "Renew this consent" : mode === "capture" ? "Record a consent" : mode === "upload" ? "Upload a signed paper consent" : "Send a consent for e-sign";
   const submit = () => {
+    if (!renewFrom && !purposeCode) { onDone(false, "Choose a purpose.", "consent_record_capture"); return; }
     const effMethod = verbalOk ? method : "e_sign";
     if (renewFrom) {
       const r = run("consent_record_renew", "renewTypedConsent", [{ recordId: renewFrom.id, ...(endDate ? { expiresOn: endDate } : {}), ...(endEvent.trim() ? { expiresOnEvent: endEvent.trim() } : {}), method: effMethod, signer, relationship, attested, ...(effMethod === "verbal_assent" ? { assentWording: wording } : {}), ...(witness.trim() ? { witness } : {}), actor: storeActor }]);
@@ -251,7 +257,13 @@ function CaptureForm({ mode, patient, run, onDone, storeActor, renewFrom }: {
           <select className={field} value={kind} onChange={(e) => setKind(e.target.value as "person" | "org")} aria-label="Recipient kind"><option value="org">Organization</option><option value="person">Person</option></select>
         </label>
       </div>
-      <label className="block">Purpose<Input className="mt-1" aria-label="Purpose" value={purpose} maxLength={200} onChange={(e) => setPurpose(e.target.value)} /></label>
+      <label className="block">Purpose <span className="text-muted-foreground">(Required)</span>
+        <select className={field} value={purposePick} required aria-required="true" onChange={(e) => setPurposePick(e.target.value as ConsentPurposeCode | "")} aria-label="Purpose">
+          <option value="">Choose a purpose</option>
+          {CONSENT_PURPOSES.map((p) => <option key={p.code} value={p.code}>{p.label}</option>)}
+        </select>
+      </label>
+      <label className="block">Purpose note (optional)<Input className="mt-1" aria-label="Purpose note" value={purposeNote} maxLength={200} onChange={(e) => setPurposeNote(e.target.value)} /></label>
       {type === "referrer_authorization" && (
         <label className="flex min-h-9 items-center gap-2"><Checkbox checked={enrolledOnly} onCheckedChange={(v) => setEnrolledOnly(v === true)} aria-label="Enrolled update only" /> Only the &quot;enrolled on &lt;date&gt;&quot; update</label>
       )}

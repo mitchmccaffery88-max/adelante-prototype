@@ -1,3 +1,4 @@
+import { purposeCodeOf, purposeNeedsReview } from "./consentPurposes";
 // §B2-2 — consent record capture flows (additive; no gate reads these yet —
 // enforcement switches in B2-4). Every write runs through a registry action
 // (chartActions consent_record_*) and lands in the ONE consent ledger as a
@@ -305,6 +306,9 @@ export interface HistoryRow {
   status: TypedStatus;
   recipients: ConsentRecipient[];
   purpose?: string;
+  purposeCode?: string;
+  /** Typed record whose purpose maps to no known code (Oct 26 migration). */
+  purposeNeedsReview: boolean;
   items: string[];
   effectiveDate: string;
   expirationDate?: string;
@@ -359,6 +363,8 @@ export function consentRecordHistory(patientId: string, at = new Date()): Histor
       status,
       recipients: r.recipients ?? [],
       ...(r.purpose ? { purpose: r.purpose } : {}),
+      ...(purposeCodeOf(r) ? { purposeCode: purposeCodeOf(r) } : {}),
+      purposeNeedsReview: purposeNeedsReview(r),
       items: r.items ?? [],
       effectiveDate: r.effectiveDate,
       ...(r.expirationDate ? { expirationDate: r.expirationDate } : {}),

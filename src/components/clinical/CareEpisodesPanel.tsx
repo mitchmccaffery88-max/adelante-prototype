@@ -1,4 +1,5 @@
 import { StatusChip } from "@/components/ui/status-chip";
+import { PURPOSE_REFERRAL_FOR_TREATMENT } from "@/lib/consentPurposes";
 import { canDoChartAction } from "@/lib/chartActions";
 import { act, actFor } from "@/lib/actions/act";
 import { ReferralPacketDraft } from "@/components/chart/AdelDrafts";
@@ -292,7 +293,7 @@ function ConsentCapture({ patientId, recipient, purpose }: { patientId: string; 
       <Button size="sm" onClick={() => {
         try {
           if (!att) throw new Error("Confirm you witnessed the signature.");
-          recordLegalDisclosureConsent(patientId, { name: staffName, role, staffId }, name, { recipient, purpose });
+          recordLegalDisclosureConsent(patientId, { name: staffName, role, staffId }, name, { recipient, purpose, purposeCode: PURPOSE_REFERRAL_FOR_TREATMENT, items: ["SUD referral information"] });
           toast.success("Part 2 disclosure consent recorded");
         } catch (e) {
           toast.error((e as Error).message);

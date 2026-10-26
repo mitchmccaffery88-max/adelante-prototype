@@ -1,3 +1,4 @@
+import { purposeCodeForText } from "./consentPurposes";
 // §Batch C1 — the ONE outbound disclosure function for 42 CFR Part 2 content.
 //
 // Every outbound path that can carry SUD-classified information (HIE share,
@@ -16,7 +17,7 @@ import { consentGate } from "./consentGate";
 
 // Legal disclosure records live in outpatientCare.ts, which registers its
 // reader here (no import: avoids an ehr → outpatientCare load cycle).
-type LegalRow = { id: string; recipient: string; purpose?: string; revokedAt?: string };
+type LegalRow = { id: string; recipient: string; purpose?: string; purposeCode?: string; revokedAt?: string };
 let legalSource: (patientId: string) => LegalRow[] = () => [];
 export function registerLegalDisclosureSource(fn: (patientId: string) => LegalRow[]) {
   legalSource = fn;
@@ -203,7 +204,10 @@ export function part2ConsentFor(
       (norm(d.recipient) === norm(recipient.name) ||
         (!!recipient.organization && norm(d.recipient) === norm(recipient.organization))) &&
       // Recipient AND purpose must match the recorded legal disclosure.
-      (!purpose || !d.purpose || norm(d.purpose) === norm(purpose)),
+      // Codes only when both sides map; otherwise exact text (unmapped legacy).
+      (!purpose || !d.purpose || ((d.purposeCode ?? purposeCodeForText(d.purpose)) && purposeCodeForText(purpose)
+        ? (d.purposeCode ?? purposeCodeForText(d.purpose)) === purposeCodeForText(purpose)
+        : norm(d.purpose) === norm(purpose))),
   );
   // Applicable typed evidence decides, including a revoked/expired denial.
   // Otherwise only a live untyped legal section answers, never old history.
