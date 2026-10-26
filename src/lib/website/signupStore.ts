@@ -39,3 +39,6 @@ export function runSignupCommand(actor: ChartActor, input: SignupCommand, now = 
  return create(s,false);
 }
 export function resumeSignupDraft(id: string) { const d = sessions.get(id)?.draft; return d ? {firstName:d.firstName,lastName:d.lastName,dob:d.dob,phone:d.phone,email:d.email} : undefined; }
+
+/** Phase A safety linkage accessor: IDs only, no draft/contact/verification data. */
+export function signupSafetyLink(sessionId: string): { exists: boolean; patientId?: string } { const s = sessions.get(sessionId); return { exists: !!s, patientId: s?.patientId }; }

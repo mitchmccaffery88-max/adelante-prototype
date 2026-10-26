@@ -33,6 +33,10 @@ const DELTAS: [string, string][] = [
   [
     "      actorRole: \"patient\",\n      actorId: `patient:${input.patientId}`,\n      detail: {\n        groupSessionId: g.id,",
     "      actorRole: input.onBehalf?.role ?? \"patient\",\n      actorId: input.onBehalf?.staffId ?? `patient:${input.patientId}`,\n      detail: {\n        ...(input.onBehalf ? { referralId: input.onBehalf.referralId, onBehalfOfPatient: true } : {}),\n        groupSessionId: g.id,"
+  ],
+  [
+    "  if (!actor?.name?.trim()) throw new Error(\"Sign in as a staff member first.\");\n  if (!(GROUP_ELIGIBILITY_ROLES as readonly string[]).includes(actor.role))",
+    "  if (!actor?.name?.trim()) throw new Error(\"Sign in as a staff member first.\");\n  // 26 Oct Phase A: on-behalf Intake placement always requires clinical approval.\n  if (r.onBehalfOfPatient && !SUD_GROUP_APPROVER_ROLES.includes(actor.role)) throw new Error(\"Clinical approval required for Intake group requests.\");\n  if (!(GROUP_ELIGIBILITY_ROLES as readonly string[]).includes(actor.role))"
   ]
 ];
 export function withIntakePhaseA(path: string, source: string): string {

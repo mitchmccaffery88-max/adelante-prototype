@@ -8276,6 +8276,8 @@ _normalizeAllScreenerMeta();
 // Part 2 (SUD) group request is reviewable only by SUD_GROUP_APPROVER_ROLES.
 function _assertGroupJoinReviewer(r: GroupJoinRequest, actor: { name: string; role: StaffRole }) {
   if (!actor?.name?.trim()) throw new Error("Sign in as a staff member first.");
+  // 26 Oct Phase A: on-behalf Intake placement always requires clinical approval.
+  if (r.onBehalfOfPatient && !SUD_GROUP_APPROVER_ROLES.includes(actor.role)) throw new Error("Clinical approval required for Intake group requests.");
   if (!(GROUP_ELIGIBILITY_ROLES as readonly string[]).includes(actor.role))
     throw new Error("Only a therapist, PMHNP or case manager can review group requests.");
   if (r.protected && !SUD_GROUP_APPROVER_ROLES.includes(actor.role))
