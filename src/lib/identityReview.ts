@@ -208,7 +208,7 @@ export function identityReviewLink(
   referral.status = "enrolled";
   referral.enrolledPatientId = item.patientId;
   referral.enrolledAt = at;
-  referral.enrolledBy = { staffId: actor.staffId, name: actor.staffName ?? actor.staffId ?? "", role: actor.role };
+  referral.enrolledBy = { staffId: actor.staffId ?? "", name: actor.staffName ?? actor.staffId ?? "", role: actor.role };
   const patient = AdelanteEHR.getPatient(item.patientId);
   if (patient && !patient.referralId) patient.referralId = referral.id;
   for (const code of AdelanteEHR.listEnrollmentCodes(item.patientId)) if (!code.consumedAt) code.consumedAt = at;
