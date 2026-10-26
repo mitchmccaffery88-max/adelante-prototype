@@ -119,7 +119,8 @@ export function mergePatients(input: { survivorId: string; otherId: string; reas
   requireMerger(actor, !!input.identityReview);
   if (!input.reason?.trim()) throw new Error("A reason is required to merge.");
   const summary = previewMerge(input.survivorId, input.otherId);
-  const s = AdelanteEHR.getPatient(input.survivorId)!, o = AdelanteEHR.getPatient(input.otherId)!;
+  const s = AdelanteEHR.getPatient(input.survivorId), o = AdelanteEHR.getPatient(input.otherId);
+  if (!s || !o) throw new Error("Record not found.");
   const id = `merge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
   const at = new Date().toISOString();
   const rec: MergeRecord = { ...summary, id, at, by: actor.name, reason: input.reason.trim(), status: "active", moved: [], embedded: [], planMoved: false, flaggedClaims: [], screenerKeys: [], part2Held: 0 };

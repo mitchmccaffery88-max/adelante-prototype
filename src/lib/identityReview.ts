@@ -198,7 +198,7 @@ function candidateAllowed(actor: IdentityReviewActor, referral: Referral): boole
   const pid = referral.enrolledPatientId;
   const patient = pid ? AdelanteEHR.getPatient(pid) : undefined;
   if (pid && isRestricted(pid)) return false;
-  if (referral.substanceUseNeed) {
+  if (referral.substanceUseNeed || patient && AdelanteEHR.listProblems(patient.id).some(p=>p.category === "sud")) {
     if (!patient) return false;
     // Identity-only review is not a clinical-content grant.
     if (!AdelanteEHR.isConsentCategoryAuthorized(patient.id,"sud_treatment")) return false;
