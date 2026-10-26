@@ -1,5 +1,6 @@
 import { staffPatientLabel, viewerCanOpenChart } from "@/lib/staffPatientLabel";
 import { StaffTable } from "@/components/staff/StaffTable";
+import { PreChartTriageRows } from "@/components/staff/PreChartTriageRows";
 // §Dashboard Cleanup Phase 6a — the one task-queue card.
 //
 // Extracted verbatim from `/case-manager` so the Clinician Workspace and Care
@@ -117,6 +118,7 @@ function TaskQueueContent({
         )}
       </div>
       {summary}
+      <PreChartTriageRows actor={viewer} />
       {source.kind === "clinician_patients" && (
         <p className="mb-3 text-xs text-muted-foreground" data-testid="task-queue-source-note">
           {CLINICIAN_TASK_SOURCE_NOTE}

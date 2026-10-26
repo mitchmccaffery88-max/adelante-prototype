@@ -1,9 +1,15 @@
 # Roadmap
 
+## 26 Oct Intake Phase A — dedicated referral adapters
+- [x] A1 First-of-kind indicated booking and attributed clinician-approved group requests; no general booking/reschedule/details. Conflict refusals contain no other clinician/visit details.
+- [x] A2 Administrative checklist completion, active-roster scoped assignments, existing Today tasks and read-only header care team.
+- [x] A3 Linked crisis wrapper and source-keyed pre-chart triage with tier owners, receipts only for Intake, confirmed later chart linking. No on-call defined: explicit clinical-coordinator fallback gap. Source ingestion uses clinical-only structured capture; no private-answer scanning.
+- [x] A4 Four real-store demo referrals; allowed/adjacent-denial tests; FULL units 3,359/3,359 across 392 files; FULL public browser isolated 47/47, exit 0, 12.9m. Build OK; real UI booking/completion/clinical triage verified. Report: docs/intake-phase-a-report.md. Nothing published.
+- Phase B deferred: consent/paperwork, eligibility, SDOH and staging importer/documents. Do not publish.
+
 ## 26 Oct Intake responsibilities — scoped restoration
 - [x] Verify seven responsibilities against existing stores and Part 2 gates; findings in docs/intake-scoped-responsibilities-stop.md.
-- [ ] STOP: existing roster importer writes episodes/coverage/HRSN, not referral packets; existing crisis path requires a patient ID for unlinked referral/signup safety. Requires referral-staging import/attachments and patient-independent triage contracts, not broad grants.
-- [ ] Separate permissions/workspace controls and allowed/adjacent-denial tests remain unimplemented at the requested stop boundary. Existing app access unchanged.
+- [x] Historical stop superseded by Phase A: patient-independent triage and separate booking/group/completion/assignment/escalation boundaries built without broad grants. Importer staging and paperwork/eligibility/SDOH remain intentionally deferred to Phase B, not an open Phase A task.
 - [x] FULL units 3,340/3,340, 391 files, exit 0.
 - [x] FULL public browser clean rerun 47/47, exit 0, 13.3 minutes; first run interrupted by the command limit (31 checks passed, not a completed suite). No timeout/retry changes or publication.
 
@@ -76,7 +82,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Family/friend/self optional DOB, unknown checkbox, approximate age and identityConfidence; professional validation preserved.
 - [x] Identity review/account support routes and Your-turn count badges; separate account-support permission retained.
 - [x] Primary/additional held roles, audited sys_admin management and demo persona; acting-role-only permissions.
-- [x] Narrow intake workspace: public referral/outreach and allowed identity review only. No clinical navigation/tasks, chart grants, booking, consent, eligibility, SDOH or pre-release access; EHR booking/outreach changes reverted.
+- [x] Initial narrow intake workspace (superseded by Phase A above): generic clinical navigation/tasks, chart grants, consent, eligibility, clinical SDOH and pre-release access remain denied; dedicated Phase A referral adapters are exceptions only to their own actions.
 - [x] Item/lane/privacy/action and denied-clinical-access tests; actual reviewer decision and coordinator read-only flow checked.
 - [x] Final FULL units: 3,340/3,340 across 391 files. FULL public browser: 47/47, one worker against :8080, 13.8 minutes; no timeout changes. Earlier overlapping-edit browser run was 45/47; clean final run passes both affected checks. Build OK. No publication.
 - Preview limitations: identity/account-support/sign-in remain simulated/local-memory; account-support page is an empty separate queue, not a live reset service. Hosted persistence, real authentication/delivery and native-speaker Spanish review remain outside this batch.

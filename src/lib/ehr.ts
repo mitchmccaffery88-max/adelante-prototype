@@ -23,6 +23,7 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
+import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { isLateCancelWindow } from "./lateCancel";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
@@ -8275,6 +8276,8 @@ _normalizeAllScreenerMeta();
 // Part 2 (SUD) group request is reviewable only by SUD_GROUP_APPROVER_ROLES.
 function _assertGroupJoinReviewer(r: GroupJoinRequest, actor: { name: string; role: StaffRole }) {
   if (!actor?.name?.trim()) throw new Error("Sign in as a staff member first.");
+  // 26 Oct Phase A: on-behalf Intake placement always requires clinical approval.
+  if (r.onBehalfOfPatient && !SUD_GROUP_APPROVER_ROLES.includes(actor.role)) throw new Error("Clinical approval required for Intake group requests.");
   if (!(GROUP_ELIGIBILITY_ROLES as readonly string[]).includes(actor.role))
     throw new Error("Only a therapist, PMHNP or case manager can review group requests.");
   if (r.protected && !SUD_GROUP_APPROVER_ROLES.includes(actor.role))
@@ -9208,6 +9211,8 @@ export const AdelanteEHR = {
     requestId?: string;
     /** Who booked (for request-close attribution). */
     bookedBy?: { id: string; role: string };
+    /** 26 Oct Phase A: dedicated referral proof, never a generic scheduling grant. */
+    intakeBooking?: IntakeBookingProof;
     /** Staff member who renders a contact visit (defaults to a contact-role booker). */
     assignedStaffId?: string;
     /** §ASAM visit — link to the open ASAM task. Linking never closes it. */
@@ -9230,14 +9235,18 @@ export const AdelanteEHR = {
     const bookRole = input.bookedBy?.role as StaffRole | undefined;
     const isStaffBooking = !!bookRole && input.source !== "self_scheduled" && bookRole !== ("patient" as StaffRole);
     if (isStaffBooking) {
-      const chk = checkBookingRights({
-        role: bookRole!,
-        op: "book",
-        inCaseload: _inStaffCaseload(input.bookedBy!, input.patientId),
-        serviceType: input.serviceType,
-        asam: !!input.asamTaskId,
-      });
-      if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
+      // 26 Oct Phase A: Intake has no generic booking right. The registered
+      // boundary checks actor/referral/indication/first-kind/calendar before
+      // the unchanged fit, consent, location and conflict checks below.
+      if (bookRole === "intake_coordinator") assertIntakeBookingBoundary(input);
+      else {
+        const chk = checkBookingRights({
+          role: bookRole, op: "book",
+          inCaseload: input.bookedBy ? _inStaffCaseload(input.bookedBy, input.patientId) : false,
+          serviceType: input.serviceType, asam: !!input.asamTaskId,
+        });
+        if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
+      }
       _assertClinicianFit(input.clinicianId, input.serviceType);
       if (input.modality && input.modality !== "in_person" && +new Date(input.start) > Date.now() && !AdelanteEHR.isConsentCategoryAuthorized(input.patientId, TELEHEALTH_CONSENT_CATEGORY))
         throw new Error("No telehealth consent on file. Capture telehealth consent first, or book in person.");
@@ -9272,12 +9281,13 @@ export const AdelanteEHR = {
       const own = _patientOverlap(input.patientId, input.start, input.durationMin);
       if (own) throw new Error(_patientOverlapMessage(own));
     }
-    const { allowPatientOverlap: _ignored, requestId, bookedBy, ...fields } = input;
+    const { allowPatientOverlap: _ignored, requestId, bookedBy, intakeBooking, ...fields } = input;
     const a: Appointment = {
       ...fields,
       source: input.source ?? "staff_scheduled",
       id: uid(),
       status: "scheduled",
+      ...(intakeBooking ? { intakeFirstVisit: { referralId: intakeBooking.referralId, kind: intakeBooking.kind as import("./intakePhaseA").FirstVisitKind }, bookedBy } : {}),
       ...(bookedBy?.id && !fields.assignedStaffId && _CONTACT_ROLES.includes(bookedBy.role) ? { assignedStaffId: bookedBy.id } : {}),
     };
     appointments.push(a);
@@ -24851,7 +24861,9 @@ export const AdelanteEHR = {
   },
 
   /** Patient asks to join a group. Optional note. Staff review. */
-  requestJoinGroup(input: { sessionId: string; patientId: string; note?: string; now?: string }): GroupJoinRequest {
+  requestJoinGroup(input: { sessionId: string; patientId: string; note?: string; now?: string; onBehalf?: { referralId: string; staffId: string; role: StaffRole } }): GroupJoinRequest {
+    // 26 Oct Phase A: same pending/clinical approval path, real staff attribution.
+    if (input.onBehalf) assertIntakeGroupBoundary(input);
     const g = groupSessions.find((x) => x.id === input.sessionId);
     if (!g) throw new Error("Group not found.");
     if (g.status === "cancelled") throw new Error("That group is cancelled.");
@@ -24870,15 +24882,17 @@ export const AdelanteEHR = {
       createdAt: input.now ?? new Date().toISOString(),
       status: "pending",
       protected: isProtected,
+      ...(input.onBehalf ? { requestedBy: { ...input.onBehalf }, onBehalfOfPatient: true } : {}),
     };
     groupJoinRequests.push(row);
     appendAudit({
       category: "clinical",
       action: "group_join_requested",
       patientId: input.patientId,
-      actorRole: "patient",
-      actorId: `patient:${input.patientId}`,
+      actorRole: input.onBehalf?.role ?? "patient",
+      actorId: input.onBehalf?.staffId ?? `patient:${input.patientId}`,
       detail: {
+        ...(input.onBehalf ? { referralId: input.onBehalf.referralId, onBehalfOfPatient: true } : {}),
         groupSessionId: g.id,
         requestId: row.id,
         ...(isProtected ? { protected: true } : { topic: g.topic, category: g.category }),

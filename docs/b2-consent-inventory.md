@@ -448,3 +448,6 @@ Total lines: 342. Unclassified: 0.
 
 ## B2-5 addition
 - `src/lib/consentMigration.ts` — 1 entry-point line (listConsentRecords, to find live untyped records the system migration marks legacyUnverified).
+
+## 26 Oct Intake Phase A
+- `src/lib/intakePhaseA.ts` — three `isConsentCategoryAuthorized` entry-point lines: restricted referral boundary plus protected group store/projection require current treatment authorization. No ledger write or clinical scope projection.
