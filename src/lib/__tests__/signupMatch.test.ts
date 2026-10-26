@@ -38,8 +38,10 @@ describe("public signup outcomes", () => {
   });
   it("limits code attempts to five per fifteen minutes", () => {
     const sid = start(); const now = Date.parse("2026-10-26T12:00:00Z");
-    for (let i = 0; i < 5; i++) expect(act({ operation: "retry", sessionId: sid, code: "RE-0000-0000", draft: draft({ lastName: `Limit${i}` }) }, now + i).limited).toBeUndefined();
+    for (let i = 0; i < 5; i++) expect(act({ operation: "retry", sessionId: sid, code: "RE-0000-0000", draft: draft({ lastName: "Limit" }) }, now + i).limited).toBeUndefined();
     expect(act({ operation: "retry", sessionId: sid, code: "RE-0000-0000" }, now + 6).limited).toBe(true);
+    expect(act({ operation: "retry", sessionId: start(), code: "RE-0000-0000", draft: draft({ lastName: "Limit" }) }, now + 7).limited).toBe(true);
+    expect(act({ operation: "retry", sessionId: sid, code: "RE-0000-0000" }, now + 15 * 60 * 1000).limited).toBeUndefined();
   });
   it("no-code verification is identical for none, one and many; one-time code uses file contact and expires", () => {
     const one = AdelanteEHR.createReferral({ firstName: "Otp", lastName: "Single", dob: "1991-01-01", phone: "+15550111111", referringAgency: "Clinic", referrerName: "Referrer", referralSource: "community_based_organization", consentToContact: true, channel: "public" } as never);
@@ -58,7 +60,8 @@ describe("public signup outcomes", () => {
     const tasks = AdelanteEHR.listCaseTasks().filter((t) => t.patientId === out.patientId);
     expect(out.outcome).toBe("new");
     expect(tasks.some((t) => t.title === "Connect referral after signup" && t.allowedRoles?.join() === "clinical_coordinator")).toBe(true);
-    const task = tasks.find((t) => t.title === "Connect referral after signup")!;
+    const task = tasks.find((t) => t.title === "Connect referral after signup");
+    if (!task) throw new Error("Review task missing");
     expect(signupReviewFor({ role: "sys_admin", staffId: "s-admin1" }, task.id)).toBeUndefined();
     expect(signupReviewFor({ role: "clinical_coordinator", staffId: "s-cc1" }, task.id)?.entries.lastName).toBe("Continue");
   });
@@ -67,7 +70,8 @@ describe("public signup outcomes", () => {
     expect(act({ operation: "finish", sessionId: start(), path: "new", draft: draft({ firstName: "Dupe", lastName: "Case", dob: old.dob, phone: "5550222222", email: "" }) }).outcome).toBe("blocked");
     const made = act({ operation: "finish", sessionId: start(), path: "new", draft: draft({ firstName: "Dupe", lastName: "Case", dob: old.dob, phone: "5550333333", email: "" }) });
     expect(made.outcome).toBe("new");
-    expect(AdelanteEHR.getPatient(made.patientId!)?.possibleDuplicate).toBeTruthy();
+    if (!made.patientId) throw new Error("Account missing");
+    expect(AdelanteEHR.getPatient(made.patientId)?.possibleDuplicate).toBeTruthy();
     expect(AdelanteEHR.listCaseTasks().some((t) => t.patientId === made.patientId && t.title === "Possible duplicate account" && t.allowedRoles?.join() === "clinical_coordinator")).toBe(true);
   });
 });
