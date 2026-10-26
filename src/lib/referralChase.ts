@@ -42,9 +42,9 @@ export function missingChaseFields(r: Referral): ChaseField[] {
 export const chaseText = (missing: ChaseField[]) => `Missing: ${missing.map((m) => CHASE_FIELD_LABEL[m]).join(", ")}`;
 
 /** Critical-field check (Draft). Returns the first problem, or null. */
-export function referralCriticalProblem(f: { firstName?: string; lastName?: string; dob?: string; cin?: string; phone?: string; email?: string; referrerPhone?: string; referrerEmail?: string }): string | null {
+export function referralCriticalProblem(f: { firstName?: string; lastName?: string; dob?: string; cin?: string; phone?: string; email?: string; referrerPhone?: string; referrerEmail?: string; referrerType?: string }): string | null {
   if (!f.firstName?.trim() || !f.lastName?.trim()) return "Add the person's first and last name.";
-  if (!f.dob?.trim() && !f.cin?.trim()) return "Add a date of birth or a Medi-Cal ID.";
+  if (!["family", "self"].includes(f.referrerType ?? "") && !f.dob?.trim() && !f.cin?.trim()) return "Add a date of birth or a Medi-Cal ID.";
   if (!f.phone?.trim() && !f.email?.trim() && !f.referrerPhone?.trim() && !f.referrerEmail?.trim())
     return "Add a way to reach the person or the referrer.";
   return null;
