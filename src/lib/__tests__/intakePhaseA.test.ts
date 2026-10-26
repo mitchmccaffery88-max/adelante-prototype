@@ -6,6 +6,8 @@ import { runAction } from "../actions/runAction";
 import { bookFirstVisit, assignIntakeTeam, markIntakeComplete, firstVisitSlots, intakeAppointmentDetail, requestIntakeGroup, FIRST_VISITS, type FirstVisitKind } from "../intakePhaseA";
 import { escalateIntakeSafety, registerIntakeSafetySource, preChartTodayTasks, preChartTriageDetail, intakeSafetyRows, linkPreChartTriage } from "../intakeTriage";
 import { workspaceActionRows } from "../clinicianWorkspace";
+import { captureTreatment, captureTypedConsent, ADELANTE_PROGRAM } from "@/test/typedConsentCapture";
+import { runSignupCommand, signupActor } from "../website/signupStore";
 const actor = { role: "intake_coordinator" as const, staffId: "s-admin1", staffName: "Intake" };
 const clinical = { role: "clinical_coordinator" as const, staffId: "s-cc1", staffName: "Priya" };
 let count = 0;
@@ -48,6 +50,9 @@ describe("26 Oct Phase A — first visit boundary", () => {
     expect(() => bookFirstVisit(actor, r.id, { kind: "assessment", clinicianId: id, start: slot.start, modality: "video" }, "Video visit")).toThrow(/telehealth consent/);
     expect(() => bookFirstVisit(actor, r.id, { kind: "assessment", clinicianId: id, start: slot.start, modality: "in_person", locationId: "wrong" }, "Visit")).toThrow(/location/);
     expect(() => bookFirstVisit(actor, r.id, { kind: "assessment", clinicianId: id, start: "2090-01-01T03:13:00Z", modality: "in_person", locationId: "loc-visalia" }, "Visit")).toThrow(/slot/);
+    captureTypedConsent(pid(r), { type: "telehealth", recipient: ADELANTE_PROGRAM, purpose: "telehealth" });
+    const booked = bookFirstVisit(actor, r.id, { kind: "assessment", clinicianId: id, start: slot.start, modality: "video" }, "Consented video visit");
+    expect(booked.status).toBe("scheduled");
   });
   it("group request is attributed on behalf, pending clinical approval and creates a Today task", () => {
     const r = referral(); const g = AdelanteEHR.listGroupSessions().find(g => g.category === "skills_education"); if (!g) throw new Error("Group missing");
@@ -56,6 +61,7 @@ describe("26 Oct Phase A — first visit boundary", () => {
     expect(AdelanteEHR.listGroupJoinRequests({ patientId: pid(r) }).find(x => x.id === result.id)).toMatchObject({ requestedBy: { staffId: actor.staffId, role: actor.role }, onBehalfOfPatient: true });
     expect(AdelanteEHR.groupsForPatient(pid(r)).some(x => x.id === g.id)).toBe(false);
     expect(() => AdelanteEHR.approveGroupJoinRequest(result.id, { id: actor.staffId, name: "Intake", role: actor.role })).toThrow();
+    expect(() => AdelanteEHR.approveGroupJoinRequest(result.id, { id: "s-cm2", name: "Care manager", role: "ecm_provider" })).toThrow(/Clinical approval/);
     expect(AdelanteEHR.listCaseTasks().some(t => t.dedupeKey?.includes(`group:${result.id}`))).toBe(true);
   });
 });
@@ -80,6 +86,23 @@ describe("26 Oct Phase A — administrative completion and assignment", () => {
   });
 });
 describe("26 Oct Phase A — safety ownership and restricted receipts", () => {
+  it.each(["amber", "red"] as const)("unlinked %s routes a source-keyed real task to its assigned tier owner", tier => {
+    const r = referral(false);
+    registerIntakeSafetySource(clinical, { tier, careManagerStaffId: "s-cm2", clinicianStaffId: "s-th2", source: { kind: "referral", id: r.id, field: "safety_flag", trigger: "reported_safety_flag" } }, "Recorded flag");
+    const before = AdelanteEHR.listPatients().length; const receipt = escalateIntakeSafety(actor, "referral", r.id, "Escalate");
+    expect(receipt.ownerRole).toBe(tier === "amber" ? "ecm_provider" : "therapist");
+    expect(AdelanteEHR.listPatients()).toHaveLength(before);
+    expect(preChartTodayTasks({ role: "therapist", staffId: "s-th2" }).some(t => t.id === receipt.id)).toBe(true);
+    expect(preChartTriageDetail(actor, receipt.id)).toMatchObject({ restricted: true });
+  });
+  it("a real signup source escalates without a chart and keeps draft answers out of the receipt", () => {
+    const s = runSignupCommand(signupActor, { operation: "start" });
+    registerIntakeSafetySource(clinical, { tier: "red", source: { kind: "signup", id: s.sessionId, field: "helper_safety_flag", trigger: "reported_safety_flag", text: "Private helper source" } }, "Observed safety flag");
+    const before = AdelanteEHR.listPatients().length;
+    const receipt = escalateIntakeSafety(actor, "signup", s.sessionId, "Escalate");
+    expect(AdelanteEHR.listPatients()).toHaveLength(before); expect(JSON.stringify(receipt)).not.toContain("Private helper source");
+    expect(preChartTodayTasks(clinical).some(t => t.id === receipt.id)).toBe(true);
+  });
   it.each(["amber", "red"] as const)("linked %s creates owner task, clinician summary/red queue, receipt only", tier => {
     const r = referral(); assignIntakeTeam(actor, r.id, "care_manager", "s-cm2", "2026-10-27", "Assign"); assignIntakeTeam(actor, r.id, "clinician", "s-th2", "2026-10-27", "Assign");
     registerIntakeSafetySource(clinical, { tier, patientId: pid(r), source: { kind: "referral", id: r.id, field: "referrer_flag", trigger: "reported_safety_flag", text: "Sensitive source" } }, "Safety reported");
