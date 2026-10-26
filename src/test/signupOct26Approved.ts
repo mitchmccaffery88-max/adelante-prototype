@@ -6,8 +6,9 @@
 // changes. Parity tests apply these exact substitutions to the rollback text;
 // anything else must still match byte-for-byte. Each anchor must match
 // exactly once or this throws.
-const SIGNUP_OCT26: [
-  ['        asam: !!input.asamTaskId,\n', '        asam: !!input.asamTaskId,\n        firstVisit: !appointments.some(a => a.patientId === input.patientId && a.status !== "cancelled"),\n'],string, string][] = [
+const SIGNUP_OCT26: [string, string][] = [
+  // 26 Oct Intake Coordinator: store-level first-visit-only scheduling, existing roles unchanged.
+  ['        asam: !!input.asamTaskId,\n', '        asam: !!input.asamTaskId,\n        firstVisit: !appointments.some(a => a.patientId === input.patientId && a.status !== "cancelled"),\n'],
   // 1. enrollReferral signature gains the websiteSignup option
   [
     "  enrollReferral(id: string, opts?: { createAnyway?: { reason: string; actorId?: string; actorRole?: string } }) {",
