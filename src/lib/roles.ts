@@ -182,6 +182,8 @@ export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated
 // Matrix mirrors §4b. `consent_gated` = read/write allowed only when the
 // matching Part-2 consent is currently granted.
 const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
+  // 26 Oct intake role: account support is independent, not inherited by intake.
+  account_support: { sys_admin: "write" },
   demographics: {
     ecm_provider: "write",
     // §v3.0 — new roles. Each grant below was decided per-class, not copied
@@ -849,6 +851,14 @@ for (const [cls, [rn, lvn]] of Object.entries(NURSE_GRANTS) as [RecordClass, [Ac
 }
 
 /** §Batch E1 — outpatient nursing roles. */
+export const INTAKE_ROLE_DRAFT = "Draft — pending go-live permissions audit";
+export const INTAKE_ROLE_PURPOSE = "Owns the non-clinical front door from first contact through the first scheduled visit and intake handoff.";
+export const INTAKE_GRANTS: Partial<Record<RecordClass, AccessLevel>> = {
+  demographics: "write", documents: "write", eligibility: "write", consent_ledger: "write",
+  assisted_signup: "write", worklist: "write", sdoh: "read", pre_release: "read",
+  screeners_sud: "consent_gated", sud_treatment: "consent_gated",
+};
+for (const [cls, level] of Object.entries(INTAKE_GRANTS) as [RecordClass, AccessLevel][]) MATRIX[cls].intake_coordinator = level;
 export const NURSING_ROLES: StaffRole[] = ["nurse_rn", "lvn"];
 
 /**
@@ -1064,6 +1074,8 @@ export interface StaffMember {
   id: string;
   name: string;
   role: StaffRole;
+  /** Held roles, never unioned; permissions use the one acting role. */
+  additionalRoles?: StaffRole[];
   credential?: string;
   /** Links this staff member to a clinical provider record in AdelanteEHR. */
   clinicianId?: string;
@@ -1116,7 +1128,8 @@ export interface RoleAssignment {
 /** Role assignments a person can act in right now (in-facility ones only when the flag is on). */
 export function roleAssignmentsOf(m: StaffMember | undefined, opts: { includeHidden?: boolean } = {}): RoleAssignment[] {
   if (!m) return [];
-  const list = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];
+  const legacy = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];
+  const list = [...legacy, ...(m.additionalRoles ?? []).filter(role => !legacy.some(a => a.role === role)).map(role => ({role}))];
   return opts.includeHidden ? list : list.filter((a) => !a.inFacility || isFeatureEnabled("in_facility"));
 }
 export function hasRoleAssignment(m: StaffMember | undefined, role: StaffRole, opts: { includeHidden?: boolean } = {}): boolean {
@@ -1246,7 +1259,7 @@ export const STAFF_ROSTER: StaffMember[] = [
   },
   { id: "s-cred1", name: "Marcus Webb", role: "credentialing_coordinator" },
   { id: "s-bc1", name: "Deneen Ford", role: "billing_coordinator" },
-  { id: "s-admin1", name: "Adelante System Admin", role: "sys_admin" },
+  { id: "s-admin1", name: "Adelante System Admin", role: "sys_admin", additionalRoles: ["intake_coordinator"] },
 ];
 
 export function staffForRole(role: StaffRole): StaffMember[] {
@@ -1552,6 +1565,7 @@ export function canImportPreReleaseRoster(role: StaffRole): boolean {
     role === "cf_care_manager" ||
     role === "ecm_provider" ||
     role === "clinical_coordinator" ||
+    role === "intake_coordinator" ||
     role === "sys_admin"
   );
 }
@@ -1607,7 +1621,7 @@ export function setActingStaff(staffId: string, activeRole?: StaffRole) {
   actingStaffId = m.id;
   persist(STAFF_KEY, m.id);
   // §Batch E — the active role must be one of this person's assignments.
-  const next = activeRole && hasRoleAssignment(m, activeRole) ? activeRole : hasRoleAssignment(m, acting) && m.roleAssignments ? acting : m.role;
+  const next = activeRole && hasRoleAssignment(m, activeRole) ? activeRole : m.role;
   if (acting !== next) {
     acting = next;
     persist(KEY, next);

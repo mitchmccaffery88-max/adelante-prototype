@@ -35,9 +35,9 @@ declare module "./ehr" {
 
 // ---- Configuration (single home for the reviewer setting) -----------------
 /** Draft — pending executive RBAC review. Only these roles may ACT on items. */
-export const identityReviewerRoles: readonly StaffRole[] = ["sys_admin"];
+export const identityReviewerRoles: readonly StaffRole[] = ["intake_coordinator", "sys_admin"];
 /** These roles may VIEW the queue (read-only for non-reviewers). */
-export const identityViewerRoles: readonly StaffRole[] = ["sys_admin", "clinical_coordinator"];
+export const identityViewerRoles: readonly StaffRole[] = ["intake_coordinator", "sys_admin", "clinical_coordinator"];
 export const IDENTITY_REVIEW_PERMISSIONS_DRAFT = "Draft — pending executive RBAC review";
 
 export interface IdentityReviewActor {
@@ -144,6 +144,7 @@ export function createIdentityReviewItem(input: {
     createdAt: now(),
     source: input.source,
     status: "yourturn",
+    assignee: "intake_coordinator",
     sessionId: input.sessionId,
     patientId: input.patientId,
     referralId: input.referralId,
@@ -187,6 +188,10 @@ function requireReviewer(actor: IdentityReviewActor): void {
   if (!canActOnIdentityReview(actor)) throw new Error("Only an identity reviewer can decide.");
 }
 
+function requireReason(reason: string): void {
+  if (reason.trim().length < 3) throw new Error("Give a reason.");
+}
+
 // ---- Decisions (each called through a registry action, with a reason) ------
 
 /** Link the account to this referral: claims the referral and marks any live claim code used. */
@@ -196,6 +201,7 @@ export function identityReviewLink(
   input: { referralId: string; reason: string },
 ): IdentityReviewItem {
   requireReviewer(actor);
+  requireReason(input.reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   const referral = AdelanteEHR.listReferrals().find((r) => r.id === input.referralId);
@@ -222,6 +228,7 @@ export function identityReviewLink(
 /** Not the same person — closes the item; both records stay as they are. */
 export function identityReviewNotSame(actor: IdentityReviewActor, itemId: string, reason: string): IdentityReviewItem {
   requireReviewer(actor);
+  requireReason(reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   item.status = "closed";
@@ -233,6 +240,7 @@ export function identityReviewNotSame(actor: IdentityReviewActor, itemId: string
 /** Need more information — With others, plus a task to contact the person. */
 export function identityReviewNeedInfo(actor: IdentityReviewActor, itemId: string, reason: string): IdentityReviewItem {
   requireReviewer(actor);
+  requireReason(reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   item.status = "withothers";
@@ -247,7 +255,7 @@ export function identityReviewNeedInfo(actor: IdentityReviewActor, itemId: strin
       detail: "Simulated — no outreach is sent from this prototype.",
       dueDate: due,
       taskType: "identity_review_contact",
-      allowedRoles: [...identityViewerRoles],
+      allowedRoles: ["intake_coordinator"],
       dedupeKey: `identity-review:${item.id}:contact`,
     });
     taskId = task?.id;
@@ -260,6 +268,7 @@ export function identityReviewNeedInfo(actor: IdentityReviewActor, itemId: strin
 /** Merge accounts — records the decision; the merge itself runs in the existing patient merge with its confirm step. */
 export function identityReviewMerge(actor: IdentityReviewActor, itemId: string, reason: string): IdentityReviewItem {
   requireReviewer(actor);
+  requireReason(reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   if (!item.patientId || item.candidatePatientIds.length === 0) throw new Error("There is no second record to merge with.");
@@ -324,6 +333,8 @@ export function identityReviewConfirm(
   input: { how: string; reason: string },
 ): { item: IdentityReviewItem; code: ReferralClaimCode } {
   requireReviewer(actor);
+  requireReason(input.reason);
+  if (!input.how.trim()) throw new Error("Record how identity was confirmed.");
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   const referralId = item.referralId ?? item.candidateReferralIds[0];

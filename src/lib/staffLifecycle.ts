@@ -59,6 +59,7 @@ export function addStaffMemberWithReason(actor: LifecycleActor, member: StaffMem
 export interface UpdateStaffInput {
   staffId: string;
   role?: StaffRole;
+  additionalRoles?: StaffRole[];
   siteIds?: string[];
   reason: string;
 }
@@ -70,6 +71,7 @@ export function updateStaffMember(actor: LifecycleActor, input: UpdateStaffInput
   const m = STAFF_ROSTER.find((s) => s.id === input.staffId);
   if (!m) throw new Error("Staff member not found.");
   if (input.role) m.role = input.role;
+  if (input.additionalRoles) m.additionalRoles = [...new Set(input.additionalRoles)].filter(role => role !== m.role);
   if (input.siteIds) m.siteIds = input.siteIds;
   AdelanteEHR.recordActionEvent({
     action: "staff.updated",
