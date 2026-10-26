@@ -1,10 +1,10 @@
 # Roadmap
 
 ## 26 Oct Intake Phase B — dedicated referral adapters
-- [ ] B1 Intake-only form send/typed capture/paper attestation and status-only packet checklist; no ledger/history/disclosure grants.
-- [ ] B2 Billing-owned eligibility request and coverage-only readback; no Intake result entry.
-- [ ] B3 Validated referral/partner/packet SDOH projection and administrative handoff checklist only.
-- [ ] B4 Referral-staging import and referral-owned restricted packet documents; original clinical importer denied.
+- [x] B1 Intake-only form send/typed capture/paper attestation and status-only packet checklist; no ledger/history/disclosure grants. Existing typed forms require care-team review, not Intake renewal.
+- [x] B2 Billing-owned eligibility request and coverage-only readback; no Intake result entry. Real Billing task and registry manual-check host.
+- [x] B3 Validated referral/partner/packet SDOH projection and administrative handoff checklist only; exact source references rechecked.
+- [x] B4 Referral-staging import and referral-owned restricted packet documents; original clinical importer denied. Clinical coordinator staging on existing referral queue.
 - [ ] B5 Boundary/privacy tests, real UI readback, FULL units and isolated FULL public browser; report files/rules/gaps. Do not publish.
 
 ## 26 Oct Intake Phase A — dedicated referral adapters
@@ -12,7 +12,7 @@
 - [x] A2 Administrative checklist completion, active-roster scoped assignments, existing Today tasks and read-only header care team.
 - [x] A3 Linked crisis wrapper and source-keyed pre-chart triage with tier owners, receipts only for Intake, confirmed later chart linking. No on-call defined: explicit clinical-coordinator fallback gap. Source ingestion uses clinical-only structured capture; no private-answer scanning.
 - [x] A4 Four real-store demo referrals; allowed/adjacent-denial tests; FULL units 3,359/3,359 across 392 files; FULL public browser isolated 47/47, exit 0, 12.9m. Build OK; real UI booking/completion/clinical triage verified. Report: docs/intake-phase-a-report.md. Nothing published.
-- Phase B deferred: consent/paperwork, eligibility, SDOH and staging importer/documents. Do not publish.
+- Historical Phase B deferral superseded by Phase B authorization and implementation above. Do not publish.
 
 ## 26 Oct Intake responsibilities — scoped restoration
 - [x] Verify seven responsibilities against existing stores and Part 2 gates; findings in docs/intake-scoped-responsibilities-stop.md.
