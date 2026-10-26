@@ -13,7 +13,8 @@ const patient = AdelanteEHR.listPatients()[0];
 describe("runAction — one standard event per attempt", () => {
   it("role × action × outcome matrix matches the committed snapshot", () => {
     // 26 Oct signup change (Mitch): snapshot updated for the additive registry
-    // entries hloc_consent_capture, website_signup and website_auth_preview only.
+    // entries hloc_consent_capture, website_signup and website_auth_preview;
+    // 26 Oct Intake Coordinator adds its own row and identity review decisions only.
     expect(permissionSnapshot()).toMatchSnapshot();
   });
 

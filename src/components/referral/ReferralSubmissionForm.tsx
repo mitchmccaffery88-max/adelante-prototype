@@ -1,3 +1,6 @@
+import { runAction } from "@/lib/actions/runAction";
+import { currentRunActor } from "@/lib/actions/act";
+import { signupActor } from "@/lib/website/signupStore";
 // §Phase 4d — the ONE referral submission form. Extracted verbatim from the
 // public `/referral` route so staff can record a referral on someone's behalf
 // from inside the EHR without a second implementation of the same fields,
@@ -201,6 +204,8 @@ export function ReferralSubmissionForm({
     email: "",
     cin: "",
     dob: "",
+    dobUnknown: false,
+    approxAge: "",
     releaseDate: "",
     countyOfRelease: "Tulare",
     // §Phase 4c — three real states, UNANSWERED by default. Never silently "no".
@@ -260,7 +265,8 @@ export function ReferralSubmissionForm({
     const ji = form.justiceInvolved === "yes";
     const reported = benefitsAnswers(benefits, selectedPlanSnapshot(benefits.planId));
     const { cin: reportedCin, ...reportedRest } = reported ?? {};
-    const result = AdelanteEHR.createReferral({
+    const submitActor = staff ? currentRunActor() : signupActor;
+    const submission = runAction<ReturnType<typeof AdelanteEHR.createReferral>>("website_referral_submit", submitActor, undefined, {args:[submitActor, {
       firstName: form.firstName,
       lastName: form.lastName,
       phone: noPhone ? undefined : form.phone,
@@ -273,7 +279,10 @@ export function ReferralSubmissionForm({
       // Medi-Cal ID writes to the EXISTING `Referral.cin` — no parallel field.
       cin: reportedCin ? normalizeCin(reportedCin) : undefined,
       ...(reportedRest.coverageType ? { reportedBenefits: reportedRest } : {}),
-      dob: form.dob || undefined,
+      dob: form.dobUnknown ? undefined : form.dob || undefined,
+      dobUnknown: ["family", "self"].includes(form.referrerType) && form.dobUnknown,
+      approxAge: ["family", "self"].includes(form.referrerType) ? form.approxAge.trim() || undefined : undefined,
+      identityConfidence: ["family", "self"].includes(form.referrerType) ? "public_unverified" : "verified_source",
       releaseDate: ji ? form.releaseDate || undefined : undefined,
       justiceInvolved: form.justiceInvolved || undefined,
       referringAgency: form.referringAgency.trim(),
@@ -286,7 +295,9 @@ export function ReferralSubmissionForm({
       consentToContact: noPhone ? false : form.consentToContact,
       requestManualOutreach: noPhone,
       channel: staff ? "staff" : "public",
-    });
+    }]});
+    if (!submission.ok) { toast.error(submission.reason); return; }
+    const result = submission.value;
     if (!staff) {
       setConfirmation({
         reference: referralReference(result.id),
@@ -490,13 +501,18 @@ export function ReferralSubmissionForm({
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
           </Field>
-          <Field label="Date of birth (or Medi-Cal ID below) *">
+          <Field label={["family", "self"].includes(form.referrerType) ? (screenLang === "es" ? "Fecha de nacimiento (opcional)" : "Date of birth (optional)") : "Date of birth (or Medi-Cal ID below) *"}>
             <Input
               type="date"
               value={form.dob}
+              disabled={["family", "self"].includes(form.referrerType) && form.dobUnknown}
               onChange={(e) => setForm({ ...form, dob: e.target.value })}
             />
           </Field>
+          {["family", "self"].includes(form.referrerType) && <>
+            <label className="flex min-h-12 items-center gap-3 text-sm"><Checkbox checked={form.dobUnknown} onCheckedChange={checked => setForm({...form, dobUnknown: checked === true})} />{screenLang === "es" ? "No sé su fecha de nacimiento" : "I don't know their date of birth"}</label>
+            <Field label={screenLang === "es" ? "¿Aproximadamente cuántos años tiene? (opcional)" : "About how old are they? (optional)"}><Input value={form.approxAge} onChange={e => setForm({...form, approxAge: e.target.value})} /></Field>
+          </>}
         </div>
 
         {/* §Phase 4c — one form, conditional fields. Unanswered by default:

@@ -42,9 +42,9 @@ export function missingChaseFields(r: Referral): ChaseField[] {
 export const chaseText = (missing: ChaseField[]) => `Missing: ${missing.map((m) => CHASE_FIELD_LABEL[m]).join(", ")}`;
 
 /** Critical-field check (Draft). Returns the first problem, or null. */
-export function referralCriticalProblem(f: { firstName?: string; lastName?: string; dob?: string; cin?: string; phone?: string; email?: string; referrerPhone?: string; referrerEmail?: string }): string | null {
+export function referralCriticalProblem(f: { firstName?: string; lastName?: string; dob?: string; cin?: string; phone?: string; email?: string; referrerPhone?: string; referrerEmail?: string; referrerType?: string }): string | null {
   if (!f.firstName?.trim() || !f.lastName?.trim()) return "Add the person's first and last name.";
-  if (!f.dob?.trim() && !f.cin?.trim()) return "Add a date of birth or a Medi-Cal ID.";
+  if (!["family", "self"].includes(f.referrerType ?? "") && !f.dob?.trim() && !f.cin?.trim()) return "Add a date of birth or a Medi-Cal ID.";
   if (!f.phone?.trim() && !f.email?.trim() && !f.referrerPhone?.trim() && !f.referrerEmail?.trim())
     return "Add a way to reach the person or the referrer.";
   return null;
@@ -54,9 +54,9 @@ export function referralCriticalProblem(f: { firstName?: string; lastName?: stri
 /** Can own a chase task when assigned the referral. */
 export const CHASE_OWNER_ROLES: readonly StaffRole[] = ["ecm_provider", "cf_care_manager"];
 /** Shared pool. */
-export const CHASE_POOL_ROLE: StaffRole = "clinical_coordinator";
+export const CHASE_POOL_ROLE: StaffRole = "intake_coordinator";
 /** Can open the referral and record a missing value / log outreach. Never owns. */
-export const CHASE_FILL_ROLES: readonly StaffRole[] = ["peer_specialist", "community_health_worker", "ecm_provider", "cf_care_manager", "clinical_coordinator"];
+export const CHASE_FILL_ROLES: readonly StaffRole[] = ["peer_specialist", "community_health_worker", "ecm_provider", "cf_care_manager", "clinical_coordinator", "intake_coordinator"];
 export const canFillChase = (r: StaffRole) => CHASE_FILL_ROLES.includes(r);
 export const canSeeChaseTasks = (r: StaffRole) => CHASE_OWNER_ROLES.includes(r) || r === CHASE_POOL_ROLE;
 export const canClaimChase = (r: StaffRole) => r === CHASE_POOL_ROLE;

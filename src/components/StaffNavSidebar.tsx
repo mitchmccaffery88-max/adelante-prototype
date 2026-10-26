@@ -329,6 +329,7 @@ export function StaffNavSidebar({ mobile = false, onNavigate, newSlot }: { mobil
                     >
                       <Icon className={cn("h-4 w-4 shrink-0", !active && "text-teal")} />
                       {!collapsed && <span className="truncate">{e.label}</span>}
+                      {!collapsed && e.count && e.count() > 0 && <span className="ml-auto rounded-sm bg-gold px-1.5 text-sm text-on-gold" aria-label={`${e.count()} Your-turn items`}>{e.count()}</span>}
                     </Link></TooltipTrigger>{collapsed && <TooltipContent side="right">{e.label}</TooltipContent>}</Tooltip>
                   </li>
                 );

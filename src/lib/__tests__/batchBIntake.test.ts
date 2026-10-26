@@ -19,7 +19,8 @@ const mk = (extra: Record<string, unknown> = {}) =>
     channel: "public",
     ...extra,
   } as never);
-const coord = { role: "clinical_coordinator" as StaffRole, staffId: "s-coord-test", name: "Priya" };
+// 26 Oct Intake Coordinator owns referral paperwork; clinical work is unchanged.
+const coord = { role: "intake_coordinator" as StaffRole, staffId: "s-intake-test", name: "Intake" };
 const peer = { role: "peer_specialist" as StaffRole, staffId: "s-peer-test", name: "Andre" };
 
 afterEach(() => vi.useRealTimers());
@@ -79,7 +80,7 @@ describe("B2 referral chase tasks", () => {
     expect(t.status).toBe("open");
     expect(chaseRowsFor(coord).some((x) => x.referral.id === r.id && x.lane === "pool")).toBe(true);
     expect(chaseRowsFor({ role: "ecm_provider", staffId: "s-cm1" }).some((x) => x.referral.id === r.id)).toBe(false);
-    const a = runAction("referral_assign_owner", { role: "clinical_coordinator" }, undefined, { args: [coord, r.id, "s-cm1"] });
+    const a = runAction("referral_assign_owner", { role: "intake_coordinator" }, undefined, { args: [coord, r.id, "s-cm1"] });
     expect(a.ok).toBe(true);
     expect(chaseRowsFor({ role: "ecm_provider", staffId: "s-cm1" }).some((x) => x.referral.id === r.id && x.lane === "mine")).toBe(true);
     expect(chaseRowsFor(coord).some((x) => x.referral.id === r.id)).toBe(false);

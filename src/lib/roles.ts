@@ -38,6 +38,7 @@ export type StaffRole =
   | "lvn"
   | "billing"
   | "clinical_coordinator"
+  | "intake_coordinator"
   | "credentialing_coordinator"
   | "billing_coordinator"
   | "sys_admin";
@@ -57,12 +58,14 @@ export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
   { key: "lvn", label: "LVN" },
   { key: "billing", label: "Billing coordinator" },
   { key: "clinical_coordinator", label: "Clinical coordinator" },
+  { key: "intake_coordinator", label: "Intake Coordinator" },
   { key: "credentialing_coordinator", label: "Credentialing coordinator" },
   { key: "billing_coordinator", label: "Billing coordinator (expanded)" },
   { key: "sys_admin", label: "System admin" },
 ];
 
 export type RecordClass =
+  | "account_support"
   | "demographics"
   | "screeners_mh"
   | "screeners_sud"
@@ -179,6 +182,8 @@ export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated
 // Matrix mirrors §4b. `consent_gated` = read/write allowed only when the
 // matching Part-2 consent is currently granted.
 const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
+  // 26 Oct intake role: account support is independent, not inherited by intake.
+  account_support: { sys_admin: "write" },
   demographics: {
     ecm_provider: "write",
     // §v3.0 — new roles. Each grant below was decided per-class, not copied
@@ -846,6 +851,10 @@ for (const [cls, [rn, lvn]] of Object.entries(NURSE_GRANTS) as [RecordClass, [Ac
 }
 
 /** §Batch E1 — outpatient nursing roles. */
+export const INTAKE_ROLE_DRAFT = "Draft — pending go-live permissions audit";
+export const INTAKE_ROLE_PURPOSE = "Owns public referral intake and authorized identity review.";
+// No clinical record grants: intake works only its own referral/identity queues.
+export const INTAKE_GRANTS: Partial<Record<RecordClass, AccessLevel>> = {};
 export const NURSING_ROLES: StaffRole[] = ["nurse_rn", "lvn"];
 
 /**
@@ -928,6 +937,8 @@ export function canAccess(
     return { level: allowed ? "read" : "none", locked: !allowed };
   }
   const level = MATRIX[cls]?.[permissionRole(role)] ?? "none";
+  // Intake collects paperwork, never reads assessment scores or treatment content.
+  if (role === "intake_coordinator" && (cls === "screeners_sud" || cls === "sud_treatment")) return {level:"none",locked:true,reason:"42 CFR Part 2 — consent required"};
   if (level === "consent_gated") {
     // LIVE check against the structured ConsentRecord — never cached. Expiry
     // and revocation therefore stop access at the next call, with no other
@@ -1061,6 +1072,8 @@ export interface StaffMember {
   id: string;
   name: string;
   role: StaffRole;
+  /** Held roles, never unioned; permissions use the one acting role. */
+  additionalRoles?: StaffRole[];
   credential?: string;
   /** Links this staff member to a clinical provider record in AdelanteEHR. */
   clinicianId?: string;
@@ -1113,7 +1126,9 @@ export interface RoleAssignment {
 /** Role assignments a person can act in right now (in-facility ones only when the flag is on). */
 export function roleAssignmentsOf(m: StaffMember | undefined, opts: { includeHidden?: boolean } = {}): RoleAssignment[] {
   if (!m) return [];
-  const list = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];
+  const legacy = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];
+  // Explicit additionalRoles replaces legacy assignments, so removing a held role really removes it.
+  const list: RoleAssignment[] = m.additionalRoles === undefined ? legacy : [...new Set([m.role, ...m.additionalRoles])].map(role => legacy.find(a => a.role === role) ?? {role});
   return opts.includeHidden ? list : list.filter((a) => !a.inFacility || isFeatureEnabled("in_facility"));
 }
 export function hasRoleAssignment(m: StaffMember | undefined, role: StaffRole, opts: { includeHidden?: boolean } = {}): boolean {
@@ -1243,7 +1258,7 @@ export const STAFF_ROSTER: StaffMember[] = [
   },
   { id: "s-cred1", name: "Marcus Webb", role: "credentialing_coordinator" },
   { id: "s-bc1", name: "Deneen Ford", role: "billing_coordinator" },
-  { id: "s-admin1", name: "Adelante System Admin", role: "sys_admin" },
+  { id: "s-admin1", name: "Adelante System Admin", role: "sys_admin", additionalRoles: ["intake_coordinator"] },
 ];
 
 export function staffForRole(role: StaffRole): StaffMember[] {
@@ -1604,7 +1619,7 @@ export function setActingStaff(staffId: string, activeRole?: StaffRole) {
   actingStaffId = m.id;
   persist(STAFF_KEY, m.id);
   // §Batch E — the active role must be one of this person's assignments.
-  const next = activeRole && hasRoleAssignment(m, activeRole) ? activeRole : hasRoleAssignment(m, acting) && m.roleAssignments ? acting : m.role;
+  const next = activeRole && hasRoleAssignment(m, activeRole) ? activeRole : m.role;
   if (acting !== next) {
     acting = next;
     persist(KEY, next);

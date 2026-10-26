@@ -81,7 +81,7 @@ export const TEMPLATE_DEPARTMENTS: TemplateDepartment[] = [
   {
     id: "operations",
     label: "Operations",
-    roles: ["billing", "billing_coordinator", "credentialing_coordinator", "medical_assistant"],
+    roles: ["billing", "billing_coordinator", "credentialing_coordinator", "medical_assistant", "intake_coordinator"],
     leadRoles: [],
   },
 ];

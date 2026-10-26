@@ -79,6 +79,7 @@ export const ASK_ADEL_GROUP_BY_ROLE: Record<StaffRole, AskAdelGroup> = {
   peer_specialist: "coordination",
   community_health_worker: "coordination",
   clinical_coordinator: "admin",
+  intake_coordinator: "coordination",
   billing: "admin",
   billing_coordinator: "admin",
   credentialing_coordinator: "admin",

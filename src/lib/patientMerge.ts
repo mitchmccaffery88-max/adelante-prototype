@@ -12,6 +12,7 @@ import { _mergeRows as outpatientRows } from "./outpatientCare";
 import { _mergePlanStore } from "./structuredCarePlan";
 import { needsMergeHold, PART2_HOLD } from "./mergePart2";
 import { _closeReviewsForMerge, _reopenReviewAfterUnmerge, canReviewMatches, type MatchActor } from "./patientMatching";
+import { listIdentityReviewItems, identityReviewCompare } from "./identityReview";
 
 export const UNMERGE_WINDOW_DAYS_DRAFT = 30;
 const TAG = "_mergedFrom";
@@ -69,8 +70,8 @@ function embeddedLists(p: Patient): [string, Row[]][] {
   return Object.entries(p).filter(([, v]) => Array.isArray(v) && v.every((x) => x && typeof x === "object")) as [string, Row[]][];
 }
 
-function requireMerger(actor: MatchActor) {
-  if (!canReviewMatches(actor.role)) throw new Error("Only a clinical coordinator or system admin can merge records.");
+function requireMerger(actor: MatchActor, intakeReview = false) {
+  if (!canReviewMatches(actor.role) && !(intakeReview && actor.role === "intake_coordinator")) throw new Error("Only an authorized record reviewer can merge records.");
 }
 function audit(action: string, patientId: string, actor: MatchActor, detail: Record<string, unknown>) {
   AdelanteEHR._appendIdentityAudit({ action, patientId, actorId: actor.staffId, actorRole: String(actor.role), detail });
@@ -110,11 +111,16 @@ function duplicatePairs(a: string, b: string): [ClaimRow, ClaimRow][] {
   return out;
 }
 
-export function mergePatients(input: { survivorId: string; otherId: string; reason: string }, actor: MatchActor): MergeRecord {
-  requireMerger(actor);
+export function mergePatients(input: { survivorId: string; otherId: string; reason: string; identityReview?: string }, actor: MatchActor): MergeRecord {
+  if (input.identityReview) {
+    const item = listIdentityReviewItems().find(i=>i.id===input.identityReview);
+    if (!item || item.status === "closed" || item.patientId !== input.otherId || !item.candidatePatientIds.includes(input.survivorId) || identityReviewCompare(item,{role:actor.role as import("./roles").StaffRole,staffId:actor.staffId}).some(c=>c.restrictedReason)) throw new Error("Authorized identity review candidates required.");
+  }
+  requireMerger(actor, !!input.identityReview);
   if (!input.reason?.trim()) throw new Error("A reason is required to merge.");
   const summary = previewMerge(input.survivorId, input.otherId);
-  const s = AdelanteEHR.getPatient(input.survivorId)!, o = AdelanteEHR.getPatient(input.otherId)!;
+  const s = AdelanteEHR.getPatient(input.survivorId), o = AdelanteEHR.getPatient(input.otherId);
+  if (!s || !o) throw new Error("Record not found.");
   const id = `merge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
   const at = new Date().toISOString();
   const rec: MergeRecord = { ...summary, id, at, by: actor.name, reason: input.reason.trim(), status: "active", moved: [], embedded: [], planMoved: false, flaggedClaims: [], screenerKeys: [], part2Held: 0 };
@@ -175,7 +181,7 @@ export function mergePatients(input: { survivorId: string; otherId: string; reas
   delete s.possibleDuplicate;
   M().unshift(rec);
   _closeReviewsForMerge(s.id, o.id, id, actor);
-  audit("patient_merged", s.id, actor, { mergeId: id, mergedPatientId: o.id, reason: rec.reason, counts: summary.counts, consentsNeedingReview: summary.consentsNeedingReview, duplicateClaims: summary.duplicateClaims });
+  audit("patient_merged", s.id, actor, input.identityReview ? {mergeId:id,mergedPatientId:o.id} : { mergeId: id, mergedPatientId: o.id, reason: rec.reason, counts: summary.counts, consentsNeedingReview: summary.consentsNeedingReview, duplicateClaims: summary.duplicateClaims });
   AdelanteEHR._emit();
   return rec;
 }

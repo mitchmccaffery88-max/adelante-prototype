@@ -75,7 +75,7 @@ export const OUTREACH_FALLBACK_DRAFT = {
 
 /** Any role that may log outreach may also claim the work. */
 export function canWorkReferralOutreach(role: StaffRole): boolean {
-  return canAccess(role, "care_coordination").level === "write";
+  return role === "intake_coordinator" || canAccess(role, "care_coordination").level === "write";
 }
 
 type OutreachShapedReferral = {

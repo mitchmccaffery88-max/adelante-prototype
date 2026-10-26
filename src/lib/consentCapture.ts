@@ -222,7 +222,7 @@ let seq = 0;
 
 /** Staff send a typed consent to the patient for e-sign in Forms to sign. */
 export function requestConsentESign(input: { draft: CaptureDraft; actor: Actor }): ESignRequest {
-  if (input.actor.role === "patient" || !roleHasChartEntry(input.actor.role)) throw new Error("Only care-team roles with chart entry can send forms.");
+  if (input.actor.role === "patient" || !roleHasChartEntry(input.actor.role)) throw new Error("Only authorized staff can send forms.");
   baseChecks(input.draft);
   if (isPart2Type(input.draft.consentType) && validateConsentExtension({ consentType: input.draft.consentType, part2Elements: input.draft.part2Elements, signature: { method: "e_sign" } as never }).length)
     throw new Error("Part 2 consent is missing required elements.");

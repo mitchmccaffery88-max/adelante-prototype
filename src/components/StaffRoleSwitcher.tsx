@@ -4,6 +4,8 @@
 // first page that role's own menu offers.
 import { useHydrated, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useEffect } from "react";
+import { seedIntakeStaff } from "@/lib/intakeWorkspace";
 import { ChevronDown, UserCog } from "lucide-react";
 import { STAFF_ROLES, STAFF_ROSTER, roleAssignmentsOf, setActingStaff, useActingStaff, type StaffRole } from "@/lib/roles";
 import { staffNavForRole } from "@/lib/navSections";
@@ -24,6 +26,7 @@ export function StaffRoleSwitcher() {
   const { staffId, role, staffName } = useActingStaff();
   // Saved acting role comes from browser storage: neutral label until hydrated.
   const hydrated = useHydrated();
+  useEffect(seedIntakeStaff, []);
 
   function choose(value: string) {
     // §Batch E — value is "staffId|role": one identity, pick the active role.
@@ -36,10 +39,10 @@ export function StaffRoleSwitcher() {
     const staysHere =
       pages.some((e) => e.to === pathname) ||
       (pathname.startsWith("/record/") && pages.length > 0);
-    if (!staysHere) {
+    if (!staysHere || m.role === "intake_coordinator" || id === staffId && m.role !== role) {
       // Sensible home per role, only among pages that role can already see.
       const preferred =
-        m.role === "billing" || m.role === "billing_coordinator"
+        m.role === "intake_coordinator" ? ["/intake-workspace"] : m.role === "billing" || m.role === "billing_coordinator"
           ? ["/billing"]
           : m.role === "nurse_rn" || m.role === "lvn"
             ? ["/nurse", "/my-work"]

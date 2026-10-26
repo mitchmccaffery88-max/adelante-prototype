@@ -13,9 +13,11 @@
  * the Supabase schema.
  */
 import { AdelanteEHR, type Patient, type Referral } from "./ehr";
-import type { StaffRole } from "./roles";
+import { type StaffRole } from "./roles";
+import { isRestricted } from "./chartAccess";
 import { emailKey, nameKey, phoneKey } from "./signupMatch";
 import { normalizeEnrollmentCode } from "./signup";
+import { mergePatients } from "./patientMerge";
 
 // ---- Referral identity fields (26 Oct) -----------------------------------
 // Public referrals (family, friends, self) often arrive without a reliable
@@ -35,9 +37,9 @@ declare module "./ehr" {
 
 // ---- Configuration (single home for the reviewer setting) -----------------
 /** Draft — pending executive RBAC review. Only these roles may ACT on items. */
-export const identityReviewerRoles: readonly StaffRole[] = ["sys_admin"];
+export const identityReviewerRoles: readonly StaffRole[] = ["intake_coordinator", "sys_admin"];
 /** These roles may VIEW the queue (read-only for non-reviewers). */
-export const identityViewerRoles: readonly StaffRole[] = ["sys_admin", "clinical_coordinator"];
+export const identityViewerRoles: readonly StaffRole[] = ["intake_coordinator", "sys_admin", "clinical_coordinator"];
 export const IDENTITY_REVIEW_PERMISSIONS_DRAFT = "Draft — pending executive RBAC review";
 
 export interface IdentityReviewActor {
@@ -144,6 +146,7 @@ export function createIdentityReviewItem(input: {
     createdAt: now(),
     source: input.source,
     status: "yourturn",
+    assignee: "intake_coordinator",
     sessionId: input.sessionId,
     patientId: input.patientId,
     referralId: input.referralId,
@@ -187,6 +190,30 @@ function requireReviewer(actor: IdentityReviewActor): void {
   if (!canActOnIdentityReview(actor)) throw new Error("Only an identity reviewer can decide.");
 }
 
+function requireReason(reason: string): void {
+  if (reason.trim().length < 3) throw new Error("Give a reason.");
+}
+
+function candidateAllowed(actor: IdentityReviewActor, referral: Referral): boolean {
+  const pid = referral.enrolledPatientId;
+  const patient = pid ? AdelanteEHR.getPatient(pid) : undefined;
+  if (pid && isRestricted(pid)) return false;
+  if (referral.substanceUseNeed || patient && AdelanteEHR.listProblems(patient.id).some(p=>p.category === "sud")) {
+    if (!patient) return false;
+    // Identity-only review is not a clinical-content grant.
+    if (!AdelanteEHR.isConsentCategoryAuthorized(patient.id,"sud_treatment")) return false;
+  }
+  return true;
+}
+function requireCandidate(actor: IdentityReviewActor, item: IdentityReviewItem, id: string): Referral {
+  if (item.referralId !== id && !item.candidateReferralIds.includes(id)) throw new Error("Choose a candidate from this review item.");
+  const referral = AdelanteEHR.listReferrals().find(r => r.id === id);
+  if (!referral || !["submitted", "contacted"].includes(referral.status)) throw new Error("This referral is not open for identity review.");
+  if (!candidateAllowed(actor, referral)) throw new Error("Restricted referral — authorized intake consent required.");
+  if (item.patientId && isRestricted(item.patientId)) throw new Error("Restricted account — authorized review required.");
+  return referral;
+}
+
 // ---- Decisions (each called through a registry action, with a reason) ------
 
 /** Link the account to this referral: claims the referral and marks any live claim code used. */
@@ -196,10 +223,10 @@ export function identityReviewLink(
   input: { referralId: string; reason: string },
 ): IdentityReviewItem {
   requireReviewer(actor);
+  requireReason(input.reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
-  const referral = AdelanteEHR.listReferrals().find((r) => r.id === input.referralId);
-  if (!referral) throw new Error("That referral no longer exists.");
+  const referral = requireCandidate(actor, item, input.referralId);
   if (!item.patientId) throw new Error("There is no account to link.");
   const at = now();
   // Prototype write: the referral store exposes field-limited updaters only,
@@ -222,6 +249,7 @@ export function identityReviewLink(
 /** Not the same person — closes the item; both records stay as they are. */
 export function identityReviewNotSame(actor: IdentityReviewActor, itemId: string, reason: string): IdentityReviewItem {
   requireReviewer(actor);
+  requireReason(reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   item.status = "closed";
@@ -233,38 +261,40 @@ export function identityReviewNotSame(actor: IdentityReviewActor, itemId: string
 /** Need more information — With others, plus a task to contact the person. */
 export function identityReviewNeedInfo(actor: IdentityReviewActor, itemId: string, reason: string): IdentityReviewItem {
   requireReviewer(actor);
+  requireReason(reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   item.status = "withothers";
   item.history.push({ at: now(), action: "need_more_information", by: actor.staffName ?? actor.staffId ?? "", reason });
-  let taskId: string | undefined;
-  if (item.patientId) {
-    const due = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-    const task = AdelanteEHR.createCaseTask({
-      patientId: item.patientId,
-      assignedTo: actor.staffName ?? actor.staffId ?? "",
-      title: "Contact the person to confirm identity details",
-      detail: "Simulated — no outreach is sent from this prototype.",
-      dueDate: due,
-      taskType: "identity_review_contact",
-      allowedRoles: [...identityViewerRoles],
-      dedupeKey: `identity-review:${item.id}:contact`,
-    });
-    taskId = task?.id;
-    item.contactTaskId = taskId;
-  }
-  audit(item, "identity_review_need_info", actor, taskId ? { taskId } : {});
+  // Intake follow-up stays in this identity queue, never a clinical case task.
+  audit(item, "identity_review_need_info", actor);
   return item;
 }
 
 /** Merge accounts — records the decision; the merge itself runs in the existing patient merge with its confirm step. */
 export function identityReviewMerge(actor: IdentityReviewActor, itemId: string, reason: string): IdentityReviewItem {
   requireReviewer(actor);
+  requireReason(reason);
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
   if (!item.patientId || item.candidatePatientIds.length === 0) throw new Error("There is no second record to merge with.");
   item.history.push({ at: now(), action: "merge_opened", by: actor.staffName ?? actor.staffId ?? "", reason });
   audit(item, "identity_review_merge_opened", actor, { candidatePatientIds: item.candidatePatientIds });
+  return item;
+}
+
+/** Existing merge engine and consent holds, confirmed in the identity-only review view. */
+export function identityReviewMergeConfirmed(actor: IdentityReviewActor, itemId: string, input: {candidatePatientId:string;reason:string;confirmed:boolean}): IdentityReviewItem {
+  requireReviewer(actor);
+  requireReason(input.reason);
+  const item = itemFor(itemId);
+  if (!input.confirmed || item.status === "closed" || !item.patientId || !item.candidatePatientIds.includes(input.candidatePatientId)) throw new Error("Confirm a candidate from this item.");
+  if (identityReviewCompare(item,actor).some(c=>c.restrictedReason)) throw new Error("Restricted records — authorized review required.");
+  if (!actor.staffId) throw new Error("Staff identity required.");
+  const merged = mergePatients({survivorId:input.candidatePatientId,otherId:item.patientId,reason:input.reason,identityReview:item.id},{role:actor.role,staffId:actor.staffId,name:actor.staffName ?? actor.staffId});
+  item.status="closed";
+  item.history.push({at:now(),action:"merged",by:actor.staffId,reason:input.reason});
+  audit(item,"identity_review_merged",actor,{mergeId:merged.id,candidatePatientId:input.candidatePatientId});
   return item;
 }
 
@@ -294,6 +324,9 @@ function mintCode(): string {
 }
 
 export function issueReferralClaimCode(referralId: string, actor: IdentityReviewActor): ReferralClaimCode {
+  requireReviewer(actor);
+  const referral=AdelanteEHR.listReferrals().find(r=>r.id===referralId);
+  if (!referral?.identityConfirmedBy || !referral.dob || !candidateAllowed(actor,referral)) throw new Error("Confirm identity before issuing a claim code.");
   const live = referralClaimCodes.find((c) => c.referralId === referralId && !c.consumedAt && +new Date(c.expiresAt) > Date.now());
   if (live) return live;
   const at = now();
@@ -321,15 +354,22 @@ export function consumeReferralClaimCode(code: ReferralClaimCode): void {
 export function identityReviewConfirm(
   actor: IdentityReviewActor,
   itemId: string,
-  input: { how: string; reason: string },
+  input: { how: string; reason: string; firstName:string;lastName:string;dob:string },
 ): { item: IdentityReviewItem; code: ReferralClaimCode } {
   requireReviewer(actor);
+  requireReason(input.reason);
+  if (!input.how.trim()) throw new Error("Record how identity was confirmed.");
+  if (!input.firstName.trim() || !input.lastName.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(input.dob) || !Number.isFinite(Date.parse(input.dob)) || Date.parse(input.dob)>=Date.now()) throw new Error("Confirm the person's name and date of birth.");
   const item = itemFor(itemId);
   if (item.status === "closed") throw new Error("This item is already closed.");
-  const referralId = item.referralId ?? item.candidateReferralIds[0];
-  const referral = AdelanteEHR.listReferrals().find((r) => r.id === referralId);
-  if (!referral) throw new Error("That referral no longer exists.");
+  const referralId = item.referralId;
+  if (!referralId) throw new Error("Choose the referral to confirm.");
+  const referral = requireCandidate(actor, item, referralId);
   const at = now();
+  referral.firstName=input.firstName.trim();
+  referral.lastName=input.lastName.trim();
+  referral.dob=input.dob;
+  referral.dobUnknown=false;
   referral.identityConfirmedBy = { name: actor.staffName ?? actor.staffId ?? "", role: actor.role, staffId: actor.staffId, at, how: input.how };
   referral.identityConfidence = "verified_source";
   const code = issueReferralClaimCode(referral.id, actor);
@@ -355,6 +395,7 @@ export interface IdentityCandidateView {
   identityConfidence?: string;
   createdAt: string;
   hasAccount?: boolean;
+  restrictedReason?: string;
 }
 
 const patientView = (p: Patient): IdentityCandidateView => ({
@@ -385,7 +426,8 @@ const referralView = (r: Referral): IdentityCandidateView => ({
 });
 
 /** Side-by-side compare: the new account plus every candidate record/referral, identity fields only. */
-export function identityReviewCompare(item: IdentityReviewItem): IdentityCandidateView[] {
+export function identityReviewCompare(item: IdentityReviewItem, actor?: IdentityReviewActor): IdentityCandidateView[] {
+  if (!actor || !canViewIdentityReview(actor)) return [];
   const out: IdentityCandidateView[] = [];
   if (item.patientId) {
     const p = AdelanteEHR.getPatient(item.patientId);
@@ -401,19 +443,21 @@ export function identityReviewCompare(item: IdentityReviewItem): IdentityCandida
     const r = AdelanteEHR.listReferrals().find((x) => x.id === id);
     if (r) out.push(referralView(r));
   }
-  return out;
+  return out.map(candidate => {
+    const referral = candidate.kind === "referral" ? AdelanteEHR.listReferrals().find(r => r.id === candidate.id) : undefined;
+    const pid = candidate.kind === "account" ? candidate.id : referral?.enrolledPatientId;
+    const patient = pid ? AdelanteEHR.getPatient(pid) : undefined;
+    const restricted = pid && isRestricted(pid);
+    const p2 = referral ? !candidateAllowed(actor,referral) : patient && AdelanteEHR.listProblems(patient.id).some(p=>p.category === "sud") && !AdelanteEHR.isConsentCategoryAuthorized(patient.id,"sud_treatment");
+    return restricted || p2 ? {kind:candidate.kind,id:candidate.id,firstName:"",lastName:"",createdAt:candidate.createdAt,restrictedReason:restricted ? "Restricted record — authorized review required" : "42 CFR Part 2 — intake consent required"} : candidate;
+  });
 }
 
 /** Candidate referrals a reviewer may link this account to (open, not already enrolled). */
-export function linkableReferrals(item: IdentityReviewItem): Referral[] {
+export function linkableReferrals(item: IdentityReviewItem, actor: IdentityReviewActor): Referral[] {
+  if (!canActOnIdentityReview(actor)) return [];
   const ids = new Set([...(item.referralId ? [item.referralId] : []), ...item.candidateReferralIds]);
-  const entries = item.entries;
-  return AdelanteEHR.listReferrals().filter((r) => {
-    if (r.status !== "submitted" && r.status !== "contacted") return false;
-    if (ids.has(r.id)) return true;
-    // A reviewer may also pick an unlisted referral that shares the name.
-    return nameKey(r.firstName) === nameKey(entries.firstName) && nameKey(r.lastName) === nameKey(entries.lastName);
-  });
+  return AdelanteEHR.listReferrals().filter(r => ["submitted", "contacted"].includes(r.status) && ids.has(r.id) && candidateAllowed(actor,r));
 }
 
 /** Identity-field match hints for the compare view (display only). */

@@ -157,6 +157,8 @@ function DemoAuthPage({ initialMode = "signin" }: { initialMode?: "signin" | "st
         return "/case-manager" as const;
       case "clinical_coordinator":
         return "/admin-coordination" as const;
+      case "intake_coordinator":
+        return "/intake-workspace" as const;
       case "credentialing_coordinator":
         return "/admin-credentialing" as const;
       case "billing":
