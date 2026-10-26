@@ -8,7 +8,7 @@ export function seedIntakePhaseA(actor: IntakeActor) {
   const make = (firstName: string, suffix: string, extra: Partial<Parameters<typeof AdelanteEHR.createReferral>[0]> = {}) => AdelanteEHR.createReferral({ firstName, lastName: "Demo", dob: "1990-04-12", email: `phase-a-${suffix}@example.invalid`, referringAgency: "Demo referral", referrerName: "Demo referrer", referrerEmail: "demo@example.invalid", referralSource: "other", consentToContact: false, channel: "public", identityConfidence: "verified_source", ...extra });
   make("Alex", "new");
   const outreach = make("Sam", "outreach"); AdelanteEHR.logReferralOutreachAttempt(outreach.id, { outcome: "no_answer" });
-  const waiting = make("Casey", "paperwork", { dob: undefined, dobUnknown: true, identityConfidence: "public_unverified", referralSource: "self" });
+  const waiting = make("Casey", "paperwork", { dob: undefined, dobUnknown: true, identityConfidence: "public_unverified", referralSource: "other", referrerType: "family" });
   AdelanteEHR.markReferralContacted(waiting.id);
   const ready = make("Morgan", "ready", { intakeServices: { source: "referral", kinds: ["care_manager", "assessment", "psych_evaluation"] } });
   const pid = AdelanteEHR.enrollReferral(ready.id, { websiteSignup: true });
