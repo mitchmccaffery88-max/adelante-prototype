@@ -306,7 +306,7 @@ export function identityReviewMergeConfirmed(actor: IdentityReviewActor, itemId:
   if (!input.confirmed || item.status === "closed" || !item.patientId || !item.candidatePatientIds.includes(input.candidatePatientId)) throw new Error("Confirm a candidate from this item.");
   if (identityReviewCompare(item,actor).some(c=>c.restrictedReason)) throw new Error("Restricted records — authorized review required.");
   if (!actor.staffId) throw new Error("Staff identity required.");
-  const merged = mergePatients({survivorId:input.candidatePatientId,otherId:item.patientId,reason:input.reason,identityReview:true},{role:actor.role,staffId:actor.staffId,name:actor.staffName ?? actor.staffId});
+  const merged = mergePatients({survivorId:input.candidatePatientId,otherId:item.patientId,reason:input.reason,identityReview:item.id},{role:actor.role,staffId:actor.staffId,name:actor.staffName ?? actor.staffId});
   item.status="closed";
   item.history.push({at:now(),action:"merged",by:actor.staffId,reason:input.reason});
   audit(item,"identity_review_merged",actor,{mergeId:merged.id,candidatePatientId:input.candidatePatientId});

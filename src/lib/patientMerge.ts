@@ -12,6 +12,7 @@ import { _mergeRows as outpatientRows } from "./outpatientCare";
 import { _mergePlanStore } from "./structuredCarePlan";
 import { needsMergeHold, PART2_HOLD } from "./mergePart2";
 import { _closeReviewsForMerge, _reopenReviewAfterUnmerge, canReviewMatches, type MatchActor } from "./patientMatching";
+import { listIdentityReviewItems, identityReviewCompare } from "./identityReview";
 
 export const UNMERGE_WINDOW_DAYS_DRAFT = 30;
 const TAG = "_mergedFrom";
@@ -110,8 +111,12 @@ function duplicatePairs(a: string, b: string): [ClaimRow, ClaimRow][] {
   return out;
 }
 
-export function mergePatients(input: { survivorId: string; otherId: string; reason: string; identityReview?: boolean }, actor: MatchActor): MergeRecord {
-  requireMerger(actor, input.identityReview === true);
+export function mergePatients(input: { survivorId: string; otherId: string; reason: string; identityReview?: string }, actor: MatchActor): MergeRecord {
+  if (input.identityReview) {
+    const item = listIdentityReviewItems().find(i=>i.id===input.identityReview);
+    if (!item || item.status === "closed" || item.patientId !== input.otherId || !item.candidatePatientIds.includes(input.survivorId) || identityReviewCompare(item,{role:actor.role as import("./roles").StaffRole,staffId:actor.staffId}).some(c=>c.restrictedReason)) throw new Error("Authorized identity review candidates required.");
+  }
+  requireMerger(actor, !!input.identityReview);
   if (!input.reason?.trim()) throw new Error("A reason is required to merge.");
   const summary = previewMerge(input.survivorId, input.otherId);
   const s = AdelanteEHR.getPatient(input.survivorId)!, o = AdelanteEHR.getPatient(input.otherId)!;
