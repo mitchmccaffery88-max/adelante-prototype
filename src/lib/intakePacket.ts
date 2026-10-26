@@ -3,6 +3,7 @@ import { canAccess } from "./roles";
 import { isRestricted } from "./chartAccess";
 import { canIntakeB, assertIntakeB, intakeBReferral, intakeFormsStatus, careTeamCanRead } from "./intakePhaseB";
 import { intakeCompleted, type IntakeActor } from "./intakePhaseA";
+import { registerIntakeStagingBoundary } from "./intakeStagingBoundary";
 
 export const PACKET_SOURCES = ["referral_form", "partner_referral", "pre_release_packet"] as const;
 export type PacketSource = (typeof PACKET_SOURCES)[number];
@@ -22,6 +23,12 @@ function referenceValid(r: Referral, n: Need) { return n.referralId === r.id && 
 function intakeTreatmentConsent(r: Referral) { return !!r.enrolledPatientId && !isRestricted(r.enrolledPatientId) && AdelanteEHR.isConsentCategoryAuthorized(r.enrolledPatientId, "sud_treatment"); }
 export interface StagingRow { referralId?: string; firstName: string; lastName: string; dob?: string; phone?: string; email?: string; referrerName: string; referrerPhone?: string; referrerEmail?: string; referringAgency?: string; releaseDate?: string; referralReason?: string; sdoh?: { kind: PacketNeedKind; part2?: boolean }[]; }
 const STAGING_FIELDS = ["referralId", "firstName", "lastName", "dob", "phone", "email", "referrerName", "referrerPhone", "referrerEmail", "referringAgency", "releaseDate", "referralReason", "sdoh"];
+registerIntakeStagingBoundary((raw, who) => {
+  const fields = raw as Record<string, unknown>; const actor = who as IntakeActor;
+  assertIntakeB(actor, "staging_import", "Referral staging");
+  const keys = ["firstName", "lastName", "dob", "phone", "email", "referrerName", "referrerPhone", "referrerEmail", "referringAgency", "releaseDate", "intakeStaging", "referralSource", "consentToContact", "identityConfidence"];
+  if (Object.keys(fields).some(k => !keys.includes(k))) throw new Error("Referral staging fields only.");
+});
 export function importIntakeStaging(actor: IntakeActor, source: PacketSource, sourceRef: string, rows: StagingRow[], reason: string) {
   assertIntakeB(actor, "staging_import", reason);
   if (!sourceValid(source) || source === "referral_form" || !sourceRef.trim() || !Array.isArray(rows) || !rows.length || rows.length > 500) throw new Error("Partner roster or pre-release packet source required (1–500 rows).");
@@ -36,10 +43,9 @@ export function importIntakeStaging(actor: IntakeActor, source: PacketSource, so
   const ids: string[] = [];
   for (const row of rows) {
     const fields = { firstName: row.firstName.trim(), lastName: row.lastName.trim(), dob: row.dob, phone: row.phone?.trim(), email: row.email?.trim().toLowerCase(), referrerName: row.referrerName.trim(), referrerPhone: row.referrerPhone?.trim(), referrerEmail: row.referrerEmail?.trim(), referringAgency: row.referringAgency?.trim() ?? "", releaseDate: row.releaseDate };
-    const r = row.referralId ? AdelanteEHR.listReferrals().find(x => x.id === row.referralId) : AdelanteEHR.createReferral({ ...fields, channel: "staff", referralSource: source === "pre_release_packet" ? "correctional" : "community_based_organization", consentToContact: false, requestManualOutreach: true, identityConfidence: "verified_source" });
+    const metadata = { source, sourceRef: sourceRef.trim(), ingestedBy: actor.staffId ?? "", ingestedAt: new Date().toISOString(), referralReason: row.referralReason?.trim() };
+    const r = row.referralId ? AdelanteEHR.updateIntakeStagingReferral(row.referralId, { ...fields, intakeStaging: metadata }, actor) : AdelanteEHR.createReferral({ ...fields, intakeStaging: metadata, stagingActor: actor, channel: "staff", referralSource: source === "pre_release_packet" ? "correctional" : "community_based_organization", consentToContact: false, requestManualOutreach: true, identityConfidence: "verified_source" });
     if (!r) throw new Error("Staging referral unavailable.");
-    if (row.referralId) Object.assign(r, fields);
-    r.intakeStaging = { source, sourceRef: sourceRef.trim(), ingestedBy: actor.staffId ?? "", ingestedAt: new Date().toISOString(), referralReason: row.referralReason?.trim() };
     if (row.sdoh) ingestPacketNeeds(actor, r.id, source, sourceRef, row.sdoh, reason);
     ids.push(r.id);
   }
