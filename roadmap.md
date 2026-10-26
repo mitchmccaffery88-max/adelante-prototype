@@ -1,5 +1,12 @@
 # Roadmap
 
+## 26 Oct Intake Phase B — dedicated referral adapters
+- [ ] B1 Intake-only form send/typed capture/paper attestation and status-only packet checklist; no ledger/history/disclosure grants.
+- [ ] B2 Billing-owned eligibility request and coverage-only readback; no Intake result entry.
+- [ ] B3 Validated referral/partner/packet SDOH projection and administrative handoff checklist only.
+- [ ] B4 Referral-staging import and referral-owned restricted packet documents; original clinical importer denied.
+- [ ] B5 Boundary/privacy tests, real UI readback, FULL units and isolated FULL public browser; report files/rules/gaps. Do not publish.
+
 ## 26 Oct Intake Phase A — dedicated referral adapters
 - [x] A1 First-of-kind indicated booking and attributed clinician-approved group requests; no general booking/reschedule/details. Conflict refusals contain no other clinician/visit details.
 - [x] A2 Administrative checklist completion, active-roster scoped assignments, existing Today tasks and read-only header care team.
