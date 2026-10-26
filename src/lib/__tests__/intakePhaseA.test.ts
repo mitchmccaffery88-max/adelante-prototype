@@ -56,7 +56,7 @@ describe("26 Oct Phase A — first visit boundary", () => {
   });
   it("does not offer an active clinician who does not provide the indicated service", () => {
     const r = referral(); const id = calendar("assessment");
-    AdelanteEHR.registerClinician({ id: "phase-a-wrong-service", name: "Wrong service", credential: "LCSW", mediCalCredentialed: true, services: ["therapy"] });
+    AdelanteEHR.registerClinician({ id: "phase-a-wrong-service", name: "Wrong service", credential: "LCSW", mediCalCredentialed: true, services: ["therapy_individual"] });
     STAFF_ROSTER.push({ id: "phase-a-wrong-service-staff", name: "Wrong service", role: "therapist", clinicianId: "phase-a-wrong-service" });
     AdelanteEHRExt.upsertAvailabilityBlock({ clinicianId: "phase-a-wrong-service", weekday: 2, start: "09:00", end: "17:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["intake"] });
     const slots = firstVisitSlots(r.id, "assessment", actor, "in_person");
