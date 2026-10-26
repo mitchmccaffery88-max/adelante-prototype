@@ -27,3 +27,40 @@ export interface EligibilityAdapter {
   vendor: string;
   send270(request: EligibilityRequest): Promise<NormalizedEligibilityResponse>;
 }
+
+// ---------------------------------------------------------------------------
+// 26 Oct (Mitch) — channel-agnostic coverage adapter. One interface for every
+// channel (manual, the simulated vendor, a 270/271 clearinghouse, or an
+// external billing module such as a future SculptSoft integration). Adapters
+// return ONLY this normalized shape; raw payloads stay with the channel.
+import type { CoverageChannel, CoveragePath } from "./coverageConfig";
+
+export interface CoverageCheckRequest {
+  requestKey: string;
+  patientId: string;
+  path: CoveragePath;
+  programId?: string;
+  payerId?: string;
+  /** Opaque Billing-held reference (never shown outside Billing). */
+  memberRef?: string;
+  serviceDate: string;
+}
+export interface CoverageCheckResponse {
+  outcome: "active" | "inactive" | "not_found" | "error" | "manual_required";
+  errorKind?: "timeout" | "unreachable" | "rejected" | "not_connected";
+  channel: CoverageChannel;
+  simulated: boolean;
+  transactionRef?: string;
+  planName?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  /** Billing-only. */
+  financial?: { copayCents?: number; deductibleCents?: number; outOfPocketMaxCents?: number };
+  /** Behavioral health / SUD carve-out flags (Billing-only). */
+  carveOuts?: { behavioralHealth?: boolean; sud?: boolean };
+}
+export interface CoverageAdapter {
+  channel: CoverageChannel;
+  simulated: boolean;
+  check(request: CoverageCheckRequest): Promise<CoverageCheckResponse>;
+}
