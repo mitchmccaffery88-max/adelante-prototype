@@ -102,3 +102,4 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Care-team on-behalf requests share the request item; Intake path unchanged.
 - [ ] Patient self-sign for group confidentiality / telehealth consent — blocked: needs Mitch decision on a new consent writer.
 - [ ] Open groups without care-plan eligibility — blocked: eligibility gate kept per standing rule; needs Mitch decision.
+- [x] Validation: FULL units 3,399/3,399 (394 files); FULL public browser 47/47 (9.5m, one worker, :8080). Nothing published.

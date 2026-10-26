@@ -34,4 +34,6 @@ Through `createGroupSession`: "Stress and sleep" (open, skills, billable), "Subs
 - Changed: `src/lib/ehr.ts` (six exact-once deltas pinned in `groupRequestsApproved.ts`), `src/lib/chartActions.ts` (7 actions), `src/components/PatientGroupScheduling.tsx`, `src/components/groups/GroupJoinRequestsQueue.tsx`, `src/routes/group-sessions.tsx`, `src/test/signupOct26Approved.ts`, `src/lib/__tests__/consentInventoryB2.test.ts` (+3 read-only consent checks), `runAction` snapshot (new action rows only), `docs/b2-consent-inventory.md`, `src/lib/AGENTS.md`.
 
 ## Validation
-- Full units: see final counts below.
+- FULL units: **3,399/3,399** across 394 files, exit 0 (12 new group-request tests).
+- FULL public browser: **47/47**, exit 0, 9.5 minutes, eight public specs, one worker against :8080, no concurrent work, no timeout changes.
+- Live check at 390px: patient Groups list shows joined / requested / Join rows, no overflow, no page errors.
