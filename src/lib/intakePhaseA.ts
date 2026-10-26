@@ -94,7 +94,10 @@ registerIntakeGroupBoundary(value => {
 export function firstVisitSlots(id: string, kind: FirstVisitKind, actor: IntakeActor, modality: BookingModality) {
   if (!indicatedFirstVisits(id, actor).includes(kind)) return [];
   const c = FIRST_VISITS[kind];
-  return intakeRoster(actor, c.roles).filter(s => s.clinicianId).flatMap(s => s.clinicianId ? availableSlots(s.clinicianId, { serviceType: c.service, modality, stepMin: AdelanteEHR.getServiceType(c.service)?.defaultDurationMin }).map(start => ({ clinicianId: s.clinicianId ?? "", name: s.name, start })) : []);
+  return intakeRoster(actor, c.roles).filter(s => {
+    const clinician = s.clinicianId ? AdelanteEHR.getClinician(s.clinicianId) : undefined;
+    return !!clinician && (!clinician.services || clinician.services.includes(c.service));
+  }).flatMap(s => s.clinicianId ? availableSlots(s.clinicianId, { serviceType: c.service, modality, stepMin: AdelanteEHR.getServiceType(c.service)?.defaultDurationMin }).map(start => ({ clinicianId: s.clinicianId ?? "", name: s.name, start })) : []);
 }
 export function bookFirstVisit(actor: IntakeActor, referralId: string, slot: FirstVisitSlot, reason: string) {
   assertIntakeActor(actor, "first_visit", reason);
