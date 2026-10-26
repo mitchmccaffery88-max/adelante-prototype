@@ -7,6 +7,8 @@ import { withApprovedOpsWorkspaceB3b } from "@/test/opsWorkspaceB3bApproved";
 import { withApprovedBillingWorkspaceB3b } from "@/test/billingWorkspaceB3bApproved";
 import { withApprovedP3 } from "@/test/privacyP3Approved";
 import { withApprovedConsentB2 } from "@/test/consentB2Approved";
+// 26 Oct signup change (Mitch): enrollReferral websiteSignup option — signup/reset/review additions only.
+import { withApprovedSignupOct26 } from "@/test/signupOct26Approved";
 
 const rollback = "aff263ff1aa707d68994b7f175f83aa9d09306fd";
 const files = ["src/routes/clinician.tsx", "src/routes/case-manager.tsx", "src/routes/billing.tsx", "src/routes/admin.tsx", "src/routes/quality-compliance.tsx", "src/components/clinician/WorkspaceDashboard.tsx", "src/components/tasks/TaskQueueCard.tsx", "src/components/ops/OpsWorkspace.tsx"];
@@ -32,6 +34,6 @@ describe("9c-2 unchanged values, IDs and handlers against rollback", () => {
     expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path))))));
   });
   it.each(["src/lib/roles.ts", "src/lib/chartAccess.ts", "src/lib/navGuard.ts", "src/lib/clinicianWorkspace.ts", "src/lib/billingWorkspace.ts", "src/lib/ehr.ts", "src/lib/ehr-ext.ts", "src/lib/asamReporting.ts", "src/lib/complianceMonitoring.ts", "src/components/ui/stat-tile.tsx", "src/components/billing/BillingStatusSummary.tsx"])("%s keeps selector/access/suppression behavior byte-identical", path => {
-    expect(readFileSync(path, "utf8")).toBe(withApprovedConsentB2(path, withApprovedBillingWorkspaceB3b(path, withApprovedP3(path, old(path)))));
+    expect(readFileSync(path, "utf8")).toBe(withApprovedSignupOct26(path, withApprovedConsentB2(path, withApprovedBillingWorkspaceB3b(path, withApprovedP3(path, old(path))))));
   });
 });

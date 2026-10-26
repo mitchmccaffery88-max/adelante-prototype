@@ -59,4 +59,13 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Correct HLOC required-element capture; store negatives and actual blocked Send → capture → Send browser proof passed.
 - [x] Website batch 5 preview: five steps, record codes, simulated verification, private duplicate handling and coordinator review.
 - [x] Website batch 6 preview: simulated sign-in/reset/help; demo patient and staff routing browser checks passed.
-- [ ] Full acceptance blocked by seven existing pinned-source/registry test failures; expectations untouched. Focused 46/46 and scoped browser checks passed; report docs/daylight-v2-batch5-6-report.md. Await separately scoped delta acceptance. No publishing.
+- [~] Seven failures: 6 resolved (ehr.ts pin delta proven signup-only via src/test/signupOct26Approved.ts exact-once adapter; runAction snapshot additive-only; simulatedLabelsSL now uses named PUBLIC_WEBSITE_ACTIONS allowlist). Full unit + full public browser reruns still pending.
+
+## 26 Oct decisions (Mitch) — IN PROGRESS
+- [x] Identity review store (src/lib/identityReview.ts): item types, sys_admin-only reviewer setting (Draft), view/act gates, link/not-same/need-info/merge/confirm decisions with ids-only audits, referral claim codes, compare projection.
+- [x] signupMatch: public_unverified referrals never auto-match; publicReferralResembles added.
+- [x] signupStore: review cases now create Identity review items (not coordinator case tasks); code lockout item; referral claim-code path in claimCode; worklist signup-review block removed.
+- [x] Registry: 5 identity_review_* actions (reviewer-only, Draft check label); snapshot updated.
+- [ ] Referral form: DOB-optional + "I don't know their date of birth" + approx age for family/friend/self; identityConfidence stored.
+- [ ] Routes /admin-identity-review + /admin-account-support, nav entries with Your-turn count badge, admin gate.
+- [ ] New tests (item creation per event, action audits, view-not-act, lane separation, public_unverified no-OTP); full unit + full public browser runs; report.

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
 import { codeIdentityMatches, duplicateDecision, phoneKey, referralMatches, validAge } from "@/lib/signupMatch";
-import { runSignupCommand, signupActor, signupReviewFor, type SignupResult } from "@/lib/website/signupStore";
+import { runSignupCommand, signupActor, type SignupResult } from "@/lib/website/signupStore";
+import { listIdentityReviewItems } from "@/lib/identityReview";
 
 const base = { firstName: "José", lastName: "Peña-Ruiz", dob: "1990-02-03", phone: "(555) 010-0101", email: "A@EXAMPLE.ORG" };
 const draft = (over = {}) => ({ ...base, preferredLanguage: "en" as const, credentialKind: "pin" as const, ...over });
@@ -54,16 +55,14 @@ describe("public signup outcomes", () => {
     expect(AdelanteEHR.listReferrals().find((r) => r.id === one.id)?.status).toBe("enrolled");
     expect(act({ operation: "finish", sessionId: start(), path: "no_code", draft: draft({ lastName: "Nobody" }) }).outcome).toBe("verify");
   });
-  it("continue without code creates the account and a coordinator-only task", () => {
+  it("continue without code creates the account and an Identity review item", () => {
     const sid = start(); act({ operation: "finish", sessionId: sid, path: "no_code", draft: draft({ lastName: "Continue" }) });
     const out = act({ operation: "continue", sessionId: sid });
-    const tasks = AdelanteEHR.listCaseTasks().filter((t) => t.patientId === out.patientId);
     expect(out.outcome).toBe("new");
-    expect(tasks.some((t) => t.title === "Connect referral after signup" && t.allowedRoles?.join() === "clinical_coordinator")).toBe(true);
-    const task = tasks.find((t) => t.title === "Connect referral after signup");
-    if (!task) throw new Error("Review task missing");
-    expect(signupReviewFor({ role: "sys_admin", staffId: "s-admin1" }, task.id)).toBeUndefined();
-    expect(signupReviewFor({ role: "clinical_coordinator", staffId: "s-cc1" }, task.id)?.entries.lastName).toBe("Continue");
+    const item = listIdentityReviewItems().find((i) => i.type === "link_referral_no_code" && i.patientId === out.patientId);
+    if (!item) throw new Error("Identity review item missing");
+    expect(item.entries.lastName).toBe("Continue");
+    expect(item.status).toBe("yourturn");
   });
   it("duplicate privacy: contact match blocks; no contact match creates new account plus review", () => {
     const old = AdelanteEHR.createPatient({ firstName: "Dupe", lastName: "Case", dob: "1980-01-01", phone: "+15550222222", signupCredential: { kind: "pin", verificationAvailable: false, setAt: "2026-01-01" }, matchSource: "staff_create" });
@@ -72,6 +71,7 @@ describe("public signup outcomes", () => {
     expect(made.outcome).toBe("new");
     if (!made.patientId) throw new Error("Account missing");
     expect(AdelanteEHR.getPatient(made.patientId)?.possibleDuplicate).toBeTruthy();
-    expect(AdelanteEHR.listCaseTasks().some((t) => t.patientId === made.patientId && t.title === "Possible duplicate account" && t.allowedRoles?.join() === "clinical_coordinator")).toBe(true);
+    const dupeItem = listIdentityReviewItems().find((i) => i.type === "possible_duplicate_account" && i.patientId === made.patientId);
+    expect(dupeItem?.candidatePatientIds).toContain(old.id);
   });
 });
