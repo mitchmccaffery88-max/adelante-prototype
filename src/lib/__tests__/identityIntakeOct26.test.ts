@@ -21,7 +21,7 @@ describe("26 Oct intake and identity rules", () => {
     expect(publicReferralResembles(entered,referrals).map(r => r.id)).toEqual(["public-test"]);
   });
   it("live public referral sends no OTP audit and routes to intake identity review", () => {
-    const r = AdelanteEHR.createReferral({...entered,lastName:`Public${crypto.randomUUID()}`,identityConfidence:"public_unverified",referrerType:"family",referringAgency:"",referrerName:"Family",referralSource:"family_friend",consentToContact:false,channel:"public"});
+    const r = AdelanteEHR.createReferral({...entered,lastName:`Public${crypto.randomUUID()}`,identityConfidence:"public_unverified",referrerType:"family",referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,channel:"public"});
     const session = runSignupCommand(signupActor,{operation:"start"});
     const before = AdelanteEHR.listAuditEvents().filter(e => e.action === "referral_otp_sent").length;
     const result = runSignupCommand(signupActor,{operation:"finish",sessionId:session.sessionId,path:"no_code",draft:{...entered,lastName:r.lastName,preferredLanguage:"en",credentialKind:"pin"}});
@@ -53,7 +53,7 @@ describe("26 Oct intake and identity rules", () => {
   it("need information waits on others; identity confirmation records provenance and issues a code", () => {
     const row = item();
     expect(identityReviewNeedInfo(intake,row.id,"Need DOB confirmation").status).toBe("withothers");
-    const r = AdelanteEHR.createReferral({...entered,referringAgency:"",referrerName:"Family",referralSource:"family_friend",consentToContact:false,channel:"public",identityConfidence:"public_unverified"});
+    const r = AdelanteEHR.createReferral({...entered,referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,channel:"public",identityConfidence:"public_unverified"});
     const review = createIdentityReviewItem({type:"public_referral_resemblance",source:"referral",referralId:r.id,entries:entered});
     const result = identityReviewConfirm(intake,review.id,{how:"Phone call with the person",reason:"Confirmed name and DOB"});
     expect(result.code.code).toMatch(/^RE-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
