@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { runAction } from "../actions/runAction";
 import { canAccess, getActingRole, getStaffMember, roleAssignmentsOf, setActingStaff } from "../roles";
-import { createIdentityReviewItem, identityReviewConfirm, identityReviewNotSame, identityReviewNeedInfo, canActOnIdentityReview, canViewIdentityReview, listIdentityReviewItems } from "../identityReview";
+import { createIdentityReviewItem, identityReviewConfirm, identityReviewNotSame, identityReviewNeedInfo, identityReviewLink, identityReviewCompare, linkableReferrals, canActOnIdentityReview, canViewIdentityReview, listIdentityReviewItems } from "../identityReview";
 import { referralCriticalProblem } from "../referralChase";
 import { referralMatches, publicReferralResembles } from "../signupMatch";
 import { canViewAccountSupport, listAccountSupportItems } from "../accountSupport";
@@ -70,6 +70,21 @@ describe("26 Oct intake and identity rules", () => {
     expect(runAction("staff_update",{role:getActingRole(),staffId:"s-admin1"},undefined).ok).toBe(false);
     setActingStaff("s-admin1","sys_admin");
     expect(canAccess(getActingRole(),"platform_administration").level).toBe("write");
+  });
+  it("restricted Part 2 candidates stay visible as locks and cannot be linked or confirmed", () => {
+    const r = AdelanteEHR.createReferral({...entered,substanceUseNeed:true,referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,channel:"public",identityConfidence:"public_unverified"});
+    const row = createIdentityReviewItem({type:"public_referral_resemblance",source:"referral",referralId:r.id,entries:entered});
+    expect(identityReviewCompare(row,intake)).toEqual([expect.objectContaining({id:r.id,restrictedReason:"42 CFR Part 2 — intake consent required",firstName:"",lastName:""})]);
+    expect(linkableReferrals(row,intake)).toEqual([]);
+    expect(() => identityReviewConfirm(intake,row.id,{how:"Phone",reason:"Identity checked"})).toThrow(/Restricted/);
+    expect(() => identityReviewLink(intake,row.id,{referralId:r.id,reason:"Identity checked"})).toThrow(/Restricted/);
+    expect(r.identityConfidence).toBe("public_unverified");
+  });
+  it("a reviewer cannot substitute an unrelated referral ID", () => {
+    const row = item();
+    const r = AdelanteEHR.createReferral({...entered,referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,channel:"public"});
+    expect(() => identityReviewLink(intake,row.id,{referralId:r.id,reason:"Identity checked"})).toThrow(/candidate/);
+    expect(r.status).toBe("submitted");
   });
   it("intake row writes identity/consents/eligibility, reads SDOH, locks Part2 and denies clinical/billing/admin", () => {
     for (const cls of ["demographics","consent_ledger","eligibility"] as const) expect(canAccess("intake_coordinator",cls).level).toBe("write");

@@ -1,9 +1,10 @@
 import { AdelanteEHR, type Referral } from "./ehr";
-import { addStaffMember, getStaffMember, INTAKE_ROLE_PURPOSE } from "./roles";
+import { getStaffMember, INTAKE_ROLE_PURPOSE } from "./roles";
+import { runAction } from "./actions/runAction";
 export { INTAKE_ROLE_PURPOSE };
 export const INTAKE_RESPONSIBILITIES = ["Referral triage and outreach", "Identity review", "Pre-release packets and demographic reconciliation", "Paperwork and consent collection", "Eligibility requests and billing handoff", "First appointments and group requests", "Intake completion and care-team handoff", "Escalate safety concerns for clinical triage"];
 export function seedIntakeStaff() {
-  if (!getStaffMember("s-intake1")) addStaffMember({role:"sys_admin",staffId:"s-admin1"}, {id:"s-intake1",name:"Intake Coordinator (demo)",role:"intake_coordinator"});
+  if (!getStaffMember("s-intake1")) runAction("staff_add", {role:"sys_admin",staffId:"s-admin1"}, undefined, {args:[{role:"sys_admin",staffId:"s-admin1"}, {id:"s-intake1",name:"Intake Coordinator (demo)",role:"intake_coordinator"}, "Initialize requested intake demo persona"]});
 }
 export function intakeLane(r: Referral) {
   if (r.status === "enrolled") return "Handed off";
