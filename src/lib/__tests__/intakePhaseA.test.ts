@@ -6,7 +6,7 @@ import { runAction } from "../actions/runAction";
 import { bookFirstVisit, assignIntakeTeam, markIntakeComplete, firstVisitSlots, intakeAppointmentDetail, requestIntakeGroup, FIRST_VISITS, type FirstVisitKind } from "../intakePhaseA";
 import { escalateIntakeSafety, registerIntakeSafetySource, preChartTodayTasks, preChartTriageDetail, intakeSafetyRows, linkPreChartTriage } from "../intakeTriage";
 import { workspaceActionRows } from "../clinicianWorkspace";
-import { captureTreatment, captureTypedConsent, ADELANTE_PROGRAM } from "@/test/typedConsentCapture";
+import { captureTypedConsent, ADELANTE_PROGRAM } from "@/test/typedConsentCapture";
 import { runSignupCommand, signupActor } from "../website/signupStore";
 const actor = { role: "intake_coordinator" as const, staffId: "s-admin1", staffName: "Intake" };
 const clinical = { role: "clinical_coordinator" as const, staffId: "s-cc1", staffName: "Priya" };
@@ -53,6 +53,15 @@ describe("26 Oct Phase A — first visit boundary", () => {
     captureTypedConsent(pid(r), { type: "telehealth", recipient: ADELANTE_PROGRAM, purpose: "telehealth" });
     const booked = bookFirstVisit(actor, r.id, { kind: "assessment", clinicianId: id, start: slot.start, modality: "video" }, "Consented video visit");
     expect(booked.status).toBe("scheduled");
+  });
+  it("does not offer an active clinician who does not provide the indicated service", () => {
+    const r = referral(); const id = calendar("assessment");
+    AdelanteEHR.registerClinician({ id: "phase-a-wrong-service", name: "Wrong service", credential: "LCSW", mediCalCredentialed: true, services: ["therapy"] });
+    STAFF_ROSTER.push({ id: "phase-a-wrong-service-staff", name: "Wrong service", role: "therapist", clinicianId: "phase-a-wrong-service" });
+    AdelanteEHRExt.upsertAvailabilityBlock({ clinicianId: "phase-a-wrong-service", weekday: 2, start: "09:00", end: "17:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["intake"] });
+    const slots = firstVisitSlots(r.id, "assessment", actor, "in_person");
+    expect(slots.some(s => s.clinicianId === id)).toBe(true);
+    expect(slots.some(s => s.clinicianId === "phase-a-wrong-service")).toBe(false);
   });
   it("group request is attributed on behalf, pending clinical approval and creates a Today task", () => {
     const r = referral(); const g = AdelanteEHR.listGroupSessions().find(g => g.category === "skills_education"); if (!g) throw new Error("Group missing");
