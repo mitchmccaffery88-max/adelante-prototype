@@ -6,7 +6,7 @@ import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { EligibilityHistoryCard } from "@/components/coverage/EligibilityHistoryCard";
 import { VerificationSourceBadge } from "@/components/coverage/VerificationSourceBadge";
 import { FEATURE_FLAGS } from "@/lib/features";
-import { CHART_ACTIONS } from "@/lib/chartActions";
+import { CHART_ACTIONS, PUBLIC_WEBSITE_ACTIONS } from "@/lib/chartActions";
 import { runAction } from "@/lib/actions/runAction";
 import { AdelanteEHR, type CoverageVerificationRecord } from "@/lib/ehr";
 import { STAFF_ROLES, setActingStaff } from "@/lib/roles";
@@ -37,6 +37,8 @@ describe("SL all 15 simulated flags: rendered bilingual label and audit contract
     it(`${flag}: every tied registry action writes exactly one simulated action audit`, () => {
       const p = patient();
       for (const action of CHART_ACTIONS.filter(a => a.flags?.includes(flag))) {
+        // 26 Oct (Mitch): named public website actions run with no staff actor; everything else must have one.
+        if ((PUBLIC_WEBSITE_ACTIONS as readonly string[]).includes(action.id)) continue;
         const role = STAFF_ROLES.find(r => action.allowed({ role: r.key, staffId: "s-admin1" }, p).state !== "hidden")?.key;
         if (!role) throw new Error(`No permitted actor for ${action.id}`);
         // Isolate registry transport, not clinical store correctness (tested separately).
