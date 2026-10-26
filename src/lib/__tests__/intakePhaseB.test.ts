@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { AdelanteEHRExt } from "../ehr-ext";
 import { canAccess, STAFF_ROSTER, canImportPreReleaseRoster } from "../roles";
-import { roleHasChartEntry } from "../chartAccess";
+import { roleHasChartEntry, setRecordRestricted } from "../chartAccess";
 import { runAction } from "../actions/runAction";
 import { CHART_ACTIONS } from "../chartActions";
 import { INTAKE_FORMS, intakeFormsStatus, intakeCoverageResult, billingIntakeRequests, captureIntakeForm, type IntakeCaptureInput } from "../intakePhaseB";
@@ -50,6 +50,15 @@ describe("26 Oct Phase B — narrow paperwork capture", () => {
     expect(AdelanteEHR.isConsentCategoryAuthorized(pid(r), "telehealth_services")).toBe(true);
     expect(bookFirstVisit(actor, r.id, input, "First video visit").status).toBe("scheduled");
   });
+  it("cannot renew or resend an existing typed form or disguise paper upload as a real capture", () => {
+    const r = referral(); expect(run("intake_form_capture", r.id, { ...capture("telehealth"), fileName: "signed.pdf" }).ok).toBe(false);
+    expect(run("intake_form_capture", r.id, capture("telehealth")).ok).toBe(true);
+    expect(run("intake_form_send", r.id, "telehealth").ok).toBe(false);
+    expect(run("intake_form_capture", r.id, capture("telehealth")).ok).toBe(false);
+    const rec = AdelanteEHR.listConsentRecords(pid(r)).find(r => r.consentType === "telehealth"); if (!rec) throw new Error("Record missing");
+    rec.expirationDate = "2000-01-01"; expect(intakeFormsStatus(actor, r.id).find(r => r.key === "telehealth")?.status).toBe("Expired");
+    expect(run("intake_form_upload", r.id, { ...capture("telehealth"), fileName: "renew.pdf" }).ok).toBe(false);
+  });
 });
 describe("26 Oct Phase B — Billing request/result", () => {
   it("creates real Billing task with referral reference; only coverage status/date returns", () => {
@@ -86,6 +95,7 @@ describe("26 Oct Phase B — source-bound packet and staging", () => {
     const item = intakePacketNeeds(actor, r.id)[0]; expect(item?.source).toBe("referral_form"); expect(intakePacketNeeds(actor, r.id)).toHaveLength(1);
     expect(run("intake_sdoh_log", r.id, item?.id, "confirmed_still_needed").ok).toBe(true);
     expect(intakePacketNeeds(actor, r.id)[0]?.state).toBe("confirmed_still_needed"); expect(JSON.stringify(p)).toBe(before); expect(canAccess(actor.role, "sdoh").level).toBe("none");
+    expect(() => ingestPacketNeeds(actor, r.id, "partner_referral", "invented-source", [{ kind: "housing" }], "Invented source")).toThrow(/source reference/);
   });
   it.each(["part2", "sud_related", "unclassified"] as const)("%s document stays visibly locked then opens with applicable typed treatment consent", classification => {
     const r = referral(); const result = runAction<{ documentId: string }>("intake_packet_attach", actor, undefined, { args: [actor, r.id, { type: "medication_list", source: "pre_release_packet", fileName: "private-med-list.txt", size: 4, mime: "text/plain", dataUrl: "data:text/plain;base64,dGVzdA==", classification }, "Partner packet attachment"] }); expect(result.ok).toBe(true); if (!result.ok) throw new Error(result.reason);
@@ -105,4 +115,22 @@ describe("26 Oct Phase B — source-bound packet and staging", () => {
     expect(careTeamPacket(actor, pid(r))).toEqual([]); expect(careTeamPacket(billing, pid(r))).toEqual([]); expect(run("intake_sdoh_log", r.id, item?.id, "unknown").ok).toBe(false);
   });
   it("original pre-release importer and adjacent clinical actions remain denied", () => { expect(canImportPreReleaseRoster(actor.role)).toBe(false); for (const id of ["eligibility_check", "consent_record_revoke", "consent_record_renew"]) { const a = CHART_ACTIONS.find(a => a.id === id); if (!a) throw new Error(`Missing adjacent action ${id}`); expect(a.allowed(actor).state).toBe("hidden"); } expect(canAccess(actor.role, "pre_release").level).toBe("none"); });
+  it("clinical coordinator can create/update staging referral but no clinical fields or linked identities", () => {
+    const cc = { role: "clinical_coordinator" as const, staffId: "s-cc1" };
+    const before = JSON.stringify(AdelanteEHR.listPatients());
+    const created = importIntakeStaging(cc, "partner_referral", "partner-1", [{ firstName: "Staging", lastName: "Update", email: "staging@example.invalid", referrerName: "Partner" }], "Partner intake");
+    const id = created.referralIds[0]; if (!id) throw new Error("Referral missing");
+    importIntakeStaging(cc, "partner_referral", "partner-2", [{ referralId: id, firstName: "Staging", lastName: "Updated", email: "staging@example.invalid", referrerName: "Partner" }], "Partner correction");
+    expect(AdelanteEHR.listReferrals().find(r => r.id === id)?.lastName).toBe("Updated"); expect(JSON.stringify(AdelanteEHR.listPatients())).toBe(before);
+    expect(() => AdelanteEHR.updateIntakeStagingReferral(id, { cin: "92222222B" }, actor)).toThrow(/fields only/);
+    const linked = referral(); expect(() => importIntakeStaging(actor, "partner_referral", "partner-3", [{ referralId: linked.id, firstName: "Changed", lastName: "Person", email: "staging@example.invalid", referrerName: "Partner" }], "Update")).toThrow(/unlinked open/i);
+    const audit = AdelanteEHR.listAuditEvents().find(e => e.action === "referral_submitted" && e.detail?.referralId === id); expect(JSON.stringify(audit?.detail)).not.toMatch(/Partner|Staging|staging@example/); expect(audit?.actorRole).toBe("clinical_coordinator");
+  });
+  it("restricted chart locks packet content and denies consent capture/checklist logging", () => {
+    const r = referral(); run("intake_packet_needs_ingest", r.id, "referral_form", `referral:${r.id}`, [{ kind: "food" }]); const need = intakePacketNeeds(actor, r.id)[0];
+    run("intake_packet_attach", r.id, { type: "hra", source: "referral_form", fileName: "general.txt", mime: "text/plain", size: 4, dataUrl: "data:text/plain;base64,dGVzdA==", classification: "general" });
+    setRecordRestricted({ role: "sys_admin", staffId: "s-admin1" }, pid(r), "Restricted test record", true);
+    expect(intakePacketNeeds(actor, r.id)).toEqual([]); expect(intakePacketDocuments(actor, r.id)[0]?.restricted).toBe(true);
+    expect(run("intake_sdoh_log", r.id, need?.id, "resolved").ok).toBe(false); expect(run("intake_form_capture", r.id, capture("telehealth")).ok).toBe(false);
+  });
 });
