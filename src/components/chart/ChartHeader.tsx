@@ -1,3 +1,4 @@
+import { AssignedCareTeam } from "./AssignedCareTeam";
 import { StatusChip } from "@/components/ui/status-chip";
 import { PathwayChip } from "@/components/clinical/PathwayChip";
 // §Chart redesign turn 3 — compact, pinned chart header. Three columns
@@ -145,6 +146,7 @@ export function ChartHeader({
 
         {!condensed && (
           <div className="space-y-1.5">
+            <AssignedCareTeam patientId={patientId} />
             {allergyAccess.level !== "none" && !allergyAccess.locked && (
               <div data-testid="allergy-strip" className="flex flex-wrap items-center gap-1.5 rounded-md border-2 border-input bg-surface-sunk px-2 py-1 text-xs">
                 <span className="font-semibold text-attention">Allergies:</span>

@@ -1,3 +1,4 @@
+import { PreChartTriageRows } from "@/components/staff/PreChartTriageRows";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
 // §U1 — unified Escalations queue. One view model (src/lib/escalations.ts)
@@ -113,6 +114,7 @@ function EscalationsPage() {
         </div>
       </header>
 
+      <PreChartTriageRows actor={s} />
       <StaffTable rows={shown} rowKey={(r)=>r.key} label="Escalations" testId="escalation-list" rowTestId={(r)=>`escalation-row-${r.type}`}
         views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(r)=>r.ownerStaffId === s.staffId || r.pool && isCoordinator(s.role)}]} defaultView="current"
         emptyState={<EmptyState icon={Siren} title={view === "mine" ? "No escalations assigned to you" : "No escalations"} />}
