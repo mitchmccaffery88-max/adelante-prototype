@@ -10,7 +10,7 @@ export function seedIntakeStaff() {
   if (!getStaffMember("s-intake1")) runAction("staff_add", {role:"sys_admin",staffId:"s-admin1"}, undefined, {args:[{role:"sys_admin",staffId:"s-admin1"}, {id:"s-intake1",name:"Intake Coordinator (demo)",role:"intake_coordinator"}, "Initialize requested intake demo persona"]});
 }
 export function intakeLane(r: Referral) {
-  if (r.status === "enrolled") return "Handed off";
+  if (r.status === "enrolled") return r.enrolledPatientId && intakeHandoffFor(r.enrolledPatientId) ? "Handed off" : "Ready to schedule";
   if (r.status === "submitted") return r.outreach?.attempts.length ? "Outreach in progress" : "New";
   return r.dob || r.cin ? "Ready to schedule" : "Waiting on paperwork";
 }

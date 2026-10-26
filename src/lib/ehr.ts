@@ -6964,7 +6964,8 @@ function careCoordinationWriterRoles(): StaffRole[] {
     }
   })();
   if (!roster) return [];
-  return roster.map((r) => r.key).filter((role) => canAccess(role, "care_coordination").level === "write");
+  // 26 Oct: incoming referral outreach belongs to intake; clinical work stays separate.
+  return roster.some(r=>r.key === "intake_coordinator") ? ["intake_coordinator"] : [];
 }
 
 /**
