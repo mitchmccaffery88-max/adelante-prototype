@@ -188,7 +188,7 @@ export function patientAskToJoin(actor: Actor, pid: string, sessionId: string, n
 // Staff side
 const CARE_TEAM_REQUEST_ROLES: StaffRole[] = ["ecm_provider", "cf_care_manager", "therapist", "pmhnp", "physician"];
 const active = (s: StaffMember | undefined): s is StaffMember => !!s && s.active !== false;
-const firstHolder = (role: StaffRole) => STAFF_ROSTER.find((s) => active(s) && hasRoleAssignment(s, role));
+const firstHolder = (role: StaffRole) => STAFF_ROSTER.find((s) => active(s) && s.role === role) ?? STAFF_ROSTER.find((s) => active(s) && hasRoleAssignment(s, role));
 
 export function assignedCareManager(pid: string) {
   const p = AdelanteEHR.getPatient(pid);

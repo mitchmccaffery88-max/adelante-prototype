@@ -110,7 +110,7 @@ describe("routing and decisions", () => {
   it("Not right now and Needs something first message the patient", () => {
     const r1 = AdelanteEHR.requestJoinGroup({ sessionId: sud().id, patientId: PID });
     const n = run("group_request_needs_first", actorOf(clinician()), r1.id, "confidentiality_form", "Needs the form");
-    expect(n.ok).toBe(true);
+    expect(n.ok ? "ok" : n.reason).toBe("ok");
     expect(AdelanteEHR.listMemberNotifications("patient", PID).some((x) => x.body === GROUP_DECISION_MESSAGES.needs_first.en)).toBe(true);
     const d = run("group_request_not_now", actorOf(clinician()), r1.id, "Individual sessions first");
     expect(d.ok).toBe(true);
@@ -122,7 +122,7 @@ describe("routing and decisions", () => {
     expect(res.ok).toBe(true);
     const r = AdelanteEHR.listGroupJoinRequests({ patientId: PID, status: "pending" }).find((x) => x.sessionId === reentry().id)!;
     expect(r.requestedBy?.staffId).toBe(cm().id);
-    const other = staffFor((s) => s.role === "ecm_provider" && !!s.caseManagerId && s.caseManagerId !== AdelanteEHR.getPatient(PID)!.caseManagerId);
+    const other = staffFor((s) => s.role === "therapist" && !!s.clinicianId && s.clinicianId !== AdelanteEHR.getPatient(PID)!.primaryClinicianId && s.caseManagerId !== AdelanteEHR.getPatient(PID)!.caseManagerId);
     expect(run("group_request_staff", actorOf(other), PID, stress().id, "Not mine").ok).toBe(false);
     const ev = AdelanteEHR.listAuditEvents({ category: "clinical" }).find((e) => e.action === "group_join_requested" && (e.detail as Record<string, unknown>).requestId === r.id)!;
     expect(ev.actorId).toBe(cm().id);
