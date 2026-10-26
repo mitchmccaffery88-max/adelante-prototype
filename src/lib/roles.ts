@@ -852,13 +852,9 @@ for (const [cls, [rn, lvn]] of Object.entries(NURSE_GRANTS) as [RecordClass, [Ac
 
 /** §Batch E1 — outpatient nursing roles. */
 export const INTAKE_ROLE_DRAFT = "Draft — pending go-live permissions audit";
-export const INTAKE_ROLE_PURPOSE = "Owns the non-clinical front door from first contact through the first scheduled visit and intake handoff.";
-export const INTAKE_GRANTS: Partial<Record<RecordClass, AccessLevel>> = {
-  demographics: "write", documents: "write", eligibility: "write", consent_ledger: "write",
-  assisted_signup: "write", worklist: "write", sdoh: "read", pre_release: "read",
-  screeners_sud: "consent_gated", sud_treatment: "consent_gated",
-};
-for (const [cls, level] of Object.entries(INTAKE_GRANTS) as [RecordClass, AccessLevel][]) MATRIX[cls].intake_coordinator = level;
+export const INTAKE_ROLE_PURPOSE = "Owns public referral intake and authorized identity review.";
+// No clinical record grants: intake works only its own referral/identity queues.
+export const INTAKE_GRANTS: Partial<Record<RecordClass, AccessLevel>> = {};
 export const NURSING_ROLES: StaffRole[] = ["nurse_rn", "lvn"];
 
 /**
@@ -1568,7 +1564,6 @@ export function canImportPreReleaseRoster(role: StaffRole): boolean {
     role === "cf_care_manager" ||
     role === "ecm_provider" ||
     role === "clinical_coordinator" ||
-    role === "intake_coordinator" ||
     role === "sys_admin"
   );
 }

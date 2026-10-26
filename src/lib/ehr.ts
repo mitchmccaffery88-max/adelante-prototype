@@ -6964,8 +6964,7 @@ function careCoordinationWriterRoles(): StaffRole[] {
     }
   })();
   if (!roster) return [];
-  // 26 Oct: incoming referral outreach belongs to intake; clinical work stays separate.
-  return roster.some(r=>r.key === "intake_coordinator") ? ["intake_coordinator"] : [];
+  return roster.map((r) => r.key).filter((role) => canAccess(role, "care_coordination").level === "write");
 }
 
 /**
@@ -9237,7 +9236,6 @@ export const AdelanteEHR = {
         inCaseload: _inStaffCaseload(input.bookedBy!, input.patientId),
         serviceType: input.serviceType,
         asam: !!input.asamTaskId,
-        firstVisit: !appointments.some(a => a.patientId === input.patientId && a.status !== "cancelled"),
       });
       if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
       _assertClinicianFit(input.clinicianId, input.serviceType);

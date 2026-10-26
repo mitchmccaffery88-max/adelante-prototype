@@ -28,7 +28,6 @@ const CLINICIAN: BookingRight = { scope: "clinician", reschedule: true, cancel: 
 const NONE: BookingRight = { scope: "none", reschedule: false, cancel: "none", sudVisits: false, ownCalendar: false };
 
 export const BOOKING_RIGHTS: Partial<Record<StaffRole, BookingRight>> = {
-  intake_coordinator: { scope: "any", reschedule: false, cancel: "none", sudVisits: false, ownCalendar: false },
   clinical_coordinator: { scope: "any", reschedule: true, cancel: "direct", sudVisits: true, ownCalendar: false },
   ecm_provider: { scope: "caseload", reschedule: true, cancel: "direct", sudVisits: false, ownCalendar: false },
   cf_care_manager: { scope: "caseload", reschedule: true, cancel: "direct", sudVisits: false, ownCalendar: false },
@@ -67,10 +66,8 @@ export function checkBookingRights(input: {
   inCaseload: boolean;
   serviceType?: string;
   asam?: boolean;
-  firstVisit?: boolean;
 }): BookingCheck {
   const r = bookingRightFor(input.role);
-  if (input.role === "intake_coordinator" && (input.op !== "book" || input.firstVisit !== true || !["case_management","peer_support","intake","med_management"].includes(input.serviceType ?? ""))) return {ok:false,reason:"Intake schedules first visits only.",next:"Send ongoing or group requests to the clinical coordinator."};
   if (r.scope === "none")
     return { ok: false, reason: "Your role does not book visits.", next: "Ask a clinical coordinator to schedule this visit." };
   if (input.op === "reschedule" && !r.reschedule)

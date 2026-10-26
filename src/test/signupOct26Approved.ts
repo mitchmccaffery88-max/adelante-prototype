@@ -7,10 +7,6 @@
 // anything else must still match byte-for-byte. Each anchor must match
 // exactly once or this throws.
 const SIGNUP_OCT26: [string, string][] = [
-  // 26 Oct Intake Coordinator: incoming referral outreach pool only, clinical permissions unchanged.
-  ['  return roster.map((r) => r.key).filter((role) => canAccess(role, "care_coordination").level === "write");', '  // 26 Oct: incoming referral outreach belongs to intake; clinical work stays separate.\n  return roster.some(r=>r.key === "intake_coordinator") ? ["intake_coordinator"] : [];'],
-  // 26 Oct Intake Coordinator: store-level first-visit-only scheduling, existing roles unchanged.
-  ['        asam: !!input.asamTaskId,\n', '        asam: !!input.asamTaskId,\n        firstVisit: !appointments.some(a => a.patientId === input.patientId && a.status !== "cancelled"),\n'],
   // 1. enrollReferral signature gains the websiteSignup option
   [
     "  enrollReferral(id: string, opts?: { createAnyway?: { reason: string; actorId?: string; actorRole?: string } }) {",
@@ -48,7 +44,7 @@ const INTAKE_OCT26: [string, string][] = [
   ],
   [
     "\n/** §Batch E1 — outpatient nursing roles. */\nexport const NURSING_ROLES: StaffRole[] = [\"nurse_rn\", \"lvn\"];\n\n",
-    "\n/** §Batch E1 — outpatient nursing roles. */\nexport const INTAKE_ROLE_DRAFT = \"Draft — pending go-live permissions audit\";\nexport const INTAKE_ROLE_PURPOSE = \"Owns the non-clinical front door from first contact through the first scheduled visit and intake handoff.\";\nexport const INTAKE_GRANTS: Partial<Record<RecordClass, AccessLevel>> = {\n  demographics: \"write\", documents: \"write\", eligibility: \"write\", consent_ledger: \"write\",\n  assisted_signup: \"write\", worklist: \"write\", sdoh: \"read\", pre_release: \"read\",\n  screeners_sud: \"consent_gated\", sud_treatment: \"consent_gated\",\n};\nfor (const [cls, level] of Object.entries(INTAKE_GRANTS) as [RecordClass, AccessLevel][]) MATRIX[cls].intake_coordinator = level;\nexport const NURSING_ROLES: StaffRole[] = [\"nurse_rn\", \"lvn\"];\n\n"
+    "\n/** §Batch E1 — outpatient nursing roles. */\nexport const INTAKE_ROLE_DRAFT = \"Draft — pending go-live permissions audit\";\nexport const INTAKE_ROLE_PURPOSE = \"Owns public referral intake and authorized identity review.\";\n// No clinical record grants: intake works only its own referral/identity queues.\nexport const INTAKE_GRANTS: Partial<Record<RecordClass, AccessLevel>> = {};\nexport const NURSING_ROLES: StaffRole[] = [\"nurse_rn\", \"lvn\"];\n\n"
   ],
   [
     "  name: string;\n  role: StaffRole;\n  credential?: string;\n  /** Links this staff member to a clinical provider record in AdelanteEHR. */\n",
@@ -65,10 +61,6 @@ const INTAKE_OCT26: [string, string][] = [
   [
     "  { id: \"s-cred1\", name: \"Marcus Webb\", role: \"credentialing_coordinator\" },\n  { id: \"s-bc1\", name: \"Deneen Ford\", role: \"billing_coordinator\" },\n  { id: \"s-admin1\", name: \"Adelante System Admin\", role: \"sys_admin\" },\n];\n\n",
     "  { id: \"s-cred1\", name: \"Marcus Webb\", role: \"credentialing_coordinator\" },\n  { id: \"s-bc1\", name: \"Deneen Ford\", role: \"billing_coordinator\" },\n  { id: \"s-admin1\", name: \"Adelante System Admin\", role: \"sys_admin\", additionalRoles: [\"intake_coordinator\"] },\n];\n\n"
-  ],
-  [
-    "    role === \"ecm_provider\" ||\n    role === \"clinical_coordinator\" ||\n    role === \"sys_admin\"\n  );\n",
-    "    role === \"ecm_provider\" ||\n    role === \"clinical_coordinator\" ||\n    role === \"intake_coordinator\" ||\n    role === \"sys_admin\"\n  );\n"
   ],
   [
     "  persist(STAFF_KEY, m.id);\n  // §Batch E — the active role must be one of this person's assignments.\n  const next = activeRole && hasRoleAssignment(m, activeRole) ? activeRole : hasRoleAssignment(m, acting) && m.roleAssignments ? acting : m.role;\n  if (acting !== next) {\n    acting = next;\n",
