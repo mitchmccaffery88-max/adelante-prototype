@@ -51,6 +51,10 @@ const INTAKE_OCT26: [string, string][] = [
     "  name: string;\n  role: StaffRole;\n  /** Held roles, never unioned; permissions use the one acting role. */\n  additionalRoles?: StaffRole[];\n  credential?: string;\n  /** Links this staff member to a clinical provider record in AdelanteEHR. */\n"
   ],
   [
+    '  const level = MATRIX[cls]?.[permissionRole(role)] ?? "none";\n',
+    '  const level = MATRIX[cls]?.[permissionRole(role)] ?? "none";\n  // Intake collects paperwork, never reads assessment scores or treatment content.\n  if (role === "intake_coordinator" && (cls === "screeners_sud" || cls === "sud_treatment")) return {level:"none",locked:true,reason:"42 CFR Part 2 — consent required"};\n'
+  ],
+  [
     "export function roleAssignmentsOf(m: StaffMember | undefined, opts: { includeHidden?: boolean } = {}): RoleAssignment[] {\n  if (!m) return [];\n  const list = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];\n  return opts.includeHidden ? list : list.filter((a) => !a.inFacility || isFeatureEnabled(\"in_facility\"));\n}\n",
     "export function roleAssignmentsOf(m: StaffMember | undefined, opts: { includeHidden?: boolean } = {}): RoleAssignment[] {\n  if (!m) return [];\n  const legacy = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];\n  // Explicit additionalRoles replaces legacy assignments, so removing a held role really removes it.\n  const list: RoleAssignment[] = m.additionalRoles === undefined ? legacy : [...new Set([m.role, ...m.additionalRoles])].map(role => legacy.find(a => a.role === role) ?? {role});\n  return opts.includeHidden ? list : list.filter((a) => !a.inFacility || isFeatureEnabled(\"in_facility\"));\n}\n"
   ],
