@@ -2,6 +2,7 @@ import { AdelanteEHR, resolveCrisisOwner } from "./ehr";
 import { canAccess, getStaffMember, hasRoleAssignment, type StaffRole } from "./roles";
 import { assertIntakeActor, canIntakeAct, referralForIntake, type IntakeActor } from "./intakePhaseA";
 import { isRestricted } from "./chartAccess";
+import { signupSafetyLink } from "./website/signupStore";
 export type SafetyTier = "amber" | "red";
 export type SafetySource = { kind: "referral" | "signup" | "message"; id: string; field: string; trigger: "reported_safety_flag" | "crisis_pattern"; text?: string; part2?: boolean };
 type SourceRecord = { source: SafetySource; tier: SafetyTier; patientId?: string; careManagerStaffId?: string; clinicianStaffId?: string };
@@ -20,6 +21,15 @@ export function registerIntakeSafetySource(actor: IntakeActor, input: SourceReco
     const r = referralForIntake(input.source.id, true);
     if (input.patientId && r.enrolledPatientId !== input.patientId) throw new Error("Source patient link mismatch.");
   }
+  if (input.source.kind === "signup") {
+    const link = signupSafetyLink(input.source.id);
+    if (!link.exists || input.patientId !== link.patientId) throw new Error("Source signup link mismatch.");
+  }
+  if (input.source.kind === "message" && !AdelanteEHR.listCommunityInquiries().some(m => m.id === input.source.id && m.crisisFlagged)) throw new Error("Recorded flagged message required.");
+  for (const [id, roles] of [[input.careManagerStaffId, ["ecm_provider", "cf_care_manager"]], [input.clinicianStaffId, clinicalRoles]] as [string | undefined, string[]][]) {
+    const staff = getStaffMember(id);
+    if (id && (!staff || staff.active === false || !roles.some(role => hasRoleAssignment(staff, role as StaffRole)))) throw new Error("Active safety destination with the required role needed.");
+  }
   if (input.patientId && !AdelanteEHR.getPatient(input.patientId)) throw new Error("Patient link unavailable.");
   const k = keyOf(input.source);
   if (sources.has(k)) throw new Error("Safety source already recorded.");
@@ -30,6 +40,7 @@ function sourceFor(kind: SafetySource["kind"], id: string): SourceRecord {
   const registered = sources.get(`${kind}:${id}`);
   if (registered) {
     if (kind === "referral") return { ...registered, patientId: referralForIntake(id, true).enrolledPatientId };
+    if (kind === "signup") return { ...registered, patientId: signupSafetyLink(id).patientId };
     return registered;
   }
   if (kind === "message") {
@@ -93,7 +104,8 @@ export function linkPreChartTriage(actor: IntakeActor, kind: SafetySource["kind"
   if (reason.trim().length < 3) throw new Error("Give a reason.");
   const p = AdelanteEHR.getPatient(patientId); const i = triage.get(`${kind}:${sourceId}`);
   if (!p || !i || i.patientId) throw new Error("Unlinked triage item and existing patient required.");
-  if (kind !== "referral" || referralForIntake(sourceId, true).enrolledPatientId !== patientId) throw new Error("Confirmed source-to-chart linkage required.");
+  const verified = kind === "referral" ? referralForIntake(sourceId, true).enrolledPatientId === patientId : kind === "signup" ? signupSafetyLink(sourceId).patientId === patientId : false;
+  if (!verified) throw new Error("Confirmed source-to-chart linkage required.");
   i.patientId = p.id; const source = sources.get(`${kind}:${sourceId}`); if (source) source.patientId = p.id;
   AdelanteEHR._emit(); return { id: i.id, patientId };
 }

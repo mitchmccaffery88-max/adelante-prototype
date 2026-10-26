@@ -1,5 +1,5 @@
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { getStaffMember, STAFF_ROSTER } from "@/lib/roles";
+import { STAFF_ROSTER } from "@/lib/roles";
 export function AssignedCareTeam({ patientId }: { patientId: string }) {
   const json = useEhr(() => {
     const p = AdelanteEHR.getPatient(patientId);

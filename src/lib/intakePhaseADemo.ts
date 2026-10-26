@@ -1,5 +1,5 @@
 import { AdelanteEHR } from "./ehr";
-import { registerIntakeSafetySource, escalateIntakeSafety } from "./intakeTriage";
+import { registerIntakeSafetySource } from "./intakeTriage";
 import { canIntakeAct, assignIntakeTeam, type IntakeActor } from "./intakePhaseA";
 import { runAction } from "./actions/runAction";
 export function seedIntakePhaseA(actor: IntakeActor) {
