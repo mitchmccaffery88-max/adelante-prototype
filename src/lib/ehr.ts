@@ -25,6 +25,7 @@ import type {
 import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
+import { assertGroupApproval, assertGroupStaffRequest, groupRequestHooks } from "./groupRequestBoundary";
 import { isLateCancelWindow } from "./lateCancel";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
@@ -7834,6 +7835,15 @@ export interface GroupSession {
   createdBy: string;
   cancelledAt?: string;
   cancellationReason?: string;
+  /** 26 Oct (Mitch): "Who it's for" audiences; empty = everyone. */
+  audiences?: import("./contentAudience").ContentAudience[];
+  /** 26 Oct (Mitch): open | care_team_approval | invite_only. Absent = care_team_approval. */
+  joinRule?: "open" | "care_team_approval" | "invite_only";
+  /** 26 Oct (Mitch): group TYPE whose requirement list lives in groupRequests.ts. */
+  groupType?: string;
+  /** Informational for billing only; billing logic is unchanged. */
+  billable?: boolean;
+  language?: "en" | "es" | "both";
 }
 
 /** Standing enrollment in a recurring group — not a per-occurrence booking. */
@@ -24877,10 +24887,12 @@ export const AdelanteEHR = {
   /** Patient asks to join a group. Optional note. Staff review. */
   requestJoinGroup(input: { sessionId: string; patientId: string; note?: string; now?: string; onBehalf?: { referralId: string; staffId: string; role: StaffRole } }): GroupJoinRequest {
     // 26 Oct Phase A: same pending/clinical approval path, real staff attribution.
-    if (input.onBehalf) assertIntakeGroupBoundary(input);
+    if (input.onBehalf) (input.onBehalf.role === "intake_coordinator" ? assertIntakeGroupBoundary : assertGroupStaffRequest)(input);
     const g = groupSessions.find((x) => x.id === input.sessionId);
     if (!g) throw new Error("Group not found.");
     if (g.status === "cancelled") throw new Error("That group is cancelled.");
+    // 26 Oct (Mitch): invite-only groups are staff-enrolled, never requested by the patient.
+    if (g.joinRule === "invite_only" && !input.onBehalf) throw new Error("This group is by invitation from your care team.");
     if (AdelanteEHR.groupsForPatient(input.patientId).some((x) => x.id === g.id))
       throw new Error("You're already in this group.");
     const existing = groupJoinRequests.find(
@@ -24925,6 +24937,7 @@ export const AdelanteEHR = {
     };
     const roles = isProtected ? SUD_GROUP_APPROVER_ROLES : GROUP_ELIGIBILITY_ROLES;
     for (const role of roles) AdelanteEHR.notify({ recipientRole: role as StaffRole, ...common });
+    groupRequestHooks.afterRequest?.(row);
     emit();
     return row;
   },
@@ -24941,6 +24954,7 @@ export const AdelanteEHR = {
     const r = groupJoinRequests.find((x) => x.id === requestId);
     if (!r || r.status !== "pending") throw new Error("No pending request to approve.");
     _assertGroupJoinReviewer(r, actor);
+    assertGroupApproval(r, !!groupSessions.find((x) => x.id === r.sessionId)?.groupType, actor);
     { const g = groupConsentBlock(r.patientId); if (g) throw new Error(g); }
     const g = groupSessions.find((x) => x.id === r.sessionId);
     if (!g) throw new Error("Group not found.");
