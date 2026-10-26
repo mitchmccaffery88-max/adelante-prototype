@@ -28,3 +28,29 @@ export function intakeLogOutreach(actor: IdentityReviewActor, referralId: string
   if (!["submitted","contacted"].includes(r.status)) throw new Error("This referral is closed.");
   AdelanteEHR.logReferralOutreachAttempt(referralId,{outcome});
 }
+
+const handoffs = new Map<string,{at:string;staffId:string;caseManagerId:string;clinicianId:string}>();
+export const intakeHandoffFor = (patientId:string) => handoffs.get(patientId);
+export function intakeCommand(actor: IdentityReviewActor, patientId:string, input:{operation:"eligibility"|"group"|"safety"|"handoff";reason:string;caseManagerId?:string;clinicianId?:string}) {
+  if (actor.role !== "intake_coordinator" || !actor.staffId) throw new Error("Intake Coordinator required.");
+  if (input.reason.trim().length < 3) throw new Error("Give a reason.");
+  const patient=AdelanteEHR.getPatient(patientId);
+  if (!patient || isRestricted(patientId)) throw new Error("Restricted account — authorized review required.");
+  if (input.operation === "handoff") {
+    const cm=AdelanteEHR.listCaseManagers().find(c=>c.id===input.caseManagerId);
+    const clinician=AdelanteEHR.listClinicians().find(c=>c.id===input.clinicianId);
+    if (!cm || !clinician) throw new Error("Choose the care manager and primary clinician.");
+    if (!AdelanteEHR.appointmentsForPatient(patientId).some(a=>a.status === "scheduled" || a.status === "attended")) throw new Error("Schedule the first visit before handoff.");
+    AdelanteEHR.assignCaseManager({patientId,caseManagerId:cm.id,actorId:actor.staffId});
+    AdelanteEHR.reassignPrimaryClinician({patientId,clinicianId:clinician.id});
+    handoffs.set(patientId,{at:new Date().toISOString(),staffId:actor.staffId,caseManagerId:cm.id,clinicianId:clinician.id});
+    AdelanteEHR._recordAudit({category:"assignment",action:"intake_handed_off",patientId,actorId:actor.staffId,actorRole:actor.role,detail:{caseManagerId:cm.id,clinicianId:clinician.id}});
+  } else if (input.operation === "safety") {
+    AdelanteEHR.flagCrisis(patientId,actor.staffName ?? actor.staffId,"Needs clinical triage now");
+  } else {
+    const billing=input.operation === "eligibility";
+    AdelanteEHR.createCaseTask({patientId,assignedTo:billing?"Billing":"Clinical coordinator",title:billing?"Check Medi-Cal eligibility":"Review group enrollment request",dueDate:new Date().toISOString().slice(0,10),allowedRoles:billing?["billing","billing_coordinator"]:["clinical_coordinator"],taskType:billing?"intake_eligibility_request":"intake_group_request",dedupeKey:`intake:${patientId}:${input.operation}`});
+    AdelanteEHR._recordAudit({category:"clinical",action:billing?"intake_eligibility_requested":"intake_group_requested",patientId,actorRole:actor.role,actorId:actor.staffId,detail:{patientId}});
+  }
+  AdelanteEHR._emit();
+}
