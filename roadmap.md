@@ -1,5 +1,12 @@
 # Roadmap
 
+## 26 Oct Intake Phase A — dedicated referral adapters
+- [ ] A1 First-of-kind indicated booking and attributed clinician-approved group requests; no general booking/reschedule/details.
+- [ ] A2 Administrative checklist completion, active-roster scoped assignments, existing Today tasks and read-only header care team.
+- [ ] A3 Linked crisis wrapper and source-keyed pre-chart triage with tier owners, receipts only for Intake, later chart linking.
+- [ ] A4 Four real-store demo referrals; allowed/adjacent-denial tests; full units and full public browser counts.
+- Phase B deferred: consent/paperwork, eligibility, SDOH and staging importer/documents. Do not publish.
+
 ## 26 Oct Intake responsibilities — scoped restoration
 - [x] Verify seven responsibilities against existing stores and Part 2 gates; findings in docs/intake-scoped-responsibilities-stop.md.
 - [ ] STOP: existing roster importer writes episodes/coverage/HRSN, not referral packets; existing crisis path requires a patient ID for unlinked referral/signup safety. Requires referral-staging import/attachments and patient-independent triage contracts, not broad grants.
