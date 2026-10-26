@@ -1,4 +1,5 @@
 import { purposeCodeOf, purposeNeedsReview } from "./consentPurposes";
+import { assertIntakeConsentBoundary } from "./intakeConsentBoundary";
 // §B2-2 — consent record capture flows (additive; no gate reads these yet —
 // enforcement switches in B2-4). Every write runs through a registry action
 // (chartActions consent_record_*) and lands in the ONE consent ledger as a
@@ -155,8 +156,12 @@ export function captureConsentRecord(input: {
   actor: Actor;
   /** §B2-6 — renew passes "consent.renewed"; otherwise derived. */
   consentEvent?: ConsentEventName;
+  /** 26 Oct Phase B: referral-only capability, never ledger access. */
+  intakeReferralId?: string;
+  signedOn?: string;
 }): ConsentRecord {
-  assertLedgerWriter(input.actor);
+  if (input.actor.role === "intake_coordinator") assertIntakeConsentBoundary(input, "capture");
+  else assertLedgerWriter(input.actor);
   baseChecks(input.draft);
   if (!input.attested) throw new Error("Attestation is required.");
   if (input.signer.trim().length < 2) throw new Error("Type the signer's full name.");
@@ -169,7 +174,7 @@ export function captureConsentRecord(input: {
     method: input.method,
     signer: input.signer.trim(),
     relationship: input.relationship,
-    signedAt: now,
+    signedAt: input.signedOn ? `${input.signedOn}T00:00:00.000Z` : now,
     recordedAt: now,
     recordedBy: { ...(input.actor.staffId ? { staffId: input.actor.staffId } : {}), staffName: input.actor.name, role: input.actor.role },
     ...(input.witness?.trim() ? { witness: input.witness.trim() } : {}),
@@ -187,8 +192,11 @@ export function uploadPaperConsent(input: {
   fileName: string;
   witness?: string;
   actor: Actor;
+  intakeReferralId?: string;
+  attested?: boolean;
 }): ConsentRecord {
-  assertLedgerWriter(input.actor);
+  if (input.actor.role === "intake_coordinator") assertIntakeConsentBoundary(input, "upload");
+  else assertLedgerWriter(input.actor);
   baseChecks(input.draft);
   if (input.signer.trim().length < 2) throw new Error("Type the signer's name as written on the paper.");
   if (!input.signedOn) throw new Error("Add the date on the paper.");

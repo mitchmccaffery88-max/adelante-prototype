@@ -16,6 +16,7 @@ import {
 import type { StaffRole } from "./roles";
 import { canAccess } from "./roles";
 import { roleHasChartEntry } from "./chartAccess";
+import { assertIntakeConsentBoundary } from "./intakeConsentBoundary";
 import { patientPathway, type Pathway } from "./flagJourneys";
 
 export const CONSENT_DRAFT_LABEL = "Draft — pending counsel review";
@@ -210,9 +211,10 @@ export function publishForm(vid: string, actor: Actor, reason: string) {
 
 // ------------------------------------------------------------------ send
 export const SEND_ROLES_RULE = "roleHasChartEntry";
-export function sendForms(input: { patientId: string; formKeys: FormKey[]; actor: Actor; dueDays?: number; packet?: boolean; required?: Partial<Record<FormKey, boolean>>; now?: string; advocateId?: string }): FormRequest[] {
+export function sendForms(input: { patientId: string; formKeys: FormKey[]; actor: Actor; dueDays?: number; packet?: boolean; required?: Partial<Record<FormKey, boolean>>; now?: string; advocateId?: string; intakeReferralId?: string }): FormRequest[] {
   const { actor } = input;
-  if (actor.role !== "system" && (actor.role === "patient" || !roleHasChartEntry(actor.role as StaffRole)))
+  if (actor.role === "intake_coordinator") assertIntakeConsentBoundary(input, "send");
+  else if (actor.role !== "system" && (actor.role === "patient" || !roleHasChartEntry(actor.role as StaffRole)))
     throw new Error("Only care-team roles with chart entry can send forms.");
   const p = AdelanteEHR.getPatient(input.patientId);
   if (!p) throw new Error("Patient not found.");
