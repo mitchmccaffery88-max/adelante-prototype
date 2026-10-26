@@ -54,9 +54,9 @@ export function referralCriticalProblem(f: { firstName?: string; lastName?: stri
 /** Can own a chase task when assigned the referral. */
 export const CHASE_OWNER_ROLES: readonly StaffRole[] = ["ecm_provider", "cf_care_manager"];
 /** Shared pool. */
-export const CHASE_POOL_ROLE: StaffRole = "clinical_coordinator";
+export const CHASE_POOL_ROLE: StaffRole = "intake_coordinator";
 /** Can open the referral and record a missing value / log outreach. Never owns. */
-export const CHASE_FILL_ROLES: readonly StaffRole[] = ["peer_specialist", "community_health_worker", "ecm_provider", "cf_care_manager", "clinical_coordinator"];
+export const CHASE_FILL_ROLES: readonly StaffRole[] = ["peer_specialist", "community_health_worker", "ecm_provider", "cf_care_manager", "clinical_coordinator", "intake_coordinator"];
 export const canFillChase = (r: StaffRole) => CHASE_FILL_ROLES.includes(r);
 export const canSeeChaseTasks = (r: StaffRole) => CHASE_OWNER_ROLES.includes(r) || r === CHASE_POOL_ROLE;
 export const canClaimChase = (r: StaffRole) => r === CHASE_POOL_ROLE;

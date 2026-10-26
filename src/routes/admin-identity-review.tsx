@@ -41,7 +41,7 @@ function IdentityReviewPage() {
       {id: "created", label: "Created", cell: i => i.createdAt.slice(0,10)},
       {id: "age", label: "Age", cell: i => `Waiting ${identityReviewWaitingDays(i)} days`},
       {id: "source", label: "Source", cell: i => i.source},
-      {id: "status", label: "Status", cell: i => <StatusChip lang="en" state={i.status} label={i.status === "yourturn" ? "Your turn" : i.status === "withothers" ? "With others" : "Closed"} />},
+      {id: "status", label: "Status", cell: i => <StatusChip lang="en" state={i.status === "withothers" ? "team" : i.status} label={i.status === "yourturn" ? "Your turn" : i.status === "withothers" ? "With others" : "Closed"} />},
       {id: "assignee", label: "Assignee", cell: i => i.assignee === "intake_coordinator" ? "Intake Coordinator" : i.assignee ?? "Unassigned"},
     ]} primaryAction={i => <Button variant="outline" onClick={() => {setSelected(i.id);setReason("");setHow("");setCode("");}}>Review</Button>} emptyState={IDENTITY_REVIEW_EMPTY} />
     {item && <section className="space-y-4 border-t border-line pt-5" key={`${staff.staffId}:${staff.role}:${item.id}`}>

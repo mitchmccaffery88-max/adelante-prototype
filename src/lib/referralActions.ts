@@ -23,6 +23,7 @@ export const REFERRAL_DISPOSITION_ROLES: readonly StaffRole[] = [
   "ecm_provider",
   "cf_care_manager",
   "clinical_coordinator",
+  "intake_coordinator",
 ];
 
 export const REFERRAL_DECLINE_REASONS = [
@@ -42,7 +43,7 @@ export function referralDeclineReasonLabel(key: string): string {
 
 /** May this role take this action? Access only — says nothing about state. */
 export function canPerformReferralAction(role: StaffRole, action: ReferralAction): boolean {
-  if (action === "contact") return canAccess(role, "care_coordination").level === "write";
+  if (action === "contact") return role === "intake_coordinator" || canAccess(role, "care_coordination").level === "write";
   return REFERRAL_DISPOSITION_ROLES.includes(role);
 }
 

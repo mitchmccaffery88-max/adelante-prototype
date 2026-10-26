@@ -1129,7 +1129,7 @@ export interface RoleAssignment {
 export function roleAssignmentsOf(m: StaffMember | undefined, opts: { includeHidden?: boolean } = {}): RoleAssignment[] {
   if (!m) return [];
   const legacy = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];
-  const list = [...legacy, ...(m.additionalRoles ?? []).filter(role => !legacy.some(a => a.role === role)).map(role => ({role}))];
+  const list: RoleAssignment[] = [...legacy, ...(m.additionalRoles ?? []).filter(role => !legacy.some(a => a.role === role)).map(role => ({role}))];
   return opts.includeHidden ? list : list.filter((a) => !a.inFacility || isFeatureEnabled("in_facility"));
 }
 export function hasRoleAssignment(m: StaffMember | undefined, role: StaffRole, opts: { includeHidden?: boolean } = {}): boolean {

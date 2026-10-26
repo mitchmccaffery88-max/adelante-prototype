@@ -152,6 +152,9 @@ describe("gating derives from the RBAC matrix", () => {
         const expected =
           gate.kind === "open"
             ? true
+            // 26 Oct intake role: identity review and account support are independent grants.
+            : gate.kind === "identity_review" ? ["intake_coordinator", "sys_admin", "clinical_coordinator"].includes(role)
+            : gate.kind === "account_support" ? role === "sys_admin"
             : gate.kind === "crisis_flag_only"
               ? canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none"
               : gate.kind === "sdoh_crisis_lane"
