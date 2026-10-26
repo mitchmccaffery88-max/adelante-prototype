@@ -16,7 +16,7 @@ describe("runAction — one standard event per attempt", () => {
     // entries hloc_consent_capture, website_signup and website_auth_preview;
     // 26 Oct Intake Coordinator adds its own row and identity review decisions only.
     // 26 Oct Phase A (Mitch): additive referral-only actions, no chart grants.
-    // 26 Oct Phase B (Mitch): eight dedicated paperwork/coverage/packet/staging entries only.
+    // 26 Oct Phase B (Mitch): eight dedicated Intake entries plus Billing-owned request-result entry only.
     expect(permissionSnapshot()).toMatchSnapshot();
   });
 

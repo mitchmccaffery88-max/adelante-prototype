@@ -7,7 +7,7 @@ Read sources: **flag** = legacy Patient fields (`consents.*`, `consentState`, `s
 ## Section A — enforcement points (hand-reviewed)
 
 26 Oct intake additions: `src/lib/identityReview.ts` checks current program consent for identity-only referral comparison/linking; `src/lib/intakeWorkspace.ts` uses the same program-consent check to lock restricted referral rows. Neither grants clinical assessment or treatment-content access.
-26 Oct Phase B: `src/lib/intakePhaseB.ts` has three matching lines (existing typed record replacement denial; status-only records; gate-valid status predicate); `src/lib/intakePacket.ts` has one program intake/treatment check. All prior inventory lines/counts remain unchanged. Broad consent grants stay denied.
+26 Oct Phase B: `src/lib/intakePhaseB.ts` has four matching lines (existing typed record replacement and resend denials; status-only records; gate-valid status predicate); `src/lib/intakePacket.ts` has one program intake/treatment check. All prior inventory lines/counts remain unchanged. Broad consent grants stay denied.
 
 | Gate | File:line | Reads |
 |---|---|---|

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { AdelanteEHRExt } from "../ehr-ext";
 import { canAccess, STAFF_ROSTER, canImportPreReleaseRoster } from "../roles";
@@ -56,7 +56,8 @@ describe("26 Oct Phase B — narrow paperwork capture", () => {
     expect(run("intake_form_send", r.id, "telehealth").ok).toBe(false);
     expect(run("intake_form_capture", r.id, capture("telehealth")).ok).toBe(false);
     const rec = AdelanteEHR.listConsentRecords(pid(r)).find(r => r.consentType === "telehealth"); if (!rec) throw new Error("Record missing");
-    rec.expirationDate = "2000-01-01"; expect(intakeFormsStatus(actor, r.id).find(r => r.key === "telehealth")?.status).toBe("Expired");
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2035-01-01"));
+    try { expect(intakeFormsStatus(actor, r.id).find(r => r.key === "telehealth")?.status).toBe("Expired"); } finally { vi.useRealTimers(); }
     expect(run("intake_form_upload", r.id, { ...capture("telehealth"), fileName: "renew.pdf" }).ok).toBe(false);
   });
 });
@@ -129,7 +130,7 @@ describe("26 Oct Phase B — source-bound packet and staging", () => {
   it("restricted chart locks packet content and denies consent capture/checklist logging", () => {
     const r = referral(); run("intake_packet_needs_ingest", r.id, "referral_form", `referral:${r.id}`, [{ kind: "food" }]); const need = intakePacketNeeds(actor, r.id)[0];
     run("intake_packet_attach", r.id, { type: "hra", source: "referral_form", fileName: "general.txt", mime: "text/plain", size: 4, dataUrl: "data:text/plain;base64,dGVzdA==", classification: "general" });
-    setRecordRestricted({ role: "sys_admin", staffId: "s-admin1" }, pid(r), "Restricted test record", true);
+    setRecordRestricted({ patientId: pid(r), reason: "Restricted test record", restricted: true, actor: { role: "sys_admin", staffId: "s-admin1", name: "Admin" } });
     expect(intakePacketNeeds(actor, r.id)).toEqual([]); expect(intakePacketDocuments(actor, r.id)[0]?.restricted).toBe(true);
     expect(run("intake_sdoh_log", r.id, need?.id, "resolved").ok).toBe(false); expect(run("intake_form_capture", r.id, capture("telehealth")).ok).toBe(false);
   });
