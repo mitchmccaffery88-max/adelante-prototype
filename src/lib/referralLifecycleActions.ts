@@ -10,6 +10,7 @@ import { AdelanteEHR, type Referral } from "./ehr";
 import { getStaffMember, staffForRole, STAFF_ROSTER, type StaffRole } from "./roles";
 import { REFERRAL_DISPOSITION_ROLES, canPerformReferralAction } from "./referralActions";
 import type { ReferralOutreachOutcome } from "./referralOutreach";
+import { PossibleExistingPatientError } from "./patientMatching";
 import { identityEvidence } from "./careLifecycle";
 import { firstAttendedAppointment, nextScheduledAppointment } from "./postEnrollment";
 import { _setDidntStart, didntStartCareFor, DIDNT_START_REASONS, type DidntStartReason } from "./lifecycleState";
@@ -93,7 +94,14 @@ export function lifecycleEnrollReferral(actor: LifecycleActor, referralId: strin
   needReason(reason);
   const r = referralOf(referralId);
   if (actor.role === "intake_coordinator" && !identityEvidence(r)) throw new Error(IDENTITY_NEEDED);
-  const pid = AdelanteEHR.enrollReferral(referralId, opts?.createAnyway ? { createAnyway: { reason: opts.createAnyway.reason, actorId: actor.staffId, actorRole: actor.role } } : undefined);
+  let pid: string | undefined;
+  try {
+    pid = AdelanteEHR.enrollReferral(referralId, opts?.createAnyway ? { createAnyway: { reason: opts.createAnyway.reason, actorId: actor.staffId, actorRole: actor.role } } : undefined);
+  } catch (e) {
+    // A possible existing patient opens the reasoned "Create anyway" review — not a failure.
+    if (e instanceof PossibleExistingPatientError) return { referralId, duplicate: e.matches };
+    throw e;
+  }
   if (pid) ensureFirstCarePlanTask(pid);
   return { referralId, patientId: pid };
 }

@@ -26,6 +26,10 @@ import { ClientDate } from "@/components/ClientDate";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { REFERRAL_STATUS_STYLES } from "@/components/ReferralProgressStrip";
 import { getActingRole, getActingStaff } from "@/lib/roles";
+import { runAction } from "@/lib/actions/runAction";
+import { canCloseReferral, canEnrollReferral, canLogReferralContact, CLOSE_DENIED, CONTACT_DENIED, ENROLL_DENIED, INTAKE_CLOSE_REASONS } from "@/lib/referralLifecycleActions";
+import { lifecycleForReferral } from "@/lib/careLifecycle";
+import { LifecycleChip } from "@/components/lifecycle/LifecycleChip";
 import {
   REFERRAL_DECLINE_REASONS,
   canPerformReferralAction,
@@ -94,7 +98,7 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                   </span>
                   {referral.referringAgency ? ` · ${referral.referringAgency}` : ""}
                 </div>
-                <StatusChip lang="en" state={referral.status === "enrolled" ? "done" : referral.status === "declined" ? "closed" : referral.status === "submitted" && canPerformReferralAction(viewer.role, "enroll") ? "yourturn" : "team"} label={referral.status} />
+                <LifecycleChip view={lifecycleForReferral(referral)} role={viewer.role} />
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
                 Sent <ClientDate value={referral.createdAt} />{" "}
@@ -224,23 +228,28 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
   const [exactMatches, setExactMatches] = useState<PatientMatch[] | null>(null);
   const [createReason, setCreateReason] = useState("");
 
-  const tryEnroll = (createAnyway?: { reason: string }) => {
-    const staff = getActingStaff();
-    const pid = AdelanteEHR.enrollReferral(
-      referral.id,
-      createAnyway
-        ? { createAnyway: { reason: createAnyway.reason, actorId: staff?.id, actorRole: role } }
-        : undefined,
-    );
-    if (pid) {
+  const [actionReason, setActionReason] = useState("");
+  const actor = () => { const st = getActingStaff(); return { role, staffId: st?.id, staffName: st?.name }; };
+  /** Every move goes through the registry (role check + one audit); the store re-checks the same gate. */
+  const act = <T,>(id: string, args: unknown[]): T => {
+    const result = runAction<T>(id, actor(), undefined, { args: [actor(), ...args], auditReason: actionReason });
+    if (!result.ok) throw new Error(result.reason);
+    return result.value;
+  };
+  const tryEnroll = (createAnyway?: { reason: string }): boolean | void => {
+    const v = act<{ patientId?: string; duplicate?: PatientMatch[] }>("referral_enroll", [referral.id, actionReason, createAnyway ? { createAnyway } : undefined]);
+    if (v.duplicate) { setExactMatches(v.duplicate); return false; }
+    if (v.patientId) {
       setExactMatches(null);
-      setEnrolledPatientId(pid);
+      setEnrolledPatientId(v.patientId);
       setAdvocateStep("ask");
     }
   };
 
-  const mayContact = canPerformReferralAction(role, "contact");
-  const mayDispose = canPerformReferralAction(role, "enroll");
+  const mayContact = canLogReferralContact(role);
+  const mayEnroll = canEnrollReferral(role);
+  const mayDispose = canCloseReferral(role);
+  const reasonOk = actionReason.trim().length >= 3;
   const closed = referral.status === "declined" || referral.status === "enrolled";
 
   const advocateBlock =
@@ -324,15 +333,19 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
     <>
     <Card className="p-4 space-y-3">
       <h3 className="font-display text-sm text-navy">Move this referral</h3>
+      <div className="space-y-1">
+        <Label htmlFor="ref-action-reason" className="text-xs">Reason — Required</Label>
+        <Textarea id="ref-action-reason" value={actionReason} onChange={(e) => setActionReason(e.target.value)} rows={2} className="text-sm" placeholder="e.g. Spoke with them by phone" />
+      </div>
       <div className="flex flex-wrap gap-2">
         {referral.status === "submitted" && (
           <Button
             size="sm"
             variant="outline"
-            disabled={!mayContact || busy}
+            disabled={!mayContact || !reasonOk || busy}
             onClick={() =>
               run(
-                () => AdelanteEHR.markReferralContacted(referral.id),
+                () => { act("referral_mark_contacted", [referral.id, actionReason]); },
                 "Marked as contacted",
                 "contacted",
               )
@@ -343,20 +356,10 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
         )}
         <Button
           size="sm"
-          disabled={!mayDispose || busy}
+          disabled={!mayEnroll || !reasonOk || busy}
           onClick={() =>
             run(
-              () => {
-                try {
-                  tryEnroll();
-                } catch (err) {
-                  if (err instanceof PossibleExistingPatientError) {
-                    setExactMatches(err.matches);
-                    return false;
-                  }
-                  throw err;
-                }
-              },
+              () => tryEnroll(),
               "Enrolled — a client record has been created",
               "enrolled",
             )
@@ -370,7 +373,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           disabled={!mayDispose || busy}
           onClick={() => setDeclining((d) => !d)}
         >
-          Decline
+          Close referral
         </Button>
       </div>
       {exactMatches && (
@@ -420,7 +423,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
               disabled={!createReason.trim() || busy}
               onClick={() =>
                 run(
-                  () => tryEnroll({ reason: createReason }),
+                  () => { tryEnroll({ reason: createReason }); },
                   "Enrolled — a new record was created and the match is queued for review",
                   "enrolled",
                 )
@@ -434,14 +437,9 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           </div>
         </div>
       )}
-      {!mayContact && (
-        <p className="text-[11px] text-muted-foreground">
-          {referralActionDeniedReason("contact")}
-        </p>
-      )}
-      {!mayDispose && (
-        <p className="text-[11px] text-muted-foreground">{referralActionDeniedReason("enroll")}</p>
-      )}
+      {!mayContact && <p className="text-[11px] text-muted-foreground">{CONTACT_DENIED}</p>}
+      {!mayEnroll && <p className="text-[11px] text-muted-foreground">{ENROLL_DENIED}</p>}
+      {!mayDispose && <p className="text-[11px] text-muted-foreground">{CLOSE_DENIED}</p>}
       {declining && mayDispose && (
         <div className="space-y-2 rounded-md border p-3">
           <Label className="text-xs">Reason for declining (required)</Label>
@@ -450,7 +448,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
               <SelectValue placeholder="Choose a reason" />
             </SelectTrigger>
             <SelectContent>
-              {REFERRAL_DECLINE_REASONS.map((r) => (
+              {REFERRAL_DECLINE_REASONS.filter((r) => canCloseReferral(role, r.key)).map((r) => (
                 <SelectItem key={r.key} value={r.key}>
                   {r.label}
                 </SelectItem>
@@ -472,16 +470,13 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
             <Button
               size="sm"
               variant="outline"
-              disabled={!reason || (reason === "other" && !note.trim()) || busy}
+              disabled={!reason || !reasonOk || (reason === "other" && !note.trim()) || busy}
               onClick={() =>
                 run(
                   () => {
-                    AdelanteEHR.declineReferral(referral.id, {
-                      reason,
-                      ...(note.trim() ? { note: note.trim() } : {}),
-                    });
+                    act("referral_close", [referral.id, { reason, ...(note.trim() ? { note: note.trim() } : {}) }, actionReason]);
                   },
-                  "Referral declined",
+                  "Referral closed",
                   "declined",
                 )
               }
@@ -509,6 +504,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
 function ReferralOutreachCard({ referral }: { referral: Referral }) {
   const role = getActingRole();
   const mayWork = canWorkReferralOutreach(role);
+  const mayLog = canLogReferralContact(role);
   const [outcome, setOutcome] = useState<string>("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -521,10 +517,10 @@ function ReferralOutreachCard({ referral }: { referral: Referral }) {
   const log = () => {
     setBusy(true);
     try {
-      AdelanteEHR.logReferralOutreachAttempt(referral.id, {
-        outcome: outcome as ReferralOutreachOutcome,
-        ...(note.trim() ? { note: note.trim() } : {}),
-      });
+      const st = getActingStaff();
+      const a = { role, staffId: st?.id, staffName: st?.name };
+      const result = runAction("referral_outreach_log", a, undefined, { args: [a, referral.id, outcome as ReferralOutreachOutcome, "Outreach attempt logged", note.trim() || undefined], auditReason: "Outreach attempt logged" });
+      if (!result.ok) { toast.error(result.reason); return; }
       setOutcome("");
       setNote("");
       toast.success("Outreach attempt logged");
@@ -598,7 +594,7 @@ function ReferralOutreachCard({ referral }: { referral: Referral }) {
         </div>
       )}
 
-      {mayWork && referral.status === "submitted" && (
+      {mayLog && referral.status === "submitted" && (
         <div className="space-y-2">
           <Label className="text-xs">Log an outreach attempt</Label>
           <Select value={outcome} onValueChange={setOutcome}>
@@ -625,11 +621,7 @@ function ReferralOutreachCard({ referral }: { referral: Referral }) {
           </Button>
         </div>
       )}
-      {!mayWork && (
-        <p className="text-[11px] text-muted-foreground">
-          Logging outreach needs care-coordination write access.
-        </p>
-      )}
+      {!mayLog && <p className="text-[11px] text-muted-foreground">{CONTACT_DENIED}</p>}
 
       {attempts.length > 0 && (
         <div className="border-t pt-2">
