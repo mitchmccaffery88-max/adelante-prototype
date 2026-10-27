@@ -1,0 +1,1 @@
+alter function public.phase2_packet_documents(uuid) security invoker; alter function public.advocate_view_identity(uuid) security invoker;
