@@ -1,9 +1,9 @@
 # Roadmap
 
 ## 27 Oct staff referral submission fix
-- [ ] Narrow clinical-coordinator send permission; shared button/store gate and plain refusal; peer/trainee Draft note.
-- [ ] Website/referral consistency sweep, staff saved/routed/audit proofs and public regression.
-- [ ] Full units then public browser suite; short report; no publishing or Supabase changes.
+- [x] Narrow clinical-coordinator send permission; shared button/store gate and plain refusal; peer/trainee Draft note.
+- [x] Website/referral consistency sweep; fixed Intake's public-principal link with staff dialog; staff saved/routed/audit proofs, public unchanged.
+- [x] Full units 3,512/3,512 then public browser 47/47; new staff browser 4/4. Report docs/referral-submit-fix-report.md; build OK; no publishing or Supabase changes.
 
 ## 27 Oct Supabase Phase 2b — narrower finish (stopped at clean boundary)
 - [x] 1. part2_tpo_single expiry: TS + SQL agree for the standard intake consent (purpose tpo): no end date; "until revoked"/"end of treatment" wording only. 8 shared vectors pass in TS and SQL (rollback). Treatment-purpose scope unchanged — decision for Mitch.
