@@ -53,6 +53,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
 import { AdvocateNoPatientPrompt } from "@/components/advocate/AdvocateNoPatientPrompt";
 import { AdelGreetingCheckIn } from "@/components/patient/AdelGreetingCheckIn";
+import { GettingStartedCard } from "@/components/lifecycle/GettingStartedCard";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 /** Ordinary screen copy — Spanish draft pending translation review. */
 const SCREEN_COPY = {
@@ -246,6 +247,7 @@ export function PatientHome() {
              directly under the greeting. Still a single implementation. */
           <div id="daily-mood-check-in" className="scroll-mt-24">
             <AdelGreetingCheckIn patientId={patient.id} />
+            <div className="mt-6"><GettingStartedCard patientId={patient.id} /></div>
           </div>
         }
       />

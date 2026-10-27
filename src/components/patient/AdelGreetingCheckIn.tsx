@@ -12,6 +12,7 @@ import { monthlyCheckInCount } from "@/lib/checkInStreak";
 import { dailyCheckInDayKeys, subscribeSelfTracking } from "@/lib/selfTracking";
 import { CHECK_IN_COPY } from "@/lib/checkInCopy";
 import { EmotionCheckIn } from "@/components/patient/EmotionCheckIn";
+import { adelGettingStartedLine } from "@/lib/gettingStarted";
 
 export function AdelGreetingCheckIn({ patientId }: { patientId: string }) {
   const { lang } = useI18n(); const c = CHECK_IN_COPY[lang];
@@ -21,9 +22,11 @@ export function AdelGreetingCheckIn({ patientId }: { patientId: string }) {
   const key = useSyncExternalStore(subscribeSelfTracking, () => dailyCheckInDayKeys(patientId).join(","), () => "");
   const count = useMemo(() => monthlyCheckInCount({ doseSelfReportDates: doses.map(r => r.facilityDate), quickCheckCompletedAt: quick, dailyCheckInDayKeys: dailyCheckInDayKeys(patientId) }, new Date(), patient?.facilityTimezone), [patientId, key, doses, quick, patient?.facilityTimezone]);
   const activity = useEhr(() => todaysActivity(patientId));
+  const startLine = useEhr(() => adelGettingStartedLine(patientId, lang));
   return <Card className="min-w-0 p-5" data-testid="adel-greeting-checkin">
     <div className="flex items-start gap-3"><MessageSquare className="mt-1 size-5 shrink-0 text-primary" aria-hidden="true" /><div className="min-w-0 flex-1 space-y-3">
       <p className="font-display text-xl">{c.hi}</p>
+      {startLine && <p className="text-sm text-muted-foreground" data-testid="adel-getting-started">{startLine}</p>}
       {activity && <p className="text-sm text-muted-foreground" data-testid="adel-today-activity">{c.plan}: {activity.label[lang]}.</p>}
       <EmotionCheckIn key={patientId} patientId={patientId} presentation="greeting" />
       {count > 0 && <p className="text-sm text-muted-foreground" data-testid="adel-my-week">{c.month(count)}</p>}
