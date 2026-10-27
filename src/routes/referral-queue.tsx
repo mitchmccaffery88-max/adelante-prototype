@@ -22,6 +22,7 @@ import { PostEnrollmentSetupCard } from "@/components/PostEnrollmentSetupCard";
 import { ReferralSubmissionForm } from "@/components/referral/ReferralSubmissionForm";
 import { ReferralChasePanel } from "@/components/referral/ReferralChasePanel";
 import { hasOpenOutreachTask } from "@/lib/referralOutreach";
+import { canSubmitReferral } from "@/lib/website/publicReferral";
 import { Lock, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/referral-queue")({
@@ -49,6 +50,7 @@ function ReferralQueuePage() {
   const actor = useActingStaff();
   const { role } = actor;
   const access = canAccess(role, "care_coordination");
+  const canSend = canSubmitReferral({ role, staffId: actor.id });
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
   const [submitOpen, setSubmitOpen] = useState(false);
   // §Phase 4e — real open manual-outreach work, counted honestly.
@@ -73,10 +75,10 @@ function ReferralQueuePage() {
             Everyone referred into Adelante care. Open a referral to contact, enroll or decline it.
           </p>
         </div>
-        <Button onClick={() => setSubmitOpen(true)} data-testid="staff-submit-referral">
+        {canSend ? <Button onClick={() => setSubmitOpen(true)} data-testid="staff-submit-referral">
           <Plus className="h-4 w-4 mr-2" />
           Send referral
-        </Button>
+        </Button> : <p className="text-sm text-muted-foreground">Referrals are sent by Intake or the clinical coordinator.</p>}
       </header>
 
       {outreachCount > 0 && (
@@ -95,7 +97,7 @@ function ReferralQueuePage() {
           enrollment happened. Full list lives on clinical coordination. */}
       <PostEnrollmentSetupCard limit={5} tablePresentation />
 
-      <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
+      {canSend && <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Send referral on someone&apos;s behalf</DialogTitle>
@@ -106,7 +108,7 @@ function ReferralQueuePage() {
           </DialogHeader>
           <ReferralSubmissionForm variant="staff" onSubmitted={() => setSubmitOpen(false)} />
         </DialogContent>
-      </Dialog>
+      </Dialog>}
     </div>
   );
 }

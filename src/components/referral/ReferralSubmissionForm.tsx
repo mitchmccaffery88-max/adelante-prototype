@@ -2,6 +2,7 @@ import { runAction } from "@/lib/actions/runAction";
 import { SafetyNotice988 } from "@/components/frontdoor/SafetyNotice988";
 import { currentRunActor } from "@/lib/actions/act";
 import { signupActor } from "@/lib/website/signupStore";
+import { REFERRAL_SUBMIT_DENIED } from "@/lib/website/publicReferral";
 // §Phase 4d — the ONE referral submission form. Extracted verbatim from the
 // public `/referral` route so staff can record a referral on someone's behalf
 // from inside the EHR without a second implementation of the same fields,
@@ -298,7 +299,7 @@ export function ReferralSubmissionForm({
       requestManualOutreach: noPhone,
       channel: staff ? "staff" : "public",
     }]});
-    if (!submission.ok) { toast.error(submission.reason); return; }
+    if (!submission.ok) { toast.error(staff ? REFERRAL_SUBMIT_DENIED : submission.reason); return; }
     const result = submission.value;
     if (!staff) {
       setConfirmation({

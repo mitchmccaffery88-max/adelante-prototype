@@ -5,7 +5,7 @@ import { approveGroupRequest, careTeamRequestGroup, GROUP_POLICY_ROLES, needsSom
 import { canIntakeB, sendIntakeForm, recordIntakeElectronicForm, recordIntakePaperForm, requestIntakeEligibility, recordBillingIntakeCheck, careTeamRequestCoverage } from "./intakePhaseB";
 import { billingRunCoverageCheck, billingDetermineCoveragePath, billingRecordInsuranceDetails, billingRecordSelfPay, billingRecordSlidingScale, billingMarkApplicationInProgress, billingSetCoverageOrder, billingSweepReverification } from "./coverageRequests";
 import { importIntakeStaging, ingestPacketNeeds, logIntakePacketNeed, attachIntakePacket } from "./intakePacket";
-import { canSubmitReferral, submitWebsiteReferral } from "@/lib/website/publicReferral";
+import { canSubmitReferral, submitWebsiteReferral, REFERRAL_SUBMIT_DENIED } from "@/lib/website/publicReferral";
 import { intakeLogOutreach } from "@/lib/intakeWorkspace";
 import { canReportPublicResource, createPublicResourceReport } from "@/lib/website/publicResourceReports";
 import { canActOnIdentityReview, identityReviewConfirm, identityReviewLink, identityReviewMerge, identityReviewMergeConfirmed, identityReviewNeedInfo, identityReviewNotSame } from "@/lib/identityReview";
@@ -87,7 +87,7 @@ import { addOnCallShift, canManageOnCall, removeOnCallShift } from "./onCall";
 import { patientSelfSignForm } from "./consentForms";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-26.coverage-paths";
+export const REGISTRY_VERSION = "2026-10-27.referral-submit";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -208,7 +208,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   { id: "prechart_triage_link", label: { en: "Clinical triage action", es: "Clinical triage action" }, group: "admin", menu: false, needsPatient: false, check: "26 Oct Phase A: clinical source/owner only", store: refs(["linkPreChartTriage", linkPreChartTriage]), allowed: actor => canReviewPreChart(actor) ? ok() : hide("Clinical triage only.") },
   { id: "website_signup", label: { en: "Continue signup", es: "Continuar registro" }, group: "admin", needsPatient: false, menu: false, flags: ["notifications_simulated"], simulated: true, successAuditFromStore: true, store: refs(["runSignupCommand", runSignupCommand]), allowed: actor => canUseSignup(actor) ? ok() : hide("Public signup only.") },
   { id: "website_auth_preview", label: { en: "Sign-in preview", es: "Vista previa de acceso" }, group: "admin", needsPatient: false, menu: false, flags: ["notifications_simulated"], simulated: true, successAuditFromStore: true, store: refs(["authPreview", authPreview]), allowed: actor => canUseSignup(actor) ? ok() : hide("Public preview only.") },
-  { id: "website_referral_submit", label: {en:"Send referral",es:"Enviar referencia"}, group:"admin", menu:false, needsPatient:false, check:"named public visitor or referral contact role", store:refs(["submitWebsiteReferral",submitWebsiteReferral]), allowed:actor => canSubmitReferral(actor) ? ok() : hide("Referral submission unavailable.") },
+  { id: "website_referral_submit", label: {en:"Send referral",es:"Enviar referencia"}, group:"admin", menu:false, needsPatient:false, check:"canSubmitReferral: named public visitor; staff Intake, clinical coordinator or care_coordination write", store:refs(["submitWebsiteReferral",submitWebsiteReferral]), allowed:actor => canSubmitReferral(actor) ? ok() : hide(REFERRAL_SUBMIT_DENIED) },
   { id:"intake_outreach_record",label:{en:"Log intake outreach",es:"Registrar contacto de admisión"},group:"admin",menu:false,needsPatient:false,check:"26 Oct Intake Coordinator only; restricted referral guard",store:refs(["intakeLogOutreach",intakeLogOutreach]),allowed:actor => actor.role === "intake_coordinator" && !!actor.staffId ? ok() : hide("Intake Coordinator required.") },
   { id: "hloc_consent_capture", label: { en: "Record disclosure consent", es: "Registrar consentimiento" }, group: "care", menu: false, store: refs(["recordLegalDisclosureConsent", recordLegalDisclosureConsent]), allowed: ({ role }) => HLOC_REFERRAL_ROLES.includes(role) ? ok() : hide("Not available for your role.") },
   {id:'website_intake_submit',label:{en:'Send a website inquiry',es:'Enviar una consulta del sitio'},group:'admin',menu:false,needsPatient:false,simulated:true,check:'canSubmitWebsiteIntake',store:refs(['saveWebsiteIntake',saveWebsiteIntake]),allowed:actor=>canSubmitWebsiteIntake(actor)?ok():hide('Public website intake only.')},
