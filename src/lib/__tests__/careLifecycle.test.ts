@@ -99,7 +99,7 @@ describe("didn't start care", () => {
 
 describe("getting started — Dana pre-release scenario", () => {
   it("packet needs reach the person and the clinician; Part 2 needs never become suggestions", () => {
-    const { referralIds } = importIntakeStaging(coord, "pre_release_packet", "packet-dana", [{ firstName: "Dana", lastName: "Fixture", email: "dana@example.invalid", referrerName: "Release planner", releaseDate: "2026-11-01", sdoh: [{ kind: "housing" }, { kind: "food", part2: true }] }], "Packet received");
+    const { referralIds } = importIntakeStaging({ role: "intake_coordinator", staffId: "s-admin1" }, "pre_release_packet", "packet-dana", [{ firstName: "Dana", lastName: "Fixture", email: "dana@example.invalid", referrerName: "Release planner", releaseDate: "2026-11-01", sdoh: [{ kind: "housing" }, { kind: "food", part2: true }] }], "Packet received");
     const id = referralIds[0];
     expect(run("referral_identity_confirm", intake, id, "Verified with the release planner", "Identity checked").ok).toBe(true);
     expect(run("referral_enroll", intake, id, "Enroll after release").ok).toBe(true);
