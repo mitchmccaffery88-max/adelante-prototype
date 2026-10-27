@@ -1,5 +1,13 @@
 # Roadmap
 
+## 27 Oct Supabase Phase 2c — blocked before migrations
+- [x] Retry safety preflight: all four TEST_SUPABASE secrets exist; test ref cguwotbbuyqzgmebckqy differs from main bnvukmpmwuhftvjpnwqi; test database ref matches test API ref. No values recorded.
+- [ ] Apply Phase 1 + 2 + 2b migrations to test only and compare migration versions — blocked: available migration tool targets the connected main project and offers no test-project target. Shell-based database modifications are not permitted. Do not reconnect the integration or run the migration tool against main as a substitute.
+- [ ] After migration-target blocker is resolved: fictional per-role signed-JWT accounts, store-driven seeds, positive/negative RLS and crisis-owner parity; open only proven reads in both projects.
+- [ ] Full units, then public browser suite without overlap — not run at this pre-migration stop.
+- [x] Evidence and Phase 2 report updated; no database/account/policy/application changes, publication or persistence cutover.
+- Phase 2d only: full repositories, server/registry write transport, signup parity, signed-copy storage, persistence switches; tables for Didn't-start-care state and Getting-started need confirmations.
+
 ## 27 Oct referral-to-billable-patient lifecycle — Draft (continuation done)
 - [x] Inventory all surfaces before UI edits (docs/referral-lifecycle-inventory.md; conflict section marked resolved).
 - [x] Stage 2 administrative only; first care plan drafted after enrollment via a Today task with accept/edit/dismiss suggestions.

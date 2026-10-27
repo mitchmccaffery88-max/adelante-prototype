@@ -54,3 +54,12 @@ Separate test project credentials remain external; until supplied, only rollback
 - 2c as instructed: repositories, server/registry transport, signup parity, persistence switches.
 
 **Tests:** full units 3,488/3,488 (400 files); then public browser 47/47 (eight public specs, one worker, :8080, 13.2m). Tests ran rollback-only on the main project (no test-project secrets). Persistence off; nothing published.
+
+## Phase 2c retry (27 Oct, 20:39 UTC request) — blocked before migrations
+- All four required test secrets are present: `TEST_SUPABASE_DB_URL`, `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY`. Presence only was checked; no values were printed or written.
+- Test API project ref is `cguwotbbuyqzgmebckqy`, distinct from main `bnvukmpmwuhftvjpnwqi`. The test database connection's project identity matches the test API ref. Credential validity and database connectivity were not tested.
+- **Migration-target blocker:** the available Supabase migration tool has no target-project argument and operates on the connected main project. Database modifications must use that tool; applying SQL through a sandbox script would bypass this restriction. The integration was not reconnected, and the main-targeting tool was not called as a substitute.
+- Applied migration IDs: none. Main/test schema-version equality: unverified. Auth users/accounts created: zero. Seed loads and signed-JWT RLS/crisis tests: zero. Policies opened: none in either project. Full unit/public browser suites were not run at this pre-migration stop; no application code changed.
+- Evidence: `docs/rls-evidence/phase2c-test-project.md`. Resume requires an approved migration mechanism capable of targeting the separate test project while leaving the app's main integration unchanged.
+- **Reserved for 2d:** full domain repositories, server/registry write transport, signup matching parity, signed-copy file storage and persistence switches. Include tables for the new Didn't-start-care lifecycle state and Getting-started need confirmations; neither is implemented here.
+- Persistence stays OFF; no publishing, Lovable Cloud, GitHub linking, lifecycle edits or database modifications occurred.
