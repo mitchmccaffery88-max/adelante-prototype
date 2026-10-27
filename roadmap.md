@@ -1,5 +1,12 @@
 # Roadmap
 
+## 27 Oct Supabase Phase 2c revised — main rollback access tests
+- [ ] Real-claims fictional fixtures for all 18 roles, patient and advocate; rollback with before/after counts; no TEST secrets.
+- [ ] Positive/negative chart, Part 2, identity, packet/handoff, multi-role and anonymous access; keep failed policies closed.
+- [ ] Shared TS/SQL crisis-owner vectors; open proven read groups through separate migrations only.
+- [ ] Full units then public browser, nonoverlapping; evidence phase2c-main-rollback.md and Phase 2 report.
+- Phase 2d: repositories/write transport/signup parity/storage/switches; lifecycle state, need confirmations, invite tokens/contact verification tables.
+
 ## 27 Oct sign-up verification redesign — Draft
 - [x] Invite link (hashed, 14-day, single use, rate-limited), reminders reuse it, pre-release timing, expired resend to contact on file, lost-contact review.
 - [x] Not-invited: name+DOB, contact+channel, one code required; auto-match only on verified contact on file; paper code + last name + DOB; staff in-person PIN setup; passwordless sign-in option.
