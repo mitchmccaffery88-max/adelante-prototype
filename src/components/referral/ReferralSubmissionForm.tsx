@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/ui/status-chip";
 import { runAction } from "@/lib/actions/runAction";
 import { SafetyNotice988 } from "@/components/frontdoor/SafetyNotice988";
 import { currentRunActor } from "@/lib/actions/act";
@@ -634,6 +635,8 @@ export function ReferralSubmissionForm({
             onCheckedChange={(v) => setForm({ ...form, notARobot: Boolean(v) })}
           />
           <span>{SCREEN_COPY["ui.b5b0f2cd0aad"][screenLang]}</span>
+          {/* 27 Oct (Mitch): this checkbox is not a real bot check — label it Simulated. */}
+          <StatusChip state="simulated" lang={screenLang} label={screenLang === "es" ? "Simulado — no es una verificación real" : "Simulated — not a real check"} />
         </label>
       </div>
 

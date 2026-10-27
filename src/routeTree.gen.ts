@@ -147,6 +147,7 @@ import { Route as AgenticDictationPatientIdRouteImport } from './routes/agentic.
 import { Route as AgenticScribePatientIdRouteImport } from './routes/agentic.scribe.$patientId'
 import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print.patient-records.$patientId'
 import { Route as ResourcesCategoryIdOrgIdRouteImport } from './routes/resources.$categoryId.$orgId'
+import { Route as StartInviteTokenRouteImport } from './routes/start.invite.$token'
 import { Route as AdvocateResourcesCategoryIdOrgIdRouteImport } from './routes/advocate.resources.$categoryId.$orgId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -844,6 +845,11 @@ const ResourcesCategoryIdOrgIdRoute =
     path: '/$categoryId/$orgId',
     getParentRoute: () => ResourcesRoute,
   } as any)
+const StartInviteTokenRoute = StartInviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => StartRoute,
+} as any)
 const AdvocateResourcesCategoryIdOrgIdRoute =
   AdvocateResourcesCategoryIdOrgIdRouteImport.update({
     id: '/$categoryId/$orgId',
@@ -989,6 +995,7 @@ export interface FileRoutesByFullPath {
   '/agentic/scribe/$patientId': typeof AgenticScribePatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
   '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
+  '/start/invite/$token': typeof StartInviteTokenRoute
   '/advocate/resources/': typeof AdvocateResourcesIndexRoute
   '/advocate/resources/$categoryId/$orgId': typeof AdvocateResourcesCategoryIdOrgIdRoute
 }
@@ -1126,6 +1133,7 @@ export interface FileRoutesByTo {
   '/agentic/scribe/$patientId': typeof AgenticScribePatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
   '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
+  '/start/invite/$token': typeof StartInviteTokenRoute
   '/advocate/resources': typeof AdvocateResourcesIndexRoute
   '/advocate/resources/$categoryId/$orgId': typeof AdvocateResourcesCategoryIdOrgIdRoute
 }
@@ -1268,6 +1276,7 @@ export interface FileRoutesById {
   '/agentic/scribe/$patientId': typeof AgenticScribePatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
   '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
+  '/start/invite/$token': typeof StartInviteTokenRoute
   '/advocate/resources/': typeof AdvocateResourcesIndexRoute
   '/advocate/resources/$categoryId/$orgId': typeof AdvocateResourcesCategoryIdOrgIdRoute
 }
@@ -1411,6 +1420,7 @@ export interface FileRouteTypes {
     | '/agentic/scribe/$patientId'
     | '/print/patient-records/$patientId'
     | '/resources/$categoryId/$orgId'
+    | '/start/invite/$token'
     | '/advocate/resources/'
     | '/advocate/resources/$categoryId/$orgId'
   fileRoutesByTo: FileRoutesByTo
@@ -1548,6 +1558,7 @@ export interface FileRouteTypes {
     | '/agentic/scribe/$patientId'
     | '/print/patient-records/$patientId'
     | '/resources/$categoryId/$orgId'
+    | '/start/invite/$token'
     | '/advocate/resources'
     | '/advocate/resources/$categoryId/$orgId'
   id:
@@ -1689,6 +1700,7 @@ export interface FileRouteTypes {
     | '/agentic/scribe/$patientId'
     | '/print/patient-records/$patientId'
     | '/resources/$categoryId/$orgId'
+    | '/start/invite/$token'
     | '/advocate/resources/'
     | '/advocate/resources/$categoryId/$orgId'
   fileRoutesById: FileRoutesById
@@ -2781,6 +2793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResourcesCategoryIdOrgIdRouteImport
       parentRoute: typeof ResourcesRoute
     }
+    '/start/invite/$token': {
+      id: '/start/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/start/invite/$token'
+      preLoaderRoute: typeof StartInviteTokenRouteImport
+      parentRoute: typeof StartRoute
+    }
     '/advocate/resources/$categoryId/$orgId': {
       id: '/advocate/resources/$categoryId/$orgId'
       path: '/$categoryId/$orgId'
@@ -2859,6 +2878,7 @@ interface StartRouteChildren {
   StartSignupRoute: typeof StartSignupRoute
   StartSupportRoute: typeof StartSupportRoute
   StartIndexRoute: typeof StartIndexRoute
+  StartInviteTokenRoute: typeof StartInviteTokenRoute
 }
 
 const StartRouteChildren: StartRouteChildren = {
@@ -2868,6 +2888,7 @@ const StartRouteChildren: StartRouteChildren = {
   StartSignupRoute: StartSignupRoute,
   StartSupportRoute: StartSupportRoute,
   StartIndexRoute: StartIndexRoute,
+  StartInviteTokenRoute: StartInviteTokenRoute,
 }
 
 const StartRouteWithChildren = StartRoute._addFileChildren(StartRouteChildren)
