@@ -37,7 +37,9 @@ const packetRef = staged.referralIds[0]; if (!packetRef) throw new Error("Stagin
 for (const [type, classification, fileName] of [["medication_list", "general", "fictional-med-list.txt"], ["hra", "general", "fictional-hra.txt"], ["reentry_plan", "sud_related", "fictional-reentry-plan.txt"], ["roi", "part2", "fictional-sud-history.txt"]] as const)
   act("intake_packet_attach", [packetRef, { type, source: "pre_release_packet", fileName, size: 4, mime: "text/plain", dataUrl: "data:text/plain;base64,dGVzdA==", classification }]);
 const ps = signup({ operation: "start" }).sessionId;
-const pm = signup({ operation: "finish", sessionId: ps, path: "new", draft: { ...packetId, preferredLanguage: "en", credentialKind: "pin" } });
+const pd = { ...packetId, preferredLanguage: "en" as const, credentialKind: "pin" as const };
+const otp = signup({ operation: "finish", sessionId: ps, path: "no_code", draft: pd });
+const pm = signup({ operation: "verify", sessionId: ps, otp: otp.demoCode, draft: pd }); // simulated delivery: demo code only
 const pref = AdelanteEHR.listReferrals().find(r => r.id === packetRef);
 if (!pref?.enrolledPatientId) throw new Error(`Packet sign-up did not link the staged referral (${pm.outcome}).`);
 act("intake_team_assign", [packetRef, "care_manager", "s-cm2", "2026-10-28"], "Initial assignment");
