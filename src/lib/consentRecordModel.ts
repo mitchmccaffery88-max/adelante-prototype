@@ -95,6 +95,9 @@ export const PART2_ELEMENT_LABELS: Record<Part2ElementKey, string> = {
 };
 
 /** The extended, all-optional fields added to ConsentRecord in B2-1. */
+/** Shared by typed capture and form signing. */
+export const REDISCLOSURE_NOTICE_VERSION = "redisclosure-notice-v1 (Draft — pending counsel)";
+
 export interface ConsentRecordExtension {
   consentType?: ConsentType;
   recipients?: ConsentRecipient[];

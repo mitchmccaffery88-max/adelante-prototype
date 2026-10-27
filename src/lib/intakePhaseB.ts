@@ -39,7 +39,7 @@ function linked(actor: IntakeActor, id: string, permission: IntakeBPermission, r
 export const INTAKE_FORMS = [
   { key: "hipaa", label: "Intake authorization / release of information", type: "hipaa_authorization", purposes: ["treatment", "care_coordination"] },
   { key: "telehealth", label: "Telehealth consent", type: "telehealth", purposes: ["telehealth"] },
-  { key: "part2", label: "Part 2 intake / treatment consent", type: "part2_tpo_single", purposes: ["treatment"] },
+  { key: "part2", label: "Part 2 intake / treatment consent", type: "part2_tpo_single", purposes: ["tpo", "treatment"] },
   { key: "portal", label: "Portal intake form", type: "portal_reminder", purposes: ["care_coordination"] },
   { key: "sms", label: "Text reminder intake form", type: "sms_reminder", purposes: ["care_coordination"] },
 ] as const;

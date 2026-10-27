@@ -227,7 +227,7 @@ export function part2ConsentFor(
     case "county": {
       if (!has("sud_treatment")) return { ok: false, reason: "No substance-use treatment consent is on file for this person, so this can't be shared." };
       // B2-5: cite the signed typed record that grants, never a legacy flag.
-      const typed = rec ? null : AdelanteEHR.consentCoveringRecordId(patientId, { type: "part2_tpo_single", recipient: "adelante-program", purpose: "treatment" });
+      const typed = rec ? null : AdelanteEHR.consentCoveringRecordId(patientId, { type: "part2_tpo_single", recipient: "adelante-program", purpose: "treatment" }) ?? AdelanteEHR.consentCoveringRecordId(patientId, { type: "part2_tpo_single", recipient: "adelante-program", purpose: "tpo" });
       return { ok: true, ref: typed ? `Consent record ${typed}` : recRef };
     }
     case "legal":

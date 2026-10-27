@@ -80,7 +80,8 @@ export function consentGate(patientId: string, n: GateNeed, today: () => boolean
 
 /** Internal needs for the legacy category API (isConsentCategoryAuthorized). */
 export const CATEGORY_NEEDS: Partial<Record<string, GateNeed>> = {
-  sud_treatment: { types: ["part2_tpo_single"], recipients: PROGRAM_RECIPIENTS, purposes: ["treatment"], liveCategory: "sud_treatment" },
+  // 26 Oct evening (Mitch): the standard Part 2 consent (purpose TPO) covers the treatment gate; nothing else widens.
+  sud_treatment: { types: ["part2_tpo_single"], recipients: PROGRAM_RECIPIENTS, purposes: ["treatment", "tpo"], liveCategory: "sud_treatment" },
   telehealth_services: { types: ["telehealth"], recipients: PROGRAM_RECIPIENTS, purposes: ["telehealth"], liveCategory: "telehealth_services" },
   group_confidentiality_ack: { types: ["group_confidentiality"], recipients: PROGRAM_RECIPIENTS, purposes: ["group_confidentiality"], liveCategory: "group_confidentiality_ack" },
 };
