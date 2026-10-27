@@ -2589,6 +2589,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      advocate_view_identity: { Args: { p_link: string }; Returns: Json }
       foundation_attest_beta: { Args: { p_language: string }; Returns: string }
       foundation_command: {
         Args: { p_command: string; p_user: string; p_value: string }
@@ -2618,6 +2619,7 @@ export type Database = {
       }
       foundation_matrix_checksum: { Args: never; Returns: Json }
       foundation_set_acting_role: { Args: { p_role: string }; Returns: string }
+      phase2_packet_documents: { Args: { p_referral: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
