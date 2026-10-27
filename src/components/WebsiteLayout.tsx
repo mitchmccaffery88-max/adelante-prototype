@@ -57,7 +57,7 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   window.addEventListener("scroll",focus,{passive:true}); focus();
  };
  return <div ref={shellRef} className="website-shell" data-testid="website-layout" onFocusCapture={event => {
-  const target=event.target; if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target)) return;
+  const target=event.target; if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target) || target.closest('.website-back-top')) return;
   // Let the pointer's click finish before correcting focus clearance.
   window.requestAnimationFrame(()=>{if(document.activeElement!==target)return;
   // Stop an earlier smooth anchor/back-to-top scroll before placing a focused control.

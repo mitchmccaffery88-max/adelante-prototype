@@ -708,7 +708,7 @@ export const websiteEs: Record<keyof typeof websiteEn, string> = {
   websiteAdvocatesBody: "Apoyan a los familiares, amigos y mentores que acompañan a alguien que regresa a casa.",
   websiteFit: "Encuentra tu lugar",
   websiteAnyone: "Cualquier persona que busque atención",
-  websiteAnyoneBody: "La salud mental y conductual, la manejo de medicamentos en persona y en línea, la recuperación del consumo de sustancias y los recursos cotidianos están a tu alcance.",
+  websiteAnyoneBody: "La atención de salud mental, el manejo de medicamentos en persona y en línea, el apoyo para tu recuperación y los recursos diarios están a tu alcance.",
   websiteComingHome: "Personas que regresan a casa después del encarcelamiento",
   websiteComingHomeBody: "Puedes usar todos los servicios anteriores, además de contar con un guía de reintegración durante tus primeros 90 días y más allá.",
   websiteLovedOnes: "Acompañantes y seres queridos",
