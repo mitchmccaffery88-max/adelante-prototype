@@ -50,7 +50,7 @@ function ReferralQueuePage() {
   const actor = useActingStaff();
   const { role } = actor;
   const access = canAccess(role, "care_coordination");
-  const canSend = canSubmitReferral({ role, staffId: actor.id });
+  const canSend = canSubmitReferral(actor);
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
   const [submitOpen, setSubmitOpen] = useState(false);
   // §Phase 4e — real open manual-outreach work, counted honestly.

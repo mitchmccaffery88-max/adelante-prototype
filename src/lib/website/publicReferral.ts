@@ -22,7 +22,7 @@ export const REFERRAL_SUBMIT_DENIED = "You can't send referrals from this role."
 /** Shared public/staff submission; existing store owns validation and delivery state. */
 export function submitWebsiteReferral(actor: ChartActor, input: Parameters<typeof AdelanteEHR.createReferral>[0]) {
   if (!canSubmitReferral(actor)) throw new Error(REFERRAL_SUBMIT_DENIED);
-  const referral = AdelanteEHR.createReferral({...input, channel: actor.staffId ? "staff" : "public"});
+  const referral = AdelanteEHR.createReferral({...input, channel: actor.staffId ? "staff" : "public", staffSubmitActor: actor.staffId ? actor : undefined});
   // Never blocks the referral; a match routes to clinical triage and the screen shows 988.
   const safety = actor.staffId ? false : scanReferralFreeText(referral.id, input as unknown as Record<string, unknown>);
   return safety ? { ...referral, safetyFlagged: true as const } : referral;
