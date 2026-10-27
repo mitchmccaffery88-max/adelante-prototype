@@ -35,7 +35,7 @@ No retained Phase 2 database seeds. A temporary export exercised the fictional g
 - Database: **2,023 passing rollback assertions**, main project; see `docs/rls-evidence/phase2-rollback.md`. Matrix reads on empty tables are not comprehensive positive access proof.
 - Full units: **3,479/3,479**, 399 files. New projection/default-off tests: 14/14.
 - First browser run was terminated at 600 seconds: 24 passed, 2 timed out, 21 uncompleted; overlapping full unit work contributed load. No tests/config/timeouts changed.
-- Isolated landing rerun: **5/5**. Clean full public rerun result recorded below after completion.
+- Isolated landing rerun: **5/5**. Clean full public rerun: **47/47**, 12.4 minutes, one worker against :8080; no assertion/config/timeout changes.
 - Preview build log: build OK. No content route was modified; index metadata preserved.
 
 ## Remaining work / blockers

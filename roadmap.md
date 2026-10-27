@@ -5,7 +5,7 @@
 - [x] 2,023 rollback assertions on main project; full units 3,479/3,479. Evidence and partial report written; no publishing, Cloud or GitHub connection.
 - [ ] Full fictional suite/three retained intake seeds — store-owned database seed transport not implemented.
 - [ ] Real repositories/server-registry commands and complete positive RLS/advocate/identity/handoff parity — implementation incomplete; do not enable.
-- [ ] Clean full public browser rerun — collecting result; unchanged isolated landing rerun 5/5.
+- [x] Clean full public browser rerun 47/47, 12.4m, one worker; unchanged isolated landing rerun 5/5; build OK.
 
 ## 26 Oct Intake Phase B — dedicated referral adapters
 - [x] B1 Intake-only form send/typed capture/paper attestation and status-only packet checklist; no ledger/history/disclosure grants. Existing typed forms require care-team review, not Intake renewal.
