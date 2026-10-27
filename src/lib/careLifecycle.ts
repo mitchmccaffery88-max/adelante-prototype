@@ -77,7 +77,7 @@ export function identityEvidence(r: Referral): "staff_confirmed" | "claim_code" 
 }
 
 function referralFactsGathered(r: Referral): boolean {
-  return !!(r.intakeStaging || r.dob || r.dobUnknown || r.cin || r.reportedBenefits || r.notes || r.intakeStaging?.referralReason);
+  return !!(r.intakeStaging || r.dob || r.dobUnknown || r.cin || r.reportedBenefits);
 }
 
 function reached(r: Referral): boolean {
