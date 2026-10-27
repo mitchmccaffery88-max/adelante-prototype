@@ -988,6 +988,7 @@ export type Database = {
           id: string
           language: string
           org_id: string
+          statement_sha256: string
           statement_version: string
           synthetic: boolean
           updated_at: string
@@ -998,6 +999,7 @@ export type Database = {
           id?: string
           language: string
           org_id: string
+          statement_sha256?: string
           statement_version?: string
           synthetic?: boolean
           updated_at?: string
@@ -1008,6 +1010,7 @@ export type Database = {
           id?: string
           language?: string
           org_id?: string
+          statement_sha256?: string
           statement_version?: string
           synthetic?: boolean
           updated_at?: string
@@ -1049,6 +1052,18 @@ export type Database = {
         Returns: string
       }
       foundation_current_context: { Args: never; Returns: Json }
+      foundation_log: {
+        Args: {
+          p_action: string
+          p_entity?: string
+          p_kind: string
+          p_metadata?: Json
+          p_patient?: string
+          p_registry?: string
+          p_user: string
+        }
+        Returns: string
+      }
       foundation_set_acting_role: { Args: { p_role: string }; Returns: string }
     }
     Enums: {
