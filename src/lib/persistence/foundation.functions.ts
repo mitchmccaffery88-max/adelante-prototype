@@ -4,9 +4,9 @@ import type { FoundationContext, FoundationRecord, PersistenceDomain, Foundation
 const TABLES: Record<PersistenceDomain, string> = { accounts:'accounts', staff_roles:'staff_role_assignments', feature_flags:'feature_flags', audit:'audit_events', consent:'consent_records', patients_core:'patients' };
 const PROJECTIONS: Record<PersistenceDomain, string> = {
  accounts:'id,org_id,kind,active,synthetic',
- staff_roles:'id,org_id,staff_id,role,is_primary,active',
- feature_flags:'id,org_id,flag_key,enabled,simulated,mode',
- audit:'id,org_id,actor_account_id,acting_role,action_code,entity_id,patient_id,outcome_code,simulated,registry_version,created_at',
+ staff_roles:'id,org_id,staff_member_id,role,is_primary,active',
+ feature_flags:'id,org_id,flag_id,enabled,simulated,mode',
+ audit:'id,org_id,actor_account_id,actor_role,action_code,entity_id,patient_id,outcome,simulated,registry_version,created_at',
  consent:'id,org_id,patient_id,consent_type,purpose_code,status,effective_at,expires_at,signed_by_kind',
  patients_core:'id,org_id,account_id,synthetic',
 };

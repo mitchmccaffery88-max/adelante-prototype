@@ -4,7 +4,7 @@ import { canAccess, STAFF_ROLES, type StaffRole, type RecordClass } from '../rol
 import { FOUNDATION_FLAGS, selectFoundationRepository, type FoundationRepository } from '../persistence/foundation';
 describe('27 Oct Phase 1 foundation',()=>{
  it('covers all 44 classes × 18 roles, including explicit denials',()=>{
-  expect(grants).toHaveLength(792); expect(new Set(grants.map(r=>r.record_class)).size).toBe(44); expect(new Set(grants.map(r=>r.role)).size).toBe(18);
+  expect(grants).toHaveLength(792); expect(new Set(grants.map(r=>r.record_class)).size).toBe(44); expect(new Set(grants.map(r=>r.role)).size).toBe(18); expect(new Set(grants.map(r=>`${r.role}|${r.record_class}`)).size).toBe(792);
   for(const row of grants){const actual=canAccess(row.role as StaffRole,row.record_class as RecordClass); expect(row.level==='consent_gated'?'none':row.level).toBe(actual.level);}
   expect(STAFF_ROLES).toHaveLength(18);
  });
