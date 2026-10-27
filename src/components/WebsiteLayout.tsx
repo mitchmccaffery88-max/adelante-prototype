@@ -63,7 +63,10 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   // Stop an earlier smooth anchor/back-to-top scroll before placing a focused control.
   window.scrollTo({top:window.scrollY,behavior:"instant"});
   const bottom=crisisRef.current?.getBoundingClientRect().top;
-  if (bottom !== undefined && target.getBoundingClientRect().bottom > bottom) target.scrollIntoView({block:"center",behavior:"instant"});});
+  if (bottom !== undefined && (target.getBoundingClientRect().bottom > bottom || target.closest('.website-footer'))) target.scrollIntoView({block:"center",behavior:"instant"});
+  // A header resize during a long anchor scroll can otherwise restore its old destination.
+  window.setTimeout(()=>{if(document.activeElement!==target || !target.closest('.website-footer'))return;target.scrollIntoView({block:"center",behavior:"instant"});},300);
+  });
  }}>
   <div id="website-top" ref={top} tabIndex={-1} className="website-top" />
   <a className="website-skip" href="#website-main">{t("website.v2.skip")}</a>
