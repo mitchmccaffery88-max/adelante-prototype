@@ -108,7 +108,7 @@ export interface StructuredPlan {
   patientId: string;
   goals: StructuredGoal[];
   assignments: PlanAssignment[];
-  decisions: Record<string, { decision: "accepted" | "dismissed"; at: string; by: string; reason?: string }>;
+  decisions: Record<string, { decision: "accepted" | "dismissed"; at: string; by: string; reason?: string; edited?: boolean }>;
   review: PlanReview;
 }
 

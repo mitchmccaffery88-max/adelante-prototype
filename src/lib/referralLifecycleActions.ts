@@ -153,3 +153,8 @@ export function reopenDidntStartCare(actor: LifecycleActor, patientId: string, r
   AdelanteEHR._emit();
   return { patientId };
 }
+
+// Intake facts reach the first-plan suggestions (non-Part-2 packet needs only).
+import { setIntakeFactSuggestionSource } from "./structuredCarePlan";
+import { clinicianPacketNeedFacts, NEED_LABEL } from "./intakePacket";
+setIntakeFactSuggestionSource((pid) => clinicianPacketNeedFacts(pid).map((n) => ({ id: n.id, label: NEED_LABEL[n.kind].en, source: n.source })));
