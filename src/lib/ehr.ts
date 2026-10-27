@@ -8843,11 +8843,13 @@ export const AdelanteEHR = {
       referringAgency?: string;
       requestManualOutreach?: boolean;
       stagingActor?: { role: StaffRole; staffId?: string };
+      /** Verified by the shared referral submission gate; never inferred from a viewed workspace. */
+      staffSubmitActor?: { role: StaffRole; staffId?: string };
       /** Which form was used. Staff → the acting staff member is resolved here. */
       channel: "staff" | "public";
     },
   ) {
-    const { requestManualOutreach, channel, stagingActor, ...rest } = input;
+    const { requestManualOutreach, channel, stagingActor, staffSubmitActor, ...rest } = input;
     if (stagingActor) assertIntakeStagingBoundary(rest, stagingActor);
     // Don't trust the UI alone: the referrer phone-or-email rule is enforced
     // here too. Blank strings are normalised away so "   " can't satisfy it.
@@ -8857,7 +8859,7 @@ export const AdelanteEHR = {
     const personReachable = !!(rest.phone?.trim() || rest.email?.trim());
     if (!referrerHasContact(rest) && !personReachable) throw new Error(REFERRER_CONTACT_REQUIRED_MSG);
     const submittedBy: ReferralSubmitter =
-      stagingActor ? { kind: "staff", actor: { staffId: stagingActor.staffId ?? "", name: "Staging operator", role: stagingActor.role } } : channel === "staff" ? { kind: "staff", actor: _referralActor() } : { kind: "external" };
+      stagingActor ? { kind: "staff", actor: { staffId: stagingActor.staffId ?? "", name: "Staging operator", role: stagingActor.role } } : channel === "staff" ? { kind: "staff", actor: staffSubmitActor ? { staffId: staffSubmitActor.staffId ?? "", name: getStaffMember(staffSubmitActor.staffId)?.name ?? "Staff", role: staffSubmitActor.role } : _referralActor() } : { kind: "external" };
     // Fallback: no phone, no contact consent, or referrer explicitly requested
     // manual outreach → skip the Twilio welcome-text trigger and queue a
     // manual-call task for the care team instead.
@@ -8907,7 +8909,7 @@ export const AdelanteEHR = {
       detail: {
         referralId: r.id,
         channel,
-        ...(!stagingActor ? { referralSource: r.referralSource, referringAgency: r.referringAgency, referrerName: r.referrerName } : { staging: true }),
+        ...(!stagingActor ? { referralSource: r.referralSource, ...(channel === "public" ? { referringAgency: r.referringAgency, referrerName: r.referrerName } : {}) } : { staging: true }),
         referrerContactProvided: [
           ...(r.referrerPhone ? ["phone"] : []),
           ...(r.referrerEmail ? ["email"] : []),

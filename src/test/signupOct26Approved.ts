@@ -2,6 +2,7 @@ import { withIntakePhaseA } from "./intakePhaseAApproved";
 import { withIntakePhaseB } from "./intakePhaseBApproved";
 import { withGroupRequests } from "./groupRequestsApproved";
 import { withEveningOct26 } from "./eveningOct26Approved";
+import { withReferralSubmitOct27 } from "./referralSubmitOct27Approved";
 // 26 Oct signup change (Mitch) — the ONLY approved source change to
 // src/lib/ehr.ts for the Get started / Sign in batches: `enrollReferral`
 // gains a `websiteSignup` option so the public signup path records
@@ -82,5 +83,5 @@ export function withApprovedSignupOct26(path: string, rollbackText: string): str
     s = s.replace(from, to);
   }
   // 26 Oct group requests (Mitch): exact-once additions in groupRequestsApproved.ts.
-  return withEveningOct26(path, withGroupRequests(path, withIntakePhaseB(path, withIntakePhaseA(path, s))));
+  return withReferralSubmitOct27(path, withEveningOct26(path, withGroupRequests(path, withIntakePhaseB(path, withIntakePhaseA(path, s)))));
 }
