@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { SafetyNotice988 } from '@/components/frontdoor/SafetyNotice988';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, CircleAlert, Check, Ticket, Search, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,8 +22,8 @@ export function PublicSignupSteps() {
  const [step,setStep]=useState(0); const [screen,setScreen]=useState<'steps'|'saved'|'verify'|'mismatch'|'blocked'|'matched'|'new'>('steps');
  const [draft,setDraft]=useState({firstName:'',lastName:'',dob:'',phone:'',email:'',preferredLanguage:lang,credentialKind:'password' as 'password'|'pin',source:'',helperName:''});
  const [credential,setCredential]=useState(''); const [confirm,setConfirm]=useState(''); const [path,setPath]=useState<'code'|'no_code'|'new'|''>(''); const [code,setCode]=useState(''); const [otp,setOtp]=useState('');
- const [sessionId,setSessionId]=useState(''); const started=useRef(false); const [outcome,setOutcome]=useState<SignupResult>(); const [error,setError]=useState(''); const [clock,setClock]=useState(0); const heading=useRef<HTMLHeadingElement>(null);
- function command(input:SignupCommand) { const r=runAction<SignupResult>('website_signup',signupActor,undefined,{via:'runSignupCommand',args:[signupActor,{sessionId,...input}]}); if(!r.ok){setError(c.error);return;} setSessionId(r.value.sessionId); setOutcome(r.value); if(['verify','mismatch','blocked','matched','new','saved'].includes(r.value.outcome)) setScreen(r.value.outcome as typeof screen); return r.value; }
+ const [sessionId,setSessionId]=useState(''); const started=useRef(false); const [outcome,setOutcome]=useState<SignupResult>(); const [error,setError]=useState(''); const [clock,setClock]=useState(0); const heading=useRef<HTMLHeadingElement>(null); const [safety,setSafety]=useState(false);
+ function command(input:SignupCommand) { const r=runAction<SignupResult>('website_signup',signupActor,undefined,{via:'runSignupCommand',args:[signupActor,{sessionId,...input}]}); if(!r.ok){setError(c.error);return;} setSessionId(r.value.sessionId); setOutcome(r.value); if((r.value as SignupResult&{safety?:boolean}).safety)setSafety(true); if(['verify','mismatch','blocked','matched','new','saved'].includes(r.value.outcome)) setScreen(r.value.outcome as typeof screen); return r.value; }
  useEffect(()=>{if(!started.current){started.current=true;const r=runAction<SignupResult>('website_signup',signupActor,undefined,{args:[signupActor,{operation:'start'}]});if(r.ok)setSessionId(r.value.sessionId);}},[]);
  useEffect(()=>{heading.current?.focus();heading.current?.scrollIntoView({block:'start',behavior:'instant'});setError('');},[step,screen]);
  useEffect(()=>{const timer=window.setInterval(()=>setClock(Date.now()),1000);setClock(Date.now());return()=>window.clearInterval(timer);},[]);
@@ -37,6 +38,7 @@ export function PublicSignupSteps() {
  <Card className="public-flow-card">{screen==='blocked'?<><h1 ref={heading} tabIndex={-1} className="public-flow-title">{lang==='es'?'Ayuda con tu cuenta':'Account help'}</h1><SignupVerificationHelp onBack={back} unframed/><Button variant="link" asChild><Link to="/auth">{c.help}</Link></Button><p>{c.frontdesk}</p></>:<>
  {screen==='steps'&&<p className="text-muted-foreground">{c.step} {step+1} {c.of} 5 · {5-step} {c.minutes}</p>}
  <h1 ref={heading} tabIndex={-1} className="public-flow-title">{title}</h1><p className="text-muted-foreground">{body}</p>
+ {safety&&<SafetyNotice988 lang={lang}/>}
  {(step===4||screen==='verify'||screen==='saved')&&<StatusChip state="simulated" lang={lang} label={c.simulated}/>}
  {error&&<p role="alert" aria-live="polite" className="flex gap-2 text-attention"><CircleAlert className="shrink-0"/>{error}</p>}
  {screen==='steps'&&<form onSubmit={proceed} noValidate className="space-y-5">

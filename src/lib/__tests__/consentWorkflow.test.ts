@@ -212,10 +212,11 @@ describe("W6 revoke", () => {
 
 describe("W7 intake packet + group gate", () => {
   it("packet contents per pathway", () => {
-    expect(intakePacketFor("general").map((i) => i.key)).toEqual(["hipaa", "telehealth", "portal", "sms"]);
-    expect(intakePacketFor("sud").map((i) => i.key)).toEqual(["hipaa", "telehealth", "portal", "sms", "part2", "group"]);
-    expect(intakePacketFor("reentry").map((i) => i.key)).toEqual(["hipaa", "telehealth", "portal", "sms", "group", "po_release"]);
-    expect(intakePacketFor("reentry_sud").map((i) => i.key)).toEqual(["hipaa", "telehealth", "portal", "sms", "part2", "group", "po_release"]);
+    // 26 Oct evening (Mitch): the standard Part 2 consent (optional, every population) replaces the SUD-only part2 packet item.
+    expect(intakePacketFor("general").map((i) => i.key)).toEqual(["hipaa", "telehealth", "portal", "sms", "part2_standard"]);
+    expect(intakePacketFor("sud").map((i) => i.key)).toEqual(["hipaa", "telehealth", "portal", "sms", "part2_standard", "group"]);
+    expect(intakePacketFor("reentry").map((i) => i.key)).toEqual(["hipaa", "telehealth", "portal", "sms", "part2_standard", "group", "po_release"]);
+    expect(intakePacketFor("reentry_sud").map((i) => i.key)).toEqual(["hipaa", "telehealth", "portal", "sms", "part2_standard", "group", "po_release"]);
     expect(intakePacketFor("reentry").find((i) => i.key === "po_release")!.required).toBe(false);
   });
   it("declining group blocks group booking only — never individual visits or MAT", () => {

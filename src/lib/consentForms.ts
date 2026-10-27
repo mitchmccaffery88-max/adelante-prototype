@@ -18,6 +18,7 @@ import { canAccess } from "./roles";
 import { roleHasChartEntry } from "./chartAccess";
 import { assertIntakeConsentBoundary } from "./intakeConsentBoundary";
 import { patientPathway, type Pathway } from "./flagJourneys";
+import { PART2_ELEMENT_KEYS, REDISCLOSURE_NOTICE_VERSION, type ConsentRecordExtension } from "./consentRecordModel";
 
 export const CONSENT_DRAFT_LABEL = "Draft — pending counsel review";
 export const PLACEHOLDER_WORDING = "Placeholder wording — pending counsel";
@@ -39,7 +40,8 @@ export type FormKey =
   | "advocate_patient"
   | "advocate_attestation"
   | "ai_recording"
-  | "part2_named_org";
+  | "part2_named_org"
+  | "part2_standard";
 export type SignatureMethod = "checkbox" | "typed_name" | "drawn";
 export type FormStatus = "draft" | "legal_review" | "approved" | "published" | "retired";
 type Bi = { en: string; es: string };
@@ -104,6 +106,8 @@ export interface SignedCopy {
   readonly channel: "portal" | "in_person" | "intake (legacy)";
   readonly sentBy?: string;
   readonly consentRecordId?: string;
+  /** 26 Oct evening (Mitch): the typed ledger record written alongside, for self-sign and the standard Part 2 consent. */
+  readonly typedRecordId?: string;
   readonly endsOn?: string;
   readonly signatureData?: string;
 }
@@ -134,14 +138,18 @@ export function textHash(text: string): string {
 const ph = (en: string) => ({ en, es: `${en} (Borrador — traducción pendiente)` });
 const SEED: Omit<FormVersion, "id" | "version" | "status" | "placeholder" | "counsel" | "createdAt">[] = [
   { key: "hipaa", title: { en: "HIPAA authorization", es: "Autorización HIPAA" }, summary: { en: "How we keep your health information private, and who on your care team can see it.", es: "Cómo protegemos su información de salud y quién de su equipo puede verla. (Borrador)" }, body: ph("We use your health information to give you care, to arrange care with others who help you, and for payment. We share only what is needed. You can ask for a copy of your record. Placeholder wording — pending counsel."), signatureMethod: "checkbox", pathways: "all", categories: ["hipaa_authorization", "mental_health", "case_coordination"], audience: "patient" },
-  { key: "telehealth", title: { en: "Telehealth", es: "Telesalud" }, summary: { en: "You agree to get some care by video or phone. You can always ask for in person.", es: "Acepta recibir parte de su atención por video o teléfono. Siempre puede pedir en persona. (Borrador)" }, body: ph("Video and phone visits are private, but no technology is perfect. You can stop a video visit any time and ask for an in-person visit. Placeholder wording — pending counsel."), signatureMethod: "checkbox", pathways: "all", categories: ["telehealth_services"], audience: "patient" },
+  { key: "telehealth", title: { en: "Telehealth", es: "Telesalud" }, summary: { en: "You agree to get some care by video or phone. You can always ask for in person.", es: "Aceptas recibir parte de tu atención por video o teléfono. Siempre puedes pedir una visita en persona. (Borrador)" }, body: ph("Video and phone visits are private, but no technology is perfect. You can stop a video visit any time and ask for an in-person visit. Placeholder wording — pending counsel."), signatureMethod: "checkbox", pathways: "all", categories: ["telehealth_services"], audience: "patient" },
   { key: "portal", title: { en: "Patient portal", es: "Portal del paciente" }, summary: { en: "You can use this app to see your care, message your team and sign forms.", es: "Puede usar esta app para ver su atención, escribir a su equipo y firmar formularios. (Borrador)" }, body: ph("Keep your sign-in to yourself. Messages are not for emergencies — call or text 988. Placeholder wording — pending counsel."), signatureMethod: "checkbox", pathways: "all", categories: ["patient_portal"], audience: "patient" },
   { key: "sms", title: { en: "Text reminders", es: "Recordatorios por texto" }, summary: { en: "We can text you visit and check-in reminders. Texts never name your care.", es: "Podemos enviarle recordatorios por texto. Los textos nunca nombran su atención. (Borrador)" }, body: ph("Message and data rates may apply. Reply STOP to stop. Placeholder wording — pending counsel."), signatureMethod: "checkbox", pathways: "all", categories: ["sms_reminders"], audience: "patient" },
   { key: "part2", title: { en: "Sharing substance-use information (Part 2)", es: "Compartir información sobre uso de sustancias (Parte 2)" }, summary: { en: "Lets your Adelante care team share substance-use information with each other to coordinate your care.", es: "Permite que su equipo de Adelante comparta información sobre uso de sustancias para coordinar su atención. (Borrador)" }, body: ph("Federal law (42 CFR Part 2) protects substance-use records. This form names who may receive them, what, and why. It never allows sharing with probation, parole or a court. You can stop sharing any time. Placeholder wording — pending counsel."), signatureMethod: "typed_name", pathways: ["sud", "reentry_sud"], durationDays: 365, categories: ["sud_treatment"], part2: { recipient: "Your Adelante care team (clinicians, case managers, care coordinators)", what: "Substance-use assessments, treatment notes, medications and visit types", why: "To plan and coordinate your care" }, audience: "patient" },
-  { key: "group", title: { en: "Group participation", es: "Participación en grupos" }, summary: { en: "Group members keep what is said private. Other members are not bound by Part 2. Attendance is shared within the group.", es: "Los miembros del grupo mantienen la privacidad. Otros miembros no están sujetos a la Parte 2. La asistencia se comparte en el grupo. (Borrador)" }, body: ph("Confidentiality among members: what is said in group stays in group. Other members are people, not providers, and are not bound by 42 CFR Part 2. Other members will see that you attended. Video groups: join from a private place; do not record. Placeholder wording — pending counsel."), signatureMethod: "checkbox", pathways: ["reentry", "sud", "reentry_sud"], categories: ["group_participation", "group_confidentiality_ack"], audience: "patient" },
+  { key: "group", title: { en: "Group participation", es: "Participación en grupos" }, summary: { en: "Group members keep what is said private. Other members are not bound by Part 2. Attendance is shared within the group.", es: "Lo que se dice en el grupo se queda en el grupo. Los otros miembros no están sujetos a la Parte 2. Los demás verán que asististe. (Borrador)" }, body: ph("Confidentiality among members: what is said in group stays in group. Other members are people, not providers, and are not bound by 42 CFR Part 2. Other members will see that you attended. Video groups: join from a private place; do not record. Placeholder wording — pending counsel."), signatureMethod: "checkbox", pathways: ["reentry", "sud", "reentry_sud"], categories: ["group_participation", "group_confidentiality_ack"], audience: "patient" },
   { key: "po_release", title: { en: "Release to probation or parole officer", es: "Divulgación al oficial de libertad condicional" }, summary: { en: "Optional. Lets us share care coordination updates (not substance-use details) with your officer.", es: "Opcional. Nos permite compartir actualizaciones de coordinación (no detalles de uso de sustancias) con su oficial. (Borrador)" }, body: ph("This is your choice and is never required for care. It covers attendance and coordination only. You can stop it any time. Placeholder wording — pending counsel."), signatureMethod: "typed_name", pathways: ["reentry", "reentry_sud"], durationDays: 365, categories: ["po_voluntary_coordination"], audience: "patient" },
   { key: "advocate_patient", title: { en: "Share with my helper (advocate)", es: "Compartir con mi ayudante (defensor)" }, summary: { en: "Lets the helper you named take part in your care. It does not share substance-use records.", es: "Permite que su ayudante participe en su atención. No comparte registros de uso de sustancias. (Borrador)" }, body: ph("Your helper can see appointment times and help you get ready. You can remove them any time. Placeholder wording — pending counsel."), signatureMethod: "typed_name", pathways: "all", durationDays: 365, categories: ["roi_collateral"], audience: "patient" },
   { key: "advocate_attestation", title: { en: "Advocate attestation", es: "Declaración del defensor" }, summary: { en: "The helper confirms who they are and agrees to keep what they learn private.", es: "El ayudante confirma quién es y acepta mantener la privacidad. (Borrador)" }, body: ph("I am the person named by the patient. I will use what I learn only to support them. Placeholder wording — pending counsel."), signatureMethod: "typed_name", pathways: "all", durationDays: 365, categories: ["advocate_attestation"], audience: "advocate" },
+  // 26 Oct evening (Mitch) — the standard Part 2 consent at intake, every population. Typed part2_tpo_single,
+  // purpose TPO, recipients by class, no expiry, revocable, never a condition of care. Separate from
+  // counseling notes, criminal-justice/probation, legal proceedings, advocate ROI and named outside recipients.
+  { key: "part2_standard", title: { en: "Sharing substance-use information for your care (Part 2)", es: "Compartir información sobre uso de sustancias para tu atención (Parte 2)" }, summary: { en: "Lets the people who care for you, and the plans that pay for your care, see substance-use information when they need it. Saying no never stops your care.", es: "Permite que quienes te atienden, y los planes que pagan tu atención, vean información sobre uso de sustancias cuando la necesiten. Decir que no nunca detiene tu atención. (Borrador)" }, body: { en: "Federal law (42 CFR Part 2) protects substance-use records. If you sign, we may share them for your treatment, to get paid for your care, and to run our program. Who may receive them: your Adelante care team; other providers treating you; health plans and payers, including Medi-Cal and the county DMC-ODS program; the health information exchange; and program operations staff. This does not allow sharing your counseling notes, or sharing with probation, parole, a court or for legal proceedings. Those need a separate form. This has no end date. You can stop it any time in Forms or by telling your team. Saying no will never stop your visits, groups, medications or MAT. Anyone who receives this information may not share it again except as the law allows. Placeholder wording — pending counsel.", es: "La ley federal (42 CFR Parte 2) protege los registros sobre uso de sustancias. Si firmas, podemos compartirlos para tu tratamiento, para recibir pago por tu atención y para operar nuestro programa. Quién puede recibirlos: tu equipo de Adelante; otros proveedores que te atienden; planes de salud y pagadores, incluido Medi-Cal y el programa DMC-ODS del condado; el intercambio de información de salud; y el personal de operaciones del programa. Esto no permite compartir tus notas de consejería, ni compartir con libertad condicional, libertad bajo palabra, un tribunal o para procesos legales. Eso necesita otro formulario. Esto no tiene fecha de fin. Puedes detenerlo en cualquier momento en Formularios o diciéndole a tu equipo. Decir que no nunca detendrá tus visitas, grupos, medicamentos ni MAT. Quien reciba esta información no puede volver a compartirla salvo lo que permite la ley. (Borrador — pendiente de revisión de traducción y de asesoría legal)" }, signatureMethod: "typed_name", pathways: "all", categories: ["sud_treatment"], part2: { recipient: "Your Adelante care team, other treating providers, health plans and payers (Medi-Cal, county DMC-ODS), the health information exchange, program operations", what: "Substance-use information needed for treatment, payment and health care operations — not counseling notes", why: "Treatment, payment and health care operations" }, audience: "patient" },
   { key: "ai_recording", title: { en: "AI recording of visits", es: "Grabación de visitas con IA" }, summary: { en: "Optional. Lets your clinician use a tool that drafts visit notes from a recording.", es: "Opcional. Permite que su clínico use una herramienta que redacta notas desde una grabación. (Borrador)" }, body: ph("Recordings are deleted after the note is drafted. You can say no and nothing changes about your care. Placeholder wording — pending counsel."), signatureMethod: "checkbox", pathways: "all", categories: ["ai_session_recording"], audience: "patient" },
 ];
 
@@ -292,6 +300,8 @@ export function signChecked(input: SignInput): SignedCopy[] {
   if (!checked.length) throw new Error("Check at least one form first.");
   if (input.signerName.trim().length < 2) throw new Error("Type the signer's name.");
   for (const r of checked) {
+    // 26 Oct evening (Mitch): the standard Part 2 consent is self-signed only inside the intake packet.
+    if (r.formKey === "part2_standard" && input.channel !== "in_person" && !r.packet) throw new Error("You can sign this form in your intake packet.");
     const m = getFormVersion(r.versionId)!.signatureMethod;
     if (m === "typed_name" && (input.typedName ?? "").trim().length < 2) throw new Error("Type your full name to sign.");
     if (m === "drawn" && !input.drawn) throw new Error("Draw your signature to sign.");
@@ -302,7 +312,63 @@ export function signChecked(input: SignInput): SignedCopy[] {
   closeResolvedConsentPointers();
   return out;
 }
-function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, relationshipOverride?: SignedCopy["relationship"]): SignedCopy {
+/**
+ * 26 Oct evening (Mitch) — typed ledger terms for forms that also write a
+ * TYPED record, so the one consent gate decides from typed evidence and a
+ * revocation re-locks it. Standard Part 2: TPO, class recipients, no expiry.
+ */
+const PROGRAM_RECIPIENT = { kind: "org" as const, name: "Adelante", directoryRef: "adelante-program" };
+const TYPED_TERMS: Partial<Record<FormKey, () => Omit<ConsentRecordExtension, "signature" | "document" | "disclosureIds">>> = {
+  telehealth: () => ({ consentType: "telehealth", recipients: [PROGRAM_RECIPIENT], purpose: "Telehealth services", purposeCode: "telehealth", items: ["Video and phone visits"], expiresOnEvent: "Until you stop it" }),
+  group: () => ({ consentType: "group_confidentiality", recipients: [PROGRAM_RECIPIENT], purpose: "Group confidentiality", purposeCode: "group_confidentiality", items: ["Group participation and attendance"], expiresOnEvent: "Until you stop it" }),
+  part2_standard: () => ({
+    consentType: "part2_tpo_single",
+    recipients: [
+      PROGRAM_RECIPIENT,
+      { kind: "org", name: "Other treating providers", directoryRef: "class:treating_providers" },
+      { kind: "org", name: "Health plans and payers (Medi-Cal, county DMC-ODS)", directoryRef: "class:payers" },
+      { kind: "org", name: "Health information exchange", directoryRef: "class:hie" },
+      { kind: "org", name: "Program operations", directoryRef: "class:program_operations" },
+    ],
+    purpose: "Treatment, payment and health care operations",
+    purposeCode: "tpo",
+    items: ["Substance use information for treatment, payment and operations (not counseling notes)"],
+    expiresOnEvent: "No expiry — until revoked",
+    part2Elements: Object.fromEntries(PART2_ELEMENT_KEYS.map((k) => [k, true])),
+    redisclosureNoticeVersion: REDISCLOSURE_NOTICE_VERSION,
+  }),
+};
+/** Forms a patient may start and sign themselves from Forms or an inline gate. */
+export const SELF_SIGN_FORMS: readonly FormKey[] = ["telehealth", "group"];
+/** Forms a patient may self-sign only inside their intake packet. */
+export const PACKET_SELF_SIGN_FORMS: readonly FormKey[] = ["part2_standard"];
+export type SelfSignContext = "forms" | "inline_gate" | "intake_packet";
+
+/** Patient self-sign: telehealth and group confidentiality anywhere; the standard Part 2 consent only in the intake packet. */
+export function patientSelfSignForm(input: { patientId: string; formKey: FormKey; typedName: string; attested: boolean; context: SelfSignContext; language?: "en" | "es"; at?: string }): SignedCopy {
+  const p = AdelanteEHR.getPatient(input.patientId);
+  if (!p || AdelanteEHR.getCurrentPatientId() !== p.id) throw new Error("Only you can sign your own forms.");
+  const packetOnly = PACKET_SELF_SIGN_FORMS.includes(input.formKey);
+  if (!SELF_SIGN_FORMS.includes(input.formKey) && !packetOnly) throw new Error("Your care team sends this form.");
+  if (packetOnly && input.context !== "intake_packet") throw new Error("You can sign this form in your intake packet.");
+  if (!input.attested) throw new Error("Check the box to agree.");
+  if (input.typedName.trim().length < 2) throw new Error("Type your full name to sign.");
+  const v = publishedForm(input.formKey);
+  if (!v) throw new Error("This form isn't available yet.");
+  const at = input.at ?? new Date().toISOString();
+  migrateLegacyConsents(p.id);
+  let r = requests.find((x) => x.patientId === p.id && !x.advocateId && x.formKey === input.formKey && (x.status === "sent" || x.status === "viewed") && (!packetOnly || x.packet));
+  if (!r) {
+    if (packetOnly) throw new Error("You can sign this form in your intake packet.");
+    r = { id: id("cfr"), patientId: p.id, formKey: input.formKey, versionId: v.id, version: v.version, sentBy: { role: "patient", name: "Patient (self-service)" }, sentAt: at, dueAt: at, status: "viewed", required: false };
+    requests.push(r);
+  }
+  const copy = signOne(p, r, { patientId: p.id, signerName: input.typedName, typedName: input.typedName, language: input.language, channel: "portal", at }, undefined, true);
+  closeResolvedConsentPointers();
+  return copy;
+}
+
+function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, relationshipOverride?: SignedCopy["relationship"], selfSign = false): SignedCopy {
   const v = getFormVersion(r.versionId)!;
   const lang = input.language ?? (p.preferredLanguage === "es" ? "es" : "en");
   const prior = AdelanteEHR.activeConsentRecord(p.id);
@@ -331,13 +397,20 @@ function signOne(p: Patient, r: FormRequest, input: SignInput & { at: string }, 
   });
   if (v.key === "sms") AdelanteEHR.setConsent(p.id, "sms", true, "form signed");
   if (v.key === "part2") AdelanteEHR.setConsent(p.id, "part2Sud", true, "form signed");
+  // 26 Oct evening (Mitch): typed ledger record beside the live section record.
+  const terms = (selfSign || v.key === "part2_standard") && relationship !== "advocate" ? TYPED_TERMS[v.key]?.() : undefined;
+  const typed = terms ? AdelanteEHR.createConsentRecord({
+    patientId: p.id, formType: "NonAB133", source: `form:${v.key} v${v.version}`, signedByName: (input.typedName ?? input.signerName).trim(), relationship: input.relationship ?? "patient", attested: true, effectiveDate: input.at.slice(0, 10), sections: [],
+    capturedBy: { staffName: input.channel === "in_person" ? r.sentBy.name : "Patient (self-signed)", role: input.channel === "in_person" ? "in_person" : "patient" },
+    extension: { ...terms, signature: { method: "e_sign", signer: (input.typedName ?? input.signerName).trim(), relationship: relationship === "advocate" ? "patient" : relationship, signedAt: input.at, recordedAt: input.at, recordedBy: { staffName: input.channel === "in_person" ? r.sentBy.name : "Patient (self-signed)", role: input.channel === "in_person" ? "in_person" : "patient" } }, document: { formKey: v.key, versionId: v.id, version: v.version, documentHash: textHash(text) }, disclosureIds: [] },
+  }) : undefined;
   // §F1 — the signed advocate form is what releases held advocate invitations.
   if (v.key === "advocate_patient") void import("./advocateInviteDelivery").then((m) => m.deliverConsentedAdvocateInvitations(p.id)).catch(() => undefined);
   // A newer signature of the same form supersedes the older copy.
   for (const c of copies) if (c.patientId === p.id && c.formKey === v.key && !ends.has(c.id)) ends.set(c.id, { endedAt: input.at, reason: "superseded" });
   const copy: SignedCopy = Object.freeze({
     id: id("csc"), requestId: r.id, patientId: p.id, formKey: v.key, versionId: v.id, version: v.version, title: v.title[lang], language: lang, fullText: text, textHash: textHash(text), signatureMethod: v.signatureMethod,
-    signerName: (input.typedName ?? input.signerName).trim(), relationship: relationshipOverride ?? input.relationship ?? "patient", signedAt: input.at, channel: input.channel ?? "portal", sentBy: r.sentBy.name, consentRecordId: rec.id,
+    signerName: (input.typedName ?? input.signerName).trim(), relationship: relationshipOverride ?? input.relationship ?? "patient", signedAt: input.at, channel: input.channel ?? "portal", sentBy: r.sentBy.name, consentRecordId: rec.id, ...(typed ? { typedRecordId: typed.id } : {}),
     ...(endsOn ? { endsOn } : {}), ...(input.drawn ? { signatureData: input.drawn } : {}),
   });
   copies.push(copy);
@@ -409,6 +482,7 @@ export const CARE_IMPACT: Record<FormKey, Bi> = {
   telehealth: { en: "Your visits will be in person only.", es: "Sus visitas serán solo en persona. (Borrador)" },
   portal: { en: "Staff will help you with forms and messages instead of the app.", es: "El personal le ayudará con formularios y mensajes en lugar de la app. (Borrador)" },
   sms: { en: "You won't get text reminders. We'll remind you in the app instead.", es: "No recibirá recordatorios por texto. Le recordaremos en la app. (Borrador)" },
+  part2_standard: { en: "Substance-use information will stay locked. Your visits, groups, medications and MAT don't change.", es: "La información sobre uso de sustancias quedará bloqueada. Tus visitas, grupos, medicamentos y MAT no cambian. (Borrador)" },
   part2: { en: "Substance-use information will stay locked. Your team may not see all of your care.", es: "La información sobre uso de sustancias quedará bloqueada. Su equipo puede no ver toda su atención. (Borrador)" },
   group: { en: "You can't be booked into groups. Individual visits and medications don't change.", es: "No se le puede reservar en grupos. Las visitas individuales y medicamentos no cambian. (Borrador)" },
   po_release: { en: "We won't share coordination updates with your officer. Required reporting doesn't change.", es: "No compartiremos actualizaciones con su oficial. Los informes obligatorios no cambian. (Borrador)" },
@@ -437,6 +511,9 @@ export function revokeForm(input: { patientId: string; formKey: FormKey; by: "pa
     if (input.by === "staff") AdelanteEHR.staffSetConsent(p.id, purpose, false, { role: input.actor!.role as StaffRole, ...(input.actor!.staffId ? { staffId: input.actor!.staffId } : {}), staffName: input.actor!.name }, input.reason);
     else AdelanteEHR.setConsent(p.id, purpose, false, "patient stopped sharing");
   }
+  // 26 Oct evening (Mitch): a typed record signed with this copy is revoked too, so the gate re-locks.
+  const typedRec = c.typedRecordId ? AdelanteEHR.listConsentRecords(p.id).find((x) => x.id === c.typedRecordId) : undefined;
+  if (typedRec && typedRec.status !== "revoked") AdelanteEHR.revokeTypedConsentRecord(typedRec.id, { by: input.by === "patient" ? "Patient (self-service)" : input.actor!.name, role: input.by === "patient" ? "patient" : input.actor!.role, method: input.by === "patient" ? "portal" : "in_person", reason: input.reason?.trim() || "Stopped in Forms", onBehalfOfPatient: input.by === "staff" });
   ends.set(c.id, { endedAt: at, reason: "revoked", ...(input.reason ? { note: input.reason.trim() } : {}) });
   closeResolvedConsentPointers();
   audit("consent_form.revoked", input.actor ?? { role: "patient", name: "patient" }, { formKey: v.key, version: v.version, by: input.by, reason: input.reason?.trim() || "(none given)", retainUntil: retainUntil(at) }, p.id);
@@ -499,7 +576,8 @@ export function intakePacketFor(pathway: Pathway): PacketItem[] {
     { key: "portal", required: true, neededBefore: "first visit" },
     { key: "sms", required: true, neededBefore: "first visit" },
   ];
-  if (pathway === "sud" || pathway === "reentry_sud") out.push({ key: "part2", required: true, neededBefore: "any SUD information is shared" });
+  // 26 Oct evening (Mitch): the standard Part 2 consent is offered to every population, never required (non-conditioning).
+  out.push({ key: "part2_standard", required: false, neededBefore: "offered at intake — never a condition of care" });
   if (pathway !== "general") out.push({ key: "group", required: true, neededBefore: "first group" });
   if (pathway === "reentry" || pathway === "reentry_sud") out.push({ key: "po_release", required: false, neededBefore: "offered only" });
   return out;

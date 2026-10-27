@@ -8,6 +8,7 @@ import { AdelanteEHR, worklistStatusFor } from "./ehr";
 import { addStaffMember, roleAssignmentsOf, STAFF_ROSTER, type StaffMember, type StaffRole } from "./roles";
 import { listUnsignedWork } from "./unsignedWork";
 import { listEscalations } from "./escalations";
+import { ensureCareManagerCalendar } from "./careManagerCalendar";
 
 export const PROTOTYPE_IDENTITY_LABEL = "Prototype — real sign-in needs the identity backend (SculptSoft)";
 
@@ -47,6 +48,8 @@ export function addStaffMemberWithReason(actor: LifecycleActor, member: StaffMem
   assertSysAdmin(actor);
   const cleanReason = assertReason(reason);
   const created = addStaffMember(actor, { ...member, active: member.active ?? true });
+  // 26 Oct evening (Mitch): a new care manager starts with a calendar and the Draft default week.
+  ensureCareManagerCalendar(created);
   AdelanteEHR.recordActionEvent({
     action: "staff.add_reason",
     actorRole: actor.role,
@@ -81,6 +84,7 @@ export function updateStaffMember(actor: LifecycleActor, input: UpdateStaffInput
     actorId: actor.staffId,
     detail: { staffId: m.id, reason },
   });
+  ensureCareManagerCalendar(m);
   AdelanteEHR._emit();
   return m;
 }

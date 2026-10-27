@@ -23,7 +23,8 @@ import {
 } from "./consentRecordModel";
 
 export const CAPTURE_DRAFT_LABEL = "Draft — pending counsel";
-export const REDISCLOSURE_NOTICE_VERSION = "redisclosure-notice-v1 (Draft — pending counsel)";
+import { REDISCLOSURE_NOTICE_VERSION } from "./consentRecordModel";
+export { REDISCLOSURE_NOTICE_VERSION };
 export const UPLOAD_SIMULATED_LABEL = "Simulated — paper copy is not stored in a real document system";
 
 /** Template (published form) behind each type, where one exists. */

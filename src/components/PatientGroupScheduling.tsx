@@ -18,6 +18,7 @@
 // FUTURE: an Authorized Representative / Collateral (advocate) acting for the
 // patient will reuse this surface — the actor is passed to the store, which is
 // the single place that decides who may enroll.
+import { SelfSignConsentCard } from "@/components/consent/SelfSignConsentCard";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -154,8 +155,8 @@ const GC = {
     sent: "We'll check with your care team. You'll get a message when you're added.",
     declined: "Your care team will talk with you about other options.",
     confirm: "Your care team will confirm this group is right for you.",
-    confidentiality_ack: "This group asks everyone to sign a privacy promise. Your care team can send it to you.",
-    telehealth_consent: "This group meets by video. You need to say yes to video visits first. Your care team can send the form.",
+    confidentiality_ack: "This group asks everyone to sign a privacy promise. You can sign it here.",
+    telehealth_consent: "This group meets by video. You need to say yes to video visits first. You can sign it here.",
     in_person: "In person", video: "By video", phone: "By phone",
     en: "English", es: "Spanish", both: "English and Spanish", next: "Next meeting:", tbd: "Next meeting to be set",
     joinedToast: "You're in the group.",
@@ -166,8 +167,8 @@ const GC = {
     sent: "Vamos a consultar con tu equipo de cuidado. Recibirás un mensaje cuando te agreguen.",
     declined: "Tu equipo de cuidado hablará contigo sobre otras opciones.",
     confirm: "Tu equipo de cuidado confirmará que este grupo es bueno para ti.",
-    confidentiality_ack: "Este grupo pide que todos firmen una promesa de privacidad. Tu equipo de cuidado te la puede enviar.",
-    telehealth_consent: "Este grupo se reúne por video. Primero tienes que decir que sí a las visitas por video. Tu equipo de cuidado te puede enviar el formulario.",
+    confidentiality_ack: "Este grupo pide que todos firmen una promesa de privacidad. Puedes firmarla aquí.",
+    telehealth_consent: "Este grupo se reúne por video. Primero tienes que decir que sí a las visitas por video. Puedes firmar aquí.",
     in_person: "En persona", video: "Por video", phone: "Por teléfono",
     en: "Inglés", es: "Español", both: "Inglés y español", next: "Próxima reunión:", tbd: "La próxima reunión aún no tiene fecha",
     joinedToast: "Ya estás en el grupo.",
@@ -221,7 +222,10 @@ function AskToJoinGroups({ patientId }: { patientId: string }) {
                   <div className="space-y-2">
                     {wasDeclined && <p className="text-sm text-muted-foreground">{c.declined}</p>}
                     {selfNeeds.map((n) => (
-                      <p key={n} className="text-sm text-muted-foreground">{c[n as "confidentiality_ack" | "telehealth_consent"]}</p>
+                      <div key={n} className="space-y-2">
+                        <p className="text-sm text-muted-foreground">{c[n as "confidentiality_ack" | "telehealth_consent"]}</p>
+                        {(n === "confidentiality_ack" || n === "telehealth_consent") && <SelfSignConsentCard patientId={patientId} formKey={n === "confidentiality_ack" ? "group" : "telehealth"} context="inline_gate" lang={lang === "es" ? "es" : "en"} />}
+                      </div>
                     ))}
                     <p className="text-sm text-muted-foreground">{c.confirm}</p>
                     <Button variant="outline" onClick={() => act("patient_group_ask", g.id)}>{c.ask}</Button>

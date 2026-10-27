@@ -4,6 +4,7 @@
 
 export const CONSENT_PURPOSES = [
   { code: "treatment", label: "Treatment" },
+  { code: "tpo", label: "Treatment, payment and health care operations" },
   { code: "care_coordination", label: "Care coordination" },
   { code: "status_updates", label: "Referral status updates" },
   { code: "enrolled_update", label: "\"Enrolled\" update only" },

@@ -26,6 +26,7 @@ import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { assertGroupApproval, assertGroupStaffRequest, groupRequestHooks } from "./groupRequestBoundary";
+import { ON_CALL_GAP, onCallOwnerFor } from "./onCallBoundary";
 import { isLateCancelWindow } from "./lateCancel";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
@@ -3073,6 +3074,8 @@ export interface CrisisEscalation {
   ownerStaffId?: string;
   ownerName?: string;
   ownerLane?: "named" | "pool";
+  /** 26 Oct evening (Mitch): visible notice when no on-call clinician was set. */
+  ownerGap?: string;
   ownerAssignedAt?: string;
   handoffs?: { at: string; fromStaffId?: string; toStaffId: string; toName: string; byName: string; byRole: string; reason: string }[];
   /** Most recent signal on this row — equals `triggeredAt` until a re-trigger. */
@@ -3164,8 +3167,9 @@ export function resolveCrisisOwner(p: Patient, category: CrisisCategory | undefi
     if (!p.caseManagerId) return undefined;
     return STAFF_ROSTER.find((m) => m.caseManagerId === p.caseManagerId && active(m));
   }
-  if (!p.primaryClinicianId) return undefined;
-  return STAFF_ROSTER.find((m) => m.clinicianId === p.primaryClinicianId && active(m) && m.role !== "sys_admin");
+  // 26 Oct evening (Mitch): no assigned clinician → on-call clinician, then the coordinator pool.
+  if (!p.primaryClinicianId) return onCallOwnerFor();
+  return STAFF_ROSTER.find((m) => m.clinicianId === p.primaryClinicianId && active(m) && m.role !== "sys_admin") ?? onCallOwnerFor();
 }
 
 export interface ProgressNote {
@@ -21360,7 +21364,7 @@ export const AdelanteEHR = {
     const named = resolveCrisisOwner(p, row.category);
     row.ownerAssignedAt = now;
     if (named) { row.ownerStaffId = named.id; row.ownerName = named.name; row.ownerLane = "named"; }
-    else row.ownerLane = "pool";
+    else { row.ownerLane = "pool"; if (row.category !== "sdoh") row.ownerGap = ON_CALL_GAP; }
     p.crisisEscalations = [row, ...(p.crisisEscalations ?? [])];
     appendAudit({
       category: "clinical",
@@ -24662,7 +24666,7 @@ export const AdelanteEHR = {
       throw new Error(message);
     };
     if (group.status === "cancelled") block("group_cancelled", "That group is cancelled.");
-    if (!AdelanteEHR.isGroupEligible(patientId))
+    if (!groupRequestHooks.skipsCarePlanEligibility?.(group) && !AdelanteEHR.isGroupEligible(patientId))
       block(
         "no_eligibility",
         "Group eligibility has not been set for this patient. A therapist, PMHNP or case manager must set it before any enrollment.",

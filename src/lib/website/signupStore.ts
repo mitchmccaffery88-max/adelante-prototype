@@ -42,3 +42,5 @@ export function resumeSignupDraft(id: string) { const d = sessions.get(id)?.draf
 
 /** Phase A safety linkage accessor: IDs only, no draft/contact/verification data. */
 export function signupSafetyLink(sessionId: string): { exists: boolean; patientId?: string } { const s = sessions.get(sessionId); return { exists: !!s, patientId: s?.patientId }; }
+/** 26 Oct evening (Mitch): free-text sign-up answers for the safety scan only; never audited or shown. */
+export function signupFreeText(sessionId: string): { field: string; text: string }[] { const d = sessions.get(sessionId)?.draft; if (!d) return []; const out: { field: string; text: string }[] = []; for (const [field, text] of [['source', d.source], ['helperName', d.helperName]] as [string, string | undefined][]) if (text?.trim()) out.push({ field, text }); return out; }

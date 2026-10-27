@@ -9,7 +9,8 @@ import { canSubmitReferral, submitWebsiteReferral } from "@/lib/website/publicRe
 import { intakeLogOutreach } from "@/lib/intakeWorkspace";
 import { canReportPublicResource, createPublicResourceReport } from "@/lib/website/publicResourceReports";
 import { canActOnIdentityReview, identityReviewConfirm, identityReviewLink, identityReviewMerge, identityReviewMergeConfirmed, identityReviewNeedInfo, identityReviewNotSame } from "@/lib/identityReview";
-import { canUseSignup, runSignupCommand } from "@/lib/website/signupStore";
+import { canUseSignup } from "@/lib/website/signupStore";
+import { runSignupCommand } from "@/lib/website/signupSafety";
 import { authPreview } from "@/lib/website/authPreview";
 import {canSubmitWebsiteIntake,saveWebsiteIntake} from '@/lib/website/websiteInbox';
 import { seedSimulatedContentSample } from "@/lib/contentAnalytics";
@@ -82,6 +83,8 @@ import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type Ve
 import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/moudContinuity";
 import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency, endCoordinatorEmergencyNow, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
+import { addOnCallShift, canManageOnCall, removeOnCallShift } from "./onCall";
+import { patientSelfSignForm } from "./consentForms";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 export const REGISTRY_VERSION = "2026-10-26.coverage-paths";
@@ -164,6 +167,8 @@ export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview",
 
 export const CHART_ACTIONS: ChartAction[] = [
   // 26 Oct (Mitch) group requests: one request item; stores own lifecycle audits.
+  // 26 Oct evening (Mitch) — patient self-sign: telehealth + group confidentiality; standard Part 2 only in the intake packet (store enforces).
+  { id: "patient_consent_self_sign", label: { en: "Sign a form", es: "Firmar un formulario" }, group: "coordination", menu: false, needsPatient: false, check: "patient for self; allowlisted forms only", store: refs(["patientSelfSignForm", patientSelfSignForm]), allowed: ({ role }) => role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient signs here.") },
   { id: "patient_group_join", label: { en: "Join group", es: "Unirme al grupo" }, group: "coordination", menu: false, needsPatient: false, check: "patient for self; open group with every requirement met", store: refs(["patientJoinGroup", patientJoinGroup]), allowed: ({ role }) => role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient joins here.") },
   { id: "patient_group_ask", label: { en: "Ask to join", es: "Pedir unirme" }, group: "coordination", menu: false, needsPatient: false, check: "patient for self; visible, not invite-only", store: refs(["patientAskToJoin", patientAskToJoin]), allowed: ({ role }) => role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient asks here.") },
   { id: "group_request_staff", label: { en: "Request group for patient", es: "Request group for patient" }, group: "care", menu: false, needsPatient: false, check: "own care team; Part 2 group needs SUD access", store: refs(["careTeamRequestGroup", careTeamRequestGroup]), allowed: ({ role }) => ["ecm_provider", "cf_care_manager", "therapist", "pmhnp", "physician"].includes(role) ? ok() : hide("Care team only.") },
@@ -280,6 +285,13 @@ export const CHART_ACTIONS: ChartAction[] = [
   { id: "content_discard", label: { en: "Discard content draft", es: "Discard content draft" }, group: "admin", menu: false, needsPatient: false,
     check: "canAuthorContent", store: refs(["discardContentDraft", discardContentDraft]),
     allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
+  // 26 Oct evening (Mitch) — Draft on-call duty schedule (onCall.ts); store re-checks the role.
+  { id: "on_call_shift_add", label: { en: "Add on-call shift", es: "Add on-call shift" }, group: "admin", menu: false, needsPatient: false,
+    check: "canManageOnCall", store: refs(["addOnCallShift", addOnCallShift]),
+    allowed: ({ role }) => canManageOnCall(role) ? ok() : hide("Only the clinical coordinator or a system admin can change the on-call schedule.") },
+  { id: "on_call_shift_remove", label: { en: "Remove on-call shift", es: "Remove on-call shift" }, group: "admin", menu: false, needsPatient: false,
+    check: "canManageOnCall", store: refs(["removeOnCallShift", removeOnCallShift]),
+    allowed: ({ role }) => canManageOnCall(role) ? ok() : hide("Only the clinical coordinator or a system admin can change the on-call schedule.") },
   {
     id: "resource_verify",
     label: { en: "Verify and publish resource", es: "Verificar y publicar recurso" },

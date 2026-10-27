@@ -1,4 +1,5 @@
 import { AdelanteEHR, type Appointment, type Referral, type ServiceType } from "./ehr";
+import { calendarIdFor } from "./careManagerCalendar";
 import { AdelanteEHRExt } from "./ehr-ext";
 import { getStaffMember, hasRoleAssignment, STAFF_ROSTER, type StaffRole } from "./roles";
 import { isRestricted } from "./chartAccess";
@@ -55,8 +56,9 @@ function targetFits(staffId: string, roles: StaffRole[]) { const s = getStaffMem
 export function intakeRoster(actor: IntakeActor, roles: StaffRole[]) {
   if (!canIntakeAct(actor, "care_manager_assignment")) return [];
   return STAFF_ROSTER.filter(s => s.active !== false && roles.some(role => hasRoleAssignment(s, role))).map(s => {
-    const c = s.clinicianId ? AdelanteEHR.getClinician(s.clinicianId) : undefined;
-    const blocks = AdelanteEHRExt.availabilityBlocksForClinician(s.clinicianId ?? s.id);
+    const cal = calendarIdFor(s);
+    const c = cal ? AdelanteEHR.getClinician(cal) : undefined;
+    const blocks = AdelanteEHRExt.availabilityBlocksForClinician(cal ?? s.id);
     return { id: s.id, name: s.name, role: s.role, clinicianId: s.clinicianId, caseManagerId: s.caseManagerId,
       languages: c?.languages ?? [], locations: [...new Set([...blocks.map(b => listSites().find(x => x.id === siteForBlock(b))?.name).filter((x): x is string => !!x), ...(c?.locationIds ?? []).map(id => AdelanteEHR.listLocations().find(x => x.id === id)?.name ?? id)])],
       hours: blocks.map(b => `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][b.weekday]} ${b.start}–${b.end}`),
@@ -79,7 +81,7 @@ export function validateFirstVisit(input: BookingInput & { intakeBooking?: Intak
   const start = Date.parse(input.start);
   const end = start + input.durationMin * 60000;
   if (AdelanteEHR.appointmentsForPatient(p.id).some(a => ["scheduled", "checked_in"].includes(a.status) && Date.parse(a.start) < end && Date.parse(a.start) + a.durationMin * 60000 > start)) throw new Error("That time is unavailable. Restricted — other appointment details are not available to Intake.");
-  const staff = STAFF_ROSTER.find(s => s.clinicianId === input.clinicianId);
+  const staff = STAFF_ROSTER.find(s => calendarIdFor(s) === input.clinicianId);
   if (!staff) throw new Error("An active eligible calendar is required.");
   targetFits(staff.id, config.roles);
   if (!input.modality || input.durationMin !== AdelanteEHR.getServiceType(config.service)?.defaultDurationMin || +new Date(input.start) <= Date.now() || !isWithinAvailability(input.clinicianId, input.start, { serviceType: config.service, modality: input.modality, stepMin: input.durationMin })) throw new Error("That slot is not available.");
@@ -100,9 +102,10 @@ export function firstVisitSlots(id: string, kind: FirstVisitKind, actor: IntakeA
   if (!indicatedFirstVisits(id, actor).includes(kind)) return [];
   const c = FIRST_VISITS[kind];
   return intakeRoster(actor, c.roles).filter(s => {
-    const clinician = s.clinicianId ? AdelanteEHR.getClinician(s.clinicianId) : undefined;
+    const cal = calendarIdFor(s);
+    const clinician = cal ? AdelanteEHR.getClinician(cal) : undefined;
     return !!clinician && (!clinician.services || clinician.services.includes(c.service));
-  }).flatMap(s => s.clinicianId ? availableSlots(s.clinicianId, { serviceType: c.service, modality, stepMin: AdelanteEHR.getServiceType(c.service)?.defaultDurationMin }).map(start => ({ clinicianId: s.clinicianId ?? "", name: s.name, start })) : []);
+  }).flatMap(s => { const cal = calendarIdFor(s); return cal ? availableSlots(cal, { serviceType: c.service, modality, stepMin: AdelanteEHR.getServiceType(c.service)?.defaultDurationMin }).map(start => ({ clinicianId: cal, name: s.name, start })) : []; });
 }
 export function bookFirstVisit(actor: IntakeActor, referralId: string, slot: FirstVisitSlot, reason: string) {
   assertIntakeActor(actor, "first_visit", reason);

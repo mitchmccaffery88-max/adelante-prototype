@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import type { StaffRole } from "@/lib/roles";
 import { AdelanteEHR } from "../ehr";
 import { runAction } from "../actions/runAction";
 import { CHART_ACTIONS } from "../chartActions";
@@ -220,7 +221,7 @@ describe("26 Oct coverage paths — one request type, many paths", () => {
   });
 
   it("care team request uses existing coverage access only; Intake and billing-only roles keep their lanes", () => {
-    const role = (["ecm_provider", "cf_care_manager", "clinical_coordinator", "front_desk"] as const).find((x) => { const a = canAccess(x, "eligibility"); return a.level !== "none" && !a.locked; });
+    const role = (["ecm_provider", "cf_care_manager", "clinical_coordinator", "front_desk"] as const).find((x) => { const a = canAccess(x as StaffRole, "eligibility"); return a.level !== "none" && !a.locked; });
     const action = CHART_ACTIONS.find((a) => a.id === "care_coverage_request")!;
     expect(action.allowed(intake).state).toBe("hidden");
     expect(action.allowed(billing).state).toBe("hidden");

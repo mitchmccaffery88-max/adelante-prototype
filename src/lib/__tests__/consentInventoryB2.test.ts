@@ -46,7 +46,8 @@ const ENTRY_POINT_CALLERS: Record<string, number> = {
   "src/lib/chartOrders.ts": 1,
   "src/lib/consentAudit.ts": 1,
   "src/lib/consentCapture.ts": 3,
-  "src/lib/consentForms.ts": 19,
+  // 26 Oct evening (Mitch) +3: self-sign/standard Part 2 typed record write, its revocation and lookup.
+  "src/lib/consentForms.ts": 22,
   "src/lib/consentLifecycle.ts": 4,
   "src/lib/consentMigration.ts": 1, // B2-5 new: listConsentRecords read to find live untyped records to mark legacyUnverified
   "src/lib/consentGate.ts": 8, // §B2-4 new: the one consent gate (ledger interface, consentCovers call, docs)
