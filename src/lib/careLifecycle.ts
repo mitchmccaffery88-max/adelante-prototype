@@ -18,7 +18,7 @@ import { AdelanteEHR, type Patient, type Referral } from "./ehr";
 import { getStaffMember, STAFF_ROSTER, type StaffRole } from "./roles";
 import { REFERRAL_AGING_DRAFT } from "./referralAging";
 import { POST_ENROLLMENT_STALENESS_DRAFT, firstAttendedAppointment } from "./postEnrollment";
-import { coverageProjection } from "./coverageRequests";
+import { coverageProjection, coverageKeysForPatient } from "./coverageRequests";
 import { didntStartCareFor, consumedClaimCodeForReferralSafe } from "./lifecycleState";
 import { getStructuredPlan } from "./structuredCarePlan";
 
@@ -76,7 +76,7 @@ export function identityEvidence(r: Referral): "staff_confirmed" | "claim_code" 
 }
 
 function referralFactsGathered(r: Referral): boolean {
-  return !!(r.intakeStaging || r.dob || r.dobUnknown || r.cin || r.reportedBenefits || r.notes || r.referralReasonText);
+  return !!(r.intakeStaging || r.dob || r.dobUnknown || r.cin || r.reportedBenefits || r.notes || r.intakeStaging?.referralReason);
 }
 
 function reached(r: Referral): boolean {
@@ -91,8 +91,6 @@ export function coverageForPatient(pid: string): { pathSet: boolean; verified: b
     verified: projections.some((p) => p.status === "Active" || p.status === "Self-pay" || p.status === "Sliding scale — tier set"),
   };
 }
-let coverageKeysForPatient: (pid: string) => string[] = () => [];
-export function setLifecycleCoverageKeys(fn: (pid: string) => string[]) { coverageKeysForPatient = fn; }
 
 /** Attended service with a signed note whose rendering clinician has a roster credential (Draft proxy). */
 export function billableService(pid: string) {
@@ -101,7 +99,7 @@ export function billableService(pid: string) {
   const notes = p?.progressNotes ?? [];
   const signed = attended.find((a) => notes.some((n) => n.appointmentId === a.id && !!n.signedAt));
   const staff = signed ? STAFF_ROSTER.find((s) => s.clinicianId === signed.clinicianId) : undefined;
-  return { attendedSigned: !!signed, credentialed: !!(staff && staff.credential && staff.active !== false) };
+  return { attendedSigned: !!signed, credentialed: !!(staff && staff.credential) };
 }
 
 export function firstCarePlanDrafted(pid: string): boolean {
@@ -145,7 +143,7 @@ function clockFor(stage: number, r: Referral | undefined, p: Patient | undefined
   if (stage <= 4) {
     const start = r?.contactedAt ?? r?.createdAt;
     const days = start ? Math.max(0, Math.floor((+now - Date.parse(start)) / 86400_000)) : 0;
-    return { days, clock: days >= REFERRAL_AGING_DRAFT.staleDays ? "overdue" : days >= REFERRAL_AGING_DRAFT.dueDays ? "due" : "fresh" };
+    return { days, clock: days >= REFERRAL_AGING_DRAFT.overdueDays ? "overdue" : days >= REFERRAL_AGING_DRAFT.dueDays ? "due" : "fresh" };
   }
   const start = p?.enrolledAt;
   const days = start ? Math.max(0, Math.floor((+now - Date.parse(start)) / 86400_000)) : 0;
