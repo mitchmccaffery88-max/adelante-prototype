@@ -42,3 +42,15 @@ No retained Phase 2 database seeds. A temporary export exercised the fictional g
 This implementation batch is partial, not Phase 2 acceptance. Remaining implementation gaps are not a request for new secrets or approval: generated full store-driven seeds; real domain repositories and server/registry command contracts; patient/advocate/identity positive RLS scenarios; complete handoff/care-team end-to-end; reasoned restricted-open/compliance path; broad consent/class locked projections; trusted signup matching and crisis-owner parity.
 
 Separate test project credentials remain external; until supplied, only rollback tests are used. Hosted authenticated end-to-end remains unavailable with zero provisioned accounts/auth users. These limits are distinct from unfinished implementation. All persistence remains off until the missing work passes.
+
+## Phase 2b update (27 Oct)
+**Complete**
+- Item 1 — standard Part 2 consent end rule. `src/lib/standardTpoExpiry.ts` (TS) and `app.synthetic_guard` / `app.standard_tpo_end_events()` (SQL) agree: `part2_tpo_single` with purpose `tpo` has no end date; the only end wording is until revoked / end of treatment; revocable any time. Intake Phase B capture and its staff panel show "No end date" for that scope. 8 shared vectors: TS suite pass, SQL rollback 8/8. **Open decision:** treatment-purpose `part2_tpo_single` keeps its end date because pinned B2 parity suites encode one; widening needs Mitch's approval of those pin changes.
+- Item 2 — store-driven seed transport. `scripts/generate-phase2-seed.ts` (build-time, never imported by the app) boots the demo store, runs the Phase A registry seed, a general website sign-up (`website_signup`), and the packet intake (`intake_staging_import` → `intake_packet_attach` → verified sign-up link → `intake_team_assign` ×2 → `intake_complete`), then emits compact JSON pasted into a migration-owned seed. Retained: 23 staff (+ held roles), 18 patients, 18 site enrollments, 22 care-team rows, 3 signed `part2_tpo_single` (Marcus L., Luis Camacho, Jasmine Holt; packet patient Dana unsigned so the locked path is testable), 9 referrals incl. Casey (`public_unverified`), staging import/row, 4 packet docs (2 Part 2-tagged), 3 SDOH needs, completed checklist, first-visit handoff. 0 non-synthetic rows.
+
+**Stopped at the boundary (moved to 2c)**
+- Item 3 positive access scenarios: each case needs an authenticated per-role account (auth user + account + attestation). None exist and creating auth users was outside this batch, so every Phase 2 read stays closed.
+- Item 4 crisis-owner parity vectors: not started.
+- 2c as instructed: repositories, server/registry transport, signup parity, persistence switches.
+
+**Tests:** full units 3,488/3,488 (400 files). Public browser: see roadmap. Tests ran rollback-only on the main project (no test-project secrets). Persistence off; nothing published.
