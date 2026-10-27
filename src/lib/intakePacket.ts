@@ -120,3 +120,30 @@ export function intakePacketProgress(actor: IntakeActor, referralId: string) {
   return { collected: packet.forms.filter(f => f.status === "Collected").length, missing: packet.forms.filter(f => f.status !== "Collected").length, needsLogged: packet.needs.filter(n => n.state !== "unknown").length, needsUnknown: packet.needs.filter(n => n.state === "unknown").length, documents: packet.documents.length };
 }
 export function intakePacketChecklist(actor: IntakeActor, referralId: string) { return { forms: intakeFormsStatus(actor, referralId), needs: intakePacketNeeds(actor, referralId), documents: intakePacketDocuments(actor, referralId) }; }
+// 27 Oct lifecycle — "Getting started" reads. The person sees their own
+// source-bound packet needs (kind + state only); clinicians drafting the first
+// plan receive non-Part-2 needs only, as suggestions. No new store.
+export const NEED_LABEL: Record<PacketNeedKind, { en: string; es: string }> = {
+  housing: { en: "A place to live", es: "Un lugar donde vivir" }, food: { en: "Food", es: "Comida" },
+  transportation: { en: "Getting around", es: "Transporte" }, employment: { en: "Work", es: "Trabajo" },
+  benefits: { en: "Benefits", es: "Beneficios" }, legal: { en: "Legal help", es: "Ayuda legal" },
+  education: { en: "School or training", es: "Estudios o capacitación" }, childcare: { en: "Childcare", es: "Cuidado de niños" },
+  other: { en: "Other help", es: "Otra ayuda" },
+};
+function linkedReferrals(patientId: string) { return AdelanteEHR.listReferrals().filter(r => r.enrolledPatientId === patientId); }
+export function patientOwnPacketNeeds(patientId: string) {
+  return linkedReferrals(patientId).flatMap(r => (needs.get(r.id) ?? []).filter(n => referenceValid(r, n))).map(n => ({ id: n.id, kind: n.kind, state: n.state, source: n.source }));
+}
+export function clinicianPacketNeedFacts(patientId: string) {
+  if (isRestricted(patientId)) return [];
+  return linkedReferrals(patientId).flatMap(r => (needs.get(r.id) ?? []).filter(n => referenceValid(r, n) && !n.part2 && n.state !== "resolved")).map(n => ({ id: n.id, kind: n.kind, source: n.source }));
+}
+/** "Still need help with this?" — the person's own answer, through the same checklist state. */
+export function patientConfirmPacketNeed(actor: { role: string; staffId?: string }, patientId: string, needId: string, still: boolean) {
+  if (actor.role !== "patient" || actor.staffId !== patientId) throw new Error("Only you can do this for yourself.");
+  for (const r of linkedReferrals(patientId)) {
+    const n = (needs.get(r.id) ?? []).find(x => x.id === needId && referenceValid(r, x));
+    if (n) { n.state = still ? "confirmed_still_needed" : "resolved"; AdelanteEHR._emit(); return { needId }; }
+  }
+  throw new Error("That item is no longer open.");
+}
