@@ -121,5 +121,11 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] B5. On-call duty schedule + resolveCrisisOwner + admin screen (Draft)
 - [x] B6. Standard Part 2 TPO consent at intake (Draft)
 - [x] Validation: FULL units 3,444/3,444 (396 files); FULL public browser 47/47 (13.0m, one worker, :8080). Nothing published. Report: docs/decisions-26oct-evening-report.md.
-- [ ] Record-class count: roles.ts has 44, tracking says 41 — waiting on Mitch to confirm which is authoritative.
+- [x] Record-class count: Mitch confirmed 27 Oct that roles.ts is authoritative: 44 classes (41 predates three additions).
 - [ ] On-call owner and SMS/SMTP provider — waiting on Mitch/Diana.
+
+## 27 Oct Supabase Phase 1 — approved foundation
+- [ ] Foundation schemas/tables/RLS/helpers, generated 44 × 18 grants and synthetic reference seeds; existing connected project only.
+- [ ] Off-by-default repositories, Beta banner and audited first-sign-in attestation; memory remains default.
+- [ ] Rollback-only main-project RLS/consent/matrix tests until test-project credentials exist; evidence in docs/rls-evidence/.
+- [ ] Full unit/public browser suites, Phase 1 report and remaining blockers. Do not publish.
