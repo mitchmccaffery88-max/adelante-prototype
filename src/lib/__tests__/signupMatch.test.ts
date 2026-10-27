@@ -79,4 +79,4 @@ describe("public signup outcomes", () => {
     const dupeItem = listIdentityReviewItems().find((i) => i.type === "possible_duplicate_account" && i.patientId === made.patientId);
     expect(dupeItem?.candidatePatientIds).toContain(old.id);
   });
-});});
+});
