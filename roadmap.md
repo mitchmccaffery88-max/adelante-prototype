@@ -100,8 +100,8 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Routing to care manager + clinician, Intake / clinical coordinator fallbacks; Today tasks.
 - [x] Decisions: Approve and add, Not right now, Needs something first; portal message each time.
 - [x] Care-team on-behalf requests share the request item; Intake path unchanged.
-- [ ] Patient self-sign for group confidentiality / telehealth consent — blocked: needs Mitch decision on a new consent writer.
-- [ ] Open groups without care-plan eligibility — blocked: eligibility gate kept per standing rule; needs Mitch decision.
+- [x] Patient self-sign for group confidentiality / telehealth consent — decided 26 Oct evening, built.
+- [x] Open groups without care-plan eligibility — decided 26 Oct evening (open + non-billable only), built.
 - [x] Validation: FULL units 3,399/3,399 (394 files); FULL public browser 47/47 (9.5m, one worker, :8080). Nothing published.
 
 ## Eligibility for every coverage path (26 Oct, Mitch) — preview
@@ -112,12 +112,14 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] Approved sliding-scale tier table and fee schedule — waiting on finance sign-off (Draft placeholders in place).
 - [x] Validation: FULL units 3,422/3,422 (395 files); FULL public browser 47/47 (10.8m, one worker, :8080). Nothing published. Report: docs/eligibility-paths-report.md.
 
-## Schema plan + 26 Oct evening decisions (Mitch) — in progress
-- [ ] A. Write docs/supabase-schema-plan.md with review changes (no tables)
-- [ ] B1. Patient self-sign: group confidentiality + telehealth (+ B6 in intake packet)
-- [ ] B2. Open non-billable groups skip care-plan eligibility
-- [ ] B3. Safety scan of sign-up / public referral free text
-- [ ] B4. Every care manager has a calendar; addStaffMember default hours
-- [ ] B5. On-call duty schedule + resolveCrisisOwner + admin screen (Draft)
-- [ ] B6. Standard Part 2 TPO consent at intake (Draft)
-- [ ] Full suites, docs/decisions-26oct-evening-report.md
+## Schema plan + 26 Oct evening decisions (Mitch) — preview
+- [x] A. Write docs/supabase-schema-plan.md with review changes (no tables)
+- [x] B1. Patient self-sign: group confidentiality + telehealth (+ B6 in intake packet)
+- [x] B2. Open non-billable groups skip care-plan eligibility
+- [x] B3. Safety scan of sign-up / public referral free text
+- [x] B4. Every care manager has a calendar; addStaffMember default hours
+- [x] B5. On-call duty schedule + resolveCrisisOwner + admin screen (Draft)
+- [x] B6. Standard Part 2 TPO consent at intake (Draft)
+- [ ] Full suites, docs/decisions-26oct-evening-report.md (running)
+- [ ] Record-class count: roles.ts has 44, tracking says 41 — waiting on Mitch to confirm which is authoritative.
+- [ ] On-call owner and SMS/SMTP provider — waiting on Mitch/Diana.
