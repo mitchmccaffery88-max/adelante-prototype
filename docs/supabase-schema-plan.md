@@ -242,7 +242,7 @@ Still open:
 
 1. Adel messages and check-ins are not direct owner writes. They go through the server-function path so the server-side crisis scan always runs (19 Oct decision). Owner reads stay owner-only; there is still no staff read path to content.
 2. Core patient tables (patients, patient_contacts, the account link) move into phase 1 because consent_records reference patients. Phase 2 keeps the rest.
-3. Record classes recounted against `roles.ts`: the `RecordClass` union has 44 classes, not "about 30" (our tracking said 41; the three most recent additions are `assisted_signup`, `content_authoring` and `clinical_text_governance`, which may explain the difference — to confirm with Mitch). The generated grants seed covers every one; they are listed in section 2.
+3. Record classes recounted against `roles.ts`: the `RecordClass` union has 44 classes, not "about 30". Mitch confirmed 27 Oct that code is authoritative and the previous 41 count predates three newer classes. The generated grants seed covers every one; they are listed in section 2.
 4. Reporting adds complementary suppression; no total, subtotal or second query may let someone derive a suppressed (<11) cell. Tested.
 5. Phone-only sign-in waits for an SMS provider; Beta testers sign in by email until then (section 7).
 6. The role-by-table RLS and contract suites run from the Lovable sandbox against the second Supabase project; results are recorded in `docs/rls-evidence/` and quoted in each batch report (section 9).

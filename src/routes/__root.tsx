@@ -20,6 +20,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";
 import { AppShell } from "../components/AppShell";
 import { Toaster } from "../components/ui/sonner";
+import { BetaFoundation } from "../components/BetaFoundation";
 
 function NotFoundComponent() {
   return (
@@ -243,8 +244,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <AppShell />
-        <BookVisitDrawerHost />
+        <BetaFoundation>
+          <AppShell />
+          <BookVisitDrawerHost />
+        </BetaFoundation>
         <Toaster richColors={false} position="top-right" />
       </I18nProvider>
     </QueryClientProvider>

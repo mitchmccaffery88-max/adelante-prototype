@@ -121,5 +121,16 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] B5. On-call duty schedule + resolveCrisisOwner + admin screen (Draft)
 - [x] B6. Standard Part 2 TPO consent at intake (Draft)
 - [x] Validation: FULL units 3,444/3,444 (396 files); FULL public browser 47/47 (13.0m, one worker, :8080). Nothing published. Report: docs/decisions-26oct-evening-report.md.
-- [ ] Record-class count: roles.ts has 44, tracking says 41 — waiting on Mitch to confirm which is authoritative.
+- [x] Record-class count: Mitch confirmed 27 Oct that roles.ts is authoritative: 44 classes (41 predates three additions).
 - [ ] On-call owner and SMS/SMTP provider — waiting on Mitch/Diana.
+
+## 27 Oct Supabase Phase 1 — approved foundation
+- [x] Foundation 20 tables/RLS/helpers, generated 44 × 18 grants and synthetic reference seeds; existing connected project only. DB/code checksum equal.
+- [x] Off-by-default repository scaffolding, Beta banner and SQL-audited agreement; memory remains default. No persistence cutover claimed.
+- [x] Rollback-only main-project RLS/helper checks 2,261/2,261; SQL and TypeScript consent vectors 17/17 each; evidence in docs/rls-evidence/.
+- [x] Full units 3,465/3,465; report docs/supabase-phase1-report.md; build OK. No publishing.
+- [x] Full public browser suite — isolated unchanged rerun 47/47, exit 0, 10.3m. Initial 46/47 Axe context/reload interruption retained in evidence; no test/config/timeout changes.
+- [ ] Beta first-sign-in end-to-end — blocked by zero hosted auth users/provisioned accounts and later real-auth transport.
+- [ ] Second test project — credentials not yet supplied; main tests roll back.
+- [ ] Consent create/frozen signed-copy persistence — blocked by trusted file/signature transport; persist_consent stays off.
+- [ ] Registry-driven domain cutover/staff patient RLS — blocked by Phase 2 care-team/chart context and trusted mutation contracts; all persist_* stay off.

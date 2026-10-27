@@ -1,0 +1,3962 @@
+[
+  {
+    "role": "ecm_provider",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "demographics",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "screeners_mh",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "screeners_sud",
+    "level": "consent_gated"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "psych_eval",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "care_plan",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "therapy_notes",
+    "level": "summary"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "meds_erx",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "telehealth_room",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "sdoh",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "self_help",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "safety_plan",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "sud_treatment",
+    "level": "consent_gated"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "case_notes",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "peer_notes",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "chw_notes",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "documents",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "consent_ledger",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "allergies",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "alerts",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "eligibility",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "care_coordination",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "custody_tracking",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "pre_release",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "controlled_substance_custody",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "population_health",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "crisis_queue",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "patient_messaging",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "provider_requests",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "community_inquiries",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "worklist",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "note_templates",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "scheduling_rules",
+    "level": "read"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "group_sessions",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "group_notes",
+    "level": "consent_gated"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "assisted_signup",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "ecm_provider",
+    "record_class": "clinical_text_governance",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "care_plan",
+    "level": "write"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "sdoh",
+    "level": "write"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "safety_plan",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "sud_treatment",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "case_notes",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "documents",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "problems",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "allergies",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "alerts",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "eligibility",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "care_coordination",
+    "level": "write"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "custody_tracking",
+    "level": "write"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "pre_release",
+    "level": "write"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "crisis_queue",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "patient_messaging",
+    "level": "read"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "provider_requests",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "community_inquiries",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "worklist",
+    "level": "write"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "group_sessions",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "assisted_signup",
+    "level": "write"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "cf_care_manager",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "screeners_mh",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "screeners_sud",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "psych_eval",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "care_plan",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "therapy_notes",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "telehealth_room",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "sdoh",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "self_help",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "safety_plan",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "sud_treatment",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "case_notes",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "documents",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "consent_ledger",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "allergies",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "alerts",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "eligibility",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "care_coordination",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "pre_release",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "patient_messaging",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "provider_requests",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "community_inquiries",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "worklist",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "note_templates",
+    "level": "read"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "group_sessions",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "group_notes",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "sud_counselor",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "screeners_mh",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "screeners_sud",
+    "level": "consent_gated"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "psych_eval",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "care_plan",
+    "level": "write"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "therapy_notes",
+    "level": "write"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "meds_erx",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "telehealth_room",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "safety_plan",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "sud_treatment",
+    "level": "consent_gated"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "case_notes",
+    "level": "write"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "consent_ledger",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "allergies",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "alerts",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "care_coordination",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "controlled_substance_custody",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "patient_messaging",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "provider_requests",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "community_inquiries",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "worklist",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "note_templates",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "group_sessions",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "group_notes",
+    "level": "consent_gated"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "staff_supervision",
+    "level": "read"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "clinical_trainee",
+    "record_class": "clinical_text_governance",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "care_plan",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "meds_erx",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "safety_plan",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "sud_treatment",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "documents",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "consent_ledger",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "allergies",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "alerts",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "care_coordination",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "controlled_substance_custody",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "patient_messaging",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "provider_requests",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "community_inquiries",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "worklist",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "group_sessions",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "staff_supervision",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "content_authoring",
+    "level": "read"
+  },
+  {
+    "role": "medical_assistant",
+    "record_class": "clinical_text_governance",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "screeners_mh",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "screeners_sud",
+    "level": "consent_gated"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "psych_eval",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "care_plan",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "sdoh",
+    "level": "write"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "self_help",
+    "level": "write"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "safety_plan",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "sud_treatment",
+    "level": "consent_gated"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "case_notes",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "peer_notes",
+    "level": "write"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "allergies",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "alerts",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "care_coordination",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "custody_tracking",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "patient_messaging",
+    "level": "write"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "provider_requests",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "community_inquiries",
+    "level": "write"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "worklist",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "note_templates",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "group_sessions",
+    "level": "read"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "group_notes",
+    "level": "consent_gated"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "assisted_signup",
+    "level": "write"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "peer_specialist",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "care_plan",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "sdoh",
+    "level": "write"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "safety_plan",
+    "level": "read"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "sud_treatment",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "case_notes",
+    "level": "read"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "chw_notes",
+    "level": "write"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "consent_ledger",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "problems",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "allergies",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "alerts",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "care_coordination",
+    "level": "write"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "patient_messaging",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "provider_requests",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "community_inquiries",
+    "level": "write"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "worklist",
+    "level": "write"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "group_sessions",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "staff_supervision",
+    "level": "read"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "community_health_worker",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "therapist",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "therapist",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "screeners_mh",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "screeners_sud",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "psych_eval",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "care_plan",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "therapy_notes",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "meds_erx",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "telehealth_room",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "sdoh",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "self_help",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "safety_plan",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "sud_treatment",
+    "level": "consent_gated"
+  },
+  {
+    "role": "therapist",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "therapist",
+    "record_class": "case_notes",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "peer_notes",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "chw_notes",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "documents",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "therapist",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "problems",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "allergies",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "alerts",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "eligibility",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "care_coordination",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "custody_tracking",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "pre_release",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "controlled_substance_custody",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "population_health",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "crisis_queue",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "patient_messaging",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "provider_requests",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "community_inquiries",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "worklist",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "note_templates",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "therapist",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "therapist",
+    "record_class": "scheduling_rules",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "group_sessions",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "group_notes",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "staff_supervision",
+    "level": "read"
+  },
+  {
+    "role": "therapist",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "therapist",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "therapist",
+    "record_class": "clinical_text_governance",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "physician",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "screeners_mh",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "screeners_sud",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "psych_eval",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "care_plan",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "therapy_notes",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "meds_erx",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "telehealth_room",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "sdoh",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "self_help",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "safety_plan",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "sud_treatment",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "physician",
+    "record_class": "case_notes",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "peer_notes",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "chw_notes",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "documents",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "physician",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "problems",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "allergies",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "alerts",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "eligibility",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "care_coordination",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "custody_tracking",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "pre_release",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "controlled_substance_custody",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "population_health",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "crisis_queue",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "patient_messaging",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "provider_requests",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "community_inquiries",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "worklist",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "note_templates",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "physician",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "physician",
+    "record_class": "scheduling_rules",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "group_sessions",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "group_notes",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "staff_supervision",
+    "level": "read"
+  },
+  {
+    "role": "physician",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "physician",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "physician",
+    "record_class": "clinical_text_governance",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "screeners_mh",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "screeners_sud",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "psych_eval",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "care_plan",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "therapy_notes",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "meds_erx",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "telehealth_room",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "sdoh",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "self_help",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "safety_plan",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "sud_treatment",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "case_notes",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "peer_notes",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "chw_notes",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "documents",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "problems",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "allergies",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "alerts",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "eligibility",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "care_coordination",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "custody_tracking",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "pre_release",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "controlled_substance_custody",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "population_health",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "crisis_queue",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "patient_messaging",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "provider_requests",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "community_inquiries",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "worklist",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "note_templates",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "scheduling_rules",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "group_sessions",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "group_notes",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "staff_supervision",
+    "level": "read"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "pmhnp",
+    "record_class": "clinical_text_governance",
+    "level": "write"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "screeners_mh",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "screeners_sud",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "care_plan",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "meds_erx",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "safety_plan",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "sud_treatment",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "documents",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "allergies",
+    "level": "write"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "alerts",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "care_coordination",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "controlled_substance_custody",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "patient_messaging",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "provider_requests",
+    "level": "write"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "community_inquiries",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "worklist",
+    "level": "read"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "group_sessions",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "content_authoring",
+    "level": "none"
+  },
+  {
+    "role": "nurse_rn",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "screeners_mh",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "screeners_sud",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "care_plan",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "meds_erx",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "safety_plan",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "sud_treatment",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "documents",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "consent_ledger",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "allergies",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "alerts",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "care_coordination",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "controlled_substance_custody",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "patient_messaging",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "provider_requests",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "community_inquiries",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "worklist",
+    "level": "read"
+  },
+  {
+    "role": "lvn",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "group_sessions",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "content_authoring",
+    "level": "none"
+  },
+  {
+    "role": "lvn",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "billing",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "care_plan",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "safety_plan",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "sud_treatment",
+    "level": "consent_gated"
+  },
+  {
+    "role": "billing",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "billing",
+    "level": "write"
+  },
+  {
+    "role": "billing",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "billing",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "billing",
+    "record_class": "allergies",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "alerts",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "eligibility",
+    "level": "write"
+  },
+  {
+    "role": "billing",
+    "record_class": "care_coordination",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "patient_messaging",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "provider_requests",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "community_inquiries",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "worklist",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "group_sessions",
+    "level": "read"
+  },
+  {
+    "role": "billing",
+    "record_class": "group_notes",
+    "level": "consent_gated"
+  },
+  {
+    "role": "billing",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "content_authoring",
+    "level": "none"
+  },
+  {
+    "role": "billing",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "demographics",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "care_plan",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "safety_plan",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "sud_treatment",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "chw_notes",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "allergies",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "alerts",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "eligibility",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "care_coordination",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "custody_tracking",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "pre_release",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "population_health",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "crisis_queue",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "patient_messaging",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "provider_requests",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "community_inquiries",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "worklist",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "note_templates",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "catalog_governance",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "platform_administration",
+    "level": "read"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "scheduling_rules",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "group_sessions",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "group_notes",
+    "level": "consent_gated"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "staff_supervision",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "clinical_coordinator",
+    "record_class": "clinical_text_governance",
+    "level": "write"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "demographics",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "care_plan",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "safety_plan",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "sud_treatment",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "consent_ledger",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "problems",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "allergies",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "alerts",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "care_coordination",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "patient_messaging",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "provider_requests",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "community_inquiries",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "worklist",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "group_sessions",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "content_authoring",
+    "level": "none"
+  },
+  {
+    "role": "intake_coordinator",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "demographics",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "care_plan",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "safety_plan",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "sud_treatment",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "billing",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "consent_ledger",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "problems",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "allergies",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "alerts",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "care_coordination",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "patient_messaging",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "provider_requests",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "community_inquiries",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "worklist",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "group_sessions",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "staff_supervision",
+    "level": "write"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "content_authoring",
+    "level": "none"
+  },
+  {
+    "role": "credentialing_coordinator",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "account_support",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "demographics",
+    "level": "read"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "care_plan",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "safety_plan",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "sud_treatment",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "billing",
+    "level": "write"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "consent_ledger",
+    "level": "read"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "problems",
+    "level": "read"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "allergies",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "alerts",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "eligibility",
+    "level": "write"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "care_coordination",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "custody_tracking",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "pre_release",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "population_health",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "crisis_queue",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "patient_messaging",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "provider_requests",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "community_inquiries",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "worklist",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "note_templates",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "catalog_governance",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "platform_administration",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "scheduling_rules",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "group_sessions",
+    "level": "read"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "staff_supervision",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "assisted_signup",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "content_authoring",
+    "level": "none"
+  },
+  {
+    "role": "billing_coordinator",
+    "record_class": "clinical_text_governance",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "account_support",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "demographics",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "screeners_mh",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "screeners_sud",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "psych_eval",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "care_plan",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "therapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "meds_erx",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "telehealth_room",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "sdoh",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "self_help",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "safety_plan",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "sud_treatment",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "psychotherapy_notes",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "case_notes",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "peer_notes",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "chw_notes",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "documents",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "billing",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "consent_ledger",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "problems",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "allergies",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "alerts",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "eligibility",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "care_coordination",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "custody_tracking",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "pre_release",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "controlled_substance_custody",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "population_health",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "crisis_queue",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "patient_messaging",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "provider_requests",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "community_inquiries",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "worklist",
+    "level": "read"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "note_templates",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "catalog_governance",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "platform_administration",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "scheduling_rules",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "group_sessions",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "group_notes",
+    "level": "none"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "staff_supervision",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "assisted_signup",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "content_authoring",
+    "level": "write"
+  },
+  {
+    "role": "sys_admin",
+    "record_class": "clinical_text_governance",
+    "level": "write"
+  }
+]

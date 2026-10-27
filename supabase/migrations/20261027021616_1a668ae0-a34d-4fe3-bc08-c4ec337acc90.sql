@@ -1,0 +1,6 @@
+do $$ declare t text; begin foreach t in array array['orgs','sites','locations','programs','county_programs','accounts','staff_members','staff_role_assignments','acting_role_sessions','feature_flags','audit_events','record_access_log','disclosure_events','patients','patient_contacts','consent_versions','consent_records','consent_signed_copies','tester_attestations'] loop execute format('revoke all on public.%I from anon,authenticated',t); execute format('grant select on public.%I to authenticated',t); end loop; end $$;
+revoke all on app.record_class_grants from anon,authenticated; grant select on app.record_class_grants to authenticated;
+revoke all on public.audit_events,public.consent_signed_copies,public.consent_versions,public.disclosure_events,public.tester_attestations from service_role;
+grant select,insert on public.audit_events,public.consent_signed_copies,public.consent_versions,public.disclosure_events,public.tester_attestations to service_role;
+revoke delete,truncate on public.record_access_log,public.consent_records from service_role;
+notify pgrst,'reload schema';
