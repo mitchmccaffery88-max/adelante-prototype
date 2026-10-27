@@ -1,5 +1,12 @@
 # Roadmap
 
+## 27 Oct referral-to-billable-patient lifecycle — Draft
+- [ ] Inventory all surfaces and action/count sources before UI edits; document duplicates and dead ends.
+- [ ] Shared derived lifecycle, neutral gaps and stage clocks; narrow reason-aware registry/button/store permissions.
+- [ ] Shared lifecycle display/action homes, oversight de-duplication and role-safe billing readiness.
+- [ ] Extend existing cohort-guarded funnel; stage, permission, privacy and action-home tests.
+- [ ] Full units then public browser without overlap; lifecycle report and explicit blockers; no Supabase, test secrets or publishing.
+
 ## 27 Oct peer specialist referral follow-up
 - [x] Approve peer sending through the shared narrow gate; trainee remains denied; no other grants change.
 - [x] Update only peer website_referral_submit snapshot; consistency and adjacent denials; full units 3,514/3,514 then public browser 47/47 without overlap; staff regressions 4/4 including peer Intake readback.
