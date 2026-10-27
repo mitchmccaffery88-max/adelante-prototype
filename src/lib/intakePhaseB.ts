@@ -55,10 +55,10 @@ function dates(signedOn: string, expiresOn: string, noExpiry = false) {
 function draftFor(patientId: string, input: IntakeCaptureInput): CaptureDraft {
   const f = intakeForm(input.formKey);
   if (!isPurposeCode(input.purposeCode) || !(f.purposes as readonly string[]).includes(input.purposeCode)) throw new Error("Choose the purpose appropriate to this intake form.");
-  dates(input.signedOn, input.expiresOn, f.type === "part2_tpo_single");
+  dates(input.signedOn, input.expiresOn, f.type === "part2_tpo_single" && input.purposeCode === "tpo");
   if (!input.attested || input.signer.trim().length < 2) throw new Error("Actual signer and signature attestation required.");
   if (isPart2Type(f.type) && !PART2_ELEMENT_KEYS.every(k => input.elements?.[k] === true)) throw new Error("Confirm every required Part 2 element.");
-  return { patientId, consentType: f.type, recipients: [{ kind: "org", name: "Adelante", directoryRef: "adelante-program" }], purposeCode: input.purposeCode, purpose: PURPOSE_LABEL[input.purposeCode], items: [f.key === "part2" ? "Intake and treatment information" : f.label], effectiveDate: input.signedOn, ...(f.type === "part2_tpo_single" ? { expiresOnEvent: "Until revoked" } : { expiresOn: input.expiresOn }), ...(input.elements ? { part2Elements: { ...input.elements } } : {}) };
+  return { patientId, consentType: f.type, recipients: [{ kind: "org", name: "Adelante", directoryRef: "adelante-program" }], purposeCode: input.purposeCode, purpose: PURPOSE_LABEL[input.purposeCode], items: [f.key === "part2" ? "Intake and treatment information" : f.label], effectiveDate: input.signedOn, ...(f.type === "part2_tpo_single" && input.purposeCode === "tpo" ? { expiresOnEvent: "Until revoked" } : { expiresOn: input.expiresOn }), ...(input.elements ? { part2Elements: { ...input.elements } } : {}) };
 }
 type BoundaryInput = { actor: { role: IntakeActor["role"]; staffId?: string; name: string }; intakeReferralId?: string; patientId?: string; formKeys?: FormKey[]; draft?: CaptureDraft; signedOn?: string; signer?: string; attested?: boolean; relationship?: IntakeCaptureInput["relationship"]; fileName?: string; method?: string; consentEvent?: string; advocateId?: string; now?: string; dueDays?: number };
 registerIntakeConsentBoundary((raw, operation) => {

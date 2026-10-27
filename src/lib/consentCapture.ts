@@ -86,7 +86,7 @@ function baseChecks(d: CaptureDraft) {
   if (!d.items.length) throw new Error("Choose what information is covered.");
   const tpo = standardTpoExpiryError(d);
   if (tpo) throw new Error(STANDARD_TPO_EXPIRY_MESSAGE[tpo]);
-  if (d.consentType !== "part2_tpo_single" && !d.expiresOn && !d.expiresOnEvent?.trim()) throw new Error("Add an end date or an end event.");
+  if (!(d.consentType === "part2_tpo_single" && d.purposeCode === "tpo") && !d.expiresOn && !d.expiresOnEvent?.trim()) throw new Error("Add an end date or an end event.");
 }
 
 /** The document the signer saw: the published template (if any) plus the captured terms. */

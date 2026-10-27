@@ -13,8 +13,11 @@ export const STANDARD_TPO_END_EVENTS = [
   "end of treatment",
 ] as const;
 
-export function standardTpoExpiryError(d: { consentType: ConsentType | string; expiresOn?: string; expiresOnEvent?: string }): string | null {
-  if (d.consentType !== "part2_tpo_single") return null;
+// Scope: the standard intake consent (part2_tpo_single + purpose "tpo"), the same scope SQL has guarded
+// since Phase 1. Treatment-purpose part2_tpo_single keeps today's end rules (pinned B2 parity suites);
+// widening is an open decision for Mitch, recorded in docs/supabase-phase2-report.md.
+export function standardTpoExpiryError(d: { consentType: ConsentType | string; purposeCode?: string; expiresOn?: string; expiresOnEvent?: string }): string | null {
+  if (d.consentType !== "part2_tpo_single" || d.purposeCode !== "tpo") return null;
   if (d.expiresOn) return "standard_tpo_no_expiry";
   const ev = d.expiresOnEvent?.trim().toLowerCase();
   if (ev && !(STANDARD_TPO_END_EVENTS as readonly string[]).includes(ev)) return "standard_tpo_end_event";
@@ -31,9 +34,9 @@ export const STANDARD_TPO_EXPIRY_VECTORS: { code: string; purpose: "tpo" | "trea
   { code: "tpo_no_end", purpose: "tpo", expected: null },
   { code: "tpo_until_revoked", purpose: "tpo", expiresOnEvent: "No expiry — until revoked", expected: null },
   { code: "tpo_end_of_treatment", purpose: "tpo", expiresOnEvent: "End of treatment", expected: null },
-  { code: "treatment_end_of_treatment", purpose: "treatment", expiresOnEvent: " end of treatment ", expected: null },
-  { code: "treatment_patient_revokes", purpose: "treatment", expiresOnEvent: "Patient revokes this consent", expected: null },
+  { code: "tpo_end_of_treatment_spacing", purpose: "tpo", expiresOnEvent: " end of treatment ", expected: null },
+  { code: "tpo_patient_revokes", purpose: "tpo", expiresOnEvent: "Patient revokes this consent", expected: null },
   { code: "tpo_date_rejected", purpose: "tpo", expiresOn: "2027-10-27", expected: "standard_tpo_no_expiry" },
-  { code: "treatment_date_rejected", purpose: "treatment", expiresOn: "2027-10-27", expected: "standard_tpo_no_expiry" },
+  { code: "treatment_purpose_unchanged", purpose: "treatment", expiresOn: "2027-10-27", expected: null },
   { code: "tpo_other_event_rejected", purpose: "tpo", expiresOnEvent: "When probation ends", expected: "standard_tpo_end_event" },
 ];
