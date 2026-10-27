@@ -21,3 +21,13 @@
 
 ## Boundaries
 No Supabase/schema changes, credentials, persistence activation or publishing. Verification used fictional in-memory preview records, not hosted persistence or live delivery; existing simulated services remain unchanged.
+
+## Follow-up — peer specialist sending approved, 27 Oct
+- Added `peer_specialist` explicitly to `canSubmitReferral`, alongside the clinical-coordinator exception. Care-coordination remains **read**; peer contact, enroll and decline remain denied. Clinical trainee sending remains denied; the public staffless principal is unchanged.
+- Both staff hosts retain the shared button/form gate. Denied explanation now reads: “Referrals are sent by Intake, the clinical coordinator or a peer specialist.” Removed the peer sending row's Draft go-live note; retained the trainee note.
+- Updated the committed permission snapshot with only `peer_specialist.website_referral_submit`: **hidden → allowed**. No other grant or snapshot value changed.
+- Consistency coverage spans all 18 roles and all five converted public actions. Added peer saved/submitted Intake projection, staff-ID/acting-role attribution, exactly one standard action event, content-free audit checks, and concrete contact/enroll/decline denials.
+- **Full units: 3,514/3,514 across 401 files**, exit 0. Then **full public browser: 47/47**, eight specs, one worker against localhost:8080, 10.9 minutes, exit 0; no overlap. The first foreground browser launch hit the command's 600-second limit after 33 passing checks; the complete detached rerun passed without changing tests, timeouts or retries.
+- **Staff browser: 4/4**, exit 0: clinical coordinator, Intake and peer send → submitted record → visible readback in Intake workspace; trainee explanation without send control/form. Staff attribution and IDs-only audits asserted. Screenshots inspected; readback verified by the rendered name assertion.
+- Evidence logs: `/tmp/browser/peer-referral-followup/units.log`, `public-full.log`, `public-full.exit`, and `staff.log`. Latest preview signal: **build OK**; changed staff routes and index retain unique leaf metadata.
+- No Supabase/schema changes, credentials, persistence activation or publishing. Records/delivery remain the existing fictional in-memory simulated preview.
