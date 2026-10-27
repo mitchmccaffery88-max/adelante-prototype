@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Briefcase, ChevronDown, Menu, ShieldCheck, User, X } from "lucide-react";
+import { Briefcase, ChevronDown, ChevronRight, Send, Menu, ShieldCheck, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { WEBSITE_MENUS, type WebsiteMenu, type MenuLink } from "@/lib/websiteMenus";
@@ -21,17 +21,26 @@ function CareerLink({ onClick }: { onClick?: () => void }) {
  const { t } = useI18n();
  return <Button asChild variant="ghost" className="website-career"><Link to="/careers" onClick={onClick}><Briefcase aria-hidden="true" />{t("website.v2.careers")}</Link></Button>;
 }
+function ReferralLink({ onClick }: { onClick?: () => void }) {
+ const { t } = useI18n();
+ return <Button asChild variant="outline" className="website-secondary website-referral-link"><Link to="/referral" onClick={onClick}><Send aria-hidden="true"/>{t('websiteReferral')}</Link></Button>;
+}
 function TileLink({ link, close }: { link: MenuLink; close: () => void }) {
  const { t } = useI18n(); const Icon = link.icon;
  return <Link to={link.to} hash={link.hash} hashScrollIntoView={{ block:"start" }} className="website-menu-tile" onClick={close}>
   <span className="website-icon-disc"><Icon aria-hidden="true" /></span><span><strong>{t(link.title)}</strong>{link.body && <span>{t(link.body)}</span>}</span>
  </Link>;
 }
-function MenuContents({ menu, close }: { menu: WebsiteMenu; close: () => void }) {
- const { t } = useI18n();
+function MenuContents({ menu, close, mobile = false }: { menu: WebsiteMenu; close: () => void; mobile?: boolean }) {
+ const { t } = useI18n(); const [active, setActive] = useState<number | null>(null);
+ const flyout = menu.id !== 'about';
  return <div className={`website-mega-inner website-menu-${menu.id}`}>
-  {menu.intro && <div className="website-menu-intro"><h2>{t(menu.intro)}</h2><p>{menu.body && t(menu.body)}</p></div>}
-  <div className="website-menu-columns">{menu.columns.map((column) => <section key={column.title}><h3>{t(column.title)}</h3><div>{column.links.map((link,i) => <TileLink key={`${link.title}-${i}`} link={link} close={close} />)}</div></section>)}</div>
+  {flyout ? <div className="website-category-list">{menu.columns.map((column, index) => <section className="website-category" key={column.title} onMouseEnter={() => { if (!mobile) setActive(index); }}>
+   <Button variant="ghost" className="website-category-trigger" aria-expanded={active === index} aria-controls={`category-${mobile ? 'phone' : 'desktop'}-${menu.id}-${index}`} onFocus={() => { if (!mobile) setActive(index); }} onClick={() => setActive(active === index ? null : index)} onKeyDown={event => { if (event.key === 'ArrowRight') { event.preventDefault(); setActive(index); requestAnimationFrame(() => document.getElementById(`category-desktop-${menu.id}-${index}`)?.querySelector<HTMLElement>('a')?.focus()); } }}>
+    {t(column.title)}{mobile ? <ChevronDown aria-hidden="true"/> : <ChevronRight aria-hidden="true"/>}
+   </Button>
+   <div id={`category-${mobile ? 'phone' : 'desktop'}-${menu.id}-${index}`} className="website-category-items" hidden={active !== index} onKeyDown={event => { if (event.key === 'ArrowLeft') { event.preventDefault(); event.currentTarget.parentElement?.querySelector<HTMLElement>('button')?.focus(); } }}>{column.links.map((link,i) => <TileLink key={`${link.title}-${i}`} link={link} close={close}/>)}</div>
+  </section>)}</div> : <div className="website-menu-columns">{menu.columns.map(column => <section key={column.title}><h3>{t(column.title)}</h3><div>{column.links.map((link,i) => <TileLink key={`${link.title}-${i}`} link={link} close={close}/>)}</div></section>)}</div>}
   {menu.promo && <div className="website-menu-promo"><h3>{t(menu.promo.title)}</h3><p>{t(menu.promo.body)}</p><Button asChild className="website-primary"><Link to={menu.promo.to} onClick={close}>{t(menu.promo.cta)}</Link></Button>{menu.promo.secondary && <Button asChild variant="outline" className="website-secondary"><Link to="/referral" onClick={close}>{t("websiteHelp")}</Link></Button>}</div>}
  </div>;
 }
@@ -84,8 +93,8 @@ export function WebsiteNavigation({ mobile = false }: { mobile?: boolean }) {
     <div className="website-sheet-header"><Dialog.Title>{t("website.v2.menu")}</Dialog.Title><Dialog.Close asChild><Button variant="ghost" size="icon" className="website-menu-button" aria-label={t("website.v2.close")}><X aria-hidden="true" /></Button></Dialog.Close></div>
     <nav className="website-sheet-scroll" aria-label={t("websiteNavigation")}>{WEBSITE_MENUS.map(menu => <div key={menu.id} className="website-accordion">
       <Button variant="ghost" aria-expanded={open === menu.id} aria-controls={`website-phone-${menu.id}`} onClick={() => setOpen(open === menu.id ? null : menu.id)}>{t(menu.title)}<ChevronDown aria-hidden="true" /></Button>
-      <div id={`website-phone-${menu.id}`} hidden={open !== menu.id}><MenuContents menu={menu} close={() => setSheetOpen(false)} /></div>
-     </div>)}<CareerLink onClick={() => setSheetOpen(false)} /></nav>
+      <div id={`website-phone-${menu.id}`} hidden={open !== menu.id}><MenuContents menu={menu} mobile close={() => setSheetOpen(false)} /></div>
+     </div>)}<div className="website-nav-auxiliary"><CareerLink onClick={() => setSheetOpen(false)} /><ReferralLink onClick={() => setSheetOpen(false)}/></div></nav>
     <div className="website-sheet-bottom"><WebsiteSignIn onClick={() => setSheetOpen(false)} /><WebsiteLanguageToggle /><p><ShieldCheck aria-hidden="true" />{t("website.v2.hipaa")}</p></div>
    </Dialog.Content></Dialog.Portal>
   </Dialog.Root>
@@ -93,7 +102,7 @@ export function WebsiteNavigation({ mobile = false }: { mobile?: boolean }) {
  return <>
   {open && <div className="website-nav-scrim" aria-hidden="true" onClick={close} />}
   <nav ref={navRef} className="website-desktop-nav" aria-label={t("websiteNavigation")} onMouseLeave={() => moveLine(open)}>
-   <div className="website-nav-row">{WEBSITE_MENUS.map(menu => <Button key={menu.id} ref={node => { if (node) triggers.current.set(menu.id,node); else triggers.current.delete(menu.id); }} variant="ghost" className="website-nav-trigger" aria-expanded={open === menu.id} aria-controls={`website-mega-${menu.id}`} onMouseEnter={() => moveLine(menu.id)} onFocus={() => moveLine(menu.id)} onBlur={() => moveLine(open)} onClick={() => setOpen(open === menu.id ? null : menu.id)}>{t(menu.title)}<ChevronDown aria-hidden="true" /></Button>)}<span className="website-nav-divider" aria-hidden="true" /><CareerLink /></div>
+   <div className="website-nav-row">{WEBSITE_MENUS.map(menu => <Button key={menu.id} ref={node => { if (node) triggers.current.set(menu.id,node); else triggers.current.delete(menu.id); }} variant="ghost" className="website-nav-trigger" aria-expanded={open === menu.id} aria-controls={`website-mega-${menu.id}`} onMouseEnter={() => moveLine(menu.id)} onFocus={() => moveLine(menu.id)} onBlur={() => moveLine(open)} onClick={() => setOpen(open === menu.id ? null : menu.id)}>{t(menu.title)}<ChevronDown aria-hidden="true" /></Button>)}<span className="website-nav-divider" aria-hidden="true" /><CareerLink /><ReferralLink /></div>
    <span ref={underline} className="website-nav-underline" aria-hidden="true" />
    {WEBSITE_MENUS.map(menu => <div id={`website-mega-${menu.id}`} key={menu.id} className="website-mega-panel" hidden={open !== menu.id}><MenuContents menu={menu} close={close} /></div>)}
   </nav>
