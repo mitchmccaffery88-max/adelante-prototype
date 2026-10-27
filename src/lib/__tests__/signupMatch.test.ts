@@ -79,12 +79,4 @@ describe("public signup outcomes", () => {
     const dupeItem = listIdentityReviewItems().find((i) => i.type === "possible_duplicate_account" && i.patientId === made.patientId);
     expect(dupeItem?.candidatePatientIds).toContain(old.id);
   });
-    expect(act({ operation: "finish", sessionId: start(), path: "new", draft: draft({ firstName: "Dupe", lastName: "Case", dob: old.dob, phone: "5550222222", email: "" }) }).outcome).toBe("blocked");
-    const made = act({ operation: "finish", sessionId: start(), path: "new", draft: draft({ firstName: "Dupe", lastName: "Case", dob: old.dob, phone: "5550333333", email: "" }) });
-    expect(made.outcome).toBe("new");
-    if (!made.patientId) throw new Error("Account missing");
-    expect(AdelanteEHR.getPatient(made.patientId)?.possibleDuplicate).toBeTruthy();
-    const dupeItem = listIdentityReviewItems().find((i) => i.type === "possible_duplicate_account" && i.patientId === made.patientId);
-    expect(dupeItem?.candidatePatientIds).toContain(old.id);
-  });
-});
+});});
