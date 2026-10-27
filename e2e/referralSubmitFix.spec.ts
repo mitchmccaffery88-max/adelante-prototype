@@ -10,7 +10,7 @@ async function openQueue(page: Page, role: string) {
   await expect(page.getByRole("heading", { name: role === "intake_coordinator" ? "Intake workspace" : "Referrals", exact: true })).toBeVisible();
 }
 
-for (const role of ["clinical_coordinator", "intake_coordinator"]) {
+for (const role of ["clinical_coordinator", "intake_coordinator", "peer_specialist"]) {
   test(`${role} sends a staff referral and Intake receives it`, async ({ page }) => {
     await openQueue(page, role);
     await page.getByTestId("staff-submit-referral").click();
@@ -43,14 +43,15 @@ for (const role of ["clinical_coordinator", "intake_coordinator"]) {
       d.go("/intake-workspace");
     });
     await expect(page.getByText(`FictionalReferral Browser-${role}`, { exact: false }).first()).toBeVisible();
+    await page.screenshot({ path: `/tmp/browser/referral-submit-${role}-intake-readback.png` });
   });
 }
 
-for (const role of ["peer_specialist", "clinical_trainee"]) {
+for (const role of ["clinical_trainee"]) {
   test(`${role} sees explanation without a dead send control`, async ({ page }) => {
     await openQueue(page, role);
     await expect(page.getByTestId("staff-submit-referral")).toHaveCount(0);
-    await expect(page.getByText("Referrals are sent by Intake or the clinical coordinator.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Referrals are sent by Intake, the clinical coordinator or a peer specialist.", { exact: true })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.screenshot({ path: `/tmp/browser/referral-submit-${role}.png` });
   });

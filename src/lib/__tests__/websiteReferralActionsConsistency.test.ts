@@ -20,7 +20,7 @@ describe("website/referral action consistency", () => {
   for (const { key: role } of STAFF_ROLES) {
     it(`${role}: submission gate, registry and store agree without broader grants`, () => {
       const actor = { role, staffId: `probe-${role}` };
-      const expected = role === "intake_coordinator" || role === "clinical_coordinator" || canAccess(role, "care_coordination").level === "write";
+      const expected = role === "intake_coordinator" || role === "clinical_coordinator" || role === "peer_specialist" || canAccess(role, "care_coordination").level === "write";
       expect(canSubmitReferral(actor)).toBe(expected);
       for (const [id, gate] of Object.entries(gates)) {
         expect(chartAction(id).allowed(actor).state === "allowed", id).toBe(gate(actor));
@@ -35,9 +35,9 @@ describe("website/referral action consistency", () => {
       }
     });
   }
-  for (const role of ["clinical_coordinator", "intake_coordinator"] as StaffRole[]) {
+  for (const role of ["clinical_coordinator", "intake_coordinator", "peer_specialist"] as StaffRole[]) {
     it(`${role}: saved in Intake with exact staff attribution and content-free audits`, () => {
-      const actor = { role, staffId: role === "clinical_coordinator" ? "s-coord1" : "s-intake1" };
+      const actor = { role, staffId: role === "clinical_coordinator" ? "s-coord1" : role === "peer_specialist" ? "s-peer1" : "s-intake1" };
       const before = new Set(AdelanteEHR.listAuditEvents().map(e => e.id));
       const result = runAction<ReturnType<typeof submitWebsiteReferral>>("website_referral_submit", actor, undefined, { args: [actor, input()] });
       expect(result.ok).toBe(true);
@@ -56,6 +56,13 @@ describe("website/referral action consistency", () => {
     expect(canAccess("clinical_coordinator", "care_coordination").level).toBe("read");
     expect(canPerformReferralAction("clinical_coordinator", "contact")).toBe(false);
   });
+  it("peer sending does not grant contact, enroll, decline or wider care coordination", async () => {
+    const { canPerformReferralAction } = await import("@/lib/referralActions");
+    expect(canAccess("peer_specialist", "care_coordination").level).toBe("read");
+    for (const action of ["contact", "enroll", "decline"] as const) {
+      expect(canPerformReferralAction("peer_specialist", action)).toBe(false);
+    }
+  });
   it("public referral stays external and staffless", () => {
     const result = runAction<ReturnType<typeof submitWebsiteReferral>>("website_referral_submit", signupActor, undefined, { args: [signupActor, input()] });
     expect(result.ok).toBe(true);
@@ -64,11 +71,9 @@ describe("website/referral action consistency", () => {
     expect(result.event.actorId).toBeUndefined();
     expect(canSubmitReferral({ role: signupActor.role, staffId: "s-test" })).toBe(false);
   });
-  it("peer and trainee sending remains Draft and unavailable", () => {
-    for (const role of ["peer_specialist", "clinical_trainee"]) {
-      const row = permissionMatrix().find(r => r.role === role && r.actionId === "website_referral_submit");
-      expect(row?.state).toBe("hidden");
-      expect(row?.check).toContain("Draft — pending go-live permissions audit");
-    }
+  it("peer sending is allowed while trainee sending remains unavailable", () => {
+    const rows = permissionMatrix();
+    expect(rows.find(r => r.role === "peer_specialist" && r.actionId === "website_referral_submit")?.state).toBe("allowed");
+    expect(rows.find(r => r.role === "clinical_trainee" && r.actionId === "website_referral_submit")?.state).toBe("hidden");
   });
 });

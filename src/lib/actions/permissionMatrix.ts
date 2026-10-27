@@ -34,7 +34,7 @@ export function permissionMatrix(): MatrixRow[] {
         label: a.label.en,
         group: a.group,
         state,
-        check: `${role === "intake_coordinator" ? "Draft — pending go-live permissions audit; " : ""}${a.id === "website_referral_submit" && ["peer_specialist", "clinical_trainee"].includes(role) ? "Draft — pending go-live permissions audit; referral sending remains unavailable for this role; " : ""}${a.check ?? "allowed() → store check"}`,
+        check: `${role === "intake_coordinator" ? "Draft — pending go-live permissions audit; " : ""}${a.id === "website_referral_submit" && role === "clinical_trainee" ? "Draft — pending go-live permissions audit; referral sending remains unavailable for this role; " : ""}${a.check ?? "allowed() → store check"}`,
         events: state === "hidden" ? "action.blocked" : state === "cosign" ? "action.cosign_routed, action.blocked" : "action.succeeded, action.blocked",
         flags: (a.flags ?? []).join(" "),
         store: a.store.map((s) => s.name).join(" / "),

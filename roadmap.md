@@ -1,5 +1,10 @@
 # Roadmap
 
+## 27 Oct peer specialist referral follow-up
+- [x] Approve peer sending through the shared narrow gate; trainee remains denied; no other grants change.
+- [ ] Update permission snapshot and consistency/staff regressions; run full units then public browser without overlap.
+- [ ] Append verified results to docs/referral-submit-fix-report.md; no publishing or Supabase changes.
+
 ## 27 Oct staff referral submission fix
 - [x] Narrow clinical-coordinator send permission; shared button/store gate and plain refusal; peer/trainee Draft note.
 - [x] Website/referral consistency sweep; fixed Intake's public-principal link with staff dialog; staff saved/routed/audit proofs, public unchanged.

@@ -16,7 +16,7 @@ export function scanReferralFreeText(referralId: string, input: Record<string, u
 }
 
 export function canSubmitReferral(actor: ChartActor): boolean {
-  return actor.role === signupActor.role && !actor.staffId || !!actor.staffId && (actor.role === "clinical_coordinator" || canPerformReferralAction(actor.role, "contact"));
+  return actor.role === signupActor.role && !actor.staffId || !!actor.staffId && (actor.role === "clinical_coordinator" || actor.role === "peer_specialist" || canPerformReferralAction(actor.role, "contact"));
 }
 export const REFERRAL_SUBMIT_DENIED = "You can't send referrals from this role.";
 /** Shared public/staff submission; existing store owns validation and delivery state. */
