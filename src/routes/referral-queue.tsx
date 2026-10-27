@@ -78,7 +78,7 @@ function ReferralQueuePage() {
         {canSend ? <Button onClick={() => setSubmitOpen(true)} data-testid="staff-submit-referral">
           <Plus className="h-4 w-4 mr-2" />
           Send referral
-        </Button> : <p className="text-sm text-muted-foreground">Referrals are sent by Intake or the clinical coordinator.</p>}
+        </Button> : <p className="text-sm text-muted-foreground">Referrals are sent by Intake, the clinical coordinator or a peer specialist.</p>}
       </header>
 
       {outreachCount > 0 && (
