@@ -19,7 +19,8 @@ import { getStaffMember, STAFF_ROSTER, type StaffRole } from "./roles";
 import { REFERRAL_AGING_DRAFT } from "./referralAging";
 import { POST_ENROLLMENT_STALENESS_DRAFT, firstAttendedAppointment } from "./postEnrollment";
 import { coverageProjection, coverageKeysForPatient } from "./coverageRequests";
-import { didntStartCareFor, consumedClaimCodeForReferralSafe } from "./lifecycleState";
+import { didntStartCareFor } from "./lifecycleState";
+import { referralClaimCodeConsumed } from "./identityReview";
 import { getStructuredPlan } from "./structuredCarePlan";
 
 export const LIFECYCLE_DRAFT = "Draft — pending EHR/Admin audit";
@@ -71,7 +72,7 @@ const CLINICIAN_ROLES: StaffRole[] = ["therapist", "pmhnp", "physician", "sud_co
 /** Actual identity evidence: staff-confirmed/identity-review record or a consumed claim code. DOB/confidence alone never counts. */
 export function identityEvidence(r: Referral): "staff_confirmed" | "claim_code" | undefined {
   if (r.identityConfirmedBy?.at) return "staff_confirmed";
-  if (consumedClaimCodeForReferralSafe(r.id)) return "claim_code";
+  if (referralClaimCodeConsumed(r.id)) return "claim_code";
   return undefined;
 }
 
