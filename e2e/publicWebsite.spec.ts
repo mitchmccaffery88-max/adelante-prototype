@@ -1,3 +1,4 @@
+// Diana pass 1 (27 Oct): shared five values and nested category accordion.
 import { test, expect, type Page } from "@playwright/test";
 import { websiteEn, websiteEs } from "../src/lib/i18n.website";
 
@@ -44,9 +45,9 @@ for (const lang of ["en", "es"] as const) {
         if (route === "/about") {
           await expect(page.locator("#about")).toContainText(d.websiteMission);
           await expect(page.getByRole("heading",{name:d["website.v2.values"],exact:true})).toBeVisible();
-          await expect(page.locator(".page-values")).toContainText(d.websiteTrustPrivacy);
+          await expect(page.locator(".page-values")).toContainText(d["website.diana.value.dignity"]);
           await expect(page.locator("blockquote")).toHaveCount(0);
-          await expect(page.locator(".page-values")).toContainText(d.websiteTrustLanguage);
+          await expect(page.locator(".page-values")).toContainText(d["website.diana.value.connected"]);
         } else {
           await expect(page.getByTestId("website-team")).toContainText(d.websiteTeamIntro);
           await expect(page.getByTestId("website-team").locator("#care article,#navigation article,#resource article,#advocate article")).toHaveCount(7);
@@ -118,6 +119,7 @@ test("public website mobile menu", async ({ page }) => {
   await page.getByRole("button", { name: "Open website menu" }).click();
   await nav.getByRole("button",{name:"Get care",exact:true}).click();
   await expect(nav.locator("#website-phone-care")).toBeVisible();
+  await nav.getByRole("button", { name: "How it works", exact: true }).click();
   await nav.getByRole("link", { name: "FAQ Answers to common questions", exact: true }).click();
   await expect(page).toHaveURL(/\/faq$/); await expect(page.getByRole("heading",{level:1})).toHaveText("Frequently Asked Questions");
 });

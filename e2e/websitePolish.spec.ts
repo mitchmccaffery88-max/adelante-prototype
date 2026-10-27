@@ -1,3 +1,4 @@
+// Diana pass 1 (27 Oct): header Start my care label.
 import { test, expect } from "@playwright/test";
 import { settleReveals } from "./helpers/settleReveals";
 import AxeBuilder from "@axe-core/playwright";
@@ -55,7 +56,7 @@ for (const path of ["/", "/about", "/team"]) {
         return !!crisis && parseFloat(getComputedStyle(el).paddingBottom) >= crisis.getBoundingClientRect().height;
       });
       await expect.poll(clear).toBe(true);
-      await page.getByTestId("website-header").getByRole("link", { name: "Get started", exact: true }).focus();
+      await page.getByTestId("website-header").getByRole("link", { name: "Start my care", exact: true }).focus();
       await page.getByTestId("website-footer").getByRole("link", { name: "Make a referral", exact: true }).focus();
       await expect.poll(() => page.evaluate(() => {
         const active = document.activeElement?.getBoundingClientRect();
@@ -68,7 +69,7 @@ for (const path of ["/", "/about", "/team"]) {
         const header = page.getByTestId("website-header");
         await expect(header.getByRole("button", { name: "Switch language to English" })).not.toBeVisible();
         await expect(header.getByRole("link", { name: "Sign in", exact: true })).not.toBeVisible();
-        await expect(header.getByRole("link", { name: "Get started", exact: true })).toBeVisible();
+        await expect(header.getByRole("link", { name: "Start my care", exact: true })).toBeVisible();
         await header.getByRole("button", { name: "Open website menu" }).click();
         const menu = page.locator("#website-mobile-nav");
         await expect(menu.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
