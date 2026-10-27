@@ -1,5 +1,11 @@
 # Roadmap
 
+## 27 Oct Supabase Phase 2 — approved closed foundation
+- [ ] Chart context/site/restrictions; advocate consented functions; closed referral/signup/review/intake/packet/on-call tables and audited functions.
+- [ ] Full fictional suite and three intake scenarios through store-owned seeds; persistence remains off.
+- [ ] Repository contracts, rollback-only RLS and packet-to-patient evidence; full units and unchanged public browser suite.
+- [ ] Report docs/supabase-phase2-report.md; no publishing, Cloud or GitHub connection.
+
 ## 26 Oct Intake Phase B — dedicated referral adapters
 - [x] B1 Intake-only form send/typed capture/paper attestation and status-only packet checklist; no ledger/history/disclosure grants. Existing typed forms require care-team review, not Intake renewal.
 - [x] B2 Billing-owned eligibility request and coverage-only readback; no Intake result entry. Real Billing task and registry manual-check host.
