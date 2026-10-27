@@ -13,8 +13,7 @@ export const WEBSITE_MENUS: WebsiteMenu[] = [
  { id:"team",title:"website.v2.team",intro:"website.v2.team.intro",body:"website.v2.team.body",columns:[
   {title:"websiteCareTeam",links:[item("websiteClinicians","/team",Brain,undefined,"care"),item("websitePsychiatry","/team",Video,undefined,"care"),item("websiteRecovery","/team",HandHeart,undefined,"care")]},
   {title:"websiteNavigationTeam",links:[item("websiteCoordinators","/team",ClipboardList,undefined,"navigation"),item("websiteReentry","/team",Sunrise,undefined,"navigation")]},
-  {title:"websiteResourceTeam",links:[item("websiteResources","/team",Users,undefined,"resource")]},
-  {title:"websiteAdvocateTeam",links:[item("websiteAdvocates","/team",HeartHandshake,undefined,"advocate")]}
+  {title:"website.diana.team.support",links:[item("websiteResources","/team",Users,undefined,"resource"),item("websiteAdvocates","/team",HeartHandshake,undefined,"advocate")]}
  ],promo:{title:"website.v2.careers",body:"website.v2.team.promo.body",cta:"website.v2.team.promo.cta",to:"/careers"}},
  {id:"partners",title:"website.v2.partners",columns:[
   {title:"website.v2.refer",links:[item("websiteReferral","/referral",Send,"website.v2.referral.body"),item("website.v2.partner.title","/partners",Building2,"website.v2.partner.body")]},
