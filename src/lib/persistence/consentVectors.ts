@@ -1,0 +1,20 @@
+import type { ConsentType } from '../consentRecordModel';
+export const CONSENT_COVERAGE_VECTORS: { code:string; type:ConsentType; recipient:string; purpose:string; item?:string; status?:'revoked'|'expired'|'superseded'; legacy?:boolean; merge?:boolean; expiryEvent?:boolean; future?:boolean; expected:boolean }[] = [
+ {code:'active_tpo',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',expected:true},
+ {code:'recipient_case',type:'part2_tpo_single',recipient:' ADELANTE ',purpose:'tpo',expected:true},
+ {code:'wrong_recipient',type:'part2_tpo_single',recipient:'outside',purpose:'tpo',expected:false},
+ {code:'wrong_purpose',type:'part2_tpo_single',recipient:'Adelante',purpose:'care_coordination',expected:false},
+ {code:'counseling_separate',type:'counseling_notes_release',recipient:'Adelante',purpose:'tpo',expected:false},
+ {code:'legal_separate',type:'legal_part2_disclosure',recipient:'Adelante',purpose:'tpo',expected:false},
+ {code:'justice_separate',type:'po_voluntary_coordination',recipient:'Adelante',purpose:'tpo',expected:false},
+ {code:'advocate_separate',type:'advocate_release',recipient:'Adelante',purpose:'tpo',expected:false},
+ {code:'revoked',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',status:'revoked',expected:false},
+ {code:'expired',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',status:'expired',expected:false},
+ {code:'superseded',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',status:'superseded',expected:false},
+ {code:'legacy',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',legacy:true,expected:false},
+ {code:'merge_hold',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',merge:true,expected:false},
+ {code:'expiry_event',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',expiryEvent:true,expected:false},
+ {code:'future',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',future:true,expected:false},
+ {code:'item_included',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',item:'treatment',expected:true},
+ {code:'item_missing',type:'part2_tpo_single',recipient:'Adelante',purpose:'tpo',item:'outside_records',expected:false},
+];
