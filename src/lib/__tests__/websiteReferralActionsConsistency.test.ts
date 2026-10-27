@@ -56,9 +56,15 @@ describe("website/referral action consistency", () => {
     expect(canAccess("clinical_coordinator", "care_coordination").level).toBe("read");
     expect(canPerformReferralAction("clinical_coordinator", "contact")).toBe(false);
   });
-  it("peer sending does not grant contact, enroll, decline or wider care coordination", async () => {
+  // Mitch 27 Oct lifecycle decision: peers may log outreach (contact) through the
+  // narrow lifecycle gate; enroll/close stay denied and care coordination is unchanged.
+  it("peer may log outreach contact but not enroll, close or widen care coordination", async () => {
     const { canPerformReferralAction } = await import("@/lib/referralActions");
+    const { canLogReferralContact, canEnrollReferral, canCloseReferral } = await import("@/lib/referralLifecycleActions");
     expect(canAccess("peer_specialist", "care_coordination").level).toBe("read");
+    expect(canLogReferralContact("peer_specialist")).toBe(true);
+    expect(canEnrollReferral("peer_specialist")).toBe(false);
+    expect(canCloseReferral("peer_specialist")).toBe(false);
     for (const action of ["contact", "enroll", "decline"] as const) {
       expect(canPerformReferralAction("peer_specialist", action)).toBe(false);
     }
