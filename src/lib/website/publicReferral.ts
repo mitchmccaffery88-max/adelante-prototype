@@ -24,5 +24,5 @@ export function submitWebsiteReferral(actor: ChartActor, input: Parameters<typeo
   const referral = AdelanteEHR.createReferral({...input, channel: actor.staffId ? "staff" : "public"});
   // Never blocks the referral; a match routes to clinical triage and the screen shows 988.
   const safety = actor.staffId ? false : scanReferralFreeText(referral.id, input as unknown as Record<string, unknown>);
-  return safety ? Object.assign(referral, { safetyFlagged: true as const }) : referral;
+  return safety ? { ...referral, safetyFlagged: true as const } : referral;
 }
