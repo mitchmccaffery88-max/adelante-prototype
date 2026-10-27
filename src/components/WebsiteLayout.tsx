@@ -59,7 +59,10 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
  return <div ref={shellRef} className="website-shell" data-testid="website-layout" onFocusCapture={event => {
   const target=event.target; if (!(target instanceof HTMLElement) || crisisRef.current?.contains(target)) return;
   // Let the pointer's click finish before correcting focus clearance.
-  window.requestAnimationFrame(()=>{if(document.activeElement!==target)return;const bottom=crisisRef.current?.getBoundingClientRect().top;
+  window.requestAnimationFrame(()=>{if(document.activeElement!==target)return;
+  // Stop an earlier smooth anchor/back-to-top scroll before placing a focused control.
+  window.scrollTo({top:window.scrollY,behavior:"instant"});
+  const bottom=crisisRef.current?.getBoundingClientRect().top;
   if (bottom !== undefined && target.getBoundingClientRect().bottom > bottom) target.scrollIntoView({block:"center",behavior:"instant"});});
  }}>
   <div id="website-top" ref={top} tabIndex={-1} className="website-top" />

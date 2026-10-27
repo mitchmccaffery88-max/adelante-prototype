@@ -156,6 +156,10 @@
 @keyframes daylight-values-scroll { to { transform:translateX(-50%); } }
 @media(max-width:767px) {
  .daylight-hero-actions .daylight-actions { grid-template-columns:1fr; }
+ .daylight-hero-copy { order:0; }
+ .daylight-hero-actions { order:1; }
+ .daylight-media { order:2; }
+ .daylight-media-sunrise .daylight-pause { bottom:64px; }
  .daylight-media-sunrise { display:block; height:284px; }
  .daylight-values-band { flex-direction:column; align-items:stretch; }
  .daylight-values-control { align-self:flex-end; margin-right:16px; }
