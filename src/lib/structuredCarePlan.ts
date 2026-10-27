@@ -504,7 +504,12 @@ export interface PlanSuggestion {
   needId?: string;
   frequency: Frequency;
   label: string;
+  /** 27 Oct lifecycle — a fact gathered at intake (administrative), offered to the clinician; accepting creates the need. */
+  intakeNeed?: { label: string; source: string };
 }
+/** 27 Oct lifecycle — intake fact source (non-Part-2 packet needs only), registered by referralLifecycleActions. */
+let intakeFactSource: ((patientId: string) => { id: string; label: string; source: string }[]) | undefined;
+export function setIntakeFactSuggestionSource(fn: typeof intakeFactSource) { intakeFactSource = fn; }
 export const SUGGESTION_THRESHOLDS = { gad7: 10, phq9: 10, reentryDays: 90 } as const;
 
 function latestScore(p: Patient, key: string): number | undefined {
@@ -536,16 +541,26 @@ export function planSuggestions(patientId: string, now = new Date()): PlanSugges
     if (plan.assignments.some((a) => a.active && a.needId === it.id)) continue;
     out.push({ id: `housing-${it.id}`, rule: "Open housing need", why: `Need: ${it.need}.`, kind: "sdoh_referral", needId: it.id, frequency: "once", label: "Housing referral" });
   }
+  for (const f of intakeFactSource?.(patientId) ?? []) {
+    if ((p.sdohPlan?.items ?? []).some((i) => i.need.toLowerCase() === f.label.toLowerCase())) continue;
+    out.push({ id: `intake-need-${f.id}`, rule: "Gathered at intake", why: `Intake fact: ${f.label}.`, kind: "sdoh_referral", frequency: "once", label: `${f.label} referral`, intakeNeed: { label: f.label, source: f.source } });
+  }
   return out.filter((s) => !plan.decisions[s.id]);
 }
-export function acceptSuggestion(patientId: string, suggestionId: string, goalId: string, actor: Actor, at?: string, reason?: string): PlanAssignment {
+export function acceptSuggestion(patientId: string, suggestionId: string, goalId: string, actor: Actor, at?: string, reason?: string, editedLabel?: string): PlanAssignment {
   assertEdit(actor);
   const s = planSuggestions(patientId).find((x) => x.id === suggestionId);
   if (!s) throw new Error("That suggestion is no longer open.");
-  const a = assignToGoal({ patientId, goalId, kind: s.kind, activityId: s.activityId, needId: s.needId, frequency: s.frequency, reason: "rule", suggestionId, actor, at });
+  let needId = s.needId;
+  if (s.intakeNeed && !needId) {
+    AdelanteEHR.addSdohItem(patientId, { need: (editedLabel?.trim() || s.intakeNeed.label).slice(0, 80), source: s.intakeNeed.source === "pre_release_packet" ? "pre_release_hrsn" : s.intakeNeed.source === "partner_referral" ? "partner_import" : "referral" }, { staffName: actor.name, role: actor.role as StaffRole });
+    needId = patientOf(patientId).sdohPlan?.items[0]?.id;
+  }
+  const edited = !!editedLabel?.trim();
+  const a = assignToGoal({ patientId, goalId, kind: s.kind, activityId: s.activityId, needId, frequency: s.frequency, reason: "rule", suggestionId, actor, at, ...(edited ? { label: { en: editedLabel!.trim().slice(0, 120), es: editedLabel!.trim().slice(0, 120) } } : {}) });
   const plan = getStructuredPlan(patientId);
-  plan.decisions[suggestionId] = { decision: "accepted", at: new Date().toISOString(), by: actor.name, ...(reason?.trim() ? { reason: reason.trim().slice(0, 300) } : {}) };
-  audit("plan_suggestion_accepted", patientId, actor, { suggestionId, rule: s.rule, assignmentId: a.id, ...(reason?.trim() ? { reason: reason.trim().slice(0, 300) } : {}) });
+  plan.decisions[suggestionId] = { decision: "accepted", at: new Date().toISOString(), by: actor.name, ...(edited ? { edited: true } : {}), ...(reason?.trim() ? { reason: reason.trim().slice(0, 300) } : {}) };
+  audit("plan_suggestion_accepted", patientId, actor, { suggestionId, rule: s.rule, assignmentId: a.id, ...(edited ? { edited: true } : {}), ...(reason?.trim() ? { reason: reason.trim().slice(0, 300) } : {}) });
   return a;
 }
 export function dismissSuggestion(patientId: string, suggestionId: string, reason: string, actor: Actor) {
