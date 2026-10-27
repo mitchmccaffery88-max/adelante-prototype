@@ -112,7 +112,7 @@ describe("6. standard Part 2 TPO consent at intake", () => {
 
 describe("2. open, non-billable groups skip care-plan eligibility", () => {
   const facilitator = () => AdelanteEHR.listClinicians()[0].id;
-  const mk = (topic: string, billable: boolean, joinRule: "open" | "care_team_approval") => AdelanteEHR.createGroupSession({ topic, description: "t", facilitatorId: facilitator(), serviceType: "therapy_group", modality: "in_person", category: "skills_education", start: new Date(Date.now() + 5 * 86400000).toISOString(), durationMin: 60, capacity: 10, createdBy: "Test", joinRule, audiences: [], groupType: "skills_open", billable, language: "both" } as never);
+  const mk = (topic: string, billable: boolean, joinRule: "open" | "care_team_approval") => AdelanteEHR.createGroupSession({ topic, description: "t", facilitatorId: facilitator(), serviceType: "therapy_group", modality: "in_person", category: "skills_education", start: new Date(Date.now() + 5 * 86400000).toISOString(), durationMin: 60, capacity: 10, recurrence: { kind: "weekly", daysOfWeek: [1] }, createdBy: "Test", joinRule, audiences: [], groupType: "skills_open", billable, language: "both" } as never);
   it("open non-billable: no care-plan item, patient joins directly", () => {
     const g = mk("Evening walk", false, "open");
     expect(skipsCarePlanEligibility(g)).toBe(true);
@@ -136,7 +136,7 @@ describe("3. safety scan of sign-up and public referral free text", () => {
     const r = runSignupCommand(signupActor, { operation: "save", sessionId: start.sessionId, draft: { firstName: "Ana", lastName: "Safe", dob: "1990-01-01", phone: "5595550199", preferredLanguage: "en", credentialKind: "password", helperName: "I want to kill myself" } as never });
     expect(r.outcome).toBe("saved");
     expect(r.safety).toBe(true);
-    const rows = intakeSafetyRows({ role: "intake_coordinator", staffId: STAFF_ROSTER.find((s) => s.role === "intake_coordinator")?.id });
+    const rows = intakeSafetyRows({ role: "intake_coordinator", staffId: STAFF_ROSTER.find((s) => hasRoleAssignment(s, "intake_coordinator"))?.id });
     const row = rows.find((x) => x.sourceId === start.sessionId);
     expect(row?.label).toBe("Needs clinical triage now");
     expect(JSON.stringify(row)).not.toContain("kill");
