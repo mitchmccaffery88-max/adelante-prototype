@@ -44,6 +44,8 @@ import { myAsamWork } from "@/lib/asamReporting";
 import { ASAM_DRAFT_NOTE } from "@/lib/asam";
 import { OutreachDraftDialog } from "@/components/chart/AdelDrafts";
 import { Card } from "@/components/ui/card";
+import { staffGettingStarted } from "@/lib/gettingStarted";
+import { LifecycleChip } from "@/components/lifecycle/LifecycleChip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
@@ -201,6 +203,8 @@ function MyWorkPage() {
   const planReviews = useEhr(() => myPlanReviewsDue(identity));
   const pendingLabsJson = useEhr(() => JSON.stringify(myPendingLabs(identity, actor.role)));
   const pendingLabRows = JSON.parse(pendingLabsJson) as ReturnType<typeof myPendingLabs>;
+  const gettingStartedKey = useEhr(() => staffGettingStarted(myCaseload(identity), actor.role).map((x) => `${x.patient.id}:${x.view.stage}:${x.view.gaps.join("|")}`).join(","));
+  const gettingStarted = gettingStartedKey ? staffGettingStarted(myCaseload(identity), actor.role) : [];
   const outside = useEhr(() => hieFollowUps(myCaseload(identity).map((p) => p.id), actor.role));
   const refills = useEhr(() => myPendingRefills({ ...identity, role: actor.role }));
   const myCrises = useEhr(() => caseloadCrises(identity, actor.role));
@@ -279,6 +283,20 @@ function MyWorkPage() {
           </div>
         )}
       </section>
+
+      {gettingStarted.length > 0 && (
+        <section aria-labelledby="getting-started-heading" className="space-y-3" data-testid="my-work-getting-started">
+          <SectionHeading id="getting-started-heading" icon={CalendarClock} title="Getting started" purpose="People on your caseload still finishing their first steps. Draft — pending EHR/Admin audit." count={gettingStarted.length} />
+          <div className="space-y-2">
+            {gettingStarted.map(({ patient: p, view }) => (
+              <Card key={p.id} className="flex flex-wrap items-center gap-3 p-3">
+                <Link to="/record/$patientId" params={{ patientId: p.id }} className="font-medium underline">{p.firstName} {p.lastName}</Link>
+                <LifecycleChip view={view} role={actor.role} showOwner />
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {outside.length > 0 && (
         <section aria-labelledby="hie-heading" className="space-y-3" data-testid="my-work-hie">

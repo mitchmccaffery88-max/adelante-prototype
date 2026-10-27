@@ -14,7 +14,7 @@ import { AdvocateNextStepsPanel } from "@/components/advocate/AdvocateNextStepsP
 import { useAdvocateSession } from "@/components/advocate/AdvocateSessionContext";
 import { useSupportingName } from "@/components/advocate/AdvocateViewParts";
 import { useI18n } from "@/lib/i18n";
-import { advocateGettingStarted } from "@/lib/gettingStarted";
+import { advocateGettingStartedFrom } from "@/lib/gettingStarted";
 
 /** Ordinary screen copy — Spanish draft pending translation review. */
 const SCREEN_COPY = {
@@ -59,7 +59,8 @@ function AdvocateDashboard() {
   const schedule = useEhr(() => AdelanteEHR.advocateSchedule(linkId));
   const messages = useEhr(() => AdelanteEHR.advocateCareMessages(linkId));
   const next = schedule.items[0];
-  const gs = useEhr(() => advocateGettingStarted(linkId));
+  // Same consent-scoped schedule read as above — no second access check or audit.
+  const gs = advocateGettingStartedFrom(schedule);
 
   return (
     <div className="space-y-4">

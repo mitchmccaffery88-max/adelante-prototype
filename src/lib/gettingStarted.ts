@@ -81,7 +81,9 @@ export function adelGettingStartedLine(patientId: string, lang: L): string | und
 
 /** Advocate slice — strictly the consent-scoped schedule; nothing else. */
 export function advocateGettingStarted(linkId: string) {
-  const s = AdelanteEHR.advocateSchedule(linkId);
+  return advocateGettingStartedFrom(AdelanteEHR.advocateSchedule(linkId));
+}
+export function advocateGettingStartedFrom(s: { allowed: boolean; items: { id: string; start: string; label: string }[] }) {
   if (!s.allowed) return { allowed: false as const, items: [] };
   return { allowed: true as const, items: s.items.slice(0, 3).map((i) => ({ id: i.id, start: i.start, label: i.label })) };
 }
