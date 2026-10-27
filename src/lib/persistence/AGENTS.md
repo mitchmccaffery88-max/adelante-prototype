@@ -1,0 +1,3 @@
+# Persistence foundation
+- Repositories are opt-in and memory remains the default; Supabase writes enter authenticated server functions and narrow database functions only. Why: adding persistence must never bypass the existing registry/store rules.
+- Generated grant data comes from roles.ts including nursing overlays and physician inheritance. Why: database grants must not become a second hand-maintained matrix.

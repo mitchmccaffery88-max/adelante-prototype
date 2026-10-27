@@ -117,3 +117,4 @@ Patient lessons, exercises, recovery and toolkit screens use `.patient-theme`; s
 - Care-manager calendars come only from `careManagerCalendar.ts` (calendar id = staff id, no `clinicianId` link). Why: bookable first contacts without granting primary-clinician access.
 - Patient self-sign runs only through `patientSelfSignForm` (telehealth, group; `part2_standard` only from an intake-packet request) and writes a typed record beside the live section; `revokeForm` revokes both. Why: gates decide from typed evidence and revocation re-locks.
 - Sign-up and public-referral free text is scanned in `website/signupSafety.ts` / `publicReferral.ts` into `recordAutomatedSafetyFlag` (pattern ids only). Why: crisis routing never blocks a sender and never stores triggering text.
+- Persistence subdirectory has its own AGENTS.md; its adapters stay off until domain contracts and RLS are verified. Why: memory behavior and clinical store gates remain the source during cutover.
