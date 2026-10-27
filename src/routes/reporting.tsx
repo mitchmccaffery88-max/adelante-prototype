@@ -67,7 +67,7 @@ import {
   REFERRAL_FUNNEL_ASSOCIATION_NOTE,
   REFERRAL_SOURCE_FOLD_NOTE,
 } from "@/lib/referralFunnel";
-import { LIFECYCLE_STAGES, LIFECYCLE_DRAFT } from "@/lib/careLifecycle";
+import { LIFECYCLE_STAGES, LIFECYCLE_DRAFT, lifecycleFunnel } from "@/lib/careLifecycle";
 import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
 import { TOTALS_ONLY_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
 import { PopulationHealthSection } from "@/components/reporting/PopulationHealthSection";
@@ -338,6 +338,8 @@ function ReportingHome() {
   const barriers = useEhr(() => barrierFrequency());
   // §4g — windowed on the referral's own `createdAt`, so the selector applies.
   const refFunnel = useEhr(() => referralFunnel({ sinceDays: days }));
+  const lifeFunnel = useEhr(() => JSON.stringify(lifecycleFunnel({ sinceDays: days })));
+  const life = JSON.parse(lifeFunnel) as ReturnType<typeof lifecycleFunnel>;
   const reqBooked = useEhr(() => requestToBooked(AdelanteEHR.listPatients(), days));
   const apptOut = useEhr(() => appointmentOutcomes(AdelanteEHR.listAppointments(), days));
   const refSource = useEhr(() => referralsBySource({ sinceDays: days }));
@@ -699,15 +701,15 @@ function ReportingHome() {
               }
             />
           </div>
-          {!refFunnel.belowMinimumCohort && (
+          {!life.belowMinimumCohort && (
             <div className="mt-3 space-y-1" data-testid="lifecycle-funnel">
               <p className="text-sm font-bold">Shared lifecycle — people who reached each stage</p>
               <ol className="grid gap-1 text-sm sm:grid-cols-2 lg:grid-cols-4">
                 {LIFECYCLE_STAGES.map((st, i) => (
-                  <li key={st.key}>Stage {st.n} — {st.name}: {refFunnel.lifecycleReached[i]}</li>
+                  <li key={st.key}>Stage {st.n} — {st.name}: {life.reached[i]}</li>
                 ))}
               </ol>
-              <p className="text-sm text-muted-foreground">Didn&apos;t start care: {refFunnel.didntStartCare}. {LIFECYCLE_DRAFT}. Association only — not a cause.</p>
+              <p className="text-sm text-muted-foreground">Didn&apos;t start care: {life.didntStartCare}. {LIFECYCLE_DRAFT}. Association only — not a cause.</p>
             </div>
           )}
           {refFunnel.belowMinimumCohort && (

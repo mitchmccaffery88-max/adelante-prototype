@@ -6,7 +6,7 @@ import { canAccess } from "../roles";
 import { lifecycleForReferral, lifecycleForPatient, billingReadiness } from "../careLifecycle";
 import { canCloseReferral, canEnrollReferral, canLogReferralContact, IDENTITY_NEEDED } from "../referralLifecycleActions";
 import { didntStartCareFor } from "../lifecycleState";
-import { referralFunnel } from "../referralFunnel";
+import { lifecycleFunnel } from "../careLifecycle";
 import { patientGettingStarted } from "../gettingStarted";
 import { planSuggestions } from "../structuredCarePlan";
 import { importIntakeStaging, patientOwnPacketNeeds } from "../intakePacket";
@@ -76,8 +76,8 @@ describe("shared stages", () => {
     expect(billingReadiness(p.id).ready).toBe(false);
   });
   it("funnel keeps the cohort guard at 11", () => {
-    expect(referralFunnel().minimumCohortSize).toBe(11);
-    expect(referralFunnel().lifecycleReached).toHaveLength(8);
+    expect(lifecycleFunnel().minimumCohortSize).toBe(11);
+    expect(lifecycleFunnel().reached).toHaveLength(8);
   });
 });
 

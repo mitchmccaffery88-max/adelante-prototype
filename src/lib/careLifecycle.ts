@@ -22,6 +22,7 @@ import { coverageProjection, coverageKeysForPatient } from "./coverageRequests";
 import { didntStartCareFor } from "./lifecycleState";
 import { referralClaimCodeConsumed } from "./identityReview";
 import { getStructuredPlan } from "./structuredCarePlan";
+import { cohortGuard } from "./cohortGuard";
 
 export const LIFECYCLE_DRAFT = "Draft — pending EHR/Admin audit";
 
@@ -229,3 +230,18 @@ export function billingReadiness(pid: string): BillingReadiness {
 
 /** Names, never IDs, for an owner line. */
 export function staffName(id?: string) { return getStaffMember(id)?.name; }
+
+// ---------------------------------------------------------------- funnel
+
+/** Extends the referral funnel with the eight shared stages. Same window, same cohort guard (11), association only. */
+export function lifecycleFunnel(opts: { sinceDays?: number; now?: Date } = {}) {
+  const now = opts.now ?? new Date();
+  const since = opts.sinceDays ? +now - opts.sinceDays * 86400_000 : -Infinity;
+  const rs = AdelanteEHR.listReferrals().filter((r) => Date.parse(r.createdAt) >= since);
+  const views = rs.filter((r) => r.status !== "declined").map((r) => lifecycleForReferral(r, now));
+  return {
+    reached: LIFECYCLE_STAGES.map((st) => views.filter((v) => !v.closed && v.stage >= st.n).length),
+    didntStartCare: views.filter((v) => v.closed?.kind === "didnt_start").length,
+    ...cohortGuard(rs.length),
+  };
+}
