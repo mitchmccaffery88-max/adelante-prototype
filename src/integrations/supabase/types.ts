@@ -1035,6 +1035,10 @@ export type Database = {
     }
     Functions: {
       foundation_attest_beta: { Args: { p_language: string }; Returns: string }
+      foundation_command: {
+        Args: { p_command: string; p_user: string; p_value: string }
+        Returns: Json
+      }
       foundation_current_context: { Args: never; Returns: Json }
       foundation_set_acting_role: { Args: { p_role: string }; Returns: string }
     }
