@@ -61,7 +61,11 @@ export type IdentityReviewType =
   | "possible_duplicate_account"
   | "link_referral_no_code"
   | "public_referral_resemblance"
-  | "code_lockout";
+  | "code_lockout"
+  // 27 Oct (Mitch) invite redesign — Draft.
+  | "invite_identity_mismatch"
+  | "invite_contact_lost"
+  | "contact_differs_from_referral";
 
 /** Exact copy approved 26 Oct. */
 export const IDENTITY_REVIEW_TYPE_LABELS: Record<IdentityReviewType, string> = {
@@ -70,10 +74,13 @@ export const IDENTITY_REVIEW_TYPE_LABELS: Record<IdentityReviewType, string> = {
   link_referral_no_code: "Link referral (signed up without a code)",
   public_referral_resemblance: "Possible match to a family/public referral",
   code_lockout: "Code attempts locked",
+  invite_identity_mismatch: "Invite opened, name or birth date didn't match",
+  invite_contact_lost: "Invited person no longer has the phone or email on file",
+  contact_differs_from_referral: "Name and birth date match a referral, contact differs",
 };
 export const IDENTITY_REVIEW_EMPTY = "Nothing to review. New items appear here when a sign-up might match an existing record.";
 
-export type IdentityReviewSource = "sign-up" | "referral" | "code attempts";
+export type IdentityReviewSource = "sign-up" | "referral" | "code attempts" | "invite link";
 export type IdentityReviewStatus = "yourturn" | "withothers" | "closed";
 
 export interface IdentityReviewEntries {
