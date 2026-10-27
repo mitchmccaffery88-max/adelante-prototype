@@ -96,7 +96,8 @@ describe("27 Oct sign-up invite (Draft)", () => {
   });
   it("paper code + last name + DOB → Matched, then one code verifies the new contact", () => {
     const r = referral({ phone: "", email: "" });
-    const code = issueReferralClaimCode(r.id).code;
+    runAction("referral_identity_confirm", intake, undefined, { args: [intake, r.id, "Packet reviewed", "Packet code"], auditReason: "Packet code" });
+    const code = issueReferralClaimCode(r.id, intake).code;
     const sid = session();
     const m = pub({ operation: "finish", sessionId: sid, path: "code", code, draft: { firstName: "", lastName: r.lastName, dob: r.dob, preferredLanguage: "en", credentialKind: "passwordless" } });
     expect(m.outcome).toBe("matched");
