@@ -1,8 +1,8 @@
 # Roadmap
 
 ## 27 Oct Diana public website first pass
-- [ ] Home order, shared mission/values, services, care wording and accessible menus.
-- [ ] Verify EN/ES at 1280/390, reduced motion, full public browser suite and report.
+- [x] Home order, shared mission/values, services, care wording and accessible menus.
+- [x] Verified EN/ES at 1280/390, reduced motion; full units 3,523/3,523 then full public browser 52/52 (47 existing + 5 Diana), one worker, no overlap. Report: docs/website-diana-pass1-report.md; build OK.
 - Supabase Phase 2c remains parked; no Supabase, TEST secrets or publishing.
 
 
