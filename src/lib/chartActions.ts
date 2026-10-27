@@ -9,7 +9,8 @@ import { canSubmitReferral, submitWebsiteReferral } from "@/lib/website/publicRe
 import { intakeLogOutreach } from "@/lib/intakeWorkspace";
 import { canReportPublicResource, createPublicResourceReport } from "@/lib/website/publicResourceReports";
 import { canActOnIdentityReview, identityReviewConfirm, identityReviewLink, identityReviewMerge, identityReviewMergeConfirmed, identityReviewNeedInfo, identityReviewNotSame } from "@/lib/identityReview";
-import { canUseSignup, runSignupCommand } from "@/lib/website/signupStore";
+import { canUseSignup } from "@/lib/website/signupStore";
+import { runSignupCommand } from "@/lib/website/signupSafety";
 import { authPreview } from "@/lib/website/authPreview";
 import {canSubmitWebsiteIntake,saveWebsiteIntake} from '@/lib/website/websiteInbox';
 import { seedSimulatedContentSample } from "@/lib/contentAnalytics";
