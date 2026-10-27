@@ -300,6 +300,8 @@ export function signChecked(input: SignInput): SignedCopy[] {
   if (!checked.length) throw new Error("Check at least one form first.");
   if (input.signerName.trim().length < 2) throw new Error("Type the signer's name.");
   for (const r of checked) {
+    // 26 Oct evening (Mitch): the standard Part 2 consent is self-signed only inside the intake packet.
+    if (r.formKey === "part2_standard" && input.channel !== "in_person" && !r.packet) throw new Error("You can sign this form in your intake packet.");
     const m = getFormVersion(r.versionId)!.signatureMethod;
     if (m === "typed_name" && (input.typedName ?? "").trim().length < 2) throw new Error("Type your full name to sign.");
     if (m === "drawn" && !input.drawn) throw new Error("Draw your signature to sign.");

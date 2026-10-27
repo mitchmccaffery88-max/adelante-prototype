@@ -84,6 +84,7 @@ import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/mo
 import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency, endCoordinatorEmergencyNow, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
 import { addOnCallShift, canManageOnCall, removeOnCallShift } from "./onCall";
+import { patientSelfSignForm } from "./consentForms";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 export const REGISTRY_VERSION = "2026-10-26.coverage-paths";
@@ -166,6 +167,8 @@ export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview",
 
 export const CHART_ACTIONS: ChartAction[] = [
   // 26 Oct (Mitch) group requests: one request item; stores own lifecycle audits.
+  // 26 Oct evening (Mitch) — patient self-sign: telehealth + group confidentiality; standard Part 2 only in the intake packet (store enforces).
+  { id: "patient_consent_self_sign", label: { en: "Sign a form", es: "Firmar un formulario" }, group: "coordination", menu: false, needsPatient: false, check: "patient for self; allowlisted forms only", store: refs(["patientSelfSignForm", patientSelfSignForm]), allowed: ({ role }) => role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient signs here.") },
   { id: "patient_group_join", label: { en: "Join group", es: "Unirme al grupo" }, group: "coordination", menu: false, needsPatient: false, check: "patient for self; open group with every requirement met", store: refs(["patientJoinGroup", patientJoinGroup]), allowed: ({ role }) => role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient joins here.") },
   { id: "patient_group_ask", label: { en: "Ask to join", es: "Pedir unirme" }, group: "coordination", menu: false, needsPatient: false, check: "patient for self; visible, not invite-only", store: refs(["patientAskToJoin", patientAskToJoin]), allowed: ({ role }) => role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient asks here.") },
   { id: "group_request_staff", label: { en: "Request group for patient", es: "Request group for patient" }, group: "care", menu: false, needsPatient: false, check: "own care team; Part 2 group needs SUD access", store: refs(["careTeamRequestGroup", careTeamRequestGroup]), allowed: ({ role }) => ["ecm_provider", "cf_care_manager", "therapist", "pmhnp", "physician"].includes(role) ? ok() : hide("Care team only.") },
