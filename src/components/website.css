@@ -68,7 +68,7 @@
 .website-menu-about { grid-template-columns:1fr; max-width:480px; }
 .website-menu-about .website-menu-columns { grid-template-columns:1fr; }
 .website-draft { padding:10px 24px; border-bottom:1px solid var(--line); text-align:center; font-size:14px; line-height:20px; color:var(--ink-muted); }
-.website-crisis { position:fixed; inset:auto 0 0; min-height:48px; z-index:100; background:var(--urgent); color:var(--on-urgent); font-size:16px; line-height:24px; display:flex; align-items:center; }
+.website-crisis { position:fixed; inset:auto 0 0; min-height:72px; z-index:100; background:var(--urgent); color:var(--on-urgent); font-size:20px; line-height:28px; display:flex; align-items:center; }
 .website-crisis .website-container { padding-block:12px; text-align:center; }
 .website-crisis a { display:inline-flex; align-items:center; min-height:44px; font-weight:700; text-decoration:underline; color:inherit; margin-block:-10px; padding-inline:4px; }
 .website-footer { background:var(--surface); border-top:1px solid var(--line); padding:56px 0 24px; }
@@ -132,7 +132,7 @@
  .website-brand-footer .website-wordmark { font-size:28px; }
  .website-footer-links { grid-template-columns:repeat(2,minmax(0,1fr)); }
  .website-footer-bottom { flex-direction:column; align-items:flex-start; gap:16px; }
- .website-crisis { font-size:14px; line-height:20px; }
+ .website-crisis { font-size:18px; line-height:26px; }
  .website-crisis .website-container { padding-block:12px; }
  .website-back-top { right:16px; }
  .website-placeholder-band { padding:40px 0; }
@@ -145,4 +145,20 @@
 }
 @media (prefers-reduced-motion:reduce) {
  .website-shell *, .website-menu-sheet * { transition:none !important; animation:none !important; scroll-behavior:auto !important; }
+}
+
+/* Diana pass 1: category flyouts and phone nested accordions. */
+.website-category-list { position:relative; min-height:340px; padding-right:calc(100% - 250px); }
+.website-category-trigger { width:100%; min-height:56px; justify-content:space-between; text-align:left; color:var(--ink); font-size:18px; line-height:26px; }
+.website-category-trigger[aria-expanded=true] { background:var(--path-soft); color:var(--path); }
+.website-category-trigger svg { flex-shrink:0; }
+.website-category-items { position:absolute; top:0; left:274px; right:0; }
+.website-category-items[hidden] { display:none; }
+.website-nav-auxiliary { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; }
+.website-referral-link { font-size:15px; }
+@media(max-width:1023px) {
+ .website-category-list { min-height:0; padding:0; }
+ .website-category-items { position:static; padding-left:12px; }
+ .website-category-trigger { min-height:56px; }
+ .website-nav-auxiliary>* { flex:1; }
 }

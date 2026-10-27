@@ -134,3 +134,42 @@
  .daylight-media-sunrise .daylight-sun-glow { position:relative; inset:auto; grid-column:1 / -1; height:220px; }
  .daylight-media-sunrise .daylight-service-chip { position:static; max-width:none; min-width:0; justify-content:flex-start; white-space:normal; }
 }
+
+/* Diana pass 1: equal choices, shared values and services. */
+.daylight-hero-actions .daylight-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; }
+.daylight-hero-actions .daylight-actions a { width:100%; padding-inline:12px; }
+.daylight-mission-copy { max-width:960px; margin-bottom:0!important; }
+.daylight-values-band { position:relative; background:var(--path); color:var(--on-path); padding-block:28px; display:flex; gap:16px; align-items:center; overflow:hidden; }
+.daylight-values-window { overflow:hidden; min-width:0; flex:1; }
+.daylight-values-track { display:flex; width:max-content; animation:daylight-values-scroll 55s linear infinite; }
+.daylight-values-list { display:flex; align-items:center; }
+.daylight-values-list span { font-size:22px; line-height:30px; font-weight:700; white-space:nowrap; padding-inline:28px; border-right:1px solid var(--on-path); }
+.daylight-values-control { margin-right:24px; flex-shrink:0; }
+.daylight-values-band:hover .daylight-values-track,.daylight-values-band:focus-within .daylight-values-track,.values-paused .daylight-values-track { animation-play-state:paused; }
+.daylight-services { grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
+.daylight-service { position:relative; padding:24px; border-radius:8px; min-height:240px; gap:12px; }
+.daylight-service h3 { margin:0; }
+.daylight-service h3 button { min-height:72px; width:100%; padding:0; text-align:left; justify-content:space-between; align-items:flex-start; font-size:24px; line-height:30px; color:var(--ink); background:transparent; }
+.daylight-service h3 svg { flex-shrink:0; margin-top:4px; }
+.daylight-service-detail p { font-size:18px; line-height:28px; margin:0; }
+.daylight-service-detail { margin-top:8px; }
+@keyframes daylight-values-scroll { to { transform:translateX(-50%); } }
+@media(max-width:767px) {
+ .daylight-hero-actions .daylight-actions { grid-template-columns:1fr; }
+ .daylight-hero-copy { order:0; }
+ .daylight-hero-actions { order:1; }
+ .daylight-media { order:2; }
+ .daylight-media-sunrise .daylight-pause { bottom:64px; }
+ .daylight-media-sunrise { display:block; height:284px; }
+ .daylight-values-band { flex-direction:column; align-items:stretch; }
+ .daylight-values-control { align-self:flex-end; margin-right:16px; }
+ .daylight-values-list span { font-size:20px; line-height:28px; padding-inline:20px; }
+ .daylight-services { grid-template-columns:1fr; }
+ .daylight-service { min-height:220px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .daylight-values-track { width:auto; display:block; animation:none; transform:none; }
+ .daylight-values-list { flex-wrap:wrap; gap:16px; justify-content:center; }
+ .daylight-values-list span { white-space:normal; border:0; text-align:center; }
+ .daylight-values-list:nth-child(2),.daylight-values-control { display:none; }
+}

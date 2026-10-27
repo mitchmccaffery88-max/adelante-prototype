@@ -1,3 +1,4 @@
+// Diana pass 1 (27 Oct): only superseded mission/modality copy contracts updated.
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { websiteEn, websiteEs, WEBSITE_NAV } from "@/lib/i18n.website";
@@ -38,19 +39,19 @@ describe("public website contract", () => {
     expect(websiteEs.websiteDraft).toBe("ES Draft — pending translation review");
   });
   it("keeps Mitch's mission and closing copy verbatim", () => {
-    expect(websiteEn.websiteMission).toBe("Adelante Health's Complete Wrap-Around Care provides whole-person, continuous care to anyone who needs it, wherever they are, bringing together mental and behavioral health, telepsychiatry, smart pathways to substance use recovery, and the everyday resources that make healing possible. As a hospital without walls, we serve every person with the same commitment, and we proudly pioneered care for people coming home from incarceration, walking alongside them and their advocates through the critical first 90 days and beyond so every fresh start becomes a lasting one.");
+    expect(websiteEn.websiteMission).toBe("Adelante Health is pioneering a first-of-its-kind, 90-day continuous wrap-around care model that empowers justice-involved individuals and their advocates through every step of re-entry, while extending whole-person care to everyone that needs services. By integrating behavioral and mental health services, medication management, and essential resources for everyday living, we bridge gaps in care, restore stability, and create pathways to lasting wellness for life's future possibilities.");
     expect(websiteEn.websiteReadyBody).toBe("Wherever you're starting from, we'll meet you there. Connect with our team to take your next step forward.");
   });
   it("pins the approved role, fit, language and general care copy", () => {
     const exact = {
       websiteCliniciansBody: "Help you work through stress, mental health concerns, and life's hardest moments.",
-      websitePsychiatryBody: "Offer psychiatric care and medication support by video, from wherever you are.",
+      websitePsychiatryBody: "Offer psychiatric care and medication support in person and online by video.",
       websiteRecoveryBody: "Walk with you on your own path to substance use recovery, at your pace.",
       websiteCoordinatorsBody: "Keep every part of your care connected so nothing falls through the cracks.",
       websiteReentryBody: "Stand by you through your first 90 days home and beyond.",
       websiteResourcesBody: "Connect you with housing, food, transportation, and the everyday support that makes healing possible.",
       websiteAdvocatesBody: "Support the family members, friends, and mentors who walk alongside someone coming home.",
-      websiteAnyoneBody: "Mental and behavioral health, telepsychiatry, substance use recovery, and everyday resources are open to you.",
+      websiteAnyoneBody: "Mental and behavioral health, medication management in person and online, substance use recovery, and everyday resources are open to you.",
       websiteComingHomeBody: "You can use every service above, plus a reentry guide for your first 90 days and beyond.",
       websiteLovedOnesBody: "You get guidance, resources, and a team that works with you, so you never have to support someone alone.",
       websiteTrustLanguage: "Available in English and Spanish.",

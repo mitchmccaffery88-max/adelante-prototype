@@ -1,5 +1,11 @@
 # Roadmap
 
+## 27 Oct Diana public website first pass
+- [x] Home order, shared mission/values, services, care wording and accessible menus.
+- [x] Verified EN/ES at 1280/390, reduced motion; full units 3,523/3,523 then full public browser 52/52 (47 existing + 5 Diana), one worker, no overlap. Report: docs/website-diana-pass1-report.md; build OK.
+- Supabase Phase 2c remains parked; no Supabase, TEST secrets or publishing.
+
+
 ## 27 Oct Supabase Phase 2c — blocked before migrations
 - [x] Retry safety preflight: all four TEST_SUPABASE secrets exist; test ref cguwotbbuyqzgmebckqy differs from main bnvukmpmwuhftvjpnwqi; test database ref matches test API ref. No values recorded.
 - [ ] Apply Phase 1 + 2 + 2b migrations to test only and compare migration versions — blocked: available migration tool targets the connected main project and offers no test-project target. Shell-based database modifications are not permitted. Do not reconnect the integration or run the migration tool against main as a substitute.
