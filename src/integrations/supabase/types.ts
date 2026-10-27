@@ -2619,6 +2619,15 @@ export type Database = {
       }
       foundation_matrix_checksum: { Args: never; Returns: Json }
       foundation_set_acting_role: { Args: { p_role: string }; Returns: string }
+      phase2_command: {
+        Args: {
+          p_action: string
+          p_entity: string
+          p_input: Json
+          p_reason_code: string
+        }
+        Returns: Json
+      }
       phase2_packet_documents: { Args: { p_referral: string }; Returns: Json }
     }
     Enums: {
