@@ -67,6 +67,7 @@ import {
   REFERRAL_FUNNEL_ASSOCIATION_NOTE,
   REFERRAL_SOURCE_FOLD_NOTE,
 } from "@/lib/referralFunnel";
+import { LIFECYCLE_STAGES, LIFECYCLE_DRAFT } from "@/lib/careLifecycle";
 import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
 import { TOTALS_ONLY_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
 import { PopulationHealthSection } from "@/components/reporting/PopulationHealthSection";
@@ -698,6 +699,17 @@ function ReportingHome() {
               }
             />
           </div>
+          {!refFunnel.belowMinimumCohort && (
+            <div className="mt-3 space-y-1" data-testid="lifecycle-funnel">
+              <p className="text-sm font-bold">Shared lifecycle — people who reached each stage</p>
+              <ol className="grid gap-1 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                {LIFECYCLE_STAGES.map((st, i) => (
+                  <li key={st.key}>Stage {st.n} — {st.name}: {refFunnel.lifecycleReached[i]}</li>
+                ))}
+              </ol>
+              <p className="text-sm text-muted-foreground">Didn&apos;t start care: {refFunnel.didntStartCare}. {LIFECYCLE_DRAFT}. Association only — not a cause.</p>
+            </div>
+          )}
           {refFunnel.belowMinimumCohort && (
             <CohortGuardNotice
               cohortSize={refFunnel.cohortSize}
