@@ -10,6 +10,12 @@ export interface FoundationRepository {
  context(): Promise<FoundationContext>;
  command(command: 'attest'|'set_role', value: string): Promise<unknown>;
 }
+export interface AccountsStaffRolesRepository extends FoundationRepository { }
+export interface FeatureFlagsRepository extends FoundationRepository { }
+export interface AuditRepository extends FoundationRepository { }
+export interface ConsentRepository extends FoundationRepository { }
+export interface PatientsCoreRepository extends FoundationRepository { }
+export const BETA_STATEMENT_SHA256 = '67c9c9178dec1bcbf606d5e263db6259467b4d9411fb400ee0f96be0e59baa6d';
 /** Existing memory store supplies reads and gated commands; no second seed/store. */
 export function memoryFoundationRepository(port: FoundationRepository): FoundationRepository { return port; }
 export function selectFoundationRepository(domain: PersistenceDomain, flags: Readonly<Record<string,boolean>>, memory: FoundationRepository, persisted: FoundationRepository): FoundationRepository {
