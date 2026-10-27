@@ -15,6 +15,7 @@ import { updateStaffMember } from "../staffLifecycle";
 const entered = {firstName:"OctTest",lastName:"Identity",dob:"1990-01-01",phone:"+15550000001"};
 const intake = {role:"intake_coordinator" as const,staffId:"s-intake-test",staffName:"Intake"};
 const item = () => createIdentityReviewItem({type:"possible_referral_match",source:"sign-up",sessionId:crypto.randomUUID(),entries:entered});
+const verifiedSignup = (sid: string, draft: Parameters<typeof runSignupCommand>[1]["draft"]) => { const sent = runSignupCommand(signupActor,{operation:"send_code",sessionId:sid,channel:"sms",draft}); return runSignupCommand(signupActor,{operation:"verify_code",sessionId:sid,otp:sent.demoCode}); };
 describe("26 Oct intake and identity rules", () => {
   it("family/self may omit DOB; professionals still need DOB or CIN", () => {
     for (const referrerType of ["family","self"]) expect(referralCriticalProblem({...entered,dob:"",referrerType})).toBeNull();
@@ -29,8 +30,9 @@ describe("26 Oct intake and identity rules", () => {
     const r = AdelanteEHR.createReferral({...entered,lastName:`Public${crypto.randomUUID()}`,identityConfidence:"public_unverified",referrerType:"family",referringAgency:"",referrerName:"Family",referralSource:"other",consentToContact:false,channel:"public"});
     const session = runSignupCommand(signupActor,{operation:"start"});
     const before = AdelanteEHR.listAuditEvents().filter(e => e.action === "referral_otp_sent").length;
-    const result = runSignupCommand(signupActor,{operation:"finish",sessionId:session.sessionId,path:"no_code",draft:{...entered,lastName:r.lastName,preferredLanguage:"en",credentialKind:"pin"}});
-    expect(result.outcome).toBe("verify");
+    // 27 Oct redesign: the typed contact is verified once; a public referral never auto-links.
+    const result = verifiedSignup(session.sessionId,{...entered,lastName:r.lastName,preferredLanguage:"en",credentialKind:"pin"});
+    expect(result.outcome).toBe("new");
     expect(AdelanteEHR.listAuditEvents().filter(e => e.action === "referral_otp_sent")).toHaveLength(before);
     expect(listIdentityReviewItems().find(i => i.sessionId === session.sessionId)).toMatchObject({type:"public_referral_resemblance",assignee:"intake_coordinator"});
   });
@@ -120,14 +122,15 @@ describe("26 Oct intake and identity rules", () => {
     const session=runSignupCommand(signupActor,{operation:"start"});
     for(let n=0;n<6;n++) runSignupCommand(signupActor,{operation:n?"retry":"finish",sessionId:session.sessionId,path:"code",code:"RE-AAAA-BBBB",draft});
     expect(listIdentityReviewItems().find(i=>i.sessionId===session.sessionId && i.type === "code_lockout")).toMatchObject({source:"code attempts",assignee:"intake_coordinator"});
-    runSignupCommand(signupActor,{operation:"continue",sessionId:session.sessionId});
-    expect(listIdentityReviewItems().find(i=>i.sessionId===session.sessionId && i.type === "link_referral_no_code")?.patientId).toBeTruthy();
+    // 27 Oct redesign: continuing needs a verified contact; unverified "continue" never creates an account.
+    expect(runSignupCommand(signupActor,{operation:"continue",sessionId:session.sessionId}).outcome).toBe("verify_required");
+    expect(verifiedSignup(session.sessionId,draft).patientId).toBeTruthy();
   });
   it("merge uses the existing engine, requires confirmation, and audits ids only", () => {
     const s=runSignupCommand(signupActor,{operation:"start"});
-    const n=runSignupCommand(signupActor,{operation:"finish",sessionId:s.sessionId,path:"new",draft:{...entered,lastName:`Merge${crypto.randomUUID()}`,preferredLanguage:"en",credentialKind:"pin"}});
+    const n=verifiedSignup(s.sessionId,{...entered,lastName:`Merge${crypto.randomUUID()}`,preferredLanguage:"en",credentialKind:"pin"});
     const t=runSignupCommand(signupActor,{operation:"start"});
-    const m=runSignupCommand(signupActor,{operation:"finish",sessionId:t.sessionId,path:"new",draft:{...entered,lastName:`Other${crypto.randomUUID()}`,preferredLanguage:"en",credentialKind:"pin"}});
+    const m=verifiedSignup(t.sessionId,{...entered,lastName:`Other${crypto.randomUUID()}`,preferredLanguage:"en",credentialKind:"pin"});
     if(!n.patientId || !m.patientId)throw new Error("Missing accounts");
     const row=createIdentityReviewItem({type:"possible_duplicate_account",source:"sign-up",patientId:n.patientId,candidatePatientIds:[m.patientId],entries:entered});
     expect(()=>identityReviewMergeConfirmed(intake,row.id,{candidatePatientId:m.patientId as string,reason:"Confirmed the same identity",confirmed:false})).toThrow(/Confirm/);
