@@ -1,5 +1,13 @@
 # Roadmap
 
+## 27 Oct Supabase Phase 2b — narrower finish (stopped at clean boundary)
+- [x] 1. part2_tpo_single expiry: TS + SQL agree for the standard intake consent (purpose tpo): no end date; "until revoked"/"end of treatment" wording only. 8 shared vectors pass in TS and SQL (rollback). Treatment-purpose scope unchanged — decision for Mitch.
+- [x] 2. Store-driven seed: scripts/generate-phase2-seed.ts runs the registry seeds and three intakes, migration retains 18 patients, 22 care-team rows, 18 enrollments, 3 signed part2_tpo_single, 9 referrals, packet docs/needs/checklist/handoff. All synthetic; build-time only.
+- [ ] 3. Positive access scenarios on seeded data — moved to 2c: needs signed-in test accounts per role (auth users), which this batch did not create; all reads stay closed.
+- [x] Validation: units 3,488/3,488, then public browser 47/47 (one worker, :8080).
+- [ ] 4. Crisis-owner TS/SQL parity vectors — moved to 2c (not started).
+- [ ] 2c (not started, as instructed): domain repositories, server/registry command transport, signup matching parity, persistence switches.
+
 ## 27 Oct Supabase Phase 2 — approved closed foundation
 - [x] Install 26 synthetic-only closed tables and helper prototypes; after review keep all new reads/commands revoked pending complete parity. Persistence off.
 - [x] 2,023 rollback assertions on main project; full units 3,479/3,479. Evidence and partial report written; no publishing, Cloud or GitHub connection.

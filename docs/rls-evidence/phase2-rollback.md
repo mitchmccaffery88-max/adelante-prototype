@@ -15,3 +15,6 @@ Missing composite acting-session key; permission-loop alias; NULL acting-role fa
 
 ## Not verified
 Positive row projections for every new table/role, real hosted auth, advocate consented slice/revocation, all identity decisions, crisis owner parity (including special SDOH semantics), complete care-team handoff, concurrent attempt races, signed-copy persistence, full memory/database repository parity, retained store-driven synthetic database seeds.
+## Phase 2b (27 Oct)
+- Standard Part 2 end-rule vectors (`STANDARD_TPO_EXPIRY_VECTORS`): SQL rollback transaction on the main project, `{"checks":8,"passed":8}`; 0 rows retained.
+- Store-driven seed retained (not rollback): patients 18, care team 22, enrollments 18, signed part2_tpo_single 3, referrals 9 (1 public_unverified), Part 2-tagged packet docs 2, handoffs 1, non-synthetic patients 0.

@@ -46,18 +46,19 @@ export const INTAKE_FORMS = [
 export type IntakeFormKey = (typeof INTAKE_FORMS)[number]["key"];
 export function intakeForm(key: string) { const f = INTAKE_FORMS.find(x => x.key === key); if (!f) throw new Error("Intake form not allowed."); return f; }
 export interface IntakeCaptureInput { formKey: IntakeFormKey; purposeCode: ConsentPurposeCode; note?: string; signer: string; relationship: "patient" | "guardian" | "proxy"; signedOn: string; expiresOn: string; attested: boolean; elements?: Part2Elements; fileName?: string; }
-function dates(signedOn: string, expiresOn: string) {
+function dates(signedOn: string, expiresOn: string, noExpiry = false) {
   const today = new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(signedOn) || !Number.isFinite(Date.parse(signedOn)) || new Date(signedOn).toISOString().slice(0, 10) !== signedOn || signedOn > today) throw new Error("Actual signature date required; no future signatures.");
+  if (noExpiry) { if (expiresOn) throw new Error("The standard Part 2 consent has no end date; it lasts until revoked or end of treatment."); return; }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(expiresOn) || !Number.isFinite(Date.parse(expiresOn)) || new Date(expiresOn).toISOString().slice(0, 10) !== expiresOn || expiresOn <= today || expiresOn <= signedOn) throw new Error("Future expiration date required.");
 }
 function draftFor(patientId: string, input: IntakeCaptureInput): CaptureDraft {
   const f = intakeForm(input.formKey);
   if (!isPurposeCode(input.purposeCode) || !(f.purposes as readonly string[]).includes(input.purposeCode)) throw new Error("Choose the purpose appropriate to this intake form.");
-  dates(input.signedOn, input.expiresOn);
+  dates(input.signedOn, input.expiresOn, f.type === "part2_tpo_single" && input.purposeCode === "tpo");
   if (!input.attested || input.signer.trim().length < 2) throw new Error("Actual signer and signature attestation required.");
   if (isPart2Type(f.type) && !PART2_ELEMENT_KEYS.every(k => input.elements?.[k] === true)) throw new Error("Confirm every required Part 2 element.");
-  return { patientId, consentType: f.type, recipients: [{ kind: "org", name: "Adelante", directoryRef: "adelante-program" }], purposeCode: input.purposeCode, purpose: PURPOSE_LABEL[input.purposeCode], items: [f.key === "part2" ? "Intake and treatment information" : f.label], effectiveDate: input.signedOn, expiresOn: input.expiresOn, ...(input.elements ? { part2Elements: { ...input.elements } } : {}) };
+  return { patientId, consentType: f.type, recipients: [{ kind: "org", name: "Adelante", directoryRef: "adelante-program" }], purposeCode: input.purposeCode, purpose: PURPOSE_LABEL[input.purposeCode], items: [f.key === "part2" ? "Intake and treatment information" : f.label], effectiveDate: input.signedOn, ...(f.type === "part2_tpo_single" && input.purposeCode === "tpo" ? { expiresOnEvent: "Until revoked" } : { expiresOn: input.expiresOn }), ...(input.elements ? { part2Elements: { ...input.elements } } : {}) };
 }
 type BoundaryInput = { actor: { role: IntakeActor["role"]; staffId?: string; name: string }; intakeReferralId?: string; patientId?: string; formKeys?: FormKey[]; draft?: CaptureDraft; signedOn?: string; signer?: string; attested?: boolean; relationship?: IntakeCaptureInput["relationship"]; fileName?: string; method?: string; consentEvent?: string; advocateId?: string; now?: string; dueDays?: number };
 registerIntakeConsentBoundary((raw, operation) => {
