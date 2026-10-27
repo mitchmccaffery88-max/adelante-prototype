@@ -11,8 +11,11 @@ export const foundationRead = createServerFn({method:'POST'}).middleware([requir
  if(!(input.domain in TABLES)) throw new Error('Unknown foundation domain.'); return input;
 }).handler(async({context,data}) => {
  const table=TABLES[data.domain];
+ const {data:verified,error:contextError}=await context.supabase.rpc('foundation_current_context');
+ const identity=verified as unknown as FoundationContext|null;
+ if(contextError||!identity?.attested||!identity.org_id) throw new Error('Accept the fictional-data agreement first.');
  // All reads remain caller-RLS scoped. Broad clinical reads are deliberately absent.
- const {data:rows,error} = await context.supabase.from(table as 'accounts').select('*');
+ const {data:rows,error} = await context.supabase.from(table as 'accounts').select('*').eq('org_id',identity.org_id);
  if(error) throw new Error('This Beta information is unavailable.');
  return rows as unknown as FoundationRecord[];
 });

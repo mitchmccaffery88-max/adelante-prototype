@@ -10,3 +10,4 @@ Target: connected main project `bnvukmpmwuhftvjpnwqi`, not a second project (not
 - After rollback: accounts=0; patients=0; grants=792; original auth.uid helper restored; anon/authenticated account UPDATE grants false.
 - Passing suite is recorded by `supabase/migrations/20261027021705_03af1411-8ebb-483f-adb1-2f3eaf185a04.sql`; it is rollback-only and retains no test rows.
 - Read cases exercise policies; tables without fixtures are not comprehensive positive row-projection proofs. Expanded ownership/consent/anonymous cases and API contracts are separately recorded when run.
+- SQL shared consent vectors: **17/17 passed**, same inputs as `src/lib/persistence/consentVectors.ts`; transaction rolled back.
