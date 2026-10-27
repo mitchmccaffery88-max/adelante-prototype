@@ -1064,6 +1064,7 @@ export type Database = {
         }
         Returns: string
       }
+      foundation_matrix_checksum: { Args: never; Returns: Json }
       foundation_set_acting_role: { Args: { p_role: string }; Returns: string }
     }
     Enums: {

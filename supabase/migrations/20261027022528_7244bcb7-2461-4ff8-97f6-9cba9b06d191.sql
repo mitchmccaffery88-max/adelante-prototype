@@ -1,0 +1,3 @@
+create function public.foundation_matrix_checksum() returns jsonb language sql stable security definer set search_path='' as $$ select jsonb_build_object('rows',count(*),'checksum',md5(string_agg(role||'|'||record_class||'|'||level,E'\n' order by role,record_class))) from app.record_class_grants $$;
+revoke all on function public.foundation_matrix_checksum() from public,anon,authenticated; grant execute on function public.foundation_matrix_checksum() to service_role;
+notify pgrst,'reload schema';
