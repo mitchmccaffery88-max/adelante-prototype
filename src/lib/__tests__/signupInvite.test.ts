@@ -5,6 +5,7 @@ import { listIdentityReviewItems } from "@/lib/identityReview";
 import { runSignupCommand, signupActor, type SignupResult } from "@/lib/website/signupStore";
 import { listInviteOutbox, listInvitesForReferral, sha256Hex, INVITE_TTL_DAYS, INVITE_DEFAULT_TIMING } from "@/lib/signupInvite";
 import { issueReferralClaimCode } from "@/lib/identityReview";
+import type { StaffRole } from "@/lib/roles";
 
 const intake = { role: "intake_coordinator" as const, staffId: "s-intake1", staffName: "Intake" };
 const pub = (input: Record<string, unknown>, now?: number) => { const r = runAction<SignupResult>("website_signup", signupActor, undefined, { via: "runSignupCommand", args: [signupActor, input, now] }); if (!r.ok) throw new Error(r.reason); return r.value; };
@@ -12,7 +13,7 @@ const session = () => pub({ operation: "start" }).sessionId;
 function referral(over: Record<string, unknown> = {}) {
   return AdelanteEHR.createReferral({ firstName: "Inez", lastName: `Invite${crypto.randomUUID().slice(0, 6)}`, dob: "1987-04-05", phone: "+15550170123", referringAgency: "Clinic", referrerName: "Ref", referralSource: "community_based_organization", consentToContact: true, channel: "public", ...over } as never);
 }
-function send(referralId: string, now?: number, actor = intake) {
+function send(referralId: string, now?: number, actor: { role: StaffRole; staffId: string; staffName: string } = intake) {
   return runAction<{ inviteId: string; reused: boolean }>("signup_invite_send", actor, undefined, { args: [actor, referralId, { timing: "now" }, "Ready to invite", now], auditReason: "Ready to invite" });
 }
 const tokenOf = (referralId: string) => listInviteOutbox(referralId).at(-1)!.link.split("/").pop()!;
@@ -100,7 +101,7 @@ describe("27 Oct sign-up invite (Draft)", () => {
     const code = issueReferralClaimCode(r.id, intake).code;
     const sid = session();
     const m = pub({ operation: "finish", sessionId: sid, path: "code", code, draft: { firstName: "", lastName: r.lastName, dob: r.dob, preferredLanguage: "en", credentialKind: "passwordless" } });
-    expect(m.outcome, JSON.stringify(m.event?.detail)).toBe("matched");
+    expect(m.outcome).toBe("matched");
     const sent = pub({ operation: "send_code", sessionId: sid, channel: "email", draft: { firstName: "", lastName: r.lastName, dob: r.dob, email: "inez@example.test", preferredLanguage: "en", credentialKind: "passwordless" } });
     expect(pub({ operation: "verify_code", sessionId: sid, otp: sent.demoCode }).outcome).toBe("matched");
     expect(AdelanteEHR.getPatient(m.patientId!)?.email).toBe("inez@example.test");
