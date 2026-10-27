@@ -42,7 +42,7 @@ Migration-owned `app.seed_foundation` creates fictional organization/site/locati
 - Additional boundary suite **31/31**: anonymous all-table denials, cross-org consent/copy ownership, advocate denial, copy immutability and flag reason/live/non-union/one-audit. Combined foundation **2,292/2,292** plus 17 SQL vectors.
 - Actual DB matrix vs generated code: checksum `87fb6d48742a73f6c6a68a2f23f140cc`, 792 rows, zero drift; migration literal sync zero mismatches.
 - Full units: **3,465/3,465, 398 files**, exit 0 (final full run before isolated public suite).
-- Full public browser: pending isolated 47-test run; no timeout/retry changes.
+- Full public browser: **47/47 passed**, exit 0, 10.3m, eight files, one worker, localhost:8080. First run 46/47 had an Axe execution context destroyed during reload; unchanged full rerun passed. No timeout/retry/config changes.
 - Linter: no issues. Build OK after source edits. Default browser page: no errors, Beta absent as intended.
 
 ## Incomplete cutover / blockers

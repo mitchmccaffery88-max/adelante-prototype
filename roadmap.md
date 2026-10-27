@@ -129,7 +129,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Off-by-default repository scaffolding, Beta banner and SQL-audited agreement; memory remains default. No persistence cutover claimed.
 - [x] Rollback-only main-project RLS/helper checks 2,261/2,261; SQL and TypeScript consent vectors 17/17 each; evidence in docs/rls-evidence/.
 - [x] Full units 3,465/3,465; report docs/supabase-phase1-report.md; build OK. No publishing.
-- [ ] Full public browser suite — running isolated, 47 tests; finalize count before closeout.
+- [x] Full public browser suite — isolated unchanged rerun 47/47, exit 0, 10.3m. Initial 46/47 Axe context/reload interruption retained in evidence; no test/config/timeout changes.
 - [ ] Beta first-sign-in end-to-end — blocked by zero hosted auth users/provisioned accounts and later real-auth transport.
 - [ ] Second test project — credentials not yet supplied; main tests roll back.
 - [ ] Consent create/frozen signed-copy persistence — blocked by trusted file/signature transport; persist_consent stays off.
