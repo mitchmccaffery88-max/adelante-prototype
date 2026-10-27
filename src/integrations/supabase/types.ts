@@ -1039,6 +1039,15 @@ export type Database = {
         Args: { p_command: string; p_user: string; p_value: string }
         Returns: Json
       }
+      foundation_consent_lifecycle: {
+        Args: {
+          p_reason_code: string
+          p_record: string
+          p_status: string
+          p_user: string
+        }
+        Returns: string
+      }
       foundation_current_context: { Args: never; Returns: Json }
       foundation_set_acting_role: { Args: { p_role: string }; Returns: string }
     }
