@@ -29,7 +29,8 @@ import { z } from "zod";
 export const CREDENTIAL_PROTOTYPE_NOTICE =
   "This sets up how you'll get back in later. In this preview your password or PIN isn't stored or checked — real sign-in security comes with the live system.";
 
-export type CredentialKind = "password" | "pin";
+/** 27 Oct: "passwordless" = one-time link or code sign-in (Simulated delivery). */
+export type CredentialKind = "password" | "pin" | "passwordless";
 
 /* ===================== §Front-door Phase 3 — helper attribution ===========
  * TWO tiers, one flow.
