@@ -1,40 +1,32 @@
-# Referral lifecycle batch — clean-boundary stop, 27 Oct 2026
+# Referral-to-billable-patient lifecycle — report (27 Oct, continuation)
 
-Draft — pending EHR/Admin audit. **Inventory complete; implementation stopped before UI, role, store or registry changes.**
+Draft — pending EHR/Admin audit. No publishing, no Supabase/schema changes, no TEST secrets used.
 
-## Completed
+## Resolution of the earlier stop
+- Stage 2 is administrative fact gathering only (packet facts, identity, duplicates). No clinical plan exists before enrollment.
+- On enrollment, one Today task "Draft first care plan" goes to the assigned clinician (or the clinical coordinator queue), due before the first scheduled visit (otherwise 7 days, Draft). Intake facts (non-Part-2 packet needs) show as care-plan suggestions that the clinician accepts, edits or dismisses; provenance is recorded (`edited: true` on edited accepts). Part 2-flagged packet needs never become suggestions.
+- Neutral "First care plan not drafted" gap shows in stages 6–8.
+- "Didn't start care" is a reopenable post-enrollment status, separate from a closed referral and from discharge. Blocked once a visit was attended.
 
-- Wrote `docs/referral-lifecycle-inventory.md` before changing any UI, including audiences, sources, actions, count provenance, duplicate lists, dead ends, canonical work homes and clinical/reporting exclusions.
-- Recorded Mitch's lifecycle requirements and the later narrow Intake/peer permission decision without changing running permissions.
-- Updated the roadmap with this explicit stop; no work is running after this response.
+## What was built
+- `src/lib/careLifecycle.ts`: pure eight-stage derivation, gaps, owner/next action, existing Draft clocks (3/7 referral aging; post-enrollment 7/14, 5/10, 14/30), work homes, billing readiness labels, lifecycle funnel (cohort guard 11, association only). 90-day clock start kept as one Draft setting (enrollment — unchanged behavior, pending Christi).
+- `src/lib/referralLifecycleActions.ts` + 8 registry entries (`referral_outreach_log`, `referral_mark_contacted`, `referral_identity_confirm`, `referral_enroll`, `referral_close`, `didnt_start_care_mark`, `didnt_start_care_reopen`, `patient_need_confirm`). Each store function re-checks the button's gate and reuses the existing referral store writers.
+  - Peer specialists: log outreach/contact only. Trainees: unchanged (denied).
+  - Intake: enroll only with identity evidence (staff/identity-review confirmation record or a used claim code; verified-OTP signups already enroll themselves). DOB or `verified_source` alone does not count. Close only duplicate / unable to reach.
+  - Enroll and close are separate checks. No record-class grants changed.
+- `src/lib/lifecycleState.ts`: "Didn't start care" reasons (Draft list — see open questions).
+- `src/lib/gettingStarted.ts`: patient card (care team names, first visit, paperwork, plain-language coverage, own needs with "Still need help with this?", pathway content, requested groups stay "Requested"), Adel line, advocate slice from the consent-scoped schedule only, staff My work list.
+- UI: one `LifecycleChip` on the referral queue table/list and drawer; drawer actions now go through the registry with a required reason; Intake workspace rows get stage chip, identity confirmation, enroll and the two allowed closes; record drawer gets the Getting started panel with readiness checklist and Didn't-start controls; patient Home, Adel greeting, advocate home and My work show Getting started; Reporting shows the eight-stage funnel under the cohort guard.
 
-## Why implementation stopped
+## Tests
+- New `src/lib/__tests__/careLifecycle.test.ts` (9): peer contact yes / enroll-close no; trainee denied; Intake identity evidence; Intake close reasons; first-plan task; stages; funnel guard 11; Didn't-start mark/reopen and Intake limit; Dana pre-release scenario (packet needs → patient + clinician suggestion, Part 2 need excluded, Spanish copy).
+- Updated `websiteReferralActionsConsistency.test.ts` for Mitch's peer-contact decision.
+- Permission snapshot: additions only (the 8 new actions); no existing value changed.
+- `referralFunnel.ts` is pinned by the 9a-2 parity test, so the stage funnel lives in `careLifecycle.ts` instead.
+- Full units: 3,523/3,523. Public browser suite: see final status in chat.
 
-Stage 2 requires an Intake-owned first care plan before stage 4 materializes the patient. The only existing care-plan writer is patient-keyed and clinical-role gated:
-
-- `src/lib/structuredCarePlan.ts`: `addStructuredGoal(input: { patientId: string; ... })` calls `assertEdit(input.actor)` then `patientOf(input.patientId)`. `PLAN_EDIT_ROLES` excludes Intake; clinical coordinator may only reassign owners.
-- `src/lib/chartActions.ts`: `care_plan_goal.allowed` hides the action when `!canEditPlan(role)`.
-- Root/lib architecture and existing Intake requirements forbid a second store, fake patient creation or broader clinical/chart permission.
-
-No lawful existing action home can clear this required pre-enrollment gap. A shared chip would therefore create the exact permanent dead end this batch prohibits. I did not substitute packet receipt for clinical plan authorship, fabricate completion, or grant access.
-
-## Additional reconciliation found
-
-- Intake navigation is explicitly restricted to its workspace and identity review (`navSections.ts`); opening Care → Referrals needs a documented narrow referral-only navigation exception, not broader chart/navigation rights.
-- `websiteReferralActionsConsistency.test.ts` currently asserts peer `contact`, `enroll` and `decline` all false. Mitch's new decision requires contact true but enroll/decline false. The approved stop rule forbids silently weakening protected assertions; record the exact contact-only update with implementation authorization.
-- Existing referral drawer calls enroll/contact/decline/outreach stores directly; these must be registered and reason/actor checked before new controls ship. Intake enrollment also needs source-bound confirmed-identity evidence, not mere presence of DOB or identityConfidence.
-- Existing `mayDispose` combines enroll/decline in the drawer; must separate enroll and reason-aware close. Store currently disallows declining an enrolled referral, so “Closed at any stage” needs an explicit enrolled-lifecycle closure design without changing episodes or clinical discharge.
-
-## Changes per surface / what moved
-
-**None.** No lists, numbers, clinical actions or reporting-only work moved or disappeared. The inventory provides the proposed canonical home mapping for the next approved pass. Existing five-stage funnel, Intake lanes and four setup steps remain unchanged; no new “active/billable” status claimed.
-
-## Validation and boundaries
-
-No application code changed, so full units/public browser were **not rerun for this inventory-only stop**. Latest completed validation from the preceding peer-send batch remains 3,514/3,514 units, then 47/47 public browser, and 4/4 staff browser; those are not lifecycle verification. Latest preview signal checked separately.
-
-No Supabase/schema/integration changes, TEST_SUPABASE_* reads, secret requests, migration, persistence activation or publishing.
-
-## Decision needed to resume
-
-Clarify stage 2: make pre-enrollment enrichment **administrative only**, with existing clinical care-plan drafting deferred to the enrolled patient record and owned by a currently authorized care-team author; or authorize a precisely scoped alternative compatible with the existing care-plan store and privacy gates. Also define how an enrolled lifecycle is closed without treating it as a declined inbound referral. Until then, shared model/UI, narrow action implementation, reporting and lifecycle tests remain blocked rather than partially shipped.
+## Open questions / limits
+- Didn't-start reasons and owners are my Draft list (couldn't reach, chose not to start, care elsewhere, moved away, returned to custody, other); please confirm.
+- "Rendering clinician credentialed" uses a Draft proxy (roster clinician with a credential on file); there is no credential-validity helper yet.
+- New notifications were not added; the patient card and the neutral task title carry the message.
+- Didn't-start records and patient need answers are preview memory only, like other prototype stores.
