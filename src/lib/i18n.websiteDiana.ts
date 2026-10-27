@@ -1,6 +1,7 @@
 // Diana first pass / Mitch additions, 27 Oct 2026. Spanish: draft for native review.
 export const websiteDianaEn = {
  'website.diana.mission': 'Our mission',
+ 'website.diana.about.description': 'Our mission and values: whole-person care, reentry support and one connected plan at Adelante Health.',
  'website.diana.values': 'Core values',
  'website.diana.value.life': 'No Life Left Behind',
  'website.diana.value.gaps': 'Care without Gaps',
@@ -33,6 +34,7 @@ export const websiteDianaEn = {
 } as const;
 export const websiteDianaEs: Record<keyof typeof websiteDianaEn, string> = {
  'website.diana.mission': 'Nuestra misión',
+ 'website.diana.about.description': 'Nuestra misión y valores: atención integral, apoyo para la reintegración y un solo plan conectado en Adelante Health.',
  'website.diana.values': 'Nuestros valores',
  'website.diana.value.life': 'Ninguna vida queda atrás',
  'website.diana.value.gaps': 'Atención sin vacíos',

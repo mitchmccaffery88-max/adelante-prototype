@@ -37,8 +37,8 @@ for (const lang of ["en", "es"] as const) {
         await expect(page).toHaveTitle(title);
         await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", title);
         if(route === "/about") await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", title);
-        await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", route === "/about" ? websiteEn.websiteDescription : websiteEn.websiteTeamIntro);
-        await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", route === "/about" ? websiteEn.websiteDescription : websiteEn.websiteTeamIntro);
+        await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", route === "/about" ? websiteEn['website.diana.about.description'] : websiteEn.websiteTeamIntro);
+        await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", route === "/about" ? websiteEn['website.diana.about.description'] : websiteEn.websiteTeamIntro);
         await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", route === "/about" ? "summary_large_image" : "summary");
         if(route === "/about") await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://adelmvp1.lovable.app${route}`);
         await expect(page.getByTestId("website-footer").getByRole("link", { name: route === "/about" ? d.websiteAboutNav : d.websiteTeamNav, exact: true })).toHaveAttribute("aria-current", "page");
