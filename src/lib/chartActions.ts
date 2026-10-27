@@ -82,6 +82,7 @@ import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type Ve
 import { confirmMoudContinuity, moudWriterCheck, recordMoudPlan } from "@/lib/moudContinuity";
 import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency, endCoordinatorEmergencyNow, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
+import { addOnCallShift, canManageOnCall, removeOnCallShift } from "./onCall";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 export const REGISTRY_VERSION = "2026-10-26.coverage-paths";
@@ -280,6 +281,13 @@ export const CHART_ACTIONS: ChartAction[] = [
   { id: "content_discard", label: { en: "Discard content draft", es: "Discard content draft" }, group: "admin", menu: false, needsPatient: false,
     check: "canAuthorContent", store: refs(["discardContentDraft", discardContentDraft]),
     allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("This role cannot take this content action."), },
+  // 26 Oct evening (Mitch) — Draft on-call duty schedule (onCall.ts); store re-checks the role.
+  { id: "on_call_shift_add", label: { en: "Add on-call shift", es: "Add on-call shift" }, group: "admin", menu: false, needsPatient: false,
+    check: "canManageOnCall", store: refs(["addOnCallShift", addOnCallShift]),
+    allowed: ({ role }) => canManageOnCall(role) ? ok() : hide("Only the clinical coordinator or a system admin can change the on-call schedule.") },
+  { id: "on_call_shift_remove", label: { en: "Remove on-call shift", es: "Remove on-call shift" }, group: "admin", menu: false, needsPatient: false,
+    check: "canManageOnCall", store: refs(["removeOnCallShift", removeOnCallShift]),
+    allowed: ({ role }) => canManageOnCall(role) ? ok() : hide("Only the clinical coordinator or a system admin can change the on-call schedule.") },
   {
     id: "resource_verify",
     label: { en: "Verify and publish resource", es: "Verificar y publicar recurso" },

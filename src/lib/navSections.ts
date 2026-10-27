@@ -605,6 +605,15 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "coordination_desk" },
   },
   {
+    id: "admin-on-call",
+    label: "On-call schedule",
+    desc: "Draft crisis on-call duty for licensed clinicians",
+    icon: Users,
+    to: "/admin-on-call",
+    group: "administration",
+    gate: { kind: "coordination_desk" },
+  },
+  {
     id: "admin-permissions",
     label: "Permissions & features",
     desc: "Role × action matrix, feature flags, action audit",
