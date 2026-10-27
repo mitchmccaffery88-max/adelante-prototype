@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import type { StaffRole } from "@/lib/roles";
 import { AdelanteEHR } from "../ehr";
 import { runAction } from "../actions/runAction";
 import { CHART_ACTIONS } from "../chartActions";
