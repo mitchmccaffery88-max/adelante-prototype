@@ -15,7 +15,7 @@ const SERVICES_BY_ROLE: Partial<Record<StaffRole, ServiceType[]>> = {
 };
 export const CARE_MANAGER_CALENDAR_ROLES = Object.keys(SERVICES_BY_ROLE) as StaffRole[];
 /** Draft default week: Monday–Friday 9:00–17:00, in person or by video/phone. */
-export const DEFAULT_CARE_MANAGER_HOURS = [1, 2, 3, 4, 5].map((weekday) => ({ weekday, start: "09:00", end: "17:00" }));
+export const DEFAULT_CARE_MANAGER_HOURS = ([1, 2, 3, 4, 5] as const).map((weekday) => ({ weekday, start: "09:00", end: "17:00" }));
 const DEFAULT_LOCATION = "loc-visalia";
 
 export function isCareManager(s: StaffMember): boolean {
