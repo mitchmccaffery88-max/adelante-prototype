@@ -28,4 +28,5 @@ Preview only. Nothing published. No schema phase 1, tables, migrations or Supaba
 
 ## Validation
 - FULL units: **3,444/3,444** (396 files), exit 0.
-- FULL public browser: see final chat report.
+- FULL public browser: **47/47** (eight public specs, one worker against :8080, 13.0 min), exit 0.
+- Build OK.

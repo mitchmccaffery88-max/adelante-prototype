@@ -120,6 +120,6 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] B4. Every care manager has a calendar; addStaffMember default hours
 - [x] B5. On-call duty schedule + resolveCrisisOwner + admin screen (Draft)
 - [x] B6. Standard Part 2 TPO consent at intake (Draft)
-- [ ] Full suites, docs/decisions-26oct-evening-report.md (running)
+- [x] Validation: FULL units 3,444/3,444 (396 files); FULL public browser 47/47 (13.0m, one worker, :8080). Nothing published. Report: docs/decisions-26oct-evening-report.md.
 - [ ] Record-class count: roles.ts has 44, tracking says 41 — waiting on Mitch to confirm which is authoritative.
 - [ ] On-call owner and SMS/SMTP provider — waiting on Mitch/Diana.
