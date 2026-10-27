@@ -319,7 +319,8 @@ export interface ReferralClaimCode {
 }
 
 const referralClaimCodes: ReferralClaimCode[] = [];
-const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+// 27 Oct fix: matches the enrollment-code validator (no U). Before this, any code containing U could never be redeemed.
+const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789";
 const CODE_TTL_MS = 90 * 86_400_000;
 
 function mintCode(): string {

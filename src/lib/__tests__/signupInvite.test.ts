@@ -116,3 +116,15 @@ describe("27 Oct sign-up invite (Draft)", () => {
     expect(() => runSignupCommand({ role: "intake_coordinator", staffId: "s" } as never, { operation: "start" })).toThrow();
   });
 });
+
+describe("27 Oct paper-code alphabet fix", () => {
+  it("every referral claim code is accepted by the code validator", async () => {
+    const { normalizeEnrollmentCode } = await import("@/lib/signup");
+    for (let i = 0; i < 60; i++) {
+      const r = referral({ phone: "", email: "", referrerPhone: "+15559990000" });
+      runAction("referral_identity_confirm", intake, undefined, { args: [intake, r.id, "Packet reviewed", "Packet code"], auditReason: "Packet code" });
+      const code = issueReferralClaimCode(r.id, intake).code;
+      expect(normalizeEnrollmentCode(code)).toBe(code);
+    }
+  });
+});
