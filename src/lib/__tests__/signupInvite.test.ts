@@ -100,7 +100,7 @@ describe("27 Oct sign-up invite (Draft)", () => {
     const code = issueReferralClaimCode(r.id, intake).code;
     const sid = session();
     const m = pub({ operation: "finish", sessionId: sid, path: "code", code, draft: { firstName: "", lastName: r.lastName, dob: r.dob, preferredLanguage: "en", credentialKind: "passwordless" } });
-    expect(m.outcome).toBe("matched");
+    expect(m.outcome, JSON.stringify(m.event?.detail)).toBe("matched");
     const sent = pub({ operation: "send_code", sessionId: sid, channel: "email", draft: { firstName: "", lastName: r.lastName, dob: r.dob, email: "inez@example.test", preferredLanguage: "en", credentialKind: "passwordless" } });
     expect(pub({ operation: "verify_code", sessionId: sid, otp: sent.demoCode }).outcome).toBe("matched");
     expect(AdelanteEHR.getPatient(m.patientId!)?.email).toBe("inez@example.test");
