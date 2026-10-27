@@ -9,6 +9,7 @@ import { IDENTITY_NEEDED, INTAKE_CLOSE_REASONS } from "@/lib/referralLifecycleAc
 import { referralDeclineReasonLabel } from "@/lib/referralActions";
 import type { StaffRole } from "@/lib/roles";
 import { LifecycleChip } from "./LifecycleChip";
+import { SignupInviteControls } from "./SignupInviteControls";
 
 type Actor = { role: StaffRole; staffId?: string; staffName?: string };
 
@@ -33,7 +34,7 @@ export function IntakeLifecycleActions({ actor, referralId, reason }: { actor: A
       <LifecycleChip view={view} role={actor.role} showOwner />
       {open && !evidence && (
         <>
-          <Input aria-label="How identity was confirmed" placeholder="How identity was confirmed" value={how} onChange={(e) => setHow(e.target.value)} className="max-w-xs" />
+          <Input aria-label="How identity was confirmed" placeholder="How identity was confirmed (e.g. In person — photo ID)" value={how} onChange={(e) => setHow(e.target.value)} className="max-w-xs" />
           <Button variant="outline" disabled={!reasonOk || how.trim().length < 3} onClick={() => run("referral_identity_confirm", [referralId, how, reason], "Identity confirmed")}>Record identity confirmed</Button>
         </>
       )}
@@ -44,6 +45,7 @@ export function IntakeLifecycleActions({ actor, referralId, reason }: { actor: A
       {open && INTAKE_CLOSE_REASONS.map((k) => (
         <Button key={k} variant="ghost" disabled={!reasonOk} onClick={() => run("referral_close", [referralId, { reason: k }, reason], "Referral closed")}>Close — {referralDeclineReasonLabel(k).toLowerCase()}</Button>
       ))}
+      {open && <SignupInviteControls actor={actor} referralId={referralId} reason={reason} />}
     </div>
   );
 }

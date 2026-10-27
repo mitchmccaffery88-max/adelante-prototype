@@ -1,3 +1,4 @@
+import { SignupInviteControls } from "@/components/lifecycle/SignupInviteControls";
 import { StatusChip } from "@/components/ui/status-chip";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -335,6 +336,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
         <Label htmlFor="ref-action-reason" className="text-xs">Reason — Required</Label>
         <Textarea id="ref-action-reason" value={actionReason} onChange={(e) => setActionReason(e.target.value)} rows={2} className="text-sm" placeholder="e.g. Spoke with them by phone" />
       </div>
+      <SignupInviteControls actor={actor()} referralId={referral.id} reason={actionReason} />
       <div className="flex flex-wrap gap-2">
         {referral.status === "submitted" && (
           <Button
