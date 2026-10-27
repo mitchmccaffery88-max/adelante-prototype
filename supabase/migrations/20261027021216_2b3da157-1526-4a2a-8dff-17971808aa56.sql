@@ -1,0 +1,1 @@
+alter function public.foundation_current_context() security invoker; notify pgrst,'reload schema';
