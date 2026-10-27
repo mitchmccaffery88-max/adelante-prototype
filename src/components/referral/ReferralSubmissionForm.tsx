@@ -1,4 +1,5 @@
 import { runAction } from "@/lib/actions/runAction";
+import { SafetyNotice988 } from "@/components/frontdoor/SafetyNotice988";
 import { currentRunActor } from "@/lib/actions/act";
 import { signupActor } from "@/lib/website/signupStore";
 // §Phase 4d — the ONE referral submission form. Extracted verbatim from the
@@ -179,6 +180,7 @@ export function ReferralSubmissionForm({
   const [confirmation, setConfirmation] = useState<{
     reference: string;
     textStatus: "sent" | "not_configured" | "failed" | "no_phone" | "pending" | "held";
+    safety?: boolean;
   } | null>(null);
   useEffect(() => {
     if (staff) return;
@@ -302,6 +304,7 @@ export function ReferralSubmissionForm({
       setConfirmation({
         reference: referralReference(result.id),
         textStatus: result.referrerPhone ? "pending" : "no_phone",
+        ...("safetyFlagged" in result && result.safetyFlagged ? { safety: true } : {}),
       });
       setSubmitted(true);
       // B6 — confirmation text to the referrer, honest outcome recorded on the
@@ -367,6 +370,7 @@ export function ReferralSubmissionForm({
             </p>
           )}
         </div>
+        {confirmation?.safety && <div className="mt-6"><SafetyNotice988 lang={screenLang === "es" ? "es" : "en"} /></div>}
         <Card className="mt-8 p-5 text-left space-y-3">
           <h2 className="font-display text-lg text-navy">{SCREEN_COPY["ui.51ecc5b21fd4"][screenLang]}</h2>
           <ul className="space-y-2 text-sm text-foreground">
