@@ -991,7 +991,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_request_cancel": "hidden",
     "website_auth_preview": "hidden",
     "website_intake_submit": "hidden",
-    "website_referral_submit": "hidden",
+    "website_referral_submit": "allowed",
     "website_signup": "hidden",
   },
   "clinical_trainee": {
