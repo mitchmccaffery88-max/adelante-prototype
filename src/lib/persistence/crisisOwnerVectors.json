@@ -1,0 +1,8 @@
+[
+  {"id":"sdoh_assigned","category":"sdoh","assigned":"care_manager","shift":"in_range","expected":"care_manager","source":"assigned","fallback":false},
+  {"id":"clinical_assigned","category":"clinical","assigned":"clinician","shift":"in_range","expected":"clinician","source":"assigned","fallback":false},
+  {"id":"on_call_in_range","category":"clinical","assigned":null,"shift":"in_range","expected":"clinician","source":"on_call","fallback":false},
+  {"id":"on_call_out_of_range","category":"clinical","assigned":null,"shift":"out_of_range","expected":null,"source":"clinical_coordinator","fallback":true},
+  {"id":"coordinator_fallback","category":"clinical","assigned":null,"shift":null,"expected":null,"source":"clinical_coordinator","fallback":true},
+  {"id":"sdoh_skips_on_call","category":"sdoh","assigned":null,"shift":"in_range","expected":null,"source":"clinical_coordinator","fallback":true}
+]
