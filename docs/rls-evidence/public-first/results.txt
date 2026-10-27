@@ -1,0 +1,82 @@
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+Running 47 tests using 1 worker
+
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓   1 [chromium] › e2e/publicEarlyTap8a2.spec.ts:4:1 › a language tap before the homepage is interactive still applies; 988 stays a plain link (6.7s)
+  ✓   2 [chromium] › e2e/publicEarlyTap8a2.spec.ts:13:1 › a menu tap before the phone homepage is interactive opens the menu once (4.8s)
+  ✓   3 [chromium] › e2e/publicWebsite.spec.ts:13:3 › public website en: separate pages, shared layout, navigation and copy (12.3s)
+  ✓   4 [chromium] › e2e/publicWebsite.spec.ts:13:3 › public website es: separate pages, shared layout, navigation and copy (12.4s)
+  ✓   5 [chromium] › e2e/publicWebsite.spec.ts:80:2 › legacy public anchor about (6.2s)
+  ✓   6 [chromium] › e2e/publicWebsite.spec.ts:80:2 › legacy public anchor team (5.7s)
+  ✓   7 [chromium] › e2e/publicWebsite.spec.ts:80:2 › legacy public anchor partners (6.0s)
+  ✓   8 [chromium] › e2e/publicWebsite.spec.ts:80:2 › legacy public anchor who-its-for (6.4s)
+  ✓   9 [chromium] › e2e/publicWebsite.spec.ts:88:2 › homepage anchors from / (6.9s)
+  ✓  10 [chromium] › e2e/publicWebsite.spec.ts:88:2 › homepage anchors from /about (11.9s)
+  ✓  11 [chromium] › e2e/publicWebsite.spec.ts:88:2 › homepage anchors from /team (10.9s)
+  ✓  12 [chromium] › e2e/publicWebsite.spec.ts:103:1 › public website mobile menu (6.9s)
+  ✓  13 [chromium] › e2e/publicWebsite.spec.ts:125:1 › public referral accepts no agency but requires referrer name (6.4s)
+  ✓  14 [chromium] › e2e/websiteDaylight.spec.ts:7:2 › Daylight shell 1280 en: menus, focus, clearance and contrast (9.5s)
+  ✓  15 [chromium] › e2e/websiteDaylight.spec.ts:7:2 › Daylight shell 1280 es: menus, focus, clearance and contrast (10.3s)
+  ✓  16 [chromium] › e2e/websiteDaylight.spec.ts:7:2 › Daylight shell 390 en: menus, focus, clearance and contrast (10.3s)
+  ✓  17 [chromium] › e2e/websiteDaylight.spec.ts:7:2 › Daylight shell 390 es: menus, focus, clearance and contrast (10.8s)
+  ✓  18 [chromium] › e2e/websiteDaylight.spec.ts:49:1 › Daylight crisis bar and one public shell on every public destination and entry flow (19.0s)
+  ✓  19 [chromium] › e2e/websiteDaylight.spec.ts:59:1 › Daylight reduced motion and shrinking sticky header (4.6s)
+  ✓  20 [chromium] › e2e/websiteLandingDaylight.spec.ts:5:72 › landing 1280 en: bands, journeys, Adel safety and accessibility (8.8s)
+  ✓  21 [chromium] › e2e/websiteLandingDaylight.spec.ts:5:72 › landing 1280 es: bands, journeys, Adel safety and accessibility (9.8s)
+  ✓  22 [chromium] › e2e/websiteLandingDaylight.spec.ts:5:72 › landing 390 en: bands, journeys, Adel safety and accessibility (9.2s)
+  ✓  23 [chromium] › e2e/websiteLandingDaylight.spec.ts:5:72 › landing 390 es: bands, journeys, Adel safety and accessibility (11.1s)
+  ✓  24 [chromium] › e2e/websiteLandingDaylight.spec.ts:18:1 › reduced motion finishes hero without autoplay (5.9s)
+  ✓  25 [chromium] › e2e/websitePages4a.spec.ts:5:62 › 4a pages 1280 en (36.4s)
+  ✘  26 [chromium] › e2e/websitePages4a.spec.ts:5:62 › 4a pages 1280 es (12.3s)
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓  27 [chromium] › e2e/websitePages4a.spec.ts:5:62 › 4a pages 390 en (32.4s)
+  ✓  28 [chromium] › e2e/websitePages4a.spec.ts:5:62 › 4a pages 390 es (35.3s)
+  ✓  29 [chromium] › e2e/websitePages4a.spec.ts:9:1 › directory deep link filters and anonymous report confirmation (5.3s)
+  ✓  30 [chromium] › e2e/websitePages4a.spec.ts:10:1 › Content Center edits and visibility update shared public listings; reports appear in review queue (24.3s)
+  ✓  31 [chromium] › e2e/websitePages4b.spec.ts:5:61 › 4b pages 1280 en (46.4s)
+  ✓  32 [chromium] › e2e/websitePages4b.spec.ts:5:61 › 4b pages 1280 es (42.8s)
+  ✓  33 [chromium] › e2e/websitePages4b.spec.ts:5:61 › 4b pages 390 en (38.2s)
+  ✓  34 [chromium] › e2e/websitePages4b.spec.ts:5:61 › 4b pages 390 es (46.6s)
+  ✓  35 [chromium] › e2e/websitePages4b.spec.ts:15:1 › careers/contact submit through the real registry and read back in demo admin Inbox (8.1s)
+  ✓  36 [chromium] › e2e/websitePages4b.spec.ts:21:1 › team/platform anchor clearance and reduced FAQ stills (11.0s)
+  ✓  37 [chromium] › e2e/websitePolish.spec.ts:13:3 › public polish and accessibility / (14.6s)
+  ✓  38 [chromium] › e2e/websitePolish.spec.ts:13:3 › public polish and accessibility /about (8.5s)
+  ✓  39 [chromium] › e2e/websitePolish.spec.ts:13:3 › public polish and accessibility /team (9.0s)
+  ✓  40 [chromium] › e2e/websiteSignup5.spec.ts:5:1 › code claim, generic mismatch, intake and ids-only signup audits (3.8s)
+  ✓  41 [chromium] › e2e/websiteSignup5.spec.ts:6:1 › 26 Oct: no-code continuation creates an intake Identity review item (3.6s)
+  ✓  42 [chromium] › e2e/websiteSignup5.spec.ts:7:61 › flows 1280 en: axe and crisis clearance (7.1s)
+  ✓  43 [chromium] › e2e/websiteSignup5.spec.ts:7:61 › flows 1280 es: axe and crisis clearance (7.0s)
+  ✓  44 [chromium] › e2e/websiteSignup5.spec.ts:7:61 › flows 390 en: axe and crisis clearance (5.8s)
+  ✓  45 [chromium] › e2e/websiteSignup5.spec.ts:7:61 › flows 390 es: axe and crisis clearance (6.8s)
+  ✓  46 [chromium] › e2e/websiteSignup5.spec.ts:8:1 › HLOC panel captures each required element before send and cites disclosure (6.1s)
+  ✓  47 [chromium] › e2e/websiteSignup5.spec.ts:9:1 › demo member and staff sign-in preserve workspace routing (7.2s)
+
+
+  1) [chromium] › e2e/websitePages4a.spec.ts:5:62 › 4a pages 1280 es ───────────────────────────────
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation
+
+       5 | for(const width of [1280,390]) for(const lang of ['en','es'])test(`4a pages ${width} ${lang}`,async({page})=>{
+       6 |  test.setTimeout(120000);
+    >  7 |  for(const [index,path] of pages.entries()){await page.setViewportSize({width,height:width===390?844:1800});await page.goto(path);await page.waitForFunction(()=> (window as unknown as {__adelHydrated:boolean}).__adelHydrated);if(lang==='es'&&index===0){if(width===390)await page.getByRole('button',{name:'Open website menu',exact:true}).click();await page.getByRole('button',{name:'Cambiar idioma a español',exact:true}).click();if(width===390)await page.keyboard.press('Escape');}await expect(page.locator('main h1')).toHaveCount(1);await expect(page.locator('.page-breadcrumb [aria-current=page]')).toHaveCount(1);await expect(page.locator('.website-crisis')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width);await settleReveals(page); const axe=await new AxeBuilder({page}).include('main').analyze();expect(axe.violations.filter(v=>v.impact==='serious'||v.impact==='critical')).toEqual([]);}
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+       8 | });
+       9 | test('directory deep link filters and anonymous report confirmation',async({page})=>{await page.goto('/directory?category=food&q=food');await page.waitForFunction(()=> (window as unknown as {__adelHydrated:boolean}).__adelHydrated);await expect(page.getByRole('button',{name:'Food',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.getByLabel('Search by need or place')).toHaveValue('food');await page.getByRole('button',{name:'Report a change',exact:true}).first().click();await page.getByRole('button',{name:'Send',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Choose a reason');await page.getByLabel('Reason · Required').selectOption('Wrong hours');await page.getByLabel('Optional note').fill('Hours need checking');await page.getByRole('button',{name:'Send',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('Thanks. Our team will check this listing.');await expect(page.locator('.website-crisis')).toBeVisible();});
+      10 | test('Content Center edits and visibility update shared public listings; reports appear in review queue',async({page})=>{
+        at AxeBuilder.analyze (/dev-server/node_modules/@axe-core/playwright/dist/index.mjs:201:16)
+        at /dev-server/e2e/websitePages4a.spec.ts:7:841
+
+    Error Context: test-results/websitePages4a-4a-pages-1280-es-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/websitePages4a-4a-pages-1280-es-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/websitePages4a-4a-pages-1280-es-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/websitePages4a.spec.ts:5:62 › 4a pages 1280 es ────────────────────────────────
+  46 passed (11.0m)
