@@ -1,3 +1,4 @@
+import { standardTpoExpiryError, STANDARD_TPO_EXPIRY_MESSAGE } from "./standardTpoExpiry";
 import { purposeCodeOf, purposeNeedsReview } from "./consentPurposes";
 import { assertIntakeConsentBoundary } from "./intakeConsentBoundary";
 // §B2-2 — consent record capture flows (additive; no gate reads these yet —
@@ -83,7 +84,9 @@ function baseChecks(d: CaptureDraft) {
   if (!d.recipients.length || d.recipients.some((r) => r.name.trim().length < 2)) throw new Error("Name at least one recipient.");
   if (d.purpose.trim().length < 3) throw new Error("A purpose is required.");
   if (!d.items.length) throw new Error("Choose what information is covered.");
-  if (!d.expiresOn && !d.expiresOnEvent?.trim()) throw new Error("Add an end date or an end event.");
+  const tpo = standardTpoExpiryError(d);
+  if (tpo) throw new Error(STANDARD_TPO_EXPIRY_MESSAGE[tpo]);
+  if (d.consentType !== "part2_tpo_single" && !d.expiresOn && !d.expiresOnEvent?.trim()) throw new Error("Add an end date or an end event.");
 }
 
 /** The document the signer saw: the published template (if any) plus the captured terms. */
