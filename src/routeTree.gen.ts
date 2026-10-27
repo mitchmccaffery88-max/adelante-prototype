@@ -25,6 +25,7 @@ import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
 import { Route as AdminIdentityReviewRouteImport } from './routes/admin-identity-review'
 import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminNoteTemplatesRouteImport } from './routes/admin-note-templates'
+import { Route as AdminOnCallRouteImport } from './routes/admin-on-call'
 import { Route as AdminPermissionsRouteImport } from './routes/admin-permissions'
 import { Route as AdminSchedulingRulesRouteImport } from './routes/admin-scheduling-rules'
 import { Route as AdminStaffRouteImport } from './routes/admin-staff'
@@ -226,6 +227,11 @@ const AdminKpiTargetsRoute = AdminKpiTargetsRouteImport.update({
 const AdminNoteTemplatesRoute = AdminNoteTemplatesRouteImport.update({
   id: '/admin-note-templates',
   path: '/admin-note-templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOnCallRoute = AdminOnCallRouteImport.update({
+  id: '/admin-on-call',
+  path: '/admin-on-call',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPermissionsRoute = AdminPermissionsRouteImport.update({
@@ -862,6 +868,7 @@ export interface FileRoutesByFullPath {
   '/admin-identity-review': typeof AdminIdentityReviewRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-on-call': typeof AdminOnCallRoute
   '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-staff': typeof AdminStaffRoute
@@ -1002,6 +1009,7 @@ export interface FileRoutesByTo {
   '/admin-identity-review': typeof AdminIdentityReviewRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-on-call': typeof AdminOnCallRoute
   '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-staff': typeof AdminStaffRoute
@@ -1139,6 +1147,7 @@ export interface FileRoutesById {
   '/admin-identity-review': typeof AdminIdentityReviewRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-on-call': typeof AdminOnCallRoute
   '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-staff': typeof AdminStaffRoute
@@ -1281,6 +1290,7 @@ export interface FileRouteTypes {
     | '/admin-identity-review'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-on-call'
     | '/admin-permissions'
     | '/admin-scheduling-rules'
     | '/admin-staff'
@@ -1421,6 +1431,7 @@ export interface FileRouteTypes {
     | '/admin-identity-review'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-on-call'
     | '/admin-permissions'
     | '/admin-scheduling-rules'
     | '/admin-staff'
@@ -1557,6 +1568,7 @@ export interface FileRouteTypes {
     | '/admin-identity-review'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-on-call'
     | '/admin-permissions'
     | '/admin-scheduling-rules'
     | '/admin-staff'
@@ -1698,6 +1710,7 @@ export interface RootRouteChildren {
   AdminIdentityReviewRoute: typeof AdminIdentityReviewRoute
   AdminKpiTargetsRoute: typeof AdminKpiTargetsRoute
   AdminNoteTemplatesRoute: typeof AdminNoteTemplatesRoute
+  AdminOnCallRoute: typeof AdminOnCallRoute
   AdminPermissionsRoute: typeof AdminPermissionsRoute
   AdminSchedulingRulesRoute: typeof AdminSchedulingRulesRoute
   AdminStaffRoute: typeof AdminStaffRoute
@@ -1912,6 +1925,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-note-templates'
       fullPath: '/admin-note-templates'
       preLoaderRoute: typeof AdminNoteTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-on-call': {
+      id: '/admin-on-call'
+      path: '/admin-on-call'
+      fullPath: '/admin-on-call'
+      preLoaderRoute: typeof AdminOnCallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-permissions': {
@@ -2869,6 +2889,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIdentityReviewRoute: AdminIdentityReviewRoute,
   AdminKpiTargetsRoute: AdminKpiTargetsRoute,
   AdminNoteTemplatesRoute: AdminNoteTemplatesRoute,
+  AdminOnCallRoute: AdminOnCallRoute,
   AdminPermissionsRoute: AdminPermissionsRoute,
   AdminSchedulingRulesRoute: AdminSchedulingRulesRoute,
   AdminStaffRoute: AdminStaffRoute,
