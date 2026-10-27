@@ -27,13 +27,11 @@ import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { REFERRAL_STATUS_STYLES } from "@/components/ReferralProgressStrip";
 import { getActingRole, getActingStaff } from "@/lib/roles";
 import { runAction } from "@/lib/actions/runAction";
-import { canCloseReferral, canEnrollReferral, canLogReferralContact, CLOSE_DENIED, CONTACT_DENIED, ENROLL_DENIED, INTAKE_CLOSE_REASONS } from "@/lib/referralLifecycleActions";
+import { canCloseReferral, canEnrollReferral, canLogReferralContact, CLOSE_DENIED, CONTACT_DENIED, ENROLL_DENIED } from "@/lib/referralLifecycleActions";
 import { lifecycleForReferral } from "@/lib/careLifecycle";
 import { LifecycleChip } from "@/components/lifecycle/LifecycleChip";
 import {
   REFERRAL_DECLINE_REASONS,
-  canPerformReferralAction,
-  referralActionDeniedReason,
   referralDeclineReasonLabel,
 } from "@/lib/referralActions";
 import { deliverReferrerUpdate } from "@/lib/referrerUpdateDelivery";
@@ -51,7 +49,7 @@ import {
   type ReferralOutreachOutcome,
 } from "@/lib/referralOutreach";
 import { AdvocateInviteForm } from "@/components/advocate/AdvocateInviteForm";
-import { PossibleExistingPatientError, type PatientMatch } from "@/lib/patientMatching";
+import { type PatientMatch } from "@/lib/patientMatching";
 
 interface Props {
   referralId: string | null;
