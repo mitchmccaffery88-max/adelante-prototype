@@ -61,8 +61,13 @@ export function intakeSafetyRows(actor: IntakeActor) {
 function eligible(id?: string) { const s = getStaffMember(id); return s?.active !== false && s ? s : undefined; }
 export function escalateIntakeSafety(actor: IntakeActor, kind: SafetySource["kind"], sourceId: string, reason: string): TriageReceipt {
   assertIntakeActor(actor, "safety_escalation", reason);
-  const data = sourceFor(kind, sourceId); const k = keyOf(data.source); const existing = triage.get(k);
+  const data = sourceFor(kind, sourceId); const existing = triage.get(keyOf(data.source));
   if (existing) return receipt(existing);
+  return routeTriage(data, sourceId, actor.staffId ?? "Intake", "assisted_signup");
+}
+type CrisisTrigger = NonNullable<Parameters<typeof AdelanteEHR.flagCrisis>[3]>["triggerSource"];
+function routeTriage(data: SourceRecord, sourceId: string, by: string, triggerSource: CrisisTrigger): TriageReceipt {
+  const k = keyOf(data.source);
   const p = data.patientId ? AdelanteEHR.getPatient(data.patientId) : undefined;
   const cm = p ? resolveCrisisOwner(p, "sdoh") : eligible(data.careManagerStaffId);
   // 26 Oct evening (Mitch): unlinked sources also fall back to the on-call clinician.
@@ -73,16 +78,52 @@ export function escalateIntakeSafety(actor: IntakeActor, kind: SafetySource["kin
   const at = new Date().toISOString();
   const item: TriageItem = { ...data, source: { ...data.source }, id: crypto.randomUUID(), sourceId, ownerStaffId: owner?.id, ownerName: owner?.name ?? "Clinical coordinator queue", ownerRole: owner?.role ?? "clinical_coordinator", summaryStaffId: data.tier === "amber" ? validClinician?.id : undefined, at, status: "open", ...(!owner ? { gap: ON_CALL_GAP } : {}) };
   // Linked records use the existing crisis owner path; no detail is returned.
-  if (p) {
-    const crisis = AdelanteEHR.flagCrisis(p.id, actor.staffId ?? "Intake", "Recorded intake safety flag — source available to clinical triage", { triggerSource: "assisted_signup", severity: data.tier === "red" ? "critical" : "urgent", category: data.tier === "amber" && validCm ? "sdoh" : "clinical" });
-    item.crisisId = crisis.id;
-    const taskOwner = owner ? owner.caseManagerId ?? owner.id : "";
-    AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: taskOwner, title: "Clinical triage needed", dueDate: at, priority: data.tier === "red" ? "stat" : "urgent", allowedRoles: owner ? [owner.role] : ["clinical_coordinator"], taskType: "intake_safety_triage", source: "intake_referral", dedupeKey: `intake-triage:${k}` });
-  }
+  if (p) escalateLinked(item, p.id, by, triggerSource, !!validCm, owner);
   triage.set(k, item);
   const notify = (staffId?: string) => AdelanteEHR.notify({ ...(staffId ? { recipientStaffId: staffId } : { recipientRole: "clinical_coordinator" as StaffRole }), category: "task_assigned", subject: "Clinical triage needed", body: "A recorded safety flag needs review in Escalations.", linkRoute: "/escalations", dedupeKey: `prechart-triage:${item.id}:${staffId ?? "pool"}` });
   notify(owner?.id); if (item.summaryStaffId && item.summaryStaffId !== owner?.id) notify(item.summaryStaffId);
   AdelanteEHR._emit(); return receipt(item);
+}
+function escalateLinked(item: TriageItem, patientId: string, by: string, triggerSource: CrisisTrigger, sdohOwner: boolean, owner?: { id: string; role: StaffRole; caseManagerId?: string }) {
+  const k = keyOf(item.source);
+  const crisis = AdelanteEHR.flagCrisis(patientId, by, "Recorded intake safety flag — source available to clinical triage", { triggerSource, severity: item.tier === "red" ? "critical" : "urgent", category: item.tier === "amber" && sdohOwner ? "sdoh" : "clinical" });
+  item.crisisId = crisis.id;
+  const taskOwner = owner ? owner.caseManagerId ?? owner.id : "";
+  AdelanteEHR.createCaseTask({ patientId, assignedTo: taskOwner, title: "Clinical triage needed", dueDate: item.at, priority: item.tier === "red" ? "stat" : "urgent", allowedRoles: owner ? [owner.role] : ["clinical_coordinator"], taskType: "intake_safety_triage", source: "intake_referral", dedupeKey: `intake-triage:${k}` });
+}
+
+/**
+ * 26 Oct evening (Mitch) — automated free-text safety scan of sign-up answers
+ * and public referral text (the existing crisis patterns). System ingestion:
+ * stores pattern ids only, never the triggering text; routes immediately
+ * (linked → flagCrisis, unlinked → pre-chart triage). Never blocks the sender.
+ */
+export const AUTOMATED_SAFETY_BY = "Automated safety scan";
+export function recordAutomatedSafetyFlag(kind: "referral" | "signup", id: string, field: string, patternIds: string[]): TriageReceipt | undefined {
+  if (!patternIds.length) return undefined;
+  const k = keyOf({ kind, id });
+  const prior = triage.get(k);
+  if (prior) return receipt(prior);
+  if (sources.has(k)) return undefined;
+  const patientId = kind === "referral" ? referralForIntake(id, true).enrolledPatientId : signupSafetyLink(id).patientId;
+  const part2 = kind === "referral" && !!referralForIntake(id, true).substanceUseNeed;
+  sources.set(k, { tier: "red", source: { kind, id, field, trigger: "crisis_pattern", text: `Automated pattern match: ${patternIds.join(", ")}`, part2 }, patientId });
+  return routeTriage(sourceFor(kind, id), id, AUTOMATED_SAFETY_BY, "message_pattern");
+}
+/** Once the same sign-up session creates or links an account, the open pre-chart item moves onto the chart through flagCrisis. */
+export function linkAutomatedSignupSafety(sessionId: string): string | undefined {
+  const k = keyOf({ kind: "signup", id: sessionId });
+  const i = triage.get(k); const pid = signupSafetyLink(sessionId).patientId;
+  if (!i || i.patientId || !pid || i.source.trigger !== "crisis_pattern") return undefined;
+  i.patientId = pid; const src = sources.get(k); if (src) src.patientId = pid;
+  const owner = getStaffMember(i.ownerStaffId);
+  escalateLinked(i, pid, AUTOMATED_SAFETY_BY, "message_pattern", false, owner);
+  AdelanteEHR._emit();
+  return i.crisisId;
+}
+/** Intake-facing status for a sign-up session: the label only. */
+export function signupNeedsClinicalTriage(sessionId: string): boolean {
+  return sources.has(keyOf({ kind: "signup", id: sessionId }));
 }
 export function preChartTodayTasks(actor: IntakeActor) {
   const staff = getStaffMember(actor.staffId);
