@@ -38,7 +38,8 @@ Referral paper codes (`RE-____-____` from the packet) were minted with the lette
 
 ## Results
 - Units: 3,538/3,538 passed, 112.8 s.
-- Public browser suite (one worker, :8080, after units, not overlapping): PENDING
+- Public browser suite (one worker, :8080, after units, not overlapping): **51/51 passed**, exit 0, 13.0 min — publicWebsite, websiteDaylight, websiteDianaPass1, websiteLandingDaylight, websitePages4a, websitePages4b, websitePolish, websiteSignup5.
+- Screenshots: /tmp/browser/invite/invite-390-es.png (invite screen, Spanish, 390 px, 988 bar, no overflow), staff.png (Intake invite controls, Simulated label). No page errors.
 
 ## Open / for Mitch
 - Draft settings to confirm: 14 days, 3 sends/day 60 s apart, 5 tries, "on release date" default.
