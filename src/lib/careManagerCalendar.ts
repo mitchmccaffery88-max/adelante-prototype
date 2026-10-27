@@ -49,4 +49,11 @@ export function ensureCareManagerCalendar(s: StaffMember): string | undefined {
 export function seedCareManagerCalendars(): void {
   for (const s of STAFF_ROSTER) ensureCareManagerCalendar(s);
 }
-try { seedCareManagerCalendars(); } catch { /* best-effort demo seed */ }
+// Demo seed ids come from a local deterministic sequence so this seed never
+// shifts the shared Math.random stream other seeded fixtures rely on.
+function withLocalIds(fn: () => void) {
+  const shared = Math.random; let k = 1;
+  Math.random = () => ((k++ * 0.6180339887498949) % 1);
+  try { fn(); } finally { Math.random = shared; }
+}
+try { withLocalIds(seedCareManagerCalendars); } catch { /* best-effort demo seed */ }
