@@ -53,4 +53,4 @@ Separate test project credentials remain external; until supplied, only rollback
 - Item 4 crisis-owner parity vectors: not started.
 - 2c as instructed: repositories, server/registry transport, signup parity, persistence switches.
 
-**Tests:** full units 3,488/3,488 (400 files). Public browser: see roadmap. Tests ran rollback-only on the main project (no test-project secrets). Persistence off; nothing published.
+**Tests:** full units 3,488/3,488 (400 files); then public browser 47/47 (eight public specs, one worker, :8080, 13.2m). Tests ran rollback-only on the main project (no test-project secrets). Persistence off; nothing published.
