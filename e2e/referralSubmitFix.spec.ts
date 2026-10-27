@@ -5,9 +5,9 @@ async function openQueue(page: Page, role: string) {
   await page.waitForFunction(() => Boolean((window as any).__adelante));
   await page.evaluate((role) => {
     (window as any).__adelante.setActingRole(role);
-    (window as any).__adelante.go("/referral-queue");
+    (window as any).__adelante.go(role === "intake_coordinator" ? "/intake-workspace" : "/referral-queue");
   }, role);
-  await expect(page.getByRole("heading", { name: "Referrals", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: role === "intake_coordinator" ? "Intake workspace" : "Referrals", exact: true })).toBeVisible();
 }
 
 for (const role of ["clinical_coordinator", "intake_coordinator"]) {
