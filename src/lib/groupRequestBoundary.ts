@@ -8,6 +8,8 @@ export interface GroupRequestHooks {
   afterRequest?: (row: unknown) => void;
   /** Per-type approval rule (clinician-only, hard requirements). */
   beforeApprove?: (request: unknown, actor: { name: string; role: string; id?: string }) => void;
+  /** 26 Oct evening (Mitch): open, non-billable groups follow their own requirements, not the care-plan gate. Absent = keep the gate. */
+  skipsCarePlanEligibility?: (group: unknown) => boolean;
 }
 export const groupRequestHooks: GroupRequestHooks = {};
 export function registerGroupRequestHooks(h: GroupRequestHooks) { Object.assign(groupRequestHooks, h); }

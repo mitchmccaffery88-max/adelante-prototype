@@ -85,8 +85,20 @@ export function groupPolicy(g: GroupSession) {
 }
 
 /** The type's list plus automatic checks (existing eligibility gate, telehealth when virtual, space, county ack). */
+/**
+ * 26 Oct evening (Mitch): an open, non-billable group follows its own join
+ * rules and type requirements only; the care-plan eligibility gate does not
+ * apply unless the group's TYPE lists "group_eligibility" itself. Billable,
+ * care_team_approval and invite_only groups keep every gate they had.
+ * Never read by MAT/medication paths.
+ */
+export function skipsCarePlanEligibility(g: GroupSession): boolean {
+  const pol = groupPolicy(g);
+  return pol.joinRule === "open" && !pol.billable && !GROUP_TYPES[pol.groupType].requirements.includes("group_eligibility");
+}
+
 export function requirementsFor(g: GroupSession): RequirementId[] {
-  const list = new Set<RequirementId>(["group_eligibility", ...GROUP_TYPES[groupPolicy(g).groupType].requirements]);
+  const list = new Set<RequirementId>([...(skipsCarePlanEligibility(g) ? [] : ["group_eligibility" as const]), ...GROUP_TYPES[groupPolicy(g).groupType].requirements]);
   if (AdelanteEHR.groupVirtualExposure(g.id).virtual) list.add("telehealth_consent");
   if (AdelanteEHR.isGroupConfidentialityAckRequired()) list.add("confidentiality_ack");
   list.add("space");
@@ -268,7 +280,7 @@ function beforeApprove(value: unknown, actor: { name: string; role: string }) {
   const hard = requirementsFor(g).filter((id) => !["group_eligibility", "telehealth_consent", "clinician_approval"].includes(id));
   if (hard.some((id) => evaluateRequirement(g, r.patientId, id) === "not_met")) throw new Error("A requirement is not met yet. Use \"Needs something first\".");
 }
-registerGroupRequestHooks({ staffRequest: assertStaffRequest, afterRequest: (row) => routeAfterRequest(row as GroupJoinRequest), beforeApprove });
+registerGroupRequestHooks({ staffRequest: assertStaffRequest, afterRequest: (row) => routeAfterRequest(row as GroupJoinRequest), beforeApprove, skipsCarePlanEligibility: (g) => skipsCarePlanEligibility(g as GroupSession) });
 
 /** Care team asks on the patient's behalf — same request item, staff-attributed. */
 export function careTeamRequestGroup(actor: Actor, pid: string, sessionId: string, reason: string) {
