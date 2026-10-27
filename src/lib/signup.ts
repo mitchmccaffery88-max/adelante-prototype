@@ -209,6 +209,7 @@ export function validateCredentialOnly(input: {
   credential: string;
   credentialConfirm: string;
 }): SignupErrors {
+  if (input.credentialKind === "passwordless") return {};
   const errs = validateSignup({
     firstName: "x",
     lastName: "x",
@@ -217,6 +218,7 @@ export function validateCredentialOnly(input: {
     email: "",
     preferredLanguage: "en",
     ...input,
+    credentialKind: input.credentialKind,
   });
   const out: SignupErrors = {};
   if (errs.credential) out.credential = errs.credential;
