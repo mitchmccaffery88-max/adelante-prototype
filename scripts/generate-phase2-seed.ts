@@ -34,8 +34,9 @@ if (!g.patientId) throw new Error(`General sign-up did not create a patient (${g
 const packetId = { firstName: "Dana", lastName: "Fictional-Packet", dob: "1987-03-22", phone: "(555) 010-7722", email: "dana.packet@example.invalid" };
 const staged = must(runAction<{ referralIds: string[] }>("intake_staging_import", intake, undefined, { args: [intake, "pre_release_packet", "fictional-template-v1.json", [{ ...packetId, referrerName: "Fictional Reentry Partner", releaseDate: "2026-11-03", referralReason: "Outpatient intake", sdoh: [{ kind: "housing" }, { kind: "food" }, { kind: "transportation" }] }], "Partner supplied packet"] }), "intake_staging_import");
 const packetRef = staged.referralIds[0]; if (!packetRef) throw new Error("Staging created no referral.");
+const attached: { id: string; type: string; classification: string; fileName: string }[] = [];
 for (const [type, classification, fileName] of [["medication_list", "general", "fictional-med-list.txt"], ["hra", "general", "fictional-hra.txt"], ["reentry_plan", "sud_related", "fictional-reentry-plan.txt"], ["roi", "part2", "fictional-sud-history.txt"]] as const)
-  act("intake_packet_attach", [packetRef, { type, source: "pre_release_packet", fileName, size: 4, mime: "text/plain", dataUrl: "data:text/plain;base64,dGVzdA==", classification }]);
+  attached.push({ id: act<{ documentId: string }>("intake_packet_attach", [packetRef, { type, source: "pre_release_packet", fileName, size: 4, mime: "text/plain", dataUrl: "data:text/plain;base64,dGVzdA==", classification }]).documentId, type, classification, fileName });
 const ps = signup({ operation: "start" }).sessionId;
 const pd = { ...packetId, preferredLanguage: "en" as const, credentialKind: "pin" as const };
 const otp = signup({ operation: "finish", sessionId: ps, path: "no_code", draft: pd });
@@ -85,7 +86,9 @@ for (const r of AdelanteEHR.listReferrals()) {
     const imp = uid("import:packet");
     out.push(`insert into public.staging_imports(id,org_id,source,source_ref,template_sha256,status,synthetic) values('${imp}',o,'pre_release_packet','fictional-template-v1.json','${createHash("sha256").update("fictional-template-v1").digest("hex")}','imported',true);`);
     out.push(`insert into public.staging_rows(org_id,import_id,referral_id,identity_fields,synthetic) values(o,'${imp}','${id}','{"fields":["firstName","lastName","dob","phone","email"]}',true);`);
-    for (const d of intakePacketDocuments(intake, r.id)) out.push(`insert into public.packet_documents(org_id,referral_id,document_type,source,source_ref,classification,part2_tagged,file_name,synthetic) values(o,'${id}',${q(d.type)},'pre_release_packet','fictional-template-v1.json',${q(d.classification)},${d.classification !== "general"},${q(d.fileName)},true);`);
+    const accepted = new Set(intakePacketDocuments(intake, r.id).map(d => d.id));
+    if (attached.some(d => !accepted.has(d.id))) throw new Error("Store did not retain every attached packet document.");
+    for (const d of attached) out.push(`insert into public.packet_documents(org_id,referral_id,document_type,source,source_ref,classification,part2_tagged,file_name,synthetic) values(o,'${id}',${q(d.type)},'pre_release_packet','fictional-template-v1.json',${q(d.classification)},${d.classification !== "general"},${q(d.fileName)},true);`);
     for (const n of intakePacketNeeds(intake, r.id)) out.push(`insert into public.intake_packet_needs(org_id,referral_id,source,source_ref,need_kind,state,part2_tagged,synthetic) values(o,'${id}',${q(n.source)},${q(n.sourceRef)},${q(n.kind)},${q(n.state)},${!!n.part2},true);`);
     out.push(`insert into public.intake_checklists(org_id,referral_id,identity_link_checked,contact_checked,packet_received,handoff_ready,completed_at,synthetic) values(o,'${id}',true,true,true,true,'2026-10-27T00:00:00Z',true);`);
     out.push(`insert into public.first_visit_handoffs(org_id,referral_id,patient_id,care_manager_id,clinician_id,status,synthetic) values(o,'${id}','${linked}','${staffKey.get("s-cm2")}','${staffKey.get("s-th2")}','ready',true);`);
