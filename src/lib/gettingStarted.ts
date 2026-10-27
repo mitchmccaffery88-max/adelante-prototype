@@ -65,7 +65,7 @@ export function patientGettingStarted(patientId: string, lang: L): GettingStarte
   for (const r of AdelanteEHR.listGroupJoinRequests({ patientId, status: "pending" })) {
     const g = AdelanteEHR.listGroupSessions().find((x) => x.id === r.sessionId);
     // A requested group stays "Requested" until the care team approves it.
-    items.push({ id: `group-${r.id}`, label: `${T.group[lang]}: ${r.protected ? (lang === "es" ? "grupo de apoyo" : "support group") : (g?.title ?? "")}`, detail: T.requested[lang], done: false });
+    items.push({ id: `group-${r.id}`, label: `${T.group[lang]}: ${r.protected ? (lang === "es" ? "grupo de apoyo" : "support group") : (g?.topic ?? "")}`, detail: T.requested[lang], done: false });
   }
   return items;
 }
