@@ -87,7 +87,7 @@ describe("27 Oct sign-up invite (Draft)", () => {
     expect(out.ok && out.value.scheduledFor).toBe("2099-01-02");
   });
   it("in-person setup requires staff identity confirmation; then a PIN on the tablet", () => {
-    const r = referral({ phone: "", email: "" });
+    const r = referral({ phone: "", email: "", referrerPhone: "+15559990000" });
     const setup = () => runAction<{ patientId: string }>("signup_in_person_setup", intake, undefined, { args: [intake, r.id, { credential: "4826", confirm: "4826" }, "At the clinic"], auditReason: "At the clinic" });
     expect(setup().ok).toBe(false);
     expect(runAction("referral_identity_confirm", intake, undefined, { args: [intake, r.id, "In person — photo ID", "At the clinic"], auditReason: "At the clinic" }).ok).toBe(true);
@@ -95,7 +95,7 @@ describe("27 Oct sign-up invite (Draft)", () => {
     if (ok.ok) expect(AdelanteEHR.getPatient(ok.value.patientId)?.signupCredential?.kind).toBe("pin");
   });
   it("paper code + last name + DOB → Matched, then one code verifies the new contact", () => {
-    const r = referral({ phone: "", email: "" });
+    const r = referral({ phone: "", email: "", referrerPhone: "+15559990000" });
     runAction("referral_identity_confirm", intake, undefined, { args: [intake, r.id, "Packet reviewed", "Packet code"], auditReason: "Packet code" });
     const code = issueReferralClaimCode(r.id, intake).code;
     const sid = session();
