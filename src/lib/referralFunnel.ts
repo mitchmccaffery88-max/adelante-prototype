@@ -30,8 +30,6 @@ import {
   type ReferralSource,
 } from "@/lib/ehr";
 import { cohortGuard, type CohortGuard } from "@/lib/cohortGuard";
-import { lifecycleForReferral, LIFECYCLE_STAGES, LIFECYCLE_DRAFT } from "@/lib/careLifecycle";
-export { LIFECYCLE_DRAFT };
 import { referralDeclineReasonLabel } from "@/lib/referralActions";
 import { referralAging } from "@/lib/referralAging";
 import { firstAttendedAppointment, nextScheduledAppointment } from "@/lib/postEnrollment";
@@ -67,10 +65,6 @@ export interface GuardedReferralBreakdown extends CohortGuard {
 export interface ReferralFunnel extends CohortGuard {
   /** Referrals submitted inside the window — the denominator. */
   submitted: number;
-  /** 27 Oct lifecycle (Draft) — referrals that reached each of the eight shared stages, index 0 = Stage 1. Same cohort guard. */
-  lifecycleReached: number[];
-  /** Enrolled people closed as "Didn't start care" (current, not reopened). */
-  didntStartCare: number;
   /** Actually reached: `contactedAt` set, or an outreach attempt of "reached". */
   contacted: number;
   enrolled: number;
@@ -183,12 +177,8 @@ export function referralFunnel(
     }
   }
 
-  const views = rs.filter((r) => r.status !== "declined").map((r) => lifecycleForReferral(r, opts.now ?? new Date()));
-  const lifecycleReached = LIFECYCLE_STAGES.map((st) => views.filter((v) => !v.closed && v.stage >= st.n).length);
   return {
     submitted: rs.length,
-    lifecycleReached,
-    didntStartCare: views.filter((v) => v.closed?.kind === "didnt_start").length,
     contacted: contacted.length,
     enrolled: enrolled.length,
     firstApptScheduled: scheduled,
