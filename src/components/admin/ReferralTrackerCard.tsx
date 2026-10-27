@@ -1,6 +1,8 @@
 import { StaffTable } from "@/components/staff/StaffTable";
 import { useActingRole } from "@/lib/roles";
-import { canPerformReferralAction } from "@/lib/referralActions";
+import { canEnrollReferral } from "@/lib/referralLifecycleActions";
+import { lifecycleForReferral, lifecycleTurn } from "@/lib/careLifecycle";
+import { LifecycleChip } from "@/components/lifecycle/LifecycleChip";
 import { StatusChip } from "@/components/ui/status-chip";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -187,13 +189,13 @@ export function ReferralTrackerCard({
         )}
       </div>
       {tablePresentation ? <StaffTable rows={shown} rowKey={(r)=>r.id} label={title} testId="referral-queue-table" defaultView="current"
-        views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(r)=>hasOpenOutreachTask(r) || r.status === "submitted" && canPerformReferralAction(role,"enroll")}]}
+        views={[{id:"current",label:"Current view",matches:()=>true},{id:"needs",label:"Needs you",matches:(r)=>hasOpenOutreachTask(r) || lifecycleTurn(lifecycleForReferral(r), role) === "yourturn"}]}
         emptyState={activeFilters ? "No referrals match these filters." : "No referrals in the pipeline."}
         columns={[
           {id:"patient",label:"Person",sortValue:(r)=>`${r.firstName} ${r.lastName}`,cell:(r)=><>{r.firstName} {r.lastName}{r.cin && <p className="font-mono text-ink-muted">CIN ••••{r.cin.slice(-4)}</p>}</>},
           {id:"source",label:"Source",sortValue:(r)=>sourceLabels[r.referralSource] ?? r.referralSource,cell:(r)=><>{sourceLabels[r.referralSource] ?? r.referralSource}<p data-testid="queue-referred-by">Referred by {r.referringAgency || "Not provided"}{r.referrerName ? ` · ${r.referrerName}` : ""}{!referrerHasContact(r) && <Badge variant="outline">No referrer contact</Badge>}</p></>},
           {id:"date",label:"Sent",sortValue:(r)=>r.createdAt,cell:(r)=><ClientDate value={r.createdAt} />},
-          {id:"status",label:"Status",sortValue:(r)=>r.status,cell:(r)=><><StatusChip lang="en" state={r.status === "enrolled" ? "done" : r.status === "declined" ? "closed" : r.status === "submitted" && canPerformReferralAction(role,"enroll") ? "yourturn" : "team"} label={r.status} /><ReferralStalenessBadge referral={r} />{hasOpenOutreachTask(r) && <Badge variant="outline">Call needed</Badge>}</>},
+          {id:"status",label:"Status",sortValue:(r)=>lifecycleForReferral(r).stage,cell:(r)=><><LifecycleChip view={lifecycleForReferral(r)} role={role} /><ReferralStalenessBadge referral={r} />{hasOpenOutreachTask(r) && <Badge variant="outline">Call needed</Badge>}</>},
           {id:"progress",label:"Progress",cell:(r)=>{const patient=r.enrolledPatientId ? AdelanteEHR.getPatient(r.enrolledPatientId) : undefined; const outreachAt=latestOutreachAttempt(r)?.at ?? r.smsSentAt ?? (r.outreachTask === "manual_call" ? r.createdAt : undefined);const enrolledAt=patient?.enrolledAt ?? (r.status === "enrolled" ? r.createdAt : undefined);return <><ReferralProgressStrip status={r.status} tablePresentation /><p>Outreach: {outreachAt ? <ClientDate value={outreachAt} /> : "Pending"}</p><p>Enrolled: {enrolledAt ? <ClientDate value={enrolledAt} /> : "Pending"}</p>{r.status === "declined" && <p>Declined{r.declinedBy ? ` by ${r.declinedBy.name}` : ""} · {referralDeclineReasonLabel(r.declineReason ?? "")}</p>}<ReferralOutreachStatus referral={r} />{patient && <p>Enrolled as <span className="font-mono">{patient.programId}</span></p>}</>; }},
         ]}
         primaryAction={(r)=><Button size="sm" variant="outline" onClick={()=>setOpenRefId(r.id)}>Open referral</Button>}
@@ -255,7 +257,7 @@ export function ReferralTrackerCard({
                     <Badge className="bg-warning/20 text-navy border-0">Call needed</Badge>
                   )}
                   <ReferralStalenessBadge referral={r} />
-                  <StatusChip lang="en" state={r.status === "enrolled" ? "done" : r.status === "declined" ? "closed" : r.status === "submitted" && canPerformReferralAction(role, "enroll") ? "yourturn" : "team"} label={r.status} />
+                  <LifecycleChip view={lifecycleForReferral(r)} role={role} />
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-teal" />
                 </div>
               </div>
@@ -319,6 +321,6 @@ function ReferralStalenessBadge({
   const [role] = useActingRole();
   if (state === "closed" || state === "fresh") return null;
   return (
-    <StatusChip lang="en" state={canPerformReferralAction(role, "enroll") ? "yourturn" : "team"} label={referralAgingLabel(days)} title={REFERRAL_AGING_DRAFT.label} />
+    <StatusChip lang="en" state={canEnrollReferral(role) ? "yourturn" : "team"} label={referralAgingLabel(days)} title={REFERRAL_AGING_DRAFT.label} />
   );
 }

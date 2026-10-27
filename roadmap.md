@@ -1,11 +1,12 @@
 # Roadmap
 
-## 27 Oct referral-to-billable-patient lifecycle — Draft
-- [x] Inventory all surfaces and action/count sources before UI edits; duplicates/dead ends documented in docs/referral-lifecycle-inventory.md.
-- [ ] Shared model and narrow registry/button/store actions — blocked: Intake-owned pre-enrollment clinical plan conflicts with patient-keyed clinical care-plan rules; enrolled-stage close also needs definition.
-- [ ] Shared displays, oversight and readiness — blocked by required stage 2 action home; no partial UI cutover.
-- [ ] Funnel and lifecycle tests/full suites — blocked until architecture conflict resolved; no application changes to validate in this stop.
-- [x] docs/referral-lifecycle-report.md records exact conflicts and decision to resume; no Supabase, test secrets or publishing.
+## 27 Oct referral-to-billable-patient lifecycle — Draft (continuation done)
+- [x] Inventory all surfaces before UI edits (docs/referral-lifecycle-inventory.md; conflict section marked resolved).
+- [x] Stage 2 administrative only; first care plan drafted after enrollment via a Today task with accept/edit/dismiss suggestions.
+- [x] Registry actions for outreach/contact/identity/enroll/close and reopenable "Didn't start care"; peer contact allowed, enroll/close denied; Intake identity evidence required; Intake stays in its workspace.
+- [x] Shared stage chip, record panel with readiness, My work Getting started, patient/Adel/advocate Getting started, funnel stages.
+- [x] Units 3,523/3,523; public browser suite run after units; report docs/referral-lifecycle-report.md.
+- [ ] Mitch/Christi: confirm Didn't-start reasons/owners, 90-day clock start and the credential proxy used for readiness.
 
 ## 27 Oct peer specialist referral follow-up
 - [x] Approve peer sending through the shared narrow gate; trainee remains denied; no other grants change.

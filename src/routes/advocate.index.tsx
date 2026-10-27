@@ -14,6 +14,7 @@ import { AdvocateNextStepsPanel } from "@/components/advocate/AdvocateNextStepsP
 import { useAdvocateSession } from "@/components/advocate/AdvocateSessionContext";
 import { useSupportingName } from "@/components/advocate/AdvocateViewParts";
 import { useI18n } from "@/lib/i18n";
+import { advocateGettingStartedFrom } from "@/lib/gettingStarted";
 
 /** Ordinary screen copy — Spanish draft pending translation review. */
 const SCREEN_COPY = {
@@ -29,6 +30,8 @@ const SCREEN_COPY = {
     "en": "Messages",
     "es": "Mensajes"
   },
+  "gs.title": { "en": "Getting started together", "es": "Empezando juntos" },
+  "gs.none": { "en": "Nothing scheduled yet. The care team will share visits you can help with.", "es": "Todavía no hay nada programado. El equipo te va a compartir las citas en las que puedes ayudar." },
   "ui.114e7426f5ff": {
     "en": "Once your authorization is on file, the person you support appears here.",
     "es": "Cuando tengamos tu autorización, la persona a la que apoyas aparecerá aquí."
@@ -56,6 +59,8 @@ function AdvocateDashboard() {
   const schedule = useEhr(() => AdelanteEHR.advocateSchedule(linkId));
   const messages = useEhr(() => AdelanteEHR.advocateCareMessages(linkId));
   const next = schedule.items[0];
+  // Same consent-scoped schedule read as above — no second access check or audit.
+  const gs = advocateGettingStartedFrom(schedule);
 
   return (
     <div className="space-y-4">
@@ -102,6 +107,17 @@ function AdvocateDashboard() {
                 <MessageSquare className="h-4 w-4" /> {SCREEN_COPY["ui.f1702b468627"][screenLang]} </Link>
             </Button>
           </div>
+        </Card>
+      )}
+
+      {gs.allowed && (
+        <Card className="space-y-2 p-5" data-testid="advocate-getting-started">
+          <h2 className="font-display text-lg">{SCREEN_COPY["gs.title"][screenLang]}</h2>
+          {gs.items.length ? (
+            <ul className="space-y-1">
+              {gs.items.map((i) => <li key={i.id}>{i.label} · <ClientDate value={i.start} options={{ dateStyle: "medium", timeStyle: "short" }} /></li>)}
+            </ul>
+          ) : <p className="text-muted-foreground">{SCREEN_COPY["gs.none"][screenLang]}</p>}
         </Card>
       )}
 

@@ -17,6 +17,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
+import { PatientLifecyclePanel } from "@/components/lifecycle/PatientLifecyclePanel";
 import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
 import { resolveSectionId, useRecordSections } from "@/components/clinical/recordSections";
 import { RestrictedChartGate } from "@/components/chart/RestrictedChartGate";
@@ -79,6 +80,7 @@ function DrawerBody({ patientId, initialTab }: { patientId: string; initialTab?:
 
       <div className="mt-4">
         <ReferralStatusTimeline patient={patient} />
+        <PatientLifecyclePanel patientId={patient.id} />
       </div>
 
       <Tabs value={active?.id} onValueChange={setTab} className="mt-4">

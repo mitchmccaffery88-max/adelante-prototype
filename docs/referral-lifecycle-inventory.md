@@ -37,7 +37,10 @@ Draft — pending EHR/Admin audit. Inventory completed before any UI changes. No
 - Place enrolled stage display and safe readiness in record/Client Journey, respecting chart-entry masking. Dashboard launchers continue to the existing home, not a second mutation list.
 - Extend existing reporting module, retaining justice fold, association-only note, median sample guards and cohort 11. Suppressed aggregates must not drill through to identifying rows.
 
-## Confirmed clean-boundary conflict
+## Confirmed clean-boundary conflict (RESOLVED 27 Oct by Mitch)
+
+Resolved: Stage 2 is administrative fact gathering only; clinical plan drafting happens after enrollment through a Today task for an already-authorized clinician. Intake stays in its own workspace — no Care → Referrals navigation exception. Peer contact approved; the test was updated. The text below is kept as the original record.
+
 
 Stage 2 requires a first care plan drafted **before stage 4 creates a patient record**, owned by Intake. Existing `addStructuredGoal` accepts only patientId, calls patientOf, and refuses Intake via canEditPlan. `care_plan_goal` registry repeats that refusal. `PLAN_EDIT_ROLES` intentionally excludes Intake and clinical coordinator (coordinator may reassign owners only).
 

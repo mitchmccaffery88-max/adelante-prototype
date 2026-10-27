@@ -447,6 +447,11 @@ export function patientCoverageSummary(patientId: string, lang: "en" | "es" = "e
     });
 }
 
+/** Request keys for a patient — read-only, used by the lifecycle projection. */
+export function coverageKeysForPatient(patientId: string): string[] {
+  return [...requests.values()].filter((r) => r.patientId === patientId).map((r) => r.key);
+}
+
 /** Test-only reset hook. */
 export function __resetCoverageRequestsForTests() {
   requests.clear();

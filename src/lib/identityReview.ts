@@ -346,6 +346,11 @@ export function referralClaimCodeFor(raw: string): ReferralClaimCode | undefined
   return referralClaimCodes.find((c) => c.code === code);
 }
 
+/** True when a claim code issued for this referral was actually used (identity evidence). */
+export function referralClaimCodeConsumed(referralId: string): boolean {
+  return referralClaimCodes.some((c) => c.referralId === referralId && !!c.consumedAt);
+}
+
 export function consumeReferralClaimCode(code: ReferralClaimCode): void {
   code.consumedAt = now();
 }
