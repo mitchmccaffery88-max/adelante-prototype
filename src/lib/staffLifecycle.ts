@@ -84,6 +84,7 @@ export function updateStaffMember(actor: LifecycleActor, input: UpdateStaffInput
     actorId: actor.staffId,
     detail: { staffId: m.id, reason },
   });
+  ensureCareManagerCalendar(m);
   AdelanteEHR._emit();
   return m;
 }
