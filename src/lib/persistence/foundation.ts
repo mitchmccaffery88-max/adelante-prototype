@@ -3,7 +3,8 @@ export const PERSISTENCE_DOMAINS = ['accounts','staff_roles','feature_flags','au
 export type PersistenceDomain = typeof PERSISTENCE_DOMAINS[number];
 export const FOUNDATION_FLAGS = PERSISTENCE_DOMAINS.map(domain => ({ id: `persist_${domain}`, default: false, simulated: false }));
 export interface FoundationContext { account_id: string | null; org_id: string | null; role: StaffRole | null; kind: 'staff'|'patient'|'advocate'|null; attested: boolean }
-export interface FoundationRecord { id: string; org_id: string; [field: string]: unknown }
+export type FoundationValue = string | number | boolean | null | FoundationValue[] | { [field: string]: FoundationValue };
+export interface FoundationRecord { id: string; org_id: string; [field: string]: FoundationValue }
 export interface FoundationRepository {
  list(domain: PersistenceDomain): Promise<FoundationRecord[]>;
  context(): Promise<FoundationContext>;
