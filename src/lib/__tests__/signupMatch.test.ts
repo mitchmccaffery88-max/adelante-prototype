@@ -44,30 +44,35 @@ describe("public signup outcomes", () => {
     expect(act({ operation: "retry", sessionId: start(), code: "RE-0000-0000", draft: draft({ lastName: "Limit" }) }, now + 7).limited).toBe(true);
     expect(act({ operation: "retry", sessionId: sid, code: "RE-0000-0000" }, now + 15 * 60 * 1000).limited).toBeUndefined();
   });
-  it("no-code verification is identical for none, one and many; one-time code uses file contact and expires", () => {
+  const verified = (sid: string, d: ReturnType<typeof draft>, now?: number) => { const sent = act({ operation: "send_code", sessionId: sid, channel: d.phone ? "sms" : "email", draft: d }, now); return act({ operation: "verify_code", sessionId: sid, otp: sent.demoCode }, now); };
+  it("27 Oct: verified typed contact + last name + DOB links the open referral with no second code; code expires", () => {
     const one = AdelanteEHR.createReferral({ firstName: "Otp", lastName: "Single", dob: "1991-01-01", phone: "+15550111111", referringAgency: "Clinic", referrerName: "Referrer", referralSource: "community_based_organization", consentToContact: true, channel: "public" } as never);
-    const sid = start();
-    const v = act({ operation: "finish", sessionId: sid, path: "no_code", draft: draft({ firstName: "Otp", lastName: "Single", dob: "1991-01-01", phone: "5550111111", email: "" }) }, 1000);
-    expect(v.outcome).toBe("verify");
-    expect(act({ operation: "verify", sessionId: sid, otp: v.demoCode }, 1000 + 10 * 60 * 1000).outcome).toBe("verify");
-    const fresh = act({ operation: "resend", sessionId: sid }, 2_000_000);
-    expect(act({ operation: "verify", sessionId: sid, otp: fresh.demoCode }, 2_000_001)).toMatchObject({ outcome: "matched" });
+    const sid = start(); const d = draft({ firstName: "Otto", lastName: "Single", dob: "1991-01-01", phone: "5550111111", email: "" });
+    const sent = act({ operation: "send_code", sessionId: sid, channel: "sms", draft: d }, 1000);
+    expect(sent).toMatchObject({ outcome: "verify", contactMask: "•••• 1111" });
+    expect(act({ operation: "verify_code", sessionId: sid, otp: sent.demoCode }, 1000 + 10 * 60 * 1000).outcome).toBe("verify");
+    const fresh = act({ operation: "send_code", sessionId: sid, channel: "sms" }, 2_000_000);
+    expect(act({ operation: "verify_code", sessionId: sid, otp: fresh.demoCode }, 2_000_001)).toMatchObject({ outcome: "matched" });
     expect(AdelanteEHR.listReferrals().find((r) => r.id === one.id)?.status).toBe("enrolled");
-    expect(act({ operation: "finish", sessionId: start(), path: "no_code", draft: draft({ lastName: "Nobody" }) }).outcome).toBe("verify");
   });
-  it("continue without code creates the account and an Identity review item", () => {
-    const sid = start(); act({ operation: "finish", sessionId: sid, path: "no_code", draft: draft({ lastName: "Continue" }) });
-    const out = act({ operation: "continue", sessionId: sid });
+  it("27 Oct: same name + DOB but a different verified contact creates the account plus review, nothing linked", () => {
+    const r = AdelanteEHR.createReferral({ firstName: "Diff", lastName: "Contact", dob: "1992-02-02", phone: "+15550444444", referringAgency: "Clinic", referrerName: "Referrer", referralSource: "community_based_organization", consentToContact: true, channel: "public" } as never);
+    const out = verified(start(), draft({ firstName: "Diff", lastName: "Contact", dob: "1992-02-02", phone: "5550999999", email: "" }));
     expect(out.outcome).toBe("new");
-    const item = listIdentityReviewItems().find((i) => i.type === "link_referral_no_code" && i.patientId === out.patientId);
-    if (!item) throw new Error("Identity review item missing");
-    expect(item.entries.lastName).toBe("Continue");
-    expect(item.status).toBe("yourturn");
+    expect(AdelanteEHR.listReferrals().find((x) => x.id === r.id)?.status).toBe("submitted");
+    expect(listIdentityReviewItems().find((i) => i.patientId === out.patientId && i.type === "contact_differs_from_referral")?.referralId).toBe(r.id);
+  });
+  it("27 Oct: no match makes a new account; an account is impossible without a verified contact", () => {
+    const sid = start(); act({ operation: "save", sessionId: sid, draft: draft({ lastName: "Unverified" }) });
+    expect(act({ operation: "continue", sessionId: sid }).outcome).toBe("verify_required");
+    expect(act({ operation: "finish", sessionId: sid, path: "new", draft: draft({ lastName: "Unverified" }) }).outcome).toBe("verify_required");
+    expect(AdelanteEHR.listPatients().some((p) => p.lastName === "Unverified")).toBe(false);
+    expect(verified(sid, draft({ lastName: "Unverified" })).outcome).toBe("new");
   });
   it("duplicate privacy: contact match blocks; no contact match creates new account plus review", () => {
     const old = AdelanteEHR.createPatient({ firstName: "Dupe", lastName: "Case", dob: "1980-01-01", phone: "+15550222222", signupCredential: { kind: "pin", verificationAvailable: false, setAt: "2026-01-01" }, matchSource: "staff_create" });
-    expect(act({ operation: "finish", sessionId: start(), path: "new", draft: draft({ firstName: "Dupe", lastName: "Case", dob: old.dob, phone: "5550222222", email: "" }) }).outcome).toBe("blocked");
-    const made = act({ operation: "finish", sessionId: start(), path: "new", draft: draft({ firstName: "Dupe", lastName: "Case", dob: old.dob, phone: "5550333333", email: "" }) });
+    expect(verified(start(), draft({ firstName: "Dupe", lastName: "Case", dob: old.dob, phone: "5550222222", email: "" })).outcome).toBe("blocked");
+    const made = verified(start(), draft({ firstName: "Dupe", lastName: "Case", dob: old.dob, phone: "5550333333", email: "" }));
     expect(made.outcome).toBe("new");
     if (!made.patientId) throw new Error("Account missing");
     expect(AdelanteEHR.getPatient(made.patientId)?.possibleDuplicate).toBeTruthy();

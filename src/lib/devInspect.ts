@@ -20,8 +20,8 @@ export function installDevInspect(navigate?: (to: string) => void) {
     },
     go: (to: string) => navigate?.(to),
     signup: async () => {
-      const [store, actions, care, disclosure, identity] = await Promise.all([import("@/lib/website/signupStore"), import("@/lib/actions/runAction"), import("@/lib/outpatientCare"), import("@/lib/part2Disclosure"), import("@/lib/identityReview")]);
-      return { store, actions, care, disclosure, identity };
+      const [store, actions, care, disclosure, identity, invite] = await Promise.all([import("@/lib/website/signupStore"), import("@/lib/actions/runAction"), import("@/lib/outpatientCare"), import("@/lib/part2Disclosure"), import("@/lib/identityReview"), import("@/lib/signupInvite")]);
+      return { store, actions, care, disclosure, identity, invite };
     },
     j: null as unknown,
     /** §C5 Same module instances the app uses (a bare "/src/..." import can duplicate them). */

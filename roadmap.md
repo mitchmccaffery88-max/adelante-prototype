@@ -1,5 +1,12 @@
 # Roadmap
 
+## 27 Oct sign-up verification redesign — Draft
+- [x] Invite link (hashed, 14-day, single use, rate-limited), reminders reuse it, pre-release timing, expired resend to contact on file, lost-contact review.
+- [x] Not-invited: name+DOB, contact+channel, one code required; auto-match only on verified contact on file; paper code + last name + DOB; staff in-person PIN setup; passwordless sign-in option.
+- [x] Referral "I'm not a robot" labelled Simulated (not a real check). Fixed paper codes containing U.
+- [x] Units 3,538/3,538; public browser suite after units. Report docs/signup-invite-report.md.
+- [ ] Mitch: confirm Draft settings; SMS/SMTP and CAPTCHA providers; Phase 2d tables.
+
 ## 27 Oct Diana public website first pass
 - [x] Home order, shared mission/values, services, care wording and accessible menus.
 - [x] Verified EN/ES at 1280/390, reduced motion; full units 3,523/3,523 then full public browser 52/52 (47 existing + 5 Diana), one worker, no overlap. Report: docs/website-diana-pass1-report.md; build OK.
