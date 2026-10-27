@@ -3,6 +3,7 @@ import { canAccess, getStaffMember, hasRoleAssignment, type StaffRole } from "./
 import { assertIntakeActor, canIntakeAct, referralForIntake, type IntakeActor } from "./intakePhaseA";
 import { isRestricted } from "./chartAccess";
 import { signupSafetyLink } from "./website/signupStore";
+import { ON_CALL_GAP, onCallOwnerFor } from "./onCallBoundary";
 export type SafetyTier = "amber" | "red";
 export type SafetySource = { kind: "referral" | "signup" | "message"; id: string; field: string; trigger: "reported_safety_flag" | "crisis_pattern"; text?: string; part2?: boolean };
 type SourceRecord = { source: SafetySource; tier: SafetyTier; patientId?: string; careManagerStaffId?: string; clinicianStaffId?: string };
@@ -64,12 +65,13 @@ export function escalateIntakeSafety(actor: IntakeActor, kind: SafetySource["kin
   if (existing) return receipt(existing);
   const p = data.patientId ? AdelanteEHR.getPatient(data.patientId) : undefined;
   const cm = p ? resolveCrisisOwner(p, "sdoh") : eligible(data.careManagerStaffId);
-  const clinician = p ? resolveCrisisOwner(p, "clinical") : eligible(data.clinicianStaffId);
+  // 26 Oct evening (Mitch): unlinked sources also fall back to the on-call clinician.
+  const clinician = p ? resolveCrisisOwner(p, "clinical") : eligible(data.clinicianStaffId) ?? onCallOwnerFor();
   const validClinician = clinician && clinicalRoles.some(role => hasRoleAssignment(clinician, role)) ? clinician : undefined;
   const validCm = cm && ["ecm_provider", "cf_care_manager"].some(role => hasRoleAssignment(cm, role as StaffRole)) ? cm : undefined;
   const owner = data.tier === "amber" ? validCm ?? validClinician : validClinician;
   const at = new Date().toISOString();
-  const item: TriageItem = { ...data, source: { ...data.source }, id: crypto.randomUUID(), sourceId, ownerStaffId: owner?.id, ownerName: owner?.name ?? "Clinical coordinator queue", ownerRole: owner?.role ?? "clinical_coordinator", summaryStaffId: data.tier === "amber" ? validClinician?.id : undefined, at, status: "open", ...(!owner ? { gap: "No on-call clinician is defined; routed to the clinical coordinator queue." } : {}) };
+  const item: TriageItem = { ...data, source: { ...data.source }, id: crypto.randomUUID(), sourceId, ownerStaffId: owner?.id, ownerName: owner?.name ?? "Clinical coordinator queue", ownerRole: owner?.role ?? "clinical_coordinator", summaryStaffId: data.tier === "amber" ? validClinician?.id : undefined, at, status: "open", ...(!owner ? { gap: ON_CALL_GAP } : {}) };
   // Linked records use the existing crisis owner path; no detail is returned.
   if (p) {
     const crisis = AdelanteEHR.flagCrisis(p.id, actor.staffId ?? "Intake", "Recorded intake safety flag — source available to clinical triage", { triggerSource: "assisted_signup", severity: data.tier === "red" ? "critical" : "urgent", category: data.tier === "amber" && validCm ? "sdoh" : "clinical" });

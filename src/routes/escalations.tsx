@@ -122,7 +122,7 @@ function EscalationsPage() {
           {id:"patient",label:"Patient",sortValue:(r)=>r.patientName,cell:(r)=><Link to="/record/$patientId" params={{patientId:r.patientId}} search={{}} className="font-medium underline-offset-2 hover:underline">{r.patientName}</Link>},
           {id:"type",label:"Type",sortValue:(r)=>r.typeLabel,cell:(r)=>r.type === "crisis" ? <StatusChip lang="en" state="urgent" label={r.typeLabel} /> : <Badge variant="secondary">{r.typeLabel}</Badge>},
           {id:"status",label:"Status",sortValue:(r)=>r.status,cell:(r)=><StatusChip lang="en" state={r.status === "resolved" ? "done" : r.type === "crisis" || r.type === "crisis_note" ? "urgent" : r.overdue ? "yourturn" : r.status === "handed_off" ? "team" : r.ownerStaffId === s.staffId || r.pool && isCoordinator(s.role) ? "yourturn" : "team"} label={STATUS_LABEL[r.status]} waitingDays={r.overdue && r.type !== "crisis" && r.dueAt ? Math.floor((Date.now()-Date.parse(r.dueAt))/86400000) : undefined} />},
-          {id:"owner",label:"Owner",sortValue:(r)=>r.ownerName,cell:(r)=><span data-testid="escalation-owner">{r.ownerName}</span>},
+          {id:"owner",label:"Owner",sortValue:(r)=>r.ownerName,cell:(r)=><span data-testid="escalation-owner">{r.ownerName}{r.ownerNote && <span className="block text-sm text-ink-muted">{r.ownerNote}</span>}</span>},
           {id:"due",label:"Due",sortValue:(r)=>r.dueAt ?? "",cell:(r)=><span className={r.overdue ? "text-attention" : ""}>{r.countdown}</span>},
           {id:"detail",label:"Detail",cell:(r)=>r.detail || "—"},
         ]}

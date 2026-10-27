@@ -60,6 +60,8 @@ export interface EscalationRow {
   ownerStaffId?: string;
   ownerName: string;
   pool: boolean;
+  /** 26 Oct evening (Mitch): "No on-call clinician set — sent to the clinical coordinator". */
+  ownerNote?: string;
   dueAt: string;
   overdue: boolean;
   countdown: string;
@@ -160,6 +162,7 @@ function rawRows(now: number): { raw: Raw; patient: Patient }[] {
           patientName: pname(p),
           ownerStaffId: named ? e.ownerStaffId : undefined,
           ownerName: named ? e.ownerName : undefined,
+          ownerNote: named ? undefined : e.ownerGap,
           dueAt: new Date(+new Date(since) + crisisSlaTarget(e).ms).toISOString(),
           sud: SUD_TEXT(e.triggerDetail),
           detail: e.triggerDetail,
@@ -304,6 +307,7 @@ export function listEscalations(viewer: { role: StaffRole; staffId?: string }, n
       patientName: raw.patientName,
       ownerStaffId,
       ownerName: ownerName ?? POOL_LABEL,
+      ...(!ownerStaffId && raw.ownerNote ? { ownerNote: raw.ownerNote } : {}),
       pool: !ownerStaffId,
       dueAt: raw.dueAt,
       overdue,
