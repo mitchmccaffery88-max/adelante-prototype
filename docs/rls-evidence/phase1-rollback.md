@@ -12,3 +12,4 @@ Target: connected main project `bnvukmpmwuhftvjpnwqi`, not a second project (not
 - Read cases exercise policies; tables without fixtures are not comprehensive positive row-projection proofs. Expanded ownership/consent/anonymous cases and API contracts are separately recorded when run.
 - SQL shared consent vectors: **17/17 passed**, same inputs as `src/lib/persistence/consentVectors.ts`; transaction rolled back.
 - Actual DB vs generated TypeScript sorted matrix checksum: both `87fb6d48742a73f6c6a68a2f23f140cc`, 792 rows, zero drift. Checksum detects parity only, not cryptographic authenticity.
+- Final guard rerun: 2,253 role/table/matrix checks plus 8 ownership/immutability/attestation/collapse checks = **2,261 passed** after service-role revocation and statement hash guard; both transactions rolled back.

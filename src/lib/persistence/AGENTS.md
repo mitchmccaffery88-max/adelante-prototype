@@ -1,3 +1,4 @@
 # Persistence foundation
 - Repositories are opt-in and memory remains the default; Supabase writes enter authenticated server functions and narrow database functions only. Why: adding persistence must never bypass the existing registry/store rules.
 - Generated grant data comes from roles.ts including nursing overlays and physician inheritance. Why: database grants must not become a second hand-maintained matrix.
+- Runtime foundation reads use fixed ID/status projections plus caller RLS and organization scope; service wrappers verify attestation before commands. Why: foundation opt-in cannot expose unported clinical content or permit generic writes.

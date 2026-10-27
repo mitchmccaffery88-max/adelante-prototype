@@ -125,7 +125,12 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] On-call owner and SMS/SMTP provider — waiting on Mitch/Diana.
 
 ## 27 Oct Supabase Phase 1 — approved foundation
-- [ ] Foundation schemas/tables/RLS/helpers, generated 44 × 18 grants and synthetic reference seeds; existing connected project only.
-- [ ] Off-by-default repositories, Beta banner and audited first-sign-in attestation; memory remains default.
-- [ ] Rollback-only main-project RLS/consent/matrix tests until test-project credentials exist; evidence in docs/rls-evidence/.
-- [ ] Full unit/public browser suites, Phase 1 report and remaining blockers. Do not publish.
+- [x] Foundation 20 tables/RLS/helpers, generated 44 × 18 grants and synthetic reference seeds; existing connected project only. DB/code checksum equal.
+- [x] Off-by-default repository scaffolding, Beta banner and SQL-audited agreement; memory remains default. No persistence cutover claimed.
+- [x] Rollback-only main-project RLS/helper checks 2,261/2,261; SQL and TypeScript consent vectors 17/17 each; evidence in docs/rls-evidence/.
+- [x] Full units 3,465/3,465; report docs/supabase-phase1-report.md; build OK. No publishing.
+- [ ] Full public browser suite — running isolated, 47 tests; finalize count before closeout.
+- [ ] Beta first-sign-in end-to-end — blocked by zero hosted auth users/provisioned accounts and later real-auth transport.
+- [ ] Second test project — credentials not yet supplied; main tests roll back.
+- [ ] Consent create/frozen signed-copy persistence — blocked by trusted file/signature transport; persist_consent stays off.
+- [ ] Registry-driven domain cutover/staff patient RLS — blocked by Phase 2 care-team/chart context and trusted mutation contracts; all persist_* stay off.
