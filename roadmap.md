@@ -1,5 +1,12 @@
 # Roadmap
 
+## 27 Oct referral-to-billable-patient lifecycle — Draft
+- [x] Inventory all surfaces and action/count sources before UI edits; duplicates/dead ends documented in docs/referral-lifecycle-inventory.md.
+- [ ] Shared model and narrow registry/button/store actions — blocked: Intake-owned pre-enrollment clinical plan conflicts with patient-keyed clinical care-plan rules; enrolled-stage close also needs definition.
+- [ ] Shared displays, oversight and readiness — blocked by required stage 2 action home; no partial UI cutover.
+- [ ] Funnel and lifecycle tests/full suites — blocked until architecture conflict resolved; no application changes to validate in this stop.
+- [x] docs/referral-lifecycle-report.md records exact conflicts and decision to resume; no Supabase, test secrets or publishing.
+
 ## 27 Oct peer specialist referral follow-up
 - [x] Approve peer sending through the shared narrow gate; trainee remains denied; no other grants change.
 - [x] Update only peer website_referral_submit snapshot; consistency and adjacent denials; full units 3,514/3,514 then public browser 47/47 without overlap; staff regressions 4/4 including peer Intake readback.
