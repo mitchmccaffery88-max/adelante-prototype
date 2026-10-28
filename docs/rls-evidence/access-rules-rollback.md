@@ -1,5 +1,16 @@
 # Access rules — main rollback evidence
 
+## 28 Oct 20:23 MOUD tightening acceptance
+
+**Part 2 internal-use basis: pending counsel confirmation.** No read policies opened; persistence OFF; no publishing.
+
+- Rule migration `20261028202524_ddc385f1-3680-4bfa-8b5d-78f509eda61b`: care-manager callers self-assign only; replacing another requires coordinator. Same-transaction episode-only closure uses transaction now with strictly earlier start where needed; independent-source membership remains.
+- Completed rollback `20261028202621_734e42cb-8d71-4798-b270-a4318667475e` on connected main only. Fictional coordinator, ECM and CF care-manager accounts; actual request.jwt.claims and account/acting-role/attestation helpers; local authenticated role for chart entry. Revoked commands invoked only by privileged test setup under real app actor claims, not by browsers; no helper overrides. This proves claim evaluation, not hosted login/JWT signature verification.
+- Passed: off-team no entry; self assign allowed; another target denied without state/audit mutation; replacing another with self denied; coordinator replacement allowed; prior member loses entry immediately in same transaction; one assign audit; independent row reused; no Part 2 screeners grant for ECM; episode-only end removes chart entry immediately in same transaction; other-source member retains entry immediately after end.
+- Every public base-table count plus auth.users snapshotted before fixture subtransaction and compared after sentinel rollback; outer rollback successful. Independent final counts: auth.users 0, accounts 0, patients 18, care_team_assignments 22, MOUD audits 0 — match 0/0/18/22/0 baseline. No fictional fixtures retained.
+- Independent command privileges: authenticated chart_reason_open=false; clinician_coverage_set=false. No browser transport added.
+- App units after tightenings 3,607/3,607; after coordinator hosts 3,627/3,627. Remaining all-role policy-group acceptance is not claimed by this focused proof.
+
 ## 28 Oct 16:32 resume checkpoint
 
 **Part 2 internal-use basis: pending counsel confirmation.** No migration or new rollback proof in this resume; no chart/packet/handoff read policies opened. Previous successful helper proofs below remain the latest SQL test evidence, not complete policy acceptance.
