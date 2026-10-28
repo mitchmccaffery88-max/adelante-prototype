@@ -4,6 +4,18 @@
 
 **Part 2 internal-use basis: pending counsel confirmation.**
 
+## 28 Oct step 4 green-unit checkpoint — partial, no policy opening
+
+The patient and compliance access-log hosts now display only validated canonical reason labels; active reason grants attach the reason code to subsequent content-free record/print access events. Typed opening notes never enter those log rows. No matrix or access-log audience expanded.
+
+Full units: **3,658/3,658**, **413/413 files**, exit 0 (176.97s). Focused DEA + access-log tests: **10/10**, exit 0. On-team HLOC browser fixture: **1/1**, exit 0, after units, one worker :8080; required-element/disclosure assertions unchanged. Full public suite not run.
+
+Live fictional acting-role preview readback proved global search `Reason needed` → gate; direct chart deep link → gate; print/PDF route → gate without print document; actual Other + note → chart and non-dismissible reason banner; sys_admin patient access-log readback → `Reason: Other`, typed note absent. Inline picker → clinician embedded chart gate also passed. Screenshot evidence `/tmp/browser/access-step4/{search-gate,deep-link,print-PDF,banner,reason-log}.png` and `/tmp/browser/access-launchers/picker-embedded-gate.png`; no page errors on successful runs. Initial cold dependency load and duplicate fictional matching failures were corrected only in the temporary verification script; no product matching rule or timeout changed.
+
+**Step 4 remains incomplete:** Today, inbox, bell and quick-peek drawer click-throughs are traced but not browser-proved in this checkpoint; no full-route acceptance claim. DEA evaluator/booking/readiness checks pass, but Billing projections intentionally strip the controlled-service fact and UI capture is not yet present. Stopped rather than expanding those approved privacy allowlists; details in the credentialing report. The accepted 73 snapshot rows and sys_admin go-live reversals below remain unchanged.
+
+**Step 5 not started:** no new SQL vectors, database counts, migration or chart/packet/handoff read-policy opening. All three unproved groups stay closed, and browser execution of reason/coverage commands stays revoked until 2d. No persistence switch or publication. Remaining: privacy-safe DEA end-to-end integration, remaining launcher browser proofs; all-role temporal/Intake/patient/advocate rollback vectors and counts; then separately approved passing policy groups; full public suite and final readback/report/matrix.
+
 ## 28 Oct 16:32 approved resume — stopped on an assertion outside named scope
 
 Applied only the approved assertion updates and fixture corrections. The new source adapter validates SHA-256 of the entire previously approved text, then applies exactly one approved re-pin for each of `chartAccess.ts`, `roles.ts` and `navGuard.ts`. Other pinned files are unchanged. No matrix values or application permission logic changed in this resume.

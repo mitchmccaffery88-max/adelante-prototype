@@ -1,5 +1,9 @@
 # Access rules — main rollback evidence
 
+## 28 Oct step 4 green-unit checkpoint
+
+App-only partial checkpoint: units 3,658/3,658, HLOC browser 1/1 and search/deep-link/print/embedded-picker/reason-log readback passed. Today/inbox/bell/quick-peek and privacy-safe DEA Billing integration remain unproved. **Not a SQL acceptance result:** no Supabase call, fixture, new before/after count or migration in this continuation. All chart/packet/handoff read-policy groups remain closed; command transport remains unavailable until 2d. Persistence OFF; nothing published. **Part 2 internal-use basis: pending counsel confirmation.**
+
 ## 28 Oct 21:05 Intake host checkpoint
 
 **Part 2 internal-use basis: pending counsel confirmation.** App step 3 only: logged read-only follow-up host and shared form/need/document expiry guards. Full units 3,648/3,648; preview checklist/document single-event readback and live expired-window UI passed. This is **not** a new SQL acceptance result. No Supabase calls/fixtures/migrations in this continuation; no new before/after database counts claimed. All chart/packet/handoff read-policy groups remain closed; Step 5 vectors/counts and openings still pending. Persistence OFF; nothing published; revoked command/browser transport boundary unchanged.

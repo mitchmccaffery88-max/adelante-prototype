@@ -59,7 +59,7 @@ Go-live permissions audit, compliance/IN 18-019 sign-off, county-contract cadenc
 - Booked appointment review flags: `asOf` = now until the visit day, then the visit day. An overdue check on the visit day flags the visit for Billing review; nothing is cancelled or changed.
 - "Exclusion checks due" tile: a clinician whose next check falls due before booked billable visits is listed with "Check due before booked visits" (count of visits only) and a "Record the check" link to the existing record-check controls. ehr self-registers its appointment list (`registerBookedVisitSource`), no import cycle.
 - A recorded hit still blocks new bookings immediately and flags existing ones.
-- Note: the evaluator has no DEA check today (none existed before this fix); not added here — needs a scoped decision.
+- Historical scope note: DEA was not added in the exclusion-freshness fix; the explicitly approved Part B carry-over below adds the service-date evaluator check.
 
 **Seeds.** All credentialing seed dates are now relative to today (issued/effective dates, monthly check history starting 24 cycles back). The fixed 2026-11-20 future check for c1 was removed. All seven fictional cases kept; c5 is still overdue (checked 45 days ago) and still blocked at booking.
 
@@ -76,3 +76,17 @@ No assertion was weakened; no matrix or permission change.
 - Not checked in a live preview session this turn: the tile's "Check due before booked visits" row visually.
 
 **Deferred (not for Beta, Mitch 28 Oct):** real OIG / Medi-Cal / SAM.gov checks (adapter stays Simulated until go-live); real signed-copy credential file storage (phase 5); Phase 2d.
+
+## 28 Oct Part B carry-over — DEA checkpoint, incomplete Billing integration
+
+**Draft — pending clinical sign-off and go-live permissions audit.** Persistence OFF; no Supabase operations or publishing.
+
+- Physician (`s-np1`/c5) and PMHNP (`s-th3`/c3) require an actual DEA number, verification on/before DOS and recorded expiry on/after DOS only for an explicitly controlled-substance service. Medication management and SUD alone never imply that fact. Missing/unverified/future verification and missing/expired expiry return neutral review reasons.
+- The existing ehr-ext credential document remains sole authority; its actual verification is projected/persisted and relative fictional DEA dates are preserved. `Appointment.controlledSubstance` is an optional explicit service fact, passed through the existing booking guard; `careLifecycle` passes it for DOS readiness. No additional credential store or mutation action was introduced.
+- Eight concrete DEA regressions pass for both actual prescriber identities, non-controlled/non-prescriber negatives, sole-authority expiry-edit invalidating verification, and booking guard parity. The two reason-log/gate regressions pass too.
+- Full units **3,658/3,658**, **413/413 files**, exit 0, 176.97s, after correcting a projected-object fixture to use the real registry credential writer. Earlier run: 3,657 passed/1 failed; not hidden. Exact-once SHA-256 re-pins of ehr.ts/ehr-ext.ts compose through `credentialingDeaOct28Approved.ts`; all source-equality tests pass, no billing codes/dates/provider/units/note-text assertions weakened.
+- On-team HLOC browser carry-over: unchanged required-element/disclosure assertions **1/1 passed**, exit 0, one worker on :8080 after green units. The fictional therapist is assigned through `chart_team_assignment` before chart entry. Full public suite not run at this checkpoint.
+
+**Stop boundary:** Billing's approved `APPOINTMENT_KEYS` and `CLAIM_KEYS` exclude the controlled-service fact; the current flag component receives those projections. The evaluator accepts the fact, but real Billing appointment/claim DEA flag readback and credentialing claim-count propagation are **not complete**. No allowlist, matrix, permission or claim schema was expanded. The booking editor also has no explicit controlled-service capture yet; guard tests do not prove that unflagged UI bookings are DEA-screened. A privacy-safe derived review projection/capture path must be settled before claiming complete carry-over acceptance.
+
+Actual logs: `/tmp/access-oct28/units2.log`, `focused2.log`, `hloc.log`. Deferred real screening, phase 5 secure storage and phase 2d remain unchanged.
