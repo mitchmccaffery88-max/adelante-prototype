@@ -71,7 +71,7 @@ export function chartEntryFor(role: StaffRole, staffId: string | undefined, pati
   const careTeam = onCareTeam(staffId, p, at);
   const site = patientSiteId(p);
   const reasonGrant = reasonGrantFor(role, staffId, patientId, at);
-  const supervisor = STAFF_ROSTER.some(s => s.active !== false && s.role === "clinical_trainee" && getSupervisor(s.id)?.id === staffId && onCareTeam(s.id, p, at));
+  const supervisor = ["physician", "pmhnp", "therapist"].includes(role) && STAFF_ROSTER.some(s => s.active !== false && s.role === "clinical_trainee" && getSupervisor(s.id)?.id === staffId && onCareTeam(s.id, p, at));
   const coverage = !!staffId && coveringStaffFor(staffId, at).some(id => onCareTeam(id, p, at));
   const facts = evaluateChartEntry({ eligible: true, exists: true, team: careTeam, oversight: role === "clinical_coordinator" || role === "sys_admin", onCall: !!staffId && !!site && onCallForSite(staffId, site, at), coverage, supervisor, restricted: isRestricted(p.id), restrictedOpen: isChartUnlocked(staffId, patientId), reasonOpen: !!reasonGrant });
   if (!facts.ok) return { ok: false, reason: facts.reason ?? "reason", entryEligible: true, careTeam, restricted: isRestricted(p.id), message: facts.reason === "restricted" ? "Restricted record — reason required" : "Reason needed" };
@@ -118,7 +118,7 @@ export function weeklyReasonedOpens(actor: AccessActor, at = new Date()) { retur
 /** Existing group host may use this relationship, never full-chart entry. */
 export function groupContextFor(staffId: string | undefined, patientId: string) {
   const s = getStaffMember(staffId);
-  return !!s?.clinicianId && s.active !== false && AdelanteEHR.listGroupSessions().some(g => g.status !== "cancelled" && g.facilitatorId === s.clinicianId && g.enrolledPatientIds?.includes(patientId));
+  return !!s?.clinicianId && s.active !== false && AdelanteEHR.listGroupSessions().some(g => g.status !== "cancelled" && g.facilitatorId === s.clinicianId && AdelanteEHR.listGroupEnrollments(g.id).some(e => e.patientId === patientId));
 }
 
 // ---------------------------------------------------------------------------

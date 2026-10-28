@@ -17,20 +17,22 @@ import { MENTION_NOTIFY_SUBJECT } from "@/lib/staffThreads";
 
 const luis = () => AdelanteEHR.listPatients().find((p) => p.firstName === "Luis")!;
 const staffOf = (role: StaffRole) => STAFF_ROSTER.find((s) => s.role === role)!;
-const NO_ENTRY: StaffRole[] = ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator"];
+// 27 Oct access-rules batch: sys_admin oversight now explicitly authorized.
+const NO_ENTRY: StaffRole[] = ["billing", "billing_coordinator", "credentialing_coordinator", "intake_coordinator"];
 
 beforeEach(() => _resetChartAccessForTests());
 
 describe("A1 chart entry + route guard", () => {
-  it("clinical delivery/coordination roles enter at their site", () => {
+  it("chart-capable roles either enter directly or reach the shared reason gate", () => {
     for (const role of CHART_ENTRY_ROLES) {
       const s = staffOf(role);
       if (!s) continue;
-      expect(chartEntryFor(role, s.id, luis().id).ok, role).toBe(true);
-      expect(resolveChartRouteAccess(role, s.id, `/record/${luis().id}`)?.status, role).toBe("allowed");
+      const e = chartEntryFor(role, s.id, luis().id);
+      expect(e.ok || e.entryEligible, role).toBe(true);
+      expect(resolveChartRouteAccess(role, s.id, `/record/${luis().id}`)?.status, role).toBe(e.ok ? "allowed" : "gate");
     }
   });
-  it("billing, credentialing and sys_admin are redirected with a plain message", () => {
+  it("billing, credentialing and Intake are redirected with a plain message", () => {
     for (const role of NO_ENTRY) {
       const e = chartEntryFor(role, staffOf(role)?.id, luis().id);
       expect(e.ok).toBe(false);
@@ -38,14 +40,14 @@ describe("A1 chart entry + route guard", () => {
       expect(resolveChartRouteAccess(role, staffOf(role)?.id, `/record/${luis().id}`)?.status, role).toBe("denied");
     }
   });
-  it("site rule: a patient enrolled at a site the person doesn't work is denied", () => {
+  it("off-team search does not silently authorize cross-site chart reads", () => {
     const p = luis();
     const prev = p.enrolledSiteId;
     p.enrolledSiteId = "site-nowhere";
     try {
       const e = chartEntryFor("peer_specialist", staffOf("peer_specialist").id, p.id);
       expect(e.ok).toBe(false);
-      if (!e.ok) expect(e.reason).toBe("site");
+      if (!e.ok) expect(e.reason).toBe("reason");
     } finally { p.enrolledSiteId = prev; }
   });
 });
@@ -58,9 +60,9 @@ describe("A2 search", () => {
     for (const path of ["/admin", "/admin-content", "/admin-staff", "/admin-audit", "/quality-compliance"]) expect(isStaffWorkPage(path), path).toBe(false);
     expect(isStaffWorkPage("/clinician")).toBe(true);
   });
-  it("results limited to enterable patients", () => {
+  it("results include reason-reachable patients without opening their chart", () => {
     const s = staffOf("peer_specialist");
-    for (const p of searchablePatientsFor("peer_specialist", s.id)) expect(chartEntryFor("peer_specialist", s.id, p.id).ok).toBe(true);
+    for (const p of searchablePatientsFor("peer_specialist", s.id)) { const e = chartEntryFor("peer_specialist", s.id, p.id); expect(e.ok || e.entryEligible).toBe(true); }
   });
 });
 
