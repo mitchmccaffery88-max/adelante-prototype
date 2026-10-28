@@ -254,6 +254,11 @@ export function evaluateCredentialing(
   }
 
   // Exclusion monitoring: every list checked, clear, and not overdue.
+  // Currency is evaluated at min(date of service, now): a check that is
+  // current TODAY does not block a future booking — the coordinator re-checks
+  // on cadence before the visit. For a past date of service (billing
+  // readiness) the check is evaluated as of that date.
+  const exclDay = Math.min(d, asDay(new Date().toISOString()));
   for (const { key } of EXCLUSION_LISTS) {
     const latest = record.exclusionChecks
       .filter((c) => c.list === key)
@@ -263,7 +268,7 @@ export function evaluateCredentialing(
       continue;
     }
     if (latest.result === "hit") reasons.push("exclusion_hit");
-    else if (asDay(latest.nextDueAt) < d) reasons.push("exclusion_check_overdue");
+    else if (asDay(latest.nextDueAt) < exclDay) reasons.push("exclusion_check_overdue");
   }
 
   // Payer enrollment for this service type — only when both are known.
