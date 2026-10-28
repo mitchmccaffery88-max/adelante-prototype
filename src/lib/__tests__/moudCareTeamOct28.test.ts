@@ -85,8 +85,8 @@ describe("MOUD episode care manager writes the care team", () => {
     const { p, ep } = freshEpisode();
     const cm = { role: "ecm_provider" as const, staffId: "s-cf2" };
     expect(runAction("moud_care_manager_assign", cc, undefined, { args: [cc, { episodeId: ep.id, staffId: cm.staffId }] }).ok).toBe(true);
-    expect(chartEntryFor(cm, p).ok).toBe(true);
+    expect(chartEntryFor(cm.role, cm.staffId, p.id).ok).toBe(true);
     expect(runAction("moud_care_manager_end", cc, undefined, { args: [cc, { episodeId: ep.id }] }).ok).toBe(true);
-    expect(chartEntryFor(cm, p).ok).toBe(false);
+    expect(chartEntryFor(cm.role, cm.staffId, p.id).ok).toBe(false);
   });
 });
