@@ -12,7 +12,7 @@ export const ACCESS_LOG_ROLES: readonly string[] = ["sys_admin", "credentialing_
 
 export type AccessKind = "open" | "section" | "print" | "export" | "brief" | "compute";
 /** Actions shown in "Who accessed this record" and the admin access filter. */
-export const ACCESS_LOG_ACTIONS: readonly string[] = ["record.viewed", "brief.viewed", "brief.section_computed", "action.succeeded"];
+export const ACCESS_LOG_ACTIONS: readonly string[] = ["record.viewed", "brief.viewed", "brief.section_computed"];
 
 export interface AccessInput {
   actorId: string;
@@ -70,7 +70,6 @@ export interface AccessRow {
   system?: boolean;
   triggeredBy?: string[];
   patientId?: string;
-  reasonCode?: string;
 }
 
 /** V2 — the staff member opened the Adel Brief. Same 5-minute collapse as record views. */
@@ -80,7 +79,7 @@ export function recordBriefView(input: Omit<AccessInput, "sectionId" | "kind" | 
 
 export function accessEventsFor(patientId?: string): AccessRow[] {
   return AdelanteEHR.listAuditEvents(patientId ? { patientId } : {})
-    .filter((e) => ACCESS_LOG_ACTIONS.includes(e.action) && (e.action !== "action.succeeded" || e.detail?.["actionId"] === "chart_reason_open"))
+    .filter((e) => ACCESS_LOG_ACTIONS.includes(e.action))
     .map((e) => {
       const d = (e.detail ?? {}) as Record<string, unknown>;
       return {
@@ -96,7 +95,6 @@ export function accessEventsFor(patientId?: string): AccessRow[] {
         system: d["system"] === true || undefined,
         triggeredBy: d["triggeredBy"] as string[] | undefined,
         patientId: e.patientId,
-        reasonCode: d["reasonCode"] as string | undefined,
       };
     });
 }
