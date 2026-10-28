@@ -181,9 +181,21 @@ Part 2 internal-use basis: pending counsel confirmation.
 - Full units: 3,585 / 3,585 passed, 407 files.
 
 ### Not done in this pass (left for next run)
-1. MOUD episode → care_manager team write (registry action + SQL mirror + rolled-back proof).
+1. ~~MOUD episode → care_manager team write~~ — DONE 28 Oct part B (see "Part B step 1").
 2. Coordinator hosts (care-team requests, coverage, weekly reasoned-open review).
 3. Intake logged read-only 60-day window host.
 4. Access-log reason readback UI; full gate verification.
 5. All-role rolled-back SQL vectors (on-call, coverage, supervisor, group, Intake day 60/61, patient/advocate); opening each passing policy group separately. Every read policy is still closed.
 6. Public browser suite, preview readback, final evidence doc.
+
+
+## Part B step 1 — MOUD episode → care team (28 Oct, Draft)
+- Registry actions `moud_care_manager_assign` / `moud_care_manager_end` (store `chartRelationships.ts`). Assign sets the episode care manager and adds or keeps an active `care_manager` team row in the same write; runAction writes the single audit row. End removes only the episode reason; a membership held for other reasons (e.g. coordinator `chart_team_assignment`) stays. Replacing the episode care manager drops the previous person's episode reason.
+- Assigners: clinical_coordinator, cf_care_manager, ecm_provider (the roles that already open episodes). Assignee must actively hold cf_care_manager or ecm_provider. Chart access then follows the normal care-team rule; Part 2 unchanged (matrix + consent only).
+- The pre-release episode screen (in-facility, off by default) runs the action after opening an episode.
+- Snapshot: 36 additive rows (18 roles × 2 new actions), zero removed or changed rows.
+- SQL mirror: `public.moud_care_manager_assign` / `moud_care_manager_end`, `care_team_assignments.source_refs`; ids/codes-only audit; execute revoked from anon/authenticated (2d transport).
+- Rolled-back proof (main): off-team ECM denied before assign; non-care-manager target refused; exactly one audit row; care_manager row active; assigned ECM enters chart; screeners_sud stays locked without consent; ending an episode-only row ends it; a pre-existing membership is kept, not duplicated, and still enters. Before/after: auth.users 0/0, accounts 0/0, patients 18/18, care_team_assignments 22/22, moud audits 0/0.
+- Failed attempts first (kept on record): `audit_ids_only` (metadata not ids/codes) → fixed metadata; `active_dates_invalid` (same-transaction end = start) → end time is now strictly after start.
+- Units: 409 files, 3,604/3,604.
+- Source pins re-pinned this step: none needed.

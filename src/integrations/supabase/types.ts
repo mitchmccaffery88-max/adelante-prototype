@@ -342,6 +342,7 @@ export type Database = {
           patient_id: string
           role: string
           site_id: string
+          source_refs: string[]
           staff_member_id: string
           starts_at: string
           synthetic: boolean
@@ -357,6 +358,7 @@ export type Database = {
           patient_id: string
           role: string
           site_id: string
+          source_refs?: string[]
           staff_member_id: string
           starts_at: string
           synthetic?: boolean
@@ -372,6 +374,7 @@ export type Database = {
           patient_id?: string
           role?: string
           site_id?: string
+          source_refs?: string[]
           staff_member_id?: string
           starts_at?: string
           synthetic?: boolean
@@ -2783,6 +2786,14 @@ export type Database = {
       }
       foundation_matrix_checksum: { Args: never; Returns: Json }
       foundation_set_acting_role: { Args: { p_role: string }; Returns: string }
+      moud_care_manager_assign: {
+        Args: { p_episode_ref: string; p_patient: string; p_staff: string }
+        Returns: string
+      }
+      moud_care_manager_end: {
+        Args: { p_episode_ref: string; p_patient: string }
+        Returns: number
+      }
       phase2_command: {
         Args: {
           p_action: string
