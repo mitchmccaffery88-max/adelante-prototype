@@ -131,7 +131,7 @@ export interface ClinicianCredentialing {
   license?: LicenseRecord;
   registration?: RegistrationRecord;
   npi?: string;
-  dea?: { number: string; expiresAt?: string };
+  dea?: { number: string; expiresAt?: string; verifiedAt?: string };
   boardCertification?: string;
   malpractice?: { carrier: string; policy: string; expiresAt?: string };
   /** Education/training and continuing-education status — attested for now. */
@@ -171,7 +171,9 @@ export type CredentialingReasonCode =
   | "exclusion_check_overdue"
   | "payer_not_enrolled"
   | "supervision_missing"
-  | "supervision_expired";
+  | "supervision_expired"
+  | "dea_not_verified"
+  | "dea_expired";
 
 /** Neutral reason labels — safe for Billing and the Credentialing Coordinator. */
 export const CREDENTIALING_REASON_LABEL: Record<CredentialingReasonCode, string> = {
@@ -188,6 +190,8 @@ export const CREDENTIALING_REASON_LABEL: Record<CredentialingReasonCode, string>
   payer_not_enrolled: "Not enrolled with this payer for this service",
   supervision_missing: "No supervision record on file",
   supervision_expired: "Supervision record not active on the date of service",
+  dea_not_verified: "DEA registration not verified on the date of service",
+  dea_expired: "DEA registration expired or expiry not recorded on the date of service",
 };
 
 /** The label every other role sees — never the reasons. */
@@ -221,6 +225,8 @@ export interface CredentialingCheckInput {
    * Omitted = the date of service (historical mode).
    */
   asOf?: string;
+  /** Explicit service fact; medication management alone does not imply controlled substances. */
+  controlledSubstance?: boolean;
 }
 
 export type CredentialingCheckResult = { ok: true } | { ok: false; reasons: CredentialingReasonCode[] };
@@ -261,6 +267,14 @@ export function evaluateCredentialing(
     if (record.registration.expiresAt && asDay(record.registration.expiresAt) < d) reasons.push("registration_expired");
   } else {
     reasons.push("license_missing");
+  }
+
+  // 28 Oct carry-over: prescribers require verified, dated DEA evidence only
+  // for explicitly controlled-substance services. Never infer from SUD status.
+  const role = getStaffMember(record.staffId)?.role;
+  if (input.controlledSubstance && (role === "pmhnp" || role === "physician")) {
+    if (!record.dea?.number.trim() || !record.dea.verifiedAt || !Number.isFinite(asDay(record.dea.verifiedAt)) || asDay(record.dea.verifiedAt) > d) reasons.push("dea_not_verified");
+    if (!record.dea?.expiresAt || !Number.isFinite(asDay(record.dea.expiresAt)) || asDay(record.dea.expiresAt) < d) reasons.push("dea_expired");
   }
 
   // 28 Oct fix: exclusion screening is judged as of `asOf` (never requires a
@@ -355,10 +369,10 @@ export function credentialedForService(
   payer: string | undefined,
   serviceType: string | undefined,
   dateOfService: string,
-  opts: { asOf?: string } = {},
+  opts: { asOf?: string; controlledSubstance?: boolean } = {},
 ): CredentialingCheckResult {
   const asOf = opts.asOf ?? new Date().toISOString();
-  return evaluateCredentialing(credentialingRecordForStaff(staffId), { payer, serviceType, dateOfService, asOf });
+  return evaluateCredentialing(credentialingRecordForStaff(staffId), { payer, serviceType, dateOfService, asOf, controlledSubstance: opts.controlledSubstance });
 }
 
 // 28 Oct fix: ehr self-registers its booked visits so the coordinator tile can
@@ -679,6 +693,7 @@ interface AppointmentLike {
   start: string;
   status: string;
   serviceType?: string;
+  controlledSubstance?: boolean;
 }
 interface ClaimLike {
   id: string;
@@ -687,6 +702,7 @@ interface ClaimLike {
   serviceDate?: string;
   state: string;
   serviceType?: string;
+  controlledSubstance?: boolean;
 }
 
 export interface CredentialingReviewFlag {
@@ -713,7 +729,7 @@ export function credentialingReviewFlags(
     if (!member) continue;
     // 28 Oct fix: judged as of now until the visit day, then on the visit day — flag, never cancel.
     const now = new Date().toISOString();
-    const res = credentialedForService(member.id, payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now });
+    const res = credentialedForService(member.id, payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now, controlledSubstance: a.controlledSubstance });
     if (!res.ok) out.push({ kind: "appointment", id: a.id, staffId: member.id, reasons: res.reasons });
   }
   for (const c of claims) {
@@ -721,7 +737,7 @@ export function credentialingReviewFlags(
     const member = STAFF_ROSTER.find((s) => s.clinicianId === c.clinicianId);
     if (!member) continue;
     // Billing readiness: exclusion judged on the date of service (unchanged mode).
-    const res = credentialedForService(member.id, payerForPatient(c.patientId), c.serviceType, c.serviceDate ?? "", { asOf: c.serviceDate ?? "" });
+    const res = credentialedForService(member.id, payerForPatient(c.patientId), c.serviceType, c.serviceDate ?? "", { asOf: c.serviceDate ?? "", controlledSubstance: c.controlledSubstance });
     if (!res.ok) out.push({ kind: "claim", id: c.id, staffId: member.id, reasons: res.reasons });
   }
   return out;

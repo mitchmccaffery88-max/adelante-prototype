@@ -3,6 +3,8 @@
 // Fields: section id, actor, acting role, viewed-as, patient id, timestamp,
 // simulated flag. Never content.
 import { AdelanteEHR } from "./ehr";
+import { reasonGrantFor } from "./chartAccess";
+import { type StaffRole } from "./roles";
 import { currentRunActor } from "./actions/act";
 
 export const ACCESS_LOG_LABEL = "Prototype access log — production requires immutable storage";
@@ -34,6 +36,7 @@ export function recordView(input: AccessInput): boolean {
   const now = (input.at ?? new Date()).getTime();
   const viewedAs = input.viewedAs ?? currentRunActor().viewingStaffId;
   const action = input.action ?? "record.viewed";
+  const grant = reasonGrantFor(input.role as StaffRole, input.actorId, input.patientId, new Date(now));
   const key = `${action}|${input.actorId}|${input.patientId}|${input.sectionId}`;
   const prev = lastSeen.get(key);
   if (prev !== undefined && now - prev < ACCESS_COLLAPSE_MS) return false;
@@ -51,6 +54,7 @@ export function recordView(input: AccessInput): boolean {
       ...(viewedAs ? { viewedAs } : {}),
       at: new Date(now).toISOString(),
       simulated: true,
+      ...(grant ? { reasonCode: grant.reasonCode } : {}),
     },
   });
   return true;

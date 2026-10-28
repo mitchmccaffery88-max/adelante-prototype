@@ -4,7 +4,7 @@
 - [x] Tighten MOUD care-manager self-only assignment/replacement; SQL mirror and same-transaction end/retain proof; units 3,607/3,607, no retained fixtures.
 - [x] Step 2 coordinator request/coverage/weekly review hosts; units 3,627/3,627; real preview request/open/approval/coverage/review at 1280 and 390.
 - [x] Step 3 (28 Oct 21:05 continuation) Intake logged read-only 60-day host; units 3,648/3,648; real checklist/document audit readback and live closure in preview, 1280/390.
-- [ ] Step 4 access-log reasons and full gate verification; green units.
+- [ ] Step 4 (28 Oct 21:47) access-log reasons and full gate verification; controlled-only DEA and on-team HLOC carry-overs; green units before step 5.
 - [ ] Step 5 all-role rollback vectors and separately passing read policies.
 - [ ] Step 6 public browser then preview readback, final reports/Draft matrix.
 - [ ] Carry-overs: on-team HLOC therapist fixture; DEA controlled-substance prescriber checks.
