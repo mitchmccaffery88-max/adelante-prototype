@@ -12,6 +12,7 @@ import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { STAFF_ROSTER, getSupervisor, requiresSupervision, useActingStaff } from "@/lib/roles";
 import { ClientDate } from "@/components/ClientDate";
 import { PostEnrollmentSetupCard } from "@/components/PostEnrollmentSetupCard";
+import { ChartAccessCoordination } from "@/components/chart/ChartAccessCoordination";
 import { reassignNeededItems } from "@/lib/staffLifecycle";
 import {
   COORDINATION_ACTION_LABEL,
@@ -86,6 +87,7 @@ function CoordinationPage() {
       </header>
 
       <WorkspaceSectionOrder>
+      <ChartAccessCoordination />
       {canAct && reassignNeeded.length > 0 && (
         <section data-testid="reassign-needed" className="space-y-2">
           <h2 className="font-semibold">Reassign needed</h2>
