@@ -22,6 +22,7 @@ import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
 import { resolveSectionId, useRecordSections } from "@/components/clinical/recordSections";
 import { RestrictedChartGate } from "@/components/chart/RestrictedChartGate";
 import { Maximize2 } from "lucide-react";
+import { ChartAccessGate } from "@/components/chart/ChartAccessGate";
 
 interface Props {
   patientId: string | null;
@@ -36,7 +37,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-        <DrawerBody patientId={patient.id} initialTab={initialTab} />
+        {open && <ChartAccessGate patientId={patient.id}><DrawerBody patientId={patient.id} initialTab={initialTab} /></ChartAccessGate>}
       </SheetContent>
     </Sheet>
   );

@@ -15,7 +15,8 @@ const toastError = vi.fn();
 vi.mock("sonner", () => ({ toast: { error: (...a: unknown[]) => toastError(...a) } }));
 vi.mock("@/lib/roles", async () => {
   const actual = await vi.importActual<typeof import("@/lib/roles")>("@/lib/roles");
-  return { ...actual, useActingStaff: () => ({ role, staffId: "s", staffName: "S" }) };
+  // 28 Oct access-rules: use a real held-role identity, not a nonexistent staff id.
+  return { ...actual, useActingStaff: () => ({ role, staffId: role === "sys_admin" ? "s-admin1" : "s-peer1", staffName: "S" }) };
 });
 
 import { RouteAccessGuard } from "../RouteAccessGuard";

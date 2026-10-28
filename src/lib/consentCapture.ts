@@ -9,7 +9,7 @@ import { assertIntakeConsentBoundary } from "./intakeConsentBoundary";
 // them. Draft — pending counsel.
 import { AdelanteEHR, effectiveConsentStatus, type ConsentRecord, type ConsentRecordStatus } from "./ehr";
 import { canAccess, type StaffRole } from "./roles";
-import { roleHasChartEntry } from "./chartAccess";
+import { roleCanSendConsent as roleHasChartEntry } from "./chartAccess";
 import { CONSENT_EXPIRED_AUDIT_ACTION, consentEventDetail, type ConsentEventName } from "./consentEvents";
 import { publishedForm, textHash, type FormKey } from "./consentForms";
 import {

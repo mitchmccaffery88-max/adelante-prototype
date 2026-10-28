@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { AdelanteEHR, type Patient } from "@/lib/ehr";
-import { CHART_ENTRY_ROLES } from "@/lib/chartAccess";
+import { roleCanSendConsent } from "@/lib/chartAccess";
 import { STAFF_ROLES, type StaffRole } from "@/lib/roles";
 import { runAction } from "@/lib/actions/runAction";
 import { applyFlagJourneys } from "@/lib/flagJourneys";
@@ -73,7 +73,8 @@ describe("W2 send", () => {
     const p = newPatient();
     for (const role of STAFF_ROLES.map((r) => r.key as StaffRole)) {
       const res = runAction("consent_form_send", { role }, p, { via: "sendForms", args: [{ patientId: p.id, formKeys: ["portal"], actor: { role, name: role } }] });
-      expect(res.ok, role).toBe(CHART_ENTRY_ROLES.includes(role));
+      // 28 Oct access-rules: oversight entry does not change consent action permissions.
+      expect(res.ok, role).toBe(roleCanSendConsent(role));
     }
   });
   it("patient notice and SMS are neutral — no form names", () => {

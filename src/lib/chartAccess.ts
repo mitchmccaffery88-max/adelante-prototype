@@ -13,18 +13,23 @@
 // Nothing here loosens anything INSIDE the chart: sections keep the record-
 // class matrix, live Part 2 consent and role limits.
 import { AdelanteEHR, type Patient } from "./ehr";
-import { getStaffMember, type StaffRole } from "./roles";
+import { getStaffMember, STAFF_ROSTER, getSupervisor, type StaffRole } from "./roles";
 import { defaultSiteId, primarySiteFor, sitesFor, calendarOwnerFor, siteName } from "./workingCalendar";
 import { isAssignedTo, assignmentIdentityFor } from "./caseloadScope";
 import { markEmergencyReviewed } from "./part2Disclosure";
+import { activeAt, CHART_ACCESS_DRAFT, endOfSiteDay, evaluateChartEntry, isOpenReason, type OpenReason } from "./chartAccessRules";
+import { additionalTeamFor, coveringStaffFor, validAccessActor, type AccessActor } from "./chartRelationships";
+import { onCallForSite } from "./onCallBoundary";
+import { registerChartPart2Basis } from "./chartPart2Boundary";
 
-export const ACCESS_MODEL_DRAFT_LABEL = "Draft — pending exec RBAC review";
+export const ACCESS_MODEL_DRAFT_LABEL = CHART_ACCESS_DRAFT;
 export const CHART_DENIED_MESSAGE = "This chart isn't available for your role";
 
 export const CHART_ENTRY_ROLES: readonly StaffRole[] = [
   "physician", "pmhnp", "nurse_rn", "lvn", "therapist", "sud_counselor", "clinical_trainee",
   "medical_assistant", "ecm_provider", "cf_care_manager", "peer_specialist", "community_health_worker",
   "clinical_coordinator",
+  "sys_admin",
 ];
 /** Roles that may set / clear the Restricted record flag. */
 export const RESTRICT_ROLES: readonly StaffRole[] = ["sys_admin", "clinical_coordinator"];
@@ -35,6 +40,8 @@ import { COMPLIANCE_ROLES } from "./complianceRoles";
 export const UNUSUAL_VOLUME_DRAFT = 30;
 
 export const roleHasChartEntry = (role: StaffRole) => CHART_ENTRY_ROLES.includes(role);
+// sys_admin oversight entry must not widen the existing consent-sending permissions.
+export const roleCanSendConsent = (role: StaffRole) => role !== "sys_admin" && roleHasChartEntry(role);
 
 /** Sites a staff member works at (from their staff calendar); org default when none. */
 export function staffSiteIds(staffId?: string): string[] {
@@ -50,36 +57,75 @@ export function patientSiteId(p: Pick<Patient, "primaryClinicianId"> & { enrolle
 }
 export const patientSiteName = (p: Patient) => siteName(patientSiteId(p));
 
-export function onCareTeam(staffId: string | undefined, p: Patient): boolean {
+export function onCareTeam(staffId: string | undefined, p: Patient, at = new Date()): boolean {
   const m = getStaffMember(staffId);
   if (!m) return false;
-  return isAssignedTo(p, assignmentIdentityFor({ caseManagerId: m.caseManagerId, clinicianId: m.clinicianId, staffId: m.id }));
+  return m.active !== false && (isAssignedTo(p, assignmentIdentityFor({ caseManagerId: m.caseManagerId, clinicianId: m.clinicianId, staffId: m.id })) || additionalTeamFor(m.id, p.id, at));
 }
 
 export type ChartEntry =
-  | { ok: true; restricted: boolean; careTeam: boolean; outsideCaseload: boolean }
-  | { ok: false; reason: "role" | "site" | "missing"; message: string };
+  | { ok: true; restricted: boolean; careTeam: boolean; outsideCaseload: boolean; entryEligible: true; directTreatment: boolean; reasonGrant?: ReasonGrant }
+  | { ok: false; reason: "role" | "site" | "missing" | "reason" | "restricted"; message: string; entryEligible?: boolean; restricted?: boolean; careTeam?: boolean };
 
-export function chartEntryFor(role: StaffRole, staffId: string | undefined, patientId: string): ChartEntry {
-  if (!roleHasChartEntry(role)) return { ok: false, reason: "role", message: CHART_DENIED_MESSAGE };
+export function chartEntryFor(role: StaffRole, staffId: string | undefined, patientId: string, at = new Date()): ChartEntry {
+  if (!roleHasChartEntry(role) || !validAccessActor({ role, staffId })) return { ok: false, reason: "role", message: CHART_DENIED_MESSAGE };
   const p = AdelanteEHR.getPatient(patientId);
   if (!p) return { ok: false, reason: "missing", message: CHART_DENIED_MESSAGE };
-  const careTeam = onCareTeam(staffId, p);
+  const careTeam = onCareTeam(staffId, p, at);
   const site = patientSiteId(p);
-  // Site rule only: care-team membership never grants entry across sites.
-  if (!(site && staffSiteIds(staffId).includes(site)))
-    return { ok: false, reason: "site", message: "This chart isn't available — the client is enrolled at a site where you don't work" };
-  return { ok: true, restricted: isRestricted(p.id), careTeam, outsideCaseload: !careTeam };
+  const reasonGrant = reasonGrantFor(role, staffId, patientId, at);
+  const supervisor = ["physician", "pmhnp", "therapist"].includes(role) && STAFF_ROSTER.some(s => s.active !== false && s.role === "clinical_trainee" && getSupervisor(s.id)?.id === staffId && onCareTeam(s.id, p, at));
+  const coverage = !!staffId && coveringStaffFor(staffId, at).some(id => onCareTeam(id, p, at));
+  const facts = evaluateChartEntry({ eligible: true, exists: true, team: careTeam, oversight: role === "clinical_coordinator" || role === "sys_admin", onCall: !!staffId && !!site && onCallForSite(staffId, site, at), coverage, supervisor, restricted: isRestricted(p.id), restrictedOpen: isChartUnlocked(staffId, patientId), reasonOpen: !!reasonGrant });
+  if (!facts.ok) return { ok: false, reason: facts.reason ?? "reason", entryEligible: true, careTeam, restricted: isRestricted(p.id), message: facts.reason === "restricted" ? "Restricted record — reason required" : "Reason needed" };
+  return { ok: true, restricted: isRestricted(p.id), careTeam, outsideCaseload: !careTeam, entryEligible: true, directTreatment: careTeam || coverage || supervisor || (!!staffId && !!site && onCallForSite(staffId, site, at)), reasonGrant };
 }
+registerChartPart2Basis((role, staffId, patientId) => {
+  const e = chartEntryFor(role as StaffRole, staffId, patientId);
+  return { directTreatment: e.ok && e.directTreatment, reasonOnly: e.ok && !e.directTreatment && !!e.reasonGrant && role !== "clinical_coordinator" && role !== "sys_admin" };
+});
 export const canEnterChart = (role: StaffRole, staffId: string | undefined, patientId: string) => chartEntryFor(role, staffId, patientId).ok;
 
 /** Patients the role may find in search: entry rule, minus restricted records off the care team. */
 export function searchablePatientsFor(role: StaffRole, staffId: string | undefined): Patient[] {
-  if (!roleHasChartEntry(role)) return [];
+  if (!roleHasChartEntry(role) || !validAccessActor({ role, staffId })) return [];
   return AdelanteEHR.listPatients().filter((p) => {
     const e = chartEntryFor(role, staffId, p.id);
-    return e.ok && (!e.restricted || e.careTeam);
+    return (e.ok || e.entryEligible) && (!isRestricted(p.id) || onCareTeam(staffId, p));
+  }).map(p => {
+    if (chartEntryFor(role, staffId, p.id).ok) return p;
+    // Contract retains Patient typing for legacy pickers, but denied rows carry
+    // only the minimal identification projection. Never rehydrate these IDs.
+    return { id: p.id, firstName: p.firstName, lastName: p.lastName, dob: p.dob, enrolledSiteId: patientSiteId(p) } as Patient;
   });
+}
+
+export interface ReasonGrant { id: string; patientId: string; staffId: string; role: StaffRole; reasonCode: OpenReason; at: string; expiresAt: string }
+const reasonGrants: ReasonGrant[] = [];
+const teamRequests: { id: string; patientId: string; staffId: string; role: StaffRole; at: string }[] = [];
+export function reasonGrantFor(role: StaffRole, staffId: string | undefined, patientId: string, at = new Date()) { return reasonGrants.find(g => g.role === role && g.staffId === staffId && g.patientId === patientId && activeAt(g.at, g.expiresAt, at)); }
+export function canReasonOpen(actor: AccessActor, patientId?: string) { return !!patientId && validAccessActor(actor) && roleHasChartEntry(actor.role) && !!AdelanteEHR.getPatient(patientId); }
+export function openChartWithReason(input: { patientId: string; reasonCode: string; note?: string; actor: AccessActor; at?: Date }) {
+  if (!canReasonOpen(input.actor, input.patientId) || !input.actor.staffId) throw new Error(CHART_DENIED_MESSAGE);
+  if (!isOpenReason(input.reasonCode) || (input.reasonCode === "other" && !input.note?.trim())) throw new Error("Choose a reason; Other needs a note.");
+  if (isRestricted(input.patientId) && !onCareTeam(input.actor.staffId, AdelanteEHR.getPatient(input.patientId) as Patient) && !isChartUnlocked(input.actor.staffId, input.patientId)) throw new Error("Complete the restricted-record gate first.");
+  const at = input.at ?? new Date();
+  const p = AdelanteEHR.getPatient(input.patientId);
+  if (!p) throw new Error(CHART_DENIED_MESSAGE);
+  const row: ReasonGrant = { id: `reason-${++seq}`, patientId: p.id, staffId: input.actor.staffId, role: input.actor.role, reasonCode: input.reasonCode, at: at.toISOString(), expiresAt: endOfSiteDay(at, p.facilityTimezone ?? "America/Los_Angeles") };
+  reasonGrants.unshift(row); AdelanteEHR._emit(); return { ...row };
+}
+export function requestCareTeamAddition(input: { patientId: string; actor: AccessActor }) {
+  if (!canReasonOpen(input.actor, input.patientId) || !input.actor.staffId) throw new Error(CHART_DENIED_MESSAGE);
+  const row = { id: `team-request-${++seq}`, patientId: input.patientId, staffId: input.actor.staffId, role: input.actor.role, at: new Date().toISOString() };
+  teamRequests.unshift(row); AdelanteEHR._emit(); return { ...row };
+}
+export function careTeamRequests(actor: AccessActor) { return validAccessActor(actor) && actor.role === "clinical_coordinator" ? teamRequests.map(r => ({ ...r })) : []; }
+export function weeklyReasonedOpens(actor: AccessActor, at = new Date()) { return validAccessActor(actor) && actor.role === "clinical_coordinator" ? reasonGrants.filter(g => +at - Date.parse(g.at) >= 0 && +at - Date.parse(g.at) < 7 * 86_400_000).map(g => ({ ...g })) : []; }
+/** Existing group host may use this relationship, never full-chart entry. */
+export function groupContextFor(staffId: string | undefined, patientId: string) {
+  const s = getStaffMember(staffId);
+  return !!s?.clinicianId && s.active !== false && AdelanteEHR.listGroupSessions().some(g => g.status !== "cancelled" && g.facilitatorId === s.clinicianId && AdelanteEHR.listGroupEnrollments(g.id).some(e => e.patientId === patientId));
 }
 
 // ---------------------------------------------------------------------------
@@ -123,7 +169,7 @@ export function setRecordRestricted(input: { patientId: string; restricted: bool
 export function openRestrictedChart(input: { patientId: string; reason: string; actor: Actor }): RestrictedOpenItem {
   need(input.reason);
   const entry = chartEntryFor(input.actor.role, input.actor.staffId, input.patientId);
-  if (!entry.ok) throw new Error(entry.message);
+  if (!entry.ok && !entry.entryEligible) throw new Error(entry.message);
   const at = new Date().toISOString();
   const item: RestrictedOpenItem = { id: `rro-${++seq}`, patientId: input.patientId, actorId: input.actor.staffId, actorName: input.actor.name, role: input.actor.role, at };
   openedItems.unshift(item);
@@ -146,4 +192,4 @@ export function acknowledgeRestrictedOpen(input: { id: string; note: string; act
   return item;
 }
 
-export function _resetChartAccessForTests() { restrictions.clear(); openedItems.length = 0; unlocked.clear(); }
+export function _resetChartAccessForTests() { restrictions.clear(); openedItems.length = 0; unlocked.clear(); reasonGrants.length = 0; teamRequests.length = 0; }

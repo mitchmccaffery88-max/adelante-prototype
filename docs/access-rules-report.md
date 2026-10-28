@@ -1,6 +1,35 @@
-# Care-team / reasoned-open access batch — clean stop
+# Care-team / reasoned-open access batch — partial resumed implementation
 
-**Draft — pending go-live permissions audit. Not implemented.** 28 Oct 2026. Nothing published; persistence OFF; no TEST project/secrets, Cloud or GitHub changes.
+**Draft — pending go-live permissions audit. Partial, not accepted.** 28 Oct 2026. Nothing published; persistence OFF; no TEST project/secrets, Cloud or GitHub changes.
+
+**Part 2 internal-use basis: pending counsel confirmation.**
+
+## 28 Oct 16:12 revised decision — current state
+
+Reapplied access-rules `app.chart_entry`, active-team helper and 60-day packet helper; did not restore the previous site-only rule. Commands `chart_reason_open` and `clinician_coverage_set` remain revoked for public, anon, authenticated and service_role (privileged rollback setup only; no browser execution or 2d transport).
+
+App: shared reason gate reapplied to record/print routes, quick-peek drawer and clinician embedded chart; minimal reason-needed search remains. Added cycle-free relationship boundary into `canAccess` without editing matrix values. Reason-only clinical Part 2 requires class-specific written evidence and a matrix grant; standard TPO alone cannot satisfy this reason-only check. Consent send/sign-in-person/e-sign permissions remain separate from new sys_admin chart entry.
+
+SQL: `phase2_chart_read` applies the same class-specific consent intersection for reason-only entry; direct paths retain `app.can_access`. Existing coordinator and packet consent checks remain separate. **No read policy opened.** The revised full policy acceptance is not complete.
+
+### Case results this retry
+
+- App physician: reason-only crisis open locks `screeners_sud`; adding an active team assignment preserves the existing read grant; non-granted psychotherapy class stays denied — passed.
+- App entry/search/restricted baseline updated for superseded site-only assumptions: 14/14 passed.
+- SQL all 18 roles: real claim identity; eligible team entry; off-team denial except oversight; unexpired reason entry; expiry; direct treating SUD-screener grants and reason-only no-consent lock — passed in rollback migration `20261028162346_5c7d2fa1-e0e1-4c44-b4db-8d4e73347bfb`. Every public-table count and auth-user count compared after nested fixture rollback.
+- SQL physician consent scope: reason-only locks without consent; specific written `screeners_sud` consent unlocks that class only; `sud_treatment` and psychotherapy remain denied; revoke re-locks — passed in `20261028162530_4a25c373-bd61-4dbf-9f97-0826089ad0e9`.
+- Initial consent fixture used invalid `wet_signature`; corrected to existing `wet_sign_upload`, not a schema change. Failed fixture rolled back.
+- Unproved this retry: dated on-call/coverage/supervision SQL vectors; group-context limits; Intake authenticated day-60/day-61 rows; complete patient/advocate composition; actual chart/packet/handoff policy reads; full app consent/revoke parity and UI readback. These groups remain closed.
+
+### Current validation and remaining work
+
+Full units ran before browsers: **3,571 passed / 13 failed**, 407 files, exit 1, 230.60 seconds (`/tmp/access-revised-units.log`). Subsequent focused gates/consent tests: **41 passed / 2 failed**; the remaining focused failures are MOUD continuity's assigned CF actor, whose episode ownership is not currently part of the chart-team model. The temporary episode-team workaround was removed because app/SQL must not disagree.
+
+Other full-suite failures include old byte-for-byte chartAccess/roles/navGuard pins, old sys_admin program-ID presentation expectations, coverage test assuming any same-site ECM actor immediately opens a chart, and the registry permission snapshot. Consent test expectations and nonexistent route-test identity were narrowly corrected; full suite has not been rerun afterward. No unrelated matrix assertion was changed.
+
+Public browser suite **not run this retry**, because full units are not green. Previously restored-browser 51/51 below is historical, not validation of this implementation. Coordinator review/request/coverage host, Intake logged checklist host, source-pin adapters, assignment-fixture corrections and remaining policy proofs are unfinished. Build currently OK. No acceptance or complete UI readback claimed.
+
+The sections below retain the historical stop evidence; their restoration status is superseded by this retry.
 
 ## What happened
 
