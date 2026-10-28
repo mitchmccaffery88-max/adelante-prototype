@@ -1,5 +1,13 @@
 # Roadmap
 
+## 27 Oct Supabase Phase 2c revised — main rollback access tests
+- [x] Real-claims fictional fixtures for all 18 roles, patient and advocate; all public-table/auth counts unchanged after rollback; no TEST secrets.
+- [x] 2,170 assertions; opened only own_work_sites and identity_lane after all-role positive/negative tests; failed/unproved groups stay closed.
+- [x] Shared TS/SQL crisis-owner vectors 6/6 each; separate policy migrations; no routing/persistence cutover.
+- [ ] Chart off-team/restricted-team rule decision — blocked by conflict with existing chart_entry; full packet/handoff, advocate composition, cross-org and identity decision acceptance remain incomplete (unported contracts).
+- [x] Full units 3,544/3,544 then clean full public browser 51/51, one worker, nonoverlapping (initial 49/51, unchanged Diana 5/5); evidence phase2c-main-rollback.md and Phase 2 report.
+- Phase 2d: repositories/write transport/signup parity/storage/switches; lifecycle state, need confirmations, invite tokens/contact verification tables.
+
 ## 27 Oct sign-up verification redesign — Draft
 - [x] Invite link (hashed, 14-day, single use, rate-limited), reminders reuse it, pre-release timing, expired resend to contact on file, lost-contact review.
 - [x] Not-invited: name+DOB, contact+channel, one code required; auto-match only on verified contact on file; paper code + last name + DOB; staff in-person PIN setup; passwordless sign-in option.
@@ -14,6 +22,7 @@
 
 
 ## 27 Oct Supabase Phase 2c — blocked before migrations
+- Historical test-project attempt; superseded by revised main rollback batch above. Test project remains parked/optional.
 - [x] Retry safety preflight: all four TEST_SUPABASE secrets exist; test ref cguwotbbuyqzgmebckqy differs from main bnvukmpmwuhftvjpnwqi; test database ref matches test API ref. No values recorded.
 - [ ] Apply Phase 1 + 2 + 2b migrations to test only and compare migration versions — blocked: available migration tool targets the connected main project and offers no test-project target. Shell-based database modifications are not permitted. Do not reconnect the integration or run the migration tool against main as a substitute.
 - [ ] After migration-target blocker is resolved: fictional per-role signed-JWT accounts, store-driven seeds, positive/negative RLS and crisis-owner parity; open only proven reads in both projects.

@@ -1,5 +1,19 @@
 # Supabase Phase 2 — partial closed foundation
 
+## Revised Phase 2c (27 Oct request; 27–28 Oct execution)
+
+Main-only rollback tests replace the test-target stop; no TEST secrets or separate project used. Real auth.uid claim mapping exercised for all 18 roles plus patient/advocate; no helper override. Fixtures and temporary candidate grants roll back; all public table counts and auth.users before/after agree. **2,170 successful assertions**, including current-contract and structural checks, are not full acceptance.
+
+Opened only `staff_site_assignments.own_work_sites` (migration `20261028000257_4f9dfaea-581a-4fa2-8a80-25052f690790`) and `identity_review_items.identity_lane` (`20261028000352_576e52d5-23dc-4c2b-bf40-5b3c0ec312e1`) after their all-role positive/negative suites. All direct writes and unproved read groups/RPCs remain closed; persistence stays OFF.
+
+**Unresolved:** chart_entry allows same-site outside-caseload reads, contrary to requested off-team denial; restricted care-team members bypass reasoned open. Packet tests pass in the pre-completion fixture window, not completed Intake. Full authenticated packet/handoff row-read acceptance, advocate policy composition, cross-org vectors and populated support/inbox isolation remain incomplete. Identity decision writes are unported, so Intake/sys_admin SQL decisions are not enabled. No SQL public directory exists until Phase 5.
+
+Shared crisis-owner vectors: TS 6/6 and SQL 6/6, normalized coordinator fallback; no routing changes. Full units 3,544/3,544; sequential clean full public browser 51/51, exit 0 (initial 49/51; unchanged isolated Diana 5/5). Evidence and every migration ID: `docs/rls-evidence/phase2c-main-rollback.md`. Supabase linter clean; build OK; zero retained fixture users/accounts/data. No publishing, Cloud or GitHub linking.
+
+**2d only:** repositories, server/registry writes, signup parity, signed-copy storage, persistence switches; lifecycle-state, Getting-started need-confirmation, **sign-up invite-token/contact-verification tables**.
+
+Earlier Phase 2/2b/2c sections below are historical; their complete-closure and test-target statements are superseded by this revised update.
+
 27 Oct 2026. **Not complete; persistence remains OFF; nothing published.** Existing connected Supabase Pro project only. No Lovable Cloud, GitHub link, connector, auth-user changes, or buckets.
 
 ## Installed tables
