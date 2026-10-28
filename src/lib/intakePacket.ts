@@ -84,7 +84,7 @@ export function attachIntakePacket(actor: IntakeActor, referralId: string, input
 }
 export function intakePacketDocuments(actor: IntakeActor, referralId: string) {
   if (!canIntakeB(actor, "packet_attach")) return [];
-  if (actor.role === "intake_coordinator" && !canReadIntakePacket(actor, referralId)) return [];
+  if (actor.role === "intake_coordinator" && intakeCompleted(referralId) && !canReadIntakePacket(actor, referralId)) return [];
   const r = referralForPacket(referralId);
   return (documents.get(referralId) ?? []).map(d => {
     const restricted = !!(r.enrolledPatientId && isRestricted(r.enrolledPatientId)) || (d.part2 && !intakeTreatmentConsent(r));
