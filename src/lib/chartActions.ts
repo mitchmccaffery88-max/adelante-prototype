@@ -93,7 +93,7 @@ import { acknowledgeCredentialingNotice, canManageCredentialing, CREDENTIALING_D
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 import { credentialRecordCommand } from "./credentialingActions";
 import { canReasonOpen, openChartWithReason, requestCareTeamAddition, roleCanSendConsent } from "./chartAccess";
-import { canManageCoverage, saveCoverageAssignment, saveAdditionalTeamAssignment } from "./chartRelationships";
+import { canManageCoverage, saveCoverageAssignment, saveAdditionalTeamAssignment, canAssignMoudCareManager, assignMoudCareManager, endMoudCareManager } from "./chartRelationships";
 
 export const REGISTRY_VERSION = "2026-10-28.access-rules";
 

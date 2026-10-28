@@ -49,6 +49,9 @@ export function assignMoudCareManager(actor: AccessActor, input: { episodeId: st
   const at = input.at ?? new Date().toISOString();
   ep.cfCareManagerStaffId = s.id; ep.cfCareManagerName = s.name;
   const source = `moud:${ep.id}`;
+  for (const r of additionalTeam) if (r.staffId !== s.id && r.patientId === ep.patientId && r.sources?.includes(source)) {
+    r.sources = r.sources.filter(x => x !== source); if (!r.sources.length && !r.end) r.end = at;
+  }
   let row = additionalTeam.find(r => r.staffId === s.id && r.patientId === ep.patientId && activeAt(r.start, r.end, new Date(at)));
   const kept = !!row;
   if (row) { row.kind = row.kind ?? "care_manager"; row.sources = [...new Set([...(row.sources ?? ["coordinator"]), source])]; }
