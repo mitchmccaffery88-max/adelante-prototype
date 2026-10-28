@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useEhrExt } from "@/lib/ehr-ext";
 import { billingAppointments, billingClaims } from "@/lib/billingProjection";
@@ -16,10 +15,8 @@ export function CredentialingReviewFlags() {
 function CredentialingReviewFlagsBody() {
   const appointments = useEhr(() => billingAppointments());
   const claims = useEhrExt(() => billingClaims());
-  const credentialVersion = useCredentialing(() => Symbol());
-  const flags = useMemo(
+  const flags = useCredentialing(
     () => credentialingReviewFlags(appointments, claims, (pid) => AdelanteEHR.activeCoveragePlan(pid)?.payer),
-    [appointments, claims, credentialVersion],
   );
   if (flags.length === 0) return null;
   return (
