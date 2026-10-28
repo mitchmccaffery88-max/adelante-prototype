@@ -1,13 +1,16 @@
 # Roadmap
 
 ## 27 Oct access rules — 28 Oct implementation (Draft)
+- [ ] 28 Oct 16:32 approved resume: narrow superseded assertions/pins/snapshot, MOUD normal team membership, remaining hosts and rollback vectors, separately proven read groups; full units then public browser/readback. Stop on unrelated failures.
+- [x] Narrow access/search assertions, three exact-one-change pins, sys_admin labels, ECM reason fixture and real outpatient MOUD team fixture; registry snapshot refreshed, all 73 changed rows reported.
+- [ ] Blocked outside named re-pin scope: billingProjectionB3b therapist/sys_admin pin src/routes/clinician.tsx; existing embedded-gate delta violates that protected source pin. Do not change the pin or remove the gate without a scoped decision. Full units 3,583 passed / 2 failed; browser and new SQL acceptance not started.
 - [x] Inventory shared app gates, SQL entry and rollback harness; identified the superseded mandatory-site rule and pre-data rendering gap.
 - [x] Resolve Part 2 prerequisite: Mitch chose Keep existing exceptions; no-consent negatives target already consent-gated roles/classes.
 - [ ] Finish shared gate/readback, coordinator review/request/coverage hosts and exact source-pin/assignment-fixture reconciliation; entry helpers reapplied, no previous-rule restore.
 - [ ] Intake read-only 60-day packet/checklist logged hosts and authenticated day-60/day-61 proof; helpers reapplied, policies closed.
 - [x] All-18-role chart helper rollback and physician reason-only specific-consent/revoke proof; all-public/auth counts equal, no fixtures retained.
 - [ ] Complete on-call/coverage/supervision/group/patient/advocate and policy-level acceptance; open only passing groups — none opened.
-- [ ] Resolve full units (3,571/3,584), rerun green full units, then public browser and UI readback; no browser retry while units fail.
+- [ ] Resolve protected clinician-screen pin blocker (3,583 passed / 2 failed), rerun green full units, then public browser and UI readback; no browser retry while units fail.
 - [x] Document failed rollback attempts, zero retained fixture counts, report, Draft proposed matrix and architecture stop rule.
 - [x] Restore clean app/SQL boundary; restored units 3,583/3,583, 406 files, exit 0.
 - [x] Isolated restored-app public browser 51/51, exit 0, 10.1 minutes, one worker, after units; build OK and Supabase linter clean.

@@ -10,11 +10,18 @@ import { runAction } from "@/lib/actions/runAction";
 
 const luisId = () => demoScenarioPatientId("sud_consented")!;
 const jordanId = () => demoScenarioPatientId("sud_no_consent")!;
-const cf = { role: "cf_care_manager" as const, staffId: "s-cf2" };
+// Darnell's current outpatient held role is ECM; his historical CF role is in-facility only.
+const cf = { role: "ecm_provider" as const, staffId: "s-cf2" };
 const rx = { role: "physician" as const, staffId: "s-np1" };
 const other = { role: "billing" as const, staffId: "s-bill1" };
 
 function openEpisode(patientId: string) {
+  // Use a real registry-established care-team member, never episode ownership as chart entry.
+  const assigned = runAction("chart_team_assignment", { role: "clinical_coordinator", staffId: "s-cc1" }, undefined, {
+    args: [{ role: "clinical_coordinator", staffId: "s-cc1" }, { patientId, staffId: cf.staffId, start: "2026-01-01T00:00:00Z" }],
+    auditReason: "Assigned care-manager fixture",
+  });
+  if (!assigned.ok) throw new Error("Care-team fixture assignment refused");
   return AdelanteEHR.openPreReleaseEpisode({
     patientId, anticipatedReleaseDate: "2026-11-01", cfCareManagerStaffId: "s-cf2", cfCareManagerName: "Darnell Pope",
     openedBy: "s-cf2", actorRole: "cf_care_manager",

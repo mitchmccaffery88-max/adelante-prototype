@@ -4,6 +4,26 @@
 
 **Part 2 internal-use basis: pending counsel confirmation.**
 
+## 28 Oct 16:32 approved resume — stopped on an assertion outside named scope
+
+Applied only the approved assertion updates and fixture corrections. The new source adapter validates SHA-256 of the entire previously approved text, then applies exactly one approved re-pin for each of `chartAccess.ts`, `roles.ts` and `navGuard.ts`. Other pinned files are unchanged. No matrix values or application permission logic changed in this resume.
+
+Access tests now explicitly cover cross-site assigned-clinician entry, off-team reason gate, minimal search identifiers and prototype sys_admin oversight. The coverage fixture opens with a registry reason instead of assuming same-site entry. The MOUD fixture adds the assigned manager through the normal registry team action and uses Darnell's actual outpatient ECM role; his historical CF assignment is in-facility-only and remains unavailable. **This is a fixture correction, not completion of the requested episode-assignment/team-write lifecycle.**
+
+Focused fixture/access tests: **45/45 passed**. Registry tests after approved snapshot regeneration: **7/7 passed**. Full units: **3,583 passed / 2 failed**, 407 files, exit 1, 115.99 seconds. Both remaining failures are `billingProjectionB3b.test.ts` therapist/sys_admin source equality against **`src/routes/clinician.tsx`**, not any of the three approved re-pin files. The existing embedded `ChartAccessGate` import/wrapper and its selected-patient guard cause the mismatch. No assertion changed or gate removed to conceal it. Per Mitch's instruction to stop on other failures, further work stopped here; a green full-suite result cannot honestly be claimed within the named pin scope.
+
+Public browser suite and preview readback were not run because units are not green. No migrations, rollback acceptance, or read-policy opening occurred in this resume. Independent database readback: auth.users **0**, accounts **0**, patients **18**, reason grants **0**, coverage **0**. Both command functions remain non-executable by anon, authenticated and service_role. Build OK; nothing published; persistence remains OFF.
+
+### Exact remaining scope
+
+1. Resolve the protected clinician-screen pin conflict without weakening embedded gating or unrelated assertions; rerun full units green.
+2. Implement episode-assignment → normal active `care_manager` team membership in the same registry write with one audit, preserve independent memberships when ending, and prove matching SQL behavior. Existing episode opening is not a named registry assignment action; no second episode-ownership chart path was added.
+3. Finish coordinator care-team-request, coverage and weekly reasoned-open hosts; Intake logged read-only packet/checklist window; access-log reason readback; complete search/deep-link/print/PDF/embedded gate verification.
+4. Prove dated on-call/coverage/supervision, group-context limits, Intake day 60/61, patient/advocate composition and policy-level reads in all-role main rollback acceptance with before/after counts. Open each passing group separately; all unproved groups remain closed.
+5. Run public browser suite only after full units pass, then gate/banner/coordinator/Intake preview readback; complete final reports and Draft matrix.
+
+Registry snapshot: **73 changed rows** — 72 additive rows for the four approved chart actions (most hidden for the snapshot's unspecified actor), plus sys_admin `chart_restricted_open` hidden → allowed under prototype chart entry. Clinical-note-content rows and all other existing action outcomes are byte-identical. The complete row ledger follows at the end of this report; snapshot is not proof of patient/identity-specific button/store parity.
+
 ## 28 Oct 16:12 revised decision — current state
 
 Reapplied access-rules `app.chart_entry`, active-team helper and 60-day packet helper; did not restore the previous site-only rule. Commands `chart_reason_open` and `clinician_coverage_set` remain revoked for public, anon, authenticated and service_role (privileged rollback setup only; no browser execution or 2d transport).
@@ -67,4 +87,78 @@ All fixture transactions rolled back. Independent counts: auth users 0→0, acco
 
 With the Part 2 decision resolved, confirm the narrow superseded-test updates, then reapply the coordinated app/SQL gate; preserve consent actions independently from sys_admin chart entry; use actual assigned care-team fixtures rather than old site-only test assumptions; add exact approved source-pin deltas without replacing unrelated assertions. Finish shared search/deep-link/print/PDF/embedded chart gating, grant expiry and minimal projections, coordinator request/coverage/review hosts, access-log reason display, and Intake's logged read-only 60-day packet/checklist window.
 
-Then complete all-role rolled-back SQL acceptance and comprehensive before/after counts; open each passing read-policy group separately; run full units followed by public browser and real preview UI readback. Phase 2d repositories, server write transport, signup parity, storage and persistence switches remain outside scope.
+Then complete all-role rolled-back SQL acceptance and comprehensive before/after counts; open each passing read-policy group separately; run full units followed by public browser and real preview UI readback. Phase 2d repositories, server write transport, signup parity, storage and persistence switches remain outside scope.| Role | Action | Before | After |
+|---|---|---|---|
+| billing | chart_coverage_set | absent | hidden |
+| billing | chart_reason_open | absent | hidden |
+| billing | chart_team_assignment | absent | hidden |
+| billing | chart_team_request | absent | hidden |
+| billing_coordinator | chart_coverage_set | absent | hidden |
+| billing_coordinator | chart_reason_open | absent | hidden |
+| billing_coordinator | chart_team_assignment | absent | hidden |
+| billing_coordinator | chart_team_request | absent | hidden |
+| cf_care_manager | chart_coverage_set | absent | hidden |
+| cf_care_manager | chart_reason_open | absent | hidden |
+| cf_care_manager | chart_team_assignment | absent | hidden |
+| cf_care_manager | chart_team_request | absent | hidden |
+| clinical_coordinator | chart_coverage_set | absent | allowed |
+| clinical_coordinator | chart_reason_open | absent | hidden |
+| clinical_coordinator | chart_team_assignment | absent | allowed |
+| clinical_coordinator | chart_team_request | absent | hidden |
+| clinical_trainee | chart_coverage_set | absent | hidden |
+| clinical_trainee | chart_reason_open | absent | hidden |
+| clinical_trainee | chart_team_assignment | absent | hidden |
+| clinical_trainee | chart_team_request | absent | hidden |
+| community_health_worker | chart_coverage_set | absent | hidden |
+| community_health_worker | chart_reason_open | absent | hidden |
+| community_health_worker | chart_team_assignment | absent | hidden |
+| community_health_worker | chart_team_request | absent | hidden |
+| credentialing_coordinator | chart_coverage_set | absent | hidden |
+| credentialing_coordinator | chart_reason_open | absent | hidden |
+| credentialing_coordinator | chart_team_assignment | absent | hidden |
+| credentialing_coordinator | chart_team_request | absent | hidden |
+| ecm_provider | chart_coverage_set | absent | hidden |
+| ecm_provider | chart_reason_open | absent | hidden |
+| ecm_provider | chart_team_assignment | absent | hidden |
+| ecm_provider | chart_team_request | absent | hidden |
+| intake_coordinator | chart_coverage_set | absent | hidden |
+| intake_coordinator | chart_reason_open | absent | hidden |
+| intake_coordinator | chart_team_assignment | absent | hidden |
+| intake_coordinator | chart_team_request | absent | hidden |
+| lvn | chart_coverage_set | absent | hidden |
+| lvn | chart_reason_open | absent | hidden |
+| lvn | chart_team_assignment | absent | hidden |
+| lvn | chart_team_request | absent | hidden |
+| medical_assistant | chart_coverage_set | absent | hidden |
+| medical_assistant | chart_reason_open | absent | hidden |
+| medical_assistant | chart_team_assignment | absent | hidden |
+| medical_assistant | chart_team_request | absent | hidden |
+| nurse_rn | chart_coverage_set | absent | hidden |
+| nurse_rn | chart_reason_open | absent | hidden |
+| nurse_rn | chart_team_assignment | absent | hidden |
+| nurse_rn | chart_team_request | absent | hidden |
+| peer_specialist | chart_coverage_set | absent | hidden |
+| peer_specialist | chart_reason_open | absent | hidden |
+| peer_specialist | chart_team_assignment | absent | hidden |
+| peer_specialist | chart_team_request | absent | hidden |
+| physician | chart_coverage_set | absent | hidden |
+| physician | chart_reason_open | absent | hidden |
+| physician | chart_team_assignment | absent | hidden |
+| physician | chart_team_request | absent | hidden |
+| pmhnp | chart_coverage_set | absent | hidden |
+| pmhnp | chart_reason_open | absent | hidden |
+| pmhnp | chart_team_assignment | absent | hidden |
+| pmhnp | chart_team_request | absent | hidden |
+| sud_counselor | chart_coverage_set | absent | hidden |
+| sud_counselor | chart_reason_open | absent | hidden |
+| sud_counselor | chart_team_assignment | absent | hidden |
+| sud_counselor | chart_team_request | absent | hidden |
+| sys_admin | chart_coverage_set | absent | hidden |
+| sys_admin | chart_reason_open | absent | hidden |
+| sys_admin | chart_restricted_open | hidden | allowed |
+| sys_admin | chart_team_assignment | absent | hidden |
+| sys_admin | chart_team_request | absent | hidden |
+| therapist | chart_coverage_set | absent | hidden |
+| therapist | chart_reason_open | absent | hidden |
+| therapist | chart_team_assignment | absent | hidden |
+| therapist | chart_team_request | absent | hidden |

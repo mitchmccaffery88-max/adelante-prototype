@@ -1,5 +1,13 @@
 # Access rules — main rollback evidence
 
+## 28 Oct 16:32 resume checkpoint
+
+**Part 2 internal-use basis: pending counsel confirmation.** No migration or new rollback proof in this resume; no chart/packet/handoff read policies opened. Previous successful helper proofs below remain the latest SQL test evidence, not complete policy acceptance.
+
+Independent SELECT-only readback after app test reconciliation: auth.users 0, accounts 0, patients 18, chart_reason_grants 0, clinician_coverage_assignments 0 — unchanged from the prior documented before counts 0/0/18/0/0. No fixtures were introduced this turn; this is not a new all-table transaction-count proof. `chart_reason_open` and `clinician_coverage_set`: anon/authenticated/service_role execution all **false**.
+
+Full app units: 3,583 passed / 2 failed, exit 1; protected clinician-screen source pin lies outside the three named re-pins. Stopped without changing that assertion; no public browser or preview acceptance. Pending SQL cases: dated on-call/coverage/supervision, group limits, authenticated Intake 60/61, patient/advocate composition, MOUD team-assignment lifecycle and actual policy-group reads. Persistence OFF; nothing published.
+
 ## Revised 28 Oct 16:12 decision — current retry evidence
 
 **Part 2 internal-use basis: pending counsel confirmation.** Access-rules helpers reapplied; no chart/packet/handoff policy opened; commands remain revoked and persistence OFF.
