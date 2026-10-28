@@ -24,6 +24,7 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
+import { credentialedForService, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL } from "./credentialing";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { assertGroupApproval, assertGroupStaffRequest, groupRequestHooks } from "./groupRequestBoundary";
 import { ON_CALL_GAP, onCallOwnerFor } from "./onCallBoundary";
@@ -8331,6 +8332,32 @@ function _assertBookingOp(actor: { name: string; role: StaffRole; id?: string },
   const chk = checkBookingRights({ role: actor.role, op, inCaseload: _inStaffCaseload(actor, a.patientId), serviceType: a.serviceType, asam: !!a.asamTaskId });
   if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
 }
+/**
+ * 27 Oct (Mitch) — credentialing booking block (Draft — pending go-live
+ * permissions audit and compliance review). Returns the neutral scheduler
+ * message when the rendering clinician fails the ONE credentialing rule for
+ * this payer + service type, or undefined when booking may proceed. Runs only
+ * when the patient's payer is known (active coverage plan) and the service is
+ * billable — coverage verification is a separate readiness item, and
+ * non-billable support work is never blocked. Existing appointments and
+ * claims are flagged for Billing review (credentialingReviewFlags), never
+ * cancelled or deleted.
+ */
+export function bookingCredentialingBlock(
+  clinicianId: string,
+  serviceType: string | undefined,
+  patientId: string,
+  start: string,
+): string | undefined {
+  if (!isBillableServiceType(serviceType)) return undefined;
+  const member = STAFF_ROSTER.find((s) => s.clinicianId === clinicianId);
+  if (!member) return undefined;
+  const payer = AdelanteEHR.activeCoveragePlan(patientId)?.payer;
+  if (!payer) return undefined;
+  const res = credentialedForService(member.id, payer, serviceType, start);
+  return res.ok ? undefined : "This clinician can't be booked for this service right now.";
+}
+
 /** Prescriber / MAT visits → physician or PMHNP calendars; SUD types → a calendar that offers them. */
 function _assertClinicianFit(clinicianId: string, serviceType?: ServiceType) {
   const c = clinicians.find((x) => x.id === clinicianId);
@@ -9258,6 +9285,12 @@ export const AdelanteEHR = {
     if (!input.clinicianId?.trim()) throw new Error("Choose whose calendar to book on.");
     const cred = AdelanteEHR.canBook(input.clinicianId);
     if (!cred.ok) throw new Error(cred.reason);
+    // 27 Oct (Mitch) — credentialing hard-stop (Draft): a clinician who fails
+    // the "credentialed for this service" rule can't be booked for NEW
+    // billable services for that payer. Non-billable support work continues;
+    // existing appointments are flagged for Billing review, never cancelled.
+    const credBlock = bookingCredentialingBlock(input.clinicianId, input.serviceType, input.patientId, input.start);
+    if (credBlock) throw new Error(credBlock);
     const bookRole = input.bookedBy?.role as StaffRole | undefined;
     const isStaffBooking = !!bookRole && input.source !== "self_scheduled" && bookRole !== ("patient" as StaffRole);
     if (isStaffBooking) {
@@ -26800,7 +26833,11 @@ try {
     }
   };
   book(demoScenarioPatientId("sud_consented"), "c5", 60, "med_management");
-  book("p1", "c5", 150, "med_management");
+  // 27 Oct credentialing (Draft): p1 has active Medi-Cal FFS coverage and
+  // Dr. Bagga's exclusion check is overdue, so the ONE credentialing rule
+  // blocks a NEW p1 booking with c5. The demo visit books with the other
+  // enrolled prescriber instead; Dr. Bagga keeps his uncovered-patient visit.
+  book("p1", "c3", 150, "med_management");
   book(demoScenarioPatientId("public_referral"), "c3", 90, "med_management");
   book(demoScenarioPatientId("combination"), "c3", 180, "med_management");
   book("p3", "c1", 120, "therapy_individual");

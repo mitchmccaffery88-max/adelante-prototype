@@ -32,7 +32,8 @@ import {
 import { toast } from "sonner";
 import { LANE_LABEL, LANE_ORDER, type LaneKey } from "@/lib/billingLane";
 import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
-import { canAccess, useActingStaff } from "@/lib/roles";
+import { canAccess, getStaffMember, useActingStaff } from "@/lib/roles";
+import { credentialingReviewFlags, CREDENTIALING_REASON_LABEL } from "@/lib/credentialing";
 import { ClaimSignatureLine } from "@/components/billing/ClaimSignatureLine";
 import { ClaimAmount, RatesPanel } from "@/components/billing/RatesPanel";
 import {
@@ -158,6 +159,12 @@ function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointments, patients, claims]);
 
+  // 27 Oct (Mitch) — existing appointments/claims whose rendering clinician
+  // fails the credentialing rule: flagged for Billing review, never changed.
+  const credFlags = useMemo(
+    () => credentialingReviewFlags(appointments, claims, (pid) => AdelanteEHR.activeCoveragePlan(pid)?.payer),
+    [appointments, claims],
+  );
   const [laneFilter, setLaneFilter] = useState<"all" | LaneKey>("all");
   const initialStatus = Route.useSearch().status;
   const [statusFilter, setStatusFilter] = useState<"all" | BillingStatus>(initialStatus ?? "all");
@@ -501,6 +508,26 @@ function BillingPage() {
 
       {tab === "credentials" && (
         <section className="space-y-3">
+          {credFlags.length > 0 && (
+            <div className="rounded-xl border border-gold bg-gold/10 p-4" data-testid="billing-cred-review-flags">
+              <h3 className="font-semibold">Flagged for Billing review ({credFlags.length})</h3>
+              <p className="text-xs text-muted-foreground">
+                Existing appointments and claims whose rendering clinician currently fails the credentialing rule.
+                Nothing is cancelled or changed — review only.
+              </p>
+              <ul className="mt-2 space-y-1 text-sm">
+                {credFlags.map((f) => (
+                  <li key={`${f.kind}-${f.id}`} className="flex flex-wrap items-center gap-2">
+                    <StatusChip lang="en" state="yourturn" label={f.kind === "claim" ? "Claim" : "Appointment"} />
+                    <span className="font-medium">{getStaffMember(f.staffId)?.name ?? f.staffId}</span>
+                    <span className="text-muted-foreground">
+                      {[...new Set(f.reasons.map((r) => CREDENTIALING_REASON_LABEL[r]))].join("; ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="rounded-xl border bg-card overflow-hidden">
             <StaffTable rows={clinicians} rowKey={(c) => c.id} label={tableCopy.credentials} testId="billing-credentials-table" columns={[{ id: "name", label: "Clinician", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{c.name}</>; } },{ id: "credential", label: "Credential", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{c.credential}</>; } },{ id: "medical", label: "Medi-Cal", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <><StatusChip lang="en" state={c.mediCalStatus === "active" ? "done" : c.mediCalStatus === "pending" ? "upnext" : "closed"} label={c.mediCalStatus} /></>; } },{ id: "license", label: "License #", mono: true, cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>LIC-{1000 + i}</>; } },{ id: "npi", label: "NPI", mono: true, cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>193{i}45678{i}</>; } },{ id: "dea", label: "DEA", mono: true, cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{i === 0 ? "BR1234567" : "—"}</>; } },{ id: "dmc", label: "DMC cert", mono: true, cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{i === 0 ? "DMC-0042" : "—"}</>; } },{ id: "expires", label: "License exp.", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <>{c.licenseExpiresOn ?? "—"}</>; } },{ id: "booking", label: "Booking", cell: (c) => { const i = clinicians.indexOf(c); const canBook = AdelanteEHR.canBook(c.id); return <><StatusChip lang="en" state={canBook.ok ? "done" : "yourturn"} label={canBook.ok ? "Allowed" : "Blocked"} />{!canBook.ok && <div className="text-sm text-muted-foreground">{canBook.reason}</div>}</>; } }]} />
           </div>

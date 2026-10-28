@@ -19,7 +19,8 @@ export type FeatureId =
   | "scribe_simulated"
   | "llm_simulated"
   | "calendar_sync_simulated"
-  | "consent_upload_simulated";
+  | "consent_upload_simulated"
+  | "credential_monitor_simulated";
 
 export interface FeatureFlag {
   id: FeatureId;
@@ -165,6 +166,14 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     scope: "global",
     simulated: true,
   },
+  {
+    id: "credential_monitor_simulated",
+    description: "Non-manual credential monitoring channels (vendor, exclusion-list file check, CVO) are mocks; only manual lookup is live. Off by default; switchable by configuration only.",
+    owner: "Revenue cycle",
+    default: false,
+    scope: "global",
+    simulated: true,
+  },
 ];
 
 const overrides = new Map<FeatureId, boolean>();
@@ -257,6 +266,7 @@ export const SIMULATED_SURFACE_LABELS: Partial<Record<FeatureId, string>> = {
   scribe_simulated: `${SIMULATED_LABEL} AI scribe — scripted transcript and draft, no audio stored`,
   llm_simulated: `${SIMULATED_LABEL} — template summary from the bullets, no AI model`,
   calendar_sync_simulated: `${SIMULATED_LABEL} calendar sync — nothing leaves Adelante`,
+  credential_monitor_simulated: `${SIMULATED_LABEL} — no live credential monitoring connection`,
 };
 export function simulatedSurfaceLabel(id: FeatureId): string {
   return SIMULATED_SURFACE_LABELS[id] ?? SIMULATED_LABEL;

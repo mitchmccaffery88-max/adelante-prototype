@@ -18,13 +18,13 @@ import { websiteIntakeActor } from "@/lib/website/websiteInbox";
 import { publicReportActor } from "@/lib/website/publicResourceReports";
 
 afterEach(cleanup);
-const flags = ["hie_simulated", "voice_intake", "adel_drafts", "placeholder_lab", "cures_placeholder", "eligibility_simulated", "erx_simulated", "telehealth_simulated", "caloms_export_simulated", "notifications_simulated", "payments_simulated", "scribe_simulated", "llm_simulated", "calendar_sync_simulated", "consent_upload_simulated"] as const;
+const flags = ["hie_simulated", "voice_intake", "adel_drafts", "placeholder_lab", "cures_placeholder", "eligibility_simulated", "erx_simulated", "telehealth_simulated", "caloms_export_simulated", "notifications_simulated", "payments_simulated", "scribe_simulated", "llm_simulated", "calendar_sync_simulated", "consent_upload_simulated", "credential_monitor_simulated"] as const;
 function patient() {
   const p = AdelanteEHR.listPatients()[0];
   if (!p) throw new Error("Missing demo patient");
   return p;
 }
-describe("SL all 15 simulated flags: rendered bilingual label and audit contract", () => {
+describe("SL all 16 simulated flags: rendered bilingual label and audit contract", () => {
   it("covers the exact simulated registry, excluding outpatient switch", () => {
     expect(FEATURE_FLAGS.filter(f => f.simulated).map(f => f.id).sort()).toEqual([...flags].sort());
     expect(FEATURE_FLAGS.find(f => f.id === "in_facility")?.simulated).toBe(false);

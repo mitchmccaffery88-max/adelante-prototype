@@ -23,6 +23,7 @@ import { didntStartCareFor } from "./lifecycleState";
 import { referralClaimCodeConsumed } from "./identityReview";
 import { getStructuredPlan } from "./structuredCarePlan";
 import { cohortGuard } from "./cohortGuard";
+import { credentialedForService, CREDENTIALING_NEUTRAL_LABEL, CREDENTIALING_REASON_LABEL, type CredentialingReasonCode } from "./credentialing";
 
 export const LIFECYCLE_DRAFT = "Draft — pending EHR/Admin audit";
 
@@ -94,14 +95,30 @@ export function coverageForPatient(pid: string): { pathSet: boolean; verified: b
   };
 }
 
-/** Attended service with a signed note whose rendering clinician has a roster credential (Draft proxy). */
+/**
+ * Attended service with a signed note whose rendering clinician passes the ONE
+ * credentialing rule (27 Oct, Mitch — Draft). Replaces the old
+ * credential-on-file proxy (`staff.credential` free text): the rule checks a
+ * verified unexpired license/registration, exclusion monitoring, payer
+ * enrollment for the service, and supervision for associates.
+ */
 export function billableService(pid: string) {
   const p = AdelanteEHR.getPatient(pid);
   const attended = AdelanteEHR.appointmentsForPatient(pid).filter((a) => a.status === "attended");
   const notes = p?.progressNotes ?? [];
   const signed = attended.find((a) => notes.some((n) => n.appointmentId === a.id && !!n.signedAt));
   const staff = signed ? STAFF_ROSTER.find((s) => s.clinicianId === signed.clinicianId) : undefined;
-  return { attendedSigned: !!signed, credentialed: !!(staff && staff.credential) };
+  const payer = AdelanteEHR.activeCoveragePlan(pid)?.payer;
+  const check = signed
+    ? staff
+      ? credentialedForService(staff.id, payer, signed.serviceType, signed.start)
+      : ({ ok: false, reasons: ["no_record"] } as const)
+    : undefined;
+  return {
+    attendedSigned: !!signed,
+    credentialed: !!check && check.ok,
+    credentialingReasons: check && !check.ok ? [...check.reasons] : [] as CredentialingReasonCode[],
+  };
 }
 
 export function firstCarePlanDrafted(pid: string): boolean {
@@ -210,19 +227,33 @@ export function lifecycleHome(v: LifecycleView, role: StaffRole): { to: string; 
 
 export interface BillingReadiness {
   ready: boolean;
-  checklist: { label: string; done: boolean }[];
+  checklist: { label: string; done: boolean; detail?: string }[];
 }
 
-/** Presentation only. Non-billing viewers receive checklist labels only — never payer detail. */
-export function billingReadiness(pid: string): BillingReadiness {
+/** Roles that may see the credentialing rule's reasons; everyone else gets the neutral label. */
+export const CREDENTIALING_REASON_ROLES: StaffRole[] = ["billing", "billing_coordinator", "credentialing_coordinator"];
+
+/**
+ * Presentation only. Non-billing viewers receive checklist labels only — never
+ * payer detail. The credentialing item shows the rule's neutral reasons to
+ * Billing and the Credentialing Coordinator; every other role sees only
+ * "Credentialing — needs review".
+ */
+export function billingReadiness(pid: string, viewerRole?: StaffRole): BillingReadiness {
   const p = AdelanteEHR.getPatient(pid);
   const cov = coverageForPatient(pid);
   const svc = billableService(pid);
+  const seesReasons = !!viewerRole && CREDENTIALING_REASON_ROLES.includes(viewerRole);
+  const credDetail = svc.credentialed
+    ? undefined
+    : seesReasons
+      ? svc.credentialingReasons.map((r) => CREDENTIALING_REASON_LABEL[r]).join("; ")
+      : CREDENTIALING_NEUTRAL_LABEL;
   const checklist = [
     { label: "Coverage path set", done: cov.pathSet },
     { label: "Coverage verified", done: cov.verified },
     { label: "Attended visit with signed note", done: svc.attendedSigned },
-    { label: "Rendering clinician credentialed", done: svc.credentialed },
+    { label: "Rendering clinician credentialed", done: svc.credentialed, detail: credDetail },
     { label: "Intake packet finished", done: !!p?.intakeCompletedAt },
   ];
   return { ready: checklist.every((c) => c.done), checklist };
