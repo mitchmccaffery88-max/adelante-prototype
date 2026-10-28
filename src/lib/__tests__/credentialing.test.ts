@@ -134,16 +134,29 @@ describe("the one credentialing rule", () => {
     if (!res.ok) expect(res.reasons).toContain("supervision_expired");
   });
 
-  it("skips the enrollment check when no payer is known", () => {
-    // c6 fails on supervision, not enrollment, when the patient has no payer.
-    const res = credentialedForService("s-th3", undefined, "sud_counseling", today());
-    expect(res.ok).toBe(true);
+  // 28 Oct credentialing reconciliation (Mitch approved): replace this batch's
+  // obsolete missing-payer pass; every other existing assertion stays intact.
+  it("requires a payer", () => {
+    const res = credentialedForService("s-th3", undefined, "med_management", today());
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.reasons).toContain("payer_missing");
   });
+  it("requires a service type", () => {
+    const res = credentialedForService("s-th3", "Medi-Cal FFS", undefined, today());
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.reasons).toContain("service_missing");
+  });
+  it("passes known payer and service with active enrollment", () => {
+    expect(credentialedForService("s-th3", "Medi-Cal FFS", "med_management", today()).ok).toBe(true);
+  });
+
 });
 
 describe("billing readiness uses the rule", () => {
   function signedVisit(clinicianId: string, serviceType: string, signerRole: StaffRole, signer: string) {
     const p = freshPatient();
+    // 28 Oct credentialing reconciliation: passing readiness fixture needs a real payer.
+    if (clinicianId === "c1") AdelanteEHR.addCoveragePlan(p.id, { payer: "Medi-Cal FFS", from: "2024-01-01" } as Parameters<typeof AdelanteEHR.addCoveragePlan>[1]);
     const a = book(clinicianId, p.id, serviceType);
     AdelanteEHR.markAppointmentAttended(a.id, { name: signer, role: signerRole, id: "s-x" }, +new Date(a.start) + 60000);
     const note = AdelanteEHR.addProgressNote(p.id, {
@@ -237,8 +250,8 @@ describe("review flags never change records", () => {
       { id: "flag-a3", clinicianId: "c5", patientId: "p1", start: inDays(5), status: "attended", serviceType: "med_management" },
     ];
     const claims = [
-      { id: "flag-c1", clinicianId: "c5", patientId: "p1", serviceDate: today(), state: "ready" },
-      { id: "flag-c2", clinicianId: "c1", patientId: "p1", serviceDate: today(), state: "ready" },
+      { id: "flag-c1", clinicianId: "c5", patientId: "p1", serviceDate: today(), state: "ready", serviceType: "therapy_individual" },
+      { id: "flag-c2", clinicianId: "c1", patientId: "p1", serviceDate: today(), state: "ready", serviceType: "therapy_individual" },
     ];
     const payer = () => "Medi-Cal FFS";
     const flags = credentialingReviewFlags(appts, claims, payer);
