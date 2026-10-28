@@ -1,3 +1,4 @@
+import { withApprovedCredentialingReconciliationOct28 } from "./credentialingReconciliationOct28Approved";
 import { withApprovedSignupOct26 } from "./signupOct26Approved";
 // 27 Oct credentialing batch (Mitch) — the ONLY approved source changes to the
 // pinned files for the clinician-credentialing batch:
@@ -149,5 +150,5 @@ export function withApprovedCredentialingOct27(path: string, rollbackText: strin
     if (s.split(from).length !== 2) throw new Error(`Approved anchor not found once in ${path}`);
     s = s.replace(from, to);
   }
-  return s;
+  return withApprovedCredentialingReconciliationOct28(path, s);
 }

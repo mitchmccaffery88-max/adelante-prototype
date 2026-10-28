@@ -571,15 +571,16 @@ function seedExclusions(staffId: string, checkedDaysAgo: number): ClinicianCrede
       checks.push({ list, result: "clear", checkedAt: new Date(at).toISOString(), nextDueAt: new Date(at + 30 * 86400000).toISOString() });
     checks.push({ list, result: "clear", checkedAt: new Date(end).toISOString(), nextDueAt: new Date(end + 30 * 86400000).toISOString() });
     if (staffId === "s-th1") {
-      const at = +new Date("2026-11-01");
+      const at = +new Date("2026-11-20");
       checks.push({ list, result: "clear", checkedAt: new Date(at).toISOString(), nextDueAt: new Date(at + 30 * 86400000).toISOString() });
     }
   }
   return checks;
 }
+let credentialSeedId = 0;
 function seedRecord(r: ClinicianCredentialing) {
   const l = r.license; const reg = r.registration;
-  credentials.push({ id: uid(), clinicianId: r.clinicianId ?? r.staffId, kind: "license", uploadedAt: iso(), seed: true,
+  credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "license", uploadedAt: iso(), seed: true,
     licenseType: l?.licenseType, registrationType: reg?.registrationType,
     number: l?.number ?? reg?.number, issuingState: l?.state ?? "CA", issuedAt: l?.issuedAt,
     expiresAt: l?.expiresAt ?? reg?.expiresAt, verifiedAt: l?.verifiedAt ?? reg?.verifiedAt,
@@ -587,10 +588,10 @@ function seedRecord(r: ClinicianCredentialing) {
     supervision: reg?.supervision, exclusionChecks: r.exclusionChecks, attestation18019: r.attestation,
     educationAttestedAt: r.educationAttestedAt, ceAttestedAt: r.ceAttestedAt, recredentialingDueAt: r.recredentialingDueAt,
     documentStatus: "simulated_unavailable" });
-  if (r.dea) credentials.push({ id: uid(), clinicianId: r.clinicianId ?? r.staffId, kind: "dea", number: r.dea.number, expiresAt: r.dea.expiresAt, uploadedAt: iso(), seed: true });
-  if (r.malpractice) credentials.push({ id: uid(), clinicianId: r.clinicianId ?? r.staffId, kind: "malpractice", number: r.malpractice.policy, carrier: r.malpractice.carrier, expiresAt: r.malpractice.expiresAt, uploadedAt: iso(), seed: true });
-  if (r.boardCertification) credentials.push({ id: uid(), clinicianId: r.clinicianId ?? r.staffId, kind: "board_cert", number: r.boardCertification, uploadedAt: iso(), seed: true });
-  for (const e of r.enrollments) payerEnrollments.push({ id: uid(), clinicianId: r.clinicianId ?? r.staffId, payer: e.payer, serviceType: e.serviceType, status: ({ active: "enrolled", submitted: "pending", not_started: "not_enrolled", inactive: "terminated" } as const)[e.status], effectiveFrom: e.effectiveAt, caqhId: e.caqhId, billingTin: "DEMO-TIN" });
+  if (r.dea) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "dea", number: r.dea.number, expiresAt: r.dea.expiresAt, uploadedAt: iso(), seed: true });
+  if (r.malpractice) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "malpractice", number: r.malpractice.policy, carrier: r.malpractice.carrier, expiresAt: r.malpractice.expiresAt, uploadedAt: iso(), seed: true });
+  if (r.boardCertification) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "board_cert", number: r.boardCertification, uploadedAt: iso(), seed: true });
+  for (const e of r.enrollments) payerEnrollments.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, payer: e.payer, serviceType: e.serviceType, status: ({ active: "enrolled", submitted: "pending", not_started: "not_enrolled", inactive: "terminated" } as const)[e.status], effectiveFrom: e.effectiveAt, caqhId: e.caqhId, billingTin: "DEMO-TIN" });
 }
 function seedCredentialAuthorityDemo() {
   // c1 — fully credentialed and enrolled.
@@ -721,6 +722,9 @@ function seedCredentialAuthorityDemo() {
 }
 
 seedCredentialAuthorityDemo();
+// 28 Oct credentialing reconciliation: preserve the pre-existing seed PRNG budget.
+for (let i = 0; i < 13; i++) uid();
+
 
 // §Phase 3b — the `coverageSpans` store that used to live here was a second,
 // disconnected coverage shape. Its rows were migrated onto
@@ -923,6 +927,9 @@ export const AdelanteEHRExt = {
   },
   addCredential(input: Omit<CredentialDoc, "id" | "uploadedAt">) {
     const c: CredentialDoc = { ...input, id: uid(), uploadedAt: iso(), documentStatus: input.fileDataUrl ? "on_file" : "simulated_unavailable" };
+    // 28 Oct credentialing reconciliation: a received primary credential replaces demo evidence.
+    if (c.kind === "license") for (let i = credentials.length - 1; i >= 0; i--)
+      if (credentials[i].clinicianId === c.clinicianId && credentials[i].kind === "license" && credentials[i].seed) credentials.splice(i, 1);
     credentials.push(c);
     // §Phase 2b — uploading the thing that was asked for answers the request.
     credentials
