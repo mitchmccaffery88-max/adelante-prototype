@@ -5,7 +5,7 @@
 - [x] 2,170 assertions; opened only own_work_sites and identity_lane after all-role positive/negative tests; failed/unproved groups stay closed.
 - [x] Shared TS/SQL crisis-owner vectors 6/6 each; separate policy migrations; no routing/persistence cutover.
 - [ ] Chart off-team/restricted-team rule decision — blocked by conflict with existing chart_entry; full packet/handoff, advocate composition, cross-org and identity decision acceptance remain incomplete (unported contracts).
-- [ ] Full units then public browser, nonoverlapping; evidence phase2c-main-rollback.md and Phase 2 report.
+- [x] Full units 3,544/3,544 then clean full public browser 51/51, one worker, nonoverlapping (initial 49/51, unchanged Diana 5/5); evidence phase2c-main-rollback.md and Phase 2 report.
 - Phase 2d: repositories/write transport/signup parity/storage/switches; lifecycle state, need confirmations, invite tokens/contact verification tables.
 
 ## 27 Oct sign-up verification redesign — Draft

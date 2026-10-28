@@ -61,7 +61,7 @@ Failed attempts were checked for rollback before retry; auth.users/accounts stay
 ## Application validation
 
 - Full units **3,544/3,544**, 404 files, exit 0, 175.79 seconds; completed before public browser suite started.
-- Public browser: pending final result; eight current public specs, one worker against :8080, no unit overlap.
+- Public browser: clean full rerun **51/51**, exit 0, 13.0 minutes; eight current public specs, one worker against :8080, no unit overlap. Initial full run 49/51: both Diana 390 service click assertions observed aria-expanded=false; unchanged isolated Diana rerun 5/5, then unchanged full rerun 51/51. No browser test/config/timeout or website runtime edits; first failures remain recorded, not discarded. Spanish group-detail screenshot inspected after isolated run.
 - Preview build OK. Corrected two pre-existing TypeScript test errors in signupInvite.test.ts; no signup runtime changes.
 
 ## Reserved for 2d

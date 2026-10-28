@@ -8,7 +8,7 @@ Opened only `staff_site_assignments.own_work_sites` (migration `20261028000257_4
 
 **Unresolved:** chart_entry allows same-site outside-caseload reads, contrary to requested off-team denial; restricted care-team members bypass reasoned open. Packet tests pass in the pre-completion fixture window, not completed Intake. Full authenticated packet/handoff row-read acceptance, advocate policy composition, cross-org vectors and populated support/inbox isolation remain incomplete. Identity decision writes are unported, so Intake/sys_admin SQL decisions are not enabled. No SQL public directory exists until Phase 5.
 
-Shared crisis-owner vectors: TS 6/6 and SQL 6/6, normalized coordinator fallback; no routing changes. Full units 3,544/3,544; sequential public browser final result pending. Evidence and every migration ID: `docs/rls-evidence/phase2c-main-rollback.md`. Supabase linter clean; build OK; zero retained fixture users/accounts/data. No publishing, Cloud or GitHub linking.
+Shared crisis-owner vectors: TS 6/6 and SQL 6/6, normalized coordinator fallback; no routing changes. Full units 3,544/3,544; sequential clean full public browser 51/51, exit 0 (initial 49/51; unchanged isolated Diana 5/5). Evidence and every migration ID: `docs/rls-evidence/phase2c-main-rollback.md`. Supabase linter clean; build OK; zero retained fixture users/accounts/data. No publishing, Cloud or GitHub linking.
 
 **2d only:** repositories, server/registry writes, signup parity, signed-copy storage, persistence switches; lifecycle-state, Getting-started need-confirmation, **sign-up invite-token/contact-verification tables**.
 
