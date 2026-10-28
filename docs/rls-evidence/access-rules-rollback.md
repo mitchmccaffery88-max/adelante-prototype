@@ -2,6 +2,8 @@
 
 Requested 27 Oct; investigated and attempted 28 Oct 2026. **Stopped at a real Part 2 policy conflict; no read policies opened.** Connected main `bnvukmpmwuhftvjpnwqi` only. No TEST variables/project, Cloud, GitHub or publishing. Persistence OFF.
 
+28 Oct clarification: Mitch chose **Keep existing exceptions**. The failed universal no-consent assumption is superseded: future negative tests must target already consent-gated roles/classes, while proving treating-clinician exceptions unchanged. No new database test or policy migration was run to record this decision; historical results below remain historical, not newly accepted.
+
 ## Method
 
 Used the Supabase migration tool, `BEGIN`/`ROLLBACK`, fictional `auth.users` and app account/role fixtures, `SET LOCAL ROLE authenticated`, and actual `request.jwt.claims` with `request.jwt.claim.sub` cleared. Existing `app.attest_beta` and `app.set_acting_role` established fixture context under the privileged setup role. No auth/context helpers were overridden. This proves PostgreSQL claim evaluation, not hosted sign-in or JWT signature verification.

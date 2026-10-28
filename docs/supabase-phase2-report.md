@@ -2,6 +2,8 @@
 
 ## 28 Oct access-rule batch — stopped and restored
 
+Mitch has now confirmed **Keep existing treating-clinician Part 2 exceptions**. No-consent negatives will apply only to already consent-gated roles/classes. Runtime app/SQL helpers remain matched at the restored boundary; no policies or commands were enabled by this clarification. Narrow superseded access-test/source-pin updates need approval before the coordinated retry; see the access-rules report.
+
 Mitch approved team/reasoned-open entry, but the rollback acceptance failed `part2_no_consent_failed physician`: existing treating-clinician matrix grants do not require consent for every Part 2 class. No matrix change was authorized at that conflict boundary. Candidate app sources and active SQL chart/team/packet helpers were restored together. Empty reason-grant/coverage scaffolds remain closed; command/window/group execution revoked. No additional read policy opened; persistence OFF. Counts after rollback: auth.users 0, accounts 0, patients 18, reason grants 0, coverage rows 0. Restored units 3,583/3,583; sequential public browser result recorded in access-rules-report.md. See `docs/rls-evidence/access-rules-rollback.md` and the Draft proposed matrix for the decision and unproved cases.
 
 ## Revised Phase 2c (27 Oct request; 27–28 Oct execution)
