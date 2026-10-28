@@ -532,6 +532,8 @@ function CredentialingAdminPage() {
       {/* eslint-disable-next-line jsx-a11y/anchor-has-content */}
       <a ref={downloadRef} className="hidden" aria-hidden="true" />
 
+      {canManageCredentials && <CredentialingToday role={role} staffId={staffId} />}
+
       {expiringSoon.length > 0 && (
         <Card className="border-input bg-surface-sunk p-4">
           <h2 className="text-attention mb-2 font-semibold">

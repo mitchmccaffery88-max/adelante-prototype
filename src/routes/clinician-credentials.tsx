@@ -38,6 +38,7 @@ import {
   type CredentialFilePayload,
 } from "@/lib/credentialFile";
 import { CredentialDocumentViewer } from "@/components/credentials/CredentialDocumentViewer";
+import { ClinicianCredentialHeadsUp } from "@/components/credentials/CredentialingToday";
 import { Trash2, Upload, Paperclip } from "lucide-react";
 
 export const Route = createFileRoute("/clinician-credentials")({
@@ -115,6 +116,8 @@ function CredentialsPage() {
           License and malpractice must stay current — bookings are blocked if your license expires.
         </p>
       </header>
+
+      <ClinicianCredentialHeadsUp staffId={acting.staffId} />
 
       <Card className="p-4 text-sm" data-testid="credential-scope-card">
         <div>
