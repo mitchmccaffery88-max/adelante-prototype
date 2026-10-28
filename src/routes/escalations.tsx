@@ -1,3 +1,4 @@
+import { CredentialExclusionNotices } from "@/components/credentials/CredentialExclusionNotices";
 import { PreChartTriageRows } from "@/components/staff/PreChartTriageRows";
 import { StaffTable } from "@/components/staff/StaffTable";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -92,6 +93,7 @@ function EscalationsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-4">
+      <CredentialExclusionNotices role={s.role} staffId={s.staffId} />
       <header className="space-y-2">
         <h1 className="flex items-center gap-2 font-display text-2xl text-navy"><Siren className="h-5 w-5 text-attention" /> Escalations</h1>
         <p className="text-sm text-muted-foreground">Crisis, score changes, follow-up needed crisis notes, urgent social needs and missed handoffs — follow-up needed first, then by due time.</p>
