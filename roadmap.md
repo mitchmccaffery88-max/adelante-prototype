@@ -1,6 +1,7 @@
 # Roadmap
 
 ## 27 Oct access rules — 28 Oct implementation (Draft)
+- [ ] 28 Oct 16:32 approved resume: narrow superseded assertions/pins/snapshot, MOUD normal team membership, remaining hosts and rollback vectors, separately proven read groups; full units then public browser/readback. Stop on unrelated failures.
 - [x] Inventory shared app gates, SQL entry and rollback harness; identified the superseded mandatory-site rule and pre-data rendering gap.
 - [x] Resolve Part 2 prerequisite: Mitch chose Keep existing exceptions; no-consent negatives target already consent-gated roles/classes.
 - [ ] Finish shared gate/readback, coordinator review/request/coverage hosts and exact source-pin/assignment-fixture reconciliation; entry helpers reapplied, no previous-rule restore.
