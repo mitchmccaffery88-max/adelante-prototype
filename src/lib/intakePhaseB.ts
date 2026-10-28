@@ -9,6 +9,7 @@ import { isPurposeCode, PURPOSE_LABEL, purposeCodeOf, type ConsentPurposeCode } 
 import { createCoverageRequest, coverageProjection, getCoverageRequest, billingCoverageRequests, type CoverageProjection, type CoverageStatus } from "./coverageRequests";
 import type { CoveragePath } from "./eligibility/coverageConfig";
 import { PART2_ELEMENT_KEYS, isPart2Type, type Part2Elements } from "./consentRecordModel";
+import { canReadIntakePacket } from "./intakeFollowup";
 
 export const INTAKE_PHASE_B_DRAFT = "Draft — pending clinical sign-off";
 export type IntakeBPermission = "paperwork_send" | "paperwork_capture" | "eligibility_request" | "sdoh_checklist" | "staging_import" | "packet_attach";
@@ -106,6 +107,7 @@ export function recordIntakePaperForm(actor: IntakeActor, referralId: string, in
 export type IntakeFormStatus = "Collected" | "Missing" | "Expired" | "Needs review";
 export function intakeFormsStatus(actor: IntakeActor, referralId: string) {
   assertIntakeB(actor, "paperwork_capture", "Status projection");
+  if (intakeState(referralId, actor).completedAt && !canReadIntakePacket(actor, referralId)) return [];
   const r = referralForIntake(referralId, true);
   const pid = r.enrolledPatientId;
   return INTAKE_FORMS.map(f => {

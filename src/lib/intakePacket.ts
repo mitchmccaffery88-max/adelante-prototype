@@ -62,6 +62,7 @@ export function ingestPacketNeeds(actor: IntakeActor, referralId: string, source
 }
 export function intakePacketNeeds(actor: IntakeActor, referralId: string) {
   if (!canIntakeB(actor, "sdoh_checklist")) return [];
+  if (actor.role === "intake_coordinator" && intakeCompleted(referralId) && !canReadIntakePacket(actor, referralId)) return [];
   const r = referralForPacket(referralId);
   if (r.enrolledPatientId && isRestricted(r.enrolledPatientId)) return [];
   return (needs.get(referralId) ?? []).filter(n => referenceValid(r, n) && (!n.part2 || intakeTreatmentConsent(r))).map(n => ({ id: n.id, kind: n.kind, source: n.source, state: n.state }));

@@ -3,7 +3,7 @@
 ## 28 Oct 20:23 access rules part B continuation (Draft)
 - [x] Tighten MOUD care-manager self-only assignment/replacement; SQL mirror and same-transaction end/retain proof; units 3,607/3,607, no retained fixtures.
 - [x] Step 2 coordinator request/coverage/weekly review hosts; units 3,627/3,627; real preview request/open/approval/coverage/review at 1280 and 390.
-- [ ] Step 3 Intake logged read-only 60-day host; green units.
+- [ ] Step 3 (resumed 28 Oct 21:05) Intake logged read-only 60-day host; green units.
 - [ ] Step 4 access-log reasons and full gate verification; green units.
 - [ ] Step 5 all-role rollback vectors and separately passing read policies.
 - [ ] Step 6 public browser then preview readback, final reports/Draft matrix.
