@@ -18,6 +18,7 @@ const labels = {
   llm_simulated: () => simulatedSurfaceLabel("llm_simulated"),
   calendar_sync_simulated: () => simulatedSurfaceLabel("calendar_sync_simulated"),
   consent_upload_simulated: () => simulatedSurfaceLabel("consent_upload_simulated"),
+  credential_monitor_simulated: () => simulatedSurfaceLabel("credential_monitor_simulated"),
 };
 const spanish: Record<keyof typeof labels, string> = {
   hie_simulated: "Simulado — sin conexión real al intercambio de información de salud",
@@ -35,6 +36,7 @@ const spanish: Record<keyof typeof labels, string> = {
   llm_simulated: "Simulado — resumen de plantilla, sin modelo de inteligencia artificial",
   calendar_sync_simulated: "Simulado — nada sale de Adelante al sincronizar el calendario",
   consent_upload_simulated: "Simulado — la copia en papel no se guarda en un sistema real de documentos",
+  credential_monitor_simulated: "Simulado — no hay monitoreo automático de credenciales conectado",
 };
 
 /** Presentation only. Member shells own the single Spanish review notice. */
