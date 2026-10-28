@@ -1,4 +1,5 @@
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { ChartAccessGate } from "@/components/chart/ChartAccessGate";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { act, actFor, setViewingStaff } from "@/lib/actions/act";
@@ -352,7 +353,7 @@ function ClinicianPage() {
         <TabsContent value="chart">
           {/* §Chart mode — patient identity, coverage, and identifiers live
               here only. */}
-          <ChartHeader
+          {selectedPatient && <ChartAccessGate patientId={selectedPatient.id}><ChartHeader
             patient={selectedPatient}
             onBack={() => setMode("dashboard")}
             picker={
@@ -363,9 +364,9 @@ function ClinicianPage() {
                 }}
               />
             }
-          />
+          /></ChartAccessGate>}
           {selectedPatient && (
-            <div className="mt-4 space-y-4">
+            <ChartAccessGate patientId={selectedPatient.id}><div className="mt-4 space-y-4">
               <CarePlanCard patientId={selectedPatient.id} audience="clinician" />
               <Card className="p-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -421,7 +422,7 @@ function ClinicianPage() {
                   <Button size="sm" asChild className="bg-navy text-navy-foreground hover:bg-navy/90">
                     <Link
                       to="/record/$patientId"
-                      params={{ patientId: selectedPatientId! }}
+                      params={{ patientId: selectedPatient.id }}
                       search={{}}
                     >
                       Open patient record
@@ -429,7 +430,7 @@ function ClinicianPage() {
                   </Button>
                 </div>
               </Card>
-            </div>
+            </div></ChartAccessGate>
           )}
         </TabsContent>
       </Tabs>

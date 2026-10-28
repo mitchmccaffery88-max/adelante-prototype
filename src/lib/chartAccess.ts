@@ -60,7 +60,7 @@ export const patientSiteName = (p: Patient) => siteName(patientSiteId(p));
 export function onCareTeam(staffId: string | undefined, p: Patient, at = new Date()): boolean {
   const m = getStaffMember(staffId);
   if (!m) return false;
-  return m.active !== false && (isAssignedTo(p, assignmentIdentityFor({ caseManagerId: m.caseManagerId, clinicianId: m.clinicianId, staffId: m.id })) || additionalTeamFor(m.id, p.id, at));
+  return m.active !== false && (isAssignedTo(p, assignmentIdentityFor({ caseManagerId: m.caseManagerId, clinicianId: m.clinicianId, staffId: m.id })) || AdelanteEHR.activePreReleaseEpisode(p.id)?.cfCareManagerStaffId === m.id || additionalTeamFor(m.id, p.id, at));
 }
 
 export type ChartEntry =
