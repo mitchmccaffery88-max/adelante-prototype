@@ -88,7 +88,7 @@ import { updatePrivateSelfTracking } from "@/lib/privateSelfTrackingActions";
 import { canEndCoordinatorEmergency, canUnlockCoordinatorEmergency, endCoordinatorEmergencyNow, unlockCoordinatorEmergency } from "./coordinatorSudEmergency";
 import { addOnCallShift, canManageOnCall, removeOnCallShift } from "./onCall";
 import { patientSelfSignForm } from "./consentForms";
-import { acknowledgeCredentialingNotice, canManageCredentialing, CREDENTIALING_DENIED, recordAttestation, recordExclusionCheck, recordVerification, runMonitorChannel, setServiceEnrollment } from "./credentialing";
+import { acknowledgeCredentialingNotice, canManageCredentialing, CREDENTIALING_DENIED, recordAttestation, recordExclusionCheck, recordVerification, runMonitorChannel, setServiceEnrollment, updateCredentialingProfile } from "./credentialing";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 import { credentialRecordCommand } from "./credentialingActions";
@@ -226,7 +226,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   // compliance review (IN 18-019). Each store function re-checks
   // canManageCredentialing (the staff_supervision write tier), so the button
   // and the store can never disagree. The monitor run is Simulated.
-  { id: "credential_verify", label: { en: "Record verification", es: "Record verification" }, group: "admin", menu: false, needsPatient: false, check: "canManageCredentialing (staff_supervision write)", store: refs(["recordVerification", recordVerification], ["credentialRecordCommand", credentialRecordCommand]), allowed: ({ role }) => canManageCredentialing(role) ? ok() : hide(CREDENTIALING_DENIED) },
+  { id: "credential_verify", label: { en: "Record verification", es: "Record verification" }, group: "admin", menu: false, needsPatient: false, check: "canManageCredentialing (staff_supervision write)", store: refs(["recordVerification", recordVerification], ["credentialRecordCommand", credentialRecordCommand], ["updateCredentialingProfile", updateCredentialingProfile]), allowed: ({ role }) => canManageCredentialing(role) ? ok() : hide(CREDENTIALING_DENIED) },
   { id: "credential_exclusion_check", label: { en: "Record exclusion-list check", es: "Record exclusion-list check" }, group: "admin", menu: false, needsPatient: false, check: "canManageCredentialing; a hit raises a neutral urgent notice", store: refs(["recordExclusionCheck", recordExclusionCheck]), allowed: ({ role }) => canManageCredentialing(role) ? ok() : hide(CREDENTIALING_DENIED) },
   { id: "credential_enrollment_set", label: { en: "Set payer enrollment status", es: "Set payer enrollment status" }, group: "admin", menu: false, needsPatient: false, check: "canManageCredentialing", store: refs(["setServiceEnrollment", setServiceEnrollment], ["credentialRecordCommand", credentialRecordCommand]), allowed: ({ role }) => canManageCredentialing(role) ? ok() : hide(CREDENTIALING_DENIED) },
   { id: "credential_attestation", label: { en: "Record IN 18-019 attestation", es: "Record IN 18-019 attestation" }, group: "admin", menu: false, needsPatient: false, check: "canManageCredentialing", store: refs(["recordAttestation", recordAttestation]), allowed: ({ role }) => canManageCredentialing(role) ? ok() : hide(CREDENTIALING_DENIED) },

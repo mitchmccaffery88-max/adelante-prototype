@@ -472,6 +472,12 @@ export function recordAttestation(
   });
 }
 
+// 28 Oct credentialing reconciliation: extended fields write through the same authority.
+export function updateCredentialingProfile(actor: CredentialingActor, staffId: string, patch: Partial<ClinicianCredentialing>) {
+  assertCredentialing(actor);
+  return writeRecord(actor, staffId, r => Object.assign(r, patch, { staffId: r.staffId, clinicianId: r.clinicianId }));
+}
+
 // ---------------------------------------------------------------- monitor adapter (Simulated)
 
 export type CredentialMonitorChannel = "manual" | "vendor" | "exclusion_file" | "cvo";

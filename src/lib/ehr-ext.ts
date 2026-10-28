@@ -2022,6 +2022,14 @@ registerCredentialingAuthority({
     let primary = credentials.filter(c => c.clinicianId === cid && c.kind === "license").sort((a,b) => (b.expiresAt ?? "").localeCompare(a.expiresAt ?? ""))[0];
     if (!primary) { primary = { id: uid(), clinicianId: cid, kind: "license", uploadedAt: iso() }; credentials.push(primary); }
     Object.assign(primary, { licenseType: r.license?.licenseType, registrationType: r.registration?.registrationType, number: r.license?.number ?? r.registration?.number, issuingState: r.license?.state, issuedAt: r.license?.issuedAt, expiresAt: r.license?.expiresAt ?? r.registration?.expiresAt, verifiedAt: r.license?.verifiedAt ?? r.registration?.verifiedAt, verifiedBy: r.license?.verifiedBy ?? r.registration?.verifiedBy, verificationSource: r.license?.verificationSource, manualMethod: "manual", supervision: r.registration?.supervision, exclusionChecks: r.exclusionChecks, attestation18019: r.attestation, educationAttestedAt: r.educationAttestedAt, ceAttestedAt: r.ceAttestedAt, recredentialingDueAt: r.recredentialingDueAt });
+    for (const [kind, value] of [["dea", r.dea], ["malpractice", r.malpractice], ["board_cert", r.boardCertification]] as const) {
+      if (!value) continue;
+      let doc = credentials.find(c => c.clinicianId === cid && c.kind === kind);
+      if (!doc) { doc = { id: uid(), clinicianId: cid, kind, uploadedAt: iso() }; credentials.push(doc); }
+      if (typeof value === "string") doc.number = value;
+      else if ("carrier" in value) Object.assign(doc, { carrier: value.carrier, number: value.policy, expiresAt: value.expiresAt });
+      else Object.assign(doc, { number: value.number, expiresAt: value.expiresAt });
+    }
     for (const e of r.enrollments) { const existing = payerEnrollments.find(x => x.clinicianId === cid && x.payer === e.payer && (x.serviceType ?? "*") === e.serviceType); const row = { clinicianId: cid, payer: e.payer, serviceType: e.serviceType, billingTin: existing?.billingTin ?? "", status: ({ active: "enrolled", submitted: "pending", not_started: "not_enrolled", inactive: "terminated" } as const)[e.status], effectiveFrom: e.effectiveAt, caqhId: e.caqhId }; if (existing) Object.assign(existing, row); else payerEnrollments.push({ ...row, id: uid() }); }
     AdelanteEHRExt.syncLicenseExpiry(cid); ehrBus.publish({ type: "credential.updated", clinicianId: cid });
     return projectCredentialAuthority(staffId) ?? r;

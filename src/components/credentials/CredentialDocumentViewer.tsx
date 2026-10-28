@@ -43,7 +43,7 @@ export function CredentialDocumentViewer({
         <DialogHeader>
           <DialogTitle>{fileName ?? "Credential document"}</DialogTitle>
           <DialogDescription>
-            {fileType ?? "document"}
+            Simulated — preview-memory document. {fileType ?? "document"}
             {typeof fileSize === "number" ? ` · ${formatBytes(fileSize)}` : ""}
           </DialogDescription>
         </DialogHeader>
