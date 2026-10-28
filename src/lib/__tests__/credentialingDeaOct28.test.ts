@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { runAction } from '../actions/runAction';
 import { AdelanteEHR, bookingCredentialingBlock } from '../ehr';
 import { AdelanteEHRExt } from '../ehr-ext';
 import { credentialedForService, credentialingRecordForStaff, evaluateCredentialing, type ClinicianCredentialing } from '../credentialing';
@@ -36,7 +37,7 @@ describe('DEA on the service date — controlled-substance prescriber services o
     const doc=AdelanteEHRExt.credentialsForClinician('c3').find(c=>c.kind==='dea');if(!doc) throw new Error('DEA fixture missing');
     const before=doc.expiresAt;
     const coordinator={role:'credentialing_coordinator' as const,staffId:'s-cred1'};
-    expect(runAction('credential_record_edit',coordinator,undefined,{args:[coordinator,'edit',{id:doc.id,patch:{expiresAt:at(399)},reason:'DEA verification fixture'}]}).ok).toBe(true);
+    expect(runAction('credential_verify',coordinator,undefined,{via:'credentialRecordCommand',args:[coordinator,'edit',{id:doc.id,patch:{expiresAt:at(399)},reason:'DEA verification fixture'}]}).ok).toBe(true);
     try {
       expect(credentialedForService('s-th3','Medi-Cal FFS','med_management',at(5),{controlledSubstance:true})).toEqual({ok:false,reasons:['dea_not_verified']});
       const p=AdelanteEHR.createPatient({firstName:'DEA',lastName:'Fixture',dob:'1990-01-01'} as Parameters<typeof AdelanteEHR.createPatient>[0]);
