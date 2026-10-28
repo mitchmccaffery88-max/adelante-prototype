@@ -5,8 +5,8 @@
 - [x] Historical payer/service evaluator, stricter approved missing-data coverage, unchanged old assertions and exact-once reconciliation source ledger.
 - [x] Registry dashboard verification/expiry/follow-up/enrollment, manual and Simulated monitor paths, ids-only block/unblock audits, count-only claim ingestion and urgent coordinator notices.
 - [x] Existing preview-memory document capture labelled Simulated; no secure storage or Supabase changes.
-- [x] Full units 3,583/3,583 (406 files), exit 0; full public browser suite started afterwards with one worker, no overlap.
-- [ ] Public suite completion and credentialing UI readback — in progress in this batch.
+- [x] Full units 3,583/3,583 (406 files), exit 0; then public browser 51/51, exit 0, one worker, no overlap.
+- [x] Credentialing UI readback after public completion: enrollment saved/read back with one audit, OIG match → coordinator urgent item → acknowledgment; 1280/390, no overflow/page errors. Report docs/credentialing-report.md.
 - Draft acceptance: county cadence/contracts, go-live permissions/compliance review; real monitoring and phase 5 secure storage remain outside scope.
 
 ## 27 Oct Supabase Phase 2c revised — main rollback access tests

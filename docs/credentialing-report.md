@@ -1,6 +1,6 @@
 # Clinician credentialing — 27 Oct batch, 28 Oct reconciliation
 
-**Status: reconciled in preview; validation in progress.** Draft — pending go-live permissions audit and compliance review. No publishing, Supabase operations, TEST secrets, persistence switches or external monitoring.
+**Status: reconciled and validated in preview.** Draft — pending go-live permissions audit and compliance review. No publishing, Supabase operations, TEST secrets, persistence switches or external monitoring.
 
 ## What existed
 - Non-clinical `credentialing_coordinator`, its demo staff member and `/admin-credentialing` action home; `staff_supervision` write tier, including the existing clinical-coordinator assistance grant. Chart entry, clinical notes and billing claims remain denied for the credentialing role. Additional held roles do not union permissions.
@@ -40,8 +40,9 @@ c1 fully credentialed/enrolled; c4 supervised ASW; c2 license expiring in 25 day
 ## Validation
 - Focused credentialing + unchanged SL: 67/67; existing five regression files: 55/55.
 - Full units: **3,583/3,583**, **406/406 files**, exit 0, 126.24 seconds. New reconciliation coverage proves authority write/read agreement, historical checks, exact Draft settings, count-only ingestion, all-role writer gates and simulated single audit.
-- Full public browser suite: running after units, eight existing public specs, one worker on :8080; no suite overlap.
-- Credentialing UI readback follows public completion. Latest preview build: build OK.
+- Full public browser suite: **51/51 passed**, exit 0, 12.1 minutes; eight existing public specs, one worker on :8080, started only after the full unit suite completed. No assertion, timeout or test configuration changes.
+- Credentialing UI readback ran **after public completion**: acting Credentialing Coordinator recorded a fictional payer + med-management enrollment with actual effective date; UI showed credentialed and the existing enrollment table read back enrolled/service/date with exactly one registry audit. An OIG match then appeared as a neutral urgent item for the acting clinical coordinator on Escalations; acknowledgment removed it. Desktop 1280 and phone 390 checked; no horizontal overflow or page errors. Latest preview build: build OK.
+- UI evidence: `/tmp/browser/credentialing/enrollment-readback.png`, `urgent-readback.png`, `tiles-desktop.png`, `tiles-mobile.png`; browser result `/tmp/browser/credentialing/readback.log`. This is the explicitly requested fictional acting-role preview, not a hosted authenticated persistence test.
 - Logs under `/tmp/credentialing-reconcile/`; no secrets.
 
 ## Outside this batch
