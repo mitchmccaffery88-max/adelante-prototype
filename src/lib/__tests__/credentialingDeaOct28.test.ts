@@ -34,13 +34,18 @@ describe('DEA on the service date — controlled-substance prescriber services o
     const r=credentialingRecordForStaff('s-th3');if(!r?.dea) throw new Error('Prescriber fixture missing');
     expect(r.dea.verifiedAt).toBeTruthy();
     const doc=AdelanteEHRExt.credentialsForClinician('c3').find(c=>c.kind==='dea');if(!doc) throw new Error('DEA fixture missing');
-    const before=doc.verifiedAt;doc.verifiedAt=undefined;
+    const before=doc.expiresAt;
+    const coordinator={role:'credentialing_coordinator' as const,staffId:'s-cred1'};
+    expect(runAction('credential_record_edit',coordinator,undefined,{args:[coordinator,'edit',{id:doc.id,patch:{expiresAt:at(399)},reason:'DEA verification fixture'}]}).ok).toBe(true);
     try {
       expect(credentialedForService('s-th3','Medi-Cal FFS','med_management',at(5),{controlledSubstance:true})).toEqual({ok:false,reasons:['dea_not_verified']});
       const p=AdelanteEHR.createPatient({firstName:'DEA',lastName:'Fixture',dob:'1990-01-01'} as Parameters<typeof AdelanteEHR.createPatient>[0]);
       AdelanteEHR.addCoveragePlan(p.id,{payer:'Medi-Cal FFS',from:at(-30)} as Parameters<typeof AdelanteEHR.addCoveragePlan>[1]);
       expect(bookingCredentialingBlock('c3','med_management',p.id,at(5),true)).toBe("This clinician can't be booked for this service right now.");
       expect(bookingCredentialingBlock('c3','med_management',p.id,at(5),false)).toBeUndefined();
-    } finally {doc.verifiedAt=before;}
+    } finally {
+      AdelanteEHRExt.updateCredential(doc.id,{expiresAt:before},'s-cred1','Restore fixture');
+      AdelanteEHRExt.verifyCredential(doc.id,'s-cred1');
+    }
   });
 });
