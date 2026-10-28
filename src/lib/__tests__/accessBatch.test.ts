@@ -9,7 +9,6 @@ import {
   listRestrictedOpenItems, _resetChartAccessForTests, roleHasChartEntry, CHART_DENIED_MESSAGE,
   onCareTeam,
 } from "@/lib/chartAccess";
-import { runAction } from "@/lib/actions/runAction";
 import { resolveChartRouteAccess } from "@/lib/navGuard";
 import { isStaffWorkPage } from "@/lib/searchPlacement";
 import { outsideCaseloadReport, unusualVolumeFlags } from "@/lib/complianceMonitoring";
@@ -50,9 +49,9 @@ describe("A1 chart entry + route guard", () => {
       const e = chartEntryFor("peer_specialist", staffOf("peer_specialist").id, p.id);
       expect(e.ok).toBe(false);
       if (!e.ok) expect(e.reason).toBe("reason");
-      const clinician = STAFF_ROSTER.find(s => s.active !== false && s.role === "therapist" && onCareTeam(s.id, p));
+      const clinician = STAFF_ROSTER.find(s => s.active !== false && ["therapist", "pmhnp", "physician"].includes(s.role) && onCareTeam(s.id, p));
       if (!clinician) throw new Error("Missing assigned treating-clinician fixture");
-      expect(chartEntryFor("therapist", clinician.id, p.id)).toMatchObject({ ok: true, careTeam: true });
+      expect(chartEntryFor(clinician.role, clinician.id, p.id)).toMatchObject({ ok: true, careTeam: true });
     } finally { p.enrolledSiteId = prev; }
   });
   it("sys_admin retains prototype direct oversight entry", () => {

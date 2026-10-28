@@ -10,7 +10,8 @@ import { runAction } from "@/lib/actions/runAction";
 
 const luisId = () => demoScenarioPatientId("sud_consented")!;
 const jordanId = () => demoScenarioPatientId("sud_no_consent")!;
-const cf = { role: "cf_care_manager" as const, staffId: "s-cf2" };
+// Darnell's current outpatient held role is ECM; his historical CF role is in-facility only.
+const cf = { role: "ecm_provider" as const, staffId: "s-cf2" };
 const rx = { role: "physician" as const, staffId: "s-np1" };
 const other = { role: "billing" as const, staffId: "s-bill1" };
 
