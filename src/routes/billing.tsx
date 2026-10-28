@@ -158,6 +158,12 @@ function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointments, patients, claims]);
 
+  // 27 Oct (Mitch) — existing appointments/claims whose rendering clinician
+  // fails the credentialing rule: flagged for Billing review, never changed.
+  const credFlags = useMemo(
+    () => credentialingReviewFlags(appointments, claims, (pid) => AdelanteEHR.activeCoveragePlan(pid)?.payer),
+    [appointments, claims],
+  );
   const [laneFilter, setLaneFilter] = useState<"all" | LaneKey>("all");
   const initialStatus = Route.useSearch().status;
   const [statusFilter, setStatusFilter] = useState<"all" | BillingStatus>(initialStatus ?? "all");
