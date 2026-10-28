@@ -23,6 +23,7 @@ import { didntStartCareFor } from "./lifecycleState";
 import { referralClaimCodeConsumed } from "./identityReview";
 import { getStructuredPlan } from "./structuredCarePlan";
 import { cohortGuard } from "./cohortGuard";
+import { credentialedForService, CREDENTIALING_NEUTRAL_LABEL, CREDENTIALING_REASON_LABEL, type CredentialingReasonCode } from "./credentialing";
 
 export const LIFECYCLE_DRAFT = "Draft — pending EHR/Admin audit";
 
