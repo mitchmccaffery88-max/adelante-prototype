@@ -9,8 +9,10 @@ const cc = { role: "clinical_coordinator" as const, staffId: "s-cc1" };
 const billing = { role: "billing" as const, staffId: "s-bill1" };
 const audits = (pid?: string) => AdelanteEHR.listAuditEvents({}).filter(e => (e.detail as { actionId?: string })?.actionId?.startsWith("moud_care_manager") && (!pid || true));
 
+let n = 0;
 function freshEpisode() {
-  const p = AdelanteEHR.createPatient({ firstName: "Moud", lastName: "Team", dob: "1990-01-01" } as Parameters<typeof AdelanteEHR.createPatient>[0]);
+  n++;
+  const p = AdelanteEHR.createPatient({ firstName: `Moud${"abcdefgh"[n]}`, lastName: `Team${"qrstuvwx"[n]}`, dob: `1990-0${n}-1${n}` } as Parameters<typeof AdelanteEHR.createPatient>[0]);
   const ep = AdelanteEHR.openPreReleaseEpisode({ patientId: p.id, anticipatedReleaseDate: "2026-12-01", cfCareManagerStaffId: "", cfCareManagerName: "", openedBy: "s-cc1", actorRole: "clinical_coordinator" });
   return { p, ep };
 }
