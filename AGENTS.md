@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Credentialing evaluation must consume the existing credential/enrollment authority, never an independent copy of license or payer facts; Billing review display stays in its isolated projected component. Why: credential edits, booking decisions and readiness must agree without changing pinned Billing bindings; the 28 Oct reconciliation remains stopped pending scoped approval.
+
 - Phase 2 persistence contracts remain disconnected read scaffolds; SQL commands and unverified read policies stay closed. Read-only own-site and identity-review policies may open after rollback real-claims positive/negative coverage; chart-policy conflicts require a separate decision. Why: proven narrow reads must not become a permission or persistence cutover.
 
 - Daylight public destinations use the existing AppShell public allowlist and WebsiteLayout; existing member resources keep their route and shell, and missing marketing destinations use WebsitePlaceholder with leaf metadata. Why: new public menus must resolve without reclassifying member/staff workflows.
