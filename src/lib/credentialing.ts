@@ -733,7 +733,9 @@ function seedDemo() {
     malpractice: { carrier: "Demo Mutual", policy: "MP-4429", expiresAt: daysFromNow(400) },
     educationAttestedAt: daysFromNow(-60),
     ceAttestedAt: daysFromNow(-60),
-    exclusionChecks: seedExclusions("s-th1", 10),
+    // 27 Oct credentialing batch: freshly checked seed keeps the monthly
+    // validity runway through workingCalendar's Nov 20 clock; cadence unchanged.
+    exclusionChecks: seedExclusions("s-th1", 0),
     attestation: { status: "signed", signedAt: daysFromNow(-60), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
     enrollments: [
       { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },

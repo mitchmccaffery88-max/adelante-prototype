@@ -1,5 +1,13 @@
 # Roadmap
 
+## 27 Oct credentialing — 28 Oct continuation, stopped at clean boundary
+- [x] Exact-once approved EHR anchor, unchanged-cadence seed runway and isolated Billing flags; unchanged blocker regressions 90/90.
+- [x] Full units run: 3,574 passed / 1 failed (3,575); evidence and inventory in docs/credentialing-report.md. No test weakening, Supabase, TEST secrets or publishing.
+- [ ] Authoritative credential/enrollment ownership — blocked by independent new records duplicating existing ehr-ext facts, direct existing writers and inline-file workflow; needs scoped reconciliation approval before further changes.
+- [ ] Disabled-monitor audit coverage and import-cycle seed errors — blocked at the same architecture boundary; monitor remains off.
+- [ ] Green full units, then full public browser and credentialing UI readback — not run to completion; public suite not started because units failed.
+- [ ] Final workflow acceptance — field-edit UI, count-only claim boundary, historical/service-specific rule, task delivery and audit gaps documented in report; not claimed complete.
+
 ## 27 Oct Supabase Phase 2c revised — main rollback access tests
 - [x] Real-claims fictional fixtures for all 18 roles, patient and advocate; all public-table/auth counts unchanged after rollback; no TEST secrets.
 - [x] 2,170 assertions; opened only own_work_sites and identity_lane after all-role positive/negative tests; failed/unproved groups stay closed.

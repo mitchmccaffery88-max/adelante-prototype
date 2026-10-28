@@ -22,7 +22,8 @@ const EHR_OCT27: [string, string][] = [
   ],
   // 2. the bookingCredentialingBlock helper
   [
-    '/**\n * Checks whether the requested service type is',
+    // 27 Oct clinician credentialing batch: exact existing clinician-fit anchor only.
+    '/** Prescriber / MAT visits → physician or PMHNP calendars; SUD types → a calendar that offers them. */',
     `/**
  * 27 Oct (Mitch) — credentialing booking block (Draft — pending go-live
  * permissions audit and compliance review). Returns the neutral scheduler
@@ -49,8 +50,7 @@ export function bookingCredentialingBlock(
   return res.ok ? undefined : "This clinician can't be booked for this service right now.";
 }
 
-/**
- * Checks whether the requested service type is`,
+/** Prescriber / MAT visits → physician or PMHNP calendars; SUD types → a calendar that offers them. */`,
   ],
   // 3. the hard-stop inside bookAppointment
   [
