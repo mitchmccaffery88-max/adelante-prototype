@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt, type CredentialDoc } from "@/lib/ehr-ext";
 import { CredentialDocumentViewer } from "@/components/credentials/CredentialDocumentViewer";
+import { CredentialingToday } from "@/components/credentials/CredentialingToday";
 import {
   CREDENTIAL_ACCEPT_ATTR,
   CREDENTIAL_STORAGE_NOTE,
@@ -456,7 +457,7 @@ function ImportDialog({
 }
 
 function CredentialingAdminPage() {
-  const { staffName, role } = useActingStaff();
+  const { staffName, role, staffId } = useActingStaff();
   const canManageCredentials = canAccess(role, "staff_supervision").level === "write";
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const creds = useEhrExt(() => AdelanteEHRExt.listAllCredentials());

@@ -260,7 +260,7 @@ export function CredentialingToday({ role, staffId }: { role: StaffRole; staffId
               <span className="font-medium">{c.label}</span>
               {c.simulated ? (
                 <>
-                  <SimulatedBadge />
+                  <SimulatedBadge flag="credential_monitor_simulated" />
                   <span className="text-xs text-muted-foreground">{c.note} Disabled — switchable by configuration only.</span>
                 </>
               ) : (
