@@ -6,20 +6,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useEhr } from "@/lib/ehr";
 import { type IntakeActor } from "@/lib/intakePhaseA";
 import { INTAKE_PHASE_B_DRAFT } from "@/lib/intakePhaseB";
-import { canReadIntakePacket, openIntakeFollowupChecklist } from "@/lib/intakeFollowup";
+import { canReadIntakePacket, openIntakeFollowupChecklist, readIntakeFollowupChecklist } from "@/lib/intakeFollowup";
 import { intakePacketChecklist, packetDocumentContent } from "@/lib/intakePacket";
 
 export function IntakeFollowupPanel({ actor, referralId }: { actor: IntakeActor; referralId: string }) {
   const [opened, setOpened] = useState(false);
-  const [clock, setClock] = useState(() => new Date());
+  const [clock, setClock] = useState<Date>();
   const [document, setDocument] = useState<ReturnType<typeof packetDocumentContent>>();
   useEffect(() => {
+    setClock(new Date());
     const timer = window.setInterval(() => setClock(new Date()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
-  const allowed = useEhr(() => canReadIntakePacket(actor, referralId, clock));
+  const allowed = useEhr(() => !!clock && canReadIntakePacket(actor, referralId, clock));
   const json = useEhr(() => opened && allowed ? JSON.stringify(intakePacketChecklist(actor, referralId)) : "null");
   const packet = JSON.parse(json) as ReturnType<typeof intakePacketChecklist> | null;
+  if (!clock) return null;
   if (!allowed) return <section aria-label="Intake follow-up" className="w-full border-t border-line py-3"><p className="flex items-center gap-2"><Lock className="size-5" />This person's intake window has closed</p><p className="text-sm text-ink-muted">{INTAKE_PHASE_B_DRAFT}</p></section>;
   return <section aria-label="Intake follow-up" className="w-full space-y-3 border-t border-line py-3">
     <h4 className="flex items-center gap-2 font-bold"><FileCheck2 className="size-5" />Intake follow-up</h4>
@@ -31,7 +33,7 @@ export function IntakeFollowupPanel({ actor, referralId }: { actor: IntakeActor;
     }}>Open intake checklist</Button>
     {packet && <>
       <h5 className="font-bold">Handoff checklist</h5>
-      {Object.entries(opened ? openChecklistRead(actor, referralId) : {}).map(([key, value]) => <p key={key}>{key.replaceAll("_", " ")} · {value ? "Confirmed" : "Not confirmed"}</p>)}
+      {Object.entries(readIntakeFollowupChecklist(actor, referralId).checklist).map(([key, value]) => <p key={key}>{key.replaceAll("_", " ")} · {value ? "Confirmed" : "Not confirmed"}</p>)}
       <h5 className="font-bold">Forms checklist</h5>
       {packet.forms.map(form => <p key={form.key}>{form.label} · {form.status}{form.date ? ` · ${form.date}` : ""}</p>)}
       <h5 className="font-bold">Packet needs</h5>
@@ -47,9 +49,4 @@ export function IntakeFollowupPanel({ actor, referralId }: { actor: IntakeActor;
     </>}
     <Dialog open={!!document && allowed} onOpenChange={value => { if (!value) setDocument(undefined); }}><DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>{document?.fileName}</DialogTitle><DialogDescription>Simulated — preview-memory document</DialogDescription></DialogHeader>{document?.dataUrl ? <iframe sandbox="" title="Intake follow-up document" src={document.dataUrl} className="h-[60vh] w-full border border-line" /> : <p>Paper copy reference only — no file content stored.</p>}</DialogContent></Dialog>
   </section>;
-}
-
-import { readIntakeFollowupChecklist } from "@/lib/intakeFollowup";
-function openChecklistRead(actor: IntakeActor, referralId: string) {
-  return readIntakeFollowupChecklist(actor, referralId).checklist;
 }
