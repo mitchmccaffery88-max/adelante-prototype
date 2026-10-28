@@ -336,6 +336,7 @@ export type Database = {
           assignment_kind: string
           created_at: string
           ends_at: string | null
+          group_context_id: string | null
           id: string
           org_id: string
           patient_id: string
@@ -350,6 +351,7 @@ export type Database = {
           assignment_kind: string
           created_at?: string
           ends_at?: string | null
+          group_context_id?: string | null
           id?: string
           org_id: string
           patient_id: string
@@ -364,6 +366,7 @@ export type Database = {
           assignment_kind?: string
           created_at?: string
           ends_at?: string | null
+          group_context_id?: string | null
           id?: string
           org_id?: string
           patient_id?: string
@@ -402,6 +405,138 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "staff_members"
             referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
+      chart_reason_grants: {
+        Row: {
+          account_id: string
+          acting_role: string
+          created_at: string
+          expires_at: string
+          id: string
+          opened_at: string
+          org_id: string
+          patient_id: string
+          reason_code: string
+          synthetic: boolean
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          acting_role: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          opened_at?: string
+          org_id: string
+          patient_id: string
+          reason_code: string
+          synthetic?: boolean
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          acting_role?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          opened_at?: string
+          org_id?: string
+          patient_id?: string
+          reason_code?: string
+          synthetic?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_reason_grants_org_id_account_id_fkey"
+            columns: ["org_id", "account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "chart_reason_grants_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chart_reason_grants_org_id_patient_id_fkey"
+            columns: ["org_id", "patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
+      clinician_coverage_assignments: {
+        Row: {
+          covered_staff_id: string
+          covering_staff_id: string
+          created_at: string
+          created_by_account: string
+          ends_at: string
+          id: string
+          org_id: string
+          starts_at: string
+          synthetic: boolean
+          updated_at: string
+        }
+        Insert: {
+          covered_staff_id: string
+          covering_staff_id: string
+          created_at?: string
+          created_by_account: string
+          ends_at: string
+          id?: string
+          org_id: string
+          starts_at: string
+          synthetic?: boolean
+          updated_at?: string
+        }
+        Update: {
+          covered_staff_id?: string
+          covering_staff_id?: string
+          created_at?: string
+          created_by_account?: string
+          ends_at?: string
+          id?: string
+          org_id?: string
+          starts_at?: string
+          synthetic?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinician_coverage_assignments_org_id_covered_staff_id_fkey"
+            columns: ["org_id", "covered_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "clinician_coverage_assignments_org_id_covering_staff_id_fkey"
+            columns: ["org_id", "covering_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "clinician_coverage_assignments_org_id_created_by_account_fkey"
+            columns: ["org_id", "created_by_account"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "clinician_coverage_assignments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -778,6 +913,7 @@ export type Database = {
           care_manager_id: string | null
           clinician_id: string | null
           created_at: string
+          handed_off_at: string | null
           id: string
           org_id: string
           patient_id: string
@@ -790,6 +926,7 @@ export type Database = {
           care_manager_id?: string | null
           clinician_id?: string | null
           created_at?: string
+          handed_off_at?: string | null
           id?: string
           org_id: string
           patient_id: string
@@ -802,6 +939,7 @@ export type Database = {
           care_manager_id?: string | null
           clinician_id?: string | null
           created_at?: string
+          handed_off_at?: string | null
           id?: string
           org_id?: string
           patient_id?: string
@@ -1602,6 +1740,7 @@ export type Database = {
           last_viewed_at: string
           org_id: string
           patient_id: string
+          reason_code: string | null
           record_class: string
           simulated: boolean
           updated_at: string
@@ -1616,6 +1755,7 @@ export type Database = {
           last_viewed_at?: string
           org_id: string
           patient_id: string
+          reason_code?: string | null
           record_class: string
           simulated?: boolean
           updated_at?: string
@@ -1630,6 +1770,7 @@ export type Database = {
           last_viewed_at?: string
           org_id?: string
           patient_id?: string
+          reason_code?: string | null
           record_class?: string
           simulated?: boolean
           updated_at?: string
@@ -2242,6 +2383,7 @@ export type Database = {
           name: string
           org_id: string
           source_key: string
+          supervised_by: string | null
           synthetic: boolean
           updated_at: string
         }
@@ -2253,6 +2395,7 @@ export type Database = {
           name: string
           org_id: string
           source_key: string
+          supervised_by?: string | null
           synthetic?: boolean
           updated_at?: string
         }
@@ -2264,6 +2407,7 @@ export type Database = {
           name?: string
           org_id?: string
           source_key?: string
+          supervised_by?: string | null
           synthetic?: boolean
           updated_at?: string
         }
@@ -2281,6 +2425,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_supervisor_same_org"
+            columns: ["org_id", "supervised_by"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["org_id", "id"]
           },
         ]
       }
@@ -2590,6 +2741,19 @@ export type Database = {
     }
     Functions: {
       advocate_view_identity: { Args: { p_link: string }; Returns: Json }
+      chart_reason_open: {
+        Args: { p_note?: string; p_patient: string; p_reason: string }
+        Returns: string
+      }
+      clinician_coverage_set: {
+        Args: {
+          p_covered: string
+          p_covering: string
+          p_end: string
+          p_start: string
+        }
+        Returns: string
+      }
       foundation_attest_beta: { Args: { p_language: string }; Returns: string }
       foundation_command: {
         Args: { p_command: string; p_user: string; p_value: string }
