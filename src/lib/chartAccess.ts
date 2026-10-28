@@ -118,7 +118,7 @@ export function weeklyReasonedOpens(actor: AccessActor, at = new Date()) { retur
 /** Existing group host may use this relationship, never full-chart entry. */
 export function groupContextFor(staffId: string | undefined, patientId: string) {
   const s = getStaffMember(staffId);
-  return !!s?.clinicianId && s.active !== false && AdelanteEHR.listGroupSessions().some(g => g.status !== "cancelled" && g.facilitatorId === s.clinicianId && g.enrolledPatientIds?.includes(patientId));
+  return !!s?.clinicianId && s.active !== false && AdelanteEHR.listGroupSessions().some(g => g.status !== "cancelled" && g.facilitatorId === s.clinicianId && AdelanteEHR.listGroupEnrollments(g.id).some(e => e.patientId === patientId));
 }
 
 // ---------------------------------------------------------------------------

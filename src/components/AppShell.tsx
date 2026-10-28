@@ -398,9 +398,7 @@ function AppShellContent() {
           <StaffShell>
             {routeContent}
           </StaffShell>
-        ) : (
-          {routeContent}
-        )}
+        ) : routeContent}
       </main>
 
       {/* Persistent 988 crisis banner — §4c safety net */}
