@@ -2,7 +2,7 @@
 
 - Credentialing uses only ehr-ext credential/enrollment records, self-registered for historical evaluation; NPI stays roster-owned. Dashboard writes use the registry, transition audits contain ids only, Today ingests claim counts only, and Billing flags stay isolated. Why: edits, booking and readiness agree without cycles, permission unions or claim-detail disclosure.
 
-- Phase 2 persistence contracts remain disconnected read scaffolds; SQL commands and unverified read policies stay closed. Access-batch reason/coverage scaffolds stay empty and revoked until the Part 2 prerequisite conflict is decided; active chart/team/packet helpers retain the app-matching prior rule. Why: an entry change cannot silently replace treating-clinician matrix grants or leave app/SQL rules split.
+- Phase 2 persistence stays disconnected; commands/unproved reads stay closed. Access scaffolds stay empty/revoked until coordinated acceptance; active helpers retain matched prior rules. Existing treating-clinician Part 2 exceptions remain unchanged. Why: entry cannot replace matrix grants or split app/SQL rules.
 
 - Daylight public destinations use the existing AppShell public allowlist and WebsiteLayout; existing member resources keep their route and shell, and missing marketing destinations use WebsitePlaceholder with leaf metadata. Why: new public menus must resolve without reclassifying member/staff workflows.
 

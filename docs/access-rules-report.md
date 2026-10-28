@@ -8,7 +8,7 @@ Inventoried `chartAccess.ts`, `chartEntryFor`, `searchablePatientsFor`, `navGuar
 
 Built a candidate shared pre-data gate and pure entry/day-window rules, and installed Draft SQL scaffolds through migration tooling. Rolled-back fictional-login tests then exposed a **real existing Part 2 matrix conflict**. All candidate app changes were restored to the pre-batch source boundary, and active SQL entry/team/packet helpers were restored to match the app. No partially implemented access gate is live.
 
-## Decision needed
+## Part 2 decision resolved
 
 The request says both:
 - Keep the existing record-class matrix unchanged.
@@ -16,7 +16,9 @@ The request says both:
 
 The existing `roles.ts` matrix intentionally permits treating therapist/PMHNP/SUD-counselor SUD screener reads without separate consent; physician inherits PMHNP. PMHNP/physician/SUD-counselor have direct SUD treatment grants too. SQL's generated matrix mirrors those rules. The rollback failed with **`part2_no_consent_failed physician`**.
 
-Mitch must decide whether the no-consent negative applies only to **already consent-gated classes/roles**, preserving treating-clinician grants, or whether **all Part 2 classes/roles need a new consent prerequisite**. The latter changes clinical access policy and existing assertions, not just chart entry. Neither interpretation has been silently chosen.
+Mitch chose **Keep existing exceptions** on 28 Oct. No-consent negative cases apply only to already consent-gated classes/roles. Existing treating-clinician grants, physician inheritance and counseling-note restrictions remain unchanged. No universal Part 2 prerequisite is authorized.
+
+The next compatibility boundary is the old access assertions: `accessBatch.test.ts` explicitly requires sys_admin denial, same-site direct entry for every chart-capable role, cross-site denial and search containing only immediately enterable patients. Those assertions contradict the approved new entry/search behavior. Source-parity suites also require the old chartAccess/navGuard files byte-for-byte. The candidate would replace these expectations; that replacement has not been retained. Approval is needed for narrowly updating superseded access assertions and exact-once source-pin adapters, leaving unrelated permissions and tests intact.
 
 ## Retained database work
 
@@ -34,6 +36,6 @@ All fixture transactions rolled back. Independent counts: auth users 0→0, acco
 
 ## Resume scope
 
-After the Part 2 decision: reapply the coordinated app/SQL gate; preserve consent actions independently from sys_admin chart entry; use actual assigned care-team fixtures rather than old site-only test assumptions; add exact approved source-pin deltas without replacing unrelated assertions. Finish shared search/deep-link/print/PDF/embedded chart gating, grant expiry and minimal projections, coordinator request/coverage/review hosts, access-log reason display, and Intake's logged read-only 60-day packet/checklist window.
+With the Part 2 decision resolved, confirm the narrow superseded-test updates, then reapply the coordinated app/SQL gate; preserve consent actions independently from sys_admin chart entry; use actual assigned care-team fixtures rather than old site-only test assumptions; add exact approved source-pin deltas without replacing unrelated assertions. Finish shared search/deep-link/print/PDF/embedded chart gating, grant expiry and minimal projections, coordinator request/coverage/review hosts, access-log reason display, and Intake's logged read-only 60-day packet/checklist window.
 
 Then complete all-role rolled-back SQL acceptance and comprehensive before/after counts; open each passing read-policy group separately; run full units followed by public browser and real preview UI readback. Phase 2d repositories, server write transport, signup parity, storage and persistence switches remain outside scope.

@@ -2,9 +2,10 @@
 
 ## 27 Oct access rules — 28 Oct implementation (Draft)
 - [x] Inventory shared app gates, SQL entry and rollback harness; identified the superseded mandatory-site rule and pre-data rendering gap.
-- [ ] Align direct/reasoned entry and shared pre-data gate — blocked by Mitch's Part 2 prerequisite decision; candidate app removed and SQL restored together.
-- [ ] Intake read-only 60-day packet/checklist window and logged opens — same blocked coordinated batch; no partial window enabled.
-- [ ] Complete main rollback acceptance and open passing chart/packet/handoff policies — blocked by `part2_no_consent_failed physician`; none opened.
+- [x] Resolve Part 2 prerequisite: Mitch chose Keep existing exceptions; no-consent negatives target already consent-gated roles/classes.
+- [ ] Align direct/reasoned entry and shared pre-data gate — waiting on narrow superseded access-assertion/source-pin approval; app/SQL remain matched at the restored boundary.
+- [ ] Intake read-only 60-day packet/checklist window and logged opens — same coordinated retry; no partial window enabled.
+- [ ] Complete main rollback acceptance and open passing chart/packet/handoff policies — after narrow test compatibility approval and mirrored proofs; none opened.
 - [x] Document failed rollback attempts, zero retained fixture counts, report, Draft proposed matrix and architecture stop rule.
 - [x] Restore clean app/SQL boundary; restored units 3,583/3,583, 406 files, exit 0.
 - [x] Isolated restored-app public browser 51/51, exit 0, 10.1 minutes, one worker, after units; build OK and Supabase linter clean.
