@@ -94,14 +94,30 @@ export function coverageForPatient(pid: string): { pathSet: boolean; verified: b
   };
 }
 
-/** Attended service with a signed note whose rendering clinician has a roster credential (Draft proxy). */
+/**
+ * Attended service with a signed note whose rendering clinician passes the ONE
+ * credentialing rule (27 Oct, Mitch — Draft). Replaces the old
+ * credential-on-file proxy (`staff.credential` free text): the rule checks a
+ * verified unexpired license/registration, exclusion monitoring, payer
+ * enrollment for the service, and supervision for associates.
+ */
 export function billableService(pid: string) {
   const p = AdelanteEHR.getPatient(pid);
   const attended = AdelanteEHR.appointmentsForPatient(pid).filter((a) => a.status === "attended");
   const notes = p?.progressNotes ?? [];
   const signed = attended.find((a) => notes.some((n) => n.appointmentId === a.id && !!n.signedAt));
   const staff = signed ? STAFF_ROSTER.find((s) => s.clinicianId === signed.clinicianId) : undefined;
-  return { attendedSigned: !!signed, credentialed: !!(staff && staff.credential) };
+  const payer = AdelanteEHR.activeCoveragePlan(pid)?.payer;
+  const check = signed
+    ? staff
+      ? credentialedForService(staff.id, payer, signed.serviceType, signed.start)
+      : ({ ok: false, reasons: ["no_record"] } as const)
+    : undefined;
+  return {
+    attendedSigned: !!signed,
+    credentialed: !!check && check.ok,
+    credentialingReasons: check && !check.ok ? [...check.reasons] : [] as CredentialingReasonCode[],
+  };
 }
 
 export function firstCarePlanDrafted(pid: string): boolean {
