@@ -182,7 +182,7 @@ Part 2 internal-use basis: pending counsel confirmation.
 
 ### Not done in this pass (left for next run)
 1. ~~MOUD episode → care_manager team write~~ — DONE 28 Oct part B (see "Part B step 1").
-2. Coordinator hosts (care-team requests, coverage, weekly reasoned-open review).
+2. ~~Coordinator hosts (care-team requests, coverage, weekly reasoned-open review)~~ — DONE 28 Oct 20:23 continuation below.
 3. Intake logged read-only 60-day window host.
 4. Access-log reason readback UI; full gate verification.
 5. All-role rolled-back SQL vectors (on-call, coverage, supervisor, group, Intake day 60/61, patient/advocate); opening each passing policy group separately. Every read policy is still closed.
@@ -199,3 +199,24 @@ Part 2 internal-use basis: pending counsel confirmation.
 - Failed attempts first (kept on record): `audit_ids_only` (metadata not ids/codes) → fixed metadata; `active_dates_invalid` (same-transaction end = start) → end time is now strictly after start.
 - Units: 409 files, 3,604/3,604.
 - Source pins re-pinned this step: none needed.
+
+## 28 Oct 20:23 continuation — tightenings and step 2 (Draft)
+Part 2 internal-use basis: pending counsel confirmation.
+
+### Accepted step-1 tightenings
+- App and SQL assign checks: cf_care_manager/ecm_provider can assign only themselves, and cannot replace another episode care manager by self-assigning; clinical_coordinator can assign/replace others. Negative tests verify refused writes leave the team unchanged. No matrix or registry permission-row changes.
+- SQL migration `20261028202524_ddc385f1-3680-4bfa-8b5d-78f509eda61b`: episode-only end/replacement closes membership at transaction `now()`. For a row created in that same transaction, its start is bounded to one millisecond earlier only on closure, satisfying the existing strict end-after-start validator without leaving access alive against transaction-stable `now()`. Other-source dates and memberships stay unchanged.
+- Rollback acceptance `20261028202621_734e42cb-8d71-4798-b270-a4318667475e`: self assignment positive; other-target and self-replacement negatives; coordinator replacement positive; replaced member immediately loses entry; episode-only member immediately loses entry after end; independent-source member retains entry; ECM SUD-screeners remain locked; one assign audit; no duplicate independent membership. Every public base-table count and auth.users compared after sentinel rollback; outer rollback also completed. Before/after independent readback: users 0/0, accounts 0/0, patients 18/18, care-team rows 22/22, MOUD audits 0/0.
+- Full units after tightenings: 409 files, **3,607/3,607**, exit 0.
+
+### Step 2 — coordinator hosts complete
+- Existing `/admin-coordination` now hosts care-team requests, dated formal coverage and last-seven-days reasoned-open review through `ChartAccessCoordination`. Host mounts only for an active acting clinical_coordinator; other roles get no new reads or actions. Uses existing registry actions, relationship stores and read projections; no SQL/browser transport added.
+- Requests show requester, minimal patient identity and date; Add to care team runs `chart_team_assignment` once and changes to On care team. Coverage requires two distinct active clinicians, valid dates and a reason; Save coverage uses `chart_coverage_set` once. Weekly review shows person, actor, reason code's existing label, opened time and expiry, never opening-note text.
+- New tests cover all 18 acting roles, non-coordinator read denial/store-action refusal, request readback plus single-audit team assignment, and seven-day review exclusion/no-note disclosure.
+- Full units after step 2: 410 files, **3,627/3,627**, exit 0. Build signal: OK. Source re-pins: **none required**; all existing source/privacy pins passed unchanged.
+- Preview readback: created a fictional off-team ECM patient through the real store; requested membership through the gate, opened with covering/consult, observed banner, switched to coordinator, approved request, recorded coverage and read back both team access and weekly review. Exactly one Simulated audit per team assignment and coverage save. Desktop 1280 and phone 390 checked; new host width/scrollWidth 358/358; no page errors. Screenshots `/tmp/browser/access-step2/coordinator-desktop.png` and `coordinator-mobile.png`; script/log in the same directory. First attempt timed out while Vite initialized dependencies; fresh retry passed, not counted as a suite result.
+
+### Clean stop after completed step 2
+- Steps 3–6 remain: Intake logged read-only 60-day host; access-log reason UI/all-route gate acceptance; remaining all-role SQL vectors and separately passing chart/packet/handoff read policy groups; full public browser then preview acceptance and final reports/Draft matrix.
+- Carry-overs remain: HLOC browser fixture with an on-team therapist; DEA checks for prescribers on controlled-substance service types and credentialing report update.
+- No full public browser suite run in this continuation. All read-policy groups remain closed. Persistence OFF; nothing published; chart_reason_open and clinician_coverage_set remain browser-revoked (authenticated execution false on independent readback). No matrix change, permission widening or weakened privacy assertion was needed.

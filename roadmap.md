@@ -1,5 +1,15 @@
 # Roadmap
 
+## 28 Oct 20:23 access rules part B continuation (Draft)
+- [x] Tighten MOUD care-manager self-only assignment/replacement; SQL mirror and same-transaction end/retain proof; units 3,607/3,607, no retained fixtures.
+- [x] Step 2 coordinator request/coverage/weekly review hosts; units 3,627/3,627; real preview request/open/approval/coverage/review at 1280 and 390.
+- [ ] Step 3 Intake logged read-only 60-day host; green units.
+- [ ] Step 4 access-log reasons and full gate verification; green units.
+- [ ] Step 5 all-role rollback vectors and separately passing read policies.
+- [ ] Step 6 public browser then preview readback, final reports/Draft matrix.
+- [ ] Carry-overs: on-team HLOC therapist fixture; DEA controlled-substance prescriber checks.
+- Persistence OFF; nothing published; Part 2 matrix unchanged; commands browser-revoked until 2d.
+
 ## 28 Oct credentialing as-of fix (Draft)
 - [x] Exclusion screening judged as of booking time; DOS mode for billing readiness; tile shows checks due before booked visits; relative seeds; tests + re-pins; units 3,599/3,599.
 - [ ] Public browser 52/53: websiteSignup5 HLOC test hits the access-rules reason gate — resolve in the access-rules batch.
@@ -228,6 +238,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] Registry-driven domain cutover/staff patient RLS — blocked by Phase 2 care-team/chart context and trusted mutation contracts; all persist_* stay off.
 - [x] Re-pin clinician.tsx (access-rules adapter); full units green 3,585/3,585
 - [x] MOUD episode → care-team registry write + SQL mirror + rollback proof (part B step 1; units 3,604/3,604)
-- [ ] Part B steps 2–6: coordinator hosts; Intake 60-day host; access-log reason + gate on every route; all-role SQL vectors + per-group policy opens; units, browser (incl. HLOC fixture), preview readback, final docs; DEA carry-over
-- [ ] Coordinator hosts, Intake 60-day host, access-log readback, gate verification
+- [ ] Part B steps 3–6: Intake 60-day host; access-log reason + gate on every route; all-role SQL vectors + per-group policy opens; units, browser (incl. HLOC fixture), preview readback, final docs; DEA carry-over
+- [x] Coordinator hosts (28 Oct 20:23 continuation)
+- [ ] Intake 60-day host, access-log readback, gate verification
 - [ ] All-role SQL vectors, open passing policy groups, browser suite, preview readback, final reports
