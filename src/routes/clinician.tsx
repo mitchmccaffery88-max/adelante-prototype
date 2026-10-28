@@ -353,7 +353,7 @@ function ClinicianPage() {
         <TabsContent value="chart">
           {/* §Chart mode — patient identity, coverage, and identifiers live
               here only. */}
-          {selectedPatient && <ChartAccessGate patientId={selectedPatient.id}><ChartHeader
+          {selectedPatient ? <ChartAccessGate patientId={selectedPatient.id}><ChartHeader
             patient={selectedPatient}
             onBack={() => setMode("dashboard")}
             picker={
@@ -364,9 +364,8 @@ function ClinicianPage() {
                 }}
               />
             }
-          /></ChartAccessGate>}
-          {selectedPatient && (
-            <ChartAccessGate patientId={selectedPatient.id}><div className="mt-4 space-y-4">
+          />
+            <div className="mt-4 space-y-4">
               <CarePlanCard patientId={selectedPatient.id} audience="clinician" />
               <Card className="p-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -430,8 +429,7 @@ function ClinicianPage() {
                   </Button>
                 </div>
               </Card>
-            </div></ChartAccessGate>
-          )}
+            </div></ChartAccessGate> : <PatientPicker onChange={setSelectedPatientId} />}
         </TabsContent>
       </Tabs>
       <ClientRecordDrawer
