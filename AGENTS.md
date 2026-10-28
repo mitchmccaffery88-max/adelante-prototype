@@ -1,6 +1,6 @@
 # Architecture rules
 
-- Credentialing uses only ehr-ext credential/enrollment records, self-registered for historical evaluation; NPI stays roster-owned. Dashboard writes use the registry, transition audits contain ids only, Today ingests claim counts only, and Billing flags stay isolated. Why: edits, booking and readiness agree without cycles, permission unions or claim-detail disclosure.
+- Credentialing uses ehr-ext records, roster NPI and registry writes; transition audits are ids-only, Today reads claim counts, Billing stays projected. Controlled services use explicit appointment facts, never SUD/category inference or wider Billing allowlists. Why: screening cannot disclose clinical context or split authority.
 
 - Phase 2 stays disconnected; commands/unproved reads stay closed. Access entry uses matched team/reason helpers; chartPart2Boundary self-registers relationship facts into the unchanged matrix gate. Reason-only Part 2 requires class-specific consent; direct internal-use is counsel-pending. Why: entry cannot replace matrix grants or split app/SQL rules.
 - Approved source re-pins hash-check prior text once. Why: no drift.
