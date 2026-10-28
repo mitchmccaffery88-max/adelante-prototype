@@ -227,19 +227,33 @@ export function lifecycleHome(v: LifecycleView, role: StaffRole): { to: string; 
 
 export interface BillingReadiness {
   ready: boolean;
-  checklist: { label: string; done: boolean }[];
+  checklist: { label: string; done: boolean; detail?: string }[];
 }
 
-/** Presentation only. Non-billing viewers receive checklist labels only — never payer detail. */
-export function billingReadiness(pid: string): BillingReadiness {
+/** Roles that may see the credentialing rule's reasons; everyone else gets the neutral label. */
+export const CREDENTIALING_REASON_ROLES: StaffRole[] = ["billing", "billing_coordinator", "credentialing_coordinator"];
+
+/**
+ * Presentation only. Non-billing viewers receive checklist labels only — never
+ * payer detail. The credentialing item shows the rule's neutral reasons to
+ * Billing and the Credentialing Coordinator; every other role sees only
+ * "Credentialing — needs review".
+ */
+export function billingReadiness(pid: string, viewerRole?: StaffRole): BillingReadiness {
   const p = AdelanteEHR.getPatient(pid);
   const cov = coverageForPatient(pid);
   const svc = billableService(pid);
+  const seesReasons = !!viewerRole && CREDENTIALING_REASON_ROLES.includes(viewerRole);
+  const credDetail = svc.credentialed
+    ? undefined
+    : seesReasons
+      ? svc.credentialingReasons.map((r) => CREDENTIALING_REASON_LABEL[r]).join("; ")
+      : CREDENTIALING_NEUTRAL_LABEL;
   const checklist = [
     { label: "Coverage path set", done: cov.pathSet },
     { label: "Coverage verified", done: cov.verified },
     { label: "Attended visit with signed note", done: svc.attendedSigned },
-    { label: "Rendering clinician credentialed", done: svc.credentialed },
+    { label: "Rendering clinician credentialed", done: svc.credentialed, detail: credDetail },
     { label: "Intake packet finished", done: !!p?.intakeCompletedAt },
   ];
   return { ready: checklist.every((c) => c.done), checklist };
