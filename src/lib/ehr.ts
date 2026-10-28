@@ -24,7 +24,7 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
-import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL } from "./credentialing";
+import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource } from "./credentialing";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { assertGroupApproval, assertGroupStaffRequest, groupRequestHooks } from "./groupRequestBoundary";
 import { ON_CALL_GAP, onCallOwnerFor } from "./onCallBoundary";
@@ -8354,7 +8354,8 @@ export function bookingCredentialingBlock(
   if (!member) return undefined; // authority self-registers after initial demo bookings
   const payer = AdelanteEHR.activeCoveragePlan(patientId)?.payer;
   if (!payer) return undefined;
-  const res = credentialedForService(member.staffId, payer, serviceType, start);
+  // 28 Oct fix: booking judges exclusion screening as of now, end-dated items on the visit date.
+  const res = credentialedForService(member.staffId, payer, serviceType, start, { asOf: new Date().toISOString() });
   return res.ok ? undefined : "This clinician can't be booked for this service right now.";
 }
 
@@ -8456,6 +8457,9 @@ function _requestCancel(
   emit();
   return a;
 }
+
+// 28 Oct fix: lets the coordinator tile see booked visits after a check falls due.
+registerBookedVisitSource(() => AdelanteEHR.listAppointments());
 
 export const AdelanteEHR = {
   subscribe(l: Listener) {

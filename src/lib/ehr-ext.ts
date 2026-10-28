@@ -567,13 +567,10 @@ function seedExclusions(staffId: string, checkedDaysAgo: number): ClinicianCrede
   const checks: ClinicianCredentialing["exclusionChecks"] = [];
   for (const list of ["oig", "sam_gov", "medi_cal_suspended"] as const) {
     // 28 Oct credentialing reconciliation: fictional monthly history, unchanged cadence.
-    for (let at = +new Date("2024-01-01"); at <= end; at += 30 * 86400000)
+    // 28 Oct fix: history start is relative to today so the demo never decays.
+    for (let at = end - 24 * 30 * 86400000; at < end; at += 30 * 86400000)
       checks.push({ list, result: "clear", checkedAt: new Date(at).toISOString(), nextDueAt: new Date(at + 30 * 86400000).toISOString() });
     checks.push({ list, result: "clear", checkedAt: new Date(end).toISOString(), nextDueAt: new Date(end + 30 * 86400000).toISOString() });
-    if (staffId === "s-th1") {
-      const at = +new Date("2026-11-20");
-      checks.push({ list, result: "clear", checkedAt: new Date(at).toISOString(), nextDueAt: new Date(at + 30 * 86400000).toISOString() });
-    }
   }
   return checks;
 }
@@ -598,7 +595,7 @@ function seedCredentialAuthorityDemo() {
   seedRecord({
     staffId: "s-th1",
     clinicianId: "c1",
-    license: { licenseType: "LCSW", number: "DEMO-LIC-0000", state: "CA", issuedAt: "2021-01-15", expiresAt: daysFromNow(210), verificationSource: "bbs", verifiedAt: daysFromNow(-30), verifiedBy: "s-cred1", method: "manual" },
+    license: { licenseType: "LCSW", number: "DEMO-LIC-0000", state: "CA", issuedAt: daysFromNow(-2112), expiresAt: daysFromNow(210), verificationSource: "bbs", verifiedAt: daysFromNow(-30), verifiedBy: "s-cred1", method: "manual" },
         malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(400) },
     educationAttestedAt: daysFromNow(-60),
     ceAttestedAt: daysFromNow(-60),
@@ -607,9 +604,9 @@ function seedCredentialAuthorityDemo() {
     exclusionChecks: seedExclusions("s-th1", 0),
     attestation: { status: "signed", signedAt: daysFromNow(-60), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
     enrollments: [
-      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
-      { payer: "Health Net Medi-Cal", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
-      { payer: "Tulare County MHP", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: daysFromNow(-879) },
+      { payer: "Health Net Medi-Cal", serviceType: "*", status: "active", effectiveAt: daysFromNow(-879) },
+      { payer: "Tulare County MHP", serviceType: "*", status: "active", effectiveAt: daysFromNow(-879) },
       { payer: "Anthem Blue Cross Medi-Cal", serviceType: "*", status: "submitted" },
     ],
     recredentialingDueAt: daysFromNow(2 * 365),
@@ -630,7 +627,7 @@ function seedCredentialAuthorityDemo() {
     },
         exclusionChecks: seedExclusions("s-tr1", 12),
     attestation: { status: "signed", signedAt: daysFromNow(-50), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
-    enrollments: [{ payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-09-01" }],
+    enrollments: [{ payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: daysFromNow(-787) }],
     recredentialingDueAt: daysFromNow(2 * 365),
     documentStatus: "simulated_unavailable",
   });
@@ -639,13 +636,13 @@ function seedCredentialAuthorityDemo() {
   seedRecord({
     staffId: "s-th2",
     clinicianId: "c2",
-    license: { licenseType: "PsyD", number: "DEMO-LIC-0002", state: "CA", issuedAt: "2019-05-01", expiresAt: daysFromNow(25), verificationSource: "bbs", verifiedAt: daysFromNow(-90), verifiedBy: "s-cred1", method: "manual" },
+    license: { licenseType: "PsyD", number: "DEMO-LIC-0002", state: "CA", issuedAt: daysFromNow(-2737), expiresAt: daysFromNow(25), verificationSource: "bbs", verifiedAt: daysFromNow(-90), verifiedBy: "s-cred1", method: "manual" },
         malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(300) },
     exclusionChecks: seedExclusions("s-th2", 8),
     attestation: { status: "signed", signedAt: daysFromNow(-90), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
     enrollments: [
-      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
-      { payer: "Health Net Medi-Cal", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: daysFromNow(-879) },
+      { payer: "Health Net Medi-Cal", serviceType: "*", status: "active", effectiveAt: daysFromNow(-879) },
     ],
     recredentialingDueAt: daysFromNow(2 * 365),
     documentStatus: "simulated_unavailable",
@@ -655,15 +652,15 @@ function seedCredentialAuthorityDemo() {
   seedRecord({
     staffId: "s-th3",
     clinicianId: "c3",
-    license: { licenseType: "PMHNP", number: "DEMO-LIC-0003", state: "CA", issuedAt: "2020-03-01", expiresAt: daysFromNow(320), verificationSource: "brn", verifiedAt: daysFromNow(-15), verifiedBy: "s-cred1", method: "manual" },
+    license: { licenseType: "PMHNP", number: "DEMO-LIC-0003", state: "CA", issuedAt: daysFromNow(-2432), expiresAt: daysFromNow(320), verificationSource: "brn", verifiedAt: daysFromNow(-15), verifiedBy: "s-cred1", method: "manual" },
         dea: { number: "DEMO-LIC-0004", expiresAt: daysFromNow(400) },
     boardCertification: "PMHNP-BC",
     malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(350) },
     exclusionChecks: seedExclusions("s-th3", 6),
     attestation: { status: "signed", signedAt: daysFromNow(-40), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
     enrollments: [
-      { payer: "Medi-Cal FFS", serviceType: "med_management", status: "active", effectiveAt: "2024-06-01" },
-      { payer: "Medi-Cal FFS", serviceType: "therapy_individual", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Medi-Cal FFS", serviceType: "med_management", status: "active", effectiveAt: daysFromNow(-879) },
+      { payer: "Medi-Cal FFS", serviceType: "therapy_individual", status: "active", effectiveAt: daysFromNow(-879) },
       { payer: "Tulare County DMC-ODS", serviceType: "sud_counseling", status: "not_started" },
     ],
     recredentialingDueAt: daysFromNow(2 * 365),
@@ -674,15 +671,15 @@ function seedCredentialAuthorityDemo() {
   seedRecord({
     staffId: "s-np1",
     clinicianId: "c5",
-    license: { licenseType: "MD", number: "DEMO-LIC-0005", state: "CA", issuedAt: "2005-07-01", expiresAt: daysFromNow(500), verificationSource: "medical_board_ca", verifiedAt: daysFromNow(-10), verifiedBy: "s-cred1", method: "manual" },
+    license: { licenseType: "MD", number: "DEMO-LIC-0005", state: "CA", issuedAt: daysFromNow(-7789), expiresAt: daysFromNow(500), verificationSource: "medical_board_ca", verifiedAt: daysFromNow(-10), verifiedBy: "s-cred1", method: "manual" },
         dea: { number: "DEMO-LIC-0006", expiresAt: daysFromNow(600) },
     boardCertification: "Psychiatry",
     malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(500) },
     exclusionChecks: seedExclusions("s-np1", 45),
     attestation: { status: "signed", signedAt: daysFromNow(-100), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
     enrollments: [
-      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
-      { payer: "Tulare County MHP", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: daysFromNow(-879) },
+      { payer: "Tulare County MHP", serviceType: "*", status: "active", effectiveAt: daysFromNow(-879) },
     ],
     recredentialingDueAt: daysFromNow(60),
     documentStatus: "simulated_unavailable",
@@ -713,7 +710,7 @@ function seedCredentialAuthorityDemo() {
     },
     exclusionChecks: seedExclusions("s-sudc1", 9),
     attestation: { status: "signed", signedAt: daysFromNow(-30), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
-    enrollments: [{ payer: "Tulare County DMC-ODS", serviceType: "*", status: "active", effectiveAt: "2024-08-01" }],
+    enrollments: [{ payer: "Tulare County DMC-ODS", serviceType: "*", status: "active", effectiveAt: daysFromNow(-818) }],
     recredentialingDueAt: daysFromNow(2 * 365),
     documentStatus: "simulated_unavailable",
   });
