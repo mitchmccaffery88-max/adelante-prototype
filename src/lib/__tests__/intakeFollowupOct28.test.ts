@@ -20,8 +20,8 @@ function fixture(classification: "general" | "part2" = "general") {
   expect(run("intake_packet_needs_ingest", "referral_form", `referral:${r.id}`, [{ kind: "food" }]).ok).toBe(true);
   const doc = runAction<{ documentId: string }>("intake_packet_attach", actor, undefined, { args: [actor, r.id, { type: "hra", source: "referral_form", classification, fileName: "fictional.txt", mime: "text/plain", size: 4, dataUrl: "data:text/plain;base64,dGVzdA==" }, "Fictional packet"], auditReason: "Fictional packet" });
   if (!doc.ok) throw new Error(doc.reason);
-  expect(run("intake_assign_care_manager", "s-cm2", "2026-08-31").ok).toBe(true);
-  expect(run("intake_assign_clinician", "s-th2", "2026-08-31").ok).toBe(true);
+  expect(run("intake_team_assign", "care_manager", "s-cm2", "2026-08-31").ok).toBe(true);
+  expect(run("intake_team_assign", "clinician", "s-th2", "2026-08-31").ok).toBe(true);
   expect(run("intake_complete", Object.fromEntries(CHECKLIST_KEYS.map(key => [key, true]))).ok).toBe(true);
   return { r, pid, documentId: doc.value.documentId, run };
 }
