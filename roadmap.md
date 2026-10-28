@@ -1,7 +1,7 @@
 # Roadmap
 
 ## 27 Oct access rules — 28 Oct implementation (Draft)
-- [ ] Inventory shared app gates, SQL entry and rollback harness; reconcile standing rules.
+- [x] Inventory shared app gates, SQL entry and rollback harness; identified the superseded mandatory-site rule and pre-data rendering gap.
 - [ ] Align direct team/coverage/on-call/supervisor/group-context entry and reasoned end-of-day access with shared pre-data gate, minimal search, logs/review/requests.
 - [ ] Intake read-only 60-day packet/checklist window, logged opens, unchanged Part 2 gates.
 - [ ] Main-only rollback claims proofs and before/after counts; separately open only passing chart/packet/handoff policies.
