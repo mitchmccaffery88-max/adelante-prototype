@@ -227,6 +227,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] Consent create/frozen signed-copy persistence — blocked by trusted file/signature transport; persist_consent stays off.
 - [ ] Registry-driven domain cutover/staff patient RLS — blocked by Phase 2 care-team/chart context and trusted mutation contracts; all persist_* stay off.
 - [x] Re-pin clinician.tsx (access-rules adapter); full units green 3,585/3,585
-- [ ] MOUD episode → care-team registry write + SQL mirror + rollback proof
+- [x] MOUD episode → care-team registry write + SQL mirror + rollback proof (part B step 1; units 3,604/3,604)
+- [ ] Part B steps 2–6: coordinator hosts; Intake 60-day host; access-log reason + gate on every route; all-role SQL vectors + per-group policy opens; units, browser (incl. HLOC fixture), preview readback, final docs; DEA carry-over
 - [ ] Coordinator hosts, Intake 60-day host, access-log readback, gate verification
 - [ ] All-role SQL vectors, open passing policy groups, browser suite, preview readback, final reports
