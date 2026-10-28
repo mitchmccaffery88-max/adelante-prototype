@@ -270,9 +270,8 @@ export function evaluateCredentialing(
     const latest = record.exclusionChecks
       .filter((c) => c.list === key && asDay(c.checkedAt) <= x)
       .sort((a, b) => b.checkedAt.localeCompare(a.checkedAt))[0];
-    const anyHit = record.exclusionChecks.some((c) => c.list === key && c.result === "hit" && asDay(c.checkedAt) <= x && c === latest);
     if (!latest) reasons.push("exclusion_check_overdue");
-    else if (anyHit) reasons.push("exclusion_hit");
+    else if (latest.result === "hit") reasons.push("exclusion_hit");
     else if (asDay(latest.nextDueAt) < x) reasons.push("exclusion_check_overdue");
   }
 

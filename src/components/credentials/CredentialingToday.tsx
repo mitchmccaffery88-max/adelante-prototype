@@ -172,8 +172,9 @@ export function CredentialingToday({ role, staffId }: { role: StaffRole; staffId
                 <StatusChip
                   lang="en"
                   state="yourturn"
-                  label={r.state === "never" ? "Never checked" : r.state === "overdue" ? "Check overdue" : "Due this week"}
+                  label={r.state === "never" ? "Never checked" : r.state === "overdue" ? "Check overdue" : r.state === "before_visits" ? "Check due before booked visits" : "Due this week"}
                 />
+                <a href="#credential-person" className="text-path underline">Record the check</a>
               </li>
             ))}
           </ul>

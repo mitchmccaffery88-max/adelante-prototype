@@ -599,8 +599,7 @@ function seedCredentialAuthorityDemo() {
         malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(400) },
     educationAttestedAt: daysFromNow(-60),
     ceAttestedAt: daysFromNow(-60),
-    // 27 Oct credentialing batch: freshly checked seed keeps the monthly
-    // validity runway through workingCalendar's Nov 20 clock; cadence unchanged.
+    // 28 Oct fix: checked today; booking no longer needs a future-dated check.
     exclusionChecks: seedExclusions("s-th1", 0),
     attestation: { status: "signed", signedAt: daysFromNow(-60), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
     enrollments: [
