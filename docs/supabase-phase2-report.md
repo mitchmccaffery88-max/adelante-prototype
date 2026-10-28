@@ -1,5 +1,9 @@
 # Supabase Phase 2 — partial closed foundation
 
+## 28 Oct access-rule batch — stopped and restored
+
+Mitch approved team/reasoned-open entry, but the rollback acceptance failed `part2_no_consent_failed physician`: existing treating-clinician matrix grants do not require consent for every Part 2 class. No matrix change was authorized at that conflict boundary. Candidate app sources and active SQL chart/team/packet helpers were restored together. Empty reason-grant/coverage scaffolds remain closed; command/window/group execution revoked. No additional read policy opened; persistence OFF. Counts after rollback: auth.users 0, accounts 0, patients 18, reason grants 0, coverage rows 0. Restored units 3,583/3,583; sequential public browser result recorded in access-rules-report.md. See `docs/rls-evidence/access-rules-rollback.md` and the Draft proposed matrix for the decision and unproved cases.
+
 ## Revised Phase 2c (27 Oct request; 27–28 Oct execution)
 
 Main-only rollback tests replace the test-target stop; no TEST secrets or separate project used. Real auth.uid claim mapping exercised for all 18 roles plus patient/advocate; no helper override. Fixtures and temporary candidate grants roll back; all public table counts and auth.users before/after agree. **2,170 successful assertions**, including current-contract and structural checks, are not full acceptance.

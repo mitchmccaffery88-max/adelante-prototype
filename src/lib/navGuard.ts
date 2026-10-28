@@ -28,7 +28,6 @@ export const PATIENT_HOME = "/home";
 
 export type NavAccess =
   | { status: "unregistered" }
-  | { status: "gate"; entry: NavEntry; patientId: string }
   | { status: "allowed"; entry: NavEntry }
   | { status: "denied"; entry: NavEntry; redirectTo: string; message: string };
 
@@ -82,11 +81,7 @@ export function resolveChartRouteAccess(role: StaffRole, staffId: string | undef
   const m = /^\/(?:record|print\/patient-records)\/([^/]+)\/?$/.exec(pathname);
   if (!m) return undefined;
   const entry: NavEntry = { id: "chart", label: "Client chart", to: "/record/$patientId", group: "care", gate: { kind: "open" } } as unknown as NavEntry;
-  const id = m[1];
-  if (!id) return undefined;
-  const patientId = decodeURIComponent(id);
-  const e = chartEntryFor(role, staffId, patientId);
+  const e = chartEntryFor(role, staffId, decodeURIComponent(m[1]!));
   if (e.ok || e.reason === "missing") return { status: "allowed", entry };
-  if (e.entryEligible) return { status: "gate", entry, patientId };
   return { status: "denied", entry, redirectTo: safeLandingFor(role), message: e.message };
 }

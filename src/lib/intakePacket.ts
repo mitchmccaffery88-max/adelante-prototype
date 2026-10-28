@@ -4,7 +4,6 @@ import { isRestricted } from "./chartAccess";
 import { canIntakeB, assertIntakeB, intakeBReferral, intakeFormsStatus, careTeamCanRead } from "./intakePhaseB";
 import { intakeCompleted, type IntakeActor } from "./intakePhaseA";
 import { registerIntakeStagingBoundary } from "./intakeStagingBoundary";
-import { canReadIntakePacket } from "./intakeFollowup";
 
 export const PACKET_SOURCES = ["referral_form", "partner_referral", "pre_release_packet"] as const;
 export type PacketSource = (typeof PACKET_SOURCES)[number];
@@ -84,7 +83,6 @@ export function attachIntakePacket(actor: IntakeActor, referralId: string, input
 }
 export function intakePacketDocuments(actor: IntakeActor, referralId: string) {
   if (!canIntakeB(actor, "packet_attach")) return [];
-  if (actor.role === "intake_coordinator" && intakeCompleted(referralId) && !canReadIntakePacket(actor, referralId)) return [];
   const r = referralForPacket(referralId);
   return (documents.get(referralId) ?? []).map(d => {
     const restricted = !!(r.enrolledPatientId && isRestricted(r.enrolledPatientId)) || (d.part2 && !intakeTreatmentConsent(r));
@@ -93,7 +91,7 @@ export function intakePacketDocuments(actor: IntakeActor, referralId: string) {
 }
 export function packetDocumentContent(actor: IntakeActor, referralId: string, documentId: string) {
   const r = referralForPacket(referralId); const d = (documents.get(referralId) ?? []).find(x => x.id === documentId); if (!d) throw new Error("Document unavailable.");
-  const isIntake = canIntakeB(actor, "packet_attach") && (actor.role !== "intake_coordinator" || canReadIntakePacket(actor, referralId));
+  const isIntake = canIntakeB(actor, "packet_attach");
   const patient = r.enrolledPatientId ? AdelanteEHR.getPatient(r.enrolledPatientId) : undefined;
   const docAccess = patient ? canAccess(actor.role, "documents", patient) : undefined;
   const handoff = !!r.enrolledPatientId && completed(r.id) && careTeamCanRead(actor, r) && !!docAccess && !docAccess.locked && docAccess.level !== "none";
@@ -101,7 +99,6 @@ export function packetDocumentContent(actor: IntakeActor, referralId: string, do
   if (isIntake && r.enrolledPatientId && isRestricted(r.enrolledPatientId)) throw new Error("Restricted record — packet unavailable.");
   if (!isIntake && !handoff) throw new Error("Assigned care team after intake completion only.");
   if (d.part2 && (isIntake ? !intakeTreatmentConsent(r) : !p || canAccess(actor.role, "sud_treatment", p).locked || canAccess(actor.role, "sud_treatment", p).level === "none")) throw new Error("Part 2 — needs consent covering intake/treatment");
-  AdelanteEHR._recordAudit({ category: "access", action: "record.viewed", patientId: r.enrolledPatientId, actorId: actor.staffId, actorRole: actor.role, detail: { sectionId: "intake_packet", kind: "open", documentId, referralId, simulated: true } });
   return { mime: d.mime, dataUrl: d.dataUrl, fileName: d.fileName };
 }
 const completed = intakeCompleted;

@@ -92,10 +92,8 @@ import { acknowledgeCredentialingNotice, canManageCredentialing, CREDENTIALING_D
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 import { credentialRecordCommand } from "./credentialingActions";
-import { canReasonOpen, openChartWithReason, requestCareTeamAddition } from "./chartAccess";
-import { canManageCoverage, saveCoverageAssignment, saveAdditionalTeamAssignment } from "./chartRelationships";
 
-export const REGISTRY_VERSION = "2026-10-28.access-rules";
+export const REGISTRY_VERSION = "2026-10-28.credentialing";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -174,10 +172,6 @@ export function cosignRouteLabel(staffId?: string): string {
 export const PUBLIC_WEBSITE_ACTIONS = ["website_signup", "website_auth_preview", "website_intake_submit", "resource_public_report", "website_referral_submit"] as const;
 
 export const CHART_ACTIONS: ChartAction[] = [
-  { id: "chart_reason_open", label: { en: "Open chart with a reason", es: "Open chart with a reason" }, group: "admin", menu: false, simulated: true, check: "Draft: canReasonOpen; matrix and Part 2 unchanged", store: refs(["openChartWithReason", openChartWithReason]), successAuditMeta: v => { const g = v as ReturnType<typeof openChartWithReason>; return { reasonCode: g.reasonCode, grantId: g.id, expiresAt: g.expiresAt }; }, allowed: (a,p) => canReasonOpen(a,p?.id) ? ok() : hide("Chart-capable staff assignment required.") },
-  { id: "chart_team_request", label: { en: "Ask to join care team", es: "Ask to join care team" }, group: "admin", menu: false, simulated: true, check: "Draft: canReasonOpen; request only", store: refs(["requestCareTeamAddition", requestCareTeamAddition]), successAuditMeta: v => ({ requestId: (v as { id: string }).id }), allowed: (a,p) => canReasonOpen(a,p?.id) ? ok() : hide("Chart-capable staff assignment required.") },
-  { id: "chart_coverage_set", label: { en: "Set clinical coverage", es: "Set clinical coverage" }, group: "admin", menu: false, needsPatient: false, simulated: true, check: "Draft: canManageCoverage", store: refs(["saveCoverageAssignment", saveCoverageAssignment]), successAuditMeta: v => ({ coverageId: (v as { id: string }).id }), allowed: a => canManageCoverage(a) ? ok() : hide("Clinical coordinator required.") },
-  { id: "chart_team_assignment", label: { en: "Add care team assignment", es: "Add care team assignment" }, group: "admin", menu: false, needsPatient: false, simulated: true, check: "Draft: canManageCoverage", store: refs(["saveAdditionalTeamAssignment", saveAdditionalTeamAssignment]), successAuditMeta: v => ({ assignmentId: (v as { id: string }).id }), allowed: a => canManageCoverage(a) ? ok() : hide("Clinical coordinator required.") },
   // 26 Oct (Mitch) group requests: one request item; stores own lifecycle audits.
   // 26 Oct evening (Mitch) — patient self-sign: telehealth + group confidentiality; standard Part 2 only in the intake packet (store enforces).
   { id: "patient_consent_self_sign", label: { en: "Sign a form", es: "Firmar un formulario" }, group: "coordination", menu: false, needsPatient: false, check: "patient for self; allowlisted forms only", store: refs(["patientSelfSignForm", patientSelfSignForm]), allowed: ({ role }) => role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient signs here.") },

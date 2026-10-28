@@ -11,14 +11,13 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Search, X, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { searchPatients } from "@/lib/patientSearch";
 import { assignmentIdentityFor } from "@/lib/caseloadScope";
 import { useActingStaff, type StaffRole } from "@/lib/roles";
-import { roleHasChartEntry, searchablePatientsFor, chartEntryFor, patientSiteName } from "@/lib/chartAccess";
+import { roleHasChartEntry, searchablePatientsFor } from "@/lib/chartAccess";
 import { cn } from "@/lib/utils";
 
 /** §Access A2 — only roles with chart entry (A1) get patient search. */
@@ -39,8 +38,8 @@ export function StaffPatientSearch({
 }) {
   const navigate = useNavigate();
   const { role, ...staff } = useActingStaff();
-  const patientsKey = useEhr(() => JSON.stringify(searchablePatientsFor(role, staff.staffId)));
-  const patients = useMemo(() => JSON.parse(patientsKey) as ReturnType<typeof searchablePatientsFor>, [patientsKey]);
+  const patientsKey = useEhr(() => searchablePatientsFor(role, staff.staffId).map((p) => p.id).join(","));
+  const patients = useMemo(() => patientsKey.split(",").filter(Boolean).map((id) => AdelanteEHR.getPatient(id)!).filter(Boolean), [patientsKey]);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -115,7 +114,7 @@ export function StaffPatientSearch({
         }}
       />
       {query && (
-        <Button variant="ghost" size="icon"
+        <button
           type="button"
           aria-label="Clear patient search"
           onClick={() => {
@@ -125,7 +124,7 @@ export function StaffPatientSearch({
           className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
-        </Button>
+        </button>
       )}
 
       {open && query.trim().length >= 2 && (
@@ -136,16 +135,16 @@ export function StaffPatientSearch({
             </p>
           ) : (
             <ul role="listbox" className="max-h-72 overflow-y-auto py-1">
-              {results.map((r, i) => { const needsReason = !chartEntryFor(role, staff.staffId, r.patient.id).ok; return (
+              {results.map((r, i) => (
                 <li key={r.patient.id}>
-                  <Button variant="ghost"
+                  <button
                     type="button"
                     role="option"
                     aria-selected={i === active}
                     onMouseEnter={() => setActive(i)}
                     onClick={() => choose(r.patient.id)}
                     className={cn(
-                      "flex h-auto w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm",
+                      "flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm",
                       i === active ? "bg-secondary" : "hover:bg-secondary/60",
                     )}
                   >
@@ -153,21 +152,20 @@ export function StaffPatientSearch({
                       <span className="font-medium text-foreground">
                         {r.patient.firstName} {r.patient.lastName}
                       </span>
-                      {needsReason && <span className="flex items-center gap-1 text-sm text-ink-muted"><Lock className="size-4" />Reason needed</span>}
-                      {!needsReason && r.assigned && (
+                      {r.assigned && (
                         <span className="rounded-full bg-teal/15 px-1.5 py-0.5 text-[10px] font-medium text-teal">
                           Your caseload
                         </span>
                       )}
                     </span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       DOB {r.patient.dob}
-                      {needsReason ? ` · ${patientSiteName(r.patient)}` : r.patient.programId ? ` · ${r.patient.programId}` : ""}
-                      {!needsReason && r.matchedOn === "cin" && r.patient.cin ? ` · CIN ${r.patient.cin}` : ""}
+                      {r.patient.programId ? ` · ${r.patient.programId}` : ""}
+                      {r.matchedOn === "cin" && r.patient.cin ? ` · CIN ${r.patient.cin}` : ""}
                     </span>
-                  </Button>
+                  </button>
                 </li>
-              ); })}
+              ))}
             </ul>
           )}
         </div>
