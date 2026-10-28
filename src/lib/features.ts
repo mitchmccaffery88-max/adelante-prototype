@@ -168,9 +168,10 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
   },
   {
     id: "credential_monitor_simulated",
-    description: "Non-manual credential monitoring channels (vendor, exclusion-list file check, CVO) are mocks; only manual lookup is live. Off by default; switchable by configuration only.",
+    description: "Non-manual credential monitoring channels (vendor, exclusion-list file check, CVO) are mocks; this enabled preview attempt never connects a disabled channel. Only manual lookup is live.",
     owner: "Revenue cycle",
-    default: false,
+    // 28 Oct credentialing reconciliation: enabled simulated no-op, not a vendor switch.
+    default: true,
     scope: "global",
     simulated: true,
   },

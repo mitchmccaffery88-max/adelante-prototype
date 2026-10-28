@@ -2,7 +2,7 @@ import { assertNotAfbiSource } from "./afbiGuard";
 import { assertClaimable, isClaimable } from "./claimGuard";
 import { demoBusinessTime } from "./demoTime";
 // 28 Oct credentialing reconciliation: existing records are the only authority.
-import { registerCredentialingAuthority, type ClinicianCredentialing, type LicenseRecord, type RegistrationRecord } from "./credentialing";
+import { registerCredentialingAuthority, type ClinicianCredentialing, type LicenseRecord, type RegistrationRecord, credentialedForService, affectedClaimCount } from "./credentialing";
 import { getStaffMember, STAFF_ROSTER } from "./roles";
 // §Adelante Expansion — additive EMR extension.
 // Houses: organizations/counties/facilities, clinician profile ext,
@@ -861,6 +861,8 @@ export const AdelanteEHRExt = {
   /** §Batch E — raw claim rows a patient merge moves. */
   _mergeClaimRows: () => claims,
   listClaims: () => claims.slice().sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)),
+  // 28 Oct credentialing reconciliation: only counts leave this boundary.
+  credentialingClaimCounts: () => Object.fromEntries(STAFF_ROSTER.map(m => [m.id, affectedClaimCount(m.id, claims.map(c => ({ ...c, serviceType: AdelanteEHR.listAppointments().find(a => a.id === c.encounterId)?.serviceType })), pid => AdelanteEHR.activeCoveragePlan(pid)?.payer)])),
 
   // Mutations
   upsertClinicianProfile(patch: Partial<ClinicianProfileExt> & { clinicianId: string }) {
@@ -920,7 +922,7 @@ export const AdelanteEHRExt = {
     if (latest) AdelanteEHR.setClinicianLicenseExpiry(clinicianId, latest);
   },
   addCredential(input: Omit<CredentialDoc, "id" | "uploadedAt">) {
-    const c: CredentialDoc = { ...input, id: uid(), uploadedAt: iso() };
+    const c: CredentialDoc = { ...input, id: uid(), uploadedAt: iso(), documentStatus: input.fileDataUrl ? "on_file" : "simulated_unavailable" };
     credentials.push(c);
     // §Phase 2b — uploading the thing that was asked for answers the request.
     credentials

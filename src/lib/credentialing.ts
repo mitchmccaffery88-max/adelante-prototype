@@ -248,10 +248,10 @@ export function evaluateCredentialing(
 
   // License or registration, verified and unexpired on the date of service.
   if (record.license) {
-    if (!record.license.verifiedAt) reasons.push("license_not_verified");
+    if (!record.license.verifiedAt || asDay(record.license.verifiedAt) > d) reasons.push("license_not_verified");
     if (record.license.expiresAt && asDay(record.license.expiresAt) < d) reasons.push("license_expired");
   } else if (record.registration) {
-    if (!record.registration.verifiedAt) reasons.push("registration_not_verified");
+    if (!record.registration.verifiedAt || asDay(record.registration.verifiedAt) > d) reasons.push("registration_not_verified");
     if (record.registration.expiresAt && asDay(record.registration.expiresAt) < d) reasons.push("registration_expired");
   } else {
     reasons.push("license_missing");
@@ -411,7 +411,7 @@ export function recordExclusionCheck(
   return writeRecord(staffId, (r) => {
   const checkedAt = input.checkedAt ?? iso();
   const nextDueAt = new Date(+new Date(checkedAt) + CREDENTIALING_DRAFT.exclusionCadenceDays * dayMs).toISOString();
-  r.exclusionChecks = [...r.exclusionChecks.filter((c) => c.list !== input.list), { list: input.list, checkedAt, result: input.result, nextDueAt }];
+  r.exclusionChecks = [...r.exclusionChecks, { list: input.list, checkedAt, result: input.result, nextDueAt }];
   if (input.result === "hit") {
     // Urgent, neutral, ids-only: the clinical coordinator and sys_admin see
     // this notice; the audit row comes from the registry action.

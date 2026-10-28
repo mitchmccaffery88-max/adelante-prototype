@@ -1,3 +1,4 @@
+import { credentialCommand } from "@/components/credentials/credentialCommand";
 import { StaffTable } from "@/components/staff/StaffTable";
 import {Check,  CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -100,7 +101,7 @@ function AddCredentialDialog({
 
   const save = () => {
     if (!clinicianId) return toast.error("Choose a clinician.");
-    AdelanteEHRExt.addCredential({
+    credentialCommand("add", {
       clinicianId,
       kind: kind as CredentialDoc["kind"],
       ...(number.trim() ? { number: number.trim() } : {}),
@@ -211,17 +212,14 @@ function EditCredentialDialog({ cred, by, onClose }: { cred: CredentialDoc; by: 
 
   const save = () => {
     try {
-      AdelanteEHRExt.updateCredential(
-        cred.id,
-        {
+      credentialCommand("edit", { id: cred.id, patch: {
           number: number.trim() || undefined,
           issuingState: issuingState.trim() || undefined,
           issuedAt: issuedAt || undefined,
           expiresAt: expiresAt || undefined,
         },
-        by,
         reason,
-      );
+      });
       toast.success(
         expiryChanged
           ? "Expiry updated — booking availability follows the licence on file."
@@ -324,7 +322,7 @@ function FollowUpDialog({ cred, by, onClose }: { cred: CredentialDoc; by: string
             data-testid="followup-send"
             onClick={() => {
               try {
-                AdelanteEHRExt.requestCredentialFollowUp(cred.id, by, note);
+                credentialCommand("followup", { id: cred.id, note });
                 toast.success("Follow-up requested");
                 onClose();
               } catch (e) {
@@ -373,18 +371,15 @@ function ImportDialog({
     if (!preview) return;
     for (const c of preview.candidates) {
       if (c.existingId) {
-        AdelanteEHRExt.updateCredential(
-          c.existingId,
-          {
+        credentialCommand("edit", { id: c.existingId, patch: {
             issuingState: c.issuingState,
             issuedAt: c.issuedAt,
             expiresAt: c.expiresAt,
           },
-          by,
-          `CSV roster import (row ${c.line})`,
-        );
+          reason: `CSV roster import (row ${c.line})`,
+        });
       } else {
-        AdelanteEHRExt.addCredential({
+        credentialCommand("add", {
           clinicianId: c.clinicianId,
           kind: c.kind as CredentialDoc["kind"],
           ...(c.number ? { number: c.number } : {}),
@@ -572,7 +567,7 @@ function CredentialingAdminPage() {
             {id:"verified",label:"Verified",sortValue:(c)=>c.verifiedAt ?? "",cell:(c)=>c.verifiedAt ? <Check className="size-4" aria-label="Verified" /> : "—"},
           ]}
           primaryAction={(c)=><Button size="sm" variant="outline" data-testid={`edit-credential-${c.id}`} onClick={()=>setEditing(c)}>Edit</Button>}
-          moreContent={(c)=><div className="flex flex-col gap-1 p-1">{c.followUp && !c.followUp.resolvedAt ? <Button size="sm" variant="ghost" onClick={()=>{AdelanteEHRExt.clearCredentialFollowUp(c.id);toast.success("Follow-up cleared");}}>Clear</Button> : <Button size="sm" variant="ghost" data-testid={`followup-open-${c.id}`} onClick={()=>setFollowingUp(c)}>Follow up</Button>}{!c.verifiedAt && <Button size="sm" variant="outline" onClick={()=>{AdelanteEHRExt.verifyCredential(c.id, staffName);toast.success("Verified via primary source");}}>Verify</Button>}</div>}
+          moreContent={(c)=><div className="flex flex-col gap-1 p-1">{c.followUp && !c.followUp.resolvedAt ? <Button size="sm" variant="ghost" onClick={()=>{credentialCommand("clear", { id: c.id });toast.success("Follow-up cleared");}}>Clear</Button> : <Button size="sm" variant="ghost" data-testid={`followup-open-${c.id}`} onClick={()=>setFollowingUp(c)}>Follow up</Button>}{!c.verifiedAt && <Button size="sm" variant="outline" onClick={()=>{credentialCommand("verify", { id: c.id });toast.success("Verified via primary source");}}>Verify</Button>}</div>}
         />
       </section>
       <section className="space-y-3">
