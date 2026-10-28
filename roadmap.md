@@ -2,7 +2,7 @@
 
 ## 27 Oct access rules — 28 Oct implementation (Draft)
 - [x] Inventory shared app gates, SQL entry and rollback harness; identified the superseded mandatory-site rule and pre-data rendering gap.
-- [ ] Align direct/reasoned entry and shared pre-data gate — blocked by Mitch's Part 2 prerequisite decision; candidate app removed and SQL restored together.
+- [ ] Align direct/reasoned entry and shared pre-data gate — Part 2 decision resolved: keep existing treating-clinician exceptions; resume coordinated implementation and proof.
 - [ ] Intake read-only 60-day packet/checklist window and logged opens — same blocked coordinated batch; no partial window enabled.
 - [ ] Complete main rollback acceptance and open passing chart/packet/handoff policies — blocked by `part2_no_consent_failed physician`; none opened.
 - [x] Document failed rollback attempts, zero retained fixture counts, report, Draft proposed matrix and architecture stop rule.
