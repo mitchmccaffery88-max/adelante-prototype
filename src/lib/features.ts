@@ -19,7 +19,8 @@ export type FeatureId =
   | "scribe_simulated"
   | "llm_simulated"
   | "calendar_sync_simulated"
-  | "consent_upload_simulated";
+  | "consent_upload_simulated"
+  | "credential_monitor_simulated";
 
 export interface FeatureFlag {
   id: FeatureId;
@@ -162,6 +163,14 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     description: "Paper consent upload is a mock: the scanned file is not stored in a real document system (only its name and a reference are recorded).",
     owner: "Privacy & compliance",
     default: true,
+    scope: "global",
+    simulated: true,
+  },
+  {
+    id: "credential_monitor_simulated",
+    description: "Non-manual credential monitoring channels (vendor, exclusion-list file check, CVO) are mocks; only manual lookup is live. Off by default; switchable by configuration only.",
+    owner: "Revenue cycle",
+    default: false,
     scope: "global",
     simulated: true,
   },
