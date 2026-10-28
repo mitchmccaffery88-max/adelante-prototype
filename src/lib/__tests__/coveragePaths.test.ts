@@ -231,7 +231,11 @@ describe("26 Oct coverage paths — one request type, many paths", () => {
     expect(careTeamCoverage(intake, referral().enrolledPatientId!)).toBeUndefined();
     const ecm = STAFF_ROSTER.find((s) => s.role === "ecm_provider" && s.active !== false)!;
     const actor = { role: "ecm_provider" as const, staffId: ecm.id };
-    const pt = AdelanteEHR.listPatients().find((p) => chartEntryFor(actor.role, actor.staffId, p.id).ok && !p.mergedInto)!;
+    const pt = AdelanteEHR.listPatients().find((p) => !p.mergedInto && !chartEntryFor(actor.role, actor.staffId, p.id).ok);
+    if (!pt) throw new Error("Missing off-team coverage fixture");
+    expect(chartEntryFor(actor.role, actor.staffId, pt.id)).toMatchObject({ ok: false, reason: "reason" });
+    const opened = runAction("chart_reason_open", actor, pt, { args: [{ patientId: pt.id, reasonCode: "scheduling_admin", actor }], auditReason: R });
+    expect(opened.ok).toBe(true);
     const res = runAction("care_coverage_request", actor, undefined, { args: [actor, pt.id, "medicare", R], auditReason: R });
     expect(res.ok).toBe(true);
     expect(careTeamCoverage(actor, pt.id)).toMatchObject({ path: "medicare", status: "Pending" });

@@ -103,9 +103,9 @@ describe("Group A #4 — action audit feed display scrubbing", () => {
 });
 
 describe("Group A #5 — outbound sharing log patient label", () => {
-  it("sys_admin (no chart entry) sees the program ID, not the name", () => {
+  it("prototype sys_admin oversight entry keeps the existing full-name label", () => {
     const p = AdelanteEHR.listPatients()[0]!;
-    expect(staffPatientLabel({ role: "sys_admin", staffId: "s-admin1" }, p.id)).toBe(p.programId);
+    expect(staffPatientLabel({ role: "sys_admin", staffId: "s-admin1" }, p.id)).toBe(`${p.firstName} ${p.lastName}`);
   });
   it("a clinical coordinator who can open the chart keeps the full name", () => {
     const pair = openablePair("clinical_coordinator", (pid) => { const e = chartEntryFor("clinical_coordinator", "s-cc1", pid); return e.ok && !e.restricted; });

@@ -59,11 +59,11 @@ describe("Friday cleanup — name sweep source pins", () => {
 });
 
 describe("Friday cleanup — label behaviour", () => {
-  it("sys_admin sees program IDs everywhere; a care-team clinician sees the name", () => {
+  it("prototype sys_admin oversight entry permits the existing name label", () => {
     const p = AdelanteEHR.listPatients()[0];
     const admin = STAFF_ROSTER.find((s) => s.role === "sys_admin")!;
-    expect(viewerCanOpenChart({ role: admin.role, staffId: admin.id }, p.id)).toBe(false);
-    expect(staffPatientLabel({ role: admin.role, staffId: admin.id }, p.id)).toBe(p.programId);
-    expect(staffPatientLabel({ role: admin.role, staffId: admin.id }, p.id)).not.toContain(p.firstName);
+    expect(viewerCanOpenChart({ role: admin.role, staffId: admin.id }, p.id)).toBe(true);
+    expect(staffPatientLabel({ role: admin.role, staffId: admin.id }, p.id)).toBe(`${p.firstName} ${p.lastName}`);
+    expect(staffPatientLabel({ role: admin.role, staffId: admin.id }, p.id)).toContain(p.firstName);
   });
 });

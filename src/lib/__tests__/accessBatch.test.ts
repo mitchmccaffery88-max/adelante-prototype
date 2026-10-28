@@ -7,7 +7,9 @@ import { STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 import {
   CHART_ENTRY_ROLES, chartEntryFor, searchablePatientsFor, setRecordRestricted, openRestrictedChart,
   listRestrictedOpenItems, _resetChartAccessForTests, roleHasChartEntry, CHART_DENIED_MESSAGE,
+  onCareTeam,
 } from "@/lib/chartAccess";
+import { runAction } from "@/lib/actions/runAction";
 import { resolveChartRouteAccess } from "@/lib/navGuard";
 import { isStaffWorkPage } from "@/lib/searchPlacement";
 import { outsideCaseloadReport, unusualVolumeFlags } from "@/lib/complianceMonitoring";
@@ -23,7 +25,7 @@ const NO_ENTRY: StaffRole[] = ["billing", "billing_coordinator", "credentialing_
 beforeEach(() => _resetChartAccessForTests());
 
 describe("A1 chart entry + route guard", () => {
-  it("clinical delivery/coordination roles enter at their site", () => {
+  it("chart-capable roles reach direct entry or the shared reason gate", () => {
     for (const role of CHART_ENTRY_ROLES) {
       const s = staffOf(role);
       if (!s) continue;
@@ -32,7 +34,7 @@ describe("A1 chart entry + route guard", () => {
       expect(resolveChartRouteAccess(role, s.id, `/record/${luis().id}`)?.status, role).toBe(e.ok ? "allowed" : "gate");
     }
   });
-  it("billing, credentialing and sys_admin are redirected with a plain message", () => {
+  it("roles without charts are redirected with a plain message", () => {
     for (const role of NO_ENTRY) {
       const e = chartEntryFor(role, staffOf(role)?.id, luis().id);
       expect(e.ok).toBe(false);
@@ -40,7 +42,7 @@ describe("A1 chart entry + route guard", () => {
       expect(resolveChartRouteAccess(role, staffOf(role)?.id, `/record/${luis().id}`)?.status, role).toBe("denied");
     }
   });
-  it("site rule: a patient enrolled at a site the person doesn't work is denied", () => {
+  it("off-team staff reach the reason gate across sites; care-team members open directly", () => {
     const p = luis();
     const prev = p.enrolledSiteId;
     p.enrolledSiteId = "site-nowhere";
@@ -48,7 +50,13 @@ describe("A1 chart entry + route guard", () => {
       const e = chartEntryFor("peer_specialist", staffOf("peer_specialist").id, p.id);
       expect(e.ok).toBe(false);
       if (!e.ok) expect(e.reason).toBe("reason");
+      const clinician = STAFF_ROSTER.find(s => s.active !== false && s.role === "therapist" && onCareTeam(s.id, p));
+      if (!clinician) throw new Error("Missing assigned treating-clinician fixture");
+      expect(chartEntryFor("therapist", clinician.id, p.id)).toMatchObject({ ok: true, careTeam: true });
     } finally { p.enrolledSiteId = prev; }
+  });
+  it("sys_admin retains prototype direct oversight entry", () => {
+    expect(chartEntryFor("sys_admin", staffOf("sys_admin").id, luis().id)).toMatchObject({ ok: true });
   });
 });
 
@@ -60,9 +68,14 @@ describe("A2 search", () => {
     for (const path of ["/admin", "/admin-content", "/admin-staff", "/admin-audit", "/quality-compliance"]) expect(isStaffWorkPage(path), path).toBe(false);
     expect(isStaffWorkPage("/clinician")).toBe(true);
   });
-  it("results limited to enterable patients", () => {
+  it("reason-eligible results contain minimal identifiers only", () => {
     const s = staffOf("peer_specialist");
-    for (const p of searchablePatientsFor("peer_specialist", s.id)) { const e = chartEntryFor("peer_specialist", s.id, p.id); expect(e.ok || e.entryEligible).toBe(true); }
+    const rows = searchablePatientsFor("peer_specialist", s.id);
+    const offTeam = rows.find(p => !chartEntryFor("peer_specialist", s.id, p.id).ok);
+    if (!offTeam) throw new Error("Missing reason-needed search fixture");
+    expect(chartEntryFor("peer_specialist", s.id, offTeam.id)).toMatchObject({ ok: false, reason: "reason", message: "Reason needed" });
+    expect(Object.keys(offTeam).sort()).toEqual(["id", "firstName", "lastName", "dob", "enrolledSiteId"].sort());
+    for (const p of rows) { const e = chartEntryFor("peer_specialist", s.id, p.id); expect(e.ok || e.entryEligible).toBe(true); }
   });
 });
 
