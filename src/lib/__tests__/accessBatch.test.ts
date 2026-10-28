@@ -17,7 +17,8 @@ import { MENTION_NOTIFY_SUBJECT } from "@/lib/staffThreads";
 
 const luis = () => AdelanteEHR.listPatients().find((p) => p.firstName === "Luis")!;
 const staffOf = (role: StaffRole) => STAFF_ROSTER.find((s) => s.role === role)!;
-const NO_ENTRY: StaffRole[] = ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator"];
+// 28 Oct access-rules decision: sys_admin oversight, reasoned entry and minimal search supersede A1 site-only assumptions.
+const NO_ENTRY: StaffRole[] = ["billing", "billing_coordinator", "credentialing_coordinator", "intake_coordinator"];
 
 beforeEach(() => _resetChartAccessForTests());
 
@@ -26,8 +27,9 @@ describe("A1 chart entry + route guard", () => {
     for (const role of CHART_ENTRY_ROLES) {
       const s = staffOf(role);
       if (!s) continue;
-      expect(chartEntryFor(role, s.id, luis().id).ok, role).toBe(true);
-      expect(resolveChartRouteAccess(role, s.id, `/record/${luis().id}`)?.status, role).toBe("allowed");
+      const e = chartEntryFor(role, s.id, luis().id);
+      expect(e.ok || e.entryEligible, role).toBe(true);
+      expect(resolveChartRouteAccess(role, s.id, `/record/${luis().id}`)?.status, role).toBe(e.ok ? "allowed" : "gate");
     }
   });
   it("billing, credentialing and sys_admin are redirected with a plain message", () => {
@@ -45,7 +47,7 @@ describe("A1 chart entry + route guard", () => {
     try {
       const e = chartEntryFor("peer_specialist", staffOf("peer_specialist").id, p.id);
       expect(e.ok).toBe(false);
-      if (!e.ok) expect(e.reason).toBe("site");
+      if (!e.ok) expect(e.reason).toBe("reason");
     } finally { p.enrolledSiteId = prev; }
   });
 });
@@ -60,7 +62,7 @@ describe("A2 search", () => {
   });
   it("results limited to enterable patients", () => {
     const s = staffOf("peer_specialist");
-    for (const p of searchablePatientsFor("peer_specialist", s.id)) expect(chartEntryFor("peer_specialist", s.id, p.id).ok).toBe(true);
+    for (const p of searchablePatientsFor("peer_specialist", s.id)) { const e = chartEntryFor("peer_specialist", s.id, p.id); expect(e.ok || e.entryEligible).toBe(true); }
   });
 });
 
