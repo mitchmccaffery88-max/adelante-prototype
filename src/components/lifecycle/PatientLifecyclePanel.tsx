@@ -19,7 +19,7 @@ export function PatientLifecyclePanel({ patientId }: { patientId: string }) {
   const actor = useActingStaff();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const viewJson = useEhr(() => { const p = AdelanteEHR.getPatient(patientId); return p ? JSON.stringify(lifecycleForPatient(p)) : ""; });
-  const readinessJson = useEhr(() => JSON.stringify(billingReadiness(patientId)));
+  const readinessJson = useEhr(() => JSON.stringify(billingReadiness(patientId, actor.role)));
   const dsc = useEhr(() => didntStartCareFor(patientId));
   const [reasonKey, setReasonKey] = useState("");
   const [why, setWhy] = useState("");
@@ -47,6 +47,7 @@ export function PatientLifecyclePanel({ patientId }: { patientId: string }) {
             <li key={c.label} className="flex items-center gap-2 text-sm">
               {c.done ? <CheckCircle2 className="size-4 text-path" aria-hidden="true" /> : <Circle className="size-4 text-ink-muted" aria-hidden="true" />}
               {c.label} — {c.done ? "Done" : "Not yet"}
+              {!c.done && c.detail && <span className="text-ink-muted">({c.detail})</span>}
             </li>
           ))}
         </ul>
