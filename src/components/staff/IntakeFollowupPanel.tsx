@@ -8,6 +8,7 @@ import { type IntakeActor } from "@/lib/intakePhaseA";
 import { INTAKE_PHASE_B_DRAFT } from "@/lib/intakePhaseB";
 import { canReadIntakePacket, openIntakeFollowupChecklist, readIntakeFollowupChecklist } from "@/lib/intakeFollowup";
 import { intakePacketChecklist, packetDocumentContent } from "@/lib/intakePacket";
+const checklistLabel: Record<string, string> = { identity_link_checked: "Confirmed record link checked", contact_checked: "Contact details checked", packet_received: "Referral packet received", handoff_ready: "Administrative handoff ready" };
 
 export function IntakeFollowupPanel({ actor, referralId }: { actor: IntakeActor; referralId: string }) {
   const [opened, setOpened] = useState(false);
@@ -33,7 +34,7 @@ export function IntakeFollowupPanel({ actor, referralId }: { actor: IntakeActor;
     }}>Open intake checklist</Button>
     {packet && <>
       <h5 className="font-bold">Handoff checklist</h5>
-      {Object.entries(readIntakeFollowupChecklist(actor, referralId).checklist).map(([key, value]) => <p key={key}>{key.replaceAll("_", " ")} · {value ? "Confirmed" : "Not confirmed"}</p>)}
+      {Object.entries(readIntakeFollowupChecklist(actor, referralId).checklist).map(([key, value]) => <p key={key}>{checklistLabel[key]} · {value ? "Confirmed" : "Not confirmed"}</p>)}
       <h5 className="font-bold">Forms checklist</h5>
       {packet.forms.map(form => <p key={form.key}>{form.label} · {form.status}{form.date ? ` · ${form.date}` : ""}</p>)}
       <h5 className="font-bold">Packet needs</h5>

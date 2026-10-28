@@ -183,7 +183,7 @@ Part 2 internal-use basis: pending counsel confirmation.
 ### Not done in this pass (left for next run)
 1. ~~MOUD episode → care_manager team write~~ — DONE 28 Oct part B (see "Part B step 1").
 2. ~~Coordinator hosts (care-team requests, coverage, weekly reasoned-open review)~~ — DONE 28 Oct 20:23 continuation below.
-3. Intake logged read-only 60-day window host.
+3. ~~Intake logged read-only 60-day window host~~ — DONE 28 Oct 21:05 continuation below.
 4. Access-log reason readback UI; full gate verification.
 5. All-role rolled-back SQL vectors (on-call, coverage, supervisor, group, Intake day 60/61, patient/advocate); opening each passing policy group separately. Every read policy is still closed.
 6. Public browser suite, preview readback, final evidence doc.
@@ -220,3 +220,19 @@ Part 2 internal-use basis: pending counsel confirmation.
 - Steps 3–6 remain: Intake logged read-only 60-day host; access-log reason UI/all-route gate acceptance; remaining all-role SQL vectors and separately passing chart/packet/handoff read policy groups; full public browser then preview acceptance and final reports/Draft matrix.
 - Carry-overs remain: HLOC browser fixture with an on-team therapist; DEA checks for prescribers on controlled-substance service types and credentialing report update.
 - No full public browser suite run in this continuation. All read-policy groups remain closed. Persistence OFF; nothing published; chart_reason_open and clinician_coverage_set remain browser-revoked (authenticated execution false on independent readback). No matrix change, permission widening or weakened privacy assertion was needed.
+
+## 28 Oct 21:05 continuation — step 3 (Draft)
+Part 2 internal-use basis: pending counsel confirmation.
+
+- Completed Intake now mounts `IntakeFollowupPanel` instead of the active packet editor in the existing Intake workspace. Explicit Open intake checklist logs one existing access event; each permitted document open logs one existing event. Read-only handoff checklist, forms status, source-bound needs and packet documents reuse the existing stores. No general chart entry or edit permission added.
+- The shared `canReadIntakePacket` window applies to forms and packet-needs projections as well as documents. Handoff day is day 1, day 60 is readable, and day 61 denies all packet projections/content. A mounted host rechecks time and removes visible content/document dialogs when access expires, showing “This person's intake window has closed”. Restricted records and Part 2 consent remain on top.
+- New `intakeFollowupOct28.test.ts`: 21 passing checks, including day-60 reads, Pacific-midnight day-61 denial across all packet projections, explicit-open audit counts/content-free metadata, completed-intake write refusals, Part 2/restricted negatives, and all 17 other staff-role denials for the dedicated Intake follow-up path. Matrix values and privacy assertions unchanged.
+- Full units after step 3: **411 files, 3,648/3,648**, exit 0. Log `/tmp/access-step3-full-units.txt`. No source re-pins required; existing pins passed unchanged. Build signal OK.
+- Real preview: fictional referral created/enrolled, packet attached and initial assignments/completion run through registry; switched explicitly to the held Intake role. Opened checklist and document through UI and read back exactly one access event each; Send form absent; document content rendered. Width 358/358 at 390; desktop 1280 also checked. Explicit future clock moved past day 61; closed note appeared and checklist/document controls disappeared without navigation. No page errors on successful run. Script/log/screenshots: `/tmp/browser/intake-step3/` (`check_window.py`, `out.txt`, `panel-desktop.png`, `panel-mobile.png`, `document.png`, `closed.png`). Initial attempts hit cold-load timing, a wrongly selected held role, then browser-clock setup; not counted as suite results or product failures.
+- No Supabase change or new rollback acceptance this continuation. Read-policy groups remain closed; no browser command transport, persistence change or publishing.
+
+### Clean stop after step 3
+- Step 4 remains: patient access-log reason display and every-route gate acceptance (search/picker, deep link, Today, inbox, bell, print/PDF, embedded chart).
+- Step 5 remains: all-role main rollback vectors/counts and separate proven chart/packet/handoff policy openings. No group opened here.
+- Step 6 remains: full units then full public browser suite, final gate/coordinator/Intake preview acceptance and final reports/Draft matrix.
+- Carry-overs remain: on-team HLOC therapist browser fixture and controlled-substance prescriber DEA verification/expiry checks plus credentialing report. No matrix widening or weaker privacy assertion needed; remaining work is not blocked.

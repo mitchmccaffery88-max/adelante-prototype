@@ -1,5 +1,9 @@
 # Access rules — main rollback evidence
 
+## 28 Oct 21:05 Intake host checkpoint
+
+**Part 2 internal-use basis: pending counsel confirmation.** App step 3 only: logged read-only follow-up host and shared form/need/document expiry guards. Full units 3,648/3,648; preview checklist/document single-event readback and live expired-window UI passed. This is **not** a new SQL acceptance result. No Supabase calls/fixtures/migrations in this continuation; no new before/after database counts claimed. All chart/packet/handoff read-policy groups remain closed; Step 5 vectors/counts and openings still pending. Persistence OFF; nothing published; revoked command/browser transport boundary unchanged.
+
 ## 28 Oct 20:23 MOUD tightening acceptance
 
 **Part 2 internal-use basis: pending counsel confirmation.** No read policies opened; persistence OFF; no publishing.
