@@ -37,7 +37,7 @@ function CoordinatorAccessWork() {
       <ul className="divide-y divide-line">{requests.map(r => {
         const p = AdelanteEHR.getPatient(r.patientId);
         const added = !!p && onCareTeam(r.staffId, p);
-        return <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/record/$id" params={{ id: r.patientId }} className="underline">{patientName(r.patientId)}</Link> · {staffName(r.staffId)}<div className="text-sm text-ink-muted"><ClientDate value={r.at} /></div></div><Button variant="outline" disabled={added} onClick={() => {
+        return <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/record/$patientId" params={{ patientId: r.patientId }} search={{}} className="underline">{patientName(r.patientId)}</Link> · {staffName(r.staffId)}<div className="text-sm text-ink-muted"><ClientDate value={r.at} /></div></div><Button variant="outline" disabled={added} onClick={() => {
           const result = runAction("chart_team_assignment", actor, p, { args: [actor, { patientId: r.patientId, staffId: r.staffId, start: new Date().toISOString() }], auditReason: "care_team_request_review" });
           setMessage(result.ok ? "Simulated — care-team assignment added." : result.reason);
         }}>{added ? "On care team" : "Add to care team"}</Button></li>;
@@ -59,7 +59,7 @@ function CoordinatorAccessWork() {
       </form>
       <ul className="divide-y divide-line">{coverage.map(r => <li key={r.id} className="py-3">{staffName(r.coveringStaffId)} covers {staffName(r.coveredStaffId)} · <ClientDate value={r.start} /> to <ClientDate value={r.end} /></li>)}</ul>
     </section>
-    <section className="space-y-3"><h3 className="font-bold">Reasoned opens · Last 7 days · Your turn</h3>{!review.length && <p className="text-ink-muted">No reasoned opens in the last 7 days.</p>}<ul className="divide-y divide-line">{review.map(r => <li key={r.id} className="py-3"><Link to="/record/$id" params={{ id: r.patientId }} className="underline">{patientName(r.patientId)}</Link> · {staffName(r.staffId)} · {OPEN_REASONS[r.reasonCode]}<div className="text-sm text-ink-muted"><ClientDate value={r.at} /> · Ends <ClientDate value={r.expiresAt} /></div></li>)}</ul></section>
+    <section className="space-y-3"><h3 className="font-bold">Reasoned opens · Last 7 days · Your turn</h3>{!review.length && <p className="text-ink-muted">No reasoned opens in the last 7 days.</p>}<ul className="divide-y divide-line">{review.map(r => <li key={r.id} className="py-3"><Link to="/record/$patientId" params={{ patientId: r.patientId }} search={{}} className="underline">{patientName(r.patientId)}</Link> · {staffName(r.staffId)} · {OPEN_REASONS[r.reasonCode]}<div className="text-sm text-ink-muted"><ClientDate value={r.at} /> · Ends <ClientDate value={r.expiresAt} /></div></li>)}</ul></section>
     {message && <p role="status" className="text-ink-muted">{message}</p>}
   </section>;
 }
