@@ -8,7 +8,7 @@ function fixture(staffId: string): ClinicianCredentialing {
 }
 const input = (days: number, controlledSubstance = true) => ({payer:'Medi-Cal FFS',serviceType:'med_management',dateOfService:at(days),asOf:at(0),controlledSubstance});
 describe('DEA on the service date — controlled-substance prescriber services only', () => {
-  for (const staffId of ['s-np1','s-np2']) {
+  for (const staffId of ['s-np1','s-th3']) {
     it(`${staffId}: verified DEA works before expiry and blocks only later DOS`, () => {
       expect(evaluateCredentialing(fixture(staffId),input(45))).toEqual({ok:true});
       expect(evaluateCredentialing(fixture(staffId),input(90))).toEqual({ok:false,reasons:['dea_expired']});
@@ -31,12 +31,12 @@ describe('DEA on the service date — controlled-substance prescriber services o
     expect(evaluateCredentialing(r,{...input(45),serviceType:'therapy_individual'})).toEqual({ok:true});
   });
   it('sole credential authority retains actual DEA verification and booking checks it', () => {
-    const r=credentialingRecordForStaff('s-np2');if(!r?.dea) throw new Error('Prescriber fixture missing');
+    const r=credentialingRecordForStaff('s-th3');if(!r?.dea) throw new Error('Prescriber fixture missing');
     expect(r.dea.verifiedAt).toBeTruthy();
     const doc=AdelanteEHRExt.credentialsForClinician('c3').find(c=>c.kind==='dea');if(!doc) throw new Error('DEA fixture missing');
     const before=doc.verifiedAt;doc.verifiedAt=undefined;
     try {
-      expect(credentialedForService('s-np2','Medi-Cal FFS','med_management',at(5),{controlledSubstance:true})).toEqual({ok:false,reasons:['dea_not_verified']});
+      expect(credentialedForService('s-th3','Medi-Cal FFS','med_management',at(5),{controlledSubstance:true})).toEqual({ok:false,reasons:['dea_not_verified']});
       const p=AdelanteEHR.createPatient({firstName:'DEA',lastName:'Fixture',dob:'1990-01-01'} as Parameters<typeof AdelanteEHR.createPatient>[0]);
       AdelanteEHR.addCoveragePlan(p.id,{payer:'Medi-Cal FFS',from:at(-30)} as Parameters<typeof AdelanteEHR.addCoveragePlan>[1]);
       expect(bookingCredentialingBlock('c3','med_management',p.id,at(5),true)).toBe("This clinician can't be booked for this service right now.");
