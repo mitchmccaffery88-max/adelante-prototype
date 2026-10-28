@@ -30,6 +30,7 @@ import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { AdvocateContextSwitch, useAdvocateSessionId } from "@/components/ContextSwitcher";
 import { DemoControlsBar } from "@/components/DemoControlsBar";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
+import { ChartAccessGate } from "@/components/chart/ChartAccessGate";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { needsFirstIntake, isOnboardingComplete } from "@/lib/onboarding";
 import { recoveryJourneyVisible } from "@/lib/seeking";
@@ -154,6 +155,9 @@ function AppShellContent() {
   // Real sign-in (server-known role) will later remove the need for this.
   const hydrated = useHydrated();
   const staffLoading = showStaffShell && !hydrated;
+  const chartPath = /^\/(?:record|print\/patient-records)\/([^/]+)\/?$/.exec(pathname);
+  const chartId = chartPath?.[1];
+  const routeContent = chartId ? (!hydrated ? <StaffLoadingScreen /> : <ChartAccessGate key={`${actingRole}:${staffId}:${chartId}`} patientId={decodeURIComponent(chartId)}><Outlet /></ChartAccessGate>) : <Outlet />;
 
   if (isPublicSurface) return <WebsiteLayout>{STAFF_ROUTES.includes(pathname) && <RouteAccessGuard />}<Outlet /></WebsiteLayout>;
 
@@ -392,11 +396,9 @@ function AppShellContent() {
           <StaffLoadingScreen />
         ) : showStaffShell ? (
           <StaffShell>
-            <Outlet />
+            {routeContent}
           </StaffShell>
-        ) : (
-          <Outlet />
-        )}
+        ) : routeContent}
       </main>
 
       {/* Persistent 988 crisis banner — §4c safety net */}
