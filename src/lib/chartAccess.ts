@@ -20,6 +20,7 @@ import { markEmergencyReviewed } from "./part2Disclosure";
 import { activeAt, CHART_ACCESS_DRAFT, endOfSiteDay, evaluateChartEntry, isOpenReason, type OpenReason } from "./chartAccessRules";
 import { additionalTeamFor, coveringStaffFor, validAccessActor, type AccessActor } from "./chartRelationships";
 import { onCallForSite } from "./onCallBoundary";
+import { registerChartPart2Basis } from "./chartPart2Boundary";
 
 export const ACCESS_MODEL_DRAFT_LABEL = CHART_ACCESS_DRAFT;
 export const CHART_DENIED_MESSAGE = "This chart isn't available for your role";
@@ -39,6 +40,8 @@ import { COMPLIANCE_ROLES } from "./complianceRoles";
 export const UNUSUAL_VOLUME_DRAFT = 30;
 
 export const roleHasChartEntry = (role: StaffRole) => CHART_ENTRY_ROLES.includes(role);
+// sys_admin oversight entry must not widen the existing consent-sending permissions.
+export const roleCanSendConsent = (role: StaffRole) => role !== "sys_admin" && roleHasChartEntry(role);
 
 /** Sites a staff member works at (from their staff calendar); org default when none. */
 export function staffSiteIds(staffId?: string): string[] {
@@ -61,7 +64,7 @@ export function onCareTeam(staffId: string | undefined, p: Patient, at = new Dat
 }
 
 export type ChartEntry =
-  | { ok: true; restricted: boolean; careTeam: boolean; outsideCaseload: boolean; entryEligible: true; reasonGrant?: ReasonGrant }
+  | { ok: true; restricted: boolean; careTeam: boolean; outsideCaseload: boolean; entryEligible: true; directTreatment: boolean; reasonGrant?: ReasonGrant }
   | { ok: false; reason: "role" | "site" | "missing" | "reason" | "restricted"; message: string; entryEligible?: boolean; restricted?: boolean; careTeam?: boolean };
 
 export function chartEntryFor(role: StaffRole, staffId: string | undefined, patientId: string, at = new Date()): ChartEntry {
@@ -75,8 +78,12 @@ export function chartEntryFor(role: StaffRole, staffId: string | undefined, pati
   const coverage = !!staffId && coveringStaffFor(staffId, at).some(id => onCareTeam(id, p, at));
   const facts = evaluateChartEntry({ eligible: true, exists: true, team: careTeam, oversight: role === "clinical_coordinator" || role === "sys_admin", onCall: !!staffId && !!site && onCallForSite(staffId, site, at), coverage, supervisor, restricted: isRestricted(p.id), restrictedOpen: isChartUnlocked(staffId, patientId), reasonOpen: !!reasonGrant });
   if (!facts.ok) return { ok: false, reason: facts.reason ?? "reason", entryEligible: true, careTeam, restricted: isRestricted(p.id), message: facts.reason === "restricted" ? "Restricted record — reason required" : "Reason needed" };
-  return { ok: true, restricted: isRestricted(p.id), careTeam, outsideCaseload: !careTeam, entryEligible: true, reasonGrant };
+  return { ok: true, restricted: isRestricted(p.id), careTeam, outsideCaseload: !careTeam, entryEligible: true, directTreatment: careTeam || coverage || supervisor || (!!staffId && !!site && onCallForSite(staffId, site, at)), reasonGrant };
 }
+registerChartPart2Basis((role, staffId, patientId) => {
+  const e = chartEntryFor(role as StaffRole, staffId, patientId);
+  return { directTreatment: e.ok && e.directTreatment, reasonOnly: e.ok && !e.directTreatment && !!e.reasonGrant && role !== "clinical_coordinator" && role !== "sys_admin" };
+});
 export const canEnterChart = (role: StaffRole, staffId: string | undefined, patientId: string) => chartEntryFor(role, staffId, patientId).ok;
 
 /** Patients the role may find in search: entry rule, minus restricted records off the care team. */

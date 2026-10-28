@@ -15,7 +15,7 @@ import {
 } from "./ehr";
 import type { StaffRole } from "./roles";
 import { canAccess } from "./roles";
-import { roleHasChartEntry } from "./chartAccess";
+import { roleCanSendConsent as roleHasChartEntry } from "./chartAccess";
 import { assertIntakeConsentBoundary } from "./intakeConsentBoundary";
 import { patientPathway, type Pathway } from "./flagJourneys";
 import { PART2_ELEMENT_KEYS, REDISCLOSURE_NOTICE_VERSION, type ConsentRecordExtension } from "./consentRecordModel";

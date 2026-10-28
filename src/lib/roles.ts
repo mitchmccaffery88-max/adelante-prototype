@@ -1,5 +1,7 @@
 import { isFeatureEnabled } from "@/lib/features";
 import { coordinatorNoteCanRead, coordinatorSudCanRead } from "./coordinatorSudAccess";
+import { chartPart2Basis } from "./chartPart2Boundary";
+import { consentGate, PROGRAM_RECIPIENTS } from "./consentGate";
 // §4 — Acting staff role + record-class RBAC matrix.
 // Additive layer on top of the existing persona routing; never replaces it.
 
@@ -937,6 +939,12 @@ export function canAccess(
     return { level: allowed ? "read" : "none", locked: !allowed };
   }
   const level = MATRIX[cls]?.[permissionRole(role)] ?? "none";
+  // 28 Oct access-rules reconciliation: reason-only access never supplies the internal-use basis.
+  // Specific written evidence must name the class; standard TPO remains packet-only here.
+  if (patient && ["screeners_sud", "sud_treatment", "group_notes"].includes(cls) && level !== "none" && chartPart2Basis(role, getActingRole() === role ? getActingStaff()?.id : undefined, patient.id).reasonOnly) {
+    const covered = consentGate(patient.id, { types: ["part2_specific_written"], recipients: PROGRAM_RECIPIENTS, purposes: ["treatment", "tpo"], item: cls }, () => false);
+    return covered ? { level: level === "consent_gated" ? "read" : level, locked: false } : { level: "none", locked: true, reason: "42 CFR Part 2 — consent required" };
+  }
   // Intake collects paperwork, never reads assessment scores or treatment content.
   if (role === "intake_coordinator" && (cls === "screeners_sud" || cls === "sud_treatment")) return {level:"none",locked:true,reason:"42 CFR Part 2 — consent required"};
   if (level === "consent_gated") {
