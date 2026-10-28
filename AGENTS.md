@@ -1,6 +1,6 @@
 # Architecture rules
 
-- Phase 2 persistence contracts remain disconnected read scaffolds; SQL commands and unverified read policies stay closed until store/registry parity and positive RLS coverage are complete. Why: partial foundation work must never become a permission or persistence cutover.
+- Phase 2 persistence contracts remain disconnected read scaffolds; SQL commands and unverified read policies stay closed. Read-only own-site and identity-review policies may open after rollback real-claims positive/negative coverage; chart-policy conflicts require a separate decision. Why: proven narrow reads must not become a permission or persistence cutover.
 
 - Daylight public destinations use the existing AppShell public allowlist and WebsiteLayout; existing member resources keep their route and shell, and missing marketing destinations use WebsitePlaceholder with leaf metadata. Why: new public menus must resolve without reclassifying member/staff workflows.
 
