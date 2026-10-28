@@ -26833,7 +26833,11 @@ try {
     }
   };
   book(demoScenarioPatientId("sud_consented"), "c5", 60, "med_management");
-  book("p1", "c5", 150, "med_management");
+  // 27 Oct credentialing (Draft): p1 has active Medi-Cal FFS coverage and
+  // Dr. Bagga's exclusion check is overdue, so the ONE credentialing rule
+  // blocks a NEW p1 booking with c5. The demo visit books with the other
+  // enrolled prescriber instead; Dr. Bagga keeps his uncovered-patient visit.
+  book("p1", "c3", 150, "med_management");
   book(demoScenarioPatientId("public_referral"), "c3", 90, "med_management");
   book(demoScenarioPatientId("combination"), "c3", 180, "med_management");
   book("p3", "c1", 120, "therapy_individual");

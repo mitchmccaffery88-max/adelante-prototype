@@ -571,7 +571,9 @@ const credentials: CredentialDoc[] = [
     kind: "license",
     issuingState: "CA",
     number: "PMHNP-32101",
-    expiresAt: daysFromNow(45),
+    // 27 Oct — aligned with the credentialing record's 25-day expiry so the
+    // old document table and the new credentialing tiles tell one story.
+    expiresAt: daysFromNow(25),
     fileName: "np_license.pdf",
     uploadedAt: iso(),
     verifiedAt: iso(),
