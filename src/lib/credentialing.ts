@@ -774,7 +774,10 @@ function seedDemo() {
     malpractice: { carrier: "Demo Mutual", policy: "MP-8810", expiresAt: daysFromNow(300) },
     exclusionChecks: seedExclusions("s-th2", 8),
     attestation: { status: "signed", signedAt: daysFromNow(-90), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
-    enrollments: [{ payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" }],
+    enrollments: [
+      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Health Net Medi-Cal", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+    ],
     recredentialingDueAt: daysFromNow(2 * 365),
     documentStatus: "simulated_unavailable",
   });
