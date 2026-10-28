@@ -7,7 +7,8 @@
 // Owner TBD — Draft, pending clinical sign-off.
 import { AdelanteEHR } from "./ehr";
 import { hasRoleAssignment, STAFF_ROSTER, getStaffMember, type StaffMember, type StaffRole } from "./roles";
-import { registerOnCallLookup } from "./onCallBoundary";
+import { registerOnCallLookup, registerOnCallSiteLookup } from "./onCallBoundary";
+import { primarySiteFor } from "./workingCalendar";
 
 export const ON_CALL_DRAFT = "Draft — pending clinical sign-off";
 /** Licensed clinician roles that can carry on-call duty (Draft). */
@@ -16,7 +17,7 @@ export const ON_CALL_ADMIN_ROLES: readonly StaffRole[] = ["clinical_coordinator"
 export const ON_CALL_DUTY_DESCRIPTION =
   "On call: you receive new crisis escalations for patients with no active assigned clinician. Acknowledge right away, write the crisis note on the existing one-calendar-day clock, and hand off with a reason to the assigned clinician or the clinical coordinator when your shift ends.";
 
-export interface OnCallShift { id: string; staffId: string; start: string; end: string; createdById?: string; createdAt: string }
+export interface OnCallShift { id: string; staffId: string; siteId?: string; start: string; end: string; createdById?: string; createdAt: string }
 type Actor = { role: StaffRole; staffId?: string };
 const shifts: OnCallShift[] = [];
 let seq = 0;
@@ -36,7 +37,7 @@ export function listOnCallShifts(): OnCallShift[] {
   return [...shifts].sort((a, b) => a.start.localeCompare(b.start)).map((s) => ({ ...s }));
 }
 
-export function addOnCallShift(actor: Actor, input: { staffId: string; start: string; end: string }, reason: string): OnCallShift {
+export function addOnCallShift(actor: Actor, input: { staffId: string; siteId?: string; start: string; end: string }, reason: string): OnCallShift {
   assertManager(actor);
   needReason(reason);
   const s = getStaffMember(input.staffId);
@@ -44,7 +45,7 @@ export function addOnCallShift(actor: Actor, input: { staffId: string; start: st
   const start = Date.parse(input.start), end = Date.parse(input.end);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) throw new Error("Pick a start and an end after it.");
   if (end - start > 7 * 86_400_000) throw new Error("A shift can be at most 7 days.");
-  const row: OnCallShift = { id: `oncall_${Date.now().toString(36)}_${(seq++).toString(36)}`, staffId: input.staffId, start: new Date(start).toISOString(), end: new Date(end).toISOString(), createdById: actor.staffId, createdAt: new Date().toISOString() };
+  const row: OnCallShift = { id: `oncall_${Date.now().toString(36)}_${(seq++).toString(36)}`, staffId: input.staffId, siteId: input.siteId ?? primarySiteFor(s?.clinicianId), start: new Date(start).toISOString(), end: new Date(end).toISOString(), createdById: actor.staffId, createdAt: new Date().toISOString() };
   shifts.push(row);
   AdelanteEHR._emit();
   return { ...row };
@@ -76,3 +77,4 @@ export function onCallAt(at: Date = new Date()): StaffMember | undefined {
 export function _resetOnCall() { shifts.length = 0; }
 
 registerOnCallLookup(onCallAt);
+registerOnCallSiteLookup((staffId, siteId, at) => canCarryOnCall(getStaffMember(staffId)) && shifts.some(s => s.staffId === staffId && s.siteId === siteId && Date.parse(s.start) <= +at && +at < Date.parse(s.end)));
