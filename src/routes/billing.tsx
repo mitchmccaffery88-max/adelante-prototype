@@ -32,7 +32,8 @@ import {
 import { toast } from "sonner";
 import { LANE_LABEL, LANE_ORDER, type LaneKey } from "@/lib/billingLane";
 import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
-import { canAccess, useActingStaff } from "@/lib/roles";
+import { canAccess, getStaffMember, useActingStaff } from "@/lib/roles";
+import { credentialingReviewFlags, CREDENTIALING_REASON_LABEL } from "@/lib/credentialing";
 import { ClaimSignatureLine } from "@/components/billing/ClaimSignatureLine";
 import { ClaimAmount, RatesPanel } from "@/components/billing/RatesPanel";
 import {
