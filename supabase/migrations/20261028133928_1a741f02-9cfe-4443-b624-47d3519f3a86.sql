@@ -1,0 +1,9 @@
+create or replace function public.chart_reason_open(p_patient uuid,p_reason text,p_note text default null) returns uuid language plpgsql security definer set search_path='' as $$ declare r text:=app.current_role(); a uuid:=app.account_id(); o uuid:=app.org_id(); g uuid; tz text; expiry timestamptz; begin
+if a is null or app.phase2_staff_id() is null or not coalesce(app.chart_role_eligible(r),false) or not exists(select 1 from public.tester_attestations where account_id=a and org_id=o and statement_version='fictional-only-v1') then raise exception 'chart_role_required'; end if;
+if p_reason not in ('covering_consult','scheduling_admin','clinical_supervision','crisis_safety','other') or (p_reason='other' and length(trim(coalesce(p_note,'')))=0) then raise exception 'reason_required'; end if;
+if not coalesce((app.chart_entry(p_patient)->>'entryEligible')::boolean,false) or app.chart_entry(p_patient)->>'reason'='restricted' then raise exception 'restricted_or_missing'; end if;
+tz:=app.patient_site_timezone(p_patient); expiry:=(((now() at time zone tz)::date+1)::timestamp at time zone tz);
+insert into public.chart_reason_grants(org_id,patient_id,account_id,acting_role,reason_code,expires_at,synthetic) values(o,p_patient,a,r,p_reason,expiry,true) returning id into g;
+insert into public.record_access_log(org_id,actor_account_id,actor_role,patient_id,record_class,kind,reason_code,simulated) values(o,a,r,p_patient,'chart_entry','open',p_reason,true);
+insert into public.audit_events(org_id,actor_account_id,actor_role,action_code,entity_id,patient_id,outcome,metadata,simulated,registry_version) values(o,a,r,'chart_reason_open',g,p_patient,'simulated',jsonb_build_object('reason_code',p_reason),true,'2026-10-28.access-rules'); return g; end $$;
+revoke execute on function public.chart_reason_open(uuid,text,text) from public,anon,authenticated; grant execute on function public.chart_reason_open(uuid,text,text) to service_role;
