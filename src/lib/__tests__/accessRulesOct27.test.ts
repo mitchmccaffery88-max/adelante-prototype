@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
-import { STAFF_ROLES, STAFF_ROSTER } from "../roles";
+import { STAFF_ROLES, STAFF_ROSTER, staffForRole } from "../roles";
 import { chartEntryFor, searchablePatientsFor, openChartWithReason, _resetChartAccessForTests, CHART_ENTRY_ROLES, setRecordRestricted } from "../chartAccess";
 import { endOfSiteDay, intakeWindowActive, evaluateChartEntry, type EntryFacts } from "../chartAccessRules";
 import { resolveChartRouteAccess } from "../navGuard";
@@ -35,7 +35,7 @@ describe("27 Oct access rules — Draft mirrored acceptance", () => {
   it("all 18 roles: search, direct link and print use one eligibility boundary", () => {
     const p = AdelanteEHR.listPatients()[0]; if (!p) throw new Error("Fixture missing");
     for (const { key: role } of STAFF_ROLES) {
-      const s = STAFF_ROSTER.find(s => s.role === role); if (!s) throw new Error(`Missing ${role}`);
+      const s = staffForRole(role)[0]; if (!s) throw new Error(`Missing ${role}`);
       const entry = chartEntryFor(role, s.id, p.id);
       const chart = resolveChartRouteAccess(role,s.id,`/record/${p.id}`);
       const print = resolveChartRouteAccess(role,s.id,`/print/patient-records/${p.id}`);
@@ -68,9 +68,12 @@ describe("27 Oct access rules — Draft mirrored acceptance", () => {
   });
   it("coverage dates constrain entry and unrelated patients do not inherit it",()=>{
     const cover=STAFF_ROSTER.find(s=>s.role==="sud_counselor"), covered=STAFF_ROSTER.find(s=>s.role==="therapist");
-    const p=AdelanteEHR.listPatients().find(p=>p.primaryClinicianId===covered?.clinicianId); if(!cover||!covered||!p) throw new Error("Fixture missing");
-    saveCoverageAssignment({role:"clinical_coordinator",staffId:"s-cc1"},{coveringStaffId:cover.id,coveredStaffId:covered.id,start:"2026-10-27T00:00:00Z",end:"2026-10-29T00:00:00Z"});
-    expect(chartEntryFor(cover.role,cover.id,p.id,new Date("2026-10-28T18:00:00Z")).ok).toBe(true);
-    expect(chartEntryFor(cover.role,cover.id,p.id,new Date("2026-10-29T00:00:00Z")).ok).toBe(false);
+    const p=AdelanteEHR.listPatients()[0]; if(!cover||!covered||!p) throw new Error("Fixture missing");
+    const previous=p.primaryClinicianId; p.primaryClinicianId=covered.clinicianId;
+    try {
+      saveCoverageAssignment({role:"clinical_coordinator",staffId:"s-cc1"},{coveringStaffId:cover.id,coveredStaffId:covered.id,start:"2026-10-27T00:00:00Z",end:"2026-10-29T00:00:00Z"});
+      expect(chartEntryFor(cover.role,cover.id,p.id,new Date("2026-10-28T18:00:00Z")).ok).toBe(true);
+      expect(chartEntryFor(cover.role,cover.id,p.id,new Date("2026-10-29T00:00:00Z")).ok).toBe(false);
+    } finally { p.primaryClinicianId=previous; }
   });
 });
