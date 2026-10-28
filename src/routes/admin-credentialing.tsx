@@ -1,3 +1,4 @@
+import { CredentialingRecordEditor } from "@/components/credentials/CredentialingRecordEditor";
 import { credentialCommand } from "@/components/credentials/credentialCommand";
 import { StaffTable } from "@/components/staff/StaffTable";
 import {Check,  CircleAlert } from "lucide-react";
@@ -527,7 +528,7 @@ function CredentialingAdminPage() {
       {/* eslint-disable-next-line jsx-a11y/anchor-has-content */}
       <a ref={downloadRef} className="hidden" aria-hidden="true" />
 
-      {canManageCredentials && <CredentialingToday role={role} staffId={staffId} />}
+      {canManageCredentials && <><CredentialingToday role={role} staffId={staffId} /><CredentialingRecordEditor role={role} staffId={staffId} /></>}
 
       {expiringSoon.length > 0 && (
         <Card className="border-input bg-surface-sunk p-4">
