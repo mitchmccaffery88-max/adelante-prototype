@@ -2,10 +2,12 @@
 
 ## 27 Oct access rules — 28 Oct implementation (Draft)
 - [x] Inventory shared app gates, SQL entry and rollback harness; identified the superseded mandatory-site rule and pre-data rendering gap.
-- [ ] Align direct team/coverage/on-call/supervisor/group-context entry and reasoned end-of-day access with shared pre-data gate, minimal search, logs/review/requests.
-- [ ] Intake read-only 60-day packet/checklist window, logged opens, unchanged Part 2 gates.
-- [ ] Main-only rollback claims proofs and before/after counts; separately open only passing chart/packet/handoff policies.
-- [ ] Mirrored app tests, full units then isolated public browser; evidence/report, Draft permission matrix and architecture update.
+- [ ] Align direct/reasoned entry and shared pre-data gate — blocked by Mitch's Part 2 prerequisite decision; candidate app removed and SQL restored together.
+- [ ] Intake read-only 60-day packet/checklist window and logged opens — same blocked coordinated batch; no partial window enabled.
+- [ ] Complete main rollback acceptance and open passing chart/packet/handoff policies — blocked by `part2_no_consent_failed physician`; none opened.
+- [x] Document failed rollback attempts, zero retained fixture counts, report, Draft proposed matrix and architecture stop rule.
+- [x] Restore clean app/SQL boundary; restored units 3,583/3,583, 406 files, exit 0.
+- [ ] Complete isolated public browser validation of restored app — running after unit completion.
 - Persistence OFF; no TEST secrets/project, publishing, Cloud or GitHub. Phase 2d remains outside scope.
 
 ## 27 Oct credentialing — 28 Oct reconciliation (Draft)
