@@ -1,12 +1,13 @@
 # Roadmap
 
-## 27 Oct credentialing — 28 Oct continuation, stopped at clean boundary
-- [x] Exact-once approved EHR anchor, unchanged-cadence seed runway and isolated Billing flags; unchanged blocker regressions 90/90.
-- [x] Full units run: 3,574 passed / 1 failed (3,575); evidence and inventory in docs/credentialing-report.md. No test weakening, Supabase, TEST secrets or publishing.
-- [ ] Authoritative credential/enrollment ownership — blocked by independent new records duplicating existing ehr-ext facts, direct existing writers and inline-file workflow; needs scoped reconciliation approval before further changes.
-- [ ] Disabled-monitor audit coverage and import-cycle seed errors — blocked at the same architecture boundary; monitor remains off.
-- [ ] Green full units, then full public browser and credentialing UI readback — not run to completion; public suite not started because units failed.
-- [ ] Final workflow acceptance — field-edit UI, count-only claim boundary, historical/service-specific rule, task delivery and audit gaps documented in report; not claimed complete.
+## 27 Oct credentialing — 28 Oct reconciliation (Draft)
+- [x] Existing ehr-ext credential/enrollment records are the sole authority; self-registration removes module-load roster reads; roster NPI remains single-source.
+- [x] Historical payer/service evaluator, stricter approved missing-data coverage, unchanged old assertions and exact-once reconciliation source ledger.
+- [x] Registry dashboard verification/expiry/follow-up/enrollment, manual and Simulated monitor paths, ids-only block/unblock audits, count-only claim ingestion and urgent coordinator notices.
+- [x] Existing preview-memory document capture labelled Simulated; no secure storage or Supabase changes.
+- [x] Full units 3,583/3,583 (406 files), exit 0; then public browser 51/51, exit 0, one worker, no overlap.
+- [x] Credentialing UI readback after public completion: enrollment saved/read back with one audit, OIG match → coordinator urgent item → acknowledgment; 1280/390, no overflow/page errors. Report docs/credentialing-report.md.
+- Draft acceptance: county cadence/contracts, go-live permissions/compliance review; real monitoring and phase 5 secure storage remain outside scope.
 
 ## 27 Oct Supabase Phase 2c revised — main rollback access tests
 - [x] Real-claims fictional fixtures for all 18 roles, patient and advocate; all public-table/auth counts unchanged after rollback; no TEST secrets.

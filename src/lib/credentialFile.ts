@@ -27,7 +27,7 @@ export type CredentialFileType = (typeof CREDENTIAL_ACCEPTED_TYPES)[number];
 export const CREDENTIAL_ACCEPT_ATTR = CREDENTIAL_ACCEPTED_TYPES.join(",");
 
 export const CREDENTIAL_STORAGE_NOTE =
-  "Documents are stored inside this prototype as inline data, the same way drawn signatures are. Keep files under 2 MB.";
+  "Simulated — documents stay in preview memory only. Secure file storage waits for phase 5. Keep files under 2 MB.";
 
 export interface CredentialFilePayload {
   fileName: string;

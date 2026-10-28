@@ -1,6 +1,9 @@
 import { assertNotAfbiSource } from "./afbiGuard";
 import { assertClaimable, isClaimable } from "./claimGuard";
 import { demoBusinessTime } from "./demoTime";
+// 28 Oct credentialing reconciliation: existing records are the only authority.
+import { registerCredentialingAuthority, type ClinicianCredentialing, type LicenseRecord, type RegistrationRecord, credentialedForService, affectedClaimCount } from "./credentialing";
+import { getStaffMember, STAFF_ROSTER } from "./roles";
 // §Adelante Expansion — additive EMR extension.
 // Houses: organizations/counties/facilities, clinician profile ext,
 // credentials, payer enrollments, patient coverage spans, availability
@@ -104,6 +107,19 @@ export interface CredentialDoc {
     reason: string;
   }[];
   /** §Phase 2b — coordinator asked the clinician to act on this record. */
+  licenseType?: string;
+  registrationType?: string;
+  verificationSource?: LicenseRecord["verificationSource"];
+  manualMethod?: "manual";
+  supervision?: RegistrationRecord["supervision"];
+  exclusionChecks?: ClinicianCredentialing["exclusionChecks"];
+  attestation18019?: ClinicianCredentialing["attestation"];
+  educationAttestedAt?: string;
+  ceAttestedAt?: string;
+  recredentialingDueAt?: string;
+  carrier?: string;
+  documentStatus?: ClinicianCredentialing["documentStatus"];
+  seed?: boolean;
   followUp?: {
     requestedBy: string;
     requestedAt: string;
@@ -122,6 +138,8 @@ export interface PayerEnrollment {
   status: PayerEnrollmentStatus;
   effectiveFrom?: string;
   effectiveTo?: string;
+  serviceType?: string;
+  caqhId?: string;
 }
 
 // §Phase 3b — `CoverageSpan` was removed. The one coverage model is
@@ -541,73 +559,172 @@ const clinicianProfiles: ClinicianProfileExt[] = [
   },
 ];
 
-const credentials: CredentialDoc[] = [
-  {
-    id: uid(),
+const credentials: CredentialDoc[] = [];
+const payerEnrollments: PayerEnrollment[] = [];
+function seedExclusions(staffId: string, checkedDaysAgo: number): ClinicianCredentialing["exclusionChecks"] {
+  const now = Date.now();
+  const end = now - checkedDaysAgo * 86400000;
+  const checks: ClinicianCredentialing["exclusionChecks"] = [];
+  for (const list of ["oig", "sam_gov", "medi_cal_suspended"] as const) {
+    // 28 Oct credentialing reconciliation: fictional monthly history, unchanged cadence.
+    for (let at = +new Date("2024-01-01"); at <= end; at += 30 * 86400000)
+      checks.push({ list, result: "clear", checkedAt: new Date(at).toISOString(), nextDueAt: new Date(at + 30 * 86400000).toISOString() });
+    checks.push({ list, result: "clear", checkedAt: new Date(end).toISOString(), nextDueAt: new Date(end + 30 * 86400000).toISOString() });
+    if (staffId === "s-th1") {
+      const at = +new Date("2026-11-20");
+      checks.push({ list, result: "clear", checkedAt: new Date(at).toISOString(), nextDueAt: new Date(at + 30 * 86400000).toISOString() });
+    }
+  }
+  return checks;
+}
+let credentialSeedId = 0;
+function seedRecord(r: ClinicianCredentialing) {
+  const l = r.license; const reg = r.registration;
+  credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "license", uploadedAt: iso(), seed: true,
+    licenseType: l?.licenseType, registrationType: reg?.registrationType,
+    number: l?.number ?? reg?.number, issuingState: l?.state ?? "CA", issuedAt: l?.issuedAt,
+    expiresAt: l?.expiresAt ?? reg?.expiresAt, verifiedAt: l?.verifiedAt ?? reg?.verifiedAt,
+    verifiedBy: l?.verifiedBy ?? reg?.verifiedBy, verificationSource: l?.verificationSource, manualMethod: "manual",
+    supervision: reg?.supervision, exclusionChecks: r.exclusionChecks, attestation18019: r.attestation,
+    educationAttestedAt: r.educationAttestedAt, ceAttestedAt: r.ceAttestedAt, recredentialingDueAt: r.recredentialingDueAt,
+    documentStatus: "simulated_unavailable" });
+  if (r.dea) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "dea", number: r.dea.number, expiresAt: r.dea.expiresAt, uploadedAt: iso(), seed: true });
+  if (r.malpractice) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "malpractice", number: r.malpractice.policy, carrier: r.malpractice.carrier, expiresAt: r.malpractice.expiresAt, uploadedAt: iso(), seed: true });
+  if (r.boardCertification) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "board_cert", number: r.boardCertification, uploadedAt: iso(), seed: true });
+  for (const e of r.enrollments) payerEnrollments.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, payer: e.payer, serviceType: e.serviceType, status: ({ active: "enrolled", submitted: "pending", not_started: "not_enrolled", inactive: "terminated" } as const)[e.status], effectiveFrom: e.effectiveAt, caqhId: e.caqhId, billingTin: "DEMO-TIN" });
+}
+function seedCredentialAuthorityDemo() {
+  // c1 — fully credentialed and enrolled.
+  seedRecord({
+    staffId: "s-th1",
     clinicianId: "c1",
-    kind: "license",
-    issuingState: "CA",
-    number: "LCSW-88213",
-    issuedAt: "2021-01-15",
-    expiresAt: daysFromNow(210),
-    fileName: "lcsw_license.pdf",
-    uploadedAt: iso(),
-    verifiedAt: iso(),
-    verifiedBy: "credentialing_coordinator",
-    verificationMethod: "primary_source",
-  },
-  {
-    id: uid(),
-    clinicianId: "c1",
-    kind: "malpractice",
-    number: "MP-4429",
-    expiresAt: daysFromNow(21),
-    fileName: "malpractice_coi.pdf",
-    uploadedAt: iso(),
-  },
-  {
-    id: uid(),
-    clinicianId: "c2",
-    kind: "license",
-    issuingState: "CA",
-    number: "PMHNP-32101",
-    // 27 Oct — aligned with the credentialing record's 25-day expiry so the
-    // old document table and the new credentialing tiles tell one story.
-    expiresAt: daysFromNow(25),
-    fileName: "np_license.pdf",
-    uploadedAt: iso(),
-    verifiedAt: iso(),
-    verifiedBy: "credentialing_coordinator",
-    verificationMethod: "primary_source",
-  },
-  {
-    id: uid(),
-    clinicianId: "c2",
-    kind: "dea",
-    number: "BW-7788221",
-    expiresAt: daysFromNow(400),
-    fileName: "dea.pdf",
-    uploadedAt: iso(),
-    verifiedAt: iso(),
-  },
-  {
-    id: uid(),
-    clinicianId: "c3",
-    kind: "cv",
-    fileName: "peer_cv.pdf",
-    uploadedAt: iso(),
-  },
-];
+    license: { licenseType: "LCSW", number: "DEMO-LIC-0000", state: "CA", issuedAt: "2021-01-15", expiresAt: daysFromNow(210), verificationSource: "bbs", verifiedAt: daysFromNow(-30), verifiedBy: "s-cred1", method: "manual" },
+        malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(400) },
+    educationAttestedAt: daysFromNow(-60),
+    ceAttestedAt: daysFromNow(-60),
+    // 27 Oct credentialing batch: freshly checked seed keeps the monthly
+    // validity runway through workingCalendar's Nov 20 clock; cadence unchanged.
+    exclusionChecks: seedExclusions("s-th1", 0),
+    attestation: { status: "signed", signedAt: daysFromNow(-60), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
+    enrollments: [
+      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Health Net Medi-Cal", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Tulare County MHP", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Anthem Blue Cross Medi-Cal", serviceType: "*", status: "submitted" },
+    ],
+    recredentialingDueAt: daysFromNow(2 * 365),
+    documentStatus: "simulated_unavailable",
+  });
 
-const payerEnrollments: PayerEnrollment[] = [
-  { id: uid(), clinicianId: "c1", payer: "Medi-Cal FFS", billingTin: "84-1234567", status: "enrolled", effectiveFrom: "2024-06-01" },
-  { id: uid(), clinicianId: "c1", payer: "Health Net Medi-Cal", billingTin: "84-1234567", status: "enrolled" },
-  { id: uid(), clinicianId: "c1", payer: "Anthem Blue Cross Medi-Cal", billingTin: "84-1234567", status: "pending" },
-  { id: uid(), clinicianId: "c2", payer: "Medi-Cal FFS", billingTin: "84-1234567", status: "enrolled" },
-  { id: uid(), clinicianId: "c2", payer: "Tulare County MHP", billingTin: "84-1234567", status: "enrolled" },
-  { id: uid(), clinicianId: "c2", payer: "CalViva Health", billingTin: "84-1234567", status: "not_enrolled" },
-  { id: uid(), clinicianId: "c3", payer: "Medi-Cal FFS", billingTin: "84-1234567", status: "enrolled" },
-];
+  // c4 — registered associate (ASW) with a licensed supervisor on file.
+  seedRecord({
+    staffId: "s-tr1",
+    clinicianId: "c4",
+    registration: {
+      registrationType: "ASW",
+      number: "DEMO-LIC-0001",
+      expiresAt: daysFromNow(300),
+      verifiedAt: daysFromNow(-20),
+      verifiedBy: "s-cred1",
+      supervision: { supervisorStaffId: "s-th1", start: daysFromNow(-180) },
+    },
+        exclusionChecks: seedExclusions("s-tr1", 12),
+    attestation: { status: "signed", signedAt: daysFromNow(-50), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
+    enrollments: [{ payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-09-01" }],
+    recredentialingDueAt: daysFromNow(2 * 365),
+    documentStatus: "simulated_unavailable",
+  });
+
+  // c2 — license expiring within 30 days.
+  seedRecord({
+    staffId: "s-th2",
+    clinicianId: "c2",
+    license: { licenseType: "PsyD", number: "DEMO-LIC-0002", state: "CA", issuedAt: "2019-05-01", expiresAt: daysFromNow(25), verificationSource: "bbs", verifiedAt: daysFromNow(-90), verifiedBy: "s-cred1", method: "manual" },
+        malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(300) },
+    exclusionChecks: seedExclusions("s-th2", 8),
+    attestation: { status: "signed", signedAt: daysFromNow(-90), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
+    enrollments: [
+      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Health Net Medi-Cal", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+    ],
+    recredentialingDueAt: daysFromNow(2 * 365),
+    documentStatus: "simulated_unavailable",
+  });
+
+  // c3 — Medi-Cal enrolled, NOT enrolled for the DMC-ODS service.
+  seedRecord({
+    staffId: "s-th3",
+    clinicianId: "c3",
+    license: { licenseType: "PMHNP", number: "DEMO-LIC-0003", state: "CA", issuedAt: "2020-03-01", expiresAt: daysFromNow(320), verificationSource: "brn", verifiedAt: daysFromNow(-15), verifiedBy: "s-cred1", method: "manual" },
+        dea: { number: "DEMO-LIC-0004", expiresAt: daysFromNow(400) },
+    boardCertification: "PMHNP-BC",
+    malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(350) },
+    exclusionChecks: seedExclusions("s-th3", 6),
+    attestation: { status: "signed", signedAt: daysFromNow(-40), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
+    enrollments: [
+      { payer: "Medi-Cal FFS", serviceType: "med_management", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Medi-Cal FFS", serviceType: "therapy_individual", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Tulare County DMC-ODS", serviceType: "sud_counseling", status: "not_started" },
+    ],
+    recredentialingDueAt: daysFromNow(2 * 365),
+    documentStatus: "simulated_unavailable",
+  });
+
+  // c5 — overdue exclusion check (checked 45 days ago against a 30-day cadence).
+  seedRecord({
+    staffId: "s-np1",
+    clinicianId: "c5",
+    license: { licenseType: "MD", number: "DEMO-LIC-0005", state: "CA", issuedAt: "2005-07-01", expiresAt: daysFromNow(500), verificationSource: "medical_board_ca", verifiedAt: daysFromNow(-10), verifiedBy: "s-cred1", method: "manual" },
+        dea: { number: "DEMO-LIC-0006", expiresAt: daysFromNow(600) },
+    boardCertification: "Psychiatry",
+    malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(500) },
+    exclusionChecks: seedExclusions("s-np1", 45),
+    attestation: { status: "signed", signedAt: daysFromNow(-100), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
+    enrollments: [
+      { payer: "Medi-Cal FFS", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+      { payer: "Tulare County MHP", serviceType: "*", status: "active", effectiveAt: "2024-06-01" },
+    ],
+    recredentialingDueAt: daysFromNow(60),
+    documentStatus: "simulated_unavailable",
+  });
+
+  // c6 — trainee with NO supervision record (already not billable in the demo).
+  seedRecord({
+    staffId: "s-tr2",
+    clinicianId: "c6",
+    registration: { registrationType: "AMFT", number: "DEMO-LIC-0007", expiresAt: daysFromNow(200), verifiedAt: daysFromNow(-25), verifiedBy: "s-cred1" },
+    exclusionChecks: seedExclusions("s-tr2", 14),
+    attestation: { status: "pending", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: false } },
+    enrollments: [],
+    documentStatus: "simulated_unavailable",
+  });
+
+  // c7 — SUD counselor (certified, registration-style credential).
+  seedRecord({
+    staffId: "s-sudc1",
+    clinicianId: "c7",
+    registration: {
+      registrationType: "SUDCC-II",
+      number: "DEMO-LIC-0008",
+      expiresAt: daysFromNow(150),
+      verifiedAt: daysFromNow(-18),
+      verifiedBy: "s-cred1",
+      supervision: { supervisorStaffId: "s-np1", start: daysFromNow(-365) },
+    },
+    exclusionChecks: seedExclusions("s-sudc1", 9),
+    attestation: { status: "signed", signedAt: daysFromNow(-30), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
+    enrollments: [{ payer: "Tulare County DMC-ODS", serviceType: "*", status: "active", effectiveAt: "2024-08-01" }],
+    recredentialingDueAt: daysFromNow(2 * 365),
+    documentStatus: "simulated_unavailable",
+  });
+
+
+}
+
+seedCredentialAuthorityDemo();
+// 28 Oct credentialing reconciliation: preserve the pre-existing seed PRNG budget.
+for (let i = 0; i < 13; i++) uid();
+
 
 // §Phase 3b — the `coverageSpans` store that used to live here was a second,
 // disconnected coverage shape. Its rows were migrated onto
@@ -718,6 +835,7 @@ export const AdelanteEHRExt = {
   listFacilities: () => facilities,
   getFacility: (id?: string) => facilities.find((f) => f.id === id),
 
+  auditCredentialTransition: (actor: { role: string; staffId?: string }, staffId: string, blocked: boolean) => AdelanteEHR._recordAudit({ category: "action", action: blocked ? "credential.blocked" : "credential.unblocked", actorId: actor.staffId ?? actor.role, actorRole: actor.role, detail: { staffId } }),
   getClinicianProfile: (id: string) => clinicianProfiles.find((p) => p.clinicianId === id),
   listClinicianProfiles: () => clinicianProfiles,
 
@@ -748,6 +866,8 @@ export const AdelanteEHRExt = {
   /** §Batch E — raw claim rows a patient merge moves. */
   _mergeClaimRows: () => claims,
   listClaims: () => claims.slice().sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)),
+  // 28 Oct credentialing reconciliation: only counts leave this boundary.
+  credentialingClaimCounts: () => Object.fromEntries(STAFF_ROSTER.map(m => [m.id, affectedClaimCount(m.id, claims.map(c => ({ ...c, serviceType: AdelanteEHR.listAppointments().find(a => a.id === c.encounterId)?.serviceType })), pid => AdelanteEHR.activeCoveragePlan(pid)?.payer)])),
 
   // Mutations
   upsertClinicianProfile(patch: Partial<ClinicianProfileExt> & { clinicianId: string }) {
@@ -807,7 +927,10 @@ export const AdelanteEHRExt = {
     if (latest) AdelanteEHR.setClinicianLicenseExpiry(clinicianId, latest);
   },
   addCredential(input: Omit<CredentialDoc, "id" | "uploadedAt">) {
-    const c: CredentialDoc = { ...input, id: uid(), uploadedAt: iso() };
+    const c: CredentialDoc = { ...input, id: uid(), uploadedAt: iso(), documentStatus: input.fileDataUrl ? "on_file" : "simulated_unavailable" };
+    // 28 Oct credentialing reconciliation: a received primary credential replaces demo evidence.
+    if (c.kind === "license") for (let i = credentials.length - 1; i >= 0; i--)
+      if (credentials[i].clinicianId === c.clinicianId && credentials[i].kind === "license" && credentials[i].seed) credentials.splice(i, 1);
     credentials.push(c);
     // §Phase 2b — uploading the thing that was asked for answers the request.
     credentials
@@ -1867,6 +1990,51 @@ export function claimBucketCounts(list: Claim[]): Record<BillingBucket, number> 
   for (const c of list) out[claimBillingBucket(c.state)] += 1;
   return out;
 }
+
+// 28 Oct credentialing reconciliation: self-registration avoids ehr → ehr-ext imports.
+function projectCredentialAuthority(staffId: string): ClinicianCredentialing | undefined {
+  const member = getStaffMember(staffId);
+  const cid = member?.clinicianId ?? staffId;
+  const docs = credentials.filter(c => c.clinicianId === cid);
+  const primary = docs.filter(c => c.kind === "license").sort((a,b) => (b.expiresAt ?? "").localeCompare(a.expiresAt ?? ""))[0];
+  if (!primary) return undefined;
+  const reg = !!primary.registrationType;
+  const dea = docs.find(c => c.kind === "dea"); const mp = docs.find(c => c.kind === "malpractice");
+  return { staffId, clinicianId: member?.clinicianId, npi: member?.npi,
+    license: reg ? undefined : { licenseType: primary.licenseType ?? "License", number: primary.number ?? "", state: primary.issuingState ?? "", issuedAt: primary.issuedAt, expiresAt: primary.expiresAt, verifiedAt: primary.verifiedAt, verifiedBy: primary.verifiedBy, verificationSource: primary.verificationSource, method: "manual" },
+    registration: reg ? { registrationType: primary.registrationType ?? "Registration", number: primary.number ?? "", expiresAt: primary.expiresAt, verifiedAt: primary.verifiedAt, verifiedBy: primary.verifiedBy, supervision: primary.supervision } : undefined,
+    dea: dea ? { number: dea.number ?? "", expiresAt: dea.expiresAt } : undefined,
+    malpractice: mp ? { carrier: mp.carrier ?? "", policy: mp.number ?? "", expiresAt: mp.expiresAt } : undefined,
+    boardCertification: docs.find(c => c.kind === "board_cert")?.number,
+    exclusionChecks: primary.exclusionChecks ?? [], attestation: primary.attestation18019,
+    educationAttestedAt: primary.educationAttestedAt, ceAttestedAt: primary.ceAttestedAt, recredentialingDueAt: primary.recredentialingDueAt,
+    enrollments: payerEnrollments.filter(e => e.clinicianId === cid).map(e => ({ payer: e.payer, serviceType: e.serviceType ?? "*", status: ({ enrolled: "active", pending: "submitted", not_enrolled: "not_started", terminated: "inactive" } as const)[e.status], effectiveAt: e.effectiveFrom, caqhId: e.caqhId })),
+    documentStatus: docs.some(c => c.fileDataUrl) ? "on_file" : primary.documentStatus ?? "simulated_unavailable" };
+}
+registerCredentialingAuthority({
+  list: () => [...new Set([...STAFF_ROSTER.map(m => m.id), ...credentials.filter(c => !STAFF_ROSTER.some(m => m.clinicianId === c.clinicianId)).map(c => c.clinicianId)])].flatMap(id => { const r = projectCredentialAuthority(id); return r ? [r] : []; }),
+  subscribe,
+  auditTransition: (staffId, actor, blocked) => AdelanteEHR._recordAudit({ category: "action", action: blocked ? "credential.blocked" : "credential.unblocked", actorId: actor.staffId ?? actor.role, actorRole: actor.role, detail: { staffId } }),
+  write: (staffId, change) => {
+    const member = getStaffMember(staffId); const cid = member?.clinicianId ?? staffId;
+    const r = projectCredentialAuthority(staffId) ?? { staffId, clinicianId: member?.clinicianId, exclusionChecks: [], enrollments: [], documentStatus: "simulated_unavailable" as const };
+    change(r);
+    let primary = credentials.filter(c => c.clinicianId === cid && c.kind === "license").sort((a,b) => (b.expiresAt ?? "").localeCompare(a.expiresAt ?? ""))[0];
+    if (!primary) { primary = { id: uid(), clinicianId: cid, kind: "license", uploadedAt: iso() }; credentials.push(primary); }
+    Object.assign(primary, { licenseType: r.license?.licenseType, registrationType: r.registration?.registrationType, number: r.license?.number ?? r.registration?.number, issuingState: r.license?.state, issuedAt: r.license?.issuedAt, expiresAt: r.license?.expiresAt ?? r.registration?.expiresAt, verifiedAt: r.license?.verifiedAt ?? r.registration?.verifiedAt, verifiedBy: r.license?.verifiedBy ?? r.registration?.verifiedBy, verificationSource: r.license?.verificationSource, manualMethod: "manual", supervision: r.registration?.supervision, exclusionChecks: r.exclusionChecks, attestation18019: r.attestation, educationAttestedAt: r.educationAttestedAt, ceAttestedAt: r.ceAttestedAt, recredentialingDueAt: r.recredentialingDueAt });
+    for (const [kind, value] of [["dea", r.dea], ["malpractice", r.malpractice], ["board_cert", r.boardCertification]] as const) {
+      if (!value) continue;
+      let doc = credentials.find(c => c.clinicianId === cid && c.kind === kind);
+      if (!doc) { doc = { id: uid(), clinicianId: cid, kind, uploadedAt: iso() }; credentials.push(doc); }
+      if (typeof value === "string") doc.number = value;
+      else if ("carrier" in value) Object.assign(doc, { carrier: value.carrier, number: value.policy, expiresAt: value.expiresAt });
+      else Object.assign(doc, { number: value.number, expiresAt: value.expiresAt });
+    }
+    for (const e of r.enrollments) { const existing = payerEnrollments.find(x => x.clinicianId === cid && x.payer === e.payer && (x.serviceType ?? "*") === e.serviceType); const row = { clinicianId: cid, payer: e.payer, serviceType: e.serviceType, billingTin: existing?.billingTin ?? "", status: ({ active: "enrolled", submitted: "pending", not_started: "not_enrolled", inactive: "terminated" } as const)[e.status], effectiveFrom: e.effectiveAt, caqhId: e.caqhId }; if (existing) Object.assign(existing, row); else payerEnrollments.push({ ...row, id: uid() }); }
+    AdelanteEHRExt.syncLicenseExpiry(cid); ehrBus.publish({ type: "credential.updated", clinicianId: cid });
+    return projectCredentialAuthority(staffId) ?? r;
+  },
+});
 
 // §EHR audit Phase 2a — reconcile the seeded licence documents with the
 // booking hard-stop field on startup, so the two dates agree from the first

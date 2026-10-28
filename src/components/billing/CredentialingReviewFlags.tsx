@@ -16,7 +16,7 @@ function CredentialingReviewFlagsBody() {
   const appointments = useEhr(() => billingAppointments());
   const claims = useEhrExt(() => billingClaims());
   const flags = useCredentialing(
-    () => credentialingReviewFlags(appointments, claims, (pid) => AdelanteEHR.activeCoveragePlan(pid)?.payer),
+    () => credentialingReviewFlags(appointments, claims.map(c => ({ ...c, serviceType: appointments.find(a => a.id === c.encounterId)?.serviceType })), (pid) => AdelanteEHR.activeCoveragePlan(pid)?.payer),
   );
   if (flags.length === 0) return null;
   return (

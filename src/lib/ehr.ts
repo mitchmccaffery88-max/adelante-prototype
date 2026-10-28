@@ -24,7 +24,7 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
-import { credentialedForService, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL } from "./credentialing";
+import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL } from "./credentialing";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { assertGroupApproval, assertGroupStaffRequest, groupRequestHooks } from "./groupRequestBoundary";
 import { ON_CALL_GAP, onCallOwnerFor } from "./onCallBoundary";
@@ -8350,11 +8350,11 @@ export function bookingCredentialingBlock(
   start: string,
 ): string | undefined {
   if (!isBillableServiceType(serviceType)) return undefined;
-  const member = STAFF_ROSTER.find((s) => s.clinicianId === clinicianId);
-  if (!member) return undefined;
+  const member = credentialingRecordForClinician(clinicianId);
+  if (!member) return undefined; // authority self-registers after initial demo bookings
   const payer = AdelanteEHR.activeCoveragePlan(patientId)?.payer;
   if (!payer) return undefined;
-  const res = credentialedForService(member.id, payer, serviceType, start);
+  const res = credentialedForService(member.staffId, payer, serviceType, start);
   return res.ok ? undefined : "This clinician can't be booked for this service right now.";
 }
 

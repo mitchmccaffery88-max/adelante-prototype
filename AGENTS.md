@@ -1,6 +1,6 @@
 # Architecture rules
 
-- Credentialing evaluation must consume the existing credential/enrollment authority, never an independent copy of license or payer facts; Billing review display stays in its isolated projected component. Why: credential edits, booking decisions and readiness must agree without changing pinned Billing bindings; the 28 Oct reconciliation remains stopped pending scoped approval.
+- Credentialing uses only ehr-ext credential/enrollment records, self-registered for historical evaluation; NPI stays roster-owned. Dashboard writes use the registry, transition audits contain ids only, Today ingests claim counts only, and Billing flags stay isolated. Why: edits, booking and readiness agree without cycles, permission unions or claim-detail disclosure.
 
 - Phase 2 persistence contracts remain disconnected read scaffolds; SQL commands and unverified read policies stay closed. Read-only own-site and identity-review policies may open after rollback real-claims positive/negative coverage; chart-policy conflicts require a separate decision. Why: proven narrow reads must not become a permission or persistence cutover.
 

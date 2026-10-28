@@ -69,7 +69,7 @@ export function CredentialingToday({ role, staffId }: { role: StaffRole; staffId
   const pending = useCredentialing(() => enrollmentsPending());
   const blocked = useCredentialing(() => blockedClinicians());
   const notices = useCredentialing(() => listCredentialingNotices());
-  const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
+  const claimCounts = useEhrExt(() => AdelanteEHRExt.credentialingClaimCounts());
 
   const openNotices = notices.filter((n) => !n.acknowledgedAt);
   const mayAcknowledge = role === "clinical_coordinator" || role === "sys_admin";
@@ -229,7 +229,7 @@ export function CredentialingToday({ role, staffId }: { role: StaffRole; staffId
             {[...new Set(blocked.map((b) => b.staffId))].map((sid) => {
               const rows = blocked.filter((b) => b.staffId === sid);
               const reasons = [...new Set(rows.flatMap((r) => r.reasons))];
-              const claimCount = affectedClaimCount(sid, claims, payerForPatient);
+              const claimCount = claimCounts[sid] ?? 0;
               return (
                 <li key={sid} className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
