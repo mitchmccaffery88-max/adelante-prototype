@@ -1,5 +1,9 @@
 # Roadmap
 
+## 28 Oct credentialing as-of fix (Draft)
+- [x] Exclusion screening judged as of booking time; DOS mode for billing readiness; tile shows checks due before booked visits; relative seeds; tests + re-pins; units 3,599/3,599.
+- [ ] Public browser 52/53: websiteSignup5 HLOC test hits the access-rules reason gate — resolve in the access-rules batch.
+
 ## 27 Oct access rules — 28 Oct implementation (Draft)
 - [ ] 28 Oct 16:32 approved resume: narrow superseded assertions/pins/snapshot, MOUD normal team membership, remaining hosts and rollback vectors, separately proven read groups; full units then public browser/readback. Stop on unrelated failures.
 - [x] Narrow access/search assertions, three exact-one-change pins, sys_admin labels, ECM reason fixture and real outpatient MOUD team fixture; registry snapshot refreshed, all 73 changed rows reported.

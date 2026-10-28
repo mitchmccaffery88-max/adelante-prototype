@@ -47,3 +47,32 @@ c1 fully credentialed/enrolled; c4 supervised ASW; c2 license expiring in 25 day
 
 ## Outside this batch
 Go-live permissions audit, compliance/IN 18-019 sign-off, county-contract cadence confirmation, real monitoring vendor/CVO agreement, persistent task/notification delivery and phase 5 secure file storage. No production compliance or storage claim is made.
+
+## 28 Oct fix — exclusion freshness judged at booking time (Mitch, Draft)
+**Problem.** `evaluateCredentialing` took the latest exclusion check on or before the date of service and failed when its `nextDueAt` fell before that date. Future checks cannot exist yet, so every billable booking more than ~30 days out failed.
+
+**Rule (one evaluator, two moments).** `credentialedForService(staffId, payer, serviceType, dateOfService, { asOf })`, `asOf` defaults to now.
+- Judged on the date of service (unchanged): license/registration verified and unexpired, payer enrollment for the service type, active supervision for associates/trainees.
+- Judged as of `asOf`: no OIG / SAM.gov / Medi-Cal S&I hit on the latest check, and the latest check not overdue as of `asOf`. It never requires a check that hasn't happened yet.
+- Booking (staff and self-scheduled, both through `bookingCredentialingBlock` in `bookAppointment`): `asOf` = now.
+- Billing readiness (`careLifecycle.billableService`) and claim review flags: `asOf` = date of service — unchanged mode. Calling the pure evaluator without `asOf` is the same historical mode.
+- Booked appointment review flags: `asOf` = now until the visit day, then the visit day. An overdue check on the visit day flags the visit for Billing review; nothing is cancelled or changed.
+- "Exclusion checks due" tile: a clinician whose next check falls due before booked billable visits is listed with "Check due before booked visits" (count of visits only) and a "Record the check" link to the existing record-check controls. ehr self-registers its appointment list (`registerBookedVisitSource`), no import cycle.
+- A recorded hit still blocks new bookings immediately and flags existing ones.
+- Note: the evaluator has no DEA check today (none existed before this fix); not added here — needs a scoped decision.
+
+**Seeds.** All credentialing seed dates are now relative to today (issued/effective dates, monthly check history starting 24 cycles back). The fixed 2026-11-20 future check for c1 was removed. All seven fictional cases kept; c5 is still overdue (checked 45 days ago) and still blocked at booking.
+
+**Tests** (`src/lib/__tests__/credentialingAsOfOct28.test.ts`, 14): last check 8 days ago bookable 45/90/180 days out; real staff and self-scheduled bookings 45/90/180 days out succeed; overdue-as-of-today blocks; demo c5 blocked; hit blocks; license expiring before DOS blocks only that booking; readiness keeps DOS mode; booked visits after due date show on the tile; overdue on visit day flags without mutation; future visits not falsely flagged; neutral label carries no reasons. Existing role/button-vs-store credentialing tests unchanged and passing.
+
+**Re-pins (pre-approved exact-once adapter).** `src/test/credentialingAsOfOct28Approved.ts` composes after the access-rules adapter in `credentialingOct27Approved.ts`:
+- `src/lib/ehr.ts` — 3 hunks (import, booking `asOf`, booked-visit registration). Pinned by roleDashboardParity9c2, billingParity9a3, billingProjectionB3b (therapist, sys_admin), statTileParity9a2.
+- `src/lib/ehr-ext.ts` — 13 hunks (relative seed dates, removed fixed future check, comment). Pinned by roleDashboardParity9c2, billingParity9a3.
+No assertion was weakened; no matrix or permission change.
+
+**Validation (real results).**
+- Full units: **3,599/3,599**, 408 files, exit 0.
+- Public browser (one worker, :8080, after units finished, no overlap): nine public/website specs, **52 passed / 1 failed**, 14.6 min. The failure is `websiteSignup5 › HLOC panel…`: an off-team therapist opening a freshly created patient now lands on the access-rules "reason needed" gate, so the chart's Send button never renders. It comes from the access-rules batch's chart gate, not this fix (no credentialing code on that path); left unchanged per "don't start access-rules here" and listed for that batch.
+- Not checked in a live preview session this turn: the tile's "Check due before booked visits" row visually.
+
+**Deferred (not for Beta, Mitch 28 Oct):** real OIG / Medi-Cal / SAM.gov checks (adapter stays Simulated until go-live); real signed-copy credential file storage (phase 5); Phase 2d.
