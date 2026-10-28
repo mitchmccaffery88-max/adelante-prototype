@@ -162,3 +162,28 @@ Then complete all-role rolled-back SQL acceptance and comprehensive before/after
 | therapist | chart_reason_open | absent | hidden |
 | therapist | chart_team_assignment | absent | hidden |
 | therapist | chart_team_request | absent | hidden |
+
+## 28 Oct 17:20 resume (Draft)
+Part 2 internal-use basis: pending counsel confirmation.
+
+### Re-pins (approved)
+- `src/routes/clinician.tsx` — exact-once SHA-256 adapter in `src/test/accessRulesOct28Approved.ts` (before `a4dfd995…`, after `9ab8c68e…`). Covers the embedded ChartAccessGate wrapper and selected-patient guard. The billing projection assertions (allowlisted keys only; no note text) are unchanged.
+
+### Accepted snapshot rows
+- 73 rows: 72 additive rows for the four new chart actions, plus sys_admin `chart_restricted_open` hidden → allowed.
+
+### Go-live reversals
+- sys_admin `chart_restricted_open` allowed (prototype only) → reasoned open at go-live.
+- sys_admin direct chart entry (oversight) → reasoned open at go-live.
+- sys_admin name labels on chart surfaces → revisit at go-live.
+
+### Validation
+- Full units: 3,585 / 3,585 passed, 407 files.
+
+### Not done in this pass (left for next run)
+1. MOUD episode → care_manager team write (registry action + SQL mirror + rolled-back proof).
+2. Coordinator hosts (care-team requests, coverage, weekly reasoned-open review).
+3. Intake logged read-only 60-day window host.
+4. Access-log reason readback UI; full gate verification.
+5. All-role rolled-back SQL vectors (on-call, coverage, supervisor, group, Intake day 60/61, patient/advocate); opening each passing policy group separately. Every read policy is still closed.
+6. Public browser suite, preview readback, final evidence doc.
