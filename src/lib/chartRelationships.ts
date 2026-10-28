@@ -44,6 +44,7 @@ export function assignMoudCareManager(actor: AccessActor, input: { episodeId: st
   if (!canAssignMoudCareManager(actor)) throw new Error("Care manager or clinical coordinator assignment required.");
   const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
   if (!ep || ep.status === "closed") throw new Error("Choose an open episode.");
+  if (actor.role !== "clinical_coordinator" && (input.staffId !== actor.staffId || (ep.cfCareManagerStaffId && ep.cfCareManagerStaffId !== actor.staffId))) throw new Error("Only the clinical coordinator may assign or replace another care manager.");
   const s = getStaffMember(input.staffId);
   if (!s || s.active === false || !MOUD_CM_ROLES.some(r => hasRoleAssignment(s, r))) throw new Error("Choose an active care manager.");
   const at = input.at ?? new Date().toISOString();

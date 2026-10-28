@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR, demoScenarioPatientId } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
 import { listAdditionalTeam } from "@/lib/chartRelationships";
-import { onCareTeam } from "@/lib/chartAccess";
+import { chartEntryFor, onCareTeam } from "@/lib/chartAccess";
 
 const cc = { role: "clinical_coordinator" as const, staffId: "s-cc1" };
 const billing = { role: "billing" as const, staffId: "s-bill1" };
@@ -12,7 +12,7 @@ const audits = (pid?: string) => AdelanteEHR.listAuditEvents({}).filter(e => (e.
 let n = 0;
 function freshEpisode() {
   n++;
-  const p = AdelanteEHR.createPatient({ firstName: `Moud${"abcdefgh"[n]}`, lastName: `Team${"qrstuvwx"[n]}`, dob: `1990-0${n}-1${n}` } as Parameters<typeof AdelanteEHR.createPatient>[0]);
+  const p = AdelanteEHR.createPatient({ firstName: `Moud${n}`, lastName: `Team${n}`, dob: "1990-01-01" } as Parameters<typeof AdelanteEHR.createPatient>[0]);
   const ep = AdelanteEHR.openPreReleaseEpisode({ patientId: p.id, anticipatedReleaseDate: "2026-12-01", cfCareManagerStaffId: "", cfCareManagerName: "", openedBy: "s-cc1", actorRole: "clinical_coordinator" });
   return { p, ep };
 }
@@ -59,5 +59,34 @@ describe("MOUD episode care manager writes the care team", () => {
 
   it("demo scenario patient is untouched by the module import", () => {
     expect(demoScenarioPatientId("sud_consented")).toBeTruthy();
+  });
+
+  it("a care manager may assign themselves but not another care manager", () => {
+    const { p, ep } = freshEpisode();
+    const cm = { role: "ecm_provider" as const, staffId: "s-cf2" };
+    const before = audits().length;
+    const denied = runAction("moud_care_manager_assign", cm, undefined, { args: [cm, { episodeId: ep.id, staffId: "s-cf1" }] });
+    expect(denied.ok).toBe(false);
+    expect(listAdditionalTeam().filter(x => x.patientId === p.id)).toEqual([]);
+    expect(audits().length - before).toBe(1);
+    expect(runAction("moud_care_manager_assign", cm, undefined, { args: [cm, { episodeId: ep.id, staffId: cm.staffId }] }).ok).toBe(true);
+  });
+
+  it("a care manager cannot replace someone else even by assigning themselves", () => {
+    const { p, ep } = freshEpisode();
+    expect(runAction("moud_care_manager_assign", cc, undefined, { args: [cc, { episodeId: ep.id, staffId: "s-cf1" }] }).ok).toBe(true);
+    const cm = { role: "ecm_provider" as const, staffId: "s-cf2" };
+    expect(runAction("moud_care_manager_assign", cm, undefined, { args: [cm, { episodeId: ep.id, staffId: cm.staffId }] }).ok).toBe(false);
+    expect(listAdditionalTeam().filter(x => x.patientId === p.id && !x.end).map(x => x.staffId)).toEqual(["s-cf1"]);
+    expect(runAction("moud_care_manager_assign", cc, undefined, { args: [cc, { episodeId: ep.id, staffId: cm.staffId }] }).ok).toBe(true);
+  });
+
+  it("ending an episode-only assignment immediately removes direct chart entry", () => {
+    const { p, ep } = freshEpisode();
+    const cm = { role: "ecm_provider" as const, staffId: "s-cf2" };
+    expect(runAction("moud_care_manager_assign", cc, undefined, { args: [cc, { episodeId: ep.id, staffId: cm.staffId }] }).ok).toBe(true);
+    expect(chartEntryFor(cm, p).ok).toBe(true);
+    expect(runAction("moud_care_manager_end", cc, undefined, { args: [cc, { episodeId: ep.id }] }).ok).toBe(true);
+    expect(chartEntryFor(cm, p).ok).toBe(false);
   });
 });

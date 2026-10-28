@@ -1,5 +1,15 @@
 # Roadmap
 
+## 28 Oct 20:23 access rules part B continuation (Draft)
+- [ ] Tighten MOUD care-manager self-only assignment/replacement; SQL mirror and same-transaction end/retain proof; green units.
+- [ ] Step 2 coordinator request/coverage/weekly review hosts; green units.
+- [ ] Step 3 Intake logged read-only 60-day host; green units.
+- [ ] Step 4 access-log reasons and full gate verification; green units.
+- [ ] Step 5 all-role rollback vectors and separately passing read policies.
+- [ ] Step 6 public browser then preview readback, final reports/Draft matrix.
+- [ ] Carry-overs: on-team HLOC therapist fixture; DEA controlled-substance prescriber checks.
+- Persistence OFF; nothing published; Part 2 matrix unchanged; commands browser-revoked until 2d.
+
 ## 28 Oct credentialing as-of fix (Draft)
 - [x] Exclusion screening judged as of booking time; DOS mode for billing readiness; tile shows checks due before booked visits; relative seeds; tests + re-pins; units 3,599/3,599.
 - [ ] Public browser 52/53: websiteSignup5 HLOC test hits the access-rules reason gate — resolve in the access-rules batch.
