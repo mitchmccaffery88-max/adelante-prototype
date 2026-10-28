@@ -105,6 +105,14 @@ export interface Attestation18019 {
 
 export type ServiceEnrollmentStatus = "not_started" | "submitted" | "active" | "inactive";
 
+export const ENROLLMENT_STATUS_LABEL: Record<ServiceEnrollmentStatus, string> = {
+  not_started: "Not started",
+  submitted: "Submitted",
+  active: "Active",
+  inactive: "Inactive",
+};
+export const enrollmentStatusLabel = (s: ServiceEnrollmentStatus) => ENROLLMENT_STATUS_LABEL[s];
+
 export interface ServicePayerEnrollment {
   payer: string;
   /** Service type id, or "*" for every service type with that payer. */
