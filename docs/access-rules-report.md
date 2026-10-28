@@ -28,7 +28,8 @@ All fixture transactions rolled back. Independent counts: auth users 0→0, acco
 
 - Candidate full unit suite: 3,585 passed, 11 failed; recorded, not accepted.
 - Restored app: **3,583/3,583 units**, 406 files, exit 0; 130.53 seconds.
-- Full public browser suite: started after restored units, one worker on :8080; completion result pending below.
+- Full public browser suite: **51/51 passed**, exit 0, 10.1 minutes, eight specs, one worker on :8080; started only after restored units completed. No test/config/timeout changes.
+- Preview build OK; Supabase linter reports no issues. Generated schema types are the only remaining source change.
 - Candidate gate/credential/Intake UI readback: not claimed; candidate implementation removed at the stop boundary.
 
 ## Resume scope

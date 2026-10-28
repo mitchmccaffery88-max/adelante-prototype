@@ -7,7 +7,7 @@
 - [ ] Complete main rollback acceptance and open passing chart/packet/handoff policies — blocked by `part2_no_consent_failed physician`; none opened.
 - [x] Document failed rollback attempts, zero retained fixture counts, report, Draft proposed matrix and architecture stop rule.
 - [x] Restore clean app/SQL boundary; restored units 3,583/3,583, 406 files, exit 0.
-- [ ] Complete isolated public browser validation of restored app — running after unit completion.
+- [x] Isolated restored-app public browser 51/51, exit 0, 10.1 minutes, one worker, after units; build OK and Supabase linter clean.
 - Persistence OFF; no TEST secrets/project, publishing, Cloud or GitHub. Phase 2d remains outside scope.
 
 ## 27 Oct credentialing — 28 Oct reconciliation (Draft)
