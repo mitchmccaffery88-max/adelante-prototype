@@ -3,7 +3,7 @@
 ## 27 Oct access rules — 28 Oct implementation (Draft)
 - [x] Inventory shared app gates, SQL entry and rollback harness; identified the superseded mandatory-site rule and pre-data rendering gap.
 - [x] Resolve Part 2 prerequisite: Mitch chose Keep existing exceptions; no-consent negatives target already consent-gated roles/classes.
-- [ ] Align direct/reasoned entry and shared pre-data gate — waiting on narrow superseded access-assertion/source-pin approval; app/SQL remain matched at the restored boundary.
+- [ ] Align direct/reasoned entry and shared pre-data gate — 28 Oct revised approval: reapply access helpers, direct-treatment Part 2 basis only, reason-only requires consent plus matrix; pending coordinated migration/proof.
 - [ ] Intake read-only 60-day packet/checklist window and logged opens — same coordinated retry; no partial window enabled.
 - [ ] Complete main rollback acceptance and open passing chart/packet/handoff policies — after narrow test compatibility approval and mirrored proofs; none opened.
 - [x] Document failed rollback attempts, zero retained fixture counts, report, Draft proposed matrix and architecture stop rule.
