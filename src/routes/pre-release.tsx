@@ -14,6 +14,7 @@ import { CoverageAtReleasePanel } from "@/components/coverage/CoverageAtReleaseP
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { runAction } from "@/lib/actions/runAction";
 import {
   AdelanteEHR,
   useEhr,
@@ -238,6 +239,11 @@ function OpenEpisodeForm() {
   const [cfId, setCfId] = useState<string>(cfStaff[0]?.id ?? "");
   const [date, setDate] = useState("");
 
+  // 28 Oct (Mitch, Draft): the episode care manager joins the care team through the named registry action.
+  const linkCareManager = (episodeId: string, cmId: string) => {
+    const r = runAction("moud_care_manager_assign", { role, staffId }, undefined, { args: [{ role, staffId }, { episodeId, staffId: cmId }] });
+    if (!r.ok) toast.message(`Care team not updated: ${r.reason}`);
+  };
   const submit = () => {
     const cf = getStaffMember(cfId);
     if (!cf || !date || (mode === "existing" ? !patientId : !firstName.trim() || !lastName.trim())) {
@@ -246,7 +252,7 @@ function OpenEpisodeForm() {
     }
     try {
       if (mode === "new") {
-        AdelanteEHR.openPreReleaseEpisodeForNewPatient({
+        const created = AdelanteEHR.openPreReleaseEpisodeForNewPatient({
           firstName,
           lastName,
           ...(dob ? { dob } : {}),
@@ -257,13 +263,14 @@ function OpenEpisodeForm() {
           actorRole: role,
           ...receiving,
         });
+        linkCareManager(created.episode.id, cf.id);
         setFirstName("");
         setLastName("");
         setDob("");
         toast.success("Record created and pre-release episode opened.");
         return;
       }
-      AdelanteEHR.openPreReleaseEpisode({
+      const opened = AdelanteEHR.openPreReleaseEpisode({
         patientId,
         anticipatedReleaseDate: date,
         cfCareManagerStaffId: cf.id,
@@ -272,6 +279,7 @@ function OpenEpisodeForm() {
         actorRole: role,
         ...receiving,
       });
+      linkCareManager(opened.id, cf.id);
       toast.success("Pre-release episode opened — task list generated.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not open the episode.");
