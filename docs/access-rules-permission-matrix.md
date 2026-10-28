@@ -1,6 +1,6 @@
-# Chart entry matrix — Draft proposal, not enabled
+# Chart entry matrix — Draft, partial implementation
 
-**Draft — pending go-live permissions audit.** Mitch confirmed existing treating-clinician Part 2 exceptions remain; current app/SQL entry rule is still restored, pending coordinated acceptance.
+**Draft — pending go-live permissions audit. Part 2 internal-use basis: pending counsel confirmation.** Access-rules entry helpers reapplied; persistence OFF and unproved read policies closed.
 
 | Role group | Proposed direct entry | Proposed reasoned entry | Clinical record classes |
 |---|---|---|---|
@@ -12,4 +12,4 @@
 | Group facilitator relationship | Existing group context only | Full chart requires an independent direct/reason grant | Group-context class limits and Part 2 unchanged |
 | Patient / advocate | Unchanged | Not applicable | Existing own-row / consented slice |
 
-No permission-matrix runtime values or snapshots changed at this stop. Group scope never grants a full chart; care-team membership never grants Part 2 consent. No-consent negative tests apply only to roles/classes already requiring consent.
+Matrix grants unchanged. Direct treating relationships preserve only existing matrix-granted Part 2 classes. Reason-only clinical entry requires applicable class-specific consent plus matrix permission; revoke re-locks. Standard TPO only satisfies the existing packet rule, not this reason-only clinical gate. Coordinator/operations consent gates and group limits remain separate. Registry snapshot/source-pin reconciliation and complete policy acceptance remain unfinished.

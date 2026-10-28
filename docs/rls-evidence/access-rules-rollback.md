@@ -1,5 +1,18 @@
 # Access rules — main rollback evidence
 
+## Revised 28 Oct 16:12 decision — current retry evidence
+
+**Part 2 internal-use basis: pending counsel confirmation.** Access-rules helpers reapplied; no chart/packet/handoff policy opened; commands remain revoked and persistence OFF.
+
+- Reapplication: `20261028161450_42bdba2a-5c2e-4cd6-af6f-f024f311e513`.
+- Reason-only Part 2 composition: `20261028161631_5a975188-74c3-4b57-bda5-90a0737b750b`, corrected consent/matrix ordering in `20261028162245_48356fa1-6b45-4744-bb73-303d0bda8099`.
+- All-role rollback proof: `20261028162346_5c7d2fa1-e0e1-4c44-b4db-8d4e73347bfb` succeeded. All 18 roles use real `request.jwt.claims`, local authenticated role, actual account/acting-role helpers; no overrides. Positive team and reason access paired with off-team/no-reason and expired-reason negatives; treating physician/PMHNP/therapist/SUD counselor matrix SUD-screener grants preserved; reason-only without consent denied. Every public base-table count plus auth.users compared after nested sentinel rollback; outer transaction also rolled back.
+- Consent-scope/revoke rollback: `20261028162530_4a25c373-bd61-4dbf-9f97-0826089ad0e9` succeeded. Physician reason-only no-consent lock; specific `screeners_sud` written consent read; other classes denied; revoke locks again. Key counts compared after nested rollback. Initial invalid signature code failed and rolled back; accepted `wet_sign_upload` fixed the fixture only.
+
+Independent counts before retry fixtures and after the failed consent attempt: auth.users **0→0**, accounts **0→0**, patients **18→18**, reason grants **0→0**, coverage **0→0**. All-public-table count equality is additionally asserted inside the successful all-role proof; no retained fictional accounts or grants.
+
+These are helper proofs, **not read-policy acceptance**. On-call/coverage/supervisor/group and authenticated Intake-window row cases, patient/advocate composition and policy-level positive/negative reads remain unproved. Opened policies this retry: **none**. App full units: 3,571 passed / 13 failed; no public browser retry while units fail. Historical evidence below is not the current validation result.
+
 Requested 27 Oct; investigated and attempted 28 Oct 2026. **Stopped at a real Part 2 policy conflict; no read policies opened.** Connected main `bnvukmpmwuhftvjpnwqi` only. No TEST variables/project, Cloud, GitHub or publishing. Persistence OFF.
 
 28 Oct clarification: Mitch chose **Keep existing exceptions**. The failed universal no-consent assumption is superseded: future negative tests must target already consent-gated roles/classes, while proving treating-clinician exceptions unchanged. No new database test or policy migration was run to record this decision; historical results below remain historical, not newly accepted.
