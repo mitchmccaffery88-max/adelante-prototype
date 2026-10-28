@@ -1,5 +1,13 @@
 # Roadmap
 
+## 27 Oct access rules — 28 Oct implementation (Draft)
+- [ ] Inventory shared app gates, SQL entry and rollback harness; reconcile standing rules.
+- [ ] Align direct team/coverage/on-call/supervisor/group-context entry and reasoned end-of-day access with shared pre-data gate, minimal search, logs/review/requests.
+- [ ] Intake read-only 60-day packet/checklist window, logged opens, unchanged Part 2 gates.
+- [ ] Main-only rollback claims proofs and before/after counts; separately open only passing chart/packet/handoff policies.
+- [ ] Mirrored app tests, full units then isolated public browser; evidence/report, Draft permission matrix and architecture update.
+- Persistence OFF; no TEST secrets/project, publishing, Cloud or GitHub. Phase 2d remains outside scope.
+
 ## 27 Oct credentialing — 28 Oct reconciliation (Draft)
 - [x] Existing ehr-ext credential/enrollment records are the sole authority; self-registration removes module-load roster reads; roster NPI remains single-source.
 - [x] Historical payer/service evaluator, stricter approved missing-data coverage, unchanged old assertions and exact-once reconciliation source ledger.
