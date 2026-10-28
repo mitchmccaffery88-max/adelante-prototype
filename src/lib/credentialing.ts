@@ -533,7 +533,8 @@ export function expiringItems(now: Date = new Date()): ExpiringItem[] {
       if (!c.expiresAt) continue;
       const daysLeft = asDay(c.expiresAt) - today;
       if (daysLeft < 0) continue; // expired rows fail the rule itself; they are not "expiring"
-      const threshold = CREDENTIALING_DRAFT.expiryTaskThresholdsDays.find((t) => daysLeft <= t);
+      // Tightest crossed threshold: 25 days left → 30, 80 days left → 90.
+      const threshold = [...CREDENTIALING_DRAFT.expiryTaskThresholdsDays].sort((a, b) => a - b).find((t) => daysLeft <= t);
       if (threshold !== undefined) out.push({ staffId: r.staffId, item: c.item, expiresAt: c.expiresAt, daysLeft, threshold });
     }
   }

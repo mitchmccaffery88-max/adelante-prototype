@@ -1,7 +1,7 @@
 // 27 Oct (Mitch) — clinician credentialing batch. Draft — pending the go-live
 // permissions audit and compliance review (DHCS MHSUDS IN 18-019).
 import { describe, expect, it } from "vitest";
-import { AdelanteEHR } from "../ehr";
+import { AdelanteEHR, bookingCredentialingBlock } from "../ehr";
 import { AdelanteEHRExt } from "../ehr-ext";
 import { canAccess, STAFF_ROLES, type StaffRole } from "../roles";
 import { roleHasChartEntry } from "../chartAccess";
@@ -42,8 +42,9 @@ function freshPatient() {
 const cc = { id: "Priya Raman", role: "clinical_coordinator" as const };
 let slotN = 0;
 function futureSlot(): string {
-  // Weekday-afternoon slots far enough out to avoid conflicts.
-  const d = new Date(Date.now() + (30 + slotN++) * 86400_000);
+  // A few days out — inside every seeded exclusion check's validity window —
+  // each booking on its own day to avoid conflicts.
+  const d = new Date(Date.now() + (3 + slotN++) * 86400_000);
   d.setHours(11, 0, 0, 0);
   while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
   return d.toISOString();
@@ -215,8 +216,10 @@ describe("booking block", () => {
   });
 
   it("never blocks non-billable support work", () => {
-    const a = book("c6", P1, "case_management");
-    expect(a.clinicianId).toBe("c6");
+    // c6 fails the rule, but the block helper skips non-billable services entirely.
+    expect(bookingCredentialingBlock("c6", "case_management", P1, futureSlot())).toBeUndefined();
+    expect(bookingCredentialingBlock("c6", "peer_support", P1, futureSlot())).toBeUndefined();
+    expect(bookingCredentialingBlock("c6", "therapy_individual", P1, futureSlot())).toMatch(/can't be booked/i);
   });
 
   it("does not block when the patient has no payer on file (coverage is a separate readiness item)", () => {
