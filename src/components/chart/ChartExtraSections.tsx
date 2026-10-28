@@ -11,6 +11,7 @@ import { ConsentRecordsPanel } from "@/components/consent/ConsentRecordsPanel";
 import { AiConsentCard } from "@/components/scribe/AiConsentCard";
 import { accountingOfDisclosures, CHANNEL_LABEL } from "@/lib/part2Disclosure";
 import { accessEventsFor, ACCESS_LOG_LABEL, ACCESS_LOG_ROLES } from "@/lib/accessLog";
+import { isOpenReason, OPEN_REASONS } from "@/lib/chartAccessRules";
 import { canUseCaseloadReview } from "@/lib/caseloadRoles";
 import { patientStatus, STATUS_LABEL, isWeekReviewed } from "@/lib/caseloadReview";
 
@@ -77,7 +78,7 @@ export function WhoAccessed({ patientId }: { patientId: string }) {
               {r.system ? (
                 <span className="text-muted-foreground" data-testid="access-row-system">system event · {r.sectionId} · triggered by {(r.triggeredBy ?? []).join(", ")}</span>
               ) : (
-                <span className="text-muted-foreground">{(r.role ?? "").replace(/_/g, " ")} · {r.kind} · {r.sectionId}{r.viewedAs ? ` · viewed as ${r.viewedAs}` : ""}</span>
+                <span className="text-muted-foreground">{(r.role ?? "").replace(/_/g, " ")} · {r.kind} · {r.sectionId}{r.viewedAs ? ` · viewed as ${r.viewedAs}` : ""}{r.reasonCode && isOpenReason(r.reasonCode) ? ` · Reason: ${OPEN_REASONS[r.reasonCode]}` : ""}</span>
               )}
             </li>
           ))}

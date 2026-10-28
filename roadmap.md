@@ -4,15 +4,16 @@
 - [x] Tighten MOUD care-manager self-only assignment/replacement; SQL mirror and same-transaction end/retain proof; units 3,607/3,607, no retained fixtures.
 - [x] Step 2 coordinator request/coverage/weekly review hosts; units 3,627/3,627; real preview request/open/approval/coverage/review at 1280 and 390.
 - [x] Step 3 (28 Oct 21:05 continuation) Intake logged read-only 60-day host; units 3,648/3,648; real checklist/document audit readback and live closure in preview, 1280/390.
-- [ ] Step 4 access-log reasons and full gate verification; green units.
+- [ ] Step 4 (28 Oct green-unit checkpoint): reason log and global search/deep-link/print/inline embedded gate readback pass; units 3,658/3,658. Today/inbox/bell/quick-peek browser proof remains; DEA Booking UI capture/Billing fact propagation stops at approved privacy allowlists (no expansion).
 - [ ] Step 5 all-role rollback vectors and separately passing read policies.
 - [ ] Step 6 public browser then preview readback, final reports/Draft matrix.
-- [ ] Carry-overs: on-team HLOC therapist fixture; DEA controlled-substance prescriber checks.
+- [x] Carry-over: on-team HLOC therapist fixture via registry; unchanged HLOC browser 1/1 passed after green units.
+- [ ] DEA carry-over: evaluator/booking guard/readiness checks and 8 tests pass; privacy-safe UI capture, Billing flags/count projection and end-to-end proof remain, no allowlist expansion.
 - Persistence OFF; nothing published; Part 2 matrix unchanged; commands browser-revoked until 2d.
 
 ## 28 Oct credentialing as-of fix (Draft)
 - [x] Exclusion screening judged as of booking time; DOS mode for billing readiness; tile shows checks due before booked visits; relative seeds; tests + re-pins; units 3,599/3,599.
-- [ ] Public browser 52/53: websiteSignup5 HLOC test hits the access-rules reason gate — resolve in the access-rules batch.
+- [ ] Full public rerun still pending; the prior HLOC failure is resolved by on-team fixture, targeted unchanged HLOC assertions pass 1/1.
 
 ## 27 Oct access rules — 28 Oct implementation (Draft)
 - [ ] 28 Oct 16:32 approved resume: narrow superseded assertions/pins/snapshot, MOUD normal team membership, remaining hosts and rollback vectors, separately proven read groups; full units then public browser/readback. Stop on unrelated failures.

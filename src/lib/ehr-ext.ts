@@ -585,7 +585,7 @@ function seedRecord(r: ClinicianCredentialing) {
     supervision: reg?.supervision, exclusionChecks: r.exclusionChecks, attestation18019: r.attestation,
     educationAttestedAt: r.educationAttestedAt, ceAttestedAt: r.ceAttestedAt, recredentialingDueAt: r.recredentialingDueAt,
     documentStatus: "simulated_unavailable" });
-  if (r.dea) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "dea", number: r.dea.number, expiresAt: r.dea.expiresAt, uploadedAt: iso(), seed: true });
+  if (r.dea) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "dea", number: r.dea.number, expiresAt: r.dea.expiresAt, verifiedAt: r.dea.verifiedAt, uploadedAt: iso(), seed: true });
   if (r.malpractice) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "malpractice", number: r.malpractice.policy, carrier: r.malpractice.carrier, expiresAt: r.malpractice.expiresAt, uploadedAt: iso(), seed: true });
   if (r.boardCertification) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "board_cert", number: r.boardCertification, uploadedAt: iso(), seed: true });
   for (const e of r.enrollments) payerEnrollments.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, payer: e.payer, serviceType: e.serviceType, status: ({ active: "enrolled", submitted: "pending", not_started: "not_enrolled", inactive: "terminated" } as const)[e.status], effectiveFrom: e.effectiveAt, caqhId: e.caqhId, billingTin: "DEMO-TIN" });
@@ -652,7 +652,7 @@ function seedCredentialAuthorityDemo() {
     staffId: "s-th3",
     clinicianId: "c3",
     license: { licenseType: "PMHNP", number: "DEMO-LIC-0003", state: "CA", issuedAt: daysFromNow(-2432), expiresAt: daysFromNow(320), verificationSource: "brn", verifiedAt: daysFromNow(-15), verifiedBy: "s-cred1", method: "manual" },
-        dea: { number: "DEMO-LIC-0004", expiresAt: daysFromNow(400) },
+        dea: { number: "DEMO-LIC-0004", expiresAt: daysFromNow(400), verifiedAt: daysFromNow(-30) },
     boardCertification: "PMHNP-BC",
     malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(350) },
     exclusionChecks: seedExclusions("s-th3", 6),
@@ -671,7 +671,7 @@ function seedCredentialAuthorityDemo() {
     staffId: "s-np1",
     clinicianId: "c5",
     license: { licenseType: "MD", number: "DEMO-LIC-0005", state: "CA", issuedAt: daysFromNow(-7789), expiresAt: daysFromNow(500), verificationSource: "medical_board_ca", verifiedAt: daysFromNow(-10), verifiedBy: "s-cred1", method: "manual" },
-        dea: { number: "DEMO-LIC-0006", expiresAt: daysFromNow(600) },
+        dea: { number: "DEMO-LIC-0006", expiresAt: daysFromNow(600), verifiedAt: daysFromNow(-30) },
     boardCertification: "Psychiatry",
     malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(500) },
     exclusionChecks: seedExclusions("s-np1", 45),
@@ -1999,7 +1999,7 @@ function projectCredentialAuthority(staffId: string): ClinicianCredentialing | u
   return { staffId, clinicianId: member?.clinicianId, npi: member?.npi,
     license: reg ? undefined : { licenseType: primary.licenseType ?? "License", number: primary.number ?? "", state: primary.issuingState ?? "", issuedAt: primary.issuedAt, expiresAt: primary.expiresAt, verifiedAt: primary.verifiedAt, verifiedBy: primary.verifiedBy, verificationSource: primary.verificationSource, method: "manual" },
     registration: reg ? { registrationType: primary.registrationType ?? "Registration", number: primary.number ?? "", expiresAt: primary.expiresAt, verifiedAt: primary.verifiedAt, verifiedBy: primary.verifiedBy, supervision: primary.supervision } : undefined,
-    dea: dea ? { number: dea.number ?? "", expiresAt: dea.expiresAt } : undefined,
+    dea: dea ? { number: dea.number ?? "", expiresAt: dea.expiresAt, verifiedAt: dea.verifiedAt } : undefined,
     malpractice: mp ? { carrier: mp.carrier ?? "", policy: mp.number ?? "", expiresAt: mp.expiresAt } : undefined,
     boardCertification: docs.find(c => c.kind === "board_cert")?.number,
     exclusionChecks: primary.exclusionChecks ?? [], attestation: primary.attestation18019,
@@ -2024,7 +2024,7 @@ registerCredentialingAuthority({
       if (!doc) { doc = { id: uid(), clinicianId: cid, kind, uploadedAt: iso() }; credentials.push(doc); }
       if (typeof value === "string") doc.number = value;
       else if ("carrier" in value) Object.assign(doc, { carrier: value.carrier, number: value.policy, expiresAt: value.expiresAt });
-      else Object.assign(doc, { number: value.number, expiresAt: value.expiresAt });
+      else Object.assign(doc, { number: value.number, expiresAt: value.expiresAt, verifiedAt: value.verifiedAt });
     }
     for (const e of r.enrollments) { const existing = payerEnrollments.find(x => x.clinicianId === cid && x.payer === e.payer && (x.serviceType ?? "*") === e.serviceType); const row = { clinicianId: cid, payer: e.payer, serviceType: e.serviceType, billingTin: existing?.billingTin ?? "", status: ({ active: "enrolled", submitted: "pending", not_started: "not_enrolled", inactive: "terminated" } as const)[e.status], effectiveFrom: e.effectiveAt, caqhId: e.caqhId }; if (existing) Object.assign(existing, row); else payerEnrollments.push({ ...row, id: uid() }); }
     AdelanteEHRExt.syncLicenseExpiry(cid); ehrBus.publish({ type: "credential.updated", clinicianId: cid });

@@ -16,6 +16,7 @@ import {
   type DisclosureChannel,
   type RecipientType,
 } from "@/lib/part2Disclosure";
+import { isOpenReason, OPEN_REASONS } from "@/lib/chartAccessRules";
 import { accessEventsFor, ACCESS_LOG_LABEL } from "@/lib/accessLog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -181,6 +182,7 @@ function DisclosureLogPage() {
           <>
             {(a.role ?? "").replace(/_/g, " ")} · {a.kind} · {a.sectionId}
             {a.viewedAs ? ` · viewed as ${a.viewedAs}` : ""}
+            {a.reasonCode && isOpenReason(a.reasonCode) ? ` · Reason: ${OPEN_REASONS[a.reasonCode]}` : ""}
           </>
         ),
       },
