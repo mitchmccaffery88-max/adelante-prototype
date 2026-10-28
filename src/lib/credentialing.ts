@@ -215,6 +215,12 @@ export interface CredentialingCheckInput {
   serviceType?: string;
   /** ISO date/datetime of the service. */
   dateOfService: string;
+  /**
+   * 28 Oct fix (Mitch, Draft): the moment exclusion screening is judged.
+   * Booking passes now; billing readiness passes the date of service.
+   * Omitted = the date of service (historical mode).
+   */
+  asOf?: string;
 }
 
 export type CredentialingCheckResult = { ok: true } | { ok: false; reasons: CredentialingReasonCode[] };
@@ -257,14 +263,16 @@ export function evaluateCredentialing(
     reasons.push("license_missing");
   }
 
-  // 28 Oct credentialing reconciliation: historical, no current-clock reads.
+  // 28 Oct fix: exclusion screening is judged as of `asOf` (never requires a
+  // check that hasn't happened yet); end-dated items stay on the date of service.
+  const x = input.asOf ? asDay(input.asOf) : d;
   for (const { key } of EXCLUSION_LISTS) {
     const latest = record.exclusionChecks
-      .filter((c) => c.list === key && asDay(c.checkedAt) <= d)
+      .filter((c) => c.list === key && asDay(c.checkedAt) <= x)
       .sort((a, b) => b.checkedAt.localeCompare(a.checkedAt))[0];
     if (!latest) reasons.push("exclusion_check_overdue");
     else if (latest.result === "hit") reasons.push("exclusion_hit");
-    else if (asDay(latest.nextDueAt) < d) reasons.push("exclusion_check_overdue");
+    else if (asDay(latest.nextDueAt) < x) reasons.push("exclusion_check_overdue");
   }
 
   // 28 Oct credentialing reconciliation: unknown facts cannot silently pass.
@@ -347,8 +355,17 @@ export function credentialedForService(
   payer: string | undefined,
   serviceType: string | undefined,
   dateOfService: string,
+  opts: { asOf?: string } = {},
 ): CredentialingCheckResult {
-  return evaluateCredentialing(credentialingRecordForStaff(staffId), { payer, serviceType, dateOfService });
+  const asOf = opts.asOf ?? new Date().toISOString();
+  return evaluateCredentialing(credentialingRecordForStaff(staffId), { payer, serviceType, dateOfService, asOf });
+}
+
+// 28 Oct fix: ehr self-registers its booked visits so the coordinator tile can
+// show checks falling due before them (no ehr import here — avoids a cycle).
+let bookedVisitSource: (() => AppointmentLike[]) | undefined;
+export function registerBookedVisitSource(source: () => AppointmentLike[]) {
+  bookedVisitSource = source;
 }
 
 // ---------------------------------------------------------------- guards
@@ -554,8 +571,10 @@ export function expiringItems(now: Date = new Date()): ExpiringItem[] {
 export interface ExclusionDueRow {
   staffId: string;
   list: ExclusionList;
-  state: "due" | "overdue" | "never";
+  state: "due" | "overdue" | "never" | "before_visits";
   nextDueAt?: string;
+  /** Booked billable visits dated after the check falls due (count only). */
+  visitsAfterDue?: number;
 }
 
 export function exclusionChecksDue(now: Date = new Date()): ExclusionDueRow[] {
@@ -566,7 +585,16 @@ export function exclusionChecksDue(now: Date = new Date()): ExclusionDueRow[] {
       const latest = r.exclusionChecks.filter((c) => c.list === key).sort((a, b) => b.checkedAt.localeCompare(a.checkedAt))[0];
       if (!latest) out.push({ staffId: r.staffId, list: key, state: "never" });
       else if (asDay(latest.nextDueAt) < today) out.push({ staffId: r.staffId, list: key, state: "overdue", nextDueAt: latest.nextDueAt });
-      else if (asDay(latest.nextDueAt) - today <= 7) out.push({ staffId: r.staffId, list: key, state: "due", nextDueAt: latest.nextDueAt });
+      else {
+        const due = asDay(latest.nextDueAt);
+        const visitsAfterDue = r.clinicianId
+          ? (bookedVisitSource?.() ?? []).filter(
+              (a) => a.clinicianId === r.clinicianId && a.status === "scheduled" && isBillableServiceType(a.serviceType) && asDay(a.start) > due,
+            ).length
+          : 0;
+        if (visitsAfterDue > 0) out.push({ staffId: r.staffId, list: key, state: "before_visits", nextDueAt: latest.nextDueAt, visitsAfterDue });
+        else if (due - today <= 7) out.push({ staffId: r.staffId, list: key, state: "due", nextDueAt: latest.nextDueAt });
+      }
     }
   }
   return out;
@@ -683,14 +711,17 @@ export function credentialingReviewFlags(
     if (a.status !== "scheduled" || !isBillableServiceType(a.serviceType)) continue;
     const member = STAFF_ROSTER.find((s) => s.clinicianId === a.clinicianId);
     if (!member) continue;
-    const res = credentialedForService(member.id, payerForPatient(a.patientId), a.serviceType, a.start);
+    // 28 Oct fix: judged as of now until the visit day, then on the visit day — flag, never cancel.
+    const now = new Date().toISOString();
+    const res = credentialedForService(member.id, payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now });
     if (!res.ok) out.push({ kind: "appointment", id: a.id, staffId: member.id, reasons: res.reasons });
   }
   for (const c of claims) {
     if (c.state === "void" || c.state === "paid") continue;
     const member = STAFF_ROSTER.find((s) => s.clinicianId === c.clinicianId);
     if (!member) continue;
-    const res = credentialedForService(member.id, payerForPatient(c.patientId), c.serviceType, c.serviceDate ?? "");
+    // Billing readiness: exclusion judged on the date of service (unchanged mode).
+    const res = credentialedForService(member.id, payerForPatient(c.patientId), c.serviceType, c.serviceDate ?? "", { asOf: c.serviceDate ?? "" });
     if (!res.ok) out.push({ kind: "claim", id: c.id, staffId: member.id, reasons: res.reasons });
   }
   return out;

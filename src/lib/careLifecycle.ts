@@ -111,7 +111,7 @@ export function billableService(pid: string) {
   const payer = AdelanteEHR.activeCoveragePlan(pid)?.payer;
   const check = signed
     ? staff
-      ? credentialedForService(staff.id, payer, signed.serviceType, signed.start)
+      ? credentialedForService(staff.id, payer, signed.serviceType, signed.start, { asOf: signed.start })
       : ({ ok: false, reasons: ["no_record"] } as const)
     : undefined;
   return {
