@@ -40,7 +40,7 @@ Current scenarios include: c1 fully credentialed/enrolled; c4 associate with sup
 - Sole failing assertion: `simulatedLabelsSL.test.tsx`, `credential_monitor_simulated: every tied registry action writes exactly one simulated action audit`. The transport assertion expects success, but the monitor feature is deliberately off and `runAction` correctly blocks it before calling the substituted transport. No assertion was weakened and the disabled channel was not enabled to force a pass.
 - Full run also exposed import-order seed errors: `bookingCredentialingBlock` reads an uninitialized `STAFF_ROSTER` in some module graphs. These caught seed errors are not an acceptable clean run even though their containing tests pass.
 - Full public browser suite **not started**: units are not green, and work stopped at the explicit conflict boundary. No overlapping test suites.
-- Preview build telemetry is absent in this sandbox; no manual build/typecheck was run. Credentialing UI end-to-end remains unverified, and no completion claim is made.
+- Latest preview build entry: **build OK**, 28 Oct 01:33:44 UTC; no manual build/typecheck was run. Credentialing UI end-to-end remains unverified, and no completion claim is made.
 - Logs: `/tmp/credentialing-targeted.log`, `/tmp/credentialing-full-units.log` (sandbox only; no secrets).
 
 ## Clean-boundary conflict and next decision
