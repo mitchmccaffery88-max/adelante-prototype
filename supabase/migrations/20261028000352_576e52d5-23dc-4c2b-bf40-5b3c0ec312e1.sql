@@ -1,0 +1,2 @@
+alter policy identity_lane on public.identity_review_items using(org_id=app.org_id() and app.current_role() in ('intake_coordinator','sys_admin','clinical_coordinator') and (patient_id is null or not app.phase2_restricted(patient_id)) and not exists(select 1 from unnest(candidate_patient_ids) p where app.phase2_restricted(p)));
+notify pgrst,'reload schema';
