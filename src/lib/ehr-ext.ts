@@ -835,6 +835,7 @@ export const AdelanteEHRExt = {
   listFacilities: () => facilities,
   getFacility: (id?: string) => facilities.find((f) => f.id === id),
 
+  auditCredentialTransition: (actor: { role: string; staffId?: string }, staffId: string, blocked: boolean) => AdelanteEHR.recordAuditEvent({ category: "action", action: blocked ? "credential.blocked" : "credential.unblocked", actorId: actor.staffId ?? actor.role, actorRole: actor.role, detail: { staffId } }),
   getClinicianProfile: (id: string) => clinicianProfiles.find((p) => p.clinicianId === id),
   listClinicianProfiles: () => clinicianProfiles,
 
@@ -2013,6 +2014,7 @@ function projectCredentialAuthority(staffId: string): ClinicianCredentialing | u
 registerCredentialingAuthority({
   list: () => [...new Set([...STAFF_ROSTER.map(m => m.id), ...credentials.filter(c => !STAFF_ROSTER.some(m => m.clinicianId === c.clinicianId)).map(c => c.clinicianId)])].flatMap(id => { const r = projectCredentialAuthority(id); return r ? [r] : []; }),
   subscribe,
+  auditTransition: (staffId, actor, blocked) => AdelanteEHR.recordAuditEvent({ category: "action", action: blocked ? "credential.blocked" : "credential.unblocked", actorId: actor.staffId ?? actor.role, actorRole: actor.role, detail: { staffId } }),
   write: (staffId, change) => {
     const member = getStaffMember(staffId); const cid = member?.clinicianId ?? staffId;
     const r = projectCredentialAuthority(staffId) ?? { staffId, clinicianId: member?.clinicianId, exclusionChecks: [], enrollments: [], documentStatus: "simulated_unavailable" as const };

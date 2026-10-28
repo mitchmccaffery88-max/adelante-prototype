@@ -297,6 +297,7 @@ export interface CredentialingAuthority {
   list(): ClinicianCredentialing[];
   write(staffId: string, change: (record: ClinicianCredentialing) => void): ClinicianCredentialing;
   subscribe(listener: () => void): () => void;
+  auditTransition?(staffId: string, actor: CredentialingActor, blocked: boolean): void;
 }
 let authority: CredentialingAuthority | undefined;
 export function registerCredentialingAuthority(source: CredentialingAuthority) {
@@ -368,9 +369,13 @@ function assertCredentialing(actor: CredentialingActor) {
   if (!canManageCredentialing(actor.role)) throw new Error(CREDENTIALING_DENIED);
 }
 
-function writeRecord(staffId: string, change: (record: ClinicianCredentialing) => void) {
+function writeRecord(actor: CredentialingActor, staffId: string, change: (record: ClinicianCredentialing) => void) {
   if (!authority) throw new Error("Credential records are not ready.");
-  return authority.write(staffId, change);
+  const before = blockedClinicians().some(r => r.staffId === staffId);
+  const record = authority.write(staffId, change);
+  const after = blockedClinicians().some(r => r.staffId === staffId);
+  if (before !== after) authority.auditTransition?.(staffId, actor, after);
+  return record;
 }
 
 // ---------------------------------------------------------------- mutations
@@ -379,7 +384,7 @@ function writeRecord(staffId: string, change: (record: ClinicianCredentialing) =
 
 export function upsertLicense(actor: CredentialingActor, staffId: string, license: LicenseRecord): ClinicianCredentialing {
   assertCredentialing(actor);
-  return writeRecord(staffId, (r) => {
+  return writeRecord(actor, staffId, (r) => {
   r.license = license;
   });
 }
@@ -390,7 +395,7 @@ export function recordVerification(
   input: { source: VerificationSource; at?: string },
 ): ClinicianCredentialing {
   assertCredentialing(actor);
-  return writeRecord(staffId, (r) => {
+  return writeRecord(actor, staffId, (r) => {
   const target = r.license ?? r.registration;
   if (!target) throw new Error("There is no license or registration on file to verify.");
   const at = input.at ?? iso();
@@ -408,7 +413,7 @@ export function recordExclusionCheck(
   input: { list: ExclusionList; result: "clear" | "hit"; checkedAt?: string },
 ): ClinicianCredentialing {
   assertCredentialing(actor);
-  return writeRecord(staffId, (r) => {
+  return writeRecord(actor, staffId, (r) => {
   const checkedAt = input.checkedAt ?? iso();
   const nextDueAt = new Date(+new Date(checkedAt) + CREDENTIALING_DRAFT.exclusionCadenceDays * dayMs).toISOString();
   r.exclusionChecks = [...r.exclusionChecks, { list: input.list, checkedAt, result: input.result, nextDueAt }];
@@ -436,7 +441,7 @@ export function setServiceEnrollment(
   input: { payer: string; serviceType: string; status: ServiceEnrollmentStatus; effectiveAt?: string; caqhId?: string },
 ): ClinicianCredentialing {
   assertCredentialing(actor);
-  return writeRecord(staffId, (r) => {
+  return writeRecord(actor, staffId, (r) => {
   const i = r.enrollments.findIndex((e) => e.payer === input.payer && e.serviceType === input.serviceType);
   const row: ServicePayerEnrollment = {
     payer: input.payer,
@@ -456,7 +461,7 @@ export function recordAttestation(
   input: { covers: Attestation18019["covers"]; signedAt?: string },
 ): ClinicianCredentialing {
   assertCredentialing(actor);
-  return writeRecord(staffId, (r) => {
+  return writeRecord(actor, staffId, (r) => {
   const all = Object.values(input.covers).every(Boolean);
   r.attestation = {
     status: all ? "signed" : "pending",
