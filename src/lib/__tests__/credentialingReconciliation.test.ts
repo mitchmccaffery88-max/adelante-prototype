@@ -44,7 +44,7 @@ describe('credentialing reconciliation authority', () => {
   it('existing writer registry path matches role gates', () => {
     for (const { key: role } of STAFF_ROLES) {
       const result = runAction('credential_verify', { role, staffId: 'probe' }, undefined, { via: 'credentialRecordCommand', args: [{ role, staffId: 'probe' }, 'clear', { id: 'missing' }] });
-      expect(result.ok).toBe(['sys_admin', 'credentialing_coordinator'].includes(role));
+      expect(result.ok).toBe(['sys_admin', 'clinical_coordinator', 'credentialing_coordinator'].includes(role));
     }
   });
   it('monitor attempt is simulated, exactly one audit and no live success', () => {
