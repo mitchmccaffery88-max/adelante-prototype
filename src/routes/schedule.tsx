@@ -176,7 +176,7 @@ function SchedulePage() {
       toast.error(r.reason);
       return;
     }
-    const outcome = (r as { result?: { outcome?: string } }).result?.outcome;
+    const outcome = (r.value as { outcome?: string } | undefined)?.outcome;
     toast.success(outcome === "already_scheduled" ? sc.askAlreadyScheduled : outcome === "already_requested" ? sc.askAlreadyRequested : sc.askSent);
     navigate({ to: "/schedule", search: { tab: "yours" } });
   };

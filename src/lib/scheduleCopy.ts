@@ -56,6 +56,11 @@ const EN = {
   pickTimeLabel: "Pick a time",
   full: "Full",
   nOpen: (n: number) => `${n} open`,
+  askMyTeam: "Ask my team",
+  askMyTeamHelp: "Your care team sets up this kind of visit with you. Send a request and someone will reach out to find a time.",
+  askSent: "Sent to your team. Someone will reach out to find a time.",
+  askAlreadyRequested: "You already asked for this. Your team will reach out.",
+  askAlreadyScheduled: "You already have this kind of visit scheduled.",
 };
 
 type Copy = typeof EN;
@@ -112,6 +117,12 @@ const ES: Copy = {
   pickTimeLabel: "Elige una hora",
   full: "Lleno",
   nOpen: (n) => `${n} libre(s)`,
+  // Borrador — pendiente de revisión de traducción.
+  askMyTeam: "Pedir a mi equipo",
+  askMyTeamHelp: "Tu equipo de atención organiza este tipo de cita contigo. Envía una solicitud y alguien te contactará para buscar una hora.",
+  askSent: "Enviado a tu equipo. Alguien te contactará para buscar una hora.",
+  askAlreadyRequested: "Ya lo pediste. Tu equipo te contactará.",
+  askAlreadyScheduled: "Ya tienes una cita de este tipo programada.",
 };
 
 export function scheduleCopy(lang: string): Copy {
