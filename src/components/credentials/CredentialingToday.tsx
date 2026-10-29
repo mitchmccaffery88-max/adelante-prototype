@@ -29,6 +29,8 @@ import {
   enrollmentsPending,
   useCredentialing,
   EXCLUSION_LISTS,
+  roleCredentialGaps,
+  UNLICENSED_ROLE_REQUIREMENTS_DRAFT,
 } from "@/lib/credentialing";
 import { getStaffMember, type StaffRole } from "@/lib/roles";
 import { runAction } from "@/lib/actions/runAction";
@@ -53,6 +55,7 @@ const TILE_ICONS = {
   recredentialing: ClipboardCheck,
   enrollment: BadgeCheck,
   blocked: UserX,
+  role_credentials: CircleAlert,
 } as const;
 
 function nameOf(staffId: string): string {
@@ -113,7 +116,7 @@ export function CredentialingToday({ role, staffId }: { role: StaffRole; staffId
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" data-testid="cred-today-tiles">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" data-testid="cred-today-tiles">
         {tiles.map((t) => {
           const Icon = TILE_ICONS[t.key];
           return (
@@ -253,6 +256,8 @@ export function CredentialingToday({ role, staffId }: { role: StaffRole; staffId
         )}
       </Card>
 
+      <RoleCredentialsCard />
+
       <Card className="space-y-2 p-4" data-testid="cred-monitor-channels">
         <h3 className="font-semibold">Monitoring channels</h3>
         <ul className="space-y-1 text-sm">
@@ -289,6 +294,35 @@ export function ClinicianCredentialHeadsUp({ staffId }: { staffId: string }) {
           <li key={i}>{n}</li>
         ))}
       </ul>
+    </Card>
+  );
+}
+
+/** 29 Oct (Draft — confirm with compliance): peer, CHW and ECM credentials. */
+function RoleCredentialsCard() {
+  const gaps = useCredentialing(() => roleCredentialGaps());
+  return (
+    <Card className="space-y-2 p-4" id="cred-role_credentials" data-testid="cred-role-credentials">
+      <h3 className="font-semibold">Peer, CHW and ECM credentials</h3>
+      <p className="text-xs text-muted-foreground">
+        {UNLICENSED_ROLE_REQUIREMENTS_DRAFT.label}. Checked only when the service is billable for the visit&apos;s funding
+        source; non-billable peer and CHW work is never blocked.
+      </p>
+      {gaps.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing missing or expiring.</p>
+      ) : (
+        <ul className="space-y-1 text-sm">
+          {gaps.map((g) => (
+            <li key={g.staffId} className="flex flex-wrap items-center gap-2">
+              <b>{nameOf(g.staffId)}</b>
+              <StatusChip lang="en" state="yourturn" label={g.reasons.length ? "Your turn" : `Expires in ${g.expiringDays} days`} />
+              {g.reasons.length > 0 && (
+                <span className="text-xs text-muted-foreground">{g.reasons.map((r) => CREDENTIALING_REASON_LABEL[r]).join("; ")}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
