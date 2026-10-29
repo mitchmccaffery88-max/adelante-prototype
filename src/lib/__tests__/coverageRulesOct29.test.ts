@@ -126,7 +126,7 @@ describe("recurring series (staff only)", () => {
     const p = AdelanteEHR.listPatients().find((x) => x.id === "p1")!;
     const first = new Date(at(3)); first.setUTCHours(17, 0, 0, 0);
     const before = AdelanteEHR.listAuditEvents({ category: "clinical" }).filter((e) => e.action.startsWith("appointment_series_occurrence")).length;
-    const res = AdelanteEHR.bookAppointmentSeries({ patientId: p.id, clinicianId: "c3", firstStart: first.toISOString(), cadence: "weekly", count: 6, durationMin: 30, serviceType: "controlled_med_moud", modality: "video", allowPatientOverlap: true, bookedBy: { id: "s-cc1", role: "clinical_coordinator" } });
+    const res = AdelanteEHR.bookAppointmentSeries({ patientId: p.id, clinicianId: "c3", firstStart: first.toISOString(), cadence: "weekly", count: 6, durationMin: 30, serviceType: "controlled_med_moud", modality: "in_person", locationId: "loc-visalia", allowPatientOverlap: true, bookedBy: { id: "s-cc1", role: "clinical_coordinator" } });
     expect(res.booked.length + res.blocked.length).toBe(6);
     expect(res.blocked.length).toBeGreaterThan(0);
     expect(res.blocked.every((b) => b.start > at(19))).toBe(true);
@@ -162,8 +162,8 @@ describe("billing projection and roles", () => {
     const find = (id: string) => CHART_ACTIONS.find((a) => a.id === id)!;
     for (const role of STAFF_ROLES) {
       const ctx = { role, staffId: "x" } as never;
-      expect(find("appointment_funding_set").allowed(ctx, undefined as never).ok).toBe(canOverrideFundingSource(role));
-      expect(find("schedule_visit_series").allowed(ctx, undefined as never).ok).toBe(canScheduleRole(role));
+      expect(find("appointment_funding_set").allowed(ctx, undefined as never).state === "allowed").toBe(canOverrideFundingSource(role));
+      expect(find("schedule_visit_series").allowed(ctx, undefined as never).state === "allowed").toBe(canScheduleRole(role));
     }
   });
 });
