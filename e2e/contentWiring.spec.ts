@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // §C5 walkthrough — a content author creates a housing + first-30-days lesson
-// with Spanish; it is clinical so it goes to review; Dr. Sample approves.
+// with Spanish; it is clinical so it goes to review; Dr. Bagga approves.
 // Marisol sees "Adel suggests" on Luis's care plan and assigns it. Luis sees
 // it in My plan, in his housing need and in Adel chat (EN + ES), finishes it,
 // and the assignment closes. Store calls are the real store functions.

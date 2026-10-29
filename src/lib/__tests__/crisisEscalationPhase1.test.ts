@@ -14,7 +14,7 @@ describe("draft severity / category classification", () => {
     const row = AdelanteEHR.flagCrisis(pid, "Dr. Test", "Observed acute distress");
     expect(row.severity).toBe("critical");
     expect(row.category).toBe("clinical");
-    // Nothing is "reviewed" until Christi / Dr. Sample sign off.
+    // Nothing is "reviewed" until Christi / Dr. Bagga sign off.
     expect(row.classificationStatus).toBe("draft");
   });
 

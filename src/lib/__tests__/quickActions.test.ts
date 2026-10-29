@@ -1,6 +1,6 @@
 // Quick-actions batch 2 — the defaults map to real registry actions, the
 // registry's own permission check is the only gate, and the two nurse
-// actions pending Dr. Sample's sign-off are never offered.
+// actions pending Dr. Bagga's sign-off are never offered.
 import { describe, expect, it } from "vitest";
 import { CHART_ACTIONS } from "@/lib/chartActions";
 import { PENDING_SIGNOFF_IDS, QUICK_ACTION_DEFAULTS, quickActionsFor } from "@/lib/quickActions";
