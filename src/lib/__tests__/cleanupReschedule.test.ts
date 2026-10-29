@@ -12,6 +12,8 @@ const actionEvents = () => AdelanteEHR.listAuditEvents({ category: "action" });
 function bookFor(patientId: string) {
   const p = AdelanteEHR.getPatient(patientId);
   if (!p) throw new Error("Missing booking test patient");
+  // 29 Oct (Draft): therapy self-booking needs an established clinician — fixture assigns c1.
+  if (!p.primaryClinicianId) p.primaryClinicianId = "c1";
   const opt = patientBookableClinicians(p, SVC, "in_person").find((o) => patientSlots(o.clinician.id, SVC, "in_person").length > 2);
   if (!opt) throw new Error("Missing booking test clinician");
   const slots = patientSlots(opt.clinician.id, SVC, "in_person");
