@@ -116,12 +116,12 @@ export function seedDemoAvailability(): void {
   };
   add({ clinicianId: "c4", weekday: 2, start: "09:00", end: "15:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["therapy_individual", "case_management"] });
   add({ clinicianId: "c4", weekday: 4, start: "09:00", end: "15:00", modality: "virtual", careTypes: ["therapy_individual", "case_management"] });
-  add({ clinicianId: "c5", weekday: 3, start: "13:00", end: "17:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["med_management", "intake"] });
+  add({ clinicianId: "c5", weekday: 3, start: "13:00", end: "17:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["med_management", "controlled_med_moud", "intake"] });
   add({ clinicianId: "c7", weekday: 1, start: "09:00", end: "16:00", modality: "hybrid", locationId: "loc-visalia", careTypes: [] });
   add({ clinicianId: "c7", weekday: 3, start: "09:00", end: "16:00", modality: "hybrid", locationId: "loc-visalia", careTypes: [] });
   add({ clinicianId: "c7", weekday: 5, start: "09:00", end: "12:00", modality: "virtual", careTypes: [] });
   // c1 also sees intake + care coordination on Wednesdays; c2 adds a therapy afternoon; c3 adds med visits.
   add({ clinicianId: "c2", weekday: 3, start: "13:00", end: "17:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["therapy_individual", "intake"] });
-  add({ clinicianId: "c3", weekday: 2, start: "09:00", end: "13:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["med_management", "intake", "therapy_individual"] });
+  add({ clinicianId: "c3", weekday: 2, start: "09:00", end: "13:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["med_management", "controlled_med_moud", "intake", "therapy_individual"] });
 }
 seedDemoAvailability();

@@ -127,7 +127,7 @@ export function deriveClassification(input: RuleInput): { fundingSource: Funding
   else if (input.kind === "peer_contact") careContinuum = "recovery_support";
   else if (input.serviceType === "case_management" || input.serviceType === "care_coordination") careContinuum = "case_management";
   else if (input.serviceType === "peer_support") careContinuum = "recovery_support";
-  else if (input.serviceType === "med_management" && hasSudEpisode(p)) careContinuum = "mat";
+  else if ((input.serviceType === "med_management" || input.serviceType === "controlled_med_moud") && hasSudEpisode(p)) careContinuum = "mat";
   else if (isIot(p)) careContinuum = "intensive_outpatient";
   return { fundingSource, careContinuum, basis: `Funding from ${fundingBasis}; category from service type.` };
 }

@@ -443,6 +443,14 @@ export const DEFAULT_CODE_BY_SERVICE: Record<ServiceLine, Record<string, string>
     care_coordination: "T1017",
   },
 };
+/**
+ * 28 Oct MOUD service type (Draft): no billing code or rate is invented.
+ * These service types carry no default code; the claim shows the Draft
+ * review reason until billing maps it.
+ */
+export const CODE_MAPPING_NEEDS_REVIEW: readonly string[] = ["controlled_med_moud"];
+export const CODE_MAPPING_NEEDS_REVIEW_LABEL = "Code mapping needs review (Draft)";
+export const codeMappingNeedsReview = (serviceType?: string) => !!serviceType && CODE_MAPPING_NEEDS_REVIEW.includes(serviceType);
 export function defaultCodeFor(serviceType: string | undefined, line: ServiceLine): string {
   return DEFAULT_CODE_BY_SERVICE[line][serviceType ?? "therapy_individual"] ?? DEFAULT_CODE_BY_SERVICE[line]["therapy_individual"]!;
 }

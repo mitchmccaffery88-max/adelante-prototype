@@ -42,6 +42,8 @@ import {
   unitsFor,
   type PayerProgram,
   type ServiceLine,
+  codeMappingNeedsReview,
+  CODE_MAPPING_NEEDS_REVIEW_LABEL,
 } from "./rates";
 import { gateMessageFor } from "./dmcOdsReadiness";
 import { chwBillingDecision, peerBillingDecision } from "./communityBilling";
@@ -588,6 +590,12 @@ function seedRecord(r: ClinicianCredentialing) {
   if (r.dea) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "dea", number: r.dea.number, expiresAt: r.dea.expiresAt, verifiedAt: r.dea.verifiedAt, uploadedAt: iso(), seed: true });
   if (r.malpractice) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "malpractice", number: r.malpractice.policy, carrier: r.malpractice.carrier, expiresAt: r.malpractice.expiresAt, uploadedAt: iso(), seed: true });
   if (r.boardCertification) credentials.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, kind: "board_cert", number: r.boardCertification, uploadedAt: iso(), seed: true });
+  // 28 Oct MOUD service type (Draft): every clinician gets an explicit
+  // per-payer row for the new type, "not started" unless seeded otherwise.
+  for (const payer of [...new Set(r.enrollments.map((e) => e.payer))])
+    if (!r.enrollments.some((e) => e.payer === payer && e.serviceType === "controlled_med_moud"))
+      r.enrollments.push({ payer, serviceType: "controlled_med_moud", status: "not_started" });
+  if (!r.enrollments.length) r.enrollments.push({ payer: "Medi-Cal FFS", serviceType: "controlled_med_moud", status: "not_started" });
   for (const e of r.enrollments) payerEnrollments.push({ id: `demo-credential-${++credentialSeedId}`, clinicianId: r.clinicianId ?? r.staffId, payer: e.payer, serviceType: e.serviceType, status: ({ active: "enrolled", submitted: "pending", not_started: "not_enrolled", inactive: "terminated" } as const)[e.status], effectiveFrom: e.effectiveAt, caqhId: e.caqhId, billingTin: "DEMO-TIN" });
 }
 function seedCredentialAuthorityDemo() {
@@ -659,6 +667,8 @@ function seedCredentialAuthorityDemo() {
     attestation: { status: "signed", signedAt: daysFromNow(-40), signedBy: "s-cred1", covers: { limitationsAffectingJobFunctions: true, licenseLossOrFelonyHistory: true, privilegeLossOrDiscipline: true, noPresentIllegalDrugUse: true, accuracyAndCompleteness: true } },
     enrollments: [
       { payer: "Medi-Cal FFS", serviceType: "med_management", status: "active", effectiveAt: daysFromNow(-879) },
+      // 28 Oct MOUD service type: the fully credentialed demo prescriber.
+      { payer: "Medi-Cal FFS", serviceType: "controlled_med_moud", status: "active", effectiveAt: daysFromNow(-879) },
       { payer: "Medi-Cal FFS", serviceType: "therapy_individual", status: "active", effectiveAt: daysFromNow(-879) },
       { payer: "Tulare County DMC-ODS", serviceType: "sud_counseling", status: "not_started" },
     ],
@@ -671,7 +681,8 @@ function seedCredentialAuthorityDemo() {
     staffId: "s-np1",
     clinicianId: "c5",
     license: { licenseType: "MD", number: "DEMO-LIC-0005", state: "CA", issuedAt: daysFromNow(-7789), expiresAt: daysFromNow(500), verificationSource: "medical_board_ca", verifiedAt: daysFromNow(-10), verifiedBy: "s-cred1", method: "manual" },
-        dea: { number: "DEMO-LIC-0006", expiresAt: daysFromNow(600), verifiedAt: daysFromNow(-30) },
+        // 28 Oct MOUD service type: DEA expires before controlled visits booked 21+ days out.
+    dea: { number: "DEMO-LIC-0006", expiresAt: daysFromNow(20), verifiedAt: daysFromNow(-30) },
     boardCertification: "Psychiatry",
     malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(500) },
     exclusionChecks: seedExclusions("s-np1", 45),
@@ -1216,17 +1227,19 @@ export const AdelanteEHRExt = {
     {
       const serviceDate = appt.start.slice(0, 10);
       const line = lineFor(appt.fundingLane, appt.serviceType, appt.patientId);
+      const needsReview = codeMappingNeedsReview(appt.serviceType);
       const code = defaultCodeFor(appt.serviceType, line);
       const cov = coverageContext(appt.patientId, serviceDate);
       const noteMin = noteMinutesForEncounter(appt.patientId, apptId);
       claim.serviceDate = serviceDate;
-      claim.serviceCode = code;
+      if (!needsReview) claim.serviceCode = code;
       claim.codeSource = "default";
       void cov;
       assignProgram(claim, { code, line, fundingLane: appt.fundingLane });
       claim.minutes = noteMin ?? appt.durationMin;
       claim.unitsSource = noteMin !== undefined ? "note" : "schedule";
       applyPricing(claim);
+      if (needsReview) claim.noRateReason = CODE_MAPPING_NEEDS_REVIEW_LABEL;
     }
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });

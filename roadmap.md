@@ -1,5 +1,9 @@
 # Roadmap
 
+## 28 Oct MOUD service type (Draft)
+- [x] Controlled medication / MOUD visit in the one catalog; Draft controlled flag moved off med_management; enrollment rows, seeds, no invented codes; tests and re-pins; units 3,670/3,670; public 53/53 x2.
+- [ ] Mitch to confirm the Draft controlled list and the real billing code mapping.
+
 ## 28 Oct 20:23 access rules part B continuation (Draft)
 - [x] Tighten MOUD care-manager self-only assignment/replacement; SQL mirror and same-transaction end/retain proof; units 3,607/3,607, no retained fixtures.
 - [x] Step 2 coordinator request/coverage/weekly review hosts; units 3,627/3,627; real preview request/open/approval/coverage/review at 1280 and 390.
@@ -10,7 +14,7 @@
 - [x] Step 5b packet/checklist/needs: separately approved migration applied; predicates read back, tagged Part 2 excluded, commands revoked.
 - [x] Step 5b handoff: separately approved migration applied; all seven predicates read back and all47 public/auth count maps unchanged.
 - [x] Step 5c units: post-opening3,662/3,662; reports/evidence/Draft matrix updated with actual SQL and browser outcomes.
-- [ ] Step 5c final acceptance/preview closeout: blocked by non-exempt public suite failure websiteDianaPass1:5 mobile390en (group accordion remained closed);52passed/1failed,19.9m. Unchanged standalone1/1 does not waive the full-run failure; standing rule requires stop.
+- [x] Step 5c final acceptance: Diana accordion hover-then-click toggle fixed in component; units 3,670/3,670; public suite 53/53 twice in a row. Access-rules batch closed (Draft).
 - [x] App checkpoint public browser 53/53 (12.6m), after full units, one worker :8080; post-suite DEA registry/Billing readback and shared-gate browser 1/1; checkpoint reports/Draft matrix updated. Final SQL acceptance report remains with Step 5.
 - [x] Carry-over: on-team HLOC therapist fixture via registry; unchanged HLOC browser 1/1 passed after green units.
 - [x] DEA catalog checkpoint: Draft med_management flag only; no booking/projection flag; evaluator and Billing existing service-type path verified. Focused DEA/as-of/projection 29/29, full units 3,662/3,662, live registry credential edit → Billing DEA review readback. Mitch confirmation of Draft matching entry remains.

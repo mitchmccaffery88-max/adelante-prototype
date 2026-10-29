@@ -4,6 +4,17 @@
 
 **Part 2 internal-use basis: pending counsel confirmation.**
 
+
+## Final browser acceptance (29 Oct)
+
+**Cause of `websiteDianaPass1.spec.ts:5` (390, en).** In `CoreServices`, the service card opens on `mouseenter` when the pointer reports `(hover: hover)` (true for Playwright's desktop Chromium at 390px and for touch laptops/hybrid phones with a mouse). A click therefore fired `mouseenter` (open) and then the button's `onClick`, which toggled from the rendered `expanded` value. When React had already re-rendered between the two events, the click read `expanded=true` and closed the card again; whether it did depended on timing under load, which is why it failed only in the full run. No overlay was involved.
+
+**Fix (component, not test).** The card records when it was opened by hover; the next click on that same card keeps it open (and consumes the marker) instead of toggling, and plain clicks toggle with a functional state update. A first tap/click always opens, `aria-expanded` follows the same state, and mouse-leave/blur still close. No retries, timeouts or assertions changed.
+
+**Acceptance.** Full units 3,670/3,670 (415 files). Nine public/website specs, one worker against :8080, after units and not overlapping, twice in a row: run 1 **53/53** (15.3 min), run 2 **53/53** (13.0 min). Logs `/tmp/moud/public-run1.txt`, `/tmp/moud/public-run2.txt`. Build OK.
+
+**Access-rules batch closed (Draft).** Chart, packet and handoff read groups opened by separate approvals; reason/coverage commands stay browser-revoked until phase 2d; Part 2 internal-use basis pending counsel; persistence OFF; nothing published.
+
 ## 29 Oct Step 5 — rollback proofs complete, three approved groups opened
 
 Connected-main rollback acceptance passed **112 checks** covering the requested all-role/dated/group/Intake/member/MOUD/Part 2/restricted vectors. Candidate chart identity/contact/team and general packet/checklist/needs/handoff policies were also tested with actual authenticated reads inside a transaction that rolled back all policy changes. Detailed vectors, fixture corrections, migration IDs and all-table count evidence are in `docs/rls-evidence/access-rules-rollback.md`.

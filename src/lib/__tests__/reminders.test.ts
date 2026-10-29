@@ -59,6 +59,8 @@ describe("reminder coverage", () => {
         "therapy_individual",
         "therapy_group",
         "med_management",
+        // 28 Oct MOUD service type (Draft, deliberate addition).
+        "controlled_med_moud",
         "peer_support",
         "case_management",
         "care_coordination",

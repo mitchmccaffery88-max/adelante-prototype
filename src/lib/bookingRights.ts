@@ -54,7 +54,7 @@ export function canScheduleRole(role: StaffRole | string | undefined): boolean {
 export const SUD_SERVICE_TYPES = ["sud_counseling", "sud_group_odf", "sud_group_iot"] as const;
 export const isSudServiceType = (s?: string) => !!s && (SUD_SERVICE_TYPES as readonly string[]).includes(s);
 /** Prescriber / MAT visits go only to physician or PMHNP calendars. */
-export const PRESCRIBER_SERVICE_TYPES = ["med_management"] as const;
+export const PRESCRIBER_SERVICE_TYPES = ["med_management", "controlled_med_moud"] as const;
 export const isPrescriberServiceType = (s?: string) => !!s && (PRESCRIBER_SERVICE_TYPES as readonly string[]).includes(s);
 
 export type BookingOp = "book" | "reschedule" | "cancel";
