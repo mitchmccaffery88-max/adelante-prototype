@@ -1216,17 +1216,19 @@ export const AdelanteEHRExt = {
     {
       const serviceDate = appt.start.slice(0, 10);
       const line = lineFor(appt.fundingLane, appt.serviceType, appt.patientId);
+      const needsReview = codeMappingNeedsReview(appt.serviceType);
       const code = defaultCodeFor(appt.serviceType, line);
       const cov = coverageContext(appt.patientId, serviceDate);
       const noteMin = noteMinutesForEncounter(appt.patientId, apptId);
       claim.serviceDate = serviceDate;
-      claim.serviceCode = code;
+      if (!needsReview) claim.serviceCode = code;
       claim.codeSource = "default";
       void cov;
       assignProgram(claim, { code, line, fundingLane: appt.fundingLane });
       claim.minutes = noteMin ?? appt.durationMin;
       claim.unitsSource = noteMin !== undefined ? "note" : "schedule";
       applyPricing(claim);
+      if (needsReview) claim.noRateReason = CODE_MAPPING_NEEDS_REVIEW_LABEL;
     }
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
