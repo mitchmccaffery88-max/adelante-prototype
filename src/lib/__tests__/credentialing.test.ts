@@ -278,10 +278,11 @@ describe("Today work derivation", () => {
     expect(clinicianCredentialNotices("s-th1")).toEqual([]);
   });
 
-  it("lists the overdue exclusion check and builds the five tiles", () => {
+  // 29 Oct (Mitch): the sixth tile (peer, CHW and ECM credentials) is added by the coverage-rules batch.
+  it("lists the overdue exclusion check and builds the six tiles", () => {
     expect(exclusionChecksDue().some((r) => r.staffId === "s-np1" && r.state === "overdue")).toBe(true);
     const tiles = credentialingTiles();
-    expect(tiles.map((t) => t.key)).toEqual(["expiring", "exclusions", "recredentialing", "enrollment", "blocked"]);
+    expect(tiles.map((t) => t.key)).toEqual(["expiring", "exclusions", "recredentialing", "enrollment", "blocked", "role_credentials"]);
     expect(tiles.find((t) => t.key === "enrollment")!.count).toBeGreaterThan(0); // c3 DMC-ODS not_started
   });
 });

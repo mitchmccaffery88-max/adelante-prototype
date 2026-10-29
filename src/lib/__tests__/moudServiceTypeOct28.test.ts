@@ -44,16 +44,18 @@ describe('Controlled medication / MOUD visit', () => {
     const rows = AdelanteEHRExt.listAllEnrollments().filter(e => e.serviceType === 'controlled_med_moud');
     const clinicians = new Set(AdelanteEHRExt.listAllEnrollments().map(e => e.clinicianId));
     expect(new Set(rows.map(r => r.clinicianId))).toEqual(clinicians);
-    expect(rows.filter(r => r.status === 'enrolled').map(r => r.clinicianId)).toEqual(['c3']);
+    // 29 Oct: c3 also holds a DMC-ODS MOUD row (one prescriber, two payers).
+    expect([...new Set(rows.filter(r => r.status === 'enrolled').map(r => r.clinicianId))]).toEqual(['c3']);
     expect(rows.filter(r => r.clinicianId !== 'c3').every(r => r.status === 'not_enrolled')).toBe(true);
     // Service-specific "not started" wins over a payer-wide active row.
     expect(credentialedForService('s-th1', 'Medi-Cal FFS', 'controlled_med_moud', at(5))).toMatchObject({ ok: false });
   });
-  it('demo seeds: future booking with c3; c5 DEA expires before a booked date', () => {
+  // 29 Oct (Mitch): the DEA-expiry case moved from c5 to c3, fully credentialed and MOUD-enrolled.
+  it('demo seeds: future booking with c3; c3 DEA expires before a later booked date (the only block)', () => {
     expect(AdelanteEHR.listAppointments().some(a => a.serviceType === 'controlled_med_moud' && a.clinicianId === 'c3' && a.start > new Date().toISOString())).toBe(true);
-    const r = credentialedForService('s-np1', 'Medi-Cal FFS', 'controlled_med_moud', at(30), { asOf: at(0) });
-    expect(r.ok ? [] : r.reasons).toContain('dea_expired');
-    const mm = credentialedForService('s-np1', 'Medi-Cal FFS', 'med_management', at(30), { asOf: at(0) });
+    const r = credentialedForService('s-th3', 'Medi-Cal FFS', 'controlled_med_moud', at(30), { asOf: at(0) });
+    expect(r.ok ? [] : r.reasons).toEqual(['dea_expired']);
+    const mm = credentialedForService('s-th3', 'Medi-Cal FFS', 'med_management', at(30), { asOf: at(0) });
     expect(mm.ok ? [] : mm.reasons).not.toContain('dea_expired');
     const p = AdelanteEHR.listPatients().find(x => x.id === 'p1')!;
     expect(bookingCredentialingBlock('c3', 'controlled_med_moud', p.id, at(5))).toBeUndefined();
