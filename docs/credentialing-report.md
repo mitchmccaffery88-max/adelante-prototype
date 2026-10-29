@@ -12,7 +12,9 @@ Billing allowlists, codes/dates/provider/units and note-text restrictions are un
 
 Tests: focused DEA/as-of/Billing projection **29/29**; full units **3,662/3,662**, **414/414 files**, exit 0, 196.51s. Ten DEA/catalog tests cover both prescriber identities, service-date expiry/verification, unflagged SUD counseling, non-prescriber isolation, single matching catalog classification, unchanged projection fields and real store booking parity. Initial full run **3,661 passed/1 failed** used a nonexistent exported catalog in the new test; corrected to the existing accessor. Source pins verified the prior SHA-256 text before updating only approved output; no projection assertions weakened.
 
-Deferred: real OIG/SAM.gov/Medi-Cal screening, secure file storage phase 5, phase 2d transport/persistence and confirmation of the matching Draft service entry. Full public suite runs only after green units; final result follows when available.
+Full public browser suite after green units: **53/53**, 12.6m, one worker :8080, no overlap; includes unchanged HLOC required-element/disclosure test. Post-suite registry credential edit → Billing DEA readback repeated successfully with no page errors; `/tmp/browser/dea-catalog/final-out.txt`. Shared-gate regression also passed 1/1 after the suite. Build OK.
+
+Deferred: real OIG/SAM.gov/Medi-Cal screening, secure file storage phase 5, phase 2d transport/persistence and confirmation of the matching Draft service entry. Access Step 5 SQL vectors/counts and separately approved policy openings remain unstarted; all three groups closed. Nothing published; persistence OFF.
 
 ## What existed
 - Non-clinical `credentialing_coordinator`, its demo staff member and `/admin-credentialing` action home; `staff_supervision` write tier, including the existing clinical-coordinator assistance grant. Chart entry, clinical notes and billing claims remain denied for the credentialing role. Additional held roles do not union permissions.
