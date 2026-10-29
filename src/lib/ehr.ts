@@ -2379,6 +2379,8 @@ export interface ServiceTypeInfo {
 }
 
 export type PatientAccess = "book" | "request" | "staff_only";
+/** Calm refusal when a self-booking names a group, staff-only or request type. */
+export const SELF_BOOKING_REFUSED = "This visit is set up by your care team. Use “Ask my team” or the Groups tab.";
 
 export interface ClinicLocation {
   id: string;
@@ -9399,6 +9401,19 @@ export const AdelanteEHR = {
         });
         if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
       }
+    }
+    // 29 Oct (Mitch, Draft — pending Christi): ONE booking rule for patients
+    // and staff. A self-scheduled visit must be a patient "book" type and never
+    // a group; then the same fit, telehealth and group-consent checks apply to
+    // everyone (credentialing for the resolved funding source and conflicts
+    // above/below already run for every booking).
+    const isSelfBooking = input.source === "self_scheduled" || bookRole === ("patient" as StaffRole);
+    if (isSelfBooking) {
+      const svcInfo = SERVICE_TYPES.find((s) => s.id === input.serviceType);
+      if (!svcInfo || svcInfo.patientAccess !== "book" || GROUP_SERVICE_TYPES.includes(input.serviceType ?? ""))
+        throw new Error(SELF_BOOKING_REFUSED);
+    }
+    if (isStaffBooking || isSelfBooking) {
       _assertClinicianFit(input.clinicianId, input.serviceType);
       if (input.modality && input.modality !== "in_person" && +new Date(input.start) > Date.now() && !AdelanteEHR.isConsentCategoryAuthorized(input.patientId, TELEHEALTH_CONSENT_CATEGORY))
         throw new Error("No telehealth consent on file. Capture telehealth consent first, or book in person.");

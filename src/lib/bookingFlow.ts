@@ -3,7 +3,7 @@
 // (whose calendar). No writes here: booking goes through runAction →
 // bookAppointment, which re-checks every rule below (the drawer only shows
 // the reason early, inline).
-import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, GROUP_SERVICE_TYPES, groupConsentBlock, type Appointment, type Clinician, type Patient, type ServiceType } from "./ehr";
+import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, GROUP_SERVICE_TYPES, bookingCredentialingBlock, groupConsentBlock, type Appointment, type Clinician, type Patient, type ServiceType } from "./ehr";
 import type { StaffRole } from "./roles";
 import { bookingRightFor, checkBookingRights, isPrescriberServiceType, isSudServiceType, serviceRoleFit } from "./bookingRights";
 import { STAFF_ROSTER } from "./roles";
@@ -57,6 +57,8 @@ export function eligibleClinicians(serviceType: ServiceType, patient: Patient | 
     .filter((c) => (c.services ? c.services.includes(serviceType) : !isSudServiceType(serviceType)))
     .filter((c) => !c.licenseExpiresOn || c.licenseExpiresOn >= today)
     .filter((c) => !isPrescriberServiceType(serviceType) || PRESCRIBER_CRED.test(c.credential))
+    // 29 Oct (Draft): only calendars credentialed for this service and the patient's resolved funding source.
+    .filter((c) => !patient || !bookingCredentialingBlock(c.id, serviceType, patient.id, new Date().toISOString()))
     .filter((c) => serviceRoleFit(serviceType, STAFF_ROSTER.find((s) => s.clinicianId === c.id)?.role, c.credential))
     .filter((c) => modality !== "in_person" || (c.locationIds?.length ?? 0) > 0 || !c.locationIds)
     .map((c) => {
