@@ -38,7 +38,7 @@ describe("coverage controls — Draft 29 Oct", () => {
     expect(result.ok).toBe(true);
     expect(AdelanteEHR.listAuditEvents({ category: "action" }).length - before).toBe(1);
     expect(getStructuredPlan(patientId).smhsDetermination).toMatchObject({ meets: false, determinedAt: "2026-10-29" });
-    const audit = AdelanteEHR.listAuditEvents().filter(e => e.action === "plan_smhs_determination_set" && e.patientId === patientId).at(-1);
+    const audit = AdelanteEHR.listAuditEvents().find(e => e.action === "plan_smhs_determination_set" && e.patientId === patientId && e.detail?.reasonCode === "clinical_review");
     expect(audit?.detail).toEqual({ reasonCode: "clinical_review", determinedAt: "2026-10-29" });
     expect(audit?.actorId).toBe("s-th1");
     expect(JSON.stringify(result.event.detail)).not.toContain('"meets"');

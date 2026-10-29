@@ -18,7 +18,7 @@ export function intakeFundingAppointments(actor: IntakeActor, referralId: string
     if (!referral.enrolledPatientId) return [];
     return AdelanteEHR.appointmentsForPatient(referral.enrolledPatientId).flatMap(a => {
       const receipt = intakeAppointmentDetail(actor, referralId, a.id);
-      if (!("id" in receipt)) return [];
+      if (!("id" in receipt) || !receipt.id || !receipt.start) return [];
       return [{ id: receipt.id, start: receipt.start, fundingSource: a.fundingSource ? { ...a.fundingSource, flags: [...a.fundingSource.flags] } : undefined }];
     });
   } catch {
