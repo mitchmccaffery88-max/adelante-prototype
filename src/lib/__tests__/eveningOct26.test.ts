@@ -156,7 +156,7 @@ describe("4. every care manager has a bookable calendar", () => {
     for (const s of cms) {
       const id = calendarIdFor(s);
       expect(id, s.id).toBeTruthy();
-      const service = hasRoleAssignment(s, "peer_specialist") && !hasRoleAssignment(s, "ecm_provider") && !hasRoleAssignment(s, "cf_care_manager") ? "peer_support" : "case_management";
+      const service = hasRoleAssignment(s, "community_health_worker") ? "chw_visit" : hasRoleAssignment(s, "peer_specialist") && !hasRoleAssignment(s, "ecm_provider") && !hasRoleAssignment(s, "cf_care_manager") ? "peer_support" : "case_management";
       expect(availableSlots(id!, { serviceType: service as never, modality: "video", stepMin: 60 }).length, s.id).toBeGreaterThan(0);
     }
   });

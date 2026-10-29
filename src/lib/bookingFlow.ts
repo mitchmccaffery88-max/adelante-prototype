@@ -54,7 +54,8 @@ export function eligibleClinicians(serviceType: ServiceType, patient: Patient | 
   const lang = patient?.preferredLanguage ?? "en";
   return AdelanteEHR.listClinicians()
     .filter((c) => isActiveStaff(c.id) && isBookableClinician(c.id))
-    .filter((c) => (c.services ? c.services.includes(serviceType) : !isSudServiceType(serviceType)))
+    // 30 Oct (Draft): a calendar with no services list offers nothing.
+    .filter((c) => (c.services ?? []).includes(serviceType))
     .filter((c) => !c.licenseExpiresOn || c.licenseExpiresOn >= today)
     .filter((c) => !isPrescriberServiceType(serviceType) || PRESCRIBER_CRED.test(c.credential))
     // 29 Oct (Draft): only calendars credentialed for this service and the patient's resolved funding source.

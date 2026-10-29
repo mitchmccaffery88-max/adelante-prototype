@@ -346,10 +346,21 @@ export function seedNursingDemo(): void {
   seeded = true;
   addStaffMember(ADMIN, { id: "s-rn1", name: "Marisol Ortega", role: "nurse_rn", credential: "RN", clinicianId: "c-rn1" });
   addStaffMember(ADMIN, { id: "s-lvn1", name: "Kevin Duarte", role: "lvn", credential: "LVN", clinicianId: "c-lvn1", supervisedBy: "s-rn1" });
-  AdelanteEHR.registerClinician({ id: "c-rn1", name: "Marisol Ortega, RN", credential: "RN", mediCalCredentialed: true, mediCalStatus: "active", services: [], licenseExpiresOn: "2028-06-30" }, ADMIN.staffId);
+  AdelanteEHR.registerClinician({ id: "c-rn1", name: "Marisol Ortega, RN", credential: "RN", mediCalCredentialed: true, mediCalStatus: "active", services: ["nurse_visit"], locationIds: ["loc-visalia"], licenseExpiresOn: "2028-06-30" }, ADMIN.staffId);
   AdelanteEHR.registerClinician({ id: "c-lvn1", name: "Kevin Duarte, LVN", credential: "LVN", mediCalCredentialed: false, mediCalStatus: "pending", services: [], licenseExpiresOn: "2027-11-30" }, ADMIN.staffId);
   AdelanteEHRExt.addCredential({ clinicianId: "c-rn1", kind: "license", issuingState: "CA", number: "RN-000000 (fictional)", issuedAt: "2020-07-01", expiresAt: "2028-06-30", fileName: "rn_license_placeholder.pdf", uploadedBy: "Demo seed" } as never);
   AdelanteEHRExt.addCredential({ clinicianId: "c-lvn1", kind: "license", issuingState: "CA", number: "VN-000000 (fictional)", issuedAt: "2021-03-01", expiresAt: "2027-11-30", fileName: "lvn_license_placeholder.pdf", uploadedBy: "Demo seed" } as never);
+  // 30 Oct (Draft — pending clinical sign-off): the RN calendar offers nurse
+  // visits in person at Visalia, Mon–Fri 9:00–17:00. The LVN keeps no services.
+  // Local deterministic ids so this seed never shifts the shared random stream.
+  if (AdelanteEHRExt.availabilityBlocksForClinician("c-rn1").length === 0) {
+    const shared = Math.random; let k = 1;
+    Math.random = () => ((k++ * 0.7548776662466927) % 1);
+    try {
+      for (const weekday of [1, 2, 3, 4, 5])
+        AdelanteEHRExt.upsertAvailabilityBlock({ clinicianId: "c-rn1", weekday, start: "09:00", end: "17:00", modality: "in_person", locationId: "loc-visalia", careTypes: ["nurse_visit"] } as never);
+    } finally { Math.random = shared; }
+  }
   const doc = STAFF_ROSTER.find((s) => s.role === "physician") ?? STAFF_ROSTER.find((s) => s.role === "pmhnp");
   const patient = AdelanteEHR.listPatients()[0];
   if (doc && patient) {

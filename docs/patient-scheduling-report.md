@@ -76,11 +76,33 @@ Preview check: as the demo patient, the menu listed book and "Ask my team" types
 
 New IDs are names in the single catalog, not a parallel operational list. Modalities, Draft durations and delivery-system tags remain to be installed in the single catalog and listed for Christi. No rate or code mappings have been created.
 
-## Remaining scope at green stop
-1. Item (a) controls implemented and read back; prior final units were 3,696/3,696; fresh full public checkpoint passed 53/53 as recorded above.
-2. Catalog field + five care types; conditional bilingual patient book/request menu; request duplicate/auto-close and ASAM type linkage.
-3. Shared store/clinician-picker fit, consent, credential, funding and conflict rules; calm self-booking refusal; private-pay confirmation label.
-4. CHW calendar and missing-service defaults, assigned-person priority, category-specific group capacity.
-5. New all-role/patient/advocate privacy and button/store tests, any exact-once source re-pins, final units/public browser and end-to-end scheduling readback.
+## 30 Oct finish — items (c), (d), roadmap items, end-to-end check
+**Draft — pending clinical sign-off and Christi.** Nothing published, persistence OFF, no Supabase changes, no codes or rates invented.
 
-20:42 checkpoint: public validation is complete; stop before starting a partial item (b). A subsequent unchanged full unit run also passed **3,696/3,696 across 418 files, exit 0** (`/tmp/scheduling29b/units-checkpoint.txt`, `units-checkpoint.exit`); no unit/browser overlap. Items (b) catalog/new types/shared booking/picker, (c) CHW/missing-service inventory, and (d) category capacity remain unimplemented. The table above is still proposed for Christi, not an installed patientAccess field. Nothing published; persistence OFF; no Supabase changes.
+### (c) CHW and nurse calendars
+- `careManagerCalendar.ts` maps `community_health_worker → chw_visit`; the fictional demo CHW **Maribel Ortiz (s-chw1)** now gets a calendar through the existing `registerClinician`/`upsertAvailabilityBlock` path with the Draft Mon–Fri 9:00–17:00 week.
+- The fictional demo RN **Marisol Ortega, RN (c-rn1)** now offers `nurse_visit`, in person at Visalia, with a Draft Mon–Fri 9:00–17:00 week (local deterministic ids so no other seed shifts). The LVN (c-lvn1) keeps no services.
+- A missing services list now offers **nothing** in `eligibleClinicians`, `_assertClinicianFit`, `cliniciansForService` and the request demo seed.
+- **Staff affected by the missing-list change: none in the current demo roster.** Every calendar (c1–c7, c-rn1, c-lvn1, s-cm1, s-cm2, s-peer1, s-peer2, s-cf1, s-cf2, s-chw1) already carries an explicit list. Only a future calendar created without a list is affected; it is now offered for no visit type until someone sets its services.
+
+### (d) Group capacity by category
+- Billable categories (`sud_clinical_preauth`, `skills_education`) keep the DHCS 2–12 range on create and edit.
+- `open_psychoeducational` (non-billable) takes a facilitator-set capacity (whole number, at least 1, no DHCS ceiling). Pre-filled default **20 — Draft — pending clinical sign-off**, shown on the New group form. Changing a group's category re-checks capacity against the new category.
+- No limit on how many open groups one patient joins; each join still runs that group's own capacity and join rule (existing `assertEnrollmentAllowed`).
+
+### Roadmap items
+- ASAM-linked visits now book as `sud_assessment` (clinician workspace and demo seed); the existing ASAM task/Part 2 checks and `protected` audit marker are unchanged. c1 (LCSW, LPHA) now offers `sud_assessment` so existing ASAM bookings keep a calendar.
+- `/schedule` shows, before the patient confirms: "Fee: per sliding scale (Draft — tiers pending)" when the resolver says private pay, and a neutral "Coverage being reviewed" when it needs review (Spanish Draft equivalents). Presentation only; booking is never blocked.
+
+### Tests and pins
+- New `schedulingBatchOct30.test.ts` (8 tests): CHW/RN calendars and hours, LVN none, missing list offered for nothing, billable 2–12, open capacity 30 accepted / 0 refused, category switch re-check, Draft default label, sliding-scale notice and exact copy.
+- Updated for intended changes: `batchEF` (RN services), `eveningOct26` (CHW calendar service), `asamVisit` (ASAM type).
+- Exact-once re-pin `src/test/patientSchedulingOct30Approved.ts` for `ehr.ts` (prior 55390a2d… → current 261983d2…) and `clinician.tsx`, chained outermost.
+
+### End-to-end request check (preview, in-memory)
+Demo patient Marcus L. (p3) → Appointments → Book one-on-one → "Family session · Ask my team" → request sent. Switched to therapist Marisol Reyes: the request showed in the record's queue and in the workspace "Requests & booking" queue (2 waiting). Booked it from the queue (Mon Nov 2, Visalia); the queue dropped to 1 and the record shows "0 waiting … 1:1 therapy intake appointment — booked by Marisol Reyes". Evidence: `/tmp/browser/req/`.
+Noted for Christi: a family-session request uses the existing therapy request kind, so staff see "1:1 therapy intake appointment" and the drawer opens on "Talk with a counselor"; staff can change the type before booking.
+
+### Validation
+- Full units: **3,717/3,717 (420 files), exit 0** (`/tmp/s30/units2.txt`).
+- Public browser (nine specs, one worker, :8080, run once, no edits during it): **52/53, exit 1, 18.0m**. Sole failure: `publicWebsite.spec.ts:14` (es), timeout waiting for the dev `window.__adelante` hook after `goto("/#faq")`. Not a named flake, so under the standing rule this run is **not green** and was not rerun or waived. No public page or test was changed in this batch. Log `/tmp/s30/public.txt`.

@@ -4562,6 +4562,8 @@ const clinicians: Clinician[] = [
       "case_management",
       "care_coordination",
       "family_collateral",
+      // 30 Oct (Draft): LPHA — ASAM visits now book as the SUD assessment type.
+      "sud_assessment",
     ],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2028-12-31",
@@ -7738,6 +7740,17 @@ export function isSelfServiceGroupCategory(category: GroupCategory): boolean {
  */
 export const GROUP_CAPACITY_MIN = 2;
 export const GROUP_CAPACITY_MAX = 12;
+/** 30 Oct: non-billable open groups — capacity set by the facilitator. */
+export const OPEN_GROUP_CAPACITY_MIN = 1;
+/** Draft — pending clinical sign-off: pre-filled capacity for a new open group. */
+export const OPEN_GROUP_CAPACITY_DEFAULT_DRAFT = 20;
+export const OPEN_GROUP_CAPACITY_DRAFT_LABEL = "Draft — pending clinical sign-off";
+/** The capacity rule that applies to a group category. */
+export function groupCapacityRule(category: GroupCategory): { min: number; max?: number; defaultCapacity: number; draft: boolean } {
+  return isBillableGroupCategory(category)
+    ? { min: GROUP_CAPACITY_MIN, max: GROUP_CAPACITY_MAX, defaultCapacity: 8, draft: false }
+    : { min: OPEN_GROUP_CAPACITY_MIN, defaultCapacity: OPEN_GROUP_CAPACITY_DEFAULT_DRAFT, draft: true };
+}
 
 /**
  * Occurrence-level DHCS rule: an occurrence with fewer than 2 present
@@ -7813,7 +7826,14 @@ const groupConfig: { requireConfidentialityAck: boolean } = {
  * Single place the regulatory roster range is enforced, so no write path
  * (create or edit) can configure a group above the DHCS ceiling of 12.
  */
-function _assertGroupCapacity(capacity: number): void {
+function _assertGroupCapacity(capacity: number, category: GroupCategory = "sud_clinical_preauth"): void {
+  // 30 Oct (Mitch, Draft — pending Christi): only billable groups carry the
+  // DHCS 2–12 range. Non-billable open groups take a facilitator-set capacity.
+  if (!isBillableGroupCategory(category)) {
+    if (!Number.isInteger(capacity) || capacity < OPEN_GROUP_CAPACITY_MIN)
+      throw new Error(`Set a capacity of at least ${OPEN_GROUP_CAPACITY_MIN} for this open group.`);
+    return;
+  }
   if (!Number.isFinite(capacity) || capacity < GROUP_CAPACITY_MIN)
     throw new Error(`Capacity must be at least ${GROUP_CAPACITY_MIN} (DHCS group minimum).`);
   if (capacity > GROUP_CAPACITY_MAX)
@@ -8439,7 +8459,8 @@ export function bookingCredentialingBlock(
 function _assertClinicianFit(clinicianId: string, serviceType?: ServiceType) {
   const c = clinicians.find((x) => x.id === clinicianId);
   if (!c || !serviceType) return;
-  if (c.services && !c.services.includes(serviceType))
+  // 30 Oct (Draft): a missing services list offers nothing.
+  if (!(c.services ?? []).includes(serviceType))
     throw new Error(`${c.name} doesn't offer this visit type. Pick a suggested clinician.`);
   if (isPrescriberServiceType(serviceType)) {
     const role = STAFF_ROSTER.find((s) => s.clinicianId === clinicianId)?.role;
@@ -8966,7 +8987,7 @@ export const AdelanteEHR = {
   getLocation: (id?: string) => LOCATIONS.find((l) => l.id === id),
   cliniciansForService(serviceType?: ServiceType, opts?: { locationId?: string }) {
     return clinicians.filter((c) => {
-      const svcOk = !serviceType || !c.services || c.services.includes(serviceType);
+      const svcOk = !serviceType || (c.services ?? []).includes(serviceType);
       const locOk = !opts?.locationId || !c.locationIds || c.locationIds.includes(opts.locationId);
       return svcOk && locOk;
     });
@@ -24628,7 +24649,7 @@ export const AdelanteEHR = {
     },
   ): GroupSession {
     if (!input.topic.trim()) throw new Error("Give the group a topic.");
-    _assertGroupCapacity(input.capacity);
+    _assertGroupCapacity(input.capacity, input.category ?? "sud_clinical_preauth");
     const row: GroupSession = {
       ...input,
       topic: input.topic.trim(),
@@ -24661,7 +24682,8 @@ export const AdelanteEHR = {
   updateGroupSession(id: string, patch: Partial<Omit<GroupSession, "id">>, actor: string) {
     const row = groupSessions.find((g) => g.id === id);
     if (!row) throw new Error("Group not found.");
-    if (patch.capacity !== undefined) _assertGroupCapacity(patch.capacity);
+    if (patch.capacity !== undefined || patch.category !== undefined)
+      _assertGroupCapacity(patch.capacity ?? row.capacity, patch.category ?? row.category);
     Object.assign(row, patch);
     appendAudit({
       category: "clinical",
@@ -26909,7 +26931,7 @@ try {
 try {
   const SYS = { id: "demo-seed", role: "patient" };
   const therapist = AdelanteEHR.listClinicians().find(
-    (c) => (!c.services || c.services.includes("therapy_individual")) && AdelanteEHR.canBook(c.id).ok,
+    (c) => (c.services ?? []).includes("therapy_individual") && AdelanteEHR.canBook(c.id).ok,
   );
   const slot = (daysAhead: number, hour: number) => {
     let d = demoLocalDayAt(daysAhead, hour);

@@ -167,7 +167,7 @@ function ClinicianPage() {
   const bookAsamTaskId = asamTask && roleWorksAsamTask(bookRole, asamTaskPatient) ? asamTask.id : undefined;
   useEffect(() => {
     if (!bookAsamTaskId || !asamTask) return;
-    openBookVisit({ patientId: asamTask.patientId, serviceType: "intake", asamTaskId: bookAsamTaskId });
+    openBookVisit({ patientId: asamTask.patientId, serviceType: "sud_assessment", asamTaskId: bookAsamTaskId });
     navigate({ to: "/clinician", search: {} });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookAsamTaskId]);

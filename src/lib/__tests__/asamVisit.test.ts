@@ -38,7 +38,7 @@ const book = (patientId: string, taskId: string, days = 30 + n) =>
     clinicianId: clinician().id,
     start: slot(days),
     durationMin: 60,
-    serviceType: "intake",
+    serviceType: "sud_assessment",
     // In person: staff telehealth bookings now require telehealth consent.
     modality: "in_person",
     locationId: "loc-visalia",
@@ -62,7 +62,7 @@ describe("ASAM task — the single work item for the substance-use path", () => 
     const { p, task } = fresh();
     expect(() =>
       AdelanteEHR.bookAppointment({
-        patientId: p.id, clinicianId: clinician().id, start: slot(40), durationMin: 60, serviceType: "intake",
+        patientId: p.id, clinicianId: clinician().id, start: slot(40), durationMin: 60, serviceType: "sud_assessment",
         modality: "video", asamTaskId: task.id, bookedBy: { id: "Luz", role: "ecm_provider" },
       }),
     ).toThrow(/Part 2/);
