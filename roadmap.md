@@ -1,5 +1,14 @@
 # Roadmap
 
+## 29 Oct patient scheduling (Draft, pending Christi)
+- [ ] Carry-overs first: bridge coverage determinations/order; treating-clinician SMHS control; Billing/Intake funding override control; full units then public browser; coverage report.
+- [ ] Inspect and report calendars/services/availability and current group capacity behavior before changes.
+- [ ] Catalog patientAccess and five missing types; conditional patient book/request menu without changing /schedule layout.
+- [ ] Shared booking/clinician-picker checks, request kinds, ASAM visit migration, coverage-review/private-pay presentation.
+- [ ] Existing calendar-model fixes and category-specific group capacity.
+- [ ] All-role tests, exact-once re-pins, full units then public browser, patient-scheduling report and confirm table.
+- No publication, persistence or Supabase changes. Stop only at a completed green checkpoint; list remainder.
+
 ## 28 Oct MOUD service type (Draft)
 - [x] Controlled medication / MOUD visit in the one catalog; Draft controlled flag moved off med_management; enrollment rows, seeds, no invented codes; tests and re-pins; units 3,670/3,670; public 53/53 x2.
 - [ ] Mitch to confirm the Draft controlled list and the real billing code mapping.
