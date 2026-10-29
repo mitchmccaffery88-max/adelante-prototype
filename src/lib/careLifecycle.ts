@@ -14,6 +14,7 @@
 //    optional and never a stage condition.
 //  • Clocks reuse the existing Draft thresholds (referralAging 3/7 for stages
 //    1–4, POST_ENROLLMENT_STALENESS_DRAFT for 5–8).
+import { resolveFundingSource } from "./fundingSource";
 import { AdelanteEHR, type Patient, type Referral } from "./ehr";
 import { getStaffMember, STAFF_ROSTER, type StaffRole } from "./roles";
 import { REFERRAL_AGING_DRAFT } from "./referralAging";
@@ -108,10 +109,12 @@ export function billableService(pid: string) {
   const notes = p?.progressNotes ?? [];
   const signed = attended.find((a) => notes.some((n) => n.appointmentId === a.id && !!n.signedAt));
   const staff = signed ? STAFF_ROSTER.find((s) => s.clinicianId === signed.clinicianId) : undefined;
-  const payer = AdelanteEHR.activeCoveragePlan(pid)?.payer;
+  // 29 Oct (Draft): readiness uses the appointment's own funding source (stored, or resolved).
+  const funding = signed ? (signed.fundingSource?.source ? signed.fundingSource : resolveFundingSource(pid, signed.serviceType, signed.start)) : undefined;
+  const payer = funding?.payerKey ?? AdelanteEHR.activeCoveragePlan(pid)?.payer;
   const check = signed
     ? staff
-      ? credentialedForService(staff.id, payer, signed.serviceType, signed.start, { asOf: signed.start })
+      ? credentialedForService(staff.id, payer, signed.serviceType, signed.start, { asOf: signed.start, ...(funding?.source ? { fundingSource: funding.source } : {}) })
       : ({ ok: false, reasons: ["no_record"] } as const)
     : undefined;
   return {

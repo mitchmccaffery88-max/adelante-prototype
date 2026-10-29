@@ -48,7 +48,7 @@ describe("note lifecycle", () => {
   it("pmhnp self-sign goes straight to signed", () => {
     const n = draft();
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
-      signedBy: "Dr. Bagga",
+      signedBy: "Dr. Sample",
       role: "pmhnp",
       attested: true,
     });
@@ -60,7 +60,7 @@ describe("note lifecycle", () => {
     const n = draft();
     expect(() =>
       AdelanteEHR.signProgressNote(PATIENT, n.id, {
-        signedBy: "Dr. Bagga",
+        signedBy: "Dr. Sample",
         role: "pmhnp",
         attested: false,
       }),
@@ -103,9 +103,9 @@ describe("note lifecycle", () => {
     });
     expect(() =>
       AdelanteEHR.cosignProgressNote(PATIENT, n.id, {
-        cosignedBy: "Dr. Bagga",
+        cosignedBy: "Dr. Sample",
         role: "pmhnp",
-        attestation: attest("progress_note_supervisor_sign", "Dr. Bagga"),
+        attestation: attest("progress_note_supervisor_sign", "Dr. Sample"),
       }),
     ).toThrow(/different cosigning role/);
     AdelanteEHR.cosignProgressNote(PATIENT, n.id, {
@@ -178,7 +178,7 @@ describe("cosign inbox split + SUD masking shape", () => {
       cosignRole: ["therapist"],
     });
     expect(isMyCosign(n, { role: "therapist", staffName: "Christi" })).toBe(true);
-    expect(isMyCosign(n, { role: "pmhnp", staffName: "Dr. Bagga" })).toBe(false);
+    expect(isMyCosign(n, { role: "pmhnp", staffName: "Dr. Sample" })).toBe(false);
     expect(isMyCosign(n, { role: "ecm_provider", staffName: "Maria CM" })).toBe(false);
   });
 
@@ -190,7 +190,7 @@ describe("cosign inbox split + SUD masking shape", () => {
       attested: true,
       cosignRequired: true,
     });
-    expect(isMyCosign(n, { role: "pmhnp", staffName: "Dr. Bagga" })).toBe(true);
+    expect(isMyCosign(n, { role: "pmhnp", staffName: "Dr. Sample" })).toBe(true);
     expect(isMyCosign(n, { role: "therapist", staffName: "Christi" })).toBe(true);
   });
 

@@ -51,12 +51,12 @@ describe("labs", () => {
   it("UDS is Part 2-masked: not orderable or listed for roles failing the check", () => {
     const p = luis();
     expect(orderableLabs("physician", p).some((t) => t.id === "uds")).toBe(true);
-    placeLabOrder({ patientId: p.id, testId: "uds", reason: "Monitoring", priority: "routine", dueAt: new Date().toISOString(), actor: { name: "Dr. M. Bagga", role: "physician" } });
+    placeLabOrder({ patientId: p.id, testId: "uds", reason: "Monitoring", priority: "routine", dueAt: new Date().toISOString(), actor: { name: "Dr. R. Sample", role: "physician" } });
     expect(listLabOrders(p.id, "ecm_provider").some((o) => o.testId === "uds")).toBe(false);
     expect(orderableLabs("therapist", p)).toEqual([]);
   });
   it("open lab shows as Result pending on the orderer's My work", () => {
-    const rows = myPendingLabs({ staffId: "s-np1", staffName: "Dr. M. Bagga", clinicianId: undefined }, "physician");
+    const rows = myPendingLabs({ staffId: "s-np1", staffName: "Dr. R. Sample", clinicianId: undefined }, "physician");
     expect(rows.some((r) => r.patientId === byName("Luis").id)).toBe(true);
   });
 });

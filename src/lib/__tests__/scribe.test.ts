@@ -28,8 +28,8 @@ import {
 import { DMC_ODS_ELEMENT_KEYS, FORMAT_SECTIONS, SCRIBE_FORMATS, templateKeyFor } from "@/lib/scribeFormats";
 import { findMissingRequired } from "@/lib/templateSchema";
 
-const DR: ScribeActor = { name: "Dr. M. Bagga", role: "physician", staffId: "s-np1", clinicianId: "c5" };
-const staff = { staffId: "s-np1", staffName: "Dr. M. Bagga", role: "physician" };
+const DR: ScribeActor = { name: "Dr. R. Sample", role: "physician", staffId: "s-np1", clinicianId: "c5" };
+const staff = { staffId: "s-np1", staffName: "Dr. R. Sample", role: "physician" };
 
 function newPatient(sud = false) {
   const p = AdelanteEHR.createPatient({ firstName: "Scribe", lastName: `Test${Math.random().toString(36).slice(2, 6)}` } as never) as { id: string };

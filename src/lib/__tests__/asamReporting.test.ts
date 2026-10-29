@@ -59,7 +59,7 @@ describe("10d-1 worklists and report", () => {
     // Pool-routed ASAM goes to the prescriber of record (Anita Brooks), not every LPHA.
     const np = myAsamWork({ role: "pmhnp", staffId: "s-th3", staffName: "Anita Brooks", clinicianId: "c3" })!;
     expect(np.cosignsForMe.some((c) => c.patientId === jasmine)).toBe(true);
-    const bagga = myAsamWork({ role: "physician", staffId: "s-np1", staffName: "Dr. M. Bagga", clinicianId: "c5" })!;
+    const bagga = myAsamWork({ role: "physician", staffId: "s-np1", staffName: "Dr. R. Sample", clinicianId: "c5" })!;
     expect(bagga.cosignsForMe.some((c) => c.patientId === jasmine)).toBe(false);
     expect(mine.cosignsForMe).toHaveLength(0);
   });

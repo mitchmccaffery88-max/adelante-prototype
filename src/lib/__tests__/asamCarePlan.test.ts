@@ -11,7 +11,7 @@ import { getStructuredPlan, staffPlanView } from "@/lib/structuredCarePlan";
 import type { StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 
-const BAGGA = { staffId: "s-np1", name: "Dr. M. Bagga", role: "physician" as StaffRole, clinicianId: "c5" };
+const BAGGA = { staffId: "s-np1", name: "Dr. R. Sample", role: "physician" as StaffRole, clinicianId: "c5" };
 const REYES = { staffId: "s-th1", name: "Marisol Reyes", role: "therapist" as StaffRole, clinicianId: "c1" };
 const RENEE = { staffId: "s-sudc1", name: "Renee Castillo", role: "sud_counselor" as StaffRole, clinicianId: "c7" };
 const ATT = { attested: true, signatureDataUrl: "data:image/png;base64,c2VlZA==" };

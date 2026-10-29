@@ -86,7 +86,7 @@ describe("J1 referral → first visit", () => {
 });
 
 describe("J2 medication chain", () => {
-  it("Dr. Bagga orders → RN Marisol reviews → LVN Kevin gives → RN cosigns; LVN can't review", () => {
+  it("Dr. Sample orders → RN Marisol reviews → LVN Kevin gives → RN cosigns; LVN can't review", () => {
     at(FROZEN_NOW);
     const pid = AdelanteEHR.listPatients()[1].id;
     const p = AdelanteEHR.getPatient(pid);
@@ -107,7 +107,7 @@ describe("J2 medication chain", () => {
     cosignClinicDose({ doseId: d.id, actor: RN() });
     // All three signatures on the order trail.
     const o2 = AdelanteEHR.listOrders(pid).find((x) => x.id === order.id) as unknown as { signedBy?: string; createdBy?: string };
-    expect(o2.signedBy ?? o2.createdBy).toMatch(/Bagga/);
+    expect(o2.signedBy ?? o2.createdBy).toMatch(/Sample/);
     expect(nurseReviewFor(order.id)?.by).toMatch(/Marisol/);
     const trail = orderSignatureTrail(pid, order.id);
     expect(trail.map((x) => x.step)).toEqual(["ordered", "reviewed", "given", "cosigned"]);
@@ -189,7 +189,7 @@ describe("J4 scribe by role", () => {
       const st = AdelanteEHR.getPatient(p.id)!.progressNotes!.find((x) => x.id === note.id)!.status;
       if (role === "sud_counselor" || role === "nurse_rn") {
         expect(st).toBe("cosign_pending");
-        AdelanteEHR.cosignProgressNote(p.id, note.id, { cosignedBy: "Dr. Bagga", cosignedById: "s-np1", role: "pmhnp", attestation: attest("progress_note_supervisor_sign", "Dr. Bagga") });
+        AdelanteEHR.cosignProgressNote(p.id, note.id, { cosignedBy: "Dr. Sample", cosignedById: "s-np1", role: "pmhnp", attestation: attest("progress_note_supervisor_sign", "Dr. Sample") });
       }
       expect(AdelanteEHR.getPatient(p.id)!.progressNotes!.find((x) => x.id === note.id)!.status).toMatch(/^(signed|cosigned)$/);
       sweepScribeRetention();

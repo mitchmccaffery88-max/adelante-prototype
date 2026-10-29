@@ -25,6 +25,7 @@ import type {
 import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
 import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource, registerCredentialingServiceCatalog } from "./credentialing";
+import { canOverrideFundingSource, fundingRecordFrom, registerFundingFacts, resolveFundingSource, seriesOccurrences, SERIES_DRAFT, FUNDING_OVERRIDE_REASONS, FUNDING_SOURCES, type AppointmentFundingRecord, type CoverageOrder, type CoveragePlanType, type DeliverySystemDraft, type FundingOverrideReason, type FundingSource, type SeriesCadence } from "./fundingSource";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { assertGroupApproval, assertGroupStaffRequest, groupRequestHooks } from "./groupRequestBoundary";
 import { ON_CALL_GAP, onCallOwnerFor } from "./onCallBoundary";
@@ -924,6 +925,10 @@ export interface CoveragePlanSpan {
   shareOfCostCents?: number;
   /** §Phase 8c — plan name from a response that matched nothing on the list. */
   planNotOnList?: boolean;
+  /** 29 Oct (Draft) — primary/secondary order when several spans overlap. */
+  order?: CoverageOrder;
+  /** 29 Oct (Draft) — plan type; older spans are read conservatively by payer name. */
+  planType?: CoveragePlanType;
 }
 
 
@@ -2169,6 +2174,10 @@ export interface Appointment {
   chargeCents?: number;
   /** When funding lane is ISL, why this encounter fell into ISL. */
   islReason?: "uninsured" | "benefit_exhausted" | "restricted_setting";
+  /** 29 Oct (Draft) — resolved funding source, stored at booking; Billing/Intake may change it with a reason code. */
+  fundingSource?: AppointmentFundingRecord;
+  /** 29 Oct — staff-only recurring series id (each occurrence is its own booking). */
+  seriesId?: string;
   /**
    * §ASAM visit — structured link to the ASAM task this visit serves. Never
    * rendered to roles failing the ASAM Part 2 check; to them this is a
@@ -2345,6 +2354,8 @@ export interface ServiceTypeInfo {
   sud?: boolean;
   /** Draft service classification — pending clinical sign-off; never patient/SUD inference. */
   controlledSubstanceDraft?: boolean;
+  /** 29 Oct (Draft — Mitch and Christi to confirm): the Medi-Cal delivery system that usually pays. */
+  deliverySystemDraft: DeliverySystemDraft;
 }
 
 export interface ClinicLocation {
@@ -2371,6 +2382,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Get set up with your care team.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 60,
+    deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" },
   },
   {
     id: "therapy_individual",
@@ -2378,6 +2390,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "A private one-on-one session.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 50,
+    deliverySystemDraft: { tag: "smhs_or_nsmhs" },
   },
   {
     id: "therapy_group",
@@ -2385,6 +2398,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Meet with others in a supported group.",
     allowedModalities: ["in_person", "video"],
     defaultDurationMin: 60,
+    deliverySystemDraft: { tag: "smhs_or_nsmhs" },
   },
   {
     id: "med_management",
@@ -2392,6 +2406,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Talk with a prescriber about medications.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
+    deliverySystemDraft: { tag: "nsmhs" },
   },
   {
     // 28 Oct (Mitch, Draft): the controlled-substance flag lives here only;
@@ -2401,6 +2416,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Meet with a prescriber about a controlled medication or MOUD.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
+    deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation; plan or FFS billing needs review" },
     controlledSubstanceDraft: true,
   },
   {
@@ -2409,6 +2425,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Connect with someone who's been there.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 45,
+    deliverySystemDraft: { tag: "county_peer", confirm: "Confirm county opt-in" },
   },
   {
     id: "case_management",
@@ -2416,6 +2433,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Get help with resources and next steps.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 30,
+    deliverySystemDraft: { tag: "ecm_mcp", confirm: "ECM enrollment only; otherwise not billed" },
   },
   {
     id: "care_coordination",
@@ -2423,10 +2441,11 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Line up outside services and support.",
     allowedModalities: ["video", "phone"],
     defaultDurationMin: 30,
+    deliverySystemDraft: { tag: "non_billable" },
   },
-  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true },
-  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true },
-  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true },
+  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
 ];
 
 const LOCATIONS: ClinicLocation[] = [
@@ -4545,7 +4564,7 @@ const clinicians: Clinician[] = [
   },
   {
     id: "c5",
-    name: "Dr. M. Bagga",
+    name: "Dr. R. Sample",
     credential: "M.D.",
     mediCalCredentialed: true,
     mediCalStatus: "active",
@@ -5464,7 +5483,7 @@ if (patients[1]) {
     patientId: patients[1].id,
     requestType: "question",
     context: "Is the patient cleared to restart group therapy this week?",
-    requestedBy: "Dr. M. Bagga",
+    requestedBy: "Dr. R. Sample",
     requestedByRole: "pmhnp",
     status: "open",
     createdAt: ago(90),
@@ -8364,13 +8383,19 @@ export function bookingCredentialingBlock(
   patientId: string,
   start: string,
 ): string | undefined {
-  if (!isBillableServiceType(serviceType)) return undefined;
+  // 29 Oct (Draft): every appointment resolves its own funding source; private
+  // pay is checked too. Non-billable work and undecided coverage never block here
+  // (undecided is stored as "Coverage — needs review" for Billing/Intake).
+  const funding = resolveFundingSource(patientId, serviceType, start);
+  if (!funding.source || funding.source === "non_billable") return undefined;
+  // Draft (Christi to confirm): for Adelante-policy sources (private pay, grant)
+  // the hard stop covers visits dated today or later; back-dated entries are
+  // flagged for Billing review instead, never blocked or cancelled.
+  if ((funding.source === "private_pay" || funding.source === "grant_or_county_funded") && start.slice(0, 10) < new Date().toISOString().slice(0, 10)) return undefined;
   const member = credentialingRecordForClinician(clinicianId);
   if (!member) return undefined; // authority self-registers after initial demo bookings
-  const payer = AdelanteEHR.activeCoveragePlan(patientId)?.payer;
-  if (!payer) return undefined;
   // 28 Oct fix: booking judges exclusion screening as of now, end-dated items on the visit date.
-  const res = credentialedForService(member.staffId, payer, serviceType, start, { asOf: new Date().toISOString() });
+  const res = credentialedForService(member.staffId, funding.payerKey, serviceType, start, { asOf: new Date().toISOString(), fundingSource: funding.source });
   return res.ok ? undefined : "This clinician can't be booked for this service right now.";
 }
 
@@ -8476,6 +8501,44 @@ function _requestCancel(
 // 28 Oct fix: lets the coordinator tile see booked visits after a check falls due.
 registerBookedVisitSource(() => AdelanteEHR.listAppointments());
 registerCredentialingServiceCatalog(serviceType => SERVICE_TYPES.some(s => s.id === serviceType && s.controlledSubstanceDraft === true));
+// 29 Oct (Draft): the funding-source resolver reads coverage, the catalog tag and ECM enrollment here.
+registerFundingFacts({
+  coverage: (pid) => AdelanteEHR.listCoveragePlans(pid),
+  paymentArrangement: (pid) => patients.find((x) => x.id === pid)?.paymentArrangement,
+  tag: (serviceType) => SERVICE_TYPES.find((x) => x.id === serviceType)?.deliverySystemDraft.tag,
+  ecmEnrolled: (pid, at) => (patients.find((x) => x.id === pid)?.episodes ?? []).some((e) => e.type === "ecm" && e.openedAt.slice(0, 10) <= at.slice(0, 10) && (!e.closedAt || e.closedAt.slice(0, 10) >= at.slice(0, 10))),
+});
+
+/** 29 Oct — named so the staff series loop can reuse it. */
+export interface BookAppointmentInput {
+  patientId: string;
+  clinicianId: string;
+  start: string;
+  durationMin: number;
+  serviceType?: ServiceType;
+  modality?: "video" | "phone" | "in_person";
+  locationId?: string;
+  /** How this booking was created. Defaults to `staff_scheduled`. */
+  source?: AppointmentSource;
+  /**
+   * Staff-only escape hatch for a deliberate overlap on the patient's own
+   * calendar (e.g. a correction in progress, or a paired visit a human has
+   * judged to be fine). Never set from patient self-booking.
+   */
+  allowPatientOverlap?: boolean;
+  /** §Needs step 3 — booking FROM an appointment request closes it. */
+  requestId?: string;
+  /** Who booked (for request-close attribution). */
+  bookedBy?: { id: string; role: string };
+  /** 26 Oct Phase A: dedicated referral proof, never a generic scheduling grant. */
+  intakeBooking?: IntakeBookingProof;
+  /** Staff member who renders a contact visit (defaults to a contact-role booker). */
+  assignedStaffId?: string;
+  /** §ASAM visit — link to the open ASAM task. Linking never closes it. */
+  asamTaskId?: string;
+  /** 29 Oct — set only by bookAppointmentSeries. */
+  seriesId?: string;
+}
 
 export const AdelanteEHR = {
   subscribe(l: Listener) {
@@ -9264,33 +9327,7 @@ export const AdelanteEHR = {
     });
     emit();
   },
-  bookAppointment(input: {
-    patientId: string;
-    clinicianId: string;
-    start: string;
-    durationMin: number;
-    serviceType?: ServiceType;
-    modality?: "video" | "phone" | "in_person";
-    locationId?: string;
-    /** How this booking was created. Defaults to `staff_scheduled`. */
-    source?: AppointmentSource;
-    /**
-     * Staff-only escape hatch for a deliberate overlap on the patient's own
-     * calendar (e.g. a correction in progress, or a paired visit a human has
-     * judged to be fine). Never set from patient self-booking.
-     */
-    allowPatientOverlap?: boolean;
-    /** §Needs step 3 — booking FROM an appointment request closes it. */
-    requestId?: string;
-    /** Who booked (for request-close attribution). */
-    bookedBy?: { id: string; role: string };
-    /** 26 Oct Phase A: dedicated referral proof, never a generic scheduling grant. */
-    intakeBooking?: IntakeBookingProof;
-    /** Staff member who renders a contact visit (defaults to a contact-role booker). */
-    assignedStaffId?: string;
-    /** §ASAM visit — link to the open ASAM task. Linking never closes it. */
-    asamTaskId?: string;
-  }) {
+  bookAppointment(input: BookAppointmentInput) {
     if (input.asamTaskId) {
       const t = caseTasks.find((x) => x.id === input.asamTaskId);
       if (!t || t.patientId !== input.patientId || t.taskType !== ASAM_TASK_TYPE || t.status === "done")
@@ -9366,6 +9403,8 @@ export const AdelanteEHR = {
       source: input.source ?? "staff_scheduled",
       id: uid(),
       status: "scheduled",
+      // 29 Oct (Draft): the resolved funding source is stored on the appointment.
+      fundingSource: fundingRecordFrom(resolveFundingSource(input.patientId, input.serviceType, input.start)),
       ...(intakeBooking ? { intakeFirstVisit: { referralId: intakeBooking.referralId, kind: intakeBooking.kind as import("./intakePhaseA").FirstVisitKind }, bookedBy } : {}),
       ...(bookedBy?.id && !fields.assignedStaffId && _CONTACT_ROLES.includes(bookedBy.role) ? { assignedStaffId: bookedBy.id } : {}),
     };
@@ -9401,6 +9440,65 @@ export const AdelanteEHR = {
       kind: "booked",
     });
     if (isStaffBooking) _announceStaffBooking(a, input.bookedBy!);
+    emit();
+    return a;
+  },
+  /**
+   * 29 Oct (Mitch, Draft) — staff-only recurring series for individual visits.
+   * A loop over bookAppointment: every occurrence runs the same rights,
+   * credential and coverage checks on its own date and gets its own audit row.
+   * Blocked occurrences are not booked; they come back with the neutral reason
+   * so staff can rebook them with another clinician. Never patient self-scheduling.
+   */
+  bookAppointmentSeries(
+    input: Omit<BookAppointmentInput, "seriesId" | "start" | "source"> & {
+      firstStart: string;
+      cadence: SeriesCadence;
+      endDate?: string;
+      count?: number;
+      source?: AppointmentSource;
+    },
+  ): { seriesId: string; booked: Appointment[]; blocked: { start: string; reason: string }[] } {
+    const role = input.bookedBy?.role as StaffRole | undefined;
+    if (!role || role === ("patient" as StaffRole) || input.source === "self_scheduled" || !canScheduleRole(role))
+      throw new Error("Only staff who book visits can book a series.");
+    if (GROUP_SERVICE_TYPES.includes(input.serviceType ?? "")) throw new Error("Series booking is for individual visits.");
+    const starts = seriesOccurrences({ firstStart: input.firstStart, cadence: input.cadence, endDate: input.endDate, count: input.count });
+    if (input.count && input.count > SERIES_DRAFT.maxVisitsPerSeries)
+      throw new Error(`A series can have at most ${SERIES_DRAFT.maxVisitsPerSeries} visits (Draft).`);
+    const seriesId = `series-${uid()}`;
+    const booked: Appointment[] = [];
+    const blocked: { start: string; reason: string }[] = [];
+    const { firstStart: _f, cadence, endDate: _e, count: _c, ...rest } = input;
+    for (const start of starts) {
+      try {
+        const a = AdelanteEHR.bookAppointment({ ...rest, start, source: "staff_scheduled", seriesId });
+        booked.push(a);
+        appendAudit({ category: "clinical", action: "appointment_series_occurrence_booked", patientId: a.patientId, actorId: input.bookedBy?.id ?? "staff", actorRole: role, detail: { seriesId, apptId: a.id, cadence } });
+      } catch (e) {
+        blocked.push({ start, reason: e instanceof Error ? e.message : "This visit can't be booked." });
+        appendAudit({ category: "clinical", action: "appointment_series_occurrence_blocked", patientId: input.patientId, actorId: input.bookedBy?.id ?? "staff", actorRole: role, detail: { seriesId, start, cadence } });
+      }
+    }
+    emit();
+    return { seriesId, booked, blocked };
+  },
+  /**
+   * 29 Oct (Draft) — Billing or Intake changes an appointment's funding source
+   * with a reason code. One audit row, ids and reason code only.
+   */
+  setAppointmentFundingSource(
+    apptId: string,
+    input: { source: FundingSource; reasonCode: FundingOverrideReason; actorId: string; actorRole: StaffRole },
+  ): Appointment {
+    if (!canOverrideFundingSource(input.actorRole)) throw new Error("Only Billing or Intake can change who pays for a visit.");
+    if (!FUNDING_SOURCES.includes(input.source)) throw new Error("Pick a funding source.");
+    if (!FUNDING_OVERRIDE_REASONS.includes(input.reasonCode)) throw new Error("Pick a reason.");
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) throw new Error("That visit no longer exists.");
+    const before = a.fundingSource?.source;
+    a.fundingSource = { source: input.source, flags: (a.fundingSource?.flags ?? []).filter((f) => f === "cob_review"), set: "override", reasonCode: input.reasonCode };
+    appendAudit({ category: "clinical", action: "appointment_funding_source_changed", patientId: a.patientId, actorId: input.actorId, actorRole: input.actorRole, detail: { apptId: a.id, from: before ?? null, to: input.source, reasonCode: input.reasonCode } });
     emit();
     return a;
   },
@@ -13705,6 +13803,9 @@ export const AdelanteEHR = {
       from: string;
       to?: string;
       source: CoveragePlanSource;
+      /** 29 Oct (Draft) — primary/secondary and plan type for the funding-source resolver. */
+      order?: CoverageOrder;
+      planType?: CoveragePlanType;
     } & CoverageActor,
   ): { ok: boolean; error?: string } {
     const p = patients.find((x) => x.id === patientId);
@@ -13723,6 +13824,8 @@ export const AdelanteEHR = {
       from: input.from,
       ...(input.to ? { to: input.to } : {}),
       source: input.source,
+      ...(input.order ? { order: input.order } : {}),
+      ...(input.planType ? { planType: input.planType } : {}),
       recordedBy: input.actorId,
       recordedByRole: input.actorRole,
       recordedAt: new Date().toISOString(),
@@ -25741,7 +25844,7 @@ export type { Medication } from "./vendors";
 // ---------------------------------------------------------------------------
 {
   const PATIENT_ID = "p-demo-mar-seed";
-  const PMHNP = "Dr. M. Bagga, M.D.";
+  const PMHNP = "Dr. R. Sample, M.D.";
   const NURSE = "Rosa T., LVN";
   const tz = "America/Los_Angeles";
   const seedPatient: Patient = {
@@ -25826,7 +25929,7 @@ export type { Medication } from "./vendors";
 // ---------------------------------------------------------------------------
 {
   const PATIENT_ID = "p-demo-mar-seed-es";
-  const PMHNP = "Dr. M. Bagga, M.D.";
+  const PMHNP = "Dr. R. Sample, M.D.";
   const NURSE = "Rosa T., LVN";
   const tz = "America/Los_Angeles";
   const seedPatient: Patient = {
@@ -25920,7 +26023,7 @@ export function useEhr<T>(selector: () => T): T {
 // ---------------------------------------------------------------------------
 {
   const CM = "Luz Herrera";
-  const PMHNP = "Dr. M. Bagga, M.D.";
+  const PMHNP = "Dr. R. Sample, M.D.";
   const NURSE = "Rosa T., LVN";
   const iso = (d: Date) => d.toISOString();
   const daysAgo = (n: number) => iso(new Date(Date.now() - n * 86400_000));
@@ -26600,13 +26703,13 @@ try {
 // e-prescribing. OUD/AUD medications are Part 2 protected by name
 // (isSudMedicationName) everywhere they render.
 try {
-  const PRESCRIBER = "Dr. M. Bagga, M.D.";
+  const PRESCRIBER = "Dr. R. Sample, M.D.";
   const PRESCRIBER_ID = "s-np1";
   const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
   const byName = (f: string, l: string) =>
     patients.find((p) => p.firstName === f && p.lastName === l)?.id;
   // Prescriber of record split: the PMHNP (Anita Brooks) owns these patients'
-  // prescriptions and refill reviews; Dr. M. Bagga owns everyone else's.
+  // prescriptions and refill reviews; Dr. R. Sample owns everyone else's.
   const NP_PATIENTS = new Set(
     [demoScenarioPatientId("combination"), demoScenarioPatientId("public_referral"), demoScenarioPatientId("medication")].filter(Boolean) as string[],
   );
@@ -26799,7 +26902,7 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
   const p = patients.find((x) => x.id === patientId);
   if (!p) return;
   if ((p.orders ?? []).some((o) => /buprenorphine/i.test(o.drugName) && o.curesCheck)) return;
-  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. M. Bagga");
+  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. R. Sample");
   const draft = AdelanteEHR.addDraftOrder(patientId, {
     drugName: "Buprenorphine-naloxone",
     productName: "Buprenorphine 8 MG / Naloxone 2 MG Sublingual Film",
@@ -26820,10 +26923,10 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
     checkedAt: new Date(Date.now() - 86400000).toISOString().slice(0, 16),
     result: "no_concerns",
     note: "Demo — placeholder, no live query.",
-    by: "Dr. M. Bagga",
+    by: "Dr. R. Sample",
     role: "physician",
   });
-  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. M. Bagga");
+  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. R. Sample");
 }
 
 // Demo — prescriber of record (physician / PMHNP), set through the store so
@@ -26854,9 +26957,9 @@ try {
   };
   book(demoScenarioPatientId("sud_consented"), "c5", 60, "med_management");
   // 27 Oct credentialing (Draft): p1 has active Medi-Cal FFS coverage and
-  // Dr. Bagga's exclusion check is overdue, so the ONE credentialing rule
+  // Dr. Sample's exclusion check is overdue, so the ONE credentialing rule
   // blocks a NEW p1 booking with c5. The demo visit books with the other
-  // enrolled prescriber instead; Dr. Bagga keeps his uncovered-patient visit.
+  // enrolled prescriber instead; Dr. Sample keeps his uncovered-patient visit.
   book("p1", "c3", 150, "med_management");
   book(demoScenarioPatientId("public_referral"), "c3", 90, "med_management");
   book(demoScenarioPatientId("combination"), "c3", 180, "med_management");

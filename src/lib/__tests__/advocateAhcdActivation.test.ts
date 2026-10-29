@@ -38,7 +38,7 @@ function clearItems(linkId: string, part2: "verified" | "unclear" = "verified") 
 }
 
 const determination = {
-  determinedBy: "Dr. Bagga",
+  determinedBy: "Dr. Sample",
   determinedByRole: "pmhnp",
   basis: "Client cannot communicate health care decisions.",
 };

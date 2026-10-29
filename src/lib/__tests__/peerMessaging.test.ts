@@ -45,7 +45,7 @@ describe("/peer focused view", () => {
     const pid = newPatient();
     AdelanteEHR.sendPatientMessage(pid, "hi Andre");
     AdelanteEHR.sendStaffMessage(pid, "Andre Willis", "hey, I'm here", "peer_specialist");
-    AdelanteEHR.sendStaffMessage(pid, "Dr. Bagga", "labs are back", "pmhnp");
+    AdelanteEHR.sendStaffMessage(pid, "Dr. Sample", "labs are back", "pmhnp");
 
     const all = AdelanteEHR.listCareMessages(pid);
     const strand = peerStrand(all);

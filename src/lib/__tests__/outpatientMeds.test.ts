@@ -63,7 +63,7 @@ describe("outpatient medication demo seed", () => {
 });
 
 describe("ECM case manager and protected medications (draft pending compliance review)", () => {
-  it("Luz Herrera (ECM) can't see Luis's buprenorphine-naloxone; Dr. Bagga (PMHNP) still can", async () => {
+  it("Luz Herrera (ECM) can't see Luis's buprenorphine-naloxone; Dr. Sample (PMHNP) still can", async () => {
     const { roleSeesSudMedication, SUD_MED_ACCESS_NOTE } = await import("@/lib/asamReporting");
     const id = demoScenarioPatientId("sud_consented")!;
     const p = AdelanteEHR.getPatient(id)!;

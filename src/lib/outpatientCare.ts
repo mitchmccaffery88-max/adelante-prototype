@@ -380,7 +380,7 @@ export function sendLegalDisclosure(
 
 /** B1/B2 demo: an allergy override on Daniel, a CURES check on Luis's buprenorphine. */
 export function seedOrderSafetyDemo(): void {
-  const BAGGA = { by: "Dr. M. Bagga", role: "physician" };
+  const BAGGA = { by: "Dr. R. Sample", role: "physician" };
   try {
     const daniel = AdelanteEHR.listPatients().find((p) => p.firstName === "Daniel");
     if (daniel) {

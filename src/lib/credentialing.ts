@@ -26,6 +26,7 @@
 import { useSyncExternalStore } from "react";
 import { STAFF_ROSTER, getStaffMember, type StaffRole } from "./roles";
 import { canAssistCredentials } from "./credentialAccess";
+import { ADELANTE_POLICY_LABEL, fundingRequiresEnrollment, isAdelantePolicySource, type FundingFlag, type FundingSource } from "./fundingSource";
 
 export const CREDENTIALING_DRAFT_LABEL = "Draft — pending go-live permissions audit and compliance review";
 
@@ -142,6 +143,16 @@ export interface ClinicianCredentialing {
   enrollments: ServicePayerEnrollment[];
   recredentialingDueAt?: string;
   documentStatus: CredentialDocumentStatus;
+  /**
+   * 29 Oct (Mitch) — billable roles without a clinical license. Draft —
+   * confirm with compliance. Checked only when the service is billable for
+   * the resolved funding source; non-billable peer/CHW work is never blocked.
+   */
+  peerCertification?: { number: string; issuingBody: string; issuedAt?: string; expiresAt?: string; verifiedAt?: string };
+  chwQualification?: { kind: "certificate" | "experience_attestation"; number?: string; issuingBody?: string; issuedAt?: string; expiresAt?: string; attestedAt?: string };
+  /** Supervising provider on file (peer: supervising provider; CHW: supervising licensed provider). */
+  supervisingProviderStaffId?: string;
+  ecmTraining?: { attestedAt: string; expiresAt?: string };
   /** Seed rows are demo data; runtime rows come through registry actions. */
   seed?: boolean;
 }
@@ -173,7 +184,15 @@ export type CredentialingReasonCode =
   | "supervision_missing"
   | "supervision_expired"
   | "dea_not_verified"
-  | "dea_expired";
+  | "dea_expired"
+  // 29 Oct — billable roles without a clinical license (Draft, confirm with compliance).
+  | "peer_certification_missing"
+  | "peer_certification_expired"
+  | "chw_qualification_missing"
+  | "chw_qualification_expired"
+  | "supervising_provider_missing"
+  | "ecm_training_missing"
+  | "ecm_contract_missing";
 
 /** Neutral reason labels — safe for Billing and the Credentialing Coordinator. */
 export const CREDENTIALING_REASON_LABEL: Record<CredentialingReasonCode, string> = {
@@ -192,7 +211,37 @@ export const CREDENTIALING_REASON_LABEL: Record<CredentialingReasonCode, string>
   supervision_expired: "Supervision record not active on the date of service",
   dea_not_verified: "DEA registration not verified on the date of service",
   dea_expired: "DEA registration expired or expiry not recorded on the date of service",
+  peer_certification_missing: "Peer Support Specialist certification not on file",
+  peer_certification_expired: "Peer Support Specialist certification expired before the date of service",
+  chw_qualification_missing: "CHW certificate or experience attestation not on file",
+  chw_qualification_expired: "CHW certificate expired before the date of service",
+  supervising_provider_missing: "No supervising provider on file",
+  ecm_training_missing: "ECM training attestation not on file",
+  ecm_contract_missing: "No organization ECM contract with this plan",
 };
+
+/** Draft — confirm with compliance. Each requirement for billable roles without a clinical license. */
+export const UNLICENSED_ROLE_REQUIREMENTS_DRAFT = {
+  label: "Draft — confirm with compliance",
+  peer_specialist: ["Medi-Cal Peer Support Specialist certification (number, issuing body, issue and expiry dates)", "Supervising provider on file"],
+  community_health_worker: ["CHW certificate or qualifying-experience attestation", "Supervising licensed provider on file"],
+  ecm_provider: ["Required ECM training attestation", "Organization ECM contract with that plan (organization level, per plan)"],
+} as const;
+export type UnlicensedBillableRole = keyof Omit<typeof UNLICENSED_ROLE_REQUIREMENTS_DRAFT, "label">;
+export const isUnlicensedBillableRole = (role?: string): role is UnlicensedBillableRole =>
+  role === "peer_specialist" || role === "community_health_worker" || role === "ecm_provider";
+
+/** Organization-level ECM contracts per plan (Draft, fictional demo rows). */
+export const ECM_ORG_CONTRACTS_DRAFT: { payer: string; status: "active" | "pending"; effectiveAt?: string }[] = [
+  { payer: "Health Net Medi-Cal", status: "active", effectiveAt: "2025-01-01" },
+  { payer: "Anthem Blue Cross Medi-Cal", status: "pending" },
+];
+
+/** Reason label; private-pay and grant visits say exclusion screening is Adelante policy. */
+export function credentialingReasonLabel(code: CredentialingReasonCode, source?: FundingSource): string {
+  const base = CREDENTIALING_REASON_LABEL[code];
+  return isAdelantePolicySource(source) && (code === "exclusion_hit" || code === "exclusion_check_overdue") ? `${base} — ${ADELANTE_POLICY_LABEL}` : base;
+}
 
 /** The label every other role sees — never the reasons. */
 export const CREDENTIALING_NEUTRAL_LABEL = "Credentialing — needs review";
@@ -233,9 +282,19 @@ export interface CredentialingCheckInput {
    * Omitted = the date of service (historical mode).
    */
   asOf?: string;
+  /**
+   * 29 Oct (Mitch, Draft): the resolved funding source for this appointment.
+   * When present it decides which checks run; omitted = the earlier
+   * payer-string behaviour (kept for existing callers).
+   */
+  fundingSource?: FundingSource;
 }
 
-export type CredentialingCheckResult = { ok: true } | { ok: false; reasons: CredentialingReasonCode[] };
+/** Neutral Billing flags the rule raises without blocking. */
+export type CredentialingFlag = Extract<FundingFlag, "out_of_network_review" | "medicare_review">;
+export type CredentialingCheckResult =
+  | { ok: true; flags?: CredentialingFlag[] }
+  | { ok: false; reasons: CredentialingReasonCode[]; flags?: CredentialingFlag[] };
 
 const dayMs = 86400_000;
 const asDay = (iso: string) => Math.floor(+new Date(iso) / dayMs);
@@ -260,12 +319,35 @@ export function evaluateCredentialing(
   input: CredentialingCheckInput,
 ): CredentialingCheckResult {
   const reasons: CredentialingReasonCode[] = [];
+  const flags: CredentialingFlag[] = [];
+  // 29 Oct: non-billable services get no credential check (role gates still apply upstream).
+  if (input.fundingSource === "non_billable") return { ok: true };
   if (!record) return { ok: false, reasons: ["no_record"] };
   const dos = input.dateOfService;
   const d = asDay(dos);
+  const staffRole = getStaffMember(record.staffId)?.role;
+  const unlicensed = !record.license && !record.registration && isUnlicensedBillableRole(staffRole);
 
   // License or registration, verified and unexpired on the date of service.
-  if (record.license) {
+  if (unlicensed) {
+    // 29 Oct (Draft — confirm with compliance): role credentials replace the license.
+    const notExpired = (e?: string) => !e || asDay(e) >= d;
+    if (staffRole === "peer_specialist") {
+      const c = record.peerCertification;
+      if (!c?.number.trim() || !c.issuingBody.trim()) reasons.push("peer_certification_missing");
+      else if (!notExpired(c.expiresAt)) reasons.push("peer_certification_expired");
+      if (!record.supervisingProviderStaffId) reasons.push("supervising_provider_missing");
+    } else if (staffRole === "community_health_worker") {
+      const q = record.chwQualification;
+      if (!q || (q.kind === "certificate" ? !q.number?.trim() : !q.attestedAt)) reasons.push("chw_qualification_missing");
+      else if (q.kind === "certificate" && !notExpired(q.expiresAt)) reasons.push("chw_qualification_expired");
+      if (!record.supervisingProviderStaffId) reasons.push("supervising_provider_missing");
+    } else if (staffRole === "ecm_provider") {
+      if (!record.ecmTraining?.attestedAt || !notExpired(record.ecmTraining.expiresAt)) reasons.push("ecm_training_missing");
+      const contract = ECM_ORG_CONTRACTS_DRAFT.some((k) => k.payer === input.payer && k.status === "active" && (!k.effectiveAt || asDay(k.effectiveAt) <= d));
+      if (!contract) reasons.push("ecm_contract_missing");
+    }
+  } else if (record.license) {
     if (!record.license.verifiedAt || asDay(record.license.verifiedAt) > d) reasons.push("license_not_verified");
     if (record.license.expiresAt && asDay(record.license.expiresAt) < d) reasons.push("license_expired");
   } else if (record.registration) {
@@ -295,10 +377,27 @@ export function evaluateCredentialing(
     else if (asDay(latest.nextDueAt) < x) reasons.push("exclusion_check_overdue");
   }
 
+  // 29 Oct: payer enrollment only where the funding source requires it.
+  const enrollment = input.fundingSource ? (unlicensed ? "none" : fundingRequiresEnrollment(input.fundingSource)) : "required";
+  const enrolledFor = () => {
+    const specific = record.enrollments.some((e) => e.payer === input.payer && e.serviceType === input.serviceType);
+    return record.enrollments.some(
+      (e) =>
+        e.payer === input.payer &&
+        (specific ? e.serviceType === input.serviceType : e.serviceType === "*" || e.serviceType === input.serviceType) &&
+        e.status === "active" &&
+        (!e.effectiveAt || asDay(e.effectiveAt) <= d),
+    );
+  };
   // 28 Oct credentialing reconciliation: unknown facts cannot silently pass.
-  if (!input.payer) reasons.push("payer_missing");
+  if (enrollment === "required" && !input.payer) reasons.push("payer_missing");
   if (!input.serviceType) reasons.push("service_missing");
-  if (input.payer && input.serviceType) {
+  if (enrollment === "in_network_flag") {
+    if (!input.payer || !input.serviceType || !enrolledFor()) flags.push("out_of_network_review");
+  } else if (enrollment === "review_flag") {
+    flags.push("medicare_review");
+  }
+  if (enrollment === "required" && input.payer && input.serviceType) {
     // 28 Oct MOUD service type: a service-specific row for this payer takes
     // precedence over the payer-wide "*" row, so "not started" is never overridden.
     const specific = record.enrollments.some((e) => e.payer === input.payer && e.serviceType === input.serviceType);
@@ -318,7 +417,8 @@ export function evaluateCredentialing(
     else if (!supervisionActiveOn(record.registration.supervision, dos)) reasons.push("supervision_expired");
   }
 
-  return reasons.length ? { ok: false, reasons } : { ok: true };
+  const f = flags.length ? { flags } : {};
+  return reasons.length ? { ok: false, reasons, ...f } : { ok: true, ...f };
 }
 
 // ---------------------------------------------------------------- store
@@ -378,10 +478,10 @@ export function credentialedForService(
   payer: string | undefined,
   serviceType: string | undefined,
   dateOfService: string,
-  opts: { asOf?: string } = {},
+  opts: { asOf?: string; fundingSource?: FundingSource } = {},
 ): CredentialingCheckResult {
   const asOf = opts.asOf ?? new Date().toISOString();
-  return evaluateCredentialing(credentialingRecordForStaff(staffId), { payer, serviceType, dateOfService, asOf });
+  return evaluateCredentialing(credentialingRecordForStaff(staffId), { payer, serviceType, dateOfService, asOf, ...(opts.fundingSource ? { fundingSource: opts.fundingSource } : {}) });
 }
 
 // 28 Oct fix: ehr self-registers its booked visits so the coordinator tile can
@@ -578,6 +678,10 @@ export function expiringItems(now: Date = new Date()): ExpiringItem[] {
       { item: "Registration", expiresAt: r.registration?.expiresAt },
       { item: "DEA registration", expiresAt: r.dea?.expiresAt },
       { item: "Malpractice coverage", expiresAt: r.malpractice?.expiresAt },
+      // 29 Oct (Draft — confirm with compliance): billable roles without a clinical license.
+      { item: "Peer Support Specialist certification", expiresAt: r.peerCertification?.expiresAt },
+      { item: "CHW certificate", expiresAt: r.chwQualification?.kind === "certificate" ? r.chwQualification.expiresAt : undefined },
+      { item: "ECM training attestation", expiresAt: r.ecmTraining?.expiresAt },
     ];
     for (const c of candidates) {
       if (!c.expiresAt) continue;
@@ -683,7 +787,24 @@ export function credentialingTiles(now: Date = new Date()) {
     { key: "recredentialing", label: "Re-credentialing due", count: recred.length, items: recred },
     { key: "enrollment", label: "Payer enrollment pending", count: pending.length, items: pending },
     { key: "blocked", label: "Blocked clinicians", count: new Set(blocked.map((b) => b.staffId)).size, items: blocked },
+    // 29 Oct (Draft — confirm with compliance): peer / CHW / ECM credentials missing or expiring.
+    { key: "role_credentials", label: "Peer, CHW and ECM credentials", count: roleCredentialGaps(now).length, items: roleCredentialGaps(now) },
   ] as const;
+}
+
+/** Peer / CHW / ECM staff whose Draft role credentials are missing, expired, or expiring within 90 days. */
+export function roleCredentialGaps(now: Date = new Date()): { staffId: string; reasons: CredentialingReasonCode[]; expiringDays?: number }[] {
+  const out: { staffId: string; reasons: CredentialingReasonCode[]; expiringDays?: number }[] = [];
+  const today = asDay(now.toISOString());
+  for (const r of listCredentialingRecords()) {
+    const role = getStaffMember(r.staffId)?.role;
+    if (!isUnlicensedBillableRole(role) || r.license || r.registration) continue;
+    const res = evaluateCredentialing(r, { payer: ECM_ORG_CONTRACTS_DRAFT.find((k) => k.status === "active")?.payer, serviceType: "case_management", dateOfService: now.toISOString(), fundingSource: "private_pay" });
+    const own = res.ok ? [] : res.reasons.filter((x) => x.startsWith("peer_") || x.startsWith("chw_") || x.startsWith("ecm_") || x === "supervising_provider_missing");
+    const exp = [r.peerCertification?.expiresAt, r.chwQualification?.expiresAt, r.ecmTraining?.expiresAt].filter(Boolean).map((e) => asDay(e!) - today).filter((n) => n >= 0 && n <= 90);
+    if (own.length || exp.length) out.push({ staffId: r.staffId, reasons: own, ...(exp.length ? { expiringDays: Math.min(...exp) } : {}) });
+  }
+  return out;
 }
 
 /** The clinician's own neutral heads-up at 30 days — never the reasons of others. */
@@ -702,6 +823,7 @@ interface AppointmentLike {
   start: string;
   status: string;
   serviceType?: string;
+  fundingSource?: { source?: FundingSource; payerKey?: string };
 }
 interface ClaimLike {
   id: string;
@@ -731,12 +853,14 @@ export function credentialingReviewFlags(
 ): CredentialingReviewFlag[] {
   const out: CredentialingReviewFlag[] = [];
   for (const a of appointments) {
-    if (a.status !== "scheduled" || !isBillableServiceType(a.serviceType)) continue;
+    // 29 Oct (Draft): a stored funding source decides; otherwise the earlier billable-type rule.
+    const fs = a.fundingSource?.source;
+    if (a.status !== "scheduled" || (fs ? fs === "non_billable" : !isBillableServiceType(a.serviceType))) continue;
     const member = STAFF_ROSTER.find((s) => s.clinicianId === a.clinicianId);
     if (!member) continue;
     // 28 Oct fix: judged as of now until the visit day, then on the visit day — flag, never cancel.
     const now = new Date().toISOString();
-    const res = credentialedForService(member.id, payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now });
+    const res = credentialedForService(member.id, fs ? a.fundingSource?.payerKey : payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now, ...(fs ? { fundingSource: fs } : {}) });
     if (!res.ok) out.push({ kind: "appointment", id: a.id, staffId: member.id, reasons: res.reasons });
   }
   for (const c of claims) {

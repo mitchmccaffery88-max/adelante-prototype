@@ -1,4 +1,5 @@
 import { SimulatedBadge } from "@/components/SimulatedBadge";
+import { groupSessionFundingReview } from "@/lib/groupFunding";
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 import { CircleAlert } from "lucide-react";
@@ -477,6 +478,11 @@ function GroupDetail({
           </span>
         </div>
         <GroupBillingStatus category={group.category} />
+        {(() => {
+          // 29 Oct (Draft): per-member funding; the facilitator sees a neutral count only.
+          const note = groupSessionFundingReview({ ...group, billable: GROUP_BILLING[group.category].billable && group.billable !== false, start: activeStart || group.start }, enrollments.map((e) => e.patientId)).facilitatorNote;
+          return note ? <p className="text-xs text-muted-foreground" data-testid="group-billing-review-note">{note}</p> : null;
+        })()}
         <GroupJoinRulesEditor group={group} />
         <p className="text-xs text-muted-foreground">
           {group.serviceType} · {group.modality} · {group.durationMin} min · capacity{" "}

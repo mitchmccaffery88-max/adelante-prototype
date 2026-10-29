@@ -1107,7 +1107,7 @@ export interface StaffMember {
    * Only meaningful for `cf_care_manager`.
    */
   accessMode?: "direct" | "proxy";
-  /** Long display form, e.g. "Dr. Mandeep Bagga, M.D." (header). */
+  /** Long display form, e.g. "Dr. Riley Sample, M.D." (header). */
   fullName?: string;
   /**
    * §Batch E — one person, one identity, several role assignments. `role` is
@@ -1246,8 +1246,8 @@ export const STAFF_ROSTER: StaffMember[] = [
   // The only physician on staff; the only person who carries "Dr.".
   {
     id: "s-np1",
-    name: "Dr. M. Bagga",
-    fullName: "Dr. Mandeep Bagga, M.D.",
+    name: "Dr. R. Sample",
+    fullName: "Dr. Riley Sample, M.D.",
     role: "physician",
     credential: "M.D.",
     clinicianId: "c5",

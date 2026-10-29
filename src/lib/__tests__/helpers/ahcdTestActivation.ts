@@ -20,7 +20,7 @@ export function activateAhcdForTest(
     reviewedBy,
   });
   AdelanteEHR.activateAdvocateAhcd(linkId, {
-    determinedBy: opts.clinician ?? "Dr. Bagga",
+    determinedBy: opts.clinician ?? "Dr. Sample",
     determinedByRole: "pmhnp",
     basis: "Client cannot communicate health care decisions; documented in chart.",
     ...(opts.reviewByDate ? { reviewByDate: opts.reviewByDate } : {}),

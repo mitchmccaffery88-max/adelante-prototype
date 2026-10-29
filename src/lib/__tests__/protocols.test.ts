@@ -6,7 +6,7 @@ import { AdelanteEHR, worklistStatusFor } from "@/lib/ehr";
 import type { TemplateSchema } from "@/lib/templateSchema";
 import { canManageProtocol } from "@/lib/roles";
 
-const STAFF = "Dr. M. Bagga";
+const STAFF = "Dr. R. Sample";
 
 const scored: TemplateSchema = {
   sections: [

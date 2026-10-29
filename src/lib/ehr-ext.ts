@@ -660,7 +660,10 @@ function seedCredentialAuthorityDemo() {
     staffId: "s-th3",
     clinicianId: "c3",
     license: { licenseType: "PMHNP", number: "DEMO-LIC-0003", state: "CA", issuedAt: daysFromNow(-2432), expiresAt: daysFromNow(320), verificationSource: "brn", verifiedAt: daysFromNow(-15), verifiedBy: "s-cred1", method: "manual" },
-        dea: { number: "DEMO-LIC-0004", expiresAt: daysFromNow(400), verifiedAt: daysFromNow(-30) },
+        // 29 Oct (Mitch): the "DEA expires in 20 days" demo case moved here from c5. c3 is fully
+    // credentialed and enrolled for the MOUD type, so DEA expiry is the ONLY thing blocking
+    // controlled visits booked 21+ days out.
+    dea: { number: "DEMO-LIC-0004", expiresAt: daysFromNow(20), verifiedAt: daysFromNow(-30) },
     boardCertification: "PMHNP-BC",
     malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(350) },
     exclusionChecks: seedExclusions("s-th3", 6),
@@ -671,6 +674,8 @@ function seedCredentialAuthorityDemo() {
       { payer: "Medi-Cal FFS", serviceType: "controlled_med_moud", status: "active", effectiveAt: daysFromNow(-879) },
       { payer: "Medi-Cal FFS", serviceType: "therapy_individual", status: "active", effectiveAt: daysFromNow(-879) },
       { payer: "Tulare County DMC-ODS", serviceType: "sud_counseling", status: "not_started" },
+      // 29 Oct (Draft): MOUD resolves to the county DMC-ODS for Medi-Cal clients.
+      { payer: "Tulare County DMC-ODS", serviceType: "controlled_med_moud", status: "active", effectiveAt: daysFromNow(-879) },
     ],
     recredentialingDueAt: daysFromNow(2 * 365),
     documentStatus: "simulated_unavailable",
@@ -681,8 +686,8 @@ function seedCredentialAuthorityDemo() {
     staffId: "s-np1",
     clinicianId: "c5",
     license: { licenseType: "MD", number: "DEMO-LIC-0005", state: "CA", issuedAt: daysFromNow(-7789), expiresAt: daysFromNow(500), verificationSource: "medical_board_ca", verifiedAt: daysFromNow(-10), verifiedBy: "s-cred1", method: "manual" },
-        // 28 Oct MOUD service type: DEA expires before controlled visits booked 21+ days out.
-    dea: { number: "DEMO-LIC-0006", expiresAt: daysFromNow(20), verifiedAt: daysFromNow(-30) },
+        // 29 Oct: c5 stays the overdue-exclusion case only; the DEA-expiry case moved to c3.
+    dea: { number: "DEMO-LIC-0006", expiresAt: daysFromNow(400), verifiedAt: daysFromNow(-30) },
     boardCertification: "Psychiatry",
     malpractice: { carrier: "Demo Mutual", policy: "DEMO-POLICY", expiresAt: daysFromNow(500) },
     exclusionChecks: seedExclusions("s-np1", 45),

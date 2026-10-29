@@ -36,7 +36,7 @@ test("published, tagged content flows into the care plan, needs and Adel chat", 
     const saved = cp.saveContentDraft({ typeId: "library_lesson", id, body, actor: author });
     const selfPublish = cp.publishContent({ typeId: "library_lesson", id, actor: author });
     const review = cp.submitContentForReview({ typeId: "library_lesson", id, actor: author });
-    const approve = cp.publishContent({ typeId: "library_lesson", id, actor: { staffId: "s-np1", name: "Dr. M. Bagga", role: "physician" } });
+    const approve = cp.publishContent({ typeId: "library_lesson", id, actor: { staffId: "s-np1", name: "Dr. R. Sample", role: "physician" } });
     const luis = ehr.listPatients().find((p) => p.firstName === "Luis" && p.lastName === "Camacho")!;
     ehr.addSdohItem(luis.id, { need: "Housing", visibleToPatient: true }, { staffName: "Marisol Reyes", role: "therapist" });
     return { saved: saved.ok, selfPublish: selfPublish.ok, review: review.ok, approve: approve.ok, luisId: luis.id };

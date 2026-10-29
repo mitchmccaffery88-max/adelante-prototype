@@ -37,7 +37,7 @@ describe("simulated HIE", () => {
   it("outside med needs a human decision", () => {
     const [med] = listHieMeds(pid("Daniel"));
     expect(med!.status).toBe("review");
-    decideHieMed(med!.id, "ignored", { name: "Dr. M. Bagga", role: "physician" });
+    decideHieMed(med!.id, "ignored", { name: "Dr. R. Sample", role: "physician" });
     expect(listHieMeds(pid("Daniel"))[0]!.status).toBe("ignored");
   });
 

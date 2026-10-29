@@ -4,7 +4,7 @@ import { AdelanteEHR } from "@/lib/ehr";
 
 const CM = "Luz Herrera";
 const NURSE = "Rosa T., LVN";
-const PMHNP = "Dr. M. Bagga, M.D.";
+const PMHNP = "Dr. R. Sample, M.D.";
 
 function newPatient(last: string) {
   const p = AdelanteEHR.createPatient({

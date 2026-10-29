@@ -116,7 +116,7 @@ describe("note PDF builder", () => {
     const note: ProgressNote = {
       ...base,
       status: "cosigned",
-      cosignedBy: "Dr. M. Bagga",
+      cosignedBy: "Dr. R. Sample",
       cosignedAt: "2026-07-21T09:00:00.000Z",
       templateKey: "bh-intake",
       templateTitle: "Behavioral health intake",
@@ -136,7 +136,7 @@ describe("note PDF builder", () => {
     expect(value("Only if risk")).toBeUndefined();
     expect(value("PHQ total")).toBe("3 — Minimal");
     expect(value("Signed by")).toBe("Marisol Reyes");
-    expect(value("Cosigned by")).toBe("Dr. M. Bagga");
+    expect(value("Cosigned by")).toBe("Dr. R. Sample");
     expect(value("Status")).toBe("cosigned");
     expect(buildProgressNotePdf({ note, patient, role: "pmhnp" }).getNumberOfPages()).toBe(1);
   });

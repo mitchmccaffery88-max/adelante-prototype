@@ -35,7 +35,7 @@ function signedNote(automations: Automation[], answers: TemplateAnswers = {}) {
   });
   if (!n) throw new Error("no note");
   AdelanteEHR.signProgressNote(PATIENT, n.id, {
-    signedBy: "Dr. Bagga",
+    signedBy: "Dr. Sample",
     role: "pmhnp",
     attested: true,
   });
@@ -58,8 +58,8 @@ describe("post-sign automations", () => {
   it("never fires twice for the same note+automation", () => {
     const n = signedNote([taskAutomation()]);
     const before = AdelanteEHR.listCaseTasks().length;
-    AdelanteEHR.runNoteAutomations(PATIENT, n.id, { actorId: "Dr. Bagga" });
-    AdelanteEHR.runNoteAutomations(PATIENT, n.id, { actorId: "Dr. Bagga" });
+    AdelanteEHR.runNoteAutomations(PATIENT, n.id, { actorId: "Dr. Sample" });
+    AdelanteEHR.runNoteAutomations(PATIENT, n.id, { actorId: "Dr. Sample" });
     expect(AdelanteEHR.listNoteAutomationRuns(n.id)).toHaveLength(1);
     expect(AdelanteEHR.listCaseTasks().length).toBe(before);
   });

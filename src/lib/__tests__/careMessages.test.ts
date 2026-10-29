@@ -216,11 +216,11 @@ describe("care message Part 2 flagging", () => {
       (x) => canAccess("ecm_provider", "screeners_sud", x).locked && x.caseManagerId,
     )!;
     const cmName = AdelanteEHR.listCaseManagers().find((c) => c.id === gated.caseManagerId)!.name;
-    const m = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Bagga", "clinical note to patient")!;
+    const m = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Sample", "clinical note to patient")!;
     const cmBefore = AdelanteEHR.listNotificationsFor(cmName, "ecm_provider").length;
     const thBefore = AdelanteEHR.listNotificationsFor("nobody", "therapist").length;
 
-    AdelanteEHR.flagMessageAsSud(gated.id, m.id, "Dr. Bagga", "pmhnp");
+    AdelanteEHR.flagMessageAsSud(gated.id, m.id, "Dr. Sample", "pmhnp");
 
     const all = AdelanteEHR.listNotificationsFor(cmName, "ecm_provider");
     expect(all.length).toBeGreaterThan(cmBefore);
@@ -249,13 +249,13 @@ describe("care message Part 2 flagging", () => {
     const open = AdelanteEHR.listPatients().find(
       (x) => !canAccess("ecm_provider", "screeners_sud", x).locked,
     )!;
-    const m = AdelanteEHR.sendStaffMessage(open.id, "Dr. Bagga", "note")!;
+    const m = AdelanteEHR.sendStaffMessage(open.id, "Dr. Sample", "note")!;
     const count = () =>
       AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
         (n) => n.patientId === open.id,
       ).length;
     const before = count();
-    AdelanteEHR.flagMessageAsSud(open.id, m.id, "Dr. Bagga", "pmhnp");
+    AdelanteEHR.flagMessageAsSud(open.id, m.id, "Dr. Sample", "pmhnp");
     expect(count()).toBe(before);
   });
 
@@ -290,11 +290,11 @@ describe("care message Part 2 flagging", () => {
     ).toBeGreaterThan(npBefore);
 
     // Flagged by a pmhnp → backstop resolves to therapist (un-gated per policy).
-    const m2 = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Bagga", "note b")!;
+    const m2 = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Sample", "note b")!;
     const thBefore2 = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.patientId === gated.id,
     ).length;
-    AdelanteEHR.flagMessageAsSud(gated.id, m2.id, "Dr. Bagga", "pmhnp");
+    AdelanteEHR.flagMessageAsSud(gated.id, m2.id, "Dr. Sample", "pmhnp");
     expect(
       AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
         (n) => n.patientId === gated.id,
