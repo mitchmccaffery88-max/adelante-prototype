@@ -25,6 +25,7 @@ import type {
 import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
 import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource, registerCredentialingServiceCatalog } from "./credentialing";
+import { canOverrideFundingSource, fundingRecordFrom, registerFundingFacts, resolveFundingSource, seriesOccurrences, SERIES_DRAFT, FUNDING_OVERRIDE_REASONS, FUNDING_SOURCES, type AppointmentFundingRecord, type CoverageOrder, type CoveragePlanType, type DeliverySystemDraft, type FundingOverrideReason, type FundingSource, type SeriesCadence } from "./fundingSource";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { assertGroupApproval, assertGroupStaffRequest, groupRequestHooks } from "./groupRequestBoundary";
 import { ON_CALL_GAP, onCallOwnerFor } from "./onCallBoundary";
@@ -924,6 +925,10 @@ export interface CoveragePlanSpan {
   shareOfCostCents?: number;
   /** §Phase 8c — plan name from a response that matched nothing on the list. */
   planNotOnList?: boolean;
+  /** 29 Oct (Draft) — primary/secondary order when several spans overlap. */
+  order?: CoverageOrder;
+  /** 29 Oct (Draft) — plan type; older spans are read conservatively by payer name. */
+  planType?: CoveragePlanType;
 }
 
 
@@ -2169,6 +2174,10 @@ export interface Appointment {
   chargeCents?: number;
   /** When funding lane is ISL, why this encounter fell into ISL. */
   islReason?: "uninsured" | "benefit_exhausted" | "restricted_setting";
+  /** 29 Oct (Draft) — resolved funding source, stored at booking; Billing/Intake may change it with a reason code. */
+  fundingSource?: AppointmentFundingRecord;
+  /** 29 Oct — staff-only recurring series id (each occurrence is its own booking). */
+  seriesId?: string;
   /**
    * §ASAM visit — structured link to the ASAM task this visit serves. Never
    * rendered to roles failing the ASAM Part 2 check; to them this is a
@@ -2345,6 +2354,8 @@ export interface ServiceTypeInfo {
   sud?: boolean;
   /** Draft service classification — pending clinical sign-off; never patient/SUD inference. */
   controlledSubstanceDraft?: boolean;
+  /** 29 Oct (Draft — Mitch and Christi to confirm): the Medi-Cal delivery system that usually pays. */
+  deliverySystemDraft: DeliverySystemDraft;
 }
 
 export interface ClinicLocation {
@@ -2371,6 +2382,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Get set up with your care team.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 60,
+    deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" },
   },
   {
     id: "therapy_individual",
@@ -2378,6 +2390,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "A private one-on-one session.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 50,
+    deliverySystemDraft: { tag: "smhs_or_nsmhs" },
   },
   {
     id: "therapy_group",
@@ -2385,6 +2398,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Meet with others in a supported group.",
     allowedModalities: ["in_person", "video"],
     defaultDurationMin: 60,
+    deliverySystemDraft: { tag: "smhs_or_nsmhs" },
   },
   {
     id: "med_management",
@@ -2392,6 +2406,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Talk with a prescriber about medications.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
+    deliverySystemDraft: { tag: "nsmhs" },
   },
   {
     // 28 Oct (Mitch, Draft): the controlled-substance flag lives here only;
@@ -2401,6 +2416,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Meet with a prescriber about a controlled medication or MOUD.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
+    deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation; plan or FFS billing needs review" },
     controlledSubstanceDraft: true,
   },
   {
@@ -2409,6 +2425,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Connect with someone who's been there.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 45,
+    deliverySystemDraft: { tag: "county_peer", confirm: "Confirm county opt-in" },
   },
   {
     id: "case_management",
@@ -2416,6 +2433,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Get help with resources and next steps.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 30,
+    deliverySystemDraft: { tag: "ecm_mcp", confirm: "ECM enrollment only; otherwise not billed" },
   },
   {
     id: "care_coordination",
@@ -2423,10 +2441,11 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Line up outside services and support.",
     allowedModalities: ["video", "phone"],
     defaultDurationMin: 30,
+    deliverySystemDraft: { tag: "non_billable" },
   },
-  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true },
-  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true },
-  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true },
+  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
 ];
 
 const LOCATIONS: ClinicLocation[] = [
@@ -8364,13 +8383,15 @@ export function bookingCredentialingBlock(
   patientId: string,
   start: string,
 ): string | undefined {
-  if (!isBillableServiceType(serviceType)) return undefined;
+  // 29 Oct (Draft): every appointment resolves its own funding source; private
+  // pay is checked too. Non-billable work and undecided coverage never block here
+  // (undecided is stored as "Coverage — needs review" for Billing/Intake).
+  const funding = resolveFundingSource(patientId, serviceType, start);
+  if (!funding.source || funding.source === "non_billable") return undefined;
   const member = credentialingRecordForClinician(clinicianId);
   if (!member) return undefined; // authority self-registers after initial demo bookings
-  const payer = AdelanteEHR.activeCoveragePlan(patientId)?.payer;
-  if (!payer) return undefined;
   // 28 Oct fix: booking judges exclusion screening as of now, end-dated items on the visit date.
-  const res = credentialedForService(member.staffId, payer, serviceType, start, { asOf: new Date().toISOString() });
+  const res = credentialedForService(member.staffId, funding.payerKey, serviceType, start, { asOf: new Date().toISOString(), fundingSource: funding.source });
   return res.ok ? undefined : "This clinician can't be booked for this service right now.";
 }
 
@@ -8476,6 +8497,13 @@ function _requestCancel(
 // 28 Oct fix: lets the coordinator tile see booked visits after a check falls due.
 registerBookedVisitSource(() => AdelanteEHR.listAppointments());
 registerCredentialingServiceCatalog(serviceType => SERVICE_TYPES.some(s => s.id === serviceType && s.controlledSubstanceDraft === true));
+// 29 Oct (Draft): the funding-source resolver reads coverage, the catalog tag and ECM enrollment here.
+registerFundingFacts({
+  coverage: (pid) => AdelanteEHR.listCoveragePlans(pid),
+  paymentArrangement: (pid) => patients.find((x) => x.id === pid)?.paymentArrangement,
+  tag: (serviceType) => SERVICE_TYPES.find((x) => x.id === serviceType)?.deliverySystemDraft.tag,
+  ecmEnrolled: (pid, at) => (patients.find((x) => x.id === pid)?.episodes ?? []).some((e) => e.type === "ecm" && e.openedAt.slice(0, 10) <= at.slice(0, 10) && (!e.closedAt || e.closedAt.slice(0, 10) >= at.slice(0, 10))),
+});
 
 export const AdelanteEHR = {
   subscribe(l: Listener) {
@@ -9366,6 +9394,8 @@ export const AdelanteEHR = {
       source: input.source ?? "staff_scheduled",
       id: uid(),
       status: "scheduled",
+      // 29 Oct (Draft): the resolved funding source is stored on the appointment.
+      fundingSource: fundingRecordFrom(resolveFundingSource(input.patientId, input.serviceType, input.start)),
       ...(intakeBooking ? { intakeFirstVisit: { referralId: intakeBooking.referralId, kind: intakeBooking.kind as import("./intakePhaseA").FirstVisitKind }, bookedBy } : {}),
       ...(bookedBy?.id && !fields.assignedStaffId && _CONTACT_ROLES.includes(bookedBy.role) ? { assignedStaffId: bookedBy.id } : {}),
     };
