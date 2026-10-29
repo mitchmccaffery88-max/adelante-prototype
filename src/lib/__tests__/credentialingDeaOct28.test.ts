@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runAction } from '../actions/runAction';
-import { AdelanteEHR, bookingCredentialingBlock, SERVICE_TYPES } from '../ehr';
+import { AdelanteEHR, bookingCredentialingBlock } from '../ehr';
 import { AdelanteEHRExt } from '../ehr-ext';
 import { credentialedForService, credentialingRecordForStaff, evaluateCredentialing, type ClinicianCredentialing } from '../credentialing';
 import { projectBillingAppointment } from '../billingProjection';
@@ -11,7 +11,7 @@ function fixture(staffId: string): ClinicianCredentialing {
 const input = (days: number, serviceType = 'med_management') => ({payer:'Medi-Cal FFS',serviceType,dateOfService:at(days),asOf:at(0)});
 describe('DEA on the service date — controlled-substance prescriber services only', () => {
   it('only the matching Draft medication catalog entry requires DEA', () => {
-    expect(SERVICE_TYPES.filter(s => s.controlledSubstanceDraft).map(s => s.id)).toEqual(['med_management']);
+    expect(AdelanteEHR.listServiceTypes().filter(s => s.controlledSubstanceDraft).map(s => s.id)).toEqual(['med_management']);
   });
   it('Billing retains service type without receiving the catalog flag', () => {
     const row = { id:'dea-projection', patientId:'p-dea', clinicianId:'c3', start:at(45), durationMin:30, status:'scheduled', serviceType:'med_management', source:'staff_scheduled' } as Parameters<typeof projectBillingAppointment>[0];
