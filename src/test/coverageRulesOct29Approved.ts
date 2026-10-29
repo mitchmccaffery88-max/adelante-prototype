@@ -137,15 +137,15 @@ const APPROVED: Record<string, { prior: string; updated: string; pairs: [string,
  },
  "src/lib/ehr-ext.ts": {
   "prior": "0a056e5a88748329a0e522bc494c6f39bf0fbfcb37e5a32c357d2fe2efe3072e",
-  "updated": "a7ab99247a5e34fafeb5e64bd4431a11e2d6e14903e7c7b59c5ba90cde56b8eb",
+  "updated": "8b8d44ce06d322b84fbaf3d864a91ebba6696faa6c08c3a84aed174e7b9e1fa3",
   "pairs": [
    [
     "    license: { licenseType: \"PMHNP\", number: \"DEMO-LIC-0003\", state: \"CA\", issuedAt: daysFromNow(-2432), expiresAt: daysFromNow(320), verificationSource: \"brn\", verifiedAt: daysFromNow(-15), verifiedBy: \"s-cred1\", method: \"manual\" },\n        dea: { number: \"DEMO-LIC-0004\", expiresAt: daysFromNow(400), verifiedAt: daysFromNow(-30) },\n    boardCertification: \"PMHNP-BC\",\n",
     "    license: { licenseType: \"PMHNP\", number: \"DEMO-LIC-0003\", state: \"CA\", issuedAt: daysFromNow(-2432), expiresAt: daysFromNow(320), verificationSource: \"brn\", verifiedAt: daysFromNow(-15), verifiedBy: \"s-cred1\", method: \"manual\" },\n        // 29 Oct (Mitch): the \"DEA expires in 20 days\" demo case moved here from c5. c3 is fully\n    // credentialed and enrolled for the MOUD type, so DEA expiry is the ONLY thing blocking\n    // controlled visits booked 21+ days out.\n    dea: { number: \"DEMO-LIC-0004\", expiresAt: daysFromNow(20), verifiedAt: daysFromNow(-30) },\n    boardCertification: \"PMHNP-BC\",\n"
    ],
    [
-    "      { payer: \"Medi-Cal FFS\", serviceType: \"controlled_med_moud\", status: \"active\", effectiveAt: daysFromNow(-879) },\n      { payer: \"Medi-Cal FFS\", serviceType: \"therapy_individual\", status: \"active\", effectiveAt: daysFromNow(-879) },\n",
-    "      { payer: \"Medi-Cal FFS\", serviceType: \"controlled_med_moud\", status: \"active\", effectiveAt: daysFromNow(-879) },\n      // 29 Oct (Draft): MOUD resolves to the county DMC-ODS for Medi-Cal clients.\n      { payer: \"Tulare County DMC-ODS\", serviceType: \"controlled_med_moud\", status: \"active\", effectiveAt: daysFromNow(-879) },\n      { payer: \"Medi-Cal FFS\", serviceType: \"therapy_individual\", status: \"active\", effectiveAt: daysFromNow(-879) },\n"
+    "      { payer: \"Tulare County DMC-ODS\", serviceType: \"sud_counseling\", status: \"not_started\" },\n    ],\n",
+    "      { payer: \"Tulare County DMC-ODS\", serviceType: \"sud_counseling\", status: \"not_started\" },\n      // 29 Oct (Draft): MOUD resolves to the county DMC-ODS for Medi-Cal clients.\n      { payer: \"Tulare County DMC-ODS\", serviceType: \"controlled_med_moud\", status: \"active\", effectiveAt: daysFromNow(-879) },\n    ],\n"
    ],
    [
     "    license: { licenseType: \"MD\", number: \"DEMO-LIC-0005\", state: \"CA\", issuedAt: daysFromNow(-7789), expiresAt: daysFromNow(500), verificationSource: \"medical_board_ca\", verifiedAt: daysFromNow(-10), verifiedBy: \"s-cred1\", method: \"manual\" },\n        // 28 Oct MOUD service type: DEA expires before controlled visits booked 21+ days out.\n    dea: { number: \"DEMO-LIC-0006\", expiresAt: daysFromNow(20), verifiedAt: daysFromNow(-30) },\n    boardCertification: \"Psychiatry\",\n",
