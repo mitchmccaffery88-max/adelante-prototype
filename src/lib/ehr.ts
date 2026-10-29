@@ -13803,6 +13803,9 @@ export const AdelanteEHR = {
       from: string;
       to?: string;
       source: CoveragePlanSource;
+      /** 29 Oct (Draft) — primary/secondary and plan type for the funding-source resolver. */
+      order?: CoverageOrder;
+      planType?: CoveragePlanType;
     } & CoverageActor,
   ): { ok: boolean; error?: string } {
     const p = patients.find((x) => x.id === patientId);
@@ -13821,6 +13824,8 @@ export const AdelanteEHR = {
       from: input.from,
       ...(input.to ? { to: input.to } : {}),
       source: input.source,
+      ...(input.order ? { order: input.order } : {}),
+      ...(input.planType ? { planType: input.planType } : {}),
       recordedBy: input.actorId,
       recordedByRole: input.actorRole,
       recordedAt: new Date().toISOString(),
