@@ -206,6 +206,7 @@ export const BILLABLE_SERVICE_TYPES: readonly string[] = [
   "therapy_individual",
   "therapy_group",
   "med_management",
+  "controlled_med_moud",
   "sud_counseling",
   "sud_group_odf",
   "sud_group_iot",
@@ -298,10 +299,13 @@ export function evaluateCredentialing(
   if (!input.payer) reasons.push("payer_missing");
   if (!input.serviceType) reasons.push("service_missing");
   if (input.payer && input.serviceType) {
+    // 28 Oct MOUD service type: a service-specific row for this payer takes
+    // precedence over the payer-wide "*" row, so "not started" is never overridden.
+    const specific = record.enrollments.some((e) => e.payer === input.payer && e.serviceType === input.serviceType);
     const enrolled = record.enrollments.some(
       (e) =>
         e.payer === input.payer &&
-        (e.serviceType === "*" || e.serviceType === input.serviceType) &&
+        (specific ? e.serviceType === input.serviceType : e.serviceType === "*" || e.serviceType === input.serviceType) &&
         e.status === "active" &&
         (!e.effectiveAt || asDay(e.effectiveAt) <= d),
     );

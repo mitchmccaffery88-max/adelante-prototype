@@ -123,6 +123,8 @@ const SERVICE_ES: Partial<Record<ServiceType, { label: string; helper: string }>
   therapy_individual: { label: "Hablar con un consejero", helper: "Una sesión privada individual." },
   therapy_group: { label: "Sesión de grupo", helper: "Reúnete con otras personas en un grupo con apoyo." },
   med_management: { label: "Cita de medicamentos", helper: "Habla con un profesional que receta sobre tus medicamentos." },
+  // Borrador — pendiente de revisión de traducción.
+  controlled_med_moud: { label: "Visita de medicamentos controlados / MOUD", helper: "Habla con un profesional que receta sobre un medicamento controlado o MOUD." },
   peer_support: { label: "Apoyo de pares", helper: "Conecta con alguien que ha pasado por lo mismo." },
   case_management: { label: "Reunión con tu administrador de casos", helper: "Recibe ayuda con recursos y próximos pasos." },
   care_coordination: { label: "Coordinación de atención", helper: "Organiza servicios externos y apoyo." },

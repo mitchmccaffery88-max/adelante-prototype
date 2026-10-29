@@ -221,7 +221,7 @@ export function seedStaffProfiles(): void {
     ["Individual therapy", ["therapy_individual"]],
     ["Group facilitation", ["therapy_group", "sud_group_odf", "sud_group_iot"]],
     ["SUD counseling", ["sud_counseling", "sud_group_odf", "sud_group_iot"]],
-    ["MAT / prescribing", ["med_management"]],
+    ["MAT / prescribing", ["med_management", "controlled_med_moud"]],
     ["Psychiatric evaluation", ["intake"]],
     ["Trauma-focused care", ["therapy_individual"]],
     ["Reentry / justice-involved", ["case_management", "care_coordination"]],
