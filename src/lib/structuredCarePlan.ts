@@ -12,6 +12,8 @@ import { AdelanteEHR, type Patient, type SdohStatus } from "./ehr";
 import type { StaffRole } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
 import { registerSmhsDeterminationSource, type SmhsDetermination } from "./fundingSource";
+import { chartPart2Basis } from "./chartPart2Boundary";
+import { validAccessActor } from "./chartRelationships";
 
 export const PLAN_DRAFT_LABEL = "Draft — pending clinical sign-off";
 const DAY = 86400000;
@@ -387,13 +389,20 @@ export function closeStructuredGoal(patientId: string, goalId: string, outcome: 
 /** 29 Oct (Draft): licensed clinicians who may record the SMHS determination. */
 export const SMHS_DETERMINATION_ROLES = ["therapist", "pmhnp", "physician"];
 export const canSetSmhsDetermination = (role: string) => SMHS_DETERMINATION_ROLES.includes(role);
-export function setSmhsDetermination(patientId: string, input: { meets: boolean; determinedAt: string }, actor: Actor) {
-  if (!canSetSmhsDetermination(actor.role)) throw new Error("Only a treating clinician records the SMHS determination.");
-  if (!/^\d{4}-\d{2}-\d{2}/.test(input.determinedAt)) throw new Error("Give the determination date.");
+export const SMHS_REASONS = ["clinical_assessment", "clinical_review", "correction"] as const;
+export type SmhsReason = typeof SMHS_REASONS[number];
+export const SMHS_REASON_LABEL: Record<SmhsReason, string> = { clinical_assessment: "Clinical assessment", clinical_review: "Clinical review", correction: "Correct prior determination" };
+export function canRecordSmhsDetermination(patientId: string, actor: { role: string; staffId?: string }) {
+  return canSetSmhsDetermination(actor.role) && validAccessActor({ role: actor.role as StaffRole, staffId: actor.staffId }) && chartPart2Basis(actor.role, actor.staffId, patientId).directTreatment;
+}
+export function setSmhsDetermination(patientId: string, input: { meets: boolean; determinedAt: string; reasonCode: SmhsReason }, actor: Actor & { staffId?: string }) {
+  if (!canRecordSmhsDetermination(patientId, actor)) throw new Error("Only a treating clinician records the SMHS determination.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.determinedAt) || !Number.isFinite(Date.parse(input.determinedAt)) || new Date(input.determinedAt).toISOString().slice(0, 10) !== input.determinedAt) throw new Error("Give the determination date.");
+  if (typeof input.meets !== "boolean" || !SMHS_REASONS.includes(input.reasonCode)) throw new Error("Choose a determination and reason.");
   const plan = getStructuredPlan(patientId);
   plan.smhsDetermination = { meets: input.meets, determinedAt: input.determinedAt.slice(0, 10), determinedBy: actor.name };
   touch(plan);
-  audit("plan_smhs_determination_set", patientId, actor, { meets: input.meets, determinedAt: input.determinedAt.slice(0, 10) });
+  audit("plan_smhs_determination_set", patientId, { ...actor, name: actor.staffId ?? actor.name }, { reasonCode: input.reasonCode, determinedAt: input.determinedAt });
 }
 registerSmhsDeterminationSource((pid) => plans.get(pid)?.smhsDetermination);
 

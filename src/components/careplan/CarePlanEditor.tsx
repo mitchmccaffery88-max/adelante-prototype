@@ -44,6 +44,7 @@ import { Progress } from "@/components/ui/progress";
 import { ClientDate } from "@/components/ClientDate";
 import { Sparkles, Target } from "lucide-react";
 import { AsamSuggestions, AsamGoalChips } from "@/components/careplan/AsamSuggestions";
+import { SmhsDeterminationControl } from "@/components/careplan/SmhsDeterminationControl";
 
 const OWNER_LABEL: Record<GoalOwner, string> = { patient: "Patient", clinician: "Clinician", case_manager: "Case manager" };
 const selectCls = "h-9 rounded-md border bg-background px-2 text-sm";
@@ -124,6 +125,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
         </div>
       </div>
       {view.hiddenCount > 0 && <p className="text-xs text-muted-foreground">Some plan items are not shown for your role.</p>}
+      <SmhsDeterminationControl key={`${patientId}:${actor.staffId}`} patientId={patientId} readOnly={readOnly} />
 
       <section>
         <h5 className="text-xs font-medium uppercase tracking-wider text-navy">Problems</h5>

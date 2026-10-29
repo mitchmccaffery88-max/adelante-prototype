@@ -1,5 +1,7 @@
 import { billingAppointments, billingPatients, billingClaims, billingLaneFor as laneFor, type BillingPatient, type BillingAppointment } from "@/lib/billingProjection";
 import { IntakeBillingRequests } from "@/components/staff/IntakeBillingRequests";
+import { AppointmentFundingDrawer } from "@/components/scheduling/AppointmentFundingDrawer";
+import { canOverrideFundingSource, FUNDING_SOURCE_LABEL } from "@/lib/fundingSource";
 import { StatTile } from "@/components/ui/stat-tile";
 import { claimWeeklyProjection } from "@/lib/billingSparkline";
 import { StaffTable } from "@/components/staff/StaffTable";
@@ -303,6 +305,7 @@ function BillingPage() {
       {!canWrite && summary}
       <OpsActionLauncher />
       <IntakeBillingRequests />
+      {canOverrideFundingSource(role) && <section className="space-y-3 border-y border-line py-4" aria-label="Appointment funding"><h2 className="text-xl font-bold">Appointment funding</h2><p className="text-sm text-ink-muted">Draft — pending clinical sign-off and billing review with Christi.</p><StaffTable rows={appointments.filter(a => a.status === "scheduled" || a.status === "checked_in")} rowKey={a => a.id} label="Appointment funding" columns={[{ id: "date", label: "Visit date", cell: a => <span>{new Date(a.start).toLocaleString()}</span> }, { id: "program", label: "Program ID", mono: true, cell: a => patients.find(p => p.id === a.patientId)?.programId ?? "—" }, { id: "funding", label: "Who pays", cell: a => <span role="status">{a.fundingSource?.source ? FUNDING_SOURCE_LABEL[a.fundingSource.source] : "Coverage — needs review"}</span> }]} primaryAction={a => <AppointmentFundingDrawer appointment={{ id: a.id, start: a.start, fundingSource: a.fundingSource }} />} emptyState="No upcoming appointments." /></section>}
 
       {!canWrite && (
         <div className="rounded-xl border bg-card p-3 text-sm text-muted-foreground" data-testid="billing-read-only">
