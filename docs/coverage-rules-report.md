@@ -71,7 +71,7 @@ Extended the existing credential record (no new store): `peerCertification`, `ch
 
 ## Open
 - Christi/compliance confirmations above; sliding-scale tiers; real billing code mapping for the MOUD type.
-- No UI yet for the SMHS determination or for Billing/Intake "Change who pays" (registry actions and store exist).
+- The SMHS and Billing/Intake "Change who pays" controls were implemented in the 20:00 scheduling continuation; see `patient-scheduling-report.md` for scope and validation. Treating relationship/date/reason are enforced; Intake receives only active-referral first-visit receipts and loses its editor at handoff.
 
 ## 29 Oct scheduling carry-over — completed bridge checkpoint
 - New `coverageDeterminationBridgeOct29.test.ts`: acknowledged self-pay, dated fallback, Billing order, commercial/Medicare plus Medi-Cal COB, expiry, non-billable service, and financial-payload exclusion. Focused bridge + existing coverage paths: **25/25**.

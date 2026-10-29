@@ -9,6 +9,7 @@ import { runAction } from "@/lib/actions/runAction";
 import { CHECKLIST_KEYS, FIRST_VISITS, firstVisitSlots, indicatedFirstVisits, intakeRoster, intakeState, intakeGroupChoices, type FirstVisitKind, type IntakeActor, type IntakeChecklist } from "@/lib/intakePhaseA";
 import { intakeSafetyRows, type SafetySource } from "@/lib/intakeTriage";
 import { intakePacketProgress } from "@/lib/intakePacket";
+import { IntakeAppointmentFunding } from "@/components/scheduling/AppointmentFundingDrawer";
 const selectClass = "min-h-9 w-full rounded-sm border border-line-strong bg-surface px-2 text-base text-ink";
 export function IntakeSafetyActions({ actor }: { actor: IntakeActor }) {
   const json = useEhr(() => JSON.stringify(intakeSafetyRows(actor)));
@@ -39,6 +40,7 @@ export function IntakePhaseAActions({ actor, referralId }: { actor: IntakeActor;
       <section className="space-y-2"><h4 className="font-bold">Group request — clinical approval required</h4><label>Group<select className={selectClass} value={group} onChange={e => setGroup(e.target.value)}><option value="">Choose group</option>{intakeGroupChoices(actor, referralId).map(g => <option key={g.id} value={g.id} disabled={g.restricted}>{g.label}{g.restricted ? ` — Restricted: ${g.reason}` : ""}</option>)}</select></label><Button variant="outline" disabled={!group || reason.trim().length < 3} onClick={() => run("intake_group_request", group, due)}>Request group placement</Button></section>
       <fieldset className="space-y-2"><legend className="font-bold">Administrative intake checklist</legend><p>Packet: {data.packet.collected} forms collected · {data.packet.missing} missing / needing review · {data.packet.documents} documents · {data.packet.needsUnknown} needs awaiting confirmation</p>{CHECKLIST_KEYS.map(k => <label key={k} className="flex gap-2"><input type="checkbox" checked={checklist[k]} onChange={e => setChecklist(s => ({ ...s, [k]: e.target.checked }))} />{{ identity_link_checked: "Confirmed record link checked", contact_checked: "Contact details checked", packet_received: "Referral packet received", handoff_ready: "Administrative handoff ready" }[k]}</label>)}</fieldset>
       <Button disabled={!CHECKLIST_KEYS.every(k => checklist[k]) || reason.trim().length < 3} onClick={() => run("intake_complete", checklist)}>Mark intake complete</Button>
+      <IntakeAppointmentFunding referralId={referralId} />
     </>}{receipt && <p role="status">{receipt}</p>}
   </div>;
 }

@@ -52,8 +52,10 @@ export function loadCoverageMixScenario(): CoverageMixScenario {
       }
       if (key === "mcp_smhs") {
         // A treating clinician's dated SMHS determination — never inferred.
+        acting("s-cc1", "clinical_coordinator");
+        action("chart_team_assignment", "saveAdditionalTeamAssignment", undefined, { role: "clinical_coordinator", staffId: "s-cc1" }, { patientId: p.id, staffId: "s-th1", start: `${ymd(-30)}T00:00:00Z` });
         acting("s-th1", "therapist");
-        action("smhs_determination_set", "setSmhsDetermination", p, p.id, { meets: true, determinedAt: ymd(-30) }, { name: "Marisol Reyes", role: "therapist" });
+        action("smhs_determination_set", "setSmhsDetermination", p, p.id, { meets: true, determinedAt: ymd(-30), reasonCode: "clinical_assessment" }, { name: "Marisol Reyes", role: "therapist", staffId: "s-th1" });
       }
     }
     const group = AdelanteEHR.listGroupSessions().find((g) => g.serviceType === "therapy_group") ?? AdelanteEHR.listGroupSessions()[0];

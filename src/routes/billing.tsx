@@ -1,5 +1,6 @@
 import { billingAppointments, billingPatients, billingClaims, billingLaneFor as laneFor, type BillingPatient, type BillingAppointment } from "@/lib/billingProjection";
 import { IntakeBillingRequests } from "@/components/staff/IntakeBillingRequests";
+import { BillingAppointmentFunding } from "@/components/scheduling/AppointmentFundingDrawer";
 import { StatTile } from "@/components/ui/stat-tile";
 import { claimWeeklyProjection } from "@/lib/billingSparkline";
 import { StaffTable } from "@/components/staff/StaffTable";
@@ -303,6 +304,7 @@ function BillingPage() {
       {!canWrite && summary}
       <OpsActionLauncher />
       <IntakeBillingRequests />
+      <BillingAppointmentFunding />
 
       {!canWrite && (
         <div className="rounded-xl border bg-card p-3 text-sm text-muted-foreground" data-testid="billing-read-only">
