@@ -215,16 +215,24 @@ export interface FundingFactReader {
 }
 let facts: FundingFactReader | undefined;
 let smhsReader: ((patientId: string) => SmhsDetermination | undefined) | undefined;
+/** Financial details never cross this boundary; the existing request store owns order. */
+export interface DeterminedFundingFacts {
+  coverage: FundingCoverageSpan[];
+  paymentArrangement?: FundingInput["paymentArrangement"];
+}
+let determinationReader: ((patientId: string, dateOfService: string) => DeterminedFundingFacts | undefined) | undefined;
+export function registerCoverageDeterminationSource(read: (patientId: string, dateOfService: string) => DeterminedFundingFacts | undefined) { determinationReader = read; }
 export function registerFundingFacts(reader: FundingFactReader) { facts = reader; }
 export function registerSmhsDeterminationSource(read: (patientId: string) => SmhsDetermination | undefined) { smhsReader = read; }
 
 export function resolveFundingSource(patientId: string, serviceType: string | undefined, dateOfService: string): FundingResolution {
   if (!facts) return needsReview();
+  const determined = determinationReader?.(patientId, dateOfService);
   return resolveFundingSourceFrom({
     serviceType,
     dateOfService,
-    coverage: facts.coverage(patientId),
-    paymentArrangement: facts.paymentArrangement(patientId),
+    coverage: determined?.coverage ?? facts.coverage(patientId),
+    paymentArrangement: determined?.paymentArrangement ?? facts.paymentArrangement(patientId),
     tag: facts.tag(serviceType),
     smhs: smhsReader?.(patientId),
     ecmEnrolled: facts.ecmEnrolled(patientId, dateOfService),

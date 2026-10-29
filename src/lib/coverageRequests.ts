@@ -19,6 +19,7 @@ import {
 } from "./eligibility/coverageConfig";
 import { PAYER_UNREACHABLE, SIMULATED_VENDOR_NOTICE, runAdapter, selectedAdapter } from "./eligibility/coverageAdapters";
 import type { CoverageCheckResponse } from "./eligibility/adapter";
+import { registerCoverageDeterminationSource, type DeterminedFundingFacts, type FundingCoverageSpan } from "./fundingSource";
 
 export type CoverageStatus =
   | "Active"
@@ -95,6 +96,41 @@ export interface CoverageDetermination {
 const requests = new Map<string, CoverageRequest>();
 const determinations: CoverageDetermination[] = [];
 let detSeq = 0;
+
+/** Narrow resolver projection. Latest per request and the Billing-owned numeric
+ * order are authoritative whenever dated determinations exist; never merge a
+ * second primary/secondary ordering from older coverage spans. */
+export function determinedFundingFacts(patientId: string, dateOfService: string): DeterminedFundingFacts | undefined {
+  const day = dateOfService.slice(0, 10);
+  const latest = new Map<string, CoverageDetermination>();
+  for (const d of determinations) {
+    if (d.patientId === patientId && d.checkedOn <= day) latest.set(d.requestKey, d);
+  }
+  if (!latest.size) return undefined;
+  const current = [...latest.values()].sort((a, b) => a.order - b.order);
+  const coverage: FundingCoverageSpan[] = [];
+  let paymentArrangement: DeterminedFundingFacts["paymentArrangement"];
+  for (const d of current) {
+    if (d.status === "Self-pay" || d.status === "Sliding scale — tier set") {
+      paymentArrangement ??= d.path === "self_pay" ? "self_pay" : "sliding_fee";
+      continue;
+    }
+    if (d.status !== "Active") continue;
+    const from = d.billing.effectiveFrom ?? d.checkedOn;
+    const to = d.billing.effectiveTo;
+    if (from.slice(0, 10) > day || (to && to.slice(0, 10) < day)) continue;
+    if (d.path === "county_program") {
+      paymentArrangement ??= "grant_isl";
+      continue;
+    }
+    const payer = listPayers().find(p => p.id === d.billing.payerId);
+    const planType = d.path === "private" ? "commercial" : d.path === "medicare" ? "medicare"
+      : d.path === "medi_cal" && payer?.kind === "medi_cal" ? (payer.id === "medi-cal-ffs" ? "medi_cal_ffs" : "medi_cal_mcp") : undefined;
+    coverage.push({ id: d.id, payer: d.billing.payerName ?? payer?.name ?? "Coverage — needs review", from, ...(to ? { to } : {}), order: d.order === 1 ? "primary" : "secondary", ...(planType ? { planType } : {}) });
+  }
+  return { coverage, ...(paymentArrangement ? { paymentArrangement } : {}) };
+}
+registerCoverageDeterminationSource(determinedFundingFacts);
 
 const today = () => new Date().toISOString().slice(0, 10);
 function billingOwner() {
