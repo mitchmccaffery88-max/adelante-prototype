@@ -389,14 +389,14 @@ export function evaluateCredentialing(
         (!e.effectiveAt || asDay(e.effectiveAt) <= d),
     );
   };
+  // 28 Oct credentialing reconciliation: unknown facts cannot silently pass.
+  if (enrollment === "required" && !input.payer) reasons.push("payer_missing");
   if (!input.serviceType) reasons.push("service_missing");
   if (enrollment === "in_network_flag") {
     if (!input.payer || !input.serviceType || !enrolledFor()) flags.push("out_of_network_review");
   } else if (enrollment === "review_flag") {
     flags.push("medicare_review");
   }
-  // 28 Oct credentialing reconciliation: unknown facts cannot silently pass.
-  if (enrollment === "required" && !input.payer) reasons.push("payer_missing");
   if (enrollment === "required" && input.payer && input.serviceType) {
     // 28 Oct MOUD service type: a service-specific row for this payer takes
     // precedence over the payer-wide "*" row, so "not started" is never overridden.
