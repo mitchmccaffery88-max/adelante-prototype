@@ -4,7 +4,7 @@
 // (bookAppointment), and the timely-access "offered" stamp (the booking sweep
 // in timelyAccess.ts stamps every new booked slot). SUD visit types are the
 // patient's own information and are shown unmasked to the patient.
-import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, type Appointment, type Clinician, type Patient, type ServiceType } from "./ehr";
+import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, type Appointment, type AppointmentRequestKind, type AppointmentRequestOutcome, type Clinician, type Patient, type ServiceType, type ServiceTypeInfo } from "./ehr";
 import type { StaffRole } from "./roles";
 import { eligibleClinicians } from "./bookingFlow";
 import { availableSlots, hasAvailabilitySet, type BookingModality } from "./clinicianAvailability";
@@ -18,11 +18,84 @@ export interface PatientClinicianOption {
   hasHours: boolean;
 }
 
+// 29 Oct (Draft — pending Christi): the patient visit menu reads the one
+// catalog's patientAccess. staff_only types are never listed; request types
+// read "Ask my team" and use the existing request flow; conditional types are
+// hidden (not stubbed) when their condition isn't on the record, so nothing
+// about substance-use care is implied by the menu.
+export interface PatientServiceOption {
+  service: ServiceTypeInfo;
+  mode: "book" | "request";
+  requestKind?: AppointmentRequestKind;
+  /** For established types: the only calendars the patient may self-book. */
+  clinicianIds?: string[];
+}
+
+const INACTIVE = new Set(["cancelled", "late_cancel", "rescheduled"]);
+
+function establishedClinicianIds(patient: Patient, serviceType: ServiceType): string[] {
+  const ids = new Set<string>();
+  for (const a of AdelanteEHR.appointmentsForPatient(patient.id))
+    if (a.serviceType === serviceType && !a.asamTaskId && !INACTIVE.has(a.status)) ids.add(a.clinicianId);
+  if (serviceType === "therapy_individual" && patient.primaryClinicianId) ids.add(patient.primaryClinicianId);
+  return [...ids];
+}
+
+function hasAsamPlacement(patient: Patient): boolean {
+  return AdelanteEHR.listAsamAssessments(patient.id).some((a) => !!a.signedAt && !!a.actualLevel);
+}
+
+export function patientServiceMenu(patient: Patient | undefined): PatientServiceOption[] {
+  if (!patient) return [];
+  const out: PatientServiceOption[] = [];
+  for (const service of AdelanteEHR.listServiceTypes()) {
+    if (service.patientAccess === "staff_only") continue;
+    if (service.patientAccess === "request") {
+      if (service.patientRequestKind) out.push({ service, mode: "request", requestKind: service.patientRequestKind });
+      continue;
+    }
+    if (service.patientCondition === "asam_placement") {
+      if (hasAsamPlacement(patient)) out.push({ service, mode: "book" });
+      continue;
+    }
+    if (service.patientCondition === "established") {
+      const ids = establishedClinicianIds(patient, service.id);
+      if (ids.length) out.push({ service, mode: "book", clinicianIds: ids });
+      else if (service.patientRequestKind) out.push({ service, mode: "request", requestKind: service.patientRequestKind });
+      continue;
+    }
+    out.push({ service, mode: "book" });
+  }
+  return out;
+}
+
+export function patientServiceOption(patient: Patient | undefined, serviceType: ServiceType | ""): PatientServiceOption | undefined {
+  return serviceType ? patientServiceMenu(patient).find((o) => o.service.id === serviceType) : undefined;
+}
+
+const REQUEST_SELECTION: Record<AppointmentRequestKind, { mentalHealth?: boolean; medication?: boolean; notSure?: boolean }> = {
+  therapy: { mentalHealth: true },
+  medication: { medication: true },
+  help_choose: { notSure: true },
+};
+
+/** Store function for `patient_request_visit`: "Ask my team" through the existing duplicate/auto-close request flow. */
+export function patientRequestVisit(input: { patientId: string; serviceType: ServiceType }): AppointmentRequestOutcome | undefined {
+  const patient = AdelanteEHR.getPatient(input.patientId);
+  if (!patient) throw new Error("That person isn't in the record.");
+  const opt = patientServiceOption(patient, input.serviceType);
+  if (!opt || opt.mode !== "request" || !opt.requestKind) throw new Error("This visit can't be requested here. Ask your care team.");
+  return AdelanteEHR.createAppointmentRequests(patient.id, REQUEST_SELECTION[opt.requestKind], { id: patient.id, role: "patient" })[0];
+}
+
 /** The patient's assigned clinician first, then other eligible clinicians for the visit type. */
 export function patientBookableClinicians(patient: Patient | undefined, serviceType: ServiceType | "", modality?: BookingModality): PatientClinicianOption[] {
   if (!patient || !serviceType) return [];
+  const opt = patientServiceOption(patient, serviceType);
+  if (!opt || opt.mode !== "book") return [];
   const list = eligibleClinicians(serviceType, patient, { role: PATIENT_ACTOR_ROLE, clinicianId: patient.primaryClinicianId } as never, modality);
   return list
+    .filter((s) => !opt.clinicianIds || opt.clinicianIds.includes(s.clinician.id))
     .map((s) => ({ clinician: s.clinician, assigned: s.clinician.id === patient.primaryClinicianId, hasHours: hasAvailabilitySet(s.clinician.id) }))
     .sort((a, b) => Number(b.assigned) - Number(a.assigned) || Number(b.hasHours) - Number(a.hasHours));
 }
