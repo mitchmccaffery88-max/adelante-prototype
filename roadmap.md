@@ -7,7 +7,8 @@
 - [x] Step 4 (29 Oct): reason log, search/deep-link/print/embedded picker, Today/inbox/bell/quick-peek shared pre-data gates proved. Full units 3,662/3,662; saved click-through browser regression 1/1. No record-class changes.
 - [x] Step 5a: main rollback 112 checks for all-role/dated/group/Intake/members/MOUD/Part2/restrictions; all-public/auth counts equal, no fixtures. Candidate-policy actual reads also pass inside rollback; every policy still closed.
 - [x] Step 5b chart: individually approved identity/contact/team migration applied; installed predicates read back; packet/handoff still closed and commands revoked.
-- [ ] Step 5b packet/checklist/needs: waiting for separate approval; handoff follows separately. Tagged Part 2 packet reads stay closed.
+- [x] Step 5b packet/checklist/needs: separately approved migration applied; predicates read back, tagged Part 2 excluded, commands revoked.
+- [ ] Step 5b handoff: waiting for separate approval.
 - [ ] Step 5c: after approved openings, full units then public browser and final SQL docs/matrix/roadmap closeout.
 - [x] App checkpoint public browser 53/53 (12.6m), after full units, one worker :8080; post-suite DEA registry/Billing readback and shared-gate browser 1/1; checkpoint reports/Draft matrix updated. Final SQL acceptance report remains with Step 5.
 - [x] Carry-over: on-team HLOC therapist fixture via registry; unchanged HLOC browser 1/1 passed after green units.
