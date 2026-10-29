@@ -1,8 +1,8 @@
 // 29 Oct (Mitch, Draft — pending billing/compliance review with Christi).
 import { describe, expect, it } from "vitest";
+import { AdelanteEHR } from "@/lib/ehr";
 import { resolveFundingSourceFrom, seriesOccurrences, SERIES_DRAFT, type FundingCoverageSpan, FUNDING_FLAG_LABEL, SLIDING_SCALE_FEE_LABEL } from "@/lib/fundingSource";
 import { evaluateCredentialing, credentialingReasonLabel, type ClinicianCredentialing } from "@/lib/credentialing";
-import { AdelanteEHR } from "@/lib/ehr";
 import { APPOINTMENT_KEYS, projectBillingAppointment } from "@/lib/billingProjection";
 import { groupSessionFundingReview } from "@/lib/groupFunding";
 import { loadCoverageMixScenario } from "@/lib/coverageMixScenario";
