@@ -9318,6 +9318,8 @@ export const AdelanteEHR = {
     assignedStaffId?: string;
     /** §ASAM visit — link to the open ASAM task. Linking never closes it. */
     asamTaskId?: string;
+    /** 29 Oct — set only by bookAppointmentSeries. */
+    seriesId?: string;
   }) {
     if (input.asamTaskId) {
       const t = caseTasks.find((x) => x.id === input.asamTaskId);
@@ -9431,6 +9433,65 @@ export const AdelanteEHR = {
       kind: "booked",
     });
     if (isStaffBooking) _announceStaffBooking(a, input.bookedBy!);
+    emit();
+    return a;
+  },
+  /**
+   * 29 Oct (Mitch, Draft) — staff-only recurring series for individual visits.
+   * A loop over bookAppointment: every occurrence runs the same rights,
+   * credential and coverage checks on its own date and gets its own audit row.
+   * Blocked occurrences are not booked; they come back with the neutral reason
+   * so staff can rebook them with another clinician. Never patient self-scheduling.
+   */
+  bookAppointmentSeries(
+    input: Omit<Parameters<typeof AdelanteEHR.bookAppointment>[0], "seriesId" | "start" | "source"> & {
+      firstStart: string;
+      cadence: SeriesCadence;
+      endDate?: string;
+      count?: number;
+      source?: AppointmentSource;
+    },
+  ): { seriesId: string; booked: Appointment[]; blocked: { start: string; reason: string }[] } {
+    const role = input.bookedBy?.role as StaffRole | undefined;
+    if (!role || role === ("patient" as StaffRole) || input.source === "self_scheduled" || !canScheduleRole(role))
+      throw new Error("Only staff who book visits can book a series.");
+    if (GROUP_SERVICE_TYPES.includes(input.serviceType ?? "")) throw new Error("Series booking is for individual visits.");
+    const starts = seriesOccurrences({ firstStart: input.firstStart, cadence: input.cadence, endDate: input.endDate, count: input.count });
+    if (input.count && input.count > SERIES_DRAFT.maxVisitsPerSeries)
+      throw new Error(`A series can have at most ${SERIES_DRAFT.maxVisitsPerSeries} visits (Draft).`);
+    const seriesId = `series-${uid()}`;
+    const booked: Appointment[] = [];
+    const blocked: { start: string; reason: string }[] = [];
+    const { firstStart: _f, cadence, endDate: _e, count: _c, ...rest } = input;
+    for (const start of starts) {
+      try {
+        const a = AdelanteEHR.bookAppointment({ ...rest, start, source: "staff_scheduled", seriesId });
+        booked.push(a);
+        appendAudit({ category: "clinical", action: "appointment_series_occurrence_booked", patientId: a.patientId, actorId: input.bookedBy?.id ?? "staff", actorRole: role, detail: { seriesId, apptId: a.id, cadence } });
+      } catch (e) {
+        blocked.push({ start, reason: e instanceof Error ? e.message : "This visit can't be booked." });
+        appendAudit({ category: "clinical", action: "appointment_series_occurrence_blocked", patientId: input.patientId, actorId: input.bookedBy?.id ?? "staff", actorRole: role, detail: { seriesId, start, cadence } });
+      }
+    }
+    emit();
+    return { seriesId, booked, blocked };
+  },
+  /**
+   * 29 Oct (Draft) — Billing or Intake changes an appointment's funding source
+   * with a reason code. One audit row, ids and reason code only.
+   */
+  setAppointmentFundingSource(
+    apptId: string,
+    input: { source: FundingSource; reasonCode: FundingOverrideReason; actorId: string; actorRole: StaffRole },
+  ): Appointment {
+    if (!canOverrideFundingSource(input.actorRole)) throw new Error("Only Billing or Intake can change who pays for a visit.");
+    if (!FUNDING_SOURCES.includes(input.source)) throw new Error("Pick a funding source.");
+    if (!FUNDING_OVERRIDE_REASONS.includes(input.reasonCode)) throw new Error("Pick a reason.");
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) throw new Error("That visit no longer exists.");
+    const before = a.fundingSource?.source;
+    a.fundingSource = { source: input.source, flags: (a.fundingSource?.flags ?? []).filter((f) => f === "cob_review"), set: "override", reasonCode: input.reasonCode };
+    appendAudit({ category: "clinical", action: "appointment_funding_source_changed", patientId: a.patientId, actorId: input.actorId, actorRole: input.actorRole, detail: { apptId: a.id, from: before ?? null, to: input.source, reasonCode: input.reasonCode } });
     emit();
     return a;
   },
