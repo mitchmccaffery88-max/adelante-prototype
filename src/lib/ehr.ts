@@ -2342,7 +2342,13 @@ export type ServiceType =
   // "Clinical visit" to roles without SUD access).
   | "sud_counseling"
   | "sud_group_odf"
-  | "sud_group_iot";
+  | "sud_group_iot"
+  // 29 Oct (Mitch, Draft — pending Christi): five patient-scheduling types.
+  | "psychiatric_evaluation"
+  | "sud_assessment"
+  | "chw_visit"
+  | "family_collateral"
+  | "nurse_visit";
 
 export interface ServiceTypeInfo {
   id: ServiceType;
@@ -2461,6 +2467,12 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
   },
   { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true, patientAccess: "book", patientCondition: "asam_placement", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
   { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  // 29 Oct (Mitch, Draft — pending Christi): durations, modalities and tags are Draft; no codes or rates.
+  { id: "psychiatric_evaluation", label: "Psychiatric evaluation", helper: "A first full visit with a prescriber about your mental health and any medications.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60, patientAccess: "request", patientRequestKind: "medication", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" } },
+  { id: "sud_assessment", label: "ASAM assessment (SUD)", helper: "A substance-use assessment that finds the right level of care.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "chw_visit", label: "Community health worker visit", helper: "Get help with health needs, benefits and getting to care.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 30, patientAccess: "book", deliverySystemDraft: { tag: "non_billable", confirm: "Billable CHW benefit only once credential checks are approved; otherwise not billed" } },
+  { id: "family_collateral", label: "Family session", helper: "A session with family or people who support you.", allowedModalities: ["video", "in_person"], defaultDurationMin: 50, patientAccess: "request", patientRequestKind: "therapy", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "Collateral billing needs review" } },
+  { id: "nurse_visit", label: "Nurse visit", helper: "A visit with a nurse for vitals, injections or health checks.", allowedModalities: ["in_person"], defaultDurationMin: 20, patientAccess: "staff_only", deliverySystemDraft: { tag: "nsmhs", confirm: "Nurse visit billing needs review" } },
   { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
 ];
 
@@ -2484,6 +2496,11 @@ const LOCATIONS: ClinicLocation[] = [
       "sud_counseling",
       "sud_group_odf",
       "sud_group_iot",
+      "psychiatric_evaluation",
+      "sud_assessment",
+      "chw_visit",
+      "family_collateral",
+      "nurse_visit",
     ],
   },
   {
@@ -4542,6 +4559,7 @@ const clinicians: Clinician[] = [
       "therapy_group",
       "case_management",
       "care_coordination",
+      "family_collateral",
     ],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2028-12-31",
@@ -4563,7 +4581,7 @@ const clinicians: Clinician[] = [
     credential: "PMHNP-BC",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["med_management", "controlled_med_moud", "intake", "therapy_individual"],
+    services: ["med_management", "controlled_med_moud", "intake", "therapy_individual", "psychiatric_evaluation"],
     locationIds: ["loc-porterville"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4574,7 +4592,7 @@ const clinicians: Clinician[] = [
     credential: "ASW",
     mediCalCredentialed: false,
     mediCalStatus: "pending",
-    services: ["therapy_individual", "case_management"],
+    services: ["therapy_individual", "case_management", "family_collateral"],
     locationIds: ["loc-visalia"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4584,7 +4602,7 @@ const clinicians: Clinician[] = [
     credential: "M.D.",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["med_management", "controlled_med_moud", "intake"],
+    services: ["med_management", "controlled_med_moud", "intake", "psychiatric_evaluation"],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4595,7 +4613,7 @@ const clinicians: Clinician[] = [
     credential: "AMFT",
     mediCalCredentialed: false,
     mediCalStatus: "pending",
-    services: ["therapy_individual"],
+    services: ["therapy_individual", "family_collateral"],
     locationIds: ["loc-visalia"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4606,7 +4624,7 @@ const clinicians: Clinician[] = [
     credential: "SUDCC-II",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["sud_counseling", "sud_group_odf", "sud_group_iot"],
+    services: ["sud_counseling", "sud_group_odf", "sud_group_iot", "sud_assessment"],
     locationIds: ["loc-visalia"],
     licenseExpiresOn: "2028-12-31",
     languages: ["en", "es"],
@@ -8426,6 +8444,8 @@ function _assertClinicianFit(clinicianId: string, serviceType?: ServiceType) {
     const prescriber = role === "pmhnp" || role === "physician" || /PMHNP|M\.D\.|MD|DO/.test(c.credential);
     if (!prescriber) throw new Error("Medication visits can only be booked with a physician or PMHNP.");
   }
+  const fit = serviceRoleFit(serviceType, STAFF_ROSTER.find((s) => s.clinicianId === clinicianId)?.role, c.credential);
+  if (!fit) throw new Error(`${c.name} doesn't offer this visit type. Pick a suggested clinician.`);
 }
 /** Audit + clinician + patient notices for a staff booking. Part 2-neutral. */
 function _announceStaffBooking(a: Appointment, by: { id: string; role: string; staffId?: string }) {
