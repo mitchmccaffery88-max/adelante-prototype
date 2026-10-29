@@ -12,6 +12,8 @@ const SERVICES_BY_ROLE: Partial<Record<StaffRole, ServiceType[]>> = {
   ecm_provider: ["case_management"],
   cf_care_manager: ["case_management"],
   peer_specialist: ["peer_support"],
+  // 30 Oct (Draft): CHWs keep their own calendar for CHW visits.
+  community_health_worker: ["chw_visit"],
 };
 export const CARE_MANAGER_CALENDAR_ROLES = Object.keys(SERVICES_BY_ROLE) as StaffRole[];
 /** Draft default week: Monday–Friday 9:00–17:00, in person or by video/phone. */

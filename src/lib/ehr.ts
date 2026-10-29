@@ -8439,7 +8439,8 @@ export function bookingCredentialingBlock(
 function _assertClinicianFit(clinicianId: string, serviceType?: ServiceType) {
   const c = clinicians.find((x) => x.id === clinicianId);
   if (!c || !serviceType) return;
-  if (c.services && !c.services.includes(serviceType))
+  // 30 Oct (Draft): a missing services list offers nothing.
+  if (!(c.services ?? []).includes(serviceType))
     throw new Error(`${c.name} doesn't offer this visit type. Pick a suggested clinician.`);
   if (isPrescriberServiceType(serviceType)) {
     const role = STAFF_ROSTER.find((s) => s.clinicianId === clinicianId)?.role;
@@ -8966,7 +8967,7 @@ export const AdelanteEHR = {
   getLocation: (id?: string) => LOCATIONS.find((l) => l.id === id),
   cliniciansForService(serviceType?: ServiceType, opts?: { locationId?: string }) {
     return clinicians.filter((c) => {
-      const svcOk = !serviceType || !c.services || c.services.includes(serviceType);
+      const svcOk = !serviceType || (c.services ?? []).includes(serviceType);
       const locOk = !opts?.locationId || !c.locationIds || c.locationIds.includes(opts.locationId);
       return svcOk && locOk;
     });
@@ -26909,7 +26910,7 @@ try {
 try {
   const SYS = { id: "demo-seed", role: "patient" };
   const therapist = AdelanteEHR.listClinicians().find(
-    (c) => (!c.services || c.services.includes("therapy_individual")) && AdelanteEHR.canBook(c.id).ok,
+    (c) => (c.services ?? []).includes("therapy_individual") && AdelanteEHR.canBook(c.id).ok,
   );
   const slot = (daysAhead: number, hour: number) => {
     let d = demoLocalDayAt(daysAhead, hour);
