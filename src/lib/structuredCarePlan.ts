@@ -11,6 +11,7 @@ import { isJusticeInvolved } from "./justiceInvolvement";
 import { AdelanteEHR, type Patient, type SdohStatus } from "./ehr";
 import type { StaffRole } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
+import { registerSmhsDeterminationSource, type SmhsDetermination } from "./fundingSource";
 
 export const PLAN_DRAFT_LABEL = "Draft — pending clinical sign-off";
 const DAY = 86400000;
@@ -110,6 +111,12 @@ export interface StructuredPlan {
   assignments: PlanAssignment[];
   decisions: Record<string, { decision: "accepted" | "dismissed"; at: string; by: string; reason?: string; edited?: boolean }>;
   review: PlanReview;
+  /**
+   * 29 Oct (Mitch, Draft): whether the client meets SMHS criteria — a dated
+   * clinical determination set by a clinician, never inferred. Picks county MHP
+   * vs managed care plan for therapy/psychiatry funding.
+   */
+  smhsDetermination?: SmhsDetermination;
 }
 
 // ---------------------------------------------------------------- catalog
@@ -376,6 +383,19 @@ export function closeStructuredGoal(patientId: string, goalId: string, outcome: 
   touch(plan);
   audit("plan_goal_closed", patientId, actor, { goalId, outcome });
 }
+
+/** 29 Oct (Draft): licensed clinicians who may record the SMHS determination. */
+export const SMHS_DETERMINATION_ROLES = ["therapist", "pmhnp", "physician"];
+export const canSetSmhsDetermination = (role: string) => SMHS_DETERMINATION_ROLES.includes(role);
+export function setSmhsDetermination(patientId: string, input: { meets: boolean; determinedAt: string }, actor: Actor) {
+  if (!canSetSmhsDetermination(actor.role)) throw new Error("Only a treating clinician records the SMHS determination.");
+  if (!/^\d{4}-\d{2}-\d{2}/.test(input.determinedAt)) throw new Error("Give the determination date.");
+  const plan = getStructuredPlan(patientId);
+  plan.smhsDetermination = { meets: input.meets, determinedAt: input.determinedAt.slice(0, 10), determinedBy: actor.name };
+  touch(plan);
+  audit("plan_smhs_determination_set", patientId, actor, { meets: input.meets, determinedAt: input.determinedAt.slice(0, 10) });
+}
+registerSmhsDeterminationSource((pid) => plans.get(pid)?.smhsDetermination);
 
 /** Owner reassignment — the coordinator's only care-plan write. Reason required, audited. */
 export function reassignGoalOwner(patientId: string, goalId: string, owner: GoalOwner, reason: string, actor: Actor) {
