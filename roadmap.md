@@ -1,5 +1,15 @@
 # Roadmap
 
+## 29 Oct patient scheduling (Draft, pending Christi)
+- [x] Carry-over bridge: dated coverage determinations and existing Billing order feed the single resolver; full units 3,690/3,690 then isolated public browser 53/53; coverage report.
+- [ ] Remaining carry-overs first: treating-clinician SMHS control; Billing/Intake funding override control; full units then public browser and coverage report after both controls.
+- [x] Inspect and report calendars/services/availability and current group capacity behavior before changes (patient-scheduling-report.md).
+- [ ] Catalog patientAccess and five missing types; conditional patient book/request menu without changing /schedule layout.
+- [ ] Shared booking/clinician-picker checks, request kinds, ASAM visit migration, coverage-review/private-pay presentation.
+- [ ] Existing calendar-model fixes and category-specific group capacity.
+- [ ] All-role tests, exact-once re-pins, full units then public browser, patient-scheduling report and confirm table.
+- No publication, persistence or Supabase changes. Stop only at a completed green checkpoint; list remainder.
+
 ## 28 Oct MOUD service type (Draft)
 - [x] Controlled medication / MOUD visit in the one catalog; Draft controlled flag moved off med_management; enrollment rows, seeds, no invented codes; tests and re-pins; units 3,670/3,670; public 53/53 x2.
 - [ ] Mitch to confirm the Draft controlled list and the real billing code mapping.
@@ -263,6 +273,6 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] 7 Rename c5, move DEA-expiry case, demo clients
 - [x] Tests, full units, coverage-rules-report.md, credentialing-report.md
 - [x] Public browser 53/53
-- [ ] Bridge coverageRequests determinations order into the resolver — next batch
+- [x] Bridge coverageRequests determinations order into the resolver — scheduling checkpoint; full units 3,690/3,690, public 53/53.
 - [ ] SMHS determination and "Change who pays" screens — store/registry ready, UI not built
 - [ ] Christi/compliance confirmations, sliding-scale tiers, MOUD code mapping — waiting on Christi/compliance
