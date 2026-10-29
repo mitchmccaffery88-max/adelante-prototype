@@ -100,6 +100,16 @@ const APPROVED: Record<string, { prior: string; updated: string; pairs: [string,
     "      }\n    }\n    // 29 Oct (Mitch, Draft \u2014 pending Christi): ONE booking rule for patients\n    // and staff. A self-scheduled visit must be a patient \"book\" type and never\n    // a group; then the same fit, telehealth and group-consent checks apply to\n    // everyone (credentialing for the resolved funding source and conflicts\n    // above/below already run for every booking).\n    const isSelfBooking = input.source === \"self_scheduled\" || bookRole === (\"patient\" as StaffRole);\n    if (isSelfBooking) {\n      const svcInfo = SERVICE_TYPES.find((s) => s.id === input.serviceType);\n      if (!svcInfo || svcInfo.patientAccess !== \"book\" || GROUP_SERVICE_TYPES.includes(input.serviceType ?? \"\"))\n        throw new Error(SELF_BOOKING_REFUSED);\n    }\n    if (isStaffBooking || isSelfBooking) {\n      _assertClinicianFit(input.clinicianId, input.serviceType);\n"
    ]
   ]
+ },
+ "src/lib/ehr-ext.ts": {
+  "prior": "8b8d44ce06d322b84fbaf3d864a91ebba6696faa6c08c3a84aed174e7b9e1fa3",
+  "updated": "83df6de4a25cde47f04bab6ea2ed77d6e9810343bcaef01a833571171e6e17a5",
+  "pairs": [
+   [
+    "      { payer: \"Medi-Cal FFS\", serviceType: \"therapy_individual\", status: \"active\", effectiveAt: daysFromNow(-879) },\n      { payer: \"Tulare County DMC-ODS\", serviceType: \"sud_counseling\", status: \"not_started\" },\n",
+    "      { payer: \"Medi-Cal FFS\", serviceType: \"therapy_individual\", status: \"active\", effectiveAt: daysFromNow(-879) },\n      // 29 Oct patient scheduling (fictional demo row, Draft): psychiatric evaluation enrollment.\n      { payer: \"Medi-Cal FFS\", serviceType: \"psychiatric_evaluation\", status: \"active\", effectiveAt: daysFromNow(-879) },\n      { payer: \"Tulare County DMC-ODS\", serviceType: \"sud_counseling\", status: \"not_started\" },\n"
+   ]
+  ]
  }
 };
 export const PATIENT_SCHEDULING_OCT29_FILES = Object.keys(APPROVED);
