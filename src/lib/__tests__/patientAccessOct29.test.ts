@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { AdelanteEHR, type ServiceType } from "@/lib/ehr";
+import { AdelanteEHR, SELF_BOOKING_REFUSED, type ServiceType } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
 import { STAFF_ROLES } from "@/lib/roles";
 import { PATIENT_ACTOR_ROLE, patientBookableClinicians, patientRequestVisit, patientSelfBook, patientServiceMenu } from "@/lib/patientBooking";
@@ -94,5 +94,37 @@ describe("29 Oct new service types (Draft)", () => {
   it("roles without SUD visit access never see the ASAM assessment type", () => {
     expect(bookableServiceTypes("peer_specialist").map((s) => s.id)).not.toContain("sud_assessment");
     expect(visitTypeLabel("sud_assessment", "peer_specialist")).toBe("Clinical visit");
+  });
+});
+
+describe("29 Oct one booking rule for patients and staff (Draft)", () => {
+  const slotFor = (c: string, s: ServiceType) => availableSlots(c, { serviceType: s, modality: "in_person" })[0]!;
+  it("the store refuses self-scheduled group, staff_only and request types for any caller", () => {
+    const p = fresh();
+    for (const serviceType of ["therapy_group", "intake", "nurse_visit", "psychiatric_evaluation", "family_collateral"] as ServiceType[]) {
+      expect(() => AdelanteEHR.bookAppointment({ patientId: p.id, clinicianId: "c3", start: slotFor("c3", "med_management"), durationMin: 30, serviceType, modality: "in_person", locationId: "loc-visalia", source: "self_scheduled", bookedBy: { id: p.id, role: "patient" } })).toThrow(SELF_BOOKING_REFUSED);
+    }
+  });
+  it("self-booking gets the same clinician-fit check as staff booking", () => {
+    const p = fresh();
+    // c1 (LCSW) does not prescribe: refused for patients exactly as for staff.
+    expect(() => AdelanteEHR.bookAppointment({ patientId: p.id, clinicianId: "c1", start: slotFor("c1", "therapy_individual"), durationMin: 30, serviceType: "med_management", modality: "in_person", locationId: "loc-visalia", source: "self_scheduled", bookedBy: { id: p.id, role: "patient" } })).toThrow(/doesn't offer|physician or PMHNP/);
+  });
+  it("the picker drops a clinician who isn't credentialed for the resolved funding source", async () => {
+    const cred = await import("@/lib/credentialing");
+    const p = fresh();
+    p.primaryClinicianId = "c1";
+    const before = patientBookableClinicians(p, "therapy_individual", "in_person").map((o) => o.clinician.id);
+    expect(before).toContain("c1");
+    const spy = (await import("vitest")).vi.spyOn(cred, "credentialedForService").mockReturnValue({ ok: false, reasons: ["license_expired"] } as never);
+    try {
+      const blocked = AdelanteEHR.bookAppointment.length >= 0 && patientBookableClinicians(p, "therapy_individual", "in_person").map((o) => o.clinician.id);
+      // Only applies when the funding source is billable; non-billable work is never blocked.
+      const funding = (await import("@/lib/fundingSource")).resolveFundingSource(p.id, "therapy_individual", new Date().toISOString());
+      if (funding.source && funding.source !== "non_billable") expect(blocked).not.toContain("c1");
+      else expect(blocked).toContain("c1");
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
