@@ -672,10 +672,10 @@ function seedCredentialAuthorityDemo() {
       { payer: "Medi-Cal FFS", serviceType: "med_management", status: "active", effectiveAt: daysFromNow(-879) },
       // 28 Oct MOUD service type: the fully credentialed demo prescriber.
       { payer: "Medi-Cal FFS", serviceType: "controlled_med_moud", status: "active", effectiveAt: daysFromNow(-879) },
-      // 29 Oct (Draft): MOUD resolves to the county DMC-ODS for Medi-Cal clients.
-      { payer: "Tulare County DMC-ODS", serviceType: "controlled_med_moud", status: "active", effectiveAt: daysFromNow(-879) },
       { payer: "Medi-Cal FFS", serviceType: "therapy_individual", status: "active", effectiveAt: daysFromNow(-879) },
       { payer: "Tulare County DMC-ODS", serviceType: "sud_counseling", status: "not_started" },
+      // 29 Oct (Draft): MOUD resolves to the county DMC-ODS for Medi-Cal clients.
+      { payer: "Tulare County DMC-ODS", serviceType: "controlled_med_moud", status: "active", effectiveAt: daysFromNow(-879) },
     ],
     recredentialingDueAt: daysFromNow(2 * 365),
     documentStatus: "simulated_unavailable",

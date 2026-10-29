@@ -107,7 +107,7 @@ describe("J2 medication chain", () => {
     cosignClinicDose({ doseId: d.id, actor: RN() });
     // All three signatures on the order trail.
     const o2 = AdelanteEHR.listOrders(pid).find((x) => x.id === order.id) as unknown as { signedBy?: string; createdBy?: string };
-    expect(o2.signedBy ?? o2.createdBy).toMatch(/Bagga/);
+    expect(o2.signedBy ?? o2.createdBy).toMatch(/Sample/);
     expect(nurseReviewFor(order.id)?.by).toMatch(/Marisol/);
     const trail = orderSignatureTrail(pid, order.id);
     expect(trail.map((x) => x.step)).toEqual(["ordered", "reviewed", "given", "cosigned"]);
