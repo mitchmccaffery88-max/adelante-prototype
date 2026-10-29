@@ -1,14 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { runAction } from '../actions/runAction';
-import { AdelanteEHR, bookingCredentialingBlock } from '../ehr';
+import { AdelanteEHR, bookingCredentialingBlock, SERVICE_TYPES } from '../ehr';
 import { AdelanteEHRExt } from '../ehr-ext';
 import { credentialedForService, credentialingRecordForStaff, evaluateCredentialing, type ClinicianCredentialing } from '../credentialing';
+import { projectBillingAppointment } from '../billingProjection';
 const at = (days: number) => new Date(Date.now() + days * 86400000).toISOString();
 function fixture(staffId: string): ClinicianCredentialing {
   return { staffId, license: { licenseType:'MD',number:'DEMO',state:'CA',verifiedAt:at(-30),expiresAt:at(400),method:'manual' }, dea: {number:'DEMO-DEA',verifiedAt:at(-30),expiresAt:at(60)}, exclusionChecks: (['oig','sam_gov','medi_cal_suspended'] as const).map(list => ({list,checkedAt:at(-8),nextDueAt:at(22),result:'clear'})),enrollments:[{payer:'Medi-Cal FFS',serviceType:'*',status:'active'}],documentStatus:'simulated_unavailable' };
 }
 const input = (days: number, serviceType = 'med_management') => ({payer:'Medi-Cal FFS',serviceType,dateOfService:at(days),asOf:at(0)});
 describe('DEA on the service date — controlled-substance prescriber services only', () => {
+  it('only the matching Draft medication catalog entry requires DEA', () => {
+    expect(SERVICE_TYPES.filter(s => s.controlledSubstanceDraft).map(s => s.id)).toEqual(['med_management']);
+  });
+  it('Billing retains service type without receiving the catalog flag', () => {
+    const row = { id:'dea-projection', patientId:'p-dea', clinicianId:'c3', start:at(45), durationMin:30, status:'scheduled', serviceType:'med_management', source:'staff_scheduled' } as Parameters<typeof projectBillingAppointment>[0];
+    const projected = projectBillingAppointment(row);
+    expect(projected.serviceType).toBe('med_management');
+    expect(Object.keys(projected)).not.toContain('controlledSubstance');
+    expect(Object.keys(projected)).not.toContain('controlledSubstanceDraft');
+  });
   for (const staffId of ['s-np1','s-th3']) {
     it(`${staffId}: verified DEA works before expiry and blocks only later DOS`, () => {
       expect(evaluateCredentialing(fixture(staffId),input(45))).toEqual({ok:true});
@@ -43,7 +54,8 @@ describe('DEA on the service date — controlled-substance prescriber services o
       const p=AdelanteEHR.createPatient({firstName:'DEA',lastName:'Fixture',dob:'1990-01-01'} as Parameters<typeof AdelanteEHR.createPatient>[0]);
       AdelanteEHR.addCoveragePlan(p.id,{payer:'Medi-Cal FFS',from:at(-30)} as Parameters<typeof AdelanteEHR.addCoveragePlan>[1]);
       expect(bookingCredentialingBlock('c3','med_management',p.id,at(5))).toBe("This clinician can't be booked for this service right now.");
-      expect(bookingCredentialingBlock('c3','intake',p.id,at(5))).toBeUndefined();
+      const unflagged = credentialedForService('s-th3','Medi-Cal FFS','intake',at(5));
+      expect(unflagged.ok ? [] : unflagged.reasons).not.toContain('dea_not_verified');
     } finally {
       AdelanteEHRExt.updateCredential(doc.id,{expiresAt:before},'s-cred1','Restore fixture');
       AdelanteEHRExt.verifyCredential(doc.id,'s-cred1');

@@ -1,6 +1,6 @@
 # Architecture rules
 
-- Credentialing uses ehr-ext records, roster NPI and registry writes; transition audits are ids-only, Today reads claim counts, Billing stays projected. Controlled services use explicit appointment facts, never SUD/category inference or wider Billing allowlists. Why: screening cannot disclose clinical context or split authority.
+- Credentialing uses ehr-ext records, roster NPI and registry writes; transition audits are ids-only, Today reads claim counts, Billing stays projected. DEA reads the existing service catalog through self-registration, never booking flags, SUD inference or wider Billing allowlists. Why: one service classification cannot disclose clinical context or split authority.
 
 - Phase 2 stays disconnected; commands/unproved reads stay closed. Access entry uses matched team/reason helpers; chartPart2Boundary self-registers relationship facts into the unchanged matrix gate. Reason-only Part 2 requires class-specific consent; direct internal-use is counsel-pending. Why: entry cannot replace matrix grants or split app/SQL rules.
 - Approved source re-pins hash-check prior text once. Why: no drift.
