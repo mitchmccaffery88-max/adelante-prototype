@@ -678,6 +678,10 @@ export function expiringItems(now: Date = new Date()): ExpiringItem[] {
       { item: "Registration", expiresAt: r.registration?.expiresAt },
       { item: "DEA registration", expiresAt: r.dea?.expiresAt },
       { item: "Malpractice coverage", expiresAt: r.malpractice?.expiresAt },
+      // 29 Oct (Draft — confirm with compliance): billable roles without a clinical license.
+      { item: "Peer Support Specialist certification", expiresAt: r.peerCertification?.expiresAt },
+      { item: "CHW certificate", expiresAt: r.chwQualification?.kind === "certificate" ? r.chwQualification.expiresAt : undefined },
+      { item: "ECM training attestation", expiresAt: r.ecmTraining?.expiresAt },
     ];
     for (const c of candidates) {
       if (!c.expiresAt) continue;
@@ -783,7 +787,24 @@ export function credentialingTiles(now: Date = new Date()) {
     { key: "recredentialing", label: "Re-credentialing due", count: recred.length, items: recred },
     { key: "enrollment", label: "Payer enrollment pending", count: pending.length, items: pending },
     { key: "blocked", label: "Blocked clinicians", count: new Set(blocked.map((b) => b.staffId)).size, items: blocked },
+    // 29 Oct (Draft — confirm with compliance): peer / CHW / ECM credentials missing or expiring.
+    { key: "role_credentials", label: "Peer, CHW and ECM credentials", count: roleCredentialGaps(now).length, items: roleCredentialGaps(now) },
   ] as const;
+}
+
+/** Peer / CHW / ECM staff whose Draft role credentials are missing, expired, or expiring within 90 days. */
+export function roleCredentialGaps(now: Date = new Date()): { staffId: string; reasons: CredentialingReasonCode[]; expiringDays?: number }[] {
+  const out: { staffId: string; reasons: CredentialingReasonCode[]; expiringDays?: number }[] = [];
+  const today = asDay(now.toISOString());
+  for (const r of listCredentialingRecords()) {
+    const role = getStaffMember(r.staffId)?.role;
+    if (!isUnlicensedBillableRole(role) || r.license || r.registration) continue;
+    const res = evaluateCredentialing(r, { payer: ECM_ORG_CONTRACTS_DRAFT.find((k) => k.status === "active")?.payer, serviceType: "case_management", dateOfService: now.toISOString(), fundingSource: "private_pay" });
+    const own = res.ok ? [] : res.reasons.filter((x) => x.startsWith("peer_") || x.startsWith("chw_") || x.startsWith("ecm_") || x === "supervising_provider_missing");
+    const exp = [r.peerCertification?.expiresAt, r.chwQualification?.expiresAt, r.ecmTraining?.expiresAt].filter(Boolean).map((e) => asDay(e!) - today).filter((n) => n >= 0 && n <= 90);
+    if (own.length || exp.length) out.push({ staffId: r.staffId, reasons: own, ...(exp.length ? { expiringDays: Math.min(...exp) } : {}) });
+  }
+  return out;
 }
 
 /** The clinician's own neutral heads-up at 30 days — never the reasons of others. */
