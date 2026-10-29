@@ -30,6 +30,7 @@ import {
   MapPin,
   Building2,
   CalendarClock,
+  Info,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { PatientGroupScheduling } from "@/components/PatientGroupScheduling";
