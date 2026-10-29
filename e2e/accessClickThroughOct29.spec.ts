@@ -1,0 +1,34 @@
+import { expect, test } from "@playwright/test";
+
+test("Today, Inbox, bell and quick peek share the pre-data reason gate", async ({ page }) => {
+  await page.goto("/clinician");
+  await page.waitForFunction(() => !!(window as any).__adelante?.access);
+  await page.evaluate(() => (window as any).__adelante.setActingStaff("s-th1", "therapist"));
+  await expect(page.getByRole("tab", { name: "Dashboard", exact: true })).toBeVisible();
+  const cancelled = page.getByRole("tab", { name: /^Cancelled · Missed visit · late cancel · rescheduled/ });
+  await cancelled.click();
+  await page.getByRole("region", { name: "Today", exact: true }).getByRole("button", { name: "ADL-2026-002", exact: true }).click();
+  await expect(page.getByTestId("chart-access-gate")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Full patient record", exact: true })).toHaveCount(0);
+  await page.evaluate(() => (window as any).__adelante.go("/inbox"));
+  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "Requests", exact: true }).click();
+  await page.getByRole("button", { name: /^Unclaimed \(/ }).click();
+  const request = page.getByRole("row").filter({ hasText: "Is the patient cleared to restart group therapy this week?" });
+  await request.getByRole("link", { name: "Rosa T.", exact: true }).click();
+  await expect(page.getByTestId("chart-access-gate")).toBeVisible();
+  await page.getByRole("button", { name: /^Notifications/ }).click();
+  await page.getByRole("button", { name: /^Visit cancelled — Rosa T\./ }).click();
+  await expect(page.getByTestId("chart-access-gate")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => (window as any).__adelante.go("/case-manager"));
+  await expect(page.getByRole("button", { name: "Quick peek", exact: true })).toBeVisible();
+  const row = page.getByRole("row").filter({ hasText: "ADL-2026-002" }).filter({ has: page.getByRole("button", { name: "Record", exact: true }) });
+  await row.getByRole("button", { name: "Open", exact: true }).click();
+  await page.getByRole("button", { name: "Quick peek", exact: true }).click();
+  await expect(page.getByTestId("chart-access-gate")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open full record", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Open chart", exact: true }).click();
+  await expect(page.getByTestId("reason-open-banner")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open full record", exact: true })).toBeVisible();
+});
