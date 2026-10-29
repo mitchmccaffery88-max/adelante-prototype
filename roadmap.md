@@ -251,3 +251,14 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] Remaining Part B: all-role SQL temporal/group/Intake/patient/advocate vectors and counts; candidate-policy read proofs; separately shown/approved chart, packet and handoff migrations; final SQL acceptance report.
 - [x] Coordinator hosts (28 Oct 20:23 continuation)
 - [x] Intake host, access-log reason and shared-gate app checkpoint; catalog DEA; units 3,662/3,662, public browser 53/53, preview readback. SQL groups remain closed.
+
+## 29 Oct — Payment and coverage rules per appointment (Draft, pending Christi)
+- [x] Inspection report delivered (no DB mirror for patient coverage; no migration needed)
+- [ ] 1 resolveFundingSource (order/dates on CoveragePlanSpan, COB flag, stored on appointment, Billing/Intake override)
+- [ ] 2 Draft delivery-system tag on SERVICE_TYPES + dated clinician SMHS determination on care plan
+- [ ] 3 credentialedForService takes funding source; per-source enrollment rules; sliding-scale label
+- [ ] 4 Peer/CHW/ECM credential fields, tiles, expiry tasks
+- [ ] 5 Mixed-payer groups, per-member flag
+- [ ] 6 Recurring series per-occurrence evaluation
+- [ ] 7 Rename c5, move DEA-expiry case, demo clients
+- [ ] Tests, full units, public browser x1, coverage-rules-report.md, credentialing-report.md
