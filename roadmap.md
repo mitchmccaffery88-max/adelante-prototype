@@ -5,7 +5,7 @@
 - [x] Step 2 coordinator request/coverage/weekly review hosts; units 3,627/3,627; real preview request/open/approval/coverage/review at 1280 and 390.
 - [x] Step 3 (28 Oct 21:05 continuation) Intake logged read-only 60-day host; units 3,648/3,648; real checklist/document audit readback and live closure in preview, 1280/390.
 - [x] Step 4 (29 Oct): reason log, search/deep-link/print/embedded picker, Today/inbox/bell/quick-peek shared pre-data gates proved. Full units 3,662/3,662; saved click-through browser regression 1/1. No record-class changes.
-- [ ] Step 5 all-role rollback vectors and separately passing read policies.
+- [ ] Step 5 (29 Oct resumed): all-role main rollback acceptance with all-table before/after counts; dated relationships, group-only, Intake day60/day61, members, MOUD self-only/independent membership, Part 2/restrictions; then individually shown/approved passing chart, packet and handoff read migrations. Failures stay closed.
 - [x] App checkpoint public browser 53/53 (12.6m), after full units, one worker :8080; post-suite DEA registry/Billing readback and shared-gate browser 1/1; checkpoint reports/Draft matrix updated. Final SQL acceptance report remains with Step 5.
 - [x] Carry-over: on-team HLOC therapist fixture via registry; unchanged HLOC browser 1/1 passed after green units.
 - [x] DEA catalog checkpoint: Draft med_management flag only; no booking/projection flag; evaluator and Billing existing service-type path verified. Focused DEA/as-of/projection 29/29, full units 3,662/3,662, live registry credential edit → Billing DEA review readback. Mitch confirmation of Draft matching entry remains.
