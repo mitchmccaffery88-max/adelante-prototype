@@ -1,5 +1,9 @@
 # Access rules — main rollback evidence
 
+## 29 Oct green app checkpoint — no new SQL proof
+
+Step 4 Today/Inbox/bell/quick-peek shared-gate readback and saved browser regression 1/1 passed; full units 3,662/3,662 after catalog DEA work. No Supabase fixture/migration/count query in this continuation; historical counts below are not a new baseline. Step 5 all-role temporal/group/Intake/patient/advocate vectors, before/after counts and candidate-policy reads remain unproved. Chart/packet/handoff policies remain closed; reason/coverage command transport remains revoked until 2d. Persistence OFF, nothing published. **Part 2 internal-use basis: pending counsel confirmation.**
+
 ## 28 Oct step 4 green-unit checkpoint
 
 App-only partial checkpoint: units 3,658/3,658, HLOC browser 1/1 and search/deep-link/print/embedded-picker/reason-log readback passed. Today/inbox/bell/quick-peek and privacy-safe DEA Billing integration remain unproved. **Not a SQL acceptance result:** no Supabase call, fixture, new before/after count or migration in this continuation. All chart/packet/handoff read-policy groups remain closed; command transport remains unavailable until 2d. Persistence OFF; nothing published. **Part 2 internal-use basis: pending counsel confirmation.**

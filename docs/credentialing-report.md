@@ -2,6 +2,18 @@
 
 **Status: reconciled and validated in preview.** Draft — pending go-live permissions audit and compliance review. No publishing, Supabase operations, TEST secrets, persistence switches or external monitoring.
 
+## 29 Oct catalog-based DEA checkpoint (supersedes optional appointment flag)
+
+**Draft — pending clinical sign-off.** The service catalog has no dedicated MOUD buprenorphine induction/maintenance or controlled-medication-management entry. Per Mitch's fallback instruction, the matching existing **`med_management` (Medication visit)** entry now carries `controlledSubstanceDraft: true`, pending Mitch's confirmation. This provisional classification applies to all visits choosing that existing entry; it does not distinguish controlled from noncontrolled medication visits. No SUD/counseling/group entry is flagged and no patient diagnosis/category is used. Mitch must confirm this matching entry before go-live.
+
+`credentialedForService` derives DEA requirements through a self-registered read of that single catalog. Removed the previous optional controlled flag from Appointment, bookAppointment input, evaluator input/options, and review appointment/claim shapes. Booking already chooses service type and needs no new UI. Service-date license/registration/DEA/supervision/enrollment and booking-time exclusion freshness remain unchanged; careLifecycle uses DOS mode. Existing ehr-ext credentials and verification remain the sole authority.
+
+Billing allowlists, codes/dates/provider/units and note-text restrictions are unchanged. Billing's existing appointment serviceType and claim-to-appointment serviceType lookup drive the existing evaluator result; no catalog flag enters either projection. Live preview used the actual registry credential edit to invalidate fictional c3 DEA verification, then the existing Billing **Credentialing** view showed three appointment DEA review results. No visit was cancelled. Screenshot: `/tmp/browser/dea-catalog/billing-flags.png`; script/output remain under `/tmp/browser/dea-catalog/`. This is preview-memory verification, not production authentication or persistence acceptance.
+
+Tests: focused DEA/as-of/Billing projection **29/29**; full units **3,662/3,662**, **414/414 files**, exit 0, 196.51s. Ten DEA/catalog tests cover both prescriber identities, service-date expiry/verification, unflagged SUD counseling, non-prescriber isolation, single matching catalog classification, unchanged projection fields and real store booking parity. Initial full run **3,661 passed/1 failed** used a nonexistent exported catalog in the new test; corrected to the existing accessor. Source pins verified the prior SHA-256 text before updating only approved output; no projection assertions weakened.
+
+Deferred: real OIG/SAM.gov/Medi-Cal screening, secure file storage phase 5, phase 2d transport/persistence and confirmation of the matching Draft service entry. Full public suite runs only after green units; final result follows when available.
+
 ## What existed
 - Non-clinical `credentialing_coordinator`, its demo staff member and `/admin-credentialing` action home; `staff_supervision` write tier, including the existing clinical-coordinator assistance grant. Chart entry, clinical notes and billing claims remain denied for the credentialing role. Additional held roles do not union permissions.
 - `ehr-ext.ts` credential documents, verification, expiry history, follow-up and payer enrollment; roster credential text, clinician linkage, NPI and supervisor; credential CSV import/export without bytes.

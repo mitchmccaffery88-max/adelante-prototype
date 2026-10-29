@@ -4,11 +4,11 @@
 - [x] Tighten MOUD care-manager self-only assignment/replacement; SQL mirror and same-transaction end/retain proof; units 3,607/3,607, no retained fixtures.
 - [x] Step 2 coordinator request/coverage/weekly review hosts; units 3,627/3,627; real preview request/open/approval/coverage/review at 1280 and 390.
 - [x] Step 3 (28 Oct 21:05 continuation) Intake logged read-only 60-day host; units 3,648/3,648; real checklist/document audit readback and live closure in preview, 1280/390.
-- [ ] Step 4 (28 Oct green-unit checkpoint): reason log and global search/deep-link/print/inline embedded gate readback pass; units 3,658/3,658. Today/inbox/bell/quick-peek browser proof remains; DEA Booking UI capture/Billing fact propagation stops at approved privacy allowlists (no expansion).
+- [x] Step 4 (29 Oct): reason log, search/deep-link/print/embedded picker, Today/inbox/bell/quick-peek shared pre-data gates proved. Full units 3,662/3,662; saved click-through browser regression 1/1. No record-class changes.
 - [ ] Step 5 all-role rollback vectors and separately passing read policies.
 - [ ] Step 6 public browser then preview readback, final reports/Draft matrix.
 - [x] Carry-over: on-team HLOC therapist fixture via registry; unchanged HLOC browser 1/1 passed after green units.
-- [ ] DEA carry-over: evaluator/booking guard/readiness checks and 8 tests pass; privacy-safe UI capture, Billing flags/count projection and end-to-end proof remain, no allowlist expansion.
+- [x] DEA catalog checkpoint: Draft med_management flag only; no booking/projection flag; evaluator and Billing existing service-type path verified. Focused DEA/as-of/projection 29/29, full units 3,662/3,662, live registry credential edit → Billing DEA review readback. Mitch confirmation of Draft matching entry remains.
 - Persistence OFF; nothing published; Part 2 matrix unchanged; commands browser-revoked until 2d.
 
 ## 28 Oct credentialing as-of fix (Draft)
