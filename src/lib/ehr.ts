@@ -8505,6 +8505,37 @@ registerFundingFacts({
   ecmEnrolled: (pid, at) => (patients.find((x) => x.id === pid)?.episodes ?? []).some((e) => e.type === "ecm" && e.openedAt.slice(0, 10) <= at.slice(0, 10) && (!e.closedAt || e.closedAt.slice(0, 10) >= at.slice(0, 10))),
 });
 
+/** 29 Oct — named so the staff series loop can reuse it. */
+export interface BookAppointmentInput {
+  patientId: string;
+  clinicianId: string;
+  start: string;
+  durationMin: number;
+  serviceType?: ServiceType;
+  modality?: "video" | "phone" | "in_person";
+  locationId?: string;
+  /** How this booking was created. Defaults to `staff_scheduled`. */
+  source?: AppointmentSource;
+  /**
+   * Staff-only escape hatch for a deliberate overlap on the patient's own
+   * calendar (e.g. a correction in progress, or a paired visit a human has
+   * judged to be fine). Never set from patient self-booking.
+   */
+  allowPatientOverlap?: boolean;
+  /** §Needs step 3 — booking FROM an appointment request closes it. */
+  requestId?: string;
+  /** Who booked (for request-close attribution). */
+  bookedBy?: { id: string; role: string };
+  /** 26 Oct Phase A: dedicated referral proof, never a generic scheduling grant. */
+  intakeBooking?: IntakeBookingProof;
+  /** Staff member who renders a contact visit (defaults to a contact-role booker). */
+  assignedStaffId?: string;
+  /** §ASAM visit — link to the open ASAM task. Linking never closes it. */
+  asamTaskId?: string;
+  /** 29 Oct — set only by bookAppointmentSeries. */
+  seriesId?: string;
+}
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
@@ -9292,35 +9323,7 @@ export const AdelanteEHR = {
     });
     emit();
   },
-  bookAppointment(input: {
-    patientId: string;
-    clinicianId: string;
-    start: string;
-    durationMin: number;
-    serviceType?: ServiceType;
-    modality?: "video" | "phone" | "in_person";
-    locationId?: string;
-    /** How this booking was created. Defaults to `staff_scheduled`. */
-    source?: AppointmentSource;
-    /**
-     * Staff-only escape hatch for a deliberate overlap on the patient's own
-     * calendar (e.g. a correction in progress, or a paired visit a human has
-     * judged to be fine). Never set from patient self-booking.
-     */
-    allowPatientOverlap?: boolean;
-    /** §Needs step 3 — booking FROM an appointment request closes it. */
-    requestId?: string;
-    /** Who booked (for request-close attribution). */
-    bookedBy?: { id: string; role: string };
-    /** 26 Oct Phase A: dedicated referral proof, never a generic scheduling grant. */
-    intakeBooking?: IntakeBookingProof;
-    /** Staff member who renders a contact visit (defaults to a contact-role booker). */
-    assignedStaffId?: string;
-    /** §ASAM visit — link to the open ASAM task. Linking never closes it. */
-    asamTaskId?: string;
-    /** 29 Oct — set only by bookAppointmentSeries. */
-    seriesId?: string;
-  }) {
+  bookAppointment(input: BookAppointmentInput) {
     if (input.asamTaskId) {
       const t = caseTasks.find((x) => x.id === input.asamTaskId);
       if (!t || t.patientId !== input.patientId || t.taskType !== ASAM_TASK_TYPE || t.status === "done")
@@ -9444,7 +9447,7 @@ export const AdelanteEHR = {
    * so staff can rebook them with another clinician. Never patient self-scheduling.
    */
   bookAppointmentSeries(
-    input: Omit<Parameters<typeof AdelanteEHR.bookAppointment>[0], "seriesId" | "start" | "source"> & {
+    input: Omit<BookAppointmentInput, "seriesId" | "start" | "source"> & {
       firstStart: string;
       cadence: SeriesCadence;
       endDate?: string;
