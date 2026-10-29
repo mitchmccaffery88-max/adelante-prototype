@@ -5,7 +5,8 @@
 // the reason early, inline).
 import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, GROUP_SERVICE_TYPES, groupConsentBlock, type Appointment, type Clinician, type Patient, type ServiceType } from "./ehr";
 import type { StaffRole } from "./roles";
-import { bookingRightFor, checkBookingRights, isPrescriberServiceType, isSudServiceType } from "./bookingRights";
+import { bookingRightFor, checkBookingRights, isPrescriberServiceType, isSudServiceType, serviceRoleFit } from "./bookingRights";
+import { STAFF_ROSTER } from "./roles";
 import { myCaseload, type ActingIdentity } from "./myWork";
 import { availableSlots } from "./clinicianAvailability";
 import { isActiveStaff } from "./staffLifecycle";
@@ -56,6 +57,7 @@ export function eligibleClinicians(serviceType: ServiceType, patient: Patient | 
     .filter((c) => (c.services ? c.services.includes(serviceType) : !isSudServiceType(serviceType)))
     .filter((c) => !c.licenseExpiresOn || c.licenseExpiresOn >= today)
     .filter((c) => !isPrescriberServiceType(serviceType) || PRESCRIBER_CRED.test(c.credential))
+    .filter((c) => serviceRoleFit(serviceType, STAFF_ROSTER.find((s) => s.clinicianId === c.id)?.role, c.credential))
     .filter((c) => modality !== "in_person" || (c.locationIds?.length ?? 0) > 0 || !c.locationIds)
     .map((c) => {
       const languageFit = !c.languages || (c.languages as string[]).includes(lang);

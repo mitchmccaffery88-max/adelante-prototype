@@ -142,6 +142,12 @@ const SERVICE_ES: Partial<Record<ServiceType, { label: string; helper: string }>
   sud_counseling: { label: "Consejería individual (uso de sustancias)", helper: "Consejería individual sobre uso de sustancias." },
   sud_group_odf: { label: "Grupo ODF", helper: "Grupo ambulatorio sin drogas." },
   sud_group_iot: { label: "Grupo IOT", helper: "Grupo ambulatorio intensivo." },
+  // 29 Oct — Borrador, pendiente de revisión de traducción.
+  psychiatric_evaluation: { label: "Evaluación psiquiátrica", helper: "Una primera cita completa con un profesional que receta sobre tu salud mental y tus medicamentos." },
+  sud_assessment: { label: "Evaluación ASAM (uso de sustancias)", helper: "Una evaluación sobre uso de sustancias para encontrar el nivel de atención adecuado." },
+  chw_visit: { label: "Cita con un promotor de salud", helper: "Recibe ayuda con tu salud, beneficios y cómo llegar a tu atención." },
+  family_collateral: { label: "Sesión familiar", helper: "Una sesión con tu familia o personas que te apoyan." },
+  nurse_visit: { label: "Cita con enfermería", helper: "Una cita con una enfermera para signos vitales, inyecciones o chequeos." },
 };
 
 export function serviceLabel(id: ServiceType | undefined, enLabel: string | undefined, lang: string): string {

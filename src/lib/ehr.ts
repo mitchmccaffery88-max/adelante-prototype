@@ -23,7 +23,7 @@ import type {
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
-import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
+import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType, serviceRoleFit } from "./bookingRights";
 import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource, registerCredentialingServiceCatalog } from "./credentialing";
 import { canOverrideFundingSource, fundingRecordFrom, registerFundingFacts, resolveFundingSource, seriesOccurrences, SERIES_DRAFT, FUNDING_OVERRIDE_REASONS, FUNDING_SOURCES, type AppointmentFundingRecord, type CoverageOrder, type CoveragePlanType, type DeliverySystemDraft, type FundingOverrideReason, type FundingSource, type SeriesCadence } from "./fundingSource";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
