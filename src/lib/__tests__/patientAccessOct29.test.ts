@@ -4,6 +4,7 @@ import { runAction } from "@/lib/actions/runAction";
 import { STAFF_ROLES } from "@/lib/roles";
 import { PATIENT_ACTOR_ROLE, patientBookableClinicians, patientRequestVisit, patientSelfBook, patientServiceMenu } from "@/lib/patientBooking";
 import { availableSlots } from "@/lib/clinicianAvailability";
+import { bookableServiceTypes, eligibleClinicians, visitTypeLabel } from "@/lib/bookingFlow";
 
 // 29 Oct (Draft — pending Christi): patientAccess on the one catalog.
 const fresh = () => {
@@ -68,5 +69,30 @@ describe("patientAccess menu", () => {
   it("staff roles can't use the patient request action", () => {
     const p = fresh();
     for (const { key } of STAFF_ROLES) expect(runAction("patient_request_visit", { role: key, staffId: "s-x" }, p, { args: [{ patientId: p.id, serviceType: "therapy_individual" }] }).ok).toBe(false);
+  });
+});
+
+describe("29 Oct new service types (Draft)", () => {
+  const svc = (id: ServiceType) => AdelanteEHR.getServiceType(id)!;
+  it("installs the five types with the Draft patientAccess from the table", () => {
+    expect(svc("psychiatric_evaluation").patientAccess).toBe("request");
+    expect(svc("sud_assessment").patientAccess).toBe("staff_only");
+    expect(svc("sud_assessment").sud).toBe(true);
+    expect(svc("chw_visit").patientAccess).toBe("book");
+    expect(svc("family_collateral").patientAccess).toBe("request");
+    expect(svc("nurse_visit").patientAccess).toBe("staff_only");
+  });
+  it("only prescribers take psychiatric evaluations; only SUD-offering calendars take ASAM assessments", () => {
+    const p = AdelanteEHR.listPatients()[0]!;
+    const actor = { role: "clinical_coordinator", staffId: "s-cc" } as never;
+    const pe = eligibleClinicians("psychiatric_evaluation", p, actor).map((s) => s.clinician.credential);
+    expect(pe.length).toBeGreaterThan(0);
+    expect(pe.every((c) => /PMHNP|M\.?D|D\.?O/.test(c))).toBe(true);
+    expect(eligibleClinicians("sud_assessment", p, actor).map((s) => s.clinician.id)).toEqual(["c7"]);
+    expect(eligibleClinicians("nurse_visit", p, actor)).toEqual([]);
+  });
+  it("roles without SUD visit access never see the ASAM assessment type", () => {
+    expect(bookableServiceTypes("peer_specialist").map((s) => s.id)).not.toContain("sud_assessment");
+    expect(visitTypeLabel("sud_assessment", "peer_specialist")).toBe("Clinical visit");
   });
 });
