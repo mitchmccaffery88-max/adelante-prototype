@@ -1,9 +1,11 @@
 # Roadmap
 
 ## 29 Oct patient scheduling (Draft, pending Christi)
-- [ ] 20:00 continuation in order: (a) coverage controls, (b) catalog/new types/shared booking/picker, (c) CHW calendar and missing-services inventory, (d) category capacity; units green after each, final full units then isolated public browser.
+- [x] 20:00 item (a): SMHS treating-clinician dated/reason control and safe Billing/active-referral Intake funding drawer; real desktop/phone save/readback, full units 3,695/3,695; additional sixth Intake test passed.
+- [ ] Item (a) final full units then isolated 53-test public browser; green budget checkpoint before (b)–(d).
+- [ ] Continue (b) catalog/new types/shared booking/picker, then (c) CHW calendar and missing-services affected-staff inventory, then (d) category-specific capacity; units after each.
 - [x] Carry-over bridge: dated coverage determinations and existing Billing order feed the single resolver; full units 3,690/3,690 then isolated public browser 53/53; coverage report.
-- [ ] Remaining carry-overs first: treating-clinician SMHS control; Billing/Intake funding override control; full units then public browser and coverage report after both controls.
+- [x] Remaining carry-over controls: treating-clinician SMHS; Billing/Intake funding override; coverage report updated (final checkpoint validation listed above).
 - [x] Inspect and report calendars/services/availability and current group capacity behavior before changes (patient-scheduling-report.md).
 - [ ] Catalog patientAccess and five missing types; conditional patient book/request menu without changing /schedule layout.
 - [ ] Shared booking/clinician-picker checks, request kinds, ASAM visit migration, coverage-review/private-pay presentation.
@@ -275,5 +277,5 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Tests, full units, coverage-rules-report.md, credentialing-report.md
 - [x] Public browser 53/53
 - [x] Bridge coverageRequests determinations order into the resolver — scheduling checkpoint; full units 3,690/3,690, public 53/53.
-- [ ] SMHS determination and "Change who pays" screens — store/registry ready, UI not built
+- [x] SMHS determination and "Change who pays" screens — 20:00 scheduling item (a), safe projections and treating relationship enforced; final checkpoint validation listed above.
 - [ ] Christi/compliance confirmations, sliding-scale tiers, MOUD code mapping — waiting on Christi/compliance
