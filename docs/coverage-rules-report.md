@@ -11,7 +11,7 @@ Every appointment now answers two questions on its own date: **who pays**, and *
 - No coverage and the client chose to pay (self-pay / sliding fee) → private pay. Grant/ISL arrangement with no coverage → grant_or_county_funded. Non-billable service types → non_billable.
 - Booking stores the result on the appointment (`fundingSource`). Billing (`billing`, `billing_coordinator`) or Intake can change it with a reason code through the new registry action `appointment_funding_set`; one audit row with appointment id, from/to source and reason code only.
 - Readiness (`careLifecycle.billableService`), credentialing review flags, the booking hard stop and groups all use the stored/resolved source.
-- Not yet bridged: the separate coverage-request determinations (`coverageRequests.ts`, which hold their own primary/secondary order) are not read by the resolver yet. Listed as open.
+- 29 Oct scheduling carry-over checkpoint: coverage-request determinations now self-register a minimal dated projection into the existing resolver. Latest per request, effective dates and Billing's existing numeric primary/secondary order are authoritative when dated determinations exist; older coverage spans are the fallback only when none exist. Acknowledged self-pay/sliding-scale and active county-program determinations supply payment arrangements. Inactive, pending and expired determinations never become active insurance. Medi-Cal remains payer of last resort; no financial, member-ID, income or COB-note payload crosses this boundary.
 
 ## 2. Full Draft delivery-system table (for Mitch and Christi to confirm)
 
@@ -70,6 +70,13 @@ Extended the existing credential record (no new store): `peerCertification`, `ch
 `src/test/coverageRulesOct29Approved.ts`, composed last in `credentialingOct27Approved.ts`: `src/lib/ehr.ts`, `src/lib/ehr-ext.ts`, `src/lib/credentialing.ts`, `src/lib/careLifecycle.ts`, `src/lib/billingProjection.ts`, `src/lib/chartActions.ts`, `src/lib/structuredCarePlan.ts`, `src/lib/roles.ts`, `src/lib/chartOrders.ts`, `src/lib/demoInboxSeed.ts`, `src/lib/outpatientCare.ts`, `src/components/credentials/CredentialingToday.tsx`, `src/components/scheduling/BookVisitDrawer.tsx`, `src/routes/group-sessions.tsx`.
 
 ## Open
-- Bridge coverage-request determinations (`coverageRequests.ts` order) into the resolver.
 - Christi/compliance confirmations above; sliding-scale tiers; real billing code mapping for the MOUD type.
 - No UI yet for the SMHS determination or for Billing/Intake "Change who pays" (registry actions and store exist).
+
+## 29 Oct scheduling carry-over — completed bridge checkpoint
+- New `coverageDeterminationBridgeOct29.test.ts`: acknowledged self-pay, dated fallback, Billing order, commercial/Medicare plus Medi-Cal COB, expiry, non-billable service, and financial-payload exclusion. Focused bridge + existing coverage paths: **25/25**.
+- Full units: **3,690/3,690, 417 files**, exit 0, 150.61 seconds.
+- Then isolated full public browser suite: **53/53**, exit 0, 12.6 minutes, one worker, dev server :8080. No edits or unit execution overlapped the browser run. Includes HLOC and real public-intake readback. No retries, timeout changes or weakened assertions.
+- Evidence: `/tmp/scheduling29/full-units.txt`, `/tmp/scheduling29/public-browser.txt`, `/tmp/scheduling29/public-browser.exit`. Preview build signal: **build OK**, 19:16:22 UTC.
+- No protected source pin changed at this checkpoint; the changed resolver/request files are not source-pinned by the existing approved adapter. No Supabase changes, publishing or persistence changes.
+- This is a bridge-only checkpoint, not acceptance of the two remaining controls or the patient-scheduling batch.
