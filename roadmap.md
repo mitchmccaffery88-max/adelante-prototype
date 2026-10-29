@@ -1,6 +1,7 @@
 # Roadmap
 
 ## 29 Oct patient scheduling (Draft, pending Christi)
+- [ ] 20:00 continuation in order: (a) coverage controls, (b) catalog/new types/shared booking/picker, (c) CHW calendar and missing-services inventory, (d) category capacity; units green after each, final full units then isolated public browser.
 - [x] Carry-over bridge: dated coverage determinations and existing Billing order feed the single resolver; full units 3,690/3,690 then isolated public browser 53/53; coverage report.
 - [ ] Remaining carry-overs first: treating-clinician SMHS control; Billing/Intake funding override control; full units then public browser and coverage report after both controls.
 - [x] Inspect and report calendars/services/availability and current group capacity behavior before changes (patient-scheduling-report.md).
