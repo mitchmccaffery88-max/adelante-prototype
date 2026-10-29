@@ -2356,7 +2356,23 @@ export interface ServiceTypeInfo {
   controlledSubstanceDraft?: boolean;
   /** 29 Oct (Draft — Mitch and Christi to confirm): the Medi-Cal delivery system that usually pays. */
   deliverySystemDraft: DeliverySystemDraft;
+  /**
+   * 29 Oct (Draft — pending Christi): what a patient may do with this type on
+   * /schedule. book = self-book; request = "Ask my team" (existing request
+   * flow); staff_only = never shown to patients (groups use the Groups tab).
+   */
+  patientAccess: PatientAccess;
+  /** Request kind used for "Ask my team" (request types and first-time asks). */
+  patientRequestKind?: AppointmentRequestKind;
+  /**
+   * Draft condition for patient self-booking. established = only clinicians the
+   * patient already sees for this type (first visit asks the team);
+   * asam_placement = a signed ASAM with a recorded level, otherwise hidden.
+   */
+  patientCondition?: "established" | "asam_placement";
 }
+
+export type PatientAccess = "book" | "request" | "staff_only";
 
 export interface ClinicLocation {
   id: string;
@@ -2382,7 +2398,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Get set up with your care team.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 60,
-    deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" },
+    patientAccess: "staff_only", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" },
   },
   {
     id: "therapy_individual",
@@ -2390,7 +2406,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "A private one-on-one session.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 50,
-    deliverySystemDraft: { tag: "smhs_or_nsmhs" },
+    patientAccess: "book", patientCondition: "established", patientRequestKind: "therapy", deliverySystemDraft: { tag: "smhs_or_nsmhs" },
   },
   {
     id: "therapy_group",
@@ -2398,7 +2414,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Meet with others in a supported group.",
     allowedModalities: ["in_person", "video"],
     defaultDurationMin: 60,
-    deliverySystemDraft: { tag: "smhs_or_nsmhs" },
+    patientAccess: "staff_only", deliverySystemDraft: { tag: "smhs_or_nsmhs" },
   },
   {
     id: "med_management",
@@ -2406,7 +2422,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Talk with a prescriber about medications.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
-    deliverySystemDraft: { tag: "nsmhs" },
+    patientAccess: "book", patientCondition: "established", patientRequestKind: "medication", deliverySystemDraft: { tag: "nsmhs" },
   },
   {
     // 28 Oct (Mitch, Draft): the controlled-substance flag lives here only;
@@ -2416,7 +2432,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Meet with a prescriber about a controlled medication or MOUD.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
-    deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation; plan or FFS billing needs review" },
+    patientAccess: "book", patientCondition: "established", patientRequestKind: "medication", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation; plan or FFS billing needs review" },
     controlledSubstanceDraft: true,
   },
   {
@@ -2425,7 +2441,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Connect with someone who's been there.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 45,
-    deliverySystemDraft: { tag: "county_peer", confirm: "Confirm county opt-in" },
+    patientAccess: "book", deliverySystemDraft: { tag: "county_peer", confirm: "Confirm county opt-in" },
   },
   {
     id: "case_management",
@@ -2433,7 +2449,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Get help with resources and next steps.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 30,
-    deliverySystemDraft: { tag: "ecm_mcp", confirm: "ECM enrollment only; otherwise not billed" },
+    patientAccess: "book", deliverySystemDraft: { tag: "ecm_mcp", confirm: "ECM enrollment only; otherwise not billed" },
   },
   {
     id: "care_coordination",
@@ -2441,11 +2457,11 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Line up outside services and support.",
     allowedModalities: ["video", "phone"],
     defaultDurationMin: 30,
-    deliverySystemDraft: { tag: "non_billable" },
+    patientAccess: "book", deliverySystemDraft: { tag: "non_billable" },
   },
-  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
-  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
-  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true, patientAccess: "book", patientCondition: "asam_placement", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
 ];
 
 const LOCATIONS: ClinicLocation[] = [
