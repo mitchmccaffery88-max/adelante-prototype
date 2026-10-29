@@ -9,6 +9,8 @@ import { runAction } from "@/lib/actions/runAction";
 import { useEhr } from "@/lib/ehr";
 import { canOverrideFundingSource, FUNDING_SOURCES, FUNDING_SOURCE_LABEL, FUNDING_OVERRIDE_REASONS, FUNDING_OVERRIDE_REASON_LABEL, FUNDING_FLAG_LABEL, SLIDING_SCALE_FEE_LABEL, type FundingSource, type FundingOverrideReason } from "@/lib/fundingSource";
 import { intakeFundingAppointments, type FundingAppointmentView } from "@/lib/fundingAppointmentView";
+import { billingAppointments, billingPatients } from "@/lib/billingProjection";
+import { StaffTable } from "@/components/staff/StaffTable";
 
 const selectClass = "min-h-9 w-full rounded-sm border border-line-strong bg-surface px-2 text-base text-ink";
 
@@ -48,4 +50,12 @@ export function IntakeAppointmentFunding({ referralId }: { referralId: string })
   const appointments = JSON.parse(json) as FundingAppointmentView[];
   if (!appointments.length) return null;
   return <section className="space-y-2 border-t border-line pt-3" aria-label="First visit funding"><h4 className="font-bold">First visit funding</h4>{appointments.map(appointment => <div key={appointment.id} className="flex flex-wrap items-center gap-3 text-base"><ClientDate value={appointment.start} /><span role="status">{appointment.fundingSource?.source ? FUNDING_SOURCE_LABEL[appointment.fundingSource.source] : "Coverage — needs review"}</span><AppointmentFundingDrawer appointment={appointment} /></div>)}</section>;
+}
+
+export function BillingAppointmentFunding() {
+  const actor = useActingStaff();
+  const appointments = useEhr(() => billingAppointments());
+  const patients = useEhr(() => billingPatients());
+  if (!canOverrideFundingSource(actor.role)) return null;
+  return <section className="space-y-3 border-y border-line py-4" aria-label="Appointment funding"><h2 className="text-xl font-bold">Appointment funding</h2><p className="text-sm text-ink-muted">Draft — pending clinical sign-off and billing review with Christi.</p><StaffTable rows={appointments.filter(a => a.status === "scheduled" || a.status === "checked_in")} rowKey={a => a.id} label="Appointment funding" columns={[{ id: "date", label: "Visit date", cell: a => <span>{new Date(a.start).toLocaleString()}</span> }, { id: "program", label: "Program ID", mono: true, cell: a => patients.find(p => p.id === a.patientId)?.programId ?? "—" }, { id: "funding", label: "Who pays", cell: a => <span role="status">{a.fundingSource?.source ? FUNDING_SOURCE_LABEL[a.fundingSource.source] : "Coverage — needs review"}</span> }]} primaryAction={a => <AppointmentFundingDrawer appointment={{ id: a.id, start: a.start, fundingSource: a.fundingSource }} />} emptyState="No upcoming appointments." /></section>;
 }
