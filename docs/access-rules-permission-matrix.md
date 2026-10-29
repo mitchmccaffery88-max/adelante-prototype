@@ -1,5 +1,7 @@
 # Chart entry matrix — Draft
 
+Post-opening public validation:52passed/1failed (19.9m), non-exempt mobile Diana group accordion failure. Unchanged standalone passed1/1 but cannot waive the full-run failure. Final acceptance/preview closeout blocked under standing stop rule; post-opening units3,662/3,662 green. SQL approvals/readback and privacy boundaries below remain unchanged.
+
 **Draft — pending go-live permissions audit. Part 2 internal-use basis: pending counsel confirmation.** Persistence OFF; individually proven chart/general-packet/handoff read groups opened only after separate approvals. Tagged Part2 document reads and reason/coverage browser commands remain closed.
 
 | Role group | Proposed direct entry | Proposed reasoned entry | Clinical record classes |
