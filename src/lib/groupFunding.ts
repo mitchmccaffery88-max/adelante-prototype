@@ -3,6 +3,8 @@
 // per member. Only an affected member's claim is flagged; the group still
 // runs and a non-billable group never blocks. The facilitator sees a neutral
 // count only — never member payer details. No store import (params in).
+// Load the store first so credentialing initialises in its usual order (ehr → credentialing).
+import "./ehr";
 import { credentialedForService, credentialingRecordForClinician, type CredentialingReasonCode } from "./credentialing";
 import { resolveFundingSource, type FundingResolution, type FundingSource } from "./fundingSource";
 
