@@ -2282,8 +2282,8 @@ export interface AppointmentRequest {
 
 /** Service types that satisfy each request kind (duplicate check + auto-close). */
 export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {
-  therapy: ["therapy_individual", "intake"],
-  medication: ["med_management", "controlled_med_moud"],
+  therapy: ["therapy_individual", "intake", "family_collateral"],
+  medication: ["med_management", "controlled_med_moud", "psychiatric_evaluation"],
   help_choose: ["care_coordination", "case_management"],
 };
 
