@@ -67,7 +67,7 @@ describe("30 Oct patient fee notice", () => {
     const p = AdelanteEHR.listPatients().find((x) => !AdelanteEHR.listCoveragePlans?.(x.id)?.length) ?? AdelanteEHR.listPatients()[0];
     AdelanteEHR._setPaymentArrangement(p.id, "self_pay", { id: "s-bill1", name: "Test", role: "billing", at: new Date().toISOString() });
     const n = patientFeeNotice(p.id, "therapy_individual");
-    expect(["sliding_scale", "coverage_review", undefined]).toContain(n);
+    expect(n).toBe("sliding_scale");
     expect(scheduleCopy("en").feeSlidingScale).toBe("Fee: per sliding scale (Draft — tiers pending)");
     expect(scheduleCopy("en").coverageReview).toBe("Coverage being reviewed");
   });
