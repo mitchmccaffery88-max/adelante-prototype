@@ -7,6 +7,7 @@ import { getStructuredPlan, canRecordSmhsDetermination, setSmhsDetermination } f
 import { canOverrideFundingSource } from "@/lib/fundingSource";
 import { intakeFundingAppointments } from "@/lib/fundingAppointmentView";
 import { loadCoverageMixScenario } from "@/lib/coverageMixScenario";
+import { firstVisitSlots, markIntakeComplete } from "@/lib/intakePhaseA";
 
 describe("coverage controls — Draft 29 Oct", () => {
   it("only treating licensed clinicians may record SMHS; role alone is not treatment", () => {
@@ -60,5 +61,26 @@ describe("coverage controls — Draft 29 Oct", () => {
 
   it("Intake funding list stays empty for non-Intake roles and invalid/referral-less context", () => {
     for (const { key: role } of STAFF_ROLES) expect(intakeFundingAppointments({ role, staffId: staffForRole(role)[0]?.id }, "missing")).toEqual([]);
+  });
+
+  it("Intake sees only its active referral first-visit funding; handoff removes the editor", () => {
+    const actor = { role: "intake_coordinator" as const, staffId: "s-admin1" };
+    const seeded = runAction("intake_demo_seed", actor, undefined, { args: [actor] });
+    expect(seeded.ok).toBe(true);
+    const referral = AdelanteEHR.listReferrals().find(r => r.email === "phase-a-ready@example.invalid");
+    if (!referral?.enrolledPatientId) throw new Error("Missing linked intake fixture");
+    const slot = firstVisitSlots(referral.id, "care_manager", actor, "in_person").find(s => s.clinicianId === "s-cm2");
+    if (!slot) throw new Error("Missing real care-manager slot");
+    const booked = runAction<{ id: string }>("intake_first_visit_book", actor, undefined, { args: [actor, referral.id, { kind: "care_manager", clinicianId: slot.clinicianId, start: slot.start, modality: "in_person", locationId: "loc-visalia" }, "First contact"] });
+    expect(booked.ok).toBe(true);
+    if (!booked.ok) throw new Error(booked.reason);
+    const views = intakeFundingAppointments(actor, referral.id);
+    expect(views.map(a => a.id)).toEqual([booked.value.id]);
+    expect(Object.keys(views[0]).sort()).toEqual(["fundingSource", "id", "start"]);
+    const updated = runAction("appointment_funding_set", actor, undefined, { args: [booked.value.id, { source: "grant_or_county_funded", reasonCode: "program_enrollment", actorId: actor.staffId, actorRole: actor.role }] });
+    expect(updated.ok).toBe(true);
+    expect(intakeFundingAppointments(actor, referral.id)[0]?.fundingSource?.source).toBe("grant_or_county_funded");
+    markIntakeComplete(actor, referral.id, { identity_link_checked: true, contact_checked: true, packet_received: true, handoff_ready: true }, "Ready to hand off");
+    expect(intakeFundingAppointments(actor, referral.id)).toEqual([]);
   });
 });
