@@ -7,7 +7,8 @@ import { checkBookingRights, isPrescriberServiceType } from '../bookingRights';
 import { eligibleClinicians, bookableServiceTypes } from '../bookingFlow';
 import { projectBillingAppointment, APPOINTMENT_KEYS } from '../billingProjection';
 import { codeMappingNeedsReview, defaultCodeFor } from '../rates';
-import { ROLES } from '../roles';
+import { STAFF_ROLES } from '../roles';
+const ROLES = STAFF_ROLES.map(r => r.key);
 
 const at = (d: number) => new Date(Date.now() + d * 86400000).toISOString();
 const rec = (dea?: ClinicianCredentialing['dea']): ClinicianCredentialing => ({ staffId: 's-th3', license: { licenseType: 'PMHNP', number: 'D', state: 'CA', verifiedAt: at(-30), expiresAt: at(400), method: 'manual' }, dea, exclusionChecks: (['oig', 'sam_gov', 'medi_cal_suspended'] as const).map(list => ({ list, checkedAt: at(-5), nextDueAt: at(25), result: 'clear' })), enrollments: [{ payer: 'Medi-Cal FFS', serviceType: '*', status: 'active' }], documentStatus: 'simulated_unavailable' });
@@ -40,8 +41,8 @@ describe('Controlled medication / MOUD visit', () => {
     expect(() => AdelanteEHR.bookAppointment({ patientId: p.id, clinicianId: 'c1', start: '2090-01-01T17:00:00Z', durationMin: 30, serviceType: 'controlled_med_moud', modality: 'video', source: 'staff_scheduled' })).toThrow();
   });
   it('enrollment rows exist; only the demo prescriber is active', () => {
-    const rows = AdelanteEHRExt.listPayerEnrollments().filter(e => e.serviceType === 'controlled_med_moud');
-    const clinicians = new Set(AdelanteEHRExt.listPayerEnrollments().map(e => e.clinicianId));
+    const rows = AdelanteEHRExt.listAllEnrollments().filter(e => e.serviceType === 'controlled_med_moud');
+    const clinicians = new Set(AdelanteEHRExt.listAllEnrollments().map(e => e.clinicianId));
     expect(new Set(rows.map(r => r.clinicianId))).toEqual(clinicians);
     expect(rows.filter(r => r.status === 'enrolled').map(r => r.clinicianId)).toEqual(['c3']);
     expect(rows.filter(r => r.clinicianId !== 'c3').every(r => r.status === 'not_enrolled')).toBe(true);
