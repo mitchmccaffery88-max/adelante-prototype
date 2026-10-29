@@ -15,6 +15,7 @@ export const PATIENT_REQUEST_LABEL: Record<AppointmentRequestKind, { en: string;
   therapy: { en: "Counseling (first visit)", es: "Consejería (primera visita)" },
   medication: { en: "Medication visit", es: "Visita de medicamentos" },
   help_choose: { en: "Help choosing the right care", es: "Ayuda para elegir la atención adecuada" },
+  family: { en: "Family session", es: "Sesión familiar" },
 };
 
 export type PatientApptState =
@@ -36,7 +37,7 @@ export function patientApptStates(
   if (s?.mentalHealth) kinds.add("therapy");
   if (s?.medication) kinds.add("medication");
   const out: PatientApptState[] = [];
-  for (const kind of ["therapy", "medication", "help_choose"] as const) {
+  for (const kind of ["therapy", "medication", "help_choose", "family"] as const) {
     if (!kinds.has(kind)) continue;
     const latest = [...reqs].filter((r) => r.kind === kind).sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))[0];
     if (latest?.status === "requested") { out.push({ kind, state: "requested" }); continue; }

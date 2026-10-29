@@ -62,7 +62,8 @@ for (const lang of ["en", "es"] as const) {
       }
     }
     await page.goto("/#faq");
-    await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
+    // The FAQ check needs a hydrated public layout with measured header offsets, not the dev EHR store hook.
+    await expect(page.locator('[data-testid="website-layout"][data-ready="true"]')).toHaveCount(1);
     await anchorAligned(page, "faq");
     const q = page.locator("#faq").getByRole("button", { name: d.websiteFaqCrisisQ });
     await q.focus(); await page.keyboard.press("Enter");

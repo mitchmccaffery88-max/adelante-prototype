@@ -30,7 +30,8 @@ export function WebsiteLayout({ children }: { children: ReactNode }) {
   const observer = new ResizeObserver(measure);
   if (crisisRef.current) observer.observe(crisisRef.current); if (headerRef.current) observer.observe(headerRef.current);
   const demo = shellRef.current?.querySelector('[data-testid="demo-controls-bar"]'); if (demo) observer.observe(demo);
-  measure(); return () => observer.disconnect();
+  // Hydrated + sticky offsets measured: browser checks wait on this, not the dev store hook.
+  measure(); if (shellRef.current) shellRef.current.dataset.ready = "true"; return () => observer.disconnect();
  },[]);
  useEffect(() => { const main=document.getElementById("website-main"); const stopReveals=main?installReveals(main):()=>{}; const stopMagnetic=installMagnetic(); return () => { stopReveals(); stopMagnetic(); }; },[]);
  useEffect(() => {

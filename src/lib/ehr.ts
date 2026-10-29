@@ -2241,7 +2241,7 @@ export interface AppointmentCancellation {
  * staff confirm it by booking a real slot through the existing booking flow
  * (which closes it) or mark it "contacted, not booked" with a reason.
  */
-export type AppointmentRequestKind = "therapy" | "medication" | "help_choose";
+export type AppointmentRequestKind = "therapy" | "medication" | "help_choose" | "family";
 
 /**
  * §ASAM reason — why the assessment is being done. Structured field on the
@@ -2282,9 +2282,10 @@ export interface AppointmentRequest {
 
 /** Service types that satisfy each request kind (duplicate check + auto-close). */
 export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {
-  therapy: ["therapy_individual", "intake", "family_collateral"],
+  therapy: ["therapy_individual", "intake"],
   medication: ["med_management", "controlled_med_moud", "psychiatric_evaluation"],
   help_choose: ["care_coordination", "case_management"],
+  family: ["family_collateral"],
 };
 
 /** Booking target when staff book from a request. */
@@ -2292,6 +2293,7 @@ export const APPT_REQUEST_BOOK_AS: Record<AppointmentRequestKind, ServiceType> =
   therapy: "therapy_individual",
   medication: "med_management",
   help_choose: "care_coordination",
+  family: "family_collateral",
 };
 
 /** Staff-facing labels. SUD label is only rendered for Part 2-authorized roles. */
@@ -2299,6 +2301,7 @@ export const APPT_REQUEST_STAFF_LABEL: Record<AppointmentRequestKind, string> = 
   therapy: "1:1 therapy intake appointment",
   medication: "Medication management (prescriber) appointment",
   help_choose: "Help me choose (care coordination)",
+  family: "Family or collateral session",
 };
 
 export interface AppointmentRequestOutcome {
@@ -2473,7 +2476,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
   { id: "psychiatric_evaluation", label: "Psychiatric evaluation", helper: "A first full visit with a prescriber about your mental health and any medications.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60, patientAccess: "request", patientRequestKind: "medication", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" } },
   { id: "sud_assessment", label: "ASAM assessment (SUD)", helper: "A substance-use assessment that finds the right level of care.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
   { id: "chw_visit", label: "Community health worker visit", helper: "Get help with health needs, benefits and getting to care.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 30, patientAccess: "book", deliverySystemDraft: { tag: "non_billable", confirm: "Billable CHW benefit only once credential checks are approved; otherwise not billed" } },
-  { id: "family_collateral", label: "Family session", helper: "A session with family or people who support you.", allowedModalities: ["video", "in_person"], defaultDurationMin: 50, patientAccess: "request", patientRequestKind: "therapy", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "Collateral billing needs review" } },
+  { id: "family_collateral", label: "Family session", helper: "A session with family or people who support you.", allowedModalities: ["video", "in_person"], defaultDurationMin: 50, patientAccess: "request", patientRequestKind: "family", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "Collateral billing needs review" } },
   { id: "nurse_visit", label: "Nurse visit", helper: "A visit with a nurse for vitals, injections or health checks.", allowedModalities: ["in_person"], defaultDurationMin: 20, patientAccess: "staff_only", deliverySystemDraft: { tag: "nsmhs", confirm: "Nurse visit billing needs review" } },
   { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
 ];
@@ -14523,7 +14526,7 @@ export const AdelanteEHR = {
    */
   createAppointmentRequests(
     patientId: string,
-    sel: { mentalHealth?: boolean; medication?: boolean; substanceUse?: boolean; notSure?: boolean },
+    sel: { mentalHealth?: boolean; medication?: boolean; substanceUse?: boolean; notSure?: boolean; family?: boolean },
     actor: { id: string; role: string },
     preferences?: AppointmentRequest["preferences"],
   ): AppointmentRequestOutcome[] {
@@ -14534,6 +14537,7 @@ export const AdelanteEHR = {
       : [
           ...(sel.mentalHealth ? (["therapy"] as const) : []),
           ...(sel.medication ? (["medication"] as const) : []),
+          ...(sel.family ? (["family"] as const) : []),
           // Substance use is NOT an appointment request: it creates only the
           // protected "ASAM assessment needed" task (Phase 10c triggers).
         ];
