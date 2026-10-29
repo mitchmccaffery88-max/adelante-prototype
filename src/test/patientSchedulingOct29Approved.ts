@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 const APPROVED: Record<string, { prior: string; updated: string; pairs: [string, string][] }> = {
  "src/lib/ehr.ts": {
   "prior": "8a53351ef1c96fb6826e8266deb85122abd5f226ef1f7fc3060af2ed42fb077f",
-  "updated": "e3002ef48741c5708c2d00ea4aef62d2a2f45b44f6fbc889c5a9627a1d47ca08",
+  "updated": "55390a2d5e0e6f6ae1228511e4dc96931cf5c275cd3d61f9ec2a12e622a76c9e",
   "pairs": [
    [
     "import type { StaffRole } from \"./roles\";\nimport { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from \"./bookingRights\";\nimport { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource, registerCredentialingServiceCatalog } from \"./credentialing\";\n",
@@ -25,7 +25,7 @@ const APPROVED: Record<string, { prior: string; updated: string; pairs: [string,
    ],
    [
     "}\n\nexport interface ClinicLocation {\n  id: string;\n",
-    "}\n\nexport type PatientAccess = \"book\" | \"request\" | \"staff_only\";\n\nexport interface ClinicLocation {\n  id: string;\n"
+    "}\n\nexport type PatientAccess = \"book\" | \"request\" | \"staff_only\";\n/** Calm refusal when a self-booking names a group, staff-only or request type. */\nexport const SELF_BOOKING_REFUSED = \"This visit is set up by your care team. Use \u201cAsk my team\u201d or the Groups tab.\";\n\nexport interface ClinicLocation {\n  id: string;\n"
    ],
    [
     "    defaultDurationMin: 60,\n    deliverySystemDraft: { tag: \"smhs_or_nsmhs\", confirm: \"SMHS determination picks county MHP vs plan/FFS\" },\n  },\n",
@@ -94,6 +94,10 @@ const APPROVED: Record<string, { prior: string; updated: string; pairs: [string,
    [
     "    if (!prescriber) throw new Error(\"Medication visits can only be booked with a physician or PMHNP.\");\n  }\n}\n/** Audit + clinician + patient notices for a staff booking. Part 2-neutral. */\n",
     "    if (!prescriber) throw new Error(\"Medication visits can only be booked with a physician or PMHNP.\");\n  }\n  const fit = serviceRoleFit(serviceType, STAFF_ROSTER.find((s) => s.clinicianId === clinicianId)?.role, c.credential);\n  if (!fit) throw new Error(`${c.name} doesn't offer this visit type. Pick a suggested clinician.`);\n}\n/** Audit + clinician + patient notices for a staff booking. Part 2-neutral. */\n"
+   ],
+   [
+    "      }\n      _assertClinicianFit(input.clinicianId, input.serviceType);\n",
+    "      }\n    }\n    // 29 Oct (Mitch, Draft \u2014 pending Christi): ONE booking rule for patients\n    // and staff. A self-scheduled visit must be a patient \"book\" type and never\n    // a group; then the same fit, telehealth and group-consent checks apply to\n    // everyone (credentialing for the resolved funding source and conflicts\n    // above/below already run for every booking).\n    const isSelfBooking = input.source === \"self_scheduled\" || bookRole === (\"patient\" as StaffRole);\n    if (isSelfBooking) {\n      const svcInfo = SERVICE_TYPES.find((s) => s.id === input.serviceType);\n      if (!svcInfo || svcInfo.patientAccess !== \"book\" || GROUP_SERVICE_TYPES.includes(input.serviceType ?? \"\"))\n        throw new Error(SELF_BOOKING_REFUSED);\n    }\n    if (isStaffBooking || isSelfBooking) {\n      _assertClinicianFit(input.clinicianId, input.serviceType);\n"
    ]
   ]
  }
