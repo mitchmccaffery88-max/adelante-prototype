@@ -6,7 +6,7 @@
 - [x] (b) steps 1–3: patientAccess menu with "Ask my team", five new types, one patient/staff booking rule and credential-filtered picker; full units green after each step (3,703 → 3,706 → 3,709).
 - [x] (c) CHW calendar mapping/default availability; missing services list defaults to none; affected-staff list.
 - [x] (d) Category-specific group capacity (billable 2–12; non-billable open facilitator-set Draft default).
-- [ ] Final: full units, then public browser suite once; patient-scheduling report final.
+- [x] Final: full units 3,717/3,717, then public browser once (52/53, see below); patient-scheduling report final.
 - [x] Carry-over bridge: dated coverage determinations and existing Billing order feed the single resolver; full units 3,690/3,690 then isolated public browser 53/53; coverage report.
 - [x] Remaining carry-over controls: treating-clinician SMHS; Billing/Intake funding override; coverage report updated (final checkpoint validation listed above).
 - [x] Inspect and report calendars/services/availability and current group capacity behavior before changes (patient-scheduling-report.md).
@@ -15,7 +15,7 @@
 - [x] ASAM-visit migration to sud_assessment and private-pay/coverage-review presentation on /schedule.
 - [x] Existing calendar-model fixes and category-specific group capacity.
 - [ ] Public browser suite green: 52/53 on 30 Oct (publicWebsite es timeout, not a named flake) — waiting on Mitch's decision.
-- [ ] All-role tests, exact-once re-pins, full units then public browser, patient-scheduling report and confirm table.
+- [x] All-role tests, exact-once re-pins, full units then public browser, patient-scheduling report and confirm table.
 - No publication, persistence or Supabase changes. Stop only at a completed green checkpoint; list remainder.
 
 ## 28 Oct MOUD service type (Draft)
