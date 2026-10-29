@@ -64,7 +64,7 @@ Extended the existing credential record (no new store): `peerCertification`, `ch
 - Superseded assertions updated (no weakening): credentialing tiles now six (new role-credentials tile); MOUD seed test now checks the DEA-expiry case on c3 (and that DEA is its only reason); enrolled-MOUD test de-duplicates c3's two payer rows; B3b appointment allowlist adds `fundingSource` and asserts its keys; cross-role J2 matches the renamed signer.
 - Registry snapshot: 54 additive rows (3 new actions × 18 roles), no removals.
 - Full units: **3,688 / 3,688** (416 files).
-- Public browser suite: see "Browser acceptance" below.
+- Public browser suite (nine public/website specs, one worker, :8080, after units, not overlapping): run 1 52/53 — `websitePages4a` 1280 es failed with "Execution context was destroyed … navigation" while I was editing docs during the run (a dev reload, not product behaviour); run 2 with no edits **53/53 (12.0m), EXIT 0**. Logs `/tmp/cov29/public-run{1,2}.txt`. No test, retry or timeout changed.
 
 ## Re-pins (pre-approved exact-once adapter)
 `src/test/coverageRulesOct29Approved.ts`, composed last in `credentialingOct27Approved.ts`: `src/lib/ehr.ts`, `src/lib/ehr-ext.ts`, `src/lib/credentialing.ts`, `src/lib/careLifecycle.ts`, `src/lib/billingProjection.ts`, `src/lib/chartActions.ts`, `src/lib/structuredCarePlan.ts`, `src/lib/roles.ts`, `src/lib/chartOrders.ts`, `src/lib/demoInboxSeed.ts`, `src/lib/outpatientCare.ts`, `src/components/credentials/CredentialingToday.tsx`, `src/components/scheduling/BookVisitDrawer.tsx`, `src/routes/group-sessions.tsx`.

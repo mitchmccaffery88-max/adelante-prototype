@@ -262,7 +262,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] 6 Recurring series (staff only, weekly/biweekly, Draft max 26) per-occurrence evaluation
 - [x] 7 Rename c5, move DEA-expiry case, demo clients
 - [x] Tests, full units, coverage-rules-report.md, credentialing-report.md
-- [ ] Public browser x1 (running)
+- [x] Public browser 53/53
 - [ ] Bridge coverageRequests determinations order into the resolver — next batch
 - [ ] SMHS determination and "Change who pays" screens — store/registry ready, UI not built
 - [ ] Christi/compliance confirmations, sliding-scale tiers, MOUD code mapping — waiting on Christi/compliance
