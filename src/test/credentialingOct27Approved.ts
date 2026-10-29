@@ -1,5 +1,6 @@
 import { withApprovedMoudServiceOct28 } from "./moudServiceOct28Approved";
 import { withApprovedCoverageRulesOct29 } from "./coverageRulesOct29Approved";
+import { withApprovedPatientSchedulingOct29 } from "./patientSchedulingOct29Approved";
 import { withApprovedCredentialingDeaOct28 } from "./credentialingDeaOct28Approved";
 import { withApprovedCredentialingReconciliationOct28 } from "./credentialingReconciliationOct28Approved";
 import { withApprovedAccessRulesOct28 } from "./accessRulesOct28Approved";
@@ -155,5 +156,5 @@ export function withApprovedCredentialingOct27(path: string, rollbackText: strin
     if (s.split(from).length !== 2) throw new Error(`Approved anchor not found once in ${path}`);
     s = s.replace(from, to);
   }
-  return withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s))))));
+  return withApprovedPatientSchedulingOct29(path, withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s)))))));
 }

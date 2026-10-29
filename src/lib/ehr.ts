@@ -23,7 +23,7 @@ import type {
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
-import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
+import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType, serviceRoleFit } from "./bookingRights";
 import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource, registerCredentialingServiceCatalog } from "./credentialing";
 import { canOverrideFundingSource, fundingRecordFrom, registerFundingFacts, resolveFundingSource, seriesOccurrences, SERIES_DRAFT, FUNDING_OVERRIDE_REASONS, FUNDING_SOURCES, type AppointmentFundingRecord, type CoverageOrder, type CoveragePlanType, type DeliverySystemDraft, type FundingOverrideReason, type FundingSource, type SeriesCadence } from "./fundingSource";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
@@ -2282,8 +2282,8 @@ export interface AppointmentRequest {
 
 /** Service types that satisfy each request kind (duplicate check + auto-close). */
 export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {
-  therapy: ["therapy_individual", "intake"],
-  medication: ["med_management", "controlled_med_moud"],
+  therapy: ["therapy_individual", "intake", "family_collateral"],
+  medication: ["med_management", "controlled_med_moud", "psychiatric_evaluation"],
   help_choose: ["care_coordination", "case_management"],
 };
 
@@ -2342,7 +2342,13 @@ export type ServiceType =
   // "Clinical visit" to roles without SUD access).
   | "sud_counseling"
   | "sud_group_odf"
-  | "sud_group_iot";
+  | "sud_group_iot"
+  // 29 Oct (Mitch, Draft — pending Christi): five patient-scheduling types.
+  | "psychiatric_evaluation"
+  | "sud_assessment"
+  | "chw_visit"
+  | "family_collateral"
+  | "nurse_visit";
 
 export interface ServiceTypeInfo {
   id: ServiceType;
@@ -2356,7 +2362,25 @@ export interface ServiceTypeInfo {
   controlledSubstanceDraft?: boolean;
   /** 29 Oct (Draft — Mitch and Christi to confirm): the Medi-Cal delivery system that usually pays. */
   deliverySystemDraft: DeliverySystemDraft;
+  /**
+   * 29 Oct (Draft — pending Christi): what a patient may do with this type on
+   * /schedule. book = self-book; request = "Ask my team" (existing request
+   * flow); staff_only = never shown to patients (groups use the Groups tab).
+   */
+  patientAccess: PatientAccess;
+  /** Request kind used for "Ask my team" (request types and first-time asks). */
+  patientRequestKind?: AppointmentRequestKind;
+  /**
+   * Draft condition for patient self-booking. established = only clinicians the
+   * patient already sees for this type (first visit asks the team);
+   * asam_placement = a signed ASAM with a recorded level, otherwise hidden.
+   */
+  patientCondition?: "established" | "asam_placement";
 }
+
+export type PatientAccess = "book" | "request" | "staff_only";
+/** Calm refusal when a self-booking names a group, staff-only or request type. */
+export const SELF_BOOKING_REFUSED = "This visit is set up by your care team. Use “Ask my team” or the Groups tab.";
 
 export interface ClinicLocation {
   id: string;
@@ -2382,7 +2406,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Get set up with your care team.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 60,
-    deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" },
+    patientAccess: "staff_only", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" },
   },
   {
     id: "therapy_individual",
@@ -2390,7 +2414,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "A private one-on-one session.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 50,
-    deliverySystemDraft: { tag: "smhs_or_nsmhs" },
+    patientAccess: "book", patientCondition: "established", patientRequestKind: "therapy", deliverySystemDraft: { tag: "smhs_or_nsmhs" },
   },
   {
     id: "therapy_group",
@@ -2398,7 +2422,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Meet with others in a supported group.",
     allowedModalities: ["in_person", "video"],
     defaultDurationMin: 60,
-    deliverySystemDraft: { tag: "smhs_or_nsmhs" },
+    patientAccess: "staff_only", deliverySystemDraft: { tag: "smhs_or_nsmhs" },
   },
   {
     id: "med_management",
@@ -2406,7 +2430,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Talk with a prescriber about medications.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
-    deliverySystemDraft: { tag: "nsmhs" },
+    patientAccess: "book", patientCondition: "established", patientRequestKind: "medication", deliverySystemDraft: { tag: "nsmhs" },
   },
   {
     // 28 Oct (Mitch, Draft): the controlled-substance flag lives here only;
@@ -2416,7 +2440,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Meet with a prescriber about a controlled medication or MOUD.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
-    deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation; plan or FFS billing needs review" },
+    patientAccess: "book", patientCondition: "established", patientRequestKind: "medication", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation; plan or FFS billing needs review" },
     controlledSubstanceDraft: true,
   },
   {
@@ -2425,7 +2449,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Connect with someone who's been there.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 45,
-    deliverySystemDraft: { tag: "county_peer", confirm: "Confirm county opt-in" },
+    patientAccess: "book", deliverySystemDraft: { tag: "county_peer", confirm: "Confirm county opt-in" },
   },
   {
     id: "case_management",
@@ -2433,7 +2457,7 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Get help with resources and next steps.",
     allowedModalities: ["video", "phone", "in_person"],
     defaultDurationMin: 30,
-    deliverySystemDraft: { tag: "ecm_mcp", confirm: "ECM enrollment only; otherwise not billed" },
+    patientAccess: "book", deliverySystemDraft: { tag: "ecm_mcp", confirm: "ECM enrollment only; otherwise not billed" },
   },
   {
     id: "care_coordination",
@@ -2441,11 +2465,17 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Line up outside services and support.",
     allowedModalities: ["video", "phone"],
     defaultDurationMin: 30,
-    deliverySystemDraft: { tag: "non_billable" },
+    patientAccess: "book", deliverySystemDraft: { tag: "non_billable" },
   },
-  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
-  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
-  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true, deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true, patientAccess: "book", patientCondition: "asam_placement", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  // 29 Oct (Mitch, Draft — pending Christi): durations, modalities and tags are Draft; no codes or rates.
+  { id: "psychiatric_evaluation", label: "Psychiatric evaluation", helper: "A first full visit with a prescriber about your mental health and any medications.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60, patientAccess: "request", patientRequestKind: "medication", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "SMHS determination picks county MHP vs plan/FFS" } },
+  { id: "sud_assessment", label: "ASAM assessment (SUD)", helper: "A substance-use assessment that finds the right level of care.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
+  { id: "chw_visit", label: "Community health worker visit", helper: "Get help with health needs, benefits and getting to care.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 30, patientAccess: "book", deliverySystemDraft: { tag: "non_billable", confirm: "Billable CHW benefit only once credential checks are approved; otherwise not billed" } },
+  { id: "family_collateral", label: "Family session", helper: "A session with family or people who support you.", allowedModalities: ["video", "in_person"], defaultDurationMin: 50, patientAccess: "request", patientRequestKind: "therapy", deliverySystemDraft: { tag: "smhs_or_nsmhs", confirm: "Collateral billing needs review" } },
+  { id: "nurse_visit", label: "Nurse visit", helper: "A visit with a nurse for vitals, injections or health checks.", allowedModalities: ["in_person"], defaultDurationMin: 20, patientAccess: "staff_only", deliverySystemDraft: { tag: "nsmhs", confirm: "Nurse visit billing needs review" } },
+  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true, patientAccess: "staff_only", deliverySystemDraft: { tag: "county_dmc_ods", confirm: "Confirm Tulare/Kings DMC-ODS participation" } },
 ];
 
 const LOCATIONS: ClinicLocation[] = [
@@ -2468,6 +2498,11 @@ const LOCATIONS: ClinicLocation[] = [
       "sud_counseling",
       "sud_group_odf",
       "sud_group_iot",
+      "psychiatric_evaluation",
+      "sud_assessment",
+      "chw_visit",
+      "family_collateral",
+      "nurse_visit",
     ],
   },
   {
@@ -4526,6 +4561,7 @@ const clinicians: Clinician[] = [
       "therapy_group",
       "case_management",
       "care_coordination",
+      "family_collateral",
     ],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2028-12-31",
@@ -4547,7 +4583,7 @@ const clinicians: Clinician[] = [
     credential: "PMHNP-BC",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["med_management", "controlled_med_moud", "intake", "therapy_individual"],
+    services: ["med_management", "controlled_med_moud", "intake", "therapy_individual", "psychiatric_evaluation"],
     locationIds: ["loc-porterville"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4558,7 +4594,7 @@ const clinicians: Clinician[] = [
     credential: "ASW",
     mediCalCredentialed: false,
     mediCalStatus: "pending",
-    services: ["therapy_individual", "case_management"],
+    services: ["therapy_individual", "case_management", "family_collateral"],
     locationIds: ["loc-visalia"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4568,7 +4604,7 @@ const clinicians: Clinician[] = [
     credential: "M.D.",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["med_management", "controlled_med_moud", "intake"],
+    services: ["med_management", "controlled_med_moud", "intake", "psychiatric_evaluation"],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4579,7 +4615,7 @@ const clinicians: Clinician[] = [
     credential: "AMFT",
     mediCalCredentialed: false,
     mediCalStatus: "pending",
-    services: ["therapy_individual"],
+    services: ["therapy_individual", "family_collateral"],
     locationIds: ["loc-visalia"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4590,7 +4626,7 @@ const clinicians: Clinician[] = [
     credential: "SUDCC-II",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["sud_counseling", "sud_group_odf", "sud_group_iot"],
+    services: ["sud_counseling", "sud_group_odf", "sud_group_iot", "sud_assessment"],
     locationIds: ["loc-visalia"],
     licenseExpiresOn: "2028-12-31",
     languages: ["en", "es"],
@@ -8410,6 +8446,8 @@ function _assertClinicianFit(clinicianId: string, serviceType?: ServiceType) {
     const prescriber = role === "pmhnp" || role === "physician" || /PMHNP|M\.D\.|MD|DO/.test(c.credential);
     if (!prescriber) throw new Error("Medication visits can only be booked with a physician or PMHNP.");
   }
+  const fit = serviceRoleFit(serviceType, STAFF_ROSTER.find((s) => s.clinicianId === clinicianId)?.role, c.credential);
+  if (!fit) throw new Error(`${c.name} doesn't offer this visit type. Pick a suggested clinician.`);
 }
 /** Audit + clinician + patient notices for a staff booking. Part 2-neutral. */
 function _announceStaffBooking(a: Appointment, by: { id: string; role: string; staffId?: string }) {
@@ -9363,6 +9401,19 @@ export const AdelanteEHR = {
         });
         if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
       }
+    }
+    // 29 Oct (Mitch, Draft — pending Christi): ONE booking rule for patients
+    // and staff. A self-scheduled visit must be a patient "book" type and never
+    // a group; then the same fit, telehealth and group-consent checks apply to
+    // everyone (credentialing for the resolved funding source and conflicts
+    // above/below already run for every booking).
+    const isSelfBooking = input.source === "self_scheduled" || bookRole === ("patient" as StaffRole);
+    if (isSelfBooking) {
+      const svcInfo = SERVICE_TYPES.find((s) => s.id === input.serviceType);
+      if (!svcInfo || svcInfo.patientAccess !== "book" || GROUP_SERVICE_TYPES.includes(input.serviceType ?? ""))
+        throw new Error(SELF_BOOKING_REFUSED);
+    }
+    if (isStaffBooking || isSelfBooking) {
       _assertClinicianFit(input.clinicianId, input.serviceType);
       if (input.modality && input.modality !== "in_person" && +new Date(input.start) > Date.now() && !AdelanteEHR.isConsentCategoryAuthorized(input.patientId, TELEHEALTH_CONSENT_CATEGORY))
         throw new Error("No telehealth consent on file. Capture telehealth consent first, or book in person.");

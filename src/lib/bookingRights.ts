@@ -51,10 +51,10 @@ export function canScheduleRole(role: StaffRole | string | undefined): boolean {
   return bookingRightFor(role).scope !== "none";
 }
 
-export const SUD_SERVICE_TYPES = ["sud_counseling", "sud_group_odf", "sud_group_iot"] as const;
+export const SUD_SERVICE_TYPES = ["sud_counseling", "sud_group_odf", "sud_group_iot", "sud_assessment"] as const;
 export const isSudServiceType = (s?: string) => !!s && (SUD_SERVICE_TYPES as readonly string[]).includes(s);
 /** Prescriber / MAT visits go only to physician or PMHNP calendars. */
-export const PRESCRIBER_SERVICE_TYPES = ["med_management", "controlled_med_moud"] as const;
+export const PRESCRIBER_SERVICE_TYPES = ["med_management", "controlled_med_moud", "psychiatric_evaluation"] as const;
 export const isPrescriberServiceType = (s?: string) => !!s && (PRESCRIBER_SERVICE_TYPES as readonly string[]).includes(s);
 
 export type BookingOp = "book" | "reschedule" | "cancel";
@@ -81,4 +81,24 @@ export function checkBookingRights(input: {
   if ((isSudServiceType(input.serviceType) || input.asam) && !r.sudVisits)
     return { ok: false, reason: "This visit type isn't available to your role.", next: "Send the request to a clinical coordinator." };
   return { ok: true };
+}
+
+// 29 Oct (Mitch, Draft — pending Christi): who may deliver the new visit
+// types. Applied on top of the calendar's services list, never instead of it.
+const LICENSED_CLINICIAN = /LCSW|LMFT|LPCC|PsyD|Ph\.?D|PMHNP|M\.?D\.?|D\.?O\.?/i;
+const NURSE_CREDENTIAL = /\b(RN|LVN)\b/;
+export const SERVICE_ROLE_FIT_DRAFT_LABEL = BOOKING_RIGHTS_DRAFT_LABEL;
+export function serviceRoleFit(serviceType: string | undefined, role: StaffRole | string | undefined, credential: string | undefined): boolean {
+  switch (serviceType) {
+    case "chw_visit":
+      return role === "community_health_worker";
+    case "nurse_visit":
+      return NURSE_CREDENTIAL.test(credential ?? "");
+    case "family_collateral":
+      return role === "therapist" || role === "clinical_trainee" || /LCSW|LMFT|LPCC|ASW|AMFT|APCC|PsyD/i.test(credential ?? "");
+    case "sud_assessment":
+      return role === "sud_counselor" || /SUDCC|CADC/i.test(credential ?? "") || LICENSED_CLINICIAN.test(credential ?? "");
+    default:
+      return true;
+  }
 }

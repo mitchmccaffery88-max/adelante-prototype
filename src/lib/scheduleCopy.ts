@@ -56,6 +56,11 @@ const EN = {
   pickTimeLabel: "Pick a time",
   full: "Full",
   nOpen: (n: number) => `${n} open`,
+  askMyTeam: "Ask my team",
+  askMyTeamHelp: "Your care team sets up this kind of visit with you. Send a request and someone will reach out to find a time.",
+  askSent: "Sent to your team. Someone will reach out to find a time.",
+  askAlreadyRequested: "You already asked for this. Your team will reach out.",
+  askAlreadyScheduled: "You already have this kind of visit scheduled.",
 };
 
 type Copy = typeof EN;
@@ -112,6 +117,12 @@ const ES: Copy = {
   pickTimeLabel: "Elige una hora",
   full: "Lleno",
   nOpen: (n) => `${n} libre(s)`,
+  // Borrador — pendiente de revisión de traducción.
+  askMyTeam: "Pedir a mi equipo",
+  askMyTeamHelp: "Tu equipo de atención organiza este tipo de cita contigo. Envía una solicitud y alguien te contactará para buscar una hora.",
+  askSent: "Enviado a tu equipo. Alguien te contactará para buscar una hora.",
+  askAlreadyRequested: "Ya lo pediste. Tu equipo te contactará.",
+  askAlreadyScheduled: "Ya tienes una cita de este tipo programada.",
 };
 
 export function scheduleCopy(lang: string): Copy {
@@ -131,6 +142,12 @@ const SERVICE_ES: Partial<Record<ServiceType, { label: string; helper: string }>
   sud_counseling: { label: "Consejería individual (uso de sustancias)", helper: "Consejería individual sobre uso de sustancias." },
   sud_group_odf: { label: "Grupo ODF", helper: "Grupo ambulatorio sin drogas." },
   sud_group_iot: { label: "Grupo IOT", helper: "Grupo ambulatorio intensivo." },
+  // 29 Oct — Borrador, pendiente de revisión de traducción.
+  psychiatric_evaluation: { label: "Evaluación psiquiátrica", helper: "Una primera cita completa con un profesional que receta sobre tu salud mental y tus medicamentos." },
+  sud_assessment: { label: "Evaluación ASAM (uso de sustancias)", helper: "Una evaluación sobre uso de sustancias para encontrar el nivel de atención adecuado." },
+  chw_visit: { label: "Cita con un promotor de salud", helper: "Recibe ayuda con tu salud, beneficios y cómo llegar a tu atención." },
+  family_collateral: { label: "Sesión familiar", helper: "Una sesión con tu familia o personas que te apoyan." },
+  nurse_visit: { label: "Cita con enfermería", helper: "Una cita con una enfermera para signos vitales, inyecciones o chequeos." },
 };
 
 export function serviceLabel(id: ServiceType | undefined, enLabel: string | undefined, lang: string): string {

@@ -48,6 +48,8 @@ describe("patient-level booking conflict", () => {
         start,
         durationMin: 50,
         source: "self_scheduled",
+        // 29 Oct (Draft): self-bookings name a patient "book" visit type.
+        serviceType: "therapy_individual",
       }),
     ).toThrow(/already have an appointment/i);
   });
@@ -69,6 +71,8 @@ describe("patient-level booking conflict", () => {
         start: new Date(Date.now() + 96 * HOUR + 10 * 60 * 1000).toISOString(),
         durationMin: 30,
         source: "self_scheduled",
+        // 29 Oct (Draft): self-bookings name a patient "book" visit type.
+        serviceType: "therapy_individual",
       }),
     ).toThrow(/already have an appointment/i);
   });
@@ -88,6 +92,8 @@ describe("patient-level booking conflict", () => {
       start: new Date(Date.now() + 120 * HOUR + 50 * 60 * 1000).toISOString(),
       durationMin: 30,
       source: "self_scheduled",
+      // 29 Oct (Draft): self-bookings name a patient "book" visit type.
+      serviceType: "therapy_individual",
     });
     expect(next.id).toBeTruthy();
   });
@@ -110,6 +116,8 @@ describe("patient-level booking conflict", () => {
       start,
       durationMin: 50,
       source: "self_scheduled",
+      // 29 Oct (Draft): self-bookings name a patient "book" visit type.
+      serviceType: "therapy_individual",
     });
     expect(second.id).toBeTruthy();
   });
@@ -153,6 +161,8 @@ describe("patient-level booking conflict", () => {
         start,
         durationMin: 50,
         source: "self_scheduled",
+        // 29 Oct (Draft): self-bookings name a patient "book" visit type.
+        serviceType: "therapy_individual",
       }),
     ).toThrow(/just taken/i);
   });
@@ -173,6 +183,8 @@ describe("patient-level booking conflict", () => {
       start: futureStart(240),
       durationMin: 50,
       source: "self_scheduled",
+      // 29 Oct (Draft): self-bookings name a patient "book" visit type.
+      serviceType: "therapy_individual",
     });
     expect(() => AdelanteEHR.rescheduleAppointment(movable.id, anchor)).toThrow(
       /already have an appointment/i,
@@ -190,6 +202,8 @@ describe("appointment provenance", () => {
       start: futureStart(300),
       durationMin: 50,
       source: "self_scheduled",
+      // 29 Oct (Draft): self-bookings name a patient "book" visit type.
+      serviceType: "therapy_individual",
     });
     expect(appt.source).toBe("self_scheduled");
   });

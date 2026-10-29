@@ -2,7 +2,7 @@ import { scheduleCopy, serviceLabel, serviceHelper, SCHEDULE_ES_DRAFT } from "@/
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { act, actFor } from "@/lib/actions/act";
 import { runAction } from "@/lib/actions/runAction";
-import { patientBookableClinicians, patientPrecheck, patientSlots, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
+import { patientBookableClinicians, patientPrecheck, patientServiceMenu, patientSlots, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
 import { useEffect, useMemo, useState } from "react";
 import {
   AdelanteEHR,
@@ -79,9 +79,17 @@ function SchedulePage() {
       : undefined,
   );
   const isReschedule = Boolean(rescheduleId && existing);
-  const serviceTypes = useEhr(() => AdelanteEHR.listServiceTypes());
+  // 29 Oct (Draft): the menu reads the catalog's patientAccess; a reschedule keeps its own type.
+  const menu = useEhr(() => patientServiceMenu(patient));
   const [serviceType, setServiceType] = useState<ServiceType | "">(existing?.serviceType ?? "");
-  const activeService = serviceTypes.find((s) => s.id === serviceType);
+  const keepType = isReschedule && serviceType === existing?.serviceType;
+  const existingService = keepType && serviceType ? AdelanteEHR.getServiceType(serviceType) : undefined;
+  const pickerOptions = existingService && !menu.some((o) => o.service.id === existingService.id)
+    ? [{ service: existingService, mode: "book" as const }, ...menu]
+    : menu;
+  const activeOption = pickerOptions.find((o) => o.service.id === serviceType);
+  const activeService = activeOption?.service;
+  const isRequest = activeOption?.mode === "request" && !keepType;
   const allowedModalities = activeService?.allowedModalities ?? ["video", "phone", "in_person"];
   const [modality, setModality] = useState<"video" | "phone" | "in_person">(
     existing?.modality ?? "video",
@@ -93,7 +101,7 @@ function SchedulePage() {
   const locations = useEhr(() => AdelanteEHR.locationsForService(serviceType || undefined));
   const [locationId, setLocationId] = useState<string>(existing?.locationId ?? "");
   // §Batch G3 — same engine as staff booking: eligible clinicians, assigned first.
-  const clinicianOptions = useEhr(() => patientBookableClinicians(patient, serviceType, effectiveModality));
+  const clinicianOptions = useEhr(() => patientBookableClinicians(patient, serviceType, effectiveModality, { keepVisitType: keepType }));
   const clinicians = clinicianOptions.map((o) => o.clinician);
   const [clinicianId, setClinicianId] = useState(existing?.clinicianId ?? "");
   // Reset clinician if the current one isn't in the filtered list.
@@ -155,6 +163,23 @@ function SchedulePage() {
   const activeDay = dayGroups.find((g) => g.date.toDateString() === activeDayKey) ?? dayGroups[0];
 
   if (!patient) return null;
+
+  const askTeam = () => {
+    if (!serviceType) return;
+    const r = runAction(
+      "patient_request_visit",
+      { role: PATIENT_ACTOR_ROLE, staffId: patient.id, staffName: "Patient (self)" },
+      patient,
+      { args: [{ patientId: patient.id, serviceType }] },
+    );
+    if (!r.ok) {
+      toast.error(r.reason);
+      return;
+    }
+    const outcome = (r.value as { outcome?: string } | undefined)?.outcome;
+    toast.success(outcome === "already_scheduled" ? sc.askAlreadyScheduled : outcome === "already_requested" ? sc.askAlreadyRequested : sc.askSent);
+    navigate({ to: "/schedule", search: { tab: "yours" } });
+  };
 
   const submit = () => {
     if (!serviceType) {
@@ -353,9 +378,10 @@ function SchedulePage() {
               <SelectValue placeholder={sc.pickType} />
             </SelectTrigger>
             <SelectContent>
-              {serviceTypes.map((s) => (
+              {pickerOptions.map(({ service: s, mode }) => (
                 <SelectItem key={s.id} value={s.id}>
                   {serviceLabel(s.id, s.label, lang)}
+                  {mode === "request" ? ` · ${sc.askMyTeam}` : ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -365,6 +391,15 @@ function SchedulePage() {
           )}
         </div>
 
+        {isRequest ? (
+          <div className="space-y-3" data-testid="ask-my-team">
+            <p className="text-sm text-muted-foreground">{sc.askMyTeamHelp}</p>
+            <Button className="w-full" onClick={askTeam}>
+              <CalendarPlus className="h-4 w-4 mr-1.5" /> {sc.askMyTeam}
+            </Button>
+          </div>
+        ) : (
+        <>
         <div className="space-y-1.5">
           <Label className="text-sm">{t("schPickFormat")}</Label>
           <div
@@ -625,6 +660,8 @@ function SchedulePage() {
           <ShieldCheck className="h-3.5 w-3.5 text-teal mt-0.5" />
           {t("schNotReported")}
         </p>
+        </>
+        )}
       </Card>
       )}
     </div>

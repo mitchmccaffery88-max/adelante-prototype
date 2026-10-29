@@ -92,7 +92,9 @@ describe("G2 — real clinician availability", () => {
 });
 
 describe("G3 — patient self-booking", () => {
-  const free = () => AdelanteEHR.listPatients().find((p) => AdelanteEHR.appointmentsForPatient(p.id).length === 0) ?? AdelanteEHR.listPatients()[0];
+  // 29 Oct (Draft): therapy self-booking needs an established clinician — fixture assigns c1.
+  const established = (p: ReturnType<typeof AdelanteEHR.listPatients>[number]) => { p.primaryClinicianId = "c1"; return p; };
+  const free = () => established(AdelanteEHR.listPatients().find((p) => AdelanteEHR.appointmentsForPatient(p.id).length === 0) ?? AdelanteEHR.listPatients()[0]);
 
   it("only eligible clinicians, assigned first", () => {
     const p = free();
@@ -120,6 +122,7 @@ describe("G3 — patient self-booking", () => {
     expect(() => patientSelfBook({ patientId: p.id, clinicianId: "c1", start: bad.toISOString(), serviceType: "therapy_individual", modality: "in_person", locationId: "loc-visalia" })).toThrow(/isn't open/);
     const noConsent = AdelanteEHR.listPatients().find((x) => !AdelanteEHR.isConsentCategoryAuthorized(x.id, TELEHEALTH_CONSENT_CATEGORY));
     if (noConsent) {
+      established(noConsent);
       const s = availableSlots("c1", { serviceType: "therapy_individual", modality: "video" })[0]!;
       expect(() => patientSelfBook({ patientId: noConsent.id, clinicianId: "c1", start: s, serviceType: "therapy_individual", modality: "video" })).toThrow(/telehealth consent/);
     }

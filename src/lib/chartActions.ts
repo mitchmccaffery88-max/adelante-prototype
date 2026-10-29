@@ -20,7 +20,7 @@ import { seedSimulatedContentSample } from "@/lib/contentAnalytics";
 import { canBrowseContent } from "@/lib/contentStaff";
 import { markContentReviewed } from "./contentPublishing";
 import { exportContentEntries, restoreContentEntries } from "./contentBackup";
-import { patientSelfBook, patientReschedule, advocateReschedule, PATIENT_ACTOR_ROLE, ADVOCATE_ACTOR_ROLE } from "@/lib/patientBooking";
+import { patientSelfBook, patientRequestVisit, patientReschedule, advocateReschedule, PATIENT_ACTOR_ROLE, ADVOCATE_ACTOR_ROLE } from "@/lib/patientBooking";
 import { bookingRightFor, canScheduleRole } from "./bookingRights";
 // §Chart redesign — single action registry. Source of truth for every chart
 // "create / act" action. Each `allowed()` calls the SAME function-level check
@@ -667,6 +667,15 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "patient acting for self; patientSelfBook re-checks eligible clinician, real availability, telehealth consent, conflicts",
     store: refs(["patientSelfBook", (...a: any[]) => (patientSelfBook as any)(...a)]),
     allowed: ({ role }) => (role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient books their own visit here.")),
+  },
+  {
+    id: "patient_request_visit",
+    label: { en: "Ask my team", es: "Pedir a mi equipo" },
+    group: "coordination",
+    sectionId: "appointments",
+    check: "patient acting for self; catalog patientAccess must be request (or first visit of an established type); existing duplicate/auto-close request flow",
+    store: refs(["patientRequestVisit", (...a: any[]) => (patientRequestVisit as any)(...a)]),
+    allowed: ({ role }) => (role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient asks for their own visit here.")),
   },
   {
     id: "patient_reschedule",
