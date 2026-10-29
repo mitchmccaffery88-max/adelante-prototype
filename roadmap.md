@@ -2,7 +2,7 @@
 
 ## 29 Oct patient scheduling (Draft, pending Christi)
 - [x] 20:00 item (a): SMHS treating-clinician dated/reason control and safe Billing/active-referral Intake funding drawer; real desktop/phone save/readback, full units 3,695/3,695; additional sixth Intake test passed.
-- [ ] Item (a) final full units then isolated 53-test public browser; green budget checkpoint before (b)–(d).
+- [x] Item (a) prior final full units 3,696/3,696; 20:42 fresh isolated public rerun 53/53, exit 0, 17.3m (earlier partial run output unavailable); report recorded. No scheduling code changed in this continuation.
 - [ ] Continue (b) catalog/new types/shared booking/picker, then (c) CHW calendar and missing-services affected-staff inventory, then (d) category-specific capacity; units after each.
 - [x] Carry-over bridge: dated coverage determinations and existing Billing order feed the single resolver; full units 3,690/3,690 then isolated public browser 53/53; coverage report.
 - [x] Remaining carry-over controls: treating-clinician SMHS; Billing/Intake funding override; coverage report updated (final checkpoint validation listed above).
