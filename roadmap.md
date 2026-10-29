@@ -254,11 +254,15 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 
 ## 29 Oct — Payment and coverage rules per appointment (Draft, pending Christi)
 - [x] Inspection report delivered (no DB mirror for patient coverage; no migration needed)
-- [ ] 1 resolveFundingSource (order/dates on CoveragePlanSpan, COB flag, stored on appointment, Billing/Intake override)
-- [ ] 2 Draft delivery-system tag on SERVICE_TYPES + dated clinician SMHS determination on care plan
-- [ ] 3 credentialedForService takes funding source; per-source enrollment rules; sliding-scale label
-- [ ] 4 Peer/CHW/ECM credential fields, tiles, expiry tasks
-- [ ] 5 Mixed-payer groups, per-member flag
-- [ ] 6 Recurring series per-occurrence evaluation
-- [ ] 7 Rename c5, move DEA-expiry case, demo clients
-- [ ] Tests, full units, public browser x1, coverage-rules-report.md, credentialing-report.md
+- [x] 1 resolveFundingSource (order/dates on CoveragePlanSpan, COB flag, stored on appointment, Billing/Intake override)
+- [x] 2 Draft delivery-system tag on SERVICE_TYPES + dated clinician SMHS determination on care plan
+- [x] 3 credentialedForService takes funding source; per-source enrollment rules; sliding-scale label
+- [x] 4 Peer/CHW/ECM credential fields, tiles, expiry tasks
+- [x] 5 Mixed-payer groups, per-member flag
+- [x] 6 Recurring series (staff only, weekly/biweekly, Draft max 26) per-occurrence evaluation
+- [x] 7 Rename c5, move DEA-expiry case, demo clients
+- [x] Tests, full units, coverage-rules-report.md, credentialing-report.md
+- [ ] Public browser x1 (running)
+- [ ] Bridge coverageRequests determinations order into the resolver — next batch
+- [ ] SMHS determination and "Change who pays" screens — store/registry ready, UI not built
+- [ ] Christi/compliance confirmations, sliding-scale tiers, MOUD code mapping — waiting on Christi/compliance

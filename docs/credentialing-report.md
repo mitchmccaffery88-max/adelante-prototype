@@ -119,3 +119,9 @@ Actual logs: `/tmp/access-oct28/units2.log`, `focused2.log`, `hloc.log`. Deferre
 - **Re-pins (pre-approved exact-once adapter)** `src/test/moudServiceOct28Approved.ts`, composed last in `credentialingOct27Approved.ts`: `src/lib/ehr.ts` (7 hunks) and `src/lib/ehr-ext.ts` (7 hunks); pinned by roleDashboardParity9c2, billingParity9a3, billingProjectionB3b (therapist, sys_admin), statTileParity9a2. No assertion weakened.
 - **Full units:** 3,670/3,670, 415 files.
 - For Mitch to confirm: the Draft controlled list is this one entry; real billing code mapping remains open.
+
+## 29 Oct coverage rules (Mitch, Draft — pending Christi)
+- `credentialedForService` takes the resolved funding source (`opts.fundingSource`). Private pay and grant visits now check license, supervision, DEA (MOUD type) and exclusion ("Adelante policy (Draft)") but never enrollment; commercial without in-network enrollment and Medicare raise neutral Billing flags without blocking; non-billable services get no credential check. Callers without a funding source keep the earlier behaviour.
+- Billable roles without a clinical license: peer certification + supervising provider, CHW certificate/attestation + supervising licensed provider, ECM training + organization ECM contract per plan — Draft, confirm with compliance; checked only when billable. New Today tile "Peer, CHW and ECM credentials" and expiry items.
+- Demo: c5 renamed "Dr. R. Sample" (fictional) and stays the overdue-exclusion case; the DEA-expires-in-20-days case moved to c3, which is fully credentialed and MOUD-enrolled (Medi-Cal FFS and Tulare County DMC-ODS), so DEA expiry is its only block.
+- Full details, delivery-system table and confirm-lists: `docs/coverage-rules-report.md`.
