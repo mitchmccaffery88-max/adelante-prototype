@@ -232,6 +232,7 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
   const [category, setCategory] = useState<GroupCategory>("sud_clinical_preauth");
   const [weekly, setWeekly] = useState(true);
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
+  const capRule = groupCapacityRule(category);
   const locations = useEhr(() => AdelanteEHR.listLocations());
 
   if (!open)
@@ -290,7 +291,14 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Category</Label>
-          <Select value={category} onValueChange={(v) => setCategory(v as GroupCategory)}>
+          <Select
+            value={category}
+            onValueChange={(v) => {
+              const next = v as GroupCategory;
+              setCategory(next);
+              setCapacity(String(groupCapacityRule(next).defaultCapacity));
+            }}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -309,18 +317,21 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">
-            Capacity ({GROUP_CAPACITY_MIN}–{GROUP_CAPACITY_MAX}, DHCS limit)
+            {capRule.max
+              ? `Capacity (${capRule.min}–${capRule.max}, DHCS limit)`
+              : "Capacity (set by the facilitator)"}
           </Label>
           <Input
             type="number"
-            min={GROUP_CAPACITY_MIN}
-            max={GROUP_CAPACITY_MAX}
+            min={capRule.min}
+            max={capRule.max}
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
           />
           <p className="text-[11px] text-muted-foreground">
-            {GROUP_CAPACITY_MAX} is the regulatory maximum (same for telehealth). A lower local cap
-            is allowed; a higher one is not.
+            {capRule.max
+              ? `${GROUP_CAPACITY_MAX} is the regulatory maximum (same for telehealth). A lower local cap is allowed; a higher one is not.`
+              : `Not billed, so the DHCS 2–12 limit doesn't apply. Default ${OPEN_GROUP_CAPACITY_DEFAULT_DRAFT} is ${OPEN_GROUP_CAPACITY_DRAFT_LABEL}. Patients may join any number of open groups.`}
           </p>
         </div>
         <div className="space-y-1.5">
