@@ -89,13 +89,14 @@ export function patientRequestVisit(input: { patientId: string; serviceType: Ser
 }
 
 /** The patient's assigned clinician first, then other eligible clinicians for the visit type. */
-export function patientBookableClinicians(patient: Patient | undefined, serviceType: ServiceType | "", modality?: BookingModality): PatientClinicianOption[] {
+export function patientBookableClinicians(patient: Patient | undefined, serviceType: ServiceType | "", modality?: BookingModality, opts: { keepVisitType?: boolean } = {}): PatientClinicianOption[] {
   if (!patient || !serviceType) return [];
-  const opt = patientServiceOption(patient, serviceType);
-  if (!opt || opt.mode !== "book") return [];
+  // Moving an existing visit keeps its type; the menu governs new bookings and type changes.
+  const opt = opts.keepVisitType ? undefined : patientServiceOption(patient, serviceType);
+  if (!opts.keepVisitType && (!opt || opt.mode !== "book")) return [];
   const list = eligibleClinicians(serviceType, patient, { role: PATIENT_ACTOR_ROLE, clinicianId: patient.primaryClinicianId } as never, modality);
   return list
-    .filter((s) => !opt.clinicianIds || opt.clinicianIds.includes(s.clinician.id))
+    .filter((s) => !opt?.clinicianIds || opt.clinicianIds.includes(s.clinician.id))
     .map((s) => ({ clinician: s.clinician, assigned: s.clinician.id === patient.primaryClinicianId, hasHours: hasAvailabilitySet(s.clinician.id) }))
     .sort((a, b) => Number(b.assigned) - Number(a.assigned) || Number(b.hasHours) - Number(a.hasHours));
 }
@@ -166,7 +167,7 @@ export interface PatientRescheduleInput {
 }
 
 function engineCheck(patient: Patient, appt: Appointment, start: string, clinicianId: string, serviceType: ServiceType, modality: BookingModality) {
-  if (!patientBookableClinicians(patient, serviceType, modality).some((o) => o.clinician.id === clinicianId))
+  if (!patientBookableClinicians(patient, serviceType, modality, { keepVisitType: serviceType === appt.serviceType }).some((o) => o.clinician.id === clinicianId))
     throw new Error("That clinician can't be booked for this visit type.");
   if (!patientPrecheck(patient, modality).ok) throw new Error("No telehealth consent on file. Choose in person, or ask your care team.");
   if (!patientSlots(clinicianId, serviceType, modality, appt.id).includes(new Date(start).toISOString()))
