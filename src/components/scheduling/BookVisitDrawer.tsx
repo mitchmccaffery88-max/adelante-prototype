@@ -14,6 +14,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { SERIES_DRAFT, type SeriesCadence } from "@/lib/fundingSource";
 import { hasAvailabilitySet, NO_AVAILABILITY_FOR_TYPE, NO_AVAILABILITY_NEXT, NO_AVAILABILITY_TEXT } from "@/lib/clinicianAvailability";
 
 type Modality = "video" | "phone" | "in_person";
@@ -30,6 +32,12 @@ export function BookVisitDrawerHost() {
   const [slot, setSlot] = useState("");
   const [locationId, setLocationId] = useState("");
   const [blocked, setBlocked] = useState<{ reason: string; next: string } | null>(null);
+  // 29 Oct (Mitch, Draft): staff-only recurring series for individual visits.
+  const [repeat, setRepeat] = useState<"none" | SeriesCadence>("none");
+  const [endBy, setEndBy] = useState<"count" | "date">("count");
+  const [seriesCount, setSeriesCount] = useState("6");
+  const [seriesEnd, setSeriesEnd] = useState("");
+  const [seriesResult, setSeriesResult] = useState<{ booked: number; blocked: { start: string; reason: string }[] } | null>(null);
 
   const patients = useEhr(() => bookablePatients(actor));
   const types = useMemo(() => bookableServiceTypes(actor.role), [actor.role]);
@@ -49,6 +57,8 @@ export function BookVisitDrawerHost() {
       setClinicianId("");
       setSlot("");
       setBlocked(null);
+      setRepeat("none");
+      setSeriesResult(null);
       setOpen(true);
     };
     window.addEventListener(BOOK_VISIT_EVENT, onOpen);
@@ -80,6 +90,24 @@ export function BookVisitDrawerHost() {
     if (!pre.ok) return setBlocked(pre);
     if (!slot) return setBlocked({ reason: "Pick a time.", next: "Choose one of the open slots." });
     if (modality === "in_person" && !locationId) return setBlocked({ reason: "Pick a location for an in-person visit.", next: "Choose a clinic site, or switch to video/phone." });
+    if (repeat !== "none") {
+      try {
+        const res = act<{ booked: unknown[]; blocked: { start: string; reason: string }[] }>("schedule_visit_series", "bookAppointmentSeries", {
+          patientId, clinicianId, firstStart: slot, cadence: repeat,
+          ...(endBy === "count" ? { count: Number(seriesCount) || 0 } : { endDate: seriesEnd }),
+          durationMin: svc?.defaultDurationMin ?? 50, serviceType, modality,
+          locationId: modality === "in_person" ? locationId : undefined,
+          bookedBy: { id: actor.staffName, staffId: actor.staffId, role: actor.role },
+        });
+        setSeriesResult({ booked: res.booked.length, blocked: res.blocked });
+        toast.success(`${res.booked.length} visit${res.booked.length === 1 ? "" : "s"} booked`, res.blocked.length ? { description: `${res.blocked.length} not booked — see the list.` } : undefined);
+        if (!res.blocked.length) setOpen(false);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Could not book that series.";
+        setBlocked({ reason: msg, next: nextStepFor(msg) });
+      }
+      return;
+    }
     try {
       act("schedule_visit", "bookAppointment", {
         patientId,
@@ -195,7 +223,51 @@ export function BookVisitDrawerHost() {
                 <p className="mt-1 text-muted-foreground">What to do: {shown.next}</p>
               </div>
             )}
-            <Button className="w-full" onClick={doBook} data-testid="book-confirm">Book visit</Button>
+            {!req.asamTaskId && !/group/.test(serviceType) && (
+              <div className="space-y-2 rounded border p-3" data-testid="book-series">
+                <Label>Repeat</Label>
+                <Select value={repeat} onValueChange={(v) => { setRepeat(v as typeof repeat); setSeriesResult(null); }}>
+                  <SelectTrigger data-testid="book-repeat"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Just this visit</SelectItem>
+                    <SelectItem value="weekly">Every week</SelectItem>
+                    <SelectItem value="biweekly">Every two weeks</SelectItem>
+                  </SelectContent>
+                </Select>
+                {repeat !== "none" && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select value={endBy} onValueChange={(v) => setEndBy(v as typeof endBy)}>
+                      <SelectTrigger data-testid="book-series-endby"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="count">Number of visits</SelectItem>
+                        <SelectItem value="date">End date</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {endBy === "count" ? (
+                      <Input type="number" min={1} max={SERIES_DRAFT.maxVisitsPerSeries} value={seriesCount} onChange={(e) => setSeriesCount(e.target.value)} aria-label="Number of visits" data-testid="book-series-count" />
+                    ) : (
+                      <Input type="date" value={seriesEnd} onChange={(e) => setSeriesEnd(e.target.value)} aria-label="End date" data-testid="book-series-end" />
+                    )}
+                  </div>
+                )}
+                {repeat !== "none" && (
+                  <p className="text-xs text-muted-foreground">
+                    Each visit is checked on its own date. Maximum {SERIES_DRAFT.maxVisitsPerSeries} visits per series ({SERIES_DRAFT.label}).
+                  </p>
+                )}
+              </div>
+            )}
+            {seriesResult && seriesResult.blocked.length > 0 && (
+              <div className="rounded border-2 border-input bg-surface-sunk p-3 text-sm" data-testid="book-series-blocked">
+                <p className="font-medium">{seriesResult.booked} booked. These weren&apos;t booked — rebook them with another clinician:</p>
+                <ul className="mt-1 list-disc pl-5">
+                  {seriesResult.blocked.map((b) => (
+                    <li key={b.start}>{new Date(b.start).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} — {b.reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <Button className="w-full" onClick={doBook} data-testid="book-confirm">{repeat === "none" ? "Book visit" : "Book series"}</Button>
             <p className="text-[11px] text-muted-foreground">Booking rights: {BOOKING_RIGHTS_DRAFT_LABEL}. The clinician and the patient are notified.</p>
           </div>
         )}
