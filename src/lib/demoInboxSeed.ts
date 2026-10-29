@@ -244,7 +244,7 @@ export function seedDemoInbox(): void {
   };
   if (luis && luisTask && clin)
     safe(() => {
-      const a = AdelanteEHR.bookAppointment({ patientId: luis, clinicianId: clin.id, start: past(2), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: luisTask.id, bookedBy: { id: reyes.name, role: "therapist" }, allowPatientOverlap: true });
+      const a = AdelanteEHR.bookAppointment({ patientId: luis, clinicianId: clin.id, start: past(2), durationMin: 60, serviceType: "sud_assessment", modality: "video", source: "staff_scheduled", asamTaskId: luisTask.id, bookedBy: { id: reyes.name, role: "therapist" }, allowPatientOverlap: true });
       AdelanteEHR.markAppointmentNoShow(a.id, reyes);
     });
   // Marcus — an ASAM-linked visit yesterday, still unmarked: staff can mark
@@ -252,7 +252,7 @@ export function seedDemoInbox(): void {
   const marcusTask = marcus ? AdelanteEHR.openAsamWorkTask(marcus) : undefined;
   if (marcus && marcusTask && clin)
     safe(() => {
-      AdelanteEHR.bookAppointment({ patientId: marcus, clinicianId: clin.id, start: past(1), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: marcusTask.id, bookedBy: { id: reyes.name, role: "therapist" }, allowPatientOverlap: true });
+      AdelanteEHR.bookAppointment({ patientId: marcus, clinicianId: clin.id, start: past(1), durationMin: 60, serviceType: "sud_assessment", modality: "video", source: "staff_scheduled", asamTaskId: marcusTask.id, bookedBy: { id: reyes.name, role: "therapist" }, allowPatientOverlap: true });
     });
 
   // §Item 6 carry-over — an advocate whose release includes scheduling

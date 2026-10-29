@@ -4562,6 +4562,8 @@ const clinicians: Clinician[] = [
       "case_management",
       "care_coordination",
       "family_collateral",
+      // 30 Oct (Draft): LPHA — ASAM visits now book as the SUD assessment type.
+      "sud_assessment",
     ],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2028-12-31",
