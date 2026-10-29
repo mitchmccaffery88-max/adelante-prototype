@@ -2274,7 +2274,7 @@ export interface AppointmentRequest {
 /** Service types that satisfy each request kind (duplicate check + auto-close). */
 export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {
   therapy: ["therapy_individual", "intake"],
-  medication: ["med_management"],
+  medication: ["med_management", "controlled_med_moud"],
   help_choose: ["care_coordination", "case_management"],
 };
 
@@ -2324,6 +2324,8 @@ export type ServiceType =
   | "therapy_individual"
   | "therapy_group"
   | "med_management"
+  // 28 Oct MOUD service type (Draft): the only controlled-substance entry.
+  | "controlled_med_moud"
   | "peer_support"
   | "case_management"
   | "care_coordination"
@@ -2390,8 +2392,15 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Talk with a prescriber about medications.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
-    // No dedicated buprenorphine/controlled-medication entries exist. Mitch
-    // approved a Draft flag on the matching catalog entry, pending confirmation.
+  },
+  {
+    // 28 Oct (Mitch, Draft): the controlled-substance flag lives here only;
+    // med_management is non-controlled again. Prescriber calendars only.
+    id: "controlled_med_moud",
+    label: "Controlled medication / MOUD visit",
+    helper: "Meet with a prescriber about a controlled medication or MOUD.",
+    allowedModalities: ["video", "in_person"],
+    defaultDurationMin: 30,
     controlledSubstanceDraft: true,
   },
   {
@@ -2433,6 +2442,7 @@ const LOCATIONS: ClinicLocation[] = [
       "therapy_individual",
       "therapy_group",
       "med_management",
+      "controlled_med_moud",
       "peer_support",
       "case_management",
       // §Scheduling S2 — SUD counseling is delivered in person at Visalia.
@@ -4518,7 +4528,7 @@ const clinicians: Clinician[] = [
     credential: "PMHNP-BC",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["med_management", "intake", "therapy_individual"],
+    services: ["med_management", "controlled_med_moud", "intake", "therapy_individual"],
     locationIds: ["loc-porterville"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -4539,7 +4549,7 @@ const clinicians: Clinician[] = [
     credential: "M.D.",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["med_management", "intake"],
+    services: ["med_management", "controlled_med_moud", "intake"],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -26850,6 +26860,13 @@ try {
   book("p1", "c3", 150, "med_management");
   book(demoScenarioPatientId("public_referral"), "c3", 90, "med_management");
   book(demoScenarioPatientId("combination"), "c3", 180, "med_management");
+  // 28 Oct MOUD service type (Draft): one fictional future controlled/MOUD
+  // visit with the fully credentialed prescriber, through the real booking call.
+  try {
+    AdelanteEHR.bookAppointment({ patientId: "p1", clinicianId: "c3", start: demoBusinessTime(Date.now() + 14 * 86400000, 2), durationMin: 30, serviceType: "controlled_med_moud", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
+  } catch (e) {
+    if (typeof console !== "undefined") console.warn("[demo seed] MOUD visit", e);
+  }
   book("p3", "c1", 120, "therapy_individual");
   const core = new Set<string>(["p1", "p2", "p3", "p4"]);
   for (const k of ["sud_consented", "sud_no_consent", "combination", "public_referral", "medication", "mh_only", "ji_self_report"] as const) {
