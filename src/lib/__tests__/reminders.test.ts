@@ -68,6 +68,12 @@ describe("reminder coverage", () => {
         "sud_counseling",
         "sud_group_odf",
         "sud_group_iot",
+        // 29 Oct patient scheduling (Mitch, Draft — deliberate addition).
+        "psychiatric_evaluation",
+        "sud_assessment",
+        "chw_visit",
+        "family_collateral",
+        "nurse_visit",
       ].sort(),
     );
   });

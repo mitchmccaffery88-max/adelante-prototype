@@ -5,8 +5,20 @@ import { createHash } from "node:crypto";
 const APPROVED: Record<string, { prior: string; updated: string; pairs: [string, string][] }> = {
  "src/lib/ehr.ts": {
   "prior": "8a53351ef1c96fb6826e8266deb85122abd5f226ef1f7fc3060af2ed42fb077f",
-  "updated": "5ffb24e45b947341f9855a11605a8734724b280421ce4968653ad436754f0698",
+  "updated": "e3002ef48741c5708c2d00ea4aef62d2a2f45b44f6fbc889c5a9627a1d47ca08",
   "pairs": [
+   [
+    "import type { StaffRole } from \"./roles\";\nimport { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from \"./bookingRights\";\nimport { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource, registerCredentialingServiceCatalog } from \"./credentialing\";\n",
+    "import type { StaffRole } from \"./roles\";\nimport { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType, serviceRoleFit } from \"./bookingRights\";\nimport { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource, registerCredentialingServiceCatalog } from \"./credentialing\";\n"
+   ],
+   [
+    "export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {\n  therapy: [\"therapy_individual\", \"intake\"],\n  medication: [\"med_management\", \"controlled_med_moud\"],\n  help_choose: [\"care_coordination\", \"case_management\"],\n",
+    "export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {\n  therapy: [\"therapy_individual\", \"intake\", \"family_collateral\"],\n  medication: [\"med_management\", \"controlled_med_moud\", \"psychiatric_evaluation\"],\n  help_choose: [\"care_coordination\", \"case_management\"],\n"
+   ],
+   [
+    "  | \"sud_group_odf\"\n  | \"sud_group_iot\";\n\n",
+    "  | \"sud_group_odf\"\n  | \"sud_group_iot\"\n  // 29 Oct (Mitch, Draft \u2014 pending Christi): five patient-scheduling types.\n  | \"psychiatric_evaluation\"\n  | \"sud_assessment\"\n  | \"chw_visit\"\n  | \"family_collateral\"\n  | \"nurse_visit\";\n\n"
+   ],
    [
     "  deliverySystemDraft: DeliverySystemDraft;\n}\n",
     "  deliverySystemDraft: DeliverySystemDraft;\n  /**\n   * 29 Oct (Draft \u2014 pending Christi): what a patient may do with this type on\n   * /schedule. book = self-book; request = \"Ask my team\" (existing request\n   * flow); staff_only = never shown to patients (groups use the Groups tab).\n   */\n  patientAccess: PatientAccess;\n  /** Request kind used for \"Ask my team\" (request types and first-time asks). */\n  patientRequestKind?: AppointmentRequestKind;\n  /**\n   * Draft condition for patient self-booking. established = only clinicians the\n   * patient already sees for this type (first visit asks the team);\n   * asam_placement = a signed ASAM with a recorded level, otherwise hidden.\n   */\n  patientCondition?: \"established\" | \"asam_placement\";\n}\n"
@@ -49,7 +61,39 @@ const APPROVED: Record<string, { prior: string; updated: string; pairs: [string,
    ],
    [
     "  },\n  { id: \"sud_counseling\", label: \"Individual counseling (SUD)\", helper: \"One-on-one substance-use counseling.\", allowedModalities: [\"video\", \"phone\", \"in_person\"], defaultDurationMin: 50, sud: true, deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n  { id: \"sud_group_odf\", label: \"ODF group\", helper: \"Outpatient drug-free group.\", allowedModalities: [\"in_person\", \"video\"], defaultDurationMin: 90, sud: true, deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n  { id: \"sud_group_iot\", label: \"IOT group\", helper: \"Intensive outpatient group.\", allowedModalities: [\"in_person\", \"video\"], defaultDurationMin: 180, sud: true, deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n];\n",
-    "  },\n  { id: \"sud_counseling\", label: \"Individual counseling (SUD)\", helper: \"One-on-one substance-use counseling.\", allowedModalities: [\"video\", \"phone\", \"in_person\"], defaultDurationMin: 50, sud: true, patientAccess: \"book\", patientCondition: \"asam_placement\", deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n  { id: \"sud_group_odf\", label: \"ODF group\", helper: \"Outpatient drug-free group.\", allowedModalities: [\"in_person\", \"video\"], defaultDurationMin: 90, sud: true, patientAccess: \"staff_only\", deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n  { id: \"sud_group_iot\", label: \"IOT group\", helper: \"Intensive outpatient group.\", allowedModalities: [\"in_person\", \"video\"], defaultDurationMin: 180, sud: true, patientAccess: \"staff_only\", deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n];\n"
+    "  },\n  { id: \"sud_counseling\", label: \"Individual counseling (SUD)\", helper: \"One-on-one substance-use counseling.\", allowedModalities: [\"video\", \"phone\", \"in_person\"], defaultDurationMin: 50, sud: true, patientAccess: \"book\", patientCondition: \"asam_placement\", deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n  { id: \"sud_group_odf\", label: \"ODF group\", helper: \"Outpatient drug-free group.\", allowedModalities: [\"in_person\", \"video\"], defaultDurationMin: 90, sud: true, patientAccess: \"staff_only\", deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n  // 29 Oct (Mitch, Draft \u2014 pending Christi): durations, modalities and tags are Draft; no codes or rates.\n  { id: \"psychiatric_evaluation\", label: \"Psychiatric evaluation\", helper: \"A first full visit with a prescriber about your mental health and any medications.\", allowedModalities: [\"video\", \"in_person\"], defaultDurationMin: 60, patientAccess: \"request\", patientRequestKind: \"medication\", deliverySystemDraft: { tag: \"smhs_or_nsmhs\", confirm: \"SMHS determination picks county MHP vs plan/FFS\" } },\n  { id: \"sud_assessment\", label: \"ASAM assessment (SUD)\", helper: \"A substance-use assessment that finds the right level of care.\", allowedModalities: [\"video\", \"in_person\"], defaultDurationMin: 60, sud: true, patientAccess: \"staff_only\", deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n  { id: \"chw_visit\", label: \"Community health worker visit\", helper: \"Get help with health needs, benefits and getting to care.\", allowedModalities: [\"video\", \"phone\", \"in_person\"], defaultDurationMin: 30, patientAccess: \"book\", deliverySystemDraft: { tag: \"non_billable\", confirm: \"Billable CHW benefit only once credential checks are approved; otherwise not billed\" } },\n  { id: \"family_collateral\", label: \"Family session\", helper: \"A session with family or people who support you.\", allowedModalities: [\"video\", \"in_person\"], defaultDurationMin: 50, patientAccess: \"request\", patientRequestKind: \"therapy\", deliverySystemDraft: { tag: \"smhs_or_nsmhs\", confirm: \"Collateral billing needs review\" } },\n  { id: \"nurse_visit\", label: \"Nurse visit\", helper: \"A visit with a nurse for vitals, injections or health checks.\", allowedModalities: [\"in_person\"], defaultDurationMin: 20, patientAccess: \"staff_only\", deliverySystemDraft: { tag: \"nsmhs\", confirm: \"Nurse visit billing needs review\" } },\n  { id: \"sud_group_iot\", label: \"IOT group\", helper: \"Intensive outpatient group.\", allowedModalities: [\"in_person\", \"video\"], defaultDurationMin: 180, sud: true, patientAccess: \"staff_only\", deliverySystemDraft: { tag: \"county_dmc_ods\", confirm: \"Confirm Tulare/Kings DMC-ODS participation\" } },\n];\n"
+   ],
+   [
+    "      \"sud_group_iot\",\n    ],\n",
+    "      \"sud_group_iot\",\n      \"psychiatric_evaluation\",\n      \"sud_assessment\",\n      \"chw_visit\",\n      \"family_collateral\",\n      \"nurse_visit\",\n    ],\n"
+   ],
+   [
+    "      \"care_coordination\",\n    ],\n",
+    "      \"care_coordination\",\n      \"family_collateral\",\n    ],\n"
+   ],
+   [
+    "    mediCalStatus: \"active\",\n    services: [\"med_management\", \"controlled_med_moud\", \"intake\", \"therapy_individual\"],\n    locationIds: [\"loc-porterville\"],\n",
+    "    mediCalStatus: \"active\",\n    services: [\"med_management\", \"controlled_med_moud\", \"intake\", \"therapy_individual\", \"psychiatric_evaluation\"],\n    locationIds: [\"loc-porterville\"],\n"
+   ],
+   [
+    "    mediCalStatus: \"pending\",\n    services: [\"therapy_individual\", \"case_management\"],\n    locationIds: [\"loc-visalia\"],\n",
+    "    mediCalStatus: \"pending\",\n    services: [\"therapy_individual\", \"case_management\", \"family_collateral\"],\n    locationIds: [\"loc-visalia\"],\n"
+   ],
+   [
+    "    mediCalStatus: \"active\",\n    services: [\"med_management\", \"controlled_med_moud\", \"intake\"],\n    locationIds: [\"loc-visalia\", \"loc-porterville\"],\n",
+    "    mediCalStatus: \"active\",\n    services: [\"med_management\", \"controlled_med_moud\", \"intake\", \"psychiatric_evaluation\"],\n    locationIds: [\"loc-visalia\", \"loc-porterville\"],\n"
+   ],
+   [
+    "    mediCalStatus: \"pending\",\n    services: [\"therapy_individual\"],\n    locationIds: [\"loc-visalia\"],\n",
+    "    mediCalStatus: \"pending\",\n    services: [\"therapy_individual\", \"family_collateral\"],\n    locationIds: [\"loc-visalia\"],\n"
+   ],
+   [
+    "    mediCalStatus: \"active\",\n    services: [\"sud_counseling\", \"sud_group_odf\", \"sud_group_iot\"],\n    locationIds: [\"loc-visalia\"],\n",
+    "    mediCalStatus: \"active\",\n    services: [\"sud_counseling\", \"sud_group_odf\", \"sud_group_iot\", \"sud_assessment\"],\n    locationIds: [\"loc-visalia\"],\n"
+   ],
+   [
+    "    if (!prescriber) throw new Error(\"Medication visits can only be booked with a physician or PMHNP.\");\n  }\n}\n/** Audit + clinician + patient notices for a staff booking. Part 2-neutral. */\n",
+    "    if (!prescriber) throw new Error(\"Medication visits can only be booked with a physician or PMHNP.\");\n  }\n  const fit = serviceRoleFit(serviceType, STAFF_ROSTER.find((s) => s.clinicianId === clinicianId)?.role, c.credential);\n  if (!fit) throw new Error(`${c.name} doesn't offer this visit type. Pick a suggested clinician.`);\n}\n/** Audit + clinician + patient notices for a staff booking. Part 2-neutral. */\n"
    ]
   ]
  }
