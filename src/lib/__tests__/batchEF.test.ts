@@ -33,7 +33,8 @@ describe("E1 nurse and LVN roles", () => {
     expect(STAFF_ROLES.map((r) => r.key)).toEqual(expect.arrayContaining(["nurse_rn", "lvn"]));
     expect(RN().role).toBe("nurse_rn");
     expect(LVN().role).toBe("lvn");
-    expect(AdelanteEHR.listClinicians().find((c) => c.id === "c-rn1")?.services).toEqual([]);
+    // 30 Oct (Draft): the RN calendar now offers nurse visits only.
+    expect(AdelanteEHR.listClinicians().find((c) => c.id === "c-rn1")?.services).toEqual(["nurse_visit"]);
   });
   it("never prescribe, sign ASAM, or see therapy notes", () => {
     for (const r of ["nurse_rn", "lvn"] as const) {

@@ -352,9 +352,15 @@ export function seedNursingDemo(): void {
   AdelanteEHRExt.addCredential({ clinicianId: "c-lvn1", kind: "license", issuingState: "CA", number: "VN-000000 (fictional)", issuedAt: "2021-03-01", expiresAt: "2027-11-30", fileName: "lvn_license_placeholder.pdf", uploadedBy: "Demo seed" } as never);
   // 30 Oct (Draft — pending clinical sign-off): the RN calendar offers nurse
   // visits in person at Visalia, Mon–Fri 9:00–17:00. The LVN keeps no services.
-  if (AdelanteEHRExt.availabilityBlocksForClinician("c-rn1").length === 0)
-    for (const weekday of [1, 2, 3, 4, 5])
-      AdelanteEHRExt.upsertAvailabilityBlock({ clinicianId: "c-rn1", weekday, start: "09:00", end: "17:00", modality: "in_person", locationId: "loc-visalia", careTypes: ["nurse_visit"] } as never);
+  // Local deterministic ids so this seed never shifts the shared random stream.
+  if (AdelanteEHRExt.availabilityBlocksForClinician("c-rn1").length === 0) {
+    const shared = Math.random; let k = 1;
+    Math.random = () => ((k++ * 0.7548776662466927) % 1);
+    try {
+      for (const weekday of [1, 2, 3, 4, 5])
+        AdelanteEHRExt.upsertAvailabilityBlock({ clinicianId: "c-rn1", weekday, start: "09:00", end: "17:00", modality: "in_person", locationId: "loc-visalia", careTypes: ["nurse_visit"] } as never);
+    } finally { Math.random = shared; }
+  }
   const doc = STAFF_ROSTER.find((s) => s.role === "physician") ?? STAFF_ROSTER.find((s) => s.role === "pmhnp");
   const patient = AdelanteEHR.listPatients()[0];
   if (doc && patient) {
