@@ -4564,7 +4564,7 @@ const clinicians: Clinician[] = [
   },
   {
     id: "c5",
-    name: "Dr. M. Bagga",
+    name: "Dr. R. Sample",
     credential: "M.D.",
     mediCalCredentialed: true,
     mediCalStatus: "active",
@@ -5483,7 +5483,7 @@ if (patients[1]) {
     patientId: patients[1].id,
     requestType: "question",
     context: "Is the patient cleared to restart group therapy this week?",
-    requestedBy: "Dr. M. Bagga",
+    requestedBy: "Dr. R. Sample",
     requestedByRole: "pmhnp",
     status: "open",
     createdAt: ago(90),
@@ -25839,7 +25839,7 @@ export type { Medication } from "./vendors";
 // ---------------------------------------------------------------------------
 {
   const PATIENT_ID = "p-demo-mar-seed";
-  const PMHNP = "Dr. M. Bagga, M.D.";
+  const PMHNP = "Dr. R. Sample, M.D.";
   const NURSE = "Rosa T., LVN";
   const tz = "America/Los_Angeles";
   const seedPatient: Patient = {
@@ -25924,7 +25924,7 @@ export type { Medication } from "./vendors";
 // ---------------------------------------------------------------------------
 {
   const PATIENT_ID = "p-demo-mar-seed-es";
-  const PMHNP = "Dr. M. Bagga, M.D.";
+  const PMHNP = "Dr. R. Sample, M.D.";
   const NURSE = "Rosa T., LVN";
   const tz = "America/Los_Angeles";
   const seedPatient: Patient = {
@@ -26018,7 +26018,7 @@ export function useEhr<T>(selector: () => T): T {
 // ---------------------------------------------------------------------------
 {
   const CM = "Luz Herrera";
-  const PMHNP = "Dr. M. Bagga, M.D.";
+  const PMHNP = "Dr. R. Sample, M.D.";
   const NURSE = "Rosa T., LVN";
   const iso = (d: Date) => d.toISOString();
   const daysAgo = (n: number) => iso(new Date(Date.now() - n * 86400_000));
@@ -26698,13 +26698,13 @@ try {
 // e-prescribing. OUD/AUD medications are Part 2 protected by name
 // (isSudMedicationName) everywhere they render.
 try {
-  const PRESCRIBER = "Dr. M. Bagga, M.D.";
+  const PRESCRIBER = "Dr. R. Sample, M.D.";
   const PRESCRIBER_ID = "s-np1";
   const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
   const byName = (f: string, l: string) =>
     patients.find((p) => p.firstName === f && p.lastName === l)?.id;
   // Prescriber of record split: the PMHNP (Anita Brooks) owns these patients'
-  // prescriptions and refill reviews; Dr. M. Bagga owns everyone else's.
+  // prescriptions and refill reviews; Dr. R. Sample owns everyone else's.
   const NP_PATIENTS = new Set(
     [demoScenarioPatientId("combination"), demoScenarioPatientId("public_referral"), demoScenarioPatientId("medication")].filter(Boolean) as string[],
   );
@@ -26897,7 +26897,7 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
   const p = patients.find((x) => x.id === patientId);
   if (!p) return;
   if ((p.orders ?? []).some((o) => /buprenorphine/i.test(o.drugName) && o.curesCheck)) return;
-  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. M. Bagga");
+  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. R. Sample");
   const draft = AdelanteEHR.addDraftOrder(patientId, {
     drugName: "Buprenorphine-naloxone",
     productName: "Buprenorphine 8 MG / Naloxone 2 MG Sublingual Film",
@@ -26918,10 +26918,10 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
     checkedAt: new Date(Date.now() - 86400000).toISOString().slice(0, 16),
     result: "no_concerns",
     note: "Demo — placeholder, no live query.",
-    by: "Dr. M. Bagga",
+    by: "Dr. R. Sample",
     role: "physician",
   });
-  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. M. Bagga");
+  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. R. Sample");
 }
 
 // Demo — prescriber of record (physician / PMHNP), set through the store so
@@ -26952,9 +26952,9 @@ try {
   };
   book(demoScenarioPatientId("sud_consented"), "c5", 60, "med_management");
   // 27 Oct credentialing (Draft): p1 has active Medi-Cal FFS coverage and
-  // Dr. Bagga's exclusion check is overdue, so the ONE credentialing rule
+  // Dr. Sample's exclusion check is overdue, so the ONE credentialing rule
   // blocks a NEW p1 booking with c5. The demo visit books with the other
-  // enrolled prescriber instead; Dr. Bagga keeps his uncovered-patient visit.
+  // enrolled prescriber instead; Dr. Sample keeps his uncovered-patient visit.
   book("p1", "c3", 150, "med_management");
   book(demoScenarioPatientId("public_referral"), "c3", 90, "med_management");
   book(demoScenarioPatientId("combination"), "c3", 180, "med_management");

@@ -223,7 +223,7 @@ describe("Person-Centered Reentry Care Plan", () => {
         {
           kind: "med_management",
           start: "2026-09-04T17:00:00.000Z",
-          providerName: "Dr. M. Bagga",
+          providerName: "Dr. R. Sample",
           location: "Telehealth",
           modality: "video",
         },

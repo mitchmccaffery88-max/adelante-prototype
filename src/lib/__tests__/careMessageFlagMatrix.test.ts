@@ -112,8 +112,8 @@ describe("Part 2 flag notification matrix", () => {
   it("staff flag + consent OFF → visibility alert to the CM plus one backstop, no duplicates", () => {
     const pid = patient().id;
     setConsentOn(pid, false);
-    const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Bagga", "note")!;
-    const rows = diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Bagga", "pmhnp"));
+    const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Sample", "note")!;
+    const rows = diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Sample", "pmhnp"));
     expect(rows.length).toBe(2);
 
     const cmRow = rows.find((n) => n.recipientStaffId === cmName())!;
@@ -153,8 +153,8 @@ describe("Part 2 flag notification matrix", () => {
   it("staff flag + consent ON → no notifications at all (nothing was hidden)", () => {
     const pid = patient().id;
     setConsentOn(pid, true);
-    const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Bagga", "note")!;
-    const rows = diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Bagga", "pmhnp"));
+    const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Sample", "note")!;
+    const rows = diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Sample", "pmhnp"));
     expect(rows.length).toBe(0);
   });
 
@@ -163,10 +163,10 @@ describe("Part 2 flag notification matrix", () => {
     for (const on of [true, false]) {
       const pid = patient().id;
       setConsentOn(pid, on);
-      const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Bagga", "note")!;
-      AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Bagga", "pmhnp");
+      const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Sample", "note")!;
+      AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Sample", "pmhnp");
       const rows = diff(pid, () =>
-        AdelanteEHR.unflagMessageAsSud(pid, m.id, "Dr. Bagga", "pmhnp"),
+        AdelanteEHR.unflagMessageAsSud(pid, m.id, "Dr. Sample", "pmhnp"),
       );
       expect(rows.length).toBe(0);
     }
@@ -175,8 +175,8 @@ describe("Part 2 flag notification matrix", () => {
   it("re-flagging an already-flagged message emits nothing (no duplicate alerts)", () => {
     const pid = patient().id;
     setConsentOn(pid, false);
-    const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Bagga", "note")!;
-    expect(diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Bagga", "pmhnp")).length,
+    const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Sample", "note")!;
+    expect(diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Sample", "pmhnp")).length,
     ).toBe(2);
     const again = diff(pid, () =>
       AdelanteEHR.flagMessageAsSud(pid, m.id, "Marisol Reyes", "therapist"),
@@ -188,7 +188,7 @@ describe("Part 2 flag notification matrix", () => {
     const pid = patient().id;
     setConsentOn(pid, false);
     const m = AdelanteEHR.sendPatientMessage(pid, "sensitive", true)!;
-    const again = diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Bagga", "pmhnp"));
+    const again = diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Sample", "pmhnp"));
     expect(again.length).toBe(0);
   });
 

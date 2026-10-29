@@ -10,7 +10,7 @@ describe("My work start-of-day", () => {
     expect(dueLabel(new Date(+now - 3 * 86400000).toISOString().slice(0, 10), now)).toBe("Due 3 days ago");
   });
   it("gives prescribers today's visits and their own pending refills", () => {
-    const bagga = { staffId: "s-np1", staffName: "Dr. M. Bagga", clinicianId: "c5" };
+    const bagga = { staffId: "s-np1", staffName: "Dr. R. Sample", clinicianId: "c5" };
     const brooks = { staffId: "s-th3", staffName: "Anita Brooks", clinicianId: "c3" };
     // Time-independent: "today" is the day of one of each clinician's own visits.
     const dayOf = (cid: string) => new Date(AdelanteEHR.listAppointments().find((a) => a.clinicianId === cid && a.status !== "cancelled" && a.status !== "no_show")!.start);

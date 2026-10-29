@@ -16,11 +16,11 @@ describe("physician role mirrors PMHNP", () => {
     expect(LPHA_SUPERVISOR_ROLES).toContain("physician");
     expect(roleSeesAsamSection("physician")).toBe(roleSeesAsamSection("pmhnp"));
   });
-  it("Dr. Bagga is the only physician and the only 'Dr.'", () => {
+  it("Dr. Sample is the only physician and the only 'Dr.'", () => {
     const b = getStaffMember("s-np1")!;
     expect(b.role).toBe("physician");
-    expect(b.name).toBe("Dr. M. Bagga");
-    expect(b.fullName).toBe("Dr. Mandeep Bagga, M.D.");
+    expect(b.name).toBe("Dr. R. Sample");
+    expect(b.fullName).toBe("Dr. Riley Sample, M.D.");
     expect(STAFF_ROSTER.filter((s) => s.name.startsWith("Dr.")).map((s) => s.id)).toEqual(["s-np1"]);
     expect(STAFF_ROLES.some((r) => r.key === "physician")).toBe(true);
   });
@@ -30,7 +30,7 @@ describe("physician role mirrors PMHNP", () => {
     expect(a.credential).toBe("PMHNP-BC");
   });
   it("prescribers have caseloads", () => {
-    expect(myCaseload({ staffId: "s-np1", staffName: "Dr. M. Bagga" }).length).toBeGreaterThanOrEqual(3);
+    expect(myCaseload({ staffId: "s-np1", staffName: "Dr. R. Sample" }).length).toBeGreaterThanOrEqual(3);
     expect(myCaseload({ staffId: "s-th3", staffName: "Anita Brooks", clinicianId: "c3" }).some((p) => p.prescriberStaffId === "s-th3")).toBe(true);
   });
 });

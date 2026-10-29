@@ -20,7 +20,7 @@ describe("Draft with Adel (turn 5)", () => {
     expect(d.subjective).toMatch(/Visit reason/);
     expect(d.assessment).toMatch(/C-SSRS|risk/);
     const before = (luis.progressNotes ?? []).length;
-    const n = acceptNoteDraft({ patientId: luis.id, draft: d, original: d, actor: { name: "Dr. M. Bagga", role: "physician" } });
+    const n = acceptNoteDraft({ patientId: luis.id, draft: d, original: d, actor: { name: "Dr. R. Sample", role: "physician" } });
     expect(n?.authorSource).toBe("ai_draft");
     expect(n?.status).toBe("draft");
     expect((AdelanteEHR.getPatient(luis.id)!.progressNotes ?? []).length).toBe(before + 1);

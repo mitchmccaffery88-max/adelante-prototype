@@ -262,7 +262,7 @@ describe("signed autofill snapshots are frozen", () => {
     ] as never[];
     const snapshot = resolveAutofill(section({ source: "referrals_open" }), ctx({ referrals }));
     AdelanteEHR.signProgressNote(patientId, note.id, {
-      signedBy: "Dr. Bagga",
+      signedBy: "Dr. Sample",
       role: "pmhnp",
       attested: true,
       autofillSnapshots: [snapshot],
@@ -299,7 +299,7 @@ describe("signed autofill snapshots are frozen", () => {
       ctx({ orders: [order()] }),
     );
     AdelanteEHR.signProgressNote(patientId, note.id, {
-      signedBy: "Dr. Bagga",
+      signedBy: "Dr. Sample",
       role: "pmhnp",
       attested: true,
       autofillSnapshots: [snapshot],

@@ -87,7 +87,7 @@ describe("staff-side goal changes", () => {
   });
 
   it("defaults actorRole to staff when only a name is supplied", () => {
-    AdelanteEHR.setGoalStatus(patientId, goalId, "in_progress", "Dr. Bagga");
+    AdelanteEHR.setGoalStatus(patientId, goalId, "in_progress", "Dr. Sample");
     expect(goalAudits().at(-1)!.actorRole).toBe("staff");
   });
 

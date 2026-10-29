@@ -16,7 +16,7 @@ describe("V2 — Brief events in the record-access log", () => {
     const p = luis();
     const before = events(p.id, "brief.viewed").length;
     const t0 = new Date("2026-10-06T15:00:00Z");
-    const v = { actorId: "s-np1", actorName: "Dr. Bagga", role: "physician", patientId: p.id };
+    const v = { actorId: "s-np1", actorName: "Dr. Sample", role: "physician", patientId: p.id };
     expect(recordBriefView({ ...v, at: t0 })).toBe(true);
     expect(recordBriefView({ ...v, at: new Date(+t0 + 60_000) })).toBe(false);
     expect(recordBriefView({ ...v, at: new Date(+t0 + 4 * 60_000) })).toBe(false);

@@ -423,7 +423,7 @@ describe("risk-text translation review", () => {
     AdelanteEHR.signRiskTextReview({
       language: "es",
       role: "medical_director",
-      reviewerName: "Dr. Bagga",
+      reviewerName: "Dr. Sample",
     });
     const approved = AdelanteEHR.getRiskTextReview("es");
     expect(approved?.status).toBe("approved");

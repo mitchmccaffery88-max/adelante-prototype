@@ -120,7 +120,7 @@ describe("structured consent records", () => {
       category: "sud",
     });
     AdelanteEHR.signProgressNote(p.id, note!.id, {
-      signedBy: "Dr. M. Bagga",
+      signedBy: "Dr. R. Sample",
       role: "pmhnp",
       attested: true,
     });

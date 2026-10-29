@@ -100,7 +100,7 @@ test("J1 referral → chase task → peer fill → coordinator books on Anita �
   await shot(page, "j1-2-timely-line");
 });
 
-test("J2 Dr. Bagga order → RN review → LVN gives → RN cosign; each step in Needs my action; LVN can't review", async ({ page }) => {
+test("J2 Dr. Sample order → RN review → LVN gives → RN cosign; each step in Needs my action; LVN can't review", async ({ page }) => {
   const DR = { role: "physician", staffId: "s-np1", name: "" };
   await boot(page, "s-np1", "physician");
   const o = await page.evaluate((dr) => {

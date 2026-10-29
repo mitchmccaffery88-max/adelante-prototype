@@ -1,4 +1,4 @@
-// Faster Adel Brief — open the Brief as Dr. Bagga, a therapist and Luz (ECM) on
+// Faster Adel Brief — open the Brief as Dr. Sample, a therapist and Luz (ECM) on
 // the same SUD patient (Luis). One tab, no reloads; clock frozen.
 import { test, expect, type Page } from "@playwright/test";
 test.describe.configure({ timeout: 150_000 });

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // §C5 walkthrough — a content author creates a housing + first-30-days lesson
-// with Spanish; it is clinical so it goes to review; Dr. Bagga approves.
+// with Spanish; it is clinical so it goes to review; Dr. Sample approves.
 // Marisol sees "Adel suggests" on Luis's care plan and assigns it. Luis sees
 // it in My plan, in his housing need and in Adel chat (EN + ES), finishes it,
 // and the assignment closes. Store calls are the real store functions.
@@ -36,7 +36,7 @@ test("published, tagged content flows into the care plan, needs and Adel chat", 
     const saved = cp.saveContentDraft({ typeId: "library_lesson", id, body, actor: author });
     const selfPublish = cp.publishContent({ typeId: "library_lesson", id, actor: author });
     const review = cp.submitContentForReview({ typeId: "library_lesson", id, actor: author });
-    const approve = cp.publishContent({ typeId: "library_lesson", id, actor: { staffId: "s-np1", name: "Dr. M. Bagga", role: "physician" } });
+    const approve = cp.publishContent({ typeId: "library_lesson", id, actor: { staffId: "s-np1", name: "Dr. R. Sample", role: "physician" } });
     const luis = ehr.listPatients().find((p) => p.firstName === "Luis" && p.lastName === "Camacho")!;
     ehr.addSdohItem(luis.id, { need: "Housing", visibleToPatient: true }, { staffName: "Marisol Reyes", role: "therapist" });
     return { saved: saved.ok, selfPublish: selfPublish.ok, review: review.ok, approve: approve.ok, luisId: luis.id };

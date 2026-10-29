@@ -14,7 +14,7 @@ import { MockScribeAdapter } from "@/lib/vendors/scribe";
 
 const COUNSELOR: ScribeActor = { name: "Renee Castillo", role: "sud_counselor", staffId: "s-sud" };
 const PEER: ScribeActor = { name: "Trey Wilson", role: "peer_specialist", staffId: "s-peer" };
-const DR: ScribeActor = { name: "Dr. M. Bagga", role: "physician", staffId: "s-np1", clinicianId: "c5" };
+const DR: ScribeActor = { name: "Dr. R. Sample", role: "physician", staffId: "s-np1", clinicianId: "c5" };
 const bystander = { kind: "other" as const, agreed: true, name: "Ana R.", relationship: "Neighbour" };
 
 function patient() {

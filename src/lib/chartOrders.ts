@@ -302,7 +302,7 @@ export function listMetabolic(patientId: string): MetabolicSet[] {
 // ---------------------------------------------------------------- demo seed
 export function seedChartOrdersDemo(): void {
   const find = (n: string) => AdelanteEHR.listPatients().find((p) => p.firstName === n);
-  const bagga = { name: "Dr. M. Bagga", role: "physician" };
+  const bagga = { name: "Dr. R. Sample", role: "physician" };
   const luis = find("Luis");
   if (luis && !labs.some((o) => o.patientId === luis.id)) {
     const li = placeLabOrder({ patientId: luis.id, testId: "lithium", reason: "Lithium maintenance — trough level", priority: "routine", dueAt: new Date(Date.now() - 10 * DAY).toISOString(), actor: bagga, at: new Date(Date.now() - 14 * DAY).toISOString() });

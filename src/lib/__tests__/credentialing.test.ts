@@ -185,9 +185,9 @@ describe("billing readiness uses the rule", () => {
   });
 
   it("fails the checklist item when the rule fails, with reasons for Billing and the neutral label for others", () => {
-    // c5 (Dr. Bagga) has an overdue exclusion check; the patient has no payer,
+    // c5 (Dr. Sample) has an overdue exclusion check; the patient has no payer,
     // so booking is allowed but the readiness rule still fails.
-    const pid = signedVisit("c5", "med_management", "physician", "Dr. M. Bagga");
+    const pid = signedVisit("c5", "med_management", "physician", "Dr. R. Sample");
     const svc = billableService(pid);
     expect(svc.credentialed).toBe(false);
     expect(svc.credentialingReasons).toContain("exclusion_check_overdue");

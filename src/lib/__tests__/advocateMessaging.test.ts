@@ -104,7 +104,7 @@ describe("Part 2 masking is independent of communication rights", () => {
   it("masks a flagged message for an advocate with full messaging rights", () => {
     const { patientId, linkId } = connectedAdvocate({ commRights: true });
     const m = AdelanteEHR.sendPatientMessage(patientId, "about my methadone dose")!;
-    AdelanteEHR.flagMessageAsSud(patientId, m.id, "Dr. Bagga", "pmhnp");
+    AdelanteEHR.flagMessageAsSud(patientId, m.id, "Dr. Sample", "pmhnp");
     const view = AdelanteEHR.advocateCareMessages(linkId);
     expect(view.allowed).toBe(true);
     const seen = view.messages.find((x) => x.id === m.id)!;

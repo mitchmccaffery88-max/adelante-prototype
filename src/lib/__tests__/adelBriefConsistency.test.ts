@@ -18,7 +18,7 @@ describe("V1 — every Brief bullet matches the chart section it links to", () =
     expect(r.bullets).toBeGreaterThan(50);
     expect(r.issues.slice(0, 15)).toEqual([]);
   });
-  it("Luis Camacho (SUD) as Dr. Bagga, therapist, Luz (ECM), peer, billing and admin", () => {
+  it("Luis Camacho (SUD) as Dr. Sample, therapist, Luz (ECM), peer, billing and admin", () => {
     const p = AdelanteEHR.getPatient(demoScenarioPatientId("sud_consented")!)!;
     const roles: StaffRole[] = ["physician", "therapist", "ecm_provider", "peer_specialist", "billing", "sys_admin"];
     for (const role of roles) expect(checkBriefFor(p, role), role).toEqual([]);

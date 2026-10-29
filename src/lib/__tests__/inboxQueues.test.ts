@@ -86,17 +86,17 @@ describe("provider requests", () => {
 
   it("claiming is one-shot — a second claim is rejected without a takeover path", () => {
     const r = make();
-    expect(AdelanteEHR.claimProviderRequest(r.id, "Dr. M. Bagga", "pmhnp")).toBe(true);
+    expect(AdelanteEHR.claimProviderRequest(r.id, "Dr. R. Sample", "pmhnp")).toBe(true);
     expect(AdelanteEHR.claimProviderRequest(r.id, "Marisol Reyes", "therapist")).toBe(false);
     const after = AdelanteEHR.listProviderRequests().find((x) => x.id === r.id)!;
     expect(after.status).toBe("claimed");
-    expect(after.assignedTo).toBe("Dr. M. Bagga");
+    expect(after.assignedTo).toBe("Dr. R. Sample");
   });
 
   it("release returns a claimed request to the unclaimed pool", () => {
     const r = make();
-    AdelanteEHR.claimProviderRequest(r.id, "Dr. M. Bagga", "pmhnp");
-    expect(AdelanteEHR.releaseProviderRequest(r.id, "Dr. M. Bagga", "pmhnp")).toBe(true);
+    AdelanteEHR.claimProviderRequest(r.id, "Dr. R. Sample", "pmhnp");
+    expect(AdelanteEHR.releaseProviderRequest(r.id, "Dr. R. Sample", "pmhnp")).toBe(true);
     const after = AdelanteEHR.listProviderRequests().find((x) => x.id === r.id)!;
     expect(after.status).toBe("open");
     expect(after.assignedTo).toBeUndefined();
@@ -105,10 +105,10 @@ describe("provider requests", () => {
 
   it("completing notifies the ORIGINAL requester, once, with the outcome", () => {
     const r = make();
-    AdelanteEHR.claimProviderRequest(r.id, "Dr. M. Bagga", "pmhnp");
+    AdelanteEHR.claimProviderRequest(r.id, "Dr. R. Sample", "pmhnp");
     const before = new Set(AdelanteEHR.listNotifications().map((n) => n.id));
     expect(
-      AdelanteEHR.completeProviderRequest(r.id, "Dr. M. Bagga", "pmhnp", "Refill sent."),
+      AdelanteEHR.completeProviderRequest(r.id, "Dr. R. Sample", "pmhnp", "Refill sent."),
     ).toBe(true);
     const fresh = AdelanteEHR.listNotifications().filter((n) => !before.has(n.id));
     const hit = fresh.filter((n) => n.category === "provider_request_completed");
@@ -117,15 +117,15 @@ describe("provider requests", () => {
     expect(hit[0].body).toContain("Refill sent.");
     // Idempotent: completing again does nothing and re-notifies nobody.
     const before2 = AdelanteEHR.listNotifications().length;
-    expect(AdelanteEHR.completeProviderRequest(r.id, "Dr. M. Bagga", "pmhnp")).toBe(false);
+    expect(AdelanteEHR.completeProviderRequest(r.id, "Dr. R. Sample", "pmhnp")).toBe(false);
     expect(AdelanteEHR.listNotifications().length).toBe(before2);
   });
 
   it("an unclaimed request can be completed directly and still reports back", () => {
     const r = make();
-    expect(AdelanteEHR.completeProviderRequest(r.id, "Dr. M. Bagga", "pmhnp")).toBe(true);
+    expect(AdelanteEHR.completeProviderRequest(r.id, "Dr. R. Sample", "pmhnp")).toBe(true);
     const after = AdelanteEHR.listProviderRequests().find((x) => x.id === r.id)!;
-    expect(after.assignedTo).toBe("Dr. M. Bagga");
+    expect(after.assignedTo).toBe("Dr. R. Sample");
     expect(
       AdelanteEHR.listNotificationsFor("Luz Herrera").some(
         (n) => n.category === "provider_request_completed",

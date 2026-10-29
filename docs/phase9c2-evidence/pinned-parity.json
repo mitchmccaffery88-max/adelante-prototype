@@ -437,10 +437,10 @@
           "task-work-row": [
             "C-SSRS indicatedroutinePendingAdminister the C-SSRS Screener. Trigger: PHQ-9 item 9 positive. Response protocol per risk level is a DRAFT pending clinical sign-off. Due 2026-10-20screener flagTomás Reyna",
             "Connect request — Work or job trainingroutinePendingTomás asked the care team to help connect them for \"Work or job training\". Use Refer on this need; making the referral closes this request. Due 2026-10-22sdoh follow upTomás Reyna",
-            "Coordinate provider switch: Daniel M.routinePendingBooked with a new provider. From Marisol Reyes → Dr. M. Bagga. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchDaniel M.",
+            "Coordinate provider switch: Daniel M.routinePendingBooked with a new provider. From Marisol Reyes → Dr. R. Sample. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchDaniel M.",
             "Coordinate provider switch: Rosa T.routinePendingBooked with a new provider. From James Okafor → Kayla Nguyen. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchRosa T.",
             "Coordinate provider switch: Tomás ReynaroutinePendingPrimary provider reassigned. From Marisol Reyes → Renee Castillo. Demo setup — SUD counselor caseload Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchTomás Reyna",
-            "Refill request: Trazodone 50 mgroutinePendingat bedtime · prescriber Dr. M. Bagga, M.D. · note: Walgreens on Main Due 2026-10-20manualRosa T.",
+            "Refill request: Trazodone 50 mgroutinePendingat bedtime · prescriber Dr. R. Sample, M.D. · note: Walgreens on Main Due 2026-10-20manualRosa T.",
             "Same-day safety follow-up (staff only)urgentPendingSafety screening answers were positive. Follow up privately today. Do not share with advocates or discuss where others may hear. Draft rule — pending clinical review. Due 2026-10-20sdoh follow upTomás Reyna",
             "Same-day — ID and documentsurgentPendingPatient said they need help with \"ID and documents\" today. Draft rule — pending clinical review. Due 2026-10-20sdoh follow upTomás Reyna"
           ],
@@ -584,10 +584,10 @@
           "task-work-row": [
             "C-SSRS indicatedroutinePendingAdminister the C-SSRS Screener. Trigger: PHQ-9 item 9 positive. Response protocol per risk level is a DRAFT pending clinical sign-off. Due 2026-10-20screener flagTomás Reyna",
             "Connect request — Work or job trainingroutinePendingTomás asked the care team to help connect them for \"Work or job training\". Use Refer on this need; making the referral closes this request. Due 2026-10-22sdoh follow upTomás Reyna",
-            "Coordinate provider switch: Daniel M.routinePendingBooked with a new provider. From Marisol Reyes → Dr. M. Bagga. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchDaniel M.",
+            "Coordinate provider switch: Daniel M.routinePendingBooked with a new provider. From Marisol Reyes → Dr. R. Sample. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchDaniel M.",
             "Coordinate provider switch: Rosa T.routinePendingBooked with a new provider. From James Okafor → Kayla Nguyen. Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchRosa T.",
             "Coordinate provider switch: Tomás ReynaroutinePendingPrimary provider reassigned. From Marisol Reyes → Renee Castillo. Demo setup — SUD counselor caseload Verify in-network status, funding lane, and continuity of care. Due 2026-10-20provider switchTomás Reyna",
-            "Refill request: Trazodone 50 mgroutinePendingat bedtime · prescriber Dr. M. Bagga, M.D. · note: Walgreens on Main Due 2026-10-20manualRosa T.",
+            "Refill request: Trazodone 50 mgroutinePendingat bedtime · prescriber Dr. R. Sample, M.D. · note: Walgreens on Main Due 2026-10-20manualRosa T.",
             "Same-day safety follow-up (staff only)urgentPendingSafety screening answers were positive. Follow up privately today. Do not share with advocates or discuss where others may hear. Draft rule — pending clinical review. Due 2026-10-20sdoh follow upTomás Reyna",
             "Same-day — ID and documentsurgentPendingPatient said they need help with \"ID and documents\" today. Draft rule — pending clinical review. Due 2026-10-20sdoh follow upTomás Reyna"
           ],

@@ -9,7 +9,7 @@ import { signAsamAssessment } from "@/lib/asamFlow";
 import { acceptAsamSuggestion, latestFinalAsam, listAsamSuggestions } from "@/lib/asamCarePlan";
 import { MyPlan } from "@/components/careplan/MyPlan";
 
-const BAGGA = { staffId: "s-np1", name: "Dr. M. Bagga", role: "physician" as const, clinicianId: "c5" };
+const BAGGA = { staffId: "s-np1", name: "Dr. R. Sample", role: "physician" as const, clinicianId: "c5" };
 
 describe("C2 — patient My plan shows accepted ASAM goals in plain language, no codes (EN/ES)", () => {
   it("renders goal + what I'll do steps, never dimension codes or jargon", () => {
