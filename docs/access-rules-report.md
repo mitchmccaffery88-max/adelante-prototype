@@ -4,13 +4,13 @@
 
 **Part 2 internal-use basis: pending counsel confirmation.**
 
-## 29 Oct Step 5 — rollback proofs complete, first opening awaiting approval
+## 29 Oct Step 5 — rollback proofs complete, chart group opened
 
 Connected-main rollback acceptance passed **112 checks** covering the requested all-role/dated/group/Intake/member/MOUD/Part 2/restricted vectors. Candidate chart identity/contact/team and general packet/checklist/needs/handoff policies were also tested with actual authenticated reads inside a transaction that rolled back all policy changes. Detailed vectors, fixture corrections, migration IDs and all-table count evidence are in `docs/rls-evidence/access-rules-rollback.md`.
 
 Every public base-table count plus auth.users remained equal before/after. Independent final users/accounts/patients/team/reasons/coverage: **0/0/18/22/0/0**. No helper overrides, matrix changes or grants to browser commands. Handoff date is day1; local date difference59 is allowed day60, difference60 denied day61. All candidate policies remain closed after proof.
 
-Pause for **chart group only**: staff_chart_identity (patients), staff_chart_contacts (patient_contacts), team_context (care_team_assignments), each same-org and existing phase2_chart_read demographics gate. Patient own-row policy unchanged. Packet/handoff migrations require separate later approvals. Tagged Part 2 packet documents remain excluded. Full units/public browser/final closeout follow openings; prior accepted 3,662/53 results are not a post-opening validation claim. Nothing published, persistence OFF.
+The individually approved **chart group** is applied: staff_chart_identity (patients), staff_chart_contacts (patient_contacts), team_context (care_team_assignments), each same-org and existing phase2_chart_read demographics gate. Installed predicates read back correctly; patient own-row policy unchanged. Packet/handoff policies are still false; both browser commands remain revoked. Separate packet approval is next, followed by separate handoff approval. Tagged Part 2 packet documents remain excluded. Full units/public browser/final closeout follow openings; prior accepted 3,662/53 results are not a post-opening validation claim. Nothing published, persistence OFF.
 
 ## 29 Oct shared-gate and catalog checkpoint
 
