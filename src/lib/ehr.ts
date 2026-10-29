@@ -8388,6 +8388,10 @@ export function bookingCredentialingBlock(
   // (undecided is stored as "Coverage — needs review" for Billing/Intake).
   const funding = resolveFundingSource(patientId, serviceType, start);
   if (!funding.source || funding.source === "non_billable") return undefined;
+  // Draft (Christi to confirm): for Adelante-policy sources (private pay, grant)
+  // the hard stop covers visits dated today or later; back-dated entries are
+  // flagged for Billing review instead, never blocked or cancelled.
+  if ((funding.source === "private_pay" || funding.source === "grant_or_county_funded") && start.slice(0, 10) < new Date().toISOString().slice(0, 10)) return undefined;
   const member = credentialingRecordForClinician(clinicianId);
   if (!member) return undefined; // authority self-registers after initial demo bookings
   // 28 Oct fix: booking judges exclusion screening as of now, end-dated items on the visit date.
