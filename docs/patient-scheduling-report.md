@@ -15,6 +15,7 @@ Full units **3,690/3,690 (417 files)**, followed by isolated public browser **53
 - Existing opt-in fictional coverage scenario now assigns its treating clinician through the real `chart_team_assignment` registry before recording SMHS; no default seed or permission matrix changed.
 
 ### Item (a) validation and provenance
+- 20:42 continuation checkpoint: the earlier `/tmp/scheduling29a/` process/output was unavailable in the fresh sandbox, so its partial 36/53 run cannot be certified. A fresh unchanged full nine-spec public run completed **53/53, exit 0, 17.3 minutes**, one worker against :8080, with no edits or units overlapping. Evidence: `/tmp/scheduling29b/public-before.txt` and `public-before.exit`. No test, retry, timeout or assertion changed. Items (b)–(d) have not started; the patientAccess table below remains proposed, not installed.
 - New `coverageControlsOct29.test.ts`: licensed/treating all-role checks, patient/advocate denial, reason-only denial, real date/reason requirements, audit privacy and exactly one registry success, Billing/Intake role parity, and active-referral first-visit funding readback removed at handoff.
 - Full units after implementation: **3,695/3,695, 418 files**. One earlier full-run presentation binding pin rejected the new inline table `rows` binding; the funding section was extracted into its focused component, preserving the older Billing bindings without changing the test or re-pinning it. A sixth Intake flow test was subsequently added; final full-suite/public results are recorded below after completion.
 - Real preview walkthroughs: treating clinician save → SMHS care-plan readback; Billing drawer save → appointment funding readback; Intake first-visit booking → funding drawer save → receipt readback. Desktop 1280 and phone 390 checked; no page errors. Evidence: `/tmp/browser/coverage29a/`, including `check_controls.py`, `check_intake.py`, and screenshots. First browser attempts hit render timing/selector issues; successful fresh runs are recorded in `out.txt` and `intake-out.txt`, both EXIT 0.
@@ -68,10 +69,10 @@ The following is Mitch's requested Draft specification, **not the installed cata
 New IDs are proposed names, not a parallel operational list. Modalities, Draft durations and delivery-system tags remain to be installed in the single catalog and listed for Christi. No rate or code mappings have been created.
 
 ## Remaining scope at green stop
-1. Item (a) controls implemented and read back; finish final full units then public suite at this checkpoint.
+1. Item (a) controls implemented and read back; prior final units were 3,696/3,696; fresh full public checkpoint passed 53/53 as recorded above.
 2. Catalog field + five care types; conditional bilingual patient book/request menu; request duplicate/auto-close and ASAM type linkage.
 3. Shared store/clinician-picker fit, consent, credential, funding and conflict rules; calm self-booking refusal; private-pay confirmation label.
 4. CHW calendar and missing-service defaults, assigned-person priority, category-specific group capacity.
 5. New all-role/patient/advocate privacy and button/store tests, any exact-once source re-pins, final units/public browser and end-to-end scheduling readback.
 
-Budget checkpoint: stop after item (a) once final full units and public browser finish; items (b) catalog/new types/shared booking/picker, (c) CHW/missing-service inventory, and (d) category capacity remain unimplemented. The table above is still proposed for Christi, not an installed patientAccess field.
+20:42 checkpoint: public validation is complete; stop before starting a partial item (b). A subsequent unchanged full unit run also passed **3,696/3,696 across 418 files, exit 0** (`/tmp/scheduling29b/units-checkpoint.txt`, `units-checkpoint.exit`); no unit/browser overlap. Items (b) catalog/new types/shared booking/picker, (c) CHW/missing-service inventory, and (d) category capacity remain unimplemented. The table above is still proposed for Christi, not an installed patientAccess field. Nothing published; persistence OFF; no Supabase changes.
