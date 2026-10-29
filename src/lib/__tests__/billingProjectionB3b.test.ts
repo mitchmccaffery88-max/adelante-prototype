@@ -68,7 +68,9 @@ describe("B3b pinned-clock billing privacy and workspace parity", () => {
         for (const plan of p.coverage.plans ?? []) expect(keys(plan)).toEqual("id payer plan memberId from to source managedCarePlanId managedCarePlanName aidCode shareOfCostCents planNotOnList".split(" ").sort());
       }
     }
-    for (const a of billingAppointments()) expect(keys(a)).toEqual("id patientId clinicianId start durationMin status fundingLane serviceType modality locationId chargeCents islReason".split(" ").sort());
+    // 29 Oct (Mitch, Draft): the only addition is the resolved funding-source value (source, ids, neutral flag codes).
+    for (const a of billingAppointments()) expect(keys(a)).toEqual("id patientId clinicianId start durationMin status fundingLane serviceType modality locationId chargeCents islReason fundingSource".split(" ").sort());
+    for (const a of billingAppointments()) if (a.fundingSource) expect(Object.keys(a.fundingSource).every(k => ["source", "coverageId", "payerKey", "flags", "set", "reasonCode"].includes(k))).toBe(true);
     for (const c of billingClaims()) {
       expect(keys(c)).toEqual(claimKeys.sort());
       const raw = AdelanteEHRExt.listClaims().find(r => r.id === c.id);
