@@ -32,12 +32,11 @@ interface Props {
 }
 
 export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }: Props) {
-  const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
-  if (!patient) return null;
+  if (!patientId) return null;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-        {open && <ChartAccessGate patientId={patient.id}><DrawerBody patientId={patient.id} initialTab={initialTab} /></ChartAccessGate>}
+        {open && <ChartAccessGate patientId={patientId}><DrawerBody patientId={patientId} initialTab={initialTab} /></ChartAccessGate>}
       </SheetContent>
     </Sheet>
   );
@@ -45,10 +44,15 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
 
 function DrawerBody({ patientId, initialTab }: { patientId: string; initialTab?: string }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const { role, staffName } = useActingStaff();
-  const sections = useRecordSections(patient!);
-  const [tab, setTab] = useState(resolveSectionId(initialTab) ?? "overview");
   if (!patient) return null;
+  return <DrawerRecord patient={patient} initialTab={initialTab} />;
+}
+
+function DrawerRecord({ patient, initialTab }: { patient: NonNullable<ReturnType<typeof AdelanteEHR.getPatient>>; initialTab?: string }) {
+  const patientId = patient.id;
+  const { role, staffName } = useActingStaff();
+  const sections = useRecordSections(patient);
+  const [tab, setTab] = useState(resolveSectionId(initialTab) ?? "overview");
   const active = sections.find((s) => s.id === tab) ?? sections[0];
 
   return (

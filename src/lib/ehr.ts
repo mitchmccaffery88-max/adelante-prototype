@@ -24,7 +24,7 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
-import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource } from "./credentialing";
+import { credentialedForService, credentialingRecordForClinician, isBillableServiceType, CREDENTIALING_NEUTRAL_LABEL, registerBookedVisitSource, registerCredentialingServiceCatalog } from "./credentialing";
 import { assertIntakeBookingBoundary, assertIntakeGroupBoundary, type IntakeBookingProof } from "./intakeBookingBoundary";
 import { assertGroupApproval, assertGroupStaffRequest, groupRequestHooks } from "./groupRequestBoundary";
 import { ON_CALL_GAP, onCallOwnerFor } from "./onCallBoundary";
@@ -2157,8 +2157,6 @@ export interface Appointment {
   fundingLane?: FundingLane;
   /** What kind of visit this is (added in scheduling v2). */
   serviceType?: ServiceType;
-  /** Explicit controlled-substance service fact; never inferred from SUD or medication visit. */
-  controlledSubstance?: boolean;
   /** How the visit happens. Legacy rows may be undefined; treat as "video". */
   modality?: "video" | "phone" | "in_person";
   /** Required when modality === "in_person". */
@@ -2343,6 +2341,8 @@ export interface ServiceTypeInfo {
   defaultDurationMin: number;
   /** Substance-use visit type (42 CFR Part 2). */
   sud?: boolean;
+  /** Draft service classification — pending clinical sign-off; never patient/SUD inference. */
+  controlledSubstanceDraft?: boolean;
 }
 
 export interface ClinicLocation {
@@ -2390,6 +2390,9 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     helper: "Talk with a prescriber about medications.",
     allowedModalities: ["video", "in_person"],
     defaultDurationMin: 30,
+    // No dedicated buprenorphine/controlled-medication entries exist. Mitch
+    // approved a Draft flag on the matching catalog entry, pending confirmation.
+    controlledSubstanceDraft: true,
   },
   {
     id: "peer_support",
@@ -8350,7 +8353,6 @@ export function bookingCredentialingBlock(
   serviceType: string | undefined,
   patientId: string,
   start: string,
-  controlledSubstance = false,
 ): string | undefined {
   if (!isBillableServiceType(serviceType)) return undefined;
   const member = credentialingRecordForClinician(clinicianId);
@@ -8358,7 +8360,7 @@ export function bookingCredentialingBlock(
   const payer = AdelanteEHR.activeCoveragePlan(patientId)?.payer;
   if (!payer) return undefined;
   // 28 Oct fix: booking judges exclusion screening as of now, end-dated items on the visit date.
-  const res = credentialedForService(member.staffId, payer, serviceType, start, { asOf: new Date().toISOString(), controlledSubstance });
+  const res = credentialedForService(member.staffId, payer, serviceType, start, { asOf: new Date().toISOString() });
   return res.ok ? undefined : "This clinician can't be booked for this service right now.";
 }
 
@@ -8463,6 +8465,7 @@ function _requestCancel(
 
 // 28 Oct fix: lets the coordinator tile see booked visits after a check falls due.
 registerBookedVisitSource(() => AdelanteEHR.listAppointments());
+registerCredentialingServiceCatalog(serviceType => SERVICE_TYPES.some(s => s.id === serviceType && s.controlledSubstanceDraft === true));
 
 export const AdelanteEHR = {
   subscribe(l: Listener) {
@@ -9257,7 +9260,6 @@ export const AdelanteEHR = {
     start: string;
     durationMin: number;
     serviceType?: ServiceType;
-    controlledSubstance?: boolean;
     modality?: "video" | "phone" | "in_person";
     locationId?: string;
     /** How this booking was created. Defaults to `staff_scheduled`. */
@@ -9297,7 +9299,7 @@ export const AdelanteEHR = {
     // the "credentialed for this service" rule can't be booked for NEW
     // billable services for that payer. Non-billable support work continues;
     // existing appointments are flagged for Billing review, never cancelled.
-    const credBlock = bookingCredentialingBlock(input.clinicianId, input.serviceType, input.patientId, input.start, input.controlledSubstance);
+    const credBlock = bookingCredentialingBlock(input.clinicianId, input.serviceType, input.patientId, input.start);
     if (credBlock) throw new Error(credBlock);
     const bookRole = input.bookedBy?.role as StaffRole | undefined;
     const isStaffBooking = !!bookRole && input.source !== "self_scheduled" && bookRole !== ("patient" as StaffRole);

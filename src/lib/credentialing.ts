@@ -212,6 +212,13 @@ export const BILLABLE_SERVICE_TYPES: readonly string[] = [
 ];
 export const isBillableServiceType = (s?: string) => !!s && BILLABLE_SERVICE_TYPES.includes(s);
 
+// The existing EHR service catalog owns this Draft classification. Registration
+// avoids importing the EHR store back into its credentialing evaluator.
+let serviceRequiresDea: (serviceType?: string) => boolean = () => false;
+export function registerCredentialingServiceCatalog(read: (serviceType?: string) => boolean): void {
+  serviceRequiresDea = read;
+}
+
 export interface CredentialingCheckInput {
   /** Payer name; the enrollment check runs only when a payer is known. */
   payer?: string;
@@ -225,8 +232,6 @@ export interface CredentialingCheckInput {
    * Omitted = the date of service (historical mode).
    */
   asOf?: string;
-  /** Explicit service fact; medication management alone does not imply controlled substances. */
-  controlledSubstance?: boolean;
 }
 
 export type CredentialingCheckResult = { ok: true } | { ok: false; reasons: CredentialingReasonCode[] };
@@ -272,7 +277,7 @@ export function evaluateCredentialing(
   // 28 Oct carry-over: prescribers require verified, dated DEA evidence only
   // for explicitly controlled-substance services. Never infer from SUD status.
   const role = getStaffMember(record.staffId)?.role;
-  if (input.controlledSubstance && (role === "pmhnp" || role === "physician")) {
+  if (serviceRequiresDea(input.serviceType) && (role === "pmhnp" || role === "physician")) {
     if (!record.dea?.number.trim() || !record.dea.verifiedAt || !Number.isFinite(asDay(record.dea.verifiedAt)) || asDay(record.dea.verifiedAt) > d) reasons.push("dea_not_verified");
     if (!record.dea?.expiresAt || !Number.isFinite(asDay(record.dea.expiresAt)) || asDay(record.dea.expiresAt) < d) reasons.push("dea_expired");
   }
@@ -369,10 +374,10 @@ export function credentialedForService(
   payer: string | undefined,
   serviceType: string | undefined,
   dateOfService: string,
-  opts: { asOf?: string; controlledSubstance?: boolean } = {},
+  opts: { asOf?: string } = {},
 ): CredentialingCheckResult {
   const asOf = opts.asOf ?? new Date().toISOString();
-  return evaluateCredentialing(credentialingRecordForStaff(staffId), { payer, serviceType, dateOfService, asOf, controlledSubstance: opts.controlledSubstance });
+  return evaluateCredentialing(credentialingRecordForStaff(staffId), { payer, serviceType, dateOfService, asOf });
 }
 
 // 28 Oct fix: ehr self-registers its booked visits so the coordinator tile can
@@ -693,7 +698,6 @@ interface AppointmentLike {
   start: string;
   status: string;
   serviceType?: string;
-  controlledSubstance?: boolean;
 }
 interface ClaimLike {
   id: string;
@@ -702,7 +706,6 @@ interface ClaimLike {
   serviceDate?: string;
   state: string;
   serviceType?: string;
-  controlledSubstance?: boolean;
 }
 
 export interface CredentialingReviewFlag {
@@ -729,7 +732,7 @@ export function credentialingReviewFlags(
     if (!member) continue;
     // 28 Oct fix: judged as of now until the visit day, then on the visit day — flag, never cancel.
     const now = new Date().toISOString();
-    const res = credentialedForService(member.id, payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now, controlledSubstance: a.controlledSubstance });
+    const res = credentialedForService(member.id, payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now });
     if (!res.ok) out.push({ kind: "appointment", id: a.id, staffId: member.id, reasons: res.reasons });
   }
   for (const c of claims) {
@@ -737,7 +740,7 @@ export function credentialingReviewFlags(
     const member = STAFF_ROSTER.find((s) => s.clinicianId === c.clinicianId);
     if (!member) continue;
     // Billing readiness: exclusion judged on the date of service (unchanged mode).
-    const res = credentialedForService(member.id, payerForPatient(c.patientId), c.serviceType, c.serviceDate ?? "", { asOf: c.serviceDate ?? "", controlledSubstance: c.controlledSubstance });
+    const res = credentialedForService(member.id, payerForPatient(c.patientId), c.serviceType, c.serviceDate ?? "", { asOf: c.serviceDate ?? "" });
     if (!res.ok) out.push({ kind: "claim", id: c.id, staffId: member.id, reasons: res.reasons });
   }
   return out;

@@ -7,6 +7,7 @@ import { withApprovedOpsWorkspaceB3b } from "@/test/opsWorkspaceB3bApproved";
 import { withApprovedBillingWorkspaceB3b } from "@/test/billingWorkspaceB3bApproved";
 import { withApprovedP3 } from "@/test/privacyP3Approved";
 import { withApprovedConsentB2 } from "@/test/consentB2Approved";
+import { withApprovedChartSelectionOct29 } from "@/test/chartSelectionOct29Approved";
 // 26 Oct signup change (Mitch): enrollReferral websiteSignup option — signup/reset/review additions only.
 import { withApprovedCredentialingOct27 } from "@/test/credentialingOct27Approved";
 
@@ -32,7 +33,7 @@ function inventory(source: string) {
 describe("9c-2 unchanged values, IDs and handlers against rollback", () => {
   it.each(files)("%s preserves existing bindings", path => {
     // 26 Oct Phase A: one clinical-only triage row host in the existing Today tile; all prior bindings pinned.
-    const baseline = withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path))));
+    const baseline = withApprovedChartSelectionOct29(path, withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path)))));
     const from = 'return <div className="space-y-4">{!secondary &&';
     const expected = path === "src/components/clinician/WorkspaceDashboard.tsx" ? baseline.replace(from, 'return <div className="space-y-4">{!secondary && <PreChartTriageRows actor={actor} />}{!secondary &&') : baseline;
     if (path === "src/components/clinician/WorkspaceDashboard.tsx") expect(baseline.split(from)).toHaveLength(2);

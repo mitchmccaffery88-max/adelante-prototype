@@ -4,6 +4,19 @@
 
 **Part 2 internal-use basis: pending counsel confirmation.**
 
+## 29 Oct shared-gate and catalog checkpoint
+
+Step 4 app checkpoint complete. Today visit click, Inbox request link, bell cancellation link and case-manager quick peek all reached the shared reason gate for an off-team therapist. Quick peek now defers the patient lookup and section hooks to the gated child; the clinician selected-patient lookup checks entry first and keeps the reason gate visible for the selected ID. Actual Covering/consult open loaded the record only after the gate and read back the persistent reason banner. Search/deep-link/print/embedded picker and canonical patient access-log reason proofs from the preceding checkpoint remain applicable. No matrix values changed.
+
+- Full units after gate changes: **3,660/3,660**, **414/414 files**, exit 0, 133.43s. Saved `e2e/accessClickThroughOct29.spec.ts`: **1/1**, exit 0, one worker :8080 after units.
+- Full units after catalog DEA refactor: **3,662/3,662**, **414/414 files**, exit 0, 196.51s. Focused DEA/as-of/Billing projection **29/29**. First catalog full run had one test using a nonexistent exported catalog variable (3,661 passed/1 failed); corrected to existing listServiceTypes accessor, not by changing any product assertion.
+- Approved exact-once SHA-256 source adapters retain prior-source hashes and verify replacement output; Billing codes/dates/provider/units and note-text exclusions remain unchanged. Accepted 73 snapshot rows and sys_admin go-live reversals below are untouched.
+- DEA classification is now solely the matching existing Draft catalog entry `med_management`, pending Mitch confirmation; booking and Billing receive no controlled flag. Live registry credential edit → existing Billing Credentialing view produced the DEA review result. See credentialing report.
+
+**Step 5 remains unstarted at this completed green app checkpoint:** all-role temporal/group/Intake/patient/advocate rolled-back SQL vectors, before/after counts and actual candidate-policy reads are still required. No SQL fixture, new count proof, migration or policy opening occurred here. Chart, packet and handoff groups stay closed. Each passing group still needs its own shown migration and approval. Persistence OFF; no publication; reason/coverage command transport revoked until 2d.
+
+Full public browser suite: **53/53**, 12.6m, all nine public/website specs, one worker :8080, started after green units with no overlapping browser suite. Includes the unchanged on-team HLOC required-element/disclosure test. Post-suite actual registry credential edit → Billing DEA readback passed again, no page errors; shared click-through browser regression **1/1**, 25.5s including setup. Logs `/tmp/access-oct29/{units-dea-final,public-final,clickthrough-final}.txt`, `/tmp/browser/dea-catalog/final-out.txt`. Build OK. Stopped at the completed app/catalog checkpoint rather than claiming unproved SQL acceptance.
+
 ## 28 Oct step 4 green-unit checkpoint — partial, no policy opening
 
 The patient and compliance access-log hosts now display only validated canonical reason labels; active reason grants attach the reason code to subsequent content-free record/print access events. Typed opening notes never enter those log rows. No matrix or access-log audience expanded.

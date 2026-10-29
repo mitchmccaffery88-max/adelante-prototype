@@ -4,16 +4,16 @@
 - [x] Tighten MOUD care-manager self-only assignment/replacement; SQL mirror and same-transaction end/retain proof; units 3,607/3,607, no retained fixtures.
 - [x] Step 2 coordinator request/coverage/weekly review hosts; units 3,627/3,627; real preview request/open/approval/coverage/review at 1280 and 390.
 - [x] Step 3 (28 Oct 21:05 continuation) Intake logged read-only 60-day host; units 3,648/3,648; real checklist/document audit readback and live closure in preview, 1280/390.
-- [ ] Step 4 (28 Oct green-unit checkpoint): reason log and global search/deep-link/print/inline embedded gate readback pass; units 3,658/3,658. Today/inbox/bell/quick-peek browser proof remains; DEA Booking UI capture/Billing fact propagation stops at approved privacy allowlists (no expansion).
+- [x] Step 4 (29 Oct): reason log, search/deep-link/print/embedded picker, Today/inbox/bell/quick-peek shared pre-data gates proved. Full units 3,662/3,662; saved click-through browser regression 1/1. No record-class changes.
 - [ ] Step 5 all-role rollback vectors and separately passing read policies.
-- [ ] Step 6 public browser then preview readback, final reports/Draft matrix.
+- [x] App checkpoint public browser 53/53 (12.6m), after full units, one worker :8080; post-suite DEA registry/Billing readback and shared-gate browser 1/1; checkpoint reports/Draft matrix updated. Final SQL acceptance report remains with Step 5.
 - [x] Carry-over: on-team HLOC therapist fixture via registry; unchanged HLOC browser 1/1 passed after green units.
-- [ ] DEA carry-over: evaluator/booking guard/readiness checks and 8 tests pass; privacy-safe UI capture, Billing flags/count projection and end-to-end proof remain, no allowlist expansion.
+- [x] DEA catalog checkpoint: Draft med_management flag only; no booking/projection flag; evaluator and Billing existing service-type path verified. Focused DEA/as-of/projection 29/29, full units 3,662/3,662, live registry credential edit → Billing DEA review readback. Mitch confirmation of Draft matching entry remains.
 - Persistence OFF; nothing published; Part 2 matrix unchanged; commands browser-revoked until 2d.
 
 ## 28 Oct credentialing as-of fix (Draft)
 - [x] Exclusion screening judged as of booking time; DOS mode for billing readiness; tile shows checks due before booked visits; relative seeds; tests + re-pins; units 3,599/3,599.
-- [ ] Full public rerun still pending; the prior HLOC failure is resolved by on-team fixture, targeted unchanged HLOC assertions pass 1/1.
+- [x] Full public rerun 29 Oct 53/53; on-team HLOC required-element/disclosure test passed unchanged.
 
 ## 27 Oct access rules — 28 Oct implementation (Draft)
 - [ ] 28 Oct 16:32 approved resume: narrow superseded assertions/pins/snapshot, MOUD normal team membership, remaining hosts and rollback vectors, separately proven read groups; full units then public browser/readback. Stop on unrelated failures.
@@ -239,7 +239,6 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] Registry-driven domain cutover/staff patient RLS — blocked by Phase 2 care-team/chart context and trusted mutation contracts; all persist_* stay off.
 - [x] Re-pin clinician.tsx (access-rules adapter); full units green 3,585/3,585
 - [x] MOUD episode → care-team registry write + SQL mirror + rollback proof (part B step 1; units 3,604/3,604)
-- [ ] Part B steps 3–6: Intake 60-day host; access-log reason + gate on every route; all-role SQL vectors + per-group policy opens; units, browser (incl. HLOC fixture), preview readback, final docs; DEA carry-over
+- [ ] Remaining Part B: all-role SQL temporal/group/Intake/patient/advocate vectors and counts; candidate-policy read proofs; separately shown/approved chart, packet and handoff migrations; final SQL acceptance report.
 - [x] Coordinator hosts (28 Oct 20:23 continuation)
-- [ ] Intake 60-day host, access-log readback, gate verification
-- [ ] All-role SQL vectors, open passing policy groups, browser suite, preview readback, final reports
+- [x] Intake host, access-log reason and shared-gate app checkpoint; catalog DEA; units 3,662/3,662, public browser 53/53, preview readback. SQL groups remain closed.
