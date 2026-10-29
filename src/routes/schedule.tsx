@@ -2,7 +2,7 @@ import { scheduleCopy, serviceLabel, serviceHelper, SCHEDULE_ES_DRAFT } from "@/
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { act, actFor } from "@/lib/actions/act";
 import { runAction } from "@/lib/actions/runAction";
-import { patientBookableClinicians, patientPrecheck, patientServiceMenu, patientSlots, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
+import { patientBookableClinicians, patientPrecheck, patientFeeNotice, patientServiceMenu, patientSlots, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
 import { useEffect, useMemo, useState } from "react";
 import {
   AdelanteEHR,
@@ -90,6 +90,7 @@ function SchedulePage() {
   const activeOption = pickerOptions.find((o) => o.service.id === serviceType);
   const activeService = activeOption?.service;
   const isRequest = activeOption?.mode === "request" && !keepType;
+  const feeNotice = useEhr(() => (isRequest ? undefined : patientFeeNotice(patient?.id, serviceType)));
   const allowedModalities = activeService?.allowedModalities ?? ["video", "phone", "in_person"];
   const [modality, setModality] = useState<"video" | "phone" | "in_person">(
     existing?.modality ?? "video",
@@ -634,6 +635,12 @@ function SchedulePage() {
             {sc.sessionLength(defaultDuration)}
           </span>
         </div>
+        {feeNotice && (
+          <p data-testid="patient-fee-notice" className="rounded-md border p-3 text-sm text-foreground flex items-start gap-2">
+            <Info className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />
+            {feeNotice === "sliding_scale" ? sc.feeSlidingScale : sc.coverageReview}
+          </p>
+        )}
         <Button
           className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
           onClick={submit}

@@ -7,6 +7,7 @@
 import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, type Appointment, type AppointmentRequestKind, type AppointmentRequestOutcome, type Clinician, type Patient, type ServiceType, type ServiceTypeInfo } from "./ehr";
 import type { StaffRole } from "./roles";
 import { eligibleClinicians } from "./bookingFlow";
+import { resolveFundingSource } from "./fundingSource";
 import { availableSlots, hasAvailabilitySet, type BookingModality } from "./clinicianAvailability";
 
 /** Pseudo-role used in audit rows when the patient acts for themselves. */
@@ -213,4 +214,18 @@ export function advocateReschedule(input: { linkId: string; apptId: string; star
   if (!appt || !patient || !appt.serviceType) throw new Error("That appointment is not available.");
   engineCheck(patient, appt, input.start, appt.clinicianId, appt.serviceType, apptModality(appt));
   AdelanteEHR.advocateRescheduleAppointment(input.linkId, input.apptId, input.start);
+}
+
+/**
+ * 30 Oct (Mitch, Draft — tiers pending Christi): the patient-facing fee notice
+ * shown before confirming. Presentation only — it never blocks the booking.
+ * private_pay → sliding-scale notice; resolver needs review → neutral notice.
+ */
+export type PatientFeeNotice = "sliding_scale" | "coverage_review";
+export function patientFeeNotice(patientId: string | undefined, serviceType: ServiceType | "" | undefined, startIso?: string): PatientFeeNotice | undefined {
+  if (!patientId || !serviceType) return undefined;
+  const r = resolveFundingSource(patientId, serviceType, (startIso ?? new Date().toISOString()).slice(0, 10));
+  if (r.source === "private_pay") return "sliding_scale";
+  if (!r.source || r.flags.includes("coverage_review")) return "coverage_review";
+  return undefined;
 }
