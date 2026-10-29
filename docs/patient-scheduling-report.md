@@ -44,8 +44,8 @@ Full units **3,690/3,690 (417 files)**, followed by isolated public browser **53
 ### Individual picker today
 `/schedule` reads all 11 existing catalog entries through `listServiceTypes`. No `patientAccess` field exists yet. Missing care types and conditional request/book filtering are not implemented at this checkpoint.
 
-## Full proposed patientAccess table for Christi to confirm
-The following is Mitch's requested Draft specification, **not the installed catalog**.
+## patientAccess table for Christi to confirm (installed 29 Oct, Draft)
+Installed in the single catalog (`ehr.ts` SERVICE_TYPES `patientAccess`, `patientCondition`, `patientRequestKind`). Draft — pending Christi.
 
 | Catalog type | Draft patientAccess | Condition / destination |
 |---|---|---|
@@ -66,7 +66,15 @@ The following is Mitch's requested Draft specification, **not the installed cata
 | family_collateral (new) | request | Therapist / associate; Ask my team |
 | nurse_visit (new) | staff_only | RN / LVN |
 
-New IDs are proposed names, not a parallel operational list. Modalities, Draft durations and delivery-system tags remain to be installed in the single catalog and listed for Christi. No rate or code mappings have been created.
+Installed conditions: "established" (therapy, medication, MOUD) = only clinicians the patient already sees for that type (prior non-cancelled visit; therapy also the assigned clinician); otherwise the type reads "Ask my team" and files the existing therapy/medication request. MOUD "active episode" is approximated by an established MOUD prescriber — counsel/Christi to confirm. SUD counseling needs a signed ASAM with a recorded level, otherwise it is hidden. Request types: psychiatric evaluation → medication request; family session → therapy request. New-type fit (Draft): psychiatric evaluation prescribers only; ASAM assessment SUD counselor or licensed clinician on a calendar that lists it; CHW visit community_health_worker role only (no CHW calendar yet — item c); family session therapist/associate; nurse visit RN/LVN credential (no such staff in the demo, so not bookable). New-type delivery tags: psychiatric evaluation smhs_or_nsmhs; ASAM county_dmc_ods; CHW non_billable until credential checks are approved; family session smhs_or_nsmhs (collateral billing needs review); nurse visit nsmhs (needs review). Durations 60/60/30/50/20 min are Draft. One fictional demo enrollment row was added (c3, Medi-Cal FFS, psychiatric evaluation).
+
+### Step (b) results — 29 Oct
+1. patientAccess menu + `patient_request_visit` registry action (existing duplicate/auto-close request flow). Full units 3,703/3,703 (first run had one unrelated jsdom teardown error in `appointmentDirections.test.tsx`; that file passed alone twice and an immediate full rerun exited 0).
+2. Five new types, ES draft labels, Visalia in-person list, request-kind dedupe. Full units 3,706/3,706, exit 0.
+3. One booking rule: self-scheduled visits must be a patient "book" type and never a group (calm refusal); clinician fit, telehealth and group consent now run for patient and staff bookings; credentialing for the resolved funding source and conflicts already ran for both. Pickers drop calendars blocked by `bookingCredentialingBlock`. Full units 3,709/3,709, exit 0.
+Preview check: as the demo patient, the menu listed book and "Ask my team" types with no intake, group, ASAM or nurse entries; "Ask my team" for psychiatric evaluation returned "You already have this kind of visit scheduled" (existing medication visit). Tests corrected (not weakened): two self-booking fixtures now give the patient an established clinician; seven raw conflict-test self-bookings now name a visit type. Exact-once re-pins: `src/test/patientSchedulingOct29Approved.ts` (ehr.ts 8a53351e… prior, ehr-ext.ts) chained after coverage rules; runAction snapshot gained only the new action rows.
+
+New IDs are names in the single catalog, not a parallel operational list. Modalities, Draft durations and delivery-system tags remain to be installed in the single catalog and listed for Christi. No rate or code mappings have been created.
 
 ## Remaining scope at green stop
 1. Item (a) controls implemented and read back; prior final units were 3,696/3,696; fresh full public checkpoint passed 53/53 as recorded above.

@@ -3,12 +3,16 @@
 ## 29 Oct patient scheduling (Draft, pending Christi)
 - [x] 20:00 item (a): SMHS treating-clinician dated/reason control and safe Billing/active-referral Intake funding drawer; real desktop/phone save/readback, full units 3,695/3,695; additional sixth Intake test passed.
 - [x] Item (a) prior final full units 3,696/3,696; 20:42 fresh isolated public rerun 53/53, exit 0, 17.3m (earlier partial run output unavailable); report recorded. No scheduling code changed in this continuation.
-- [ ] Continue (b) catalog/new types/shared booking/picker, then (c) CHW calendar and missing-services affected-staff inventory, then (d) category-specific capacity; units after each.
+- [x] (b) steps 1–3: patientAccess menu with "Ask my team", five new types, one patient/staff booking rule and credential-filtered picker; full units green after each step (3,703 → 3,706 → 3,709).
+- [ ] (c) CHW calendar mapping/default availability; missing services list defaults to none; affected-staff list.
+- [ ] (d) Category-specific group capacity (billable 2–12; non-billable open facilitator-set Draft default).
+- [ ] Final: full units, then public browser suite once; patient-scheduling report final.
 - [x] Carry-over bridge: dated coverage determinations and existing Billing order feed the single resolver; full units 3,690/3,690 then isolated public browser 53/53; coverage report.
 - [x] Remaining carry-over controls: treating-clinician SMHS; Billing/Intake funding override; coverage report updated (final checkpoint validation listed above).
 - [x] Inspect and report calendars/services/availability and current group capacity behavior before changes (patient-scheduling-report.md).
-- [ ] Catalog patientAccess and five missing types; conditional patient book/request menu without changing /schedule layout.
-- [ ] Shared booking/clinician-picker checks, request kinds, ASAM visit migration, coverage-review/private-pay presentation.
+- [x] Catalog patientAccess and five missing types; conditional patient book/request menu without changing /schedule layout.
+- [x] Shared booking/clinician-picker checks and request kinds.
+- [ ] ASAM-visit migration to sud_assessment and private-pay/coverage-review presentation on /schedule.
 - [ ] Existing calendar-model fixes and category-specific group capacity.
 - [ ] All-role tests, exact-once re-pins, full units then public browser, patient-scheduling report and confirm table.
 - No publication, persistence or Supabase changes. Stop only at a completed green checkpoint; list remainder.
