@@ -160,7 +160,7 @@ describe("billing projection and roles", () => {
   it("buttons match the store for all 18 roles", () => {
     expect(STAFF_ROLES.length).toBe(18);
     const find = (id: string) => CHART_ACTIONS.find((a) => a.id === id)!;
-    for (const role of STAFF_ROLES) {
+    for (const { key: role } of STAFF_ROLES) {
       const ctx = { role, staffId: "x" } as never;
       expect(find("appointment_funding_set").allowed(ctx, undefined as never).state === "allowed").toBe(canOverrideFundingSource(role));
       expect(find("schedule_visit_series").allowed(ctx, undefined as never).state === "allowed").toBe(canScheduleRole(role));
