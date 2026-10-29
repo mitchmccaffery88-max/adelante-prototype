@@ -823,6 +823,7 @@ interface AppointmentLike {
   start: string;
   status: string;
   serviceType?: string;
+  fundingSource?: { source?: FundingSource; payerKey?: string };
 }
 interface ClaimLike {
   id: string;
@@ -852,12 +853,14 @@ export function credentialingReviewFlags(
 ): CredentialingReviewFlag[] {
   const out: CredentialingReviewFlag[] = [];
   for (const a of appointments) {
-    if (a.status !== "scheduled" || !isBillableServiceType(a.serviceType)) continue;
+    // 29 Oct (Draft): a stored funding source decides; otherwise the earlier billable-type rule.
+    const fs = a.fundingSource?.source;
+    if (a.status !== "scheduled" || (fs ? fs === "non_billable" : !isBillableServiceType(a.serviceType))) continue;
     const member = STAFF_ROSTER.find((s) => s.clinicianId === a.clinicianId);
     if (!member) continue;
     // 28 Oct fix: judged as of now until the visit day, then on the visit day — flag, never cancel.
     const now = new Date().toISOString();
-    const res = credentialedForService(member.id, payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now });
+    const res = credentialedForService(member.id, fs ? a.fundingSource?.payerKey : payerForPatient(a.patientId), a.serviceType, a.start, { asOf: a.start < now ? a.start : now, ...(fs ? { fundingSource: fs } : {}) });
     if (!res.ok) out.push({ kind: "appointment", id: a.id, staffId: member.id, reasons: res.reasons });
   }
   for (const c of claims) {

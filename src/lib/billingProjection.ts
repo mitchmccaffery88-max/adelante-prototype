@@ -11,7 +11,7 @@ import { coverageWorklistRows, type CoverageWorklistRow } from "./coverageWorkli
 export const billingAudience = (role: StaffRole) => role === "billing" || role === "billing_coordinator";
 export const CLAIM_KEYS = ["id", "encounterId", "patientId", "clinicianId", "state", "updatedAt", "serviceDate", "serviceCode", "program", "programSource", "codeSource", "unitsSource", "units", "minutes", "rateId", "rateCentsPerUnit", "rateStatus", "chargeCents", "noRateReason", "denialReason", "taxonomy", "supervisingStaffId", "arrangementMissing", "payerId", "copayCents", "deductibleCents", "coinsuranceBps", "payerPortionCents", "patientPortionCents", "patientPaidCents", "patientBalanceCents", "overpaidReview", "voidBlocked"] as const;
 export const PAYMENT_KEYS = ["id", "amountCents", "receivedOn", "method", "reference", "recordedById", "recordedByName", "recordedByRole", "recordedAt", "voidedAt", "voidedById", "voidedByName", "voidReason"] as const;
-export const APPOINTMENT_KEYS = ["id", "patientId", "clinicianId", "start", "durationMin", "status", "fundingLane", "serviceType", "modality", "locationId", "chargeCents", "islReason"] as const;
+export const APPOINTMENT_KEYS = ["id", "patientId", "clinicianId", "start", "durationMin", "status", "fundingLane", "serviceType", "modality", "locationId", "chargeCents", "islReason", "fundingSource"] as const;
 export const PLAN_KEYS = ["id", "payer", "plan", "memberId", "from", "to", "source", "managedCarePlanId", "managedCarePlanName", "aidCode", "shareOfCostCents", "planNotOnList"] as const;
 export const COVERAGE_KEYS = ["status", "verified", "coverageType", "otherPlanName"] as const;
 function pick<T, K extends keyof T>(value: T, keys: readonly K[]): Pick<T, K> {
