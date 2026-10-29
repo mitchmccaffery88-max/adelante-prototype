@@ -1,5 +1,6 @@
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { ChartAccessGate } from "@/components/chart/ChartAccessGate";
+import { chartEntryFor } from "@/lib/chartAccess";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { act, actFor, setViewingStaff } from "@/lib/actions/act";
@@ -171,7 +172,8 @@ function ClinicianPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookAsamTaskId]);
   const [selectedPatientId, setSelectedPatientId] = useState("");
-  const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
+  const selectedPatient = useEhr(() => chartEntryFor(acting.role, acting.staffId, selectedPatientId).ok
+    ? AdelanteEHR.getPatient(selectedPatientId) : undefined);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<string | undefined>(undefined);
 
@@ -353,7 +355,7 @@ function ClinicianPage() {
         <TabsContent value="chart">
           {/* §Chart mode — patient identity, coverage, and identifiers live
               here only. */}
-          {selectedPatient ? <ChartAccessGate patientId={selectedPatient.id}><ChartHeader
+          {selectedPatientId ? <ChartAccessGate patientId={selectedPatientId}>{selectedPatient && <><ChartHeader
             patient={selectedPatient}
             onBack={() => setMode("dashboard")}
             picker={
@@ -429,7 +431,7 @@ function ClinicianPage() {
                   </Button>
                 </div>
               </Card>
-            </div></ChartAccessGate> : <PatientPicker onChange={setSelectedPatientId} />}
+            </div></>}</ChartAccessGate> : <PatientPicker onChange={setSelectedPatientId} />}
         </TabsContent>
       </Tabs>
       <ClientRecordDrawer
