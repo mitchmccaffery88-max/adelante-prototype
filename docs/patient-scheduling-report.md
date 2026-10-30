@@ -101,8 +101,25 @@ New IDs are names in the single catalog, not a parallel operational list. Modali
 
 ### End-to-end request check (preview, in-memory)
 Demo patient Marcus L. (p3) → Appointments → Book one-on-one → "Family session · Ask my team" → request sent. Switched to therapist Marisol Reyes: the request showed in the record's queue and in the workspace "Requests & booking" queue (2 waiting). Booked it from the queue (Mon Nov 2, Visalia); the queue dropped to 1 and the record shows "0 waiting … 1:1 therapy intake appointment — booked by Marisol Reyes". Evidence: `/tmp/browser/req/`.
-Noted for Christi: a family-session request uses the existing therapy request kind, so staff see "1:1 therapy intake appointment" and the drawer opens on "Talk with a counselor"; staff can change the type before booking.
+Noted for Christi: a family-session request used the existing therapy request kind, so staff saw "1:1 therapy intake appointment" and the drawer opened on "Talk with a counselor". Fixed in the 30 Oct closeout below.
 
 ### Validation
 - Full units: **3,717/3,717 (420 files), exit 0** (`/tmp/s30/units2.txt`).
 - Public browser (nine specs, one worker, :8080, run once, no edits during it): **52/53, exit 1, 18.0m**. Sole failure: `publicWebsite.spec.ts:14` (es), timeout waiting for the dev `window.__adelante` hook after `goto("/#faq")`. Not a named flake, so under the standing rule this run is **not green** and was not rerun or waived. No public page or test was changed in this batch. Log `/tmp/s30/public.txt`.
+
+## 30 Oct closeout (Draft)
+
+### Family session requests
+- New request kind `family`: staff label "Family or collateral session"; books as `family_collateral`; patient label "Family session" / ES Draft "Sesión familiar". The catalog's `family_collateral` now requests through this kind instead of `therapy`.
+- Duplicate check and auto-close use the existing per-kind service list: `family: ["family_collateral"]`. `family_collateral` was removed from the therapy list, so a family visit no longer satisfies or closes a 1:1 therapy request (and vice versa).
+- Tests: `familyRequestOct30.test.ts` (label, book-as type, create once, second ask returns "already requested"). Exact-once re-pin `src/test/familyRequestOct30Approved.ts` (ehr.ts prior 261983d2… = Oct 30 layer output; apptRequestStatus.ts), chained outermost.
+- Not re-checked in the preview browser this round; covered by unit tests only.
+
+### Public browser failure: cause and fix
+- Cause: after `page.goto("/#faq")` (a full page load) the test waited for `window.__adelante`, the dev-only inspection hook. That hook is installed by a dynamic import in the root layout that loads the entire in-memory EHR store and re-seeds demo data after hydration. The FAQ check never uses it, so the test was waiting on the wrong, slow signal; on a loaded run the store import could exceed the remaining 30s test budget (the Spanish case runs second, after many navigations).
+- Fix (wait on the right signal, no retries, timeouts or weakened assertions): `WebsiteLayout` marks its shell `data-ready="true"` in the same effect that measures the crisis bar/header offsets the FAQ anchor alignment depends on (i.e. hydrated and measured). The test now waits for `[data-testid="website-layout"][data-ready="true"]` after `goto("/#faq")`; all later FAQ assertions are unchanged. No visible page change.
+
+### Validation
+- Full units: **3,719/3,719 (421 files), exit 0** (`/tmp/s31/u2.txt`).
+- Public browser, nine specs, one worker, :8080, two consecutive runs after units: **53/53 (14.9m), 53/53 (11.3m)**, both exit 0 (`/tmp/s31/pub1.txt`, `/tmp/s31/pub2.txt`).
+- Nothing published; persistence OFF; no Supabase changes.
