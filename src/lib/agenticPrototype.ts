@@ -105,7 +105,7 @@ export function chartReviewFacts(
     (a, b) => +new Date(b.completedAt) - +new Date(a.completedAt),
   );
   const visibleScreeners = allScreeners.filter(
-    (s) => !(sudLocked && isPart2Screener(s.key)),
+    (s) => !s.estimated && !(sudLocked && isPart2Screener(s.key)),
   );
   const hiddenScreenerCount = allScreeners.length - visibleScreeners.length;
 

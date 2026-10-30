@@ -27,7 +27,7 @@ export function recordMemberScreenerAnswers(patientId: string, def: ScreenerDef,
   }
   if (phq9Item9Unanswered(def.key, c)) {
     runAction("screener_item9_followup", screenerFollowupActor, AdelanteEHR.getPatient(patientId), {
-      args: [{ patientId, completedAt }], reason: "Unanswered screening item follow-up",
+      args: [{ patientId, completedAt }], auditReason: "Unanswered screening item follow-up",
     });
   }
   return result;

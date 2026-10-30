@@ -16,7 +16,7 @@ export function followupOwner(primary: StaffMember | undefined, onCall: StaffMem
 }
 /** Draft — pending clinical sign-off: booked contact in 7 days, otherwise 2 business days outreach. */
 export function followupDue(now: Date, contacts: readonly { start: string; status: string }[]) {
-  const next = contacts.filter((a) => ["scheduled", "confirmed", "booked"].includes(a.status) && +new Date(a.start) >= +now && +new Date(a.start) <= +now + 7 * 86400000)
+  const next = contacts.filter((a) => ["scheduled", "checked_in"].includes(a.status) && +new Date(a.start) >= +now && +new Date(a.start) <= +now + 7 * 86400000)
     .sort((a, b) => a.start.localeCompare(b.start))[0];
   if (next) return { dueDate: next.start, taskType: "screening_followup" };
   const due = new Date(now); let days = 0;
@@ -27,7 +27,7 @@ export function createItem9FollowupTask(input: { patientId: string; completedAt:
   const p = AdelanteEHR.getPatient(input.patientId);
   if (!p) throw new Error("Patient not found.");
   const now = new Date(input.completedAt);
-  const primary = STAFF_ROSTER.find((m) => m.id === p.primaryClinicianId || m.clinicianId === p.primaryClinicianId);
+  const primary = STAFF_ROSTER.find((m) => !!p.primaryClinicianId && (m.id === p.primaryClinicianId || m.clinicianId === p.primaryClinicianId));
   return AdelanteEHR.createCaseTask({ patientId: p.id, ...followupOwner(primary, onCallOwnerFor(now)),
     ...followupDue(now, AdelanteEHR.listAppointments().filter((a) => a.patientId === p.id)),
     title: ITEM9_UNANSWERED_TASK_TITLE, detail: ITEM9_UNANSWERED_TASK_DETAIL,

@@ -2036,6 +2036,11 @@ export interface MissedScreener {
 export interface IncompleteScreener {
   key: string;
   status: "incomplete";
+  score?: never;
+  severity?: never;
+  positive?: never;
+  domains?: never;
+  episodeId?: string;
   completedAt: string;
   timepoint?: ScreenerResult["timepoint"];
   context?: ScreenerResult["context"];
@@ -8384,9 +8389,10 @@ function _stampScreenerMeta(r: ScreenerResult): ScreenerResult {
       // 9/10; the validated anchors are 0/2/4 for the three published choices.
       // Old choices on items 9/10 cannot be mapped 1:1, so re-score only when
       // items 9/10 hold a value that is valid under the new anchors.
-      const ok = [8, 9].every((i) => [0, 2, 4].includes(r.responses![i]));
+      const auditAnswers = r.responses.filter((v): v is number => typeof v === "number");
+      const ok = auditAnswers.length === def.questions.length && [8, 9].every((i) => [0, 2, 4].includes(auditAnswers[i]));
       if (ok) {
-        const scored = scoreScreener(def, r.responses);
+        const scored = scoreScreener(def, auditAnswers);
         if (scored.score !== r.score || scored.severity !== r.severity) {
           r.rescoredFrom = { score: r.score, severity: r.severity };
           r.score = scored.score;
