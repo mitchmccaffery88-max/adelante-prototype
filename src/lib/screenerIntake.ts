@@ -5,6 +5,7 @@ import { runAction } from "./actions/runAction";
 import { type ScreenerDef } from "./screeners";
 import { scoreAnsweredScreener, phq9Item9Positive, phq9Item9Unanswered, type ScreenerAnswer } from "./screenerCompleteness";
 import { screenerFollowupActor } from "./screenerFollowup";
+import { registerMemberScreenerWriter } from "./screenerWriteBoundary";
 
 export function recordMemberScreenerAnswers(patientId: string, def: ScreenerDef, raw: readonly ScreenerAnswer[],
   metadata: { timepoint: ScreenerResult["timepoint"]; context: ScreenerResult["context"] },
@@ -36,3 +37,4 @@ export function recordIntakeScreenerAnswers(patientId: string, def: ScreenerDef,
   const result = recordMemberScreenerAnswers(patientId, def, raw, { timepoint: "intake", context: "intake" });
   return { complete: !("status" in result) && !result.estimated };
 }
+registerMemberScreenerWriter(recordMemberScreenerAnswers);

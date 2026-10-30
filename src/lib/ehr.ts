@@ -227,7 +227,7 @@ import {
   type ScreenerDomainResult,
 } from "./screeners";
 import { assessCompleteness, staffItemsRecorded, type ScreenerAnswer } from "./screenerCompleteness";
-import { recordMemberScreenerAnswers } from "./screenerIntake";
+import { writeMemberScreener } from "./screenerWriteBoundary";
 export type { LibraryCategory, LibraryItem, Exercise, SavedToolkitItem } from "./library";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
 // ownership, Part 2 restriction messaging); imports nothing back from here.
@@ -14228,7 +14228,7 @@ export const AdelanteEHR = {
       throw new Error("This questionnaire needs substance-use consent on file.");
     // R5 follow-ups. Draft — pending clinical sign-off: member blanks are allowed.
     const due = AdelanteEHR.rescreensDue(patientId).find((d) => d.key === key);
-    const result = recordMemberScreenerAnswers(patientId, def, answers, {
+    const result = writeMemberScreener(patientId, def, answers, {
       timepoint: due ? (`day${due.nextDue}` as const) : "adhoc", context: "patient_self",
     });
     if ("status" in result) return result;

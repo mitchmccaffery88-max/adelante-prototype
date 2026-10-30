@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Slim988Bar } from "@/components/patient/Slim988Bar";
 import { ITEM9_REPROMPT } from "@/lib/screenerCompleteness";
+import "@/lib/screenerIntake";
 
 export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   const { lang } = useI18n();
