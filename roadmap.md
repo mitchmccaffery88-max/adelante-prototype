@@ -293,4 +293,5 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 ## Screener completeness (R5, 30 Oct, Draft — pending Christi / Dr. Bagga)
 - [x] Blank shown items stay blank; incomplete screeners are unscored and stored apart; neutral item-9 follow-up task through the registry; crisis rule unchanged; staff "Incomplete" / "may include unanswered items" display; member skipped line. Report: docs/screener-completeness-report.md
 - [ ] runAction registry snapshot needs the new hidden row (waiting on Mitch's approval to update)
+- [ ] Full browser suite 246/270: 24 staff/chart failures listed in docs/screener-completeness-report.md (needs check whether they predate this batch)
 - [ ] Prorating, task wording/owner, and skip on /rescreen and the quick check (waiting on Christi)
