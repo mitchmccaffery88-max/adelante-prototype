@@ -104,7 +104,7 @@ import {
 import { hasExistingHistory, seedIntakeHistory, type IntakeHistory } from "@/lib/intakeHistory";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
-import { assessCompleteness, MEMBER_SKIPPED_LINE, phq9Item9Positive, phq9Item9Unanswered } from "@/lib/screenerCompleteness";
+import { answeredLabel, assessCompleteness, MEMBER_SKIPPED_LINE, phq9Item9Positive, phq9Item9Unanswered } from "@/lib/screenerCompleteness";
 import { screenerFollowupActor } from "@/lib/screenerFollowup";
 import { runAction } from "@/lib/actions/runAction";
 import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
@@ -2198,15 +2198,14 @@ function IntakePage() {
                 .filter((s) => askCore || s.key !== "ahc-hrsn")
                 .map((s) => {
                 const raw = answers[s.key] ?? [];
-                const { score, severity } = scoreScreener(
-                  s,
-                  s.questions.map((_, i) => (typeof raw[i] === "number" ? raw[i] : 0)),
-                );
+                // §R5 — an incomplete screener has no total or band.
+                const c = assessCompleteness(s, raw);
+                const scored = c.scoringAnswers ? scoreScreener(s, c.scoringAnswers) : undefined;
                 return (
                   <div key={s.key} className="flex justify-between">
                     <span>{s.name}</span>
                     <span className="font-medium text-navy">
-                      {score} · {severity}
+                      {scored ? `${scored.score} · ${scored.severity}` : `Incomplete · ${answeredLabel(c)}`}
                     </span>
                   </div>
                 );
