@@ -16,11 +16,12 @@ export function recordMemberScreenerAnswers(patientId: string, def: ScreenerDef,
     declinedItems: c.declinedItems, skippedItems: c.skippedItems };
   let result: ScreenerResult | IncompleteScreener;
   if (scored) {
-    result = { key: def.key, ...scored, ...metadata, ...evidence, completedAt,
+    const stored: ScreenerResult = { key: def.key, ...scored, ...metadata, ...evidence, completedAt,
       completeness: estimated ? "estimated" : "complete", estimated,
       ...(estimated ? { missingItems: c.unansweredItems } : {}),
       crisisFlag: phq9Item9Positive(def.key, raw) };
-    AdelanteEHR.recordScreener(patientId, result);
+    result = stored;
+    AdelanteEHR.recordScreener(patientId, stored);
   } else {
     result = { key: def.key, status: "incomplete", ...metadata, ...evidence, completedAt,
       shownCount: c.shownCount, answeredCount: c.answeredCount };
