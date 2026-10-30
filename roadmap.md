@@ -295,3 +295,4 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] runAction registry snapshot needs the new hidden row (waiting on Mitch's approval to update)
 - [ ] Full browser suite 246/270: 24 staff/chart failures listed in docs/screener-completeness-report.md (needs check whether they predate this batch)
 - [ ] Prorating, task wording/owner, and skip on /rescreen and the quick check (waiting on Christi)
+- [x] 30 Oct browser triage: snapshot row added; 24 failures all pre-R5; 390px referral row fixed; test updates await Mitch (docs/browser-triage-oct30.md)
