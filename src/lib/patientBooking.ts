@@ -74,10 +74,11 @@ export function patientServiceOption(patient: Patient | undefined, serviceType: 
   return serviceType ? patientServiceMenu(patient).find((o) => o.service.id === serviceType) : undefined;
 }
 
-const REQUEST_SELECTION: Record<AppointmentRequestKind, { mentalHealth?: boolean; medication?: boolean; notSure?: boolean }> = {
+const REQUEST_SELECTION: Record<AppointmentRequestKind, { mentalHealth?: boolean; medication?: boolean; notSure?: boolean; family?: boolean }> = {
   therapy: { mentalHealth: true },
   medication: { medication: true },
   help_choose: { notSure: true },
+  family: { family: true },
 };
 
 /** Store function for `patient_request_visit`: "Ask my team" through the existing duplicate/auto-close request flow. */

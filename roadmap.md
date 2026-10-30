@@ -14,7 +14,8 @@
 - [x] Shared booking/clinician-picker checks and request kinds.
 - [x] ASAM-visit migration to sud_assessment and private-pay/coverage-review presentation on /schedule.
 - [x] Existing calendar-model fixes and category-specific group capacity.
-- [ ] Public browser suite green: 52/53 on 30 Oct (publicWebsite es timeout, not a named flake) — waiting on Mitch's decision.
+- [x] Public browser green: publicWebsite FAQ wait fixed (layout ready signal, not dev hook); 53/53 twice after units 3,719/3,719.
+- [x] Family/collateral request kind: own label, books as family_collateral, dedupe/auto-close by kind.
 - [x] All-role tests, exact-once re-pins, full units then public browser, patient-scheduling report and confirm table.
 - No publication, persistence or Supabase changes. Stop only at a completed green checkpoint; list remainder.
 
