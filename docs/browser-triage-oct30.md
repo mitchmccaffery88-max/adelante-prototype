@@ -50,4 +50,4 @@ Pre-R5: 24 failed / 17 passed. HEAD: 21 failed / 20 passed (the 390px fix below 
 None found that would require changing decided behaviour, permissions or Part 2 handling. The access gate (#4–15) is working as decided on 27 Oct.
 
 ## 7. Final run
-Affected specs re-run: see roadmap/closing note. A full 270-test browser run takes about two hours on one worker and was not completed in this round; the last full run remains 246/270 with the 24 above, of which 3 are now fixed.
+Affected specs re-run (overflow9c + staffTables8b1): 16 passed, 2 failed — only the two `/notes-queue` row-count cases (#22–23). A full 270-test browser run takes about two hours on one worker and was not completed in this round; the last full run remains 246/270 with the 24 above, of which 3 are now fixed.
