@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] 30 Oct R5 follow-ups: partial implementation stopped at unchanged R5 assertions :45/:60/:76; approval of proposed assertions blocks re-pin, new tests, full units and targeted/public browser validation (see screener-completeness-report.md).
 
 ## 29 Oct patient scheduling (Draft, pending Christi)
 - [x] 20:00 item (a): SMHS treating-clinician dated/reason control and safe Billing/active-referral Intake funding drawer; real desktop/phone save/readback, full units 3,695/3,695; additional sixth Intake test passed.

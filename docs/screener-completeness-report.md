@@ -49,3 +49,44 @@ Approved by Mitch 30 Oct. The clinical rules are **Draft — pending clinical si
 - Prorating rules (none applied).
 - Task wording and owner for an unanswered item 9.
 - Whether /rescreen and the quick check should also let members skip.
+
+## Follow-ups (30 Oct)
+
+Mitch's follow-up decisions supersede the original no-prorating, case-manager fallback and member-required-item rules above. Every clinical rule below is **Draft — pending clinical sign-off** (Christi, Dr. Bagga).
+
+### Current checkpoint: stopped on existing assertion conflicts
+
+Implementation is partial, not accepted as complete. No existing tests or snapshots were edited. No new source re-pin was written after finding the conflicts. Nothing published; persistence OFF; no Supabase changes.
+
+- Added a separate total-only estimator: PHQ-9 with 1–2 missing shown items and GAD-7 with exactly 1 missing item; rounded answered mean × instrument length. Other instruments remain unscored when incomplete. The original completeness assessment still reports the missing raw answers faithfully.
+- Intake and rescreen share the member writer. Estimated results carry `estimated: true`, `missingItems`, raw null responses and declined/skipped provenance in scored history. The item-9 crisis check reads only raw answers; the existing follow-up registry action is still called for a blank/declined item 9.
+- Follow-up routing now uses primary licensed clinician → licensed on-call clinician → clinical coordinator role pool, never case manager. Due at the next scheduled/checked-in contact within seven days, otherwise two business days for outreach (weekends excluded). Neutral task title: “Screening follow-up needed”; chart task detail uses Mitch's specified wording plus the Draft label.
+- Shared intake/rescreen controls and quick check offer “Prefer not to answer”; the member-required submit blocks were removed. Staff pre-release entry requires an explicit answer or decline for each shown item. Declines are stored as null responses with `declinedItems`; untouched blanks have `skippedItems`. C-SSRS was not changed.
+- Intake/rescreen have a once-only item-9 re-prompt; **remaining**: focus/scroll back to item 9 and visibly prove 988 on that prompt screen. Spanish copy is Draft.
+- Tracking rows/score tables carry estimate labels, and missing-item detail distinguishes Declined/Not answered. **Remaining**: audit every score display/tooltip and care-plan display, fully verify reassessment/caseload readers, and remove member intake score previews (the earlier “no scores” claim above was not true in source).
+- Unsupported agentic/content-tag readers and the population reporting projection exclude estimated results. No direct ScreenerResult field was found in the structured CalOMS export. **Needs check**: external state/CalOMS specifications explicitly allowing estimates; no such permission is assumed.
+- Store/registry module-cycle protection uses `screenerWriteBoundary`; the member writer registers itself without importing the registry into the EHR store. **Remaining**: verify all rescreen store entry points initialize that writer.
+
+### Existing assertion conflicts (unchanged tests)
+
+Focused run: `src/lib/__tests__/screenerCompletenessR5.test.ts`, **3 passed / 3 failed**.
+
+1. **Line 45** (related assertions 46–48): one missing PHQ-9 item previously had to be in `incompleteScreeners`, without a score. It now belongs in scored history as an estimate. Proposed assertion: latest scored PHQ-9 has `estimated: true`, `missingItems: [3]`, `responses[3] === null`, score **7**, and no new incomplete record.
+2. **Line 60** (source record lookup line 59): blank item 9 previously read from incomplete records. Proposed assertion: read latest scored PHQ-9, expect `estimated: true`, `missingItems: [8]`, raw item 9 null, `itemDisplay(result, 8) === "Not answered"`, estimated total **9**; retain existing task-present and no-crisis assertions.
+3. **Line 76**: one missing item previously could not create a severity flag. Proposed assertion: score **24**, estimated marker and missing index **7**, with severity allowed to evaluate the estimate; add a separate ≥3-missing case proving no score or severity action. No assertion is changed pending Mitch's approval.
+
+### Remaining validation
+
+New follow-up rule tests, approved exact-once source adapter, full units, and the requested targeted/public browser run remain pending at this stop. No browser run was started. The earlier browser-triage failures were not rerun or waived.
+
+### Clinical review register (Christi / Dr. Bagga)
+
+Each item is **Draft — pending clinical sign-off**:
+- PHQ-9 1–2-missing and GAD-7 1-missing estimation thresholds, rounding, and all never-prorate exclusions.
+- No imputed item 9, unchanged positive-answer crisis routing, and blank/declined-item follow-up even for estimated totals.
+- Use of estimated totals in severity/reassessment/caseload/care-plan score bands; explicit estimate label at every score display and fail-closed unsupported readers.
+- Exclusion from unspecified state/CalOMS exports; external specification review remains needs check.
+- Clinician → on-call → coordinator-pool follow-up ownership, specified clinical detail and neutral notification/task-list wording.
+- Next-contact within seven days versus two-business-day outreach deadline (holiday calendar not yet specified).
+- One member item-9 re-prompt with visible 988, skip afterward, no other-item re-prompt; Draft Spanish/native-speaker review.
+- Explicit declined versus skipped provenance, member optional answers, staff explicit-answer-or-decline requirement; unchanged C-SSRS administration/gating.

@@ -88,7 +88,7 @@ export function slicePrograms(p: Patient): [string, string][] {
   return uniq.map((k) => [k, PROGRAM_LABEL[k] ?? k]);
 }
 
-const usable = (r: ScreenerResult | undefined): r is ScreenerResult => !!r && !r.retiredForm && !r.placeholderText;
+const usable = (r: ScreenerResult | undefined): r is ScreenerResult => !!r && !r.estimated && !r.retiredForm && !r.placeholderText;
 
 export interface InstrumentTile {
   key: string;

@@ -22,6 +22,8 @@ export interface TrackingRow {
   status: TrackingStatus;
   score?: number;
   severity?: string;
+  estimated?: boolean;
+  missingItems?: number[];
   /** ASAM rows carry a level instead of a score. */
   level?: string;
   sud: boolean;
@@ -71,6 +73,7 @@ export function buildTrackingRows(patient: Patient, role: StaffRole, now = new D
       status: "completed",
       score: h.score,
       severity: h.severity,
+      estimated: h.estimated, missingItems: h.missingItems,
       sud: isSudKey(h.key),
       trendable: h.key !== CSSRS_KEY && h.key !== "ahc-hrsn",
     });

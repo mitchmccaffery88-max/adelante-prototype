@@ -6,6 +6,8 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { itemVisible, optionsForItem, type ScreenerDef } from "@/lib/screeners";
+import { useI18n } from "@/lib/i18n";
+import { DECLINED_ANSWER } from "@/lib/screenerCompleteness";
 
 export function ScreenerItems({
   def,
@@ -22,6 +24,7 @@ export function ScreenerItems({
   onChange: (answers: (number | undefined)[], choiceIndex: Record<number, number>) => void;
   testIdPrefix?: string;
 }) {
+  const { lang } = useI18n();
   return (
     <div className="space-y-5">
       {def.questions.map((q, qi) => {
@@ -37,8 +40,13 @@ export function ScreenerItems({
             </Label>
             <RadioGroup
               className="mt-2 flex flex-wrap gap-2"
-              value={chosen >= 0 ? String(chosen) : ""}
+              value={answers[qi] === DECLINED_ANSWER ? "declined" : chosen >= 0 ? String(chosen) : ""}
               onValueChange={(v) => {
+                // Draft — pending clinical sign-off: explicit decline is never zero.
+                if (v === "declined") {
+                  const next = [...answers]; next[qi] = DECLINED_ANSWER;
+                  const ch = { ...choices }; delete ch[qi]; onChange(next, ch); return;
+                }
                 const idx = Number(v);
                 const next = [...answers];
                 next[qi] = opts[idx].value;
@@ -63,6 +71,10 @@ export function ScreenerItems({
                   {o.label}
                 </label>
               ))}
+              <label className="flex min-h-12 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                <RadioGroupItem value="declined" />
+                {lang === "es" ? "Prefiero no responder" : "Prefer not to answer"}
+              </label>
             </RadioGroup>
           </div>
         );

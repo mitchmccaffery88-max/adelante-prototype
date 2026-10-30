@@ -11,6 +11,7 @@ import { optionsForItem, scoreScreener, screenerByKey } from "@/lib/screeners";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { DECLINED_ANSWER, staffItemsRecorded, assessCompleteness } from "@/lib/screenerCompleteness";
 import {
   Dialog,
   DialogContent,
@@ -36,13 +37,14 @@ export function PreReleaseScreenerDialog({
   const existing = useEhr(
     () => AdelanteEHR.viewScreenerResult(episode.patientId, screenerKey).result,
   );
-  const [answers, setAnswers] = useState<(number | undefined)[]>(
+  const [answers, setAnswers] = useState<(number | null | undefined)[]>(
     () => existing?.responses ?? (def ? def.questions.map(() => undefined) : []),
   );
 
   if (!def) return null;
-  const complete = answers.every((a) => a !== undefined);
-  const preview = complete ? scoreScreener(def, answers as number[]) : undefined;
+  const complete = staffItemsRecorded(def, answers);
+  const evidence = assessCompleteness(def, answers);
+  const preview = evidence.scoringAnswers ? scoreScreener(def, evidence.scoringAnswers) : undefined;
 
   const save = () => {
     try {
@@ -52,7 +54,7 @@ export function PreReleaseScreenerDialog({
         answers: answers as number[],
         attribution,
       });
-      toast.success(`${def.name} recorded — ${r.severity} (${r.score}).`);
+      toast.success("status" in r ? `${def.name} recorded — Incomplete.` : `${def.name} recorded — ${r.severity} (${r.score}).`);
       onClose();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not record the screener.");
@@ -94,6 +96,10 @@ export function PreReleaseScreenerDialog({
                     {o.label}
                   </Button>
                 ))}
+                <Button type="button" size="sm" variant={answers[i] === DECLINED_ANSWER ? "default" : "outline"}
+                  onClick={() => setAnswers((s) => s.map((v, idx) => idx === i ? DECLINED_ANSWER : v))}>
+                  Member declined
+                </Button>
               </div>
             </div>
           ))}

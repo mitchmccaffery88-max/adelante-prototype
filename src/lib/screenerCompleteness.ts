@@ -10,13 +10,13 @@
 //    no total, no severity band, no prorating (prorating is a clinical
 //    decision pending Christi).
 // Pure leaf module: imports only screener definitions.
-import { itemVisible, type ScreenerDef } from "./screeners";
+import { itemVisible, scoreScreener, severityFor, type ScreenerDef } from "./screeners";
 
 export const SCREENER_COMPLETENESS_DRAFT_LABEL = "Draft — pending clinical sign-off";
 /** Neutral clinician task text for a shown, unanswered PHQ-9 item 9. */
-export const ITEM9_UNANSWERED_TASK_TITLE = "Self-harm question not answered — ask at next contact";
+export const ITEM9_UNANSWERED_TASK_TITLE = "Screening follow-up needed";
 export const ITEM9_UNANSWERED_TASK_DETAIL =
-  "The member skipped this question. Ask about it at the next contact. Draft — pending clinical sign-off.";
+  "PHQ-9 item 9 (thoughts of self-harm) not answered: ask directly at next contact; if positive, complete the C-SSRS screener. Draft — pending clinical sign-off.";
 export const NOT_ANSWERED_LABEL = "Not answered";
 export const NOT_ASKED_LABEL = "Not asked";
 export const LEGACY_MAY_INCLUDE_UNANSWERED = "may include unanswered items";
@@ -25,6 +25,8 @@ export const MEMBER_SKIPPED_LINE = {
   es: "Saltaste algunas preguntas. Está bien — tu equipo de atención puede preguntarte sobre ellas.",
 };
 
+/** Draft — pending clinical sign-off: -2 is explicit decline, never a score. */
+export const DECLINED_ANSWER = -2;
 export type ScreenerAnswer = number | null | undefined;
 
 export interface CompletenessAssessment {
@@ -36,6 +38,8 @@ export interface CompletenessAssessment {
   unansweredItems: number[];
   /** Hidden by the instrument's own skip logic. */
   notAskedItems: number[];
+  declinedItems: number[];
+  skippedItems: number[];
   /** Stored responses: answered values, null for unanswered AND not-asked items. */
   responses: (number | null)[];
   /**
@@ -62,6 +66,8 @@ export function assessCompleteness(def: ScreenerDef, raw: readonly ScreenerAnswe
     answeredCount: shown.length - unansweredItems.length,
     unansweredItems,
     notAskedItems,
+    declinedItems: unansweredItems.filter((i) => raw[i] === DECLINED_ANSWER),
+    skippedItems: unansweredItems.filter((i) => raw[i] !== DECLINED_ANSWER),
     responses,
     ...(complete ? { scoringAnswers: responses.map((v) => v ?? 0) } : {}),
   };
@@ -85,10 +91,11 @@ export function phq9Item9Positive(key: string, raw: readonly ScreenerAnswer[]): 
 
 /** Staff display for one item on a stored result. */
 export function itemDisplay(
-  r: { responses?: readonly (number | null)[]; notAskedItems?: number[]; unansweredItems?: number[] },
+  r: { responses?: readonly (number | null)[]; notAskedItems?: number[]; unansweredItems?: number[]; declinedItems?: number[] },
   index: number,
 ): string {
   if (r.notAskedItems?.includes(index)) return NOT_ASKED_LABEL;
+  if (r.declinedItems?.includes(index)) return "Declined";
   const v = r.responses?.[index];
   if (r.unansweredItems?.includes(index) || v === null || v === undefined) return NOT_ANSWERED_LABEL;
   if (v === -1) return NOT_ASKED_LABEL; // C-SSRS gated sentinel on older records
@@ -102,3 +109,36 @@ export function itemDisplay(
 export function mayIncludeUnanswered(r: { completeness?: string } | undefined): boolean {
   return !!r && r.completeness === undefined;
 }
+
+/** Draft — pending clinical sign-off: estimate TOTAL only, never an item answer. */
+export function scoreAnsweredScreener(def: ScreenerDef, raw: readonly ScreenerAnswer[]) {
+  const assessment = assessCompleteness(def, raw);
+  if (assessment.scoringAnswers) return { assessment, scored: scoreScreener(def, assessment.scoringAnswers), estimated: false };
+  const missing = assessment.unansweredItems.length;
+  const eligible = (def.key === "phq-9" && assessment.shownCount === 9 && missing >= 1 && missing <= 2) ||
+    (def.key === "gad-7" && assessment.shownCount === 7 && missing === 1);
+  if (!eligible) return { assessment, scored: undefined, estimated: false };
+  const sum = assessment.responses.reduce<number>((n, v) => n + (v ?? 0), 0);
+  const score = Math.round(sum / assessment.answeredCount * assessment.shownCount);
+  return { assessment, scored: { score, severity: severityFor(def, score) }, estimated: true };
+}
+
+export function estimateLabel(r: { estimated?: boolean; missingItems?: number[] }): string {
+  return r.estimated ? `Estimated (${r.missingItems?.length ?? 0} items missing)` : "";
+}
+
+/** Unsupported readers/exports fail closed; estimates require explicit opt-in. */
+export function acceptsScreenerScore(r: { estimated?: boolean }, supportsEstimates = false): boolean {
+  return !r.estimated || supportsEstimates;
+}
+
+/** Staff must explicitly answer OR record a decline for every shown item. */
+export function staffItemsRecorded(def: ScreenerDef, raw: readonly ScreenerAnswer[]): boolean {
+  const a = assessCompleteness(def, raw);
+  return a.skippedItems.length === 0;
+}
+
+export const ITEM9_REPROMPT = {
+  en: "This question helps us make sure you're safe. You can answer or skip.",
+  es: "Esta pregunta nos ayuda a asegurarnos de que estás a salvo. Puedes responder o saltarla.",
+};

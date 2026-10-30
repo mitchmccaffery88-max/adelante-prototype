@@ -1,5 +1,5 @@
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
-import { answeredLabel, itemDisplay, LEGACY_MAY_INCLUDE_UNANSWERED, mayIncludeUnanswered, SCREENER_COMPLETENESS_DRAFT_LABEL } from "@/lib/screenerCompleteness";
+import { estimateLabel, answeredLabel, itemDisplay, LEGACY_MAY_INCLUDE_UNANSWERED, mayIncludeUnanswered, SCREENER_COMPLETENESS_DRAFT_LABEL } from "@/lib/screenerCompleteness";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -3353,7 +3353,7 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
                 <tr key={`${r.key}-${r.date}-${i}`} className="border-t" data-status={r.status}>
                   <td className="py-1 pr-2 whitespace-nowrap">{new Date(r.date).toLocaleDateString()}</td>
                   <td className="py-1 pr-2">{r.label}</td>
-                  <td className="py-1 pr-2 tabular-nums">{r.score ?? "—"}</td>
+                  <td className="py-1 pr-2 tabular-nums">{r.score ?? "—"} {estimateLabel(r)}</td>
                   <td className="py-1 pr-2">{r.level ? `Level ${r.level}` : (r.severity ?? "—")}</td>
                   <td className="py-1">
                     <StatusChip lang="en" state={r.status === "completed" ? "done" : "yourturn"} label={r.status === "completed" ? "Completed" : r.status === "missed" ? "Missed" : "Follow-up needed"} />
@@ -3428,6 +3428,20 @@ export function TrackingTab({ patientId }: { patientId: string }) {
           </ul>
         </div>
       )}
+      <div className="space-y-2 text-sm" data-testid="tracking-answer-details">
+        {history.filter((h) => h.unansweredItems?.length && (!screenerByKey(h.key)?.isSud || seesSud)).map((h) => (
+          <div key={`${h.key}:${h.completedAt}`}>
+            <span>{screenerByKey(h.key)?.name ?? h.key} · {h.score} · {estimateLabel(h)}</span>
+            {h.unansweredItems?.map((i) => <span key={i} className="ml-2">Item {i + 1}: {itemDisplay(h, i)}</span>)}
+          </div>
+        ))}
+        {incomplete.filter((h) => !screenerByKey(h.key)?.isSud || seesSud).map((h) => (
+          <div key={`${h.key}:${h.completedAt}`}>
+            <span>{screenerByKey(h.key)?.name ?? h.key} · Incomplete</span>
+            {h.unansweredItems.map((i) => <span key={i} className="ml-2">Item {i + 1}: {itemDisplay(h, i)}</span>)}
+          </div>
+        ))}
+      </div>
       <LabsAndMeasuresTracking patientId={patientId} role={role} />
       <div className="rounded-md border p-3 space-y-2" data-testid="tracking-cssrs">
         <div className="flex flex-wrap items-center gap-2">
@@ -3476,7 +3490,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
           .map((h) => ({
             date: new Date(h.completedAt).toLocaleDateString(),
             score: h.score,
-            severity: h.severity,
+            severity: `${h.severity}${estimateLabel(h) ? ` · ${estimateLabel(h)}` : ""}`,
             timepoint: h.timepoint,
           }));
         const last = rows[rows.length - 1];
@@ -3486,6 +3500,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
               <h4 className="font-medium text-navy text-sm">{title}</h4>
               <span className="text-[11px] text-muted-foreground">
                 Latest: {data[data.length - 1]?.score} · {data[data.length - 1]?.severity}
+                {last ? estimateLabel(last) : ""}
                 {mayIncludeUnanswered(last) ? ` · ${LEGACY_MAY_INCLUDE_UNANSWERED}` : ""}
               </span>
             </div>

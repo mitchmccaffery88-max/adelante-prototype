@@ -199,7 +199,7 @@ export function reentryStageOf(p: Patient | undefined, now = new Date()): Reentr
 
 function latest(p: Patient, key: string): number | undefined {
   const rows = (p.screenerHistory ?? [])
-    .filter((h) => h.key === key)
+    .filter((h) => h.key === key && !h.estimated)
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
   return rows[0]?.score;
 }
