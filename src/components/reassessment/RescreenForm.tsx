@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Slim988Bar } from "@/components/patient/Slim988Bar";
+import { ITEM9_REPROMPT } from "@/lib/screenerCompleteness";
 
 export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   const { lang } = useI18n();
@@ -39,6 +40,7 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   // came from an earlier visit", derived from the draft itself, so it can't be
   // lost when the draft (patient id / storage) arrives after the first render.
   const [enteredHere, setEnteredHere] = useState(false);
+  const [item9Prompted, setItem9Prompted] = useState(false);
   const showResume = resumed || (!enteredHere && hasDraft(draft));
   const [answers, setAnswers] = useState<(number | undefined)[]>(() => (draft ? [...draft.answers] : []));
   const [choices, setChoices] = useState<Record<number, number>>(() => (draft ? { ...draft.choices } : {}));
@@ -65,8 +67,9 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   }
 
   const submit = () => {
-    if (!screenerComplete(def, answers)) {
-      toast.error(c.answerAll);
+    // Draft — pending clinical sign-off: one re-prompt, then member may skip.
+    if (def.key === "phq-9" && !(typeof answers[8] === "number" && answers[8] >= 0) && !item9Prompted) {
+      setItem9Prompted(true);
       return;
     }
     try {
@@ -117,6 +120,7 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
           testIdPrefix="rescreen-q"
           onChange={handleAnswerChange}
         />
+        {item9Prompted && <p role="status" data-testid="item9-reprompt" className="text-sm">{ITEM9_REPROMPT[L]}</p>}
         <Button size="patient" className="w-full" onClick={submit} data-testid="rescreen-submit">
           {c.submit}
         </Button>

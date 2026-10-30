@@ -104,7 +104,7 @@ import {
 import { hasExistingHistory, seedIntakeHistory, type IntakeHistory } from "@/lib/intakeHistory";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
-import { answeredLabel, assessCompleteness, MEMBER_SKIPPED_LINE } from "@/lib/screenerCompleteness";
+import { answeredLabel, assessCompleteness, MEMBER_SKIPPED_LINE, ITEM9_REPROMPT } from "@/lib/screenerCompleteness";
 import { recordIntakeScreenerAnswers } from "@/lib/screenerIntake";
 import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
 import { Link } from "@tanstack/react-router";
@@ -449,6 +449,7 @@ function IntakePage() {
   const dueJson = useEhr(() => JSON.stringify(AdelanteEHR.patientReassessmentDue(currentId)));
   const due = JSON.parse(dueJson) as { key: string }[];
   const [step, setStep] = useState(0);
+  const [item9Prompted, setItem9Prompted] = useState(false);
   // §E5 Phase A — reusable voice layer (off until the patient opts in).
   const voiceLang = lang9a === "es" ? "es" : "en";
   // Crisis card follows the page language, or Spanish when the crisis words were Spanish.
@@ -756,7 +757,14 @@ function IntakePage() {
       ? `${VC.sensitiveIntro}\n\n${VC.steps[current.key] ?? ""}`
       : VC.steps[current.key] ?? "";
 
-  const next = () => setStep((s) => Math.min(s + 1, total - 1));
+  const next = () => {
+    // Draft — pending clinical sign-off: only item 9, once, without blocking skipping.
+    const item9 = answers["phq-9"]?.[8];
+    if (current.key === "phq-9" && !(typeof item9 === "number" && item9 >= 0) && !item9Prompted) {
+      setItem9Prompted(true); return;
+    }
+    setStep((s) => Math.min(s + 1, total - 1));
+  };
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = () => {
@@ -1699,6 +1707,7 @@ function IntakePage() {
                     setChoices({ ...choices, [s.key]: ch });
                   }}
                 />
+                {s.key === "phq-9" && item9Prompted && <p role="status" data-testid="item9-reprompt" className="text-sm">{ITEM9_REPROMPT[langKey]}</p>}
               </div>
             ),
         )}

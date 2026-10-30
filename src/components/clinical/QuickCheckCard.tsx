@@ -11,8 +11,11 @@ import { Button } from "@/components/ui/button";
 import { HeartPulse, CheckCircle2, ClipboardList } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { DECLINED_ANSWER } from "@/lib/screenerCompleteness";
+import { useI18n } from "@/lib/i18n";
 
 export function QuickCheckCard({ patientId }: { patientId: string }) {
+  const { lang } = useI18n();
   const due = useEhr(() => AdelanteEHR.quickCheckDue(patientId));
   const lastAt = useEhr(() => AdelanteEHR.lastQuickCheckAt(patientId));
   const pending = useEhr(() => AdelanteEHR.pendingFullScreeners(patientId));
@@ -117,6 +120,10 @@ export function QuickCheckCard({ patientId }: { patientId: string }) {
                         {o.label}
                       </Button>
                     ))}
+                    <Button size="sm" variant={answers[def.key]?.[i] === DECLINED_ANSWER ? "default" : "outline"}
+                      className="min-h-12 text-sm" onClick={() => set(def.key, i, DECLINED_ANSWER)}>
+                      {lang === "es" ? "Prefiero no responder" : "Prefer not to answer"}
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -133,7 +140,6 @@ export function QuickCheckCard({ patientId }: { patientId: string }) {
             </Button>
             <Button
               size="sm"
-              disabled={!complete}
               className="min-h-11 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
               onClick={submit}
             >
