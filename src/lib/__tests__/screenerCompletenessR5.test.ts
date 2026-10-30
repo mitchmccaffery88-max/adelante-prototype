@@ -3,7 +3,7 @@
 import { describe, it, expect } from "vitest";
 import "@/lib/ehr-ext";
 import "@/lib/chartActions";
-import { AdelanteEHR, type ScreenerResult } from "@/lib/ehr";
+import { AdelanteEHR } from "@/lib/ehr";
 import { screenerByKey, scoreScreener } from "@/lib/screeners";
 import { assessCompleteness, ITEM9_UNANSWERED_TASK_TITLE, answeredLabel, itemDisplay } from "@/lib/screenerCompleteness";
 import { recordIntakeScreenerAnswers } from "@/lib/screenerIntake";
@@ -74,7 +74,6 @@ describe("R5 screener completeness", () => {
     const flagsBefore = (AdelanteEHR.getPatient(p.id)!.severityFlags ?? []).length;
     recordIntakeScreenerAnswers(p.id, PHQ9, [3, 3, 3, 3, 3, 3, 3, null, 0]);
     expect((AdelanteEHR.getPatient(p.id)!.severityFlags ?? []).length).toBe(flagsBefore);
-    expect((AdelanteEHR.getPatient(p.id)!.screenerHistory ?? []).every((h: ScreenerResult) => h.completeness !== undefined || true)).toBe(true);
     // A complete result is stamped and still evaluated as today.
     recordIntakeScreenerAnswers(p.id, PHQ9, [3, 3, 3, 3, 3, 3, 3, 3, 0]);
     const latest = AdelanteEHR.getPatient(p.id)!.screeners["phq-9"]!;
