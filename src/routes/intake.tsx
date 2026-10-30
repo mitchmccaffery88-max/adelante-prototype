@@ -104,6 +104,8 @@ import {
 import { hasExistingHistory, seedIntakeHistory, type IntakeHistory } from "@/lib/intakeHistory";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
+import { answeredLabel, assessCompleteness, MEMBER_SKIPPED_LINE } from "@/lib/screenerCompleteness";
+import { recordIntakeScreenerAnswers } from "@/lib/screenerIntake";
 import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
 import { Link } from "@tanstack/react-router";
 import { useActingStaff } from "@/lib/roles";
@@ -772,28 +774,14 @@ function IntakePage() {
     }
     // P1 — persist the About-you patch first.
     AdelanteEHR.updateProfile(currentId, profileToSave());
+    let skippedAny = false;
     activeScreeners.forEach((s) => {
       // §Needs step 1 — AHC-HRSN only saved when it was actually asked.
       if (s.key === "ahc-hrsn" && !askCore) return;
       // §Phase 10a — shared scoring (gate items, domains) and raw answers
       // stored on the record; still the one `recordScreener` path.
-      const raw = answers[s.key] ?? [];
-      const ans = s.questions.map((_, i) => (typeof raw[i] === "number" ? raw[i] : 0));
-      const scored = scoreScreener(s, ans);
-      const isPhq = s.key === "phq-9";
-      const itemFlag = isPhq && (ans[8] ?? 0) > 0;
-      AdelanteEHR.recordScreener(currentId, {
-        key: s.key,
-        score: scored.score,
-        severity: scored.severity,
-        completedAt: new Date().toISOString(),
-        timepoint: "intake",
-        crisisFlag: itemFlag,
-        responses: ans,
-        context: "intake",
-        ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
-        ...(scored.domains ? { domains: scored.domains } : {}),
-      });
+      // §R5 (Draft — pending clinical sign-off) — blanks stay blank.
+      if (!recordIntakeScreenerAnswers(currentId, s, answers[s.key] ?? []).complete) skippedAny = true;
     });
     // §Phase 8a — merge, never replace; self-report, never "verified".
     AdelanteEHR.setCoverage(
@@ -986,7 +974,9 @@ function IntakePage() {
       }
     }
     toast.success("Intake complete", {
-      description: "Your care team will see this before your first session.",
+      description: skippedAny
+        ? MEMBER_SKIPPED_LINE[lang9a === "es" ? "es" : "en"]
+        : "Your care team will see this before your first session.",
     });
     try {
       if (storageKey) localStorage.removeItem(storageKey);
@@ -2166,15 +2156,14 @@ function IntakePage() {
                 .filter((s) => askCore || s.key !== "ahc-hrsn")
                 .map((s) => {
                 const raw = answers[s.key] ?? [];
-                const { score, severity } = scoreScreener(
-                  s,
-                  s.questions.map((_, i) => (typeof raw[i] === "number" ? raw[i] : 0)),
-                );
+                // §R5 — an incomplete screener has no total or band.
+                const c = assessCompleteness(s, raw);
+                const scored = c.scoringAnswers ? scoreScreener(s, c.scoringAnswers) : undefined;
                 return (
                   <div key={s.key} className="flex justify-between">
                     <span>{s.name}</span>
                     <span className="font-medium text-navy">
-                      {score} · {severity}
+                      {scored ? `${scored.score} · ${scored.severity}` : `Incomplete · ${answeredLabel(c)}`}
                     </span>
                   </div>
                 );

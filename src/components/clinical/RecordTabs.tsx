@@ -1,4 +1,5 @@
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
+import { answeredLabel, itemDisplay, LEGACY_MAY_INCLUDE_UNANSWERED, mayIncludeUnanswered, SCREENER_COMPLETENESS_DRAFT_LABEL } from "@/lib/screenerCompleteness";
 import { confirmedAction } from "@/components/staff/confirmed-action";
 import { CircleAlert } from "lucide-react";
 import { StatusChip } from "@/components/ui/status-chip";
@@ -3384,6 +3385,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
   const sudGate = canAccess(role, "screeners_sud", patient);
   const seesSud = roleSeesSudInstruments(role, patient);
   const drafts = listScreenerDrafts(patientId);
+  const incomplete = [...(patient.incompleteScreeners ?? [])].sort((a, b) => b.completedAt.localeCompare(a.completedAt));
   return (
     <div className="space-y-6">
       <TrackingTimeline patient={patient} role={role} />
@@ -3398,6 +3400,32 @@ export function TrackingTab({ patientId }: { patientId: string }) {
               {screenerByKey(d.key)?.name ?? (d.key === CSSRS_KEY ? "C-SSRS Screener" : d.key)} — {SCREENER_DRAFT_IN_PROGRESS_LABEL}
             </span>
           ))}
+        </div>
+      )}
+      {incomplete.length > 0 && (
+        <div className="rounded-md border p-3 space-y-1" data-testid="tracking-incomplete-screeners">
+          <h4 className="font-medium text-sm">Incomplete screeners</h4>
+          <p className="text-xs text-muted-foreground">
+            No total or severity is shown for an incomplete screener. {SCREENER_COMPLETENESS_DRAFT_LABEL}
+          </p>
+          <ul className="space-y-1 text-xs">
+            {incomplete.map((h, i) => {
+              const def = screenerByKey(h.key);
+              const name = def?.name ?? h.key;
+              if (def?.isSud && !seesSud) return null;
+              if (def?.isSud && sudGate.locked) return <li key={i}><LockedNote reason={sudGate.reason} /></li>;
+              return (
+                <li key={i} className="flex flex-wrap gap-2" data-testid={`tracking-incomplete-${h.key}`}>
+                  <span>{new Date(h.completedAt).toLocaleDateString()}</span>
+                  <span className="font-medium">{name}</span>
+                  <span>Incomplete · {answeredLabel(h)}</span>
+                  {h.key === "phq-9" && h.unansweredItems.includes(8) && (
+                    <span data-testid="tracking-item9-not-answered">Item 9: {itemDisplay(h, 8)}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
       <LabsAndMeasuresTracking patientId={patientId} role={role} />
@@ -3458,6 +3486,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
               <h4 className="font-medium text-navy text-sm">{title}</h4>
               <span className="text-[11px] text-muted-foreground">
                 Latest: {data[data.length - 1]?.score} · {data[data.length - 1]?.severity}
+                {mayIncludeUnanswered(last) ? ` · ${LEGACY_MAY_INCLUDE_UNANSWERED}` : ""}
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground">

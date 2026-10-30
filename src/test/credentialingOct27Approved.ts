@@ -3,6 +3,7 @@ import { withApprovedCoverageRulesOct29 } from "./coverageRulesOct29Approved";
 import { withApprovedPatientSchedulingOct29 } from "./patientSchedulingOct29Approved";
 import { withApprovedPatientSchedulingOct30 } from "./patientSchedulingOct30Approved";
 import { withApprovedFamilyRequestOct30 } from "./familyRequestOct30Approved";
+import { withApprovedScreenerCompletenessOct30 } from "./screenerCompletenessOct30Approved";
 import { withApprovedCredentialingDeaOct28 } from "./credentialingDeaOct28Approved";
 import { withApprovedCredentialingReconciliationOct28 } from "./credentialingReconciliationOct28Approved";
 import { withApprovedAccessRulesOct28 } from "./accessRulesOct28Approved";
@@ -158,5 +159,5 @@ export function withApprovedCredentialingOct27(path: string, rollbackText: strin
     if (s.split(from).length !== 2) throw new Error(`Approved anchor not found once in ${path}`);
     s = s.replace(from, to);
   }
-  return withApprovedFamilyRequestOct30(path, withApprovedPatientSchedulingOct30(path, withApprovedPatientSchedulingOct29(path, withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s)))))))));
+  return withApprovedScreenerCompletenessOct30(path, withApprovedFamilyRequestOct30(path, withApprovedPatientSchedulingOct30(path, withApprovedPatientSchedulingOct29(path, withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s))))))))));
 }
