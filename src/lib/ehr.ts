@@ -226,6 +226,7 @@ import {
   LEGACY_AUDIT_LABEL,
   type ScreenerDomainResult,
 } from "./screeners";
+import { assessCompleteness } from "./screenerCompleteness";
 export type { LibraryCategory, LibraryItem, Exercise, SavedToolkitItem } from "./library";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
 // ownership, Part 2 restriction messaging); imports nothing back from here.
