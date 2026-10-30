@@ -285,3 +285,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] Bridge coverageRequests determinations order into the resolver — scheduling checkpoint; full units 3,690/3,690, public 53/53.
 - [x] SMHS determination and "Change who pays" screens — 20:00 scheduling item (a), safe projections and treating relationship enforced; final checkpoint validation listed above.
 - [ ] Christi/compliance confirmations, sliding-scale tiers, MOUD code mapping — waiting on Christi/compliance
+
+## EHR/Admin inventory (30 Oct, report only)
+- [x] docs/ehr-admin-inventory.md written (sections 1–10; "needs check" items listed at end)
+- [ ] Cleanup batches 1–11 from section 7 — not started, awaiting Mitch's walkthrough
