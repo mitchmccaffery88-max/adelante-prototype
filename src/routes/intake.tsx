@@ -104,9 +104,8 @@ import {
 import { hasExistingHistory, seedIntakeHistory, type IntakeHistory } from "@/lib/intakeHistory";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
-import { answeredLabel, assessCompleteness, MEMBER_SKIPPED_LINE, phq9Item9Positive, phq9Item9Unanswered } from "@/lib/screenerCompleteness";
-import { screenerFollowupActor } from "@/lib/screenerFollowup";
-import { runAction } from "@/lib/actions/runAction";
+import { answeredLabel, assessCompleteness, MEMBER_SKIPPED_LINE } from "@/lib/screenerCompleteness";
+import { recordIntakeScreenerAnswers } from "@/lib/screenerIntake";
 import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
 import { Link } from "@tanstack/react-router";
 import { useActingStaff } from "@/lib/roles";
@@ -781,49 +780,8 @@ function IntakePage() {
       if (s.key === "ahc-hrsn" && !askCore) return;
       // §Phase 10a — shared scoring (gate items, domains) and raw answers
       // stored on the record; still the one `recordScreener` path.
-      const raw = answers[s.key] ?? [];
-      // §R5 (Draft — pending clinical sign-off) — a shown item left blank
-      // stays blank (null), never 0. Instrument-skipped items are "not
-      // asked" and scored per the instrument. Incomplete = no total/band.
-      const c = assessCompleteness(s, raw);
-      const completedAt = new Date().toISOString();
-      if (!c.complete) {
-        skippedAny = true;
-        AdelanteEHR.recordIncompleteScreener(currentId, {
-          key: s.key,
-          status: "incomplete",
-          completedAt,
-          timepoint: "intake",
-          context: "intake",
-          shownCount: c.shownCount,
-          answeredCount: c.answeredCount,
-          responses: c.responses,
-          unansweredItems: c.unansweredItems,
-          notAskedItems: c.notAskedItems,
-        });
-        if (phq9Item9Unanswered(s.key, c)) {
-          runAction("screener_item9_followup", screenerFollowupActor, AdelanteEHR.getPatient(currentId), {
-            args: [{ patientId: currentId, completedAt }],
-          });
-        }
-        return;
-      }
-      const ans = c.scoringAnswers!;
-      const scored = scoreScreener(s, ans);
-      const itemFlag = phq9Item9Positive(s.key, raw);
-      AdelanteEHR.recordScreener(currentId, {
-        key: s.key,
-        score: scored.score,
-        severity: scored.severity,
-        completedAt,
-        timepoint: "intake",
-        crisisFlag: itemFlag,
-        responses: ans,
-        ...(c.notAskedItems.length ? { notAskedItems: c.notAskedItems } : {}),
-        context: "intake",
-        ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
-        ...(scored.domains ? { domains: scored.domains } : {}),
-      });
+      // §R5 (Draft — pending clinical sign-off) — blanks stay blank.
+      if (!recordIntakeScreenerAnswers(currentId, s, answers[s.key] ?? []).complete) skippedAny = true;
     });
     // §Phase 8a — merge, never replace; self-report, never "verified".
     AdelanteEHR.setCoverage(
