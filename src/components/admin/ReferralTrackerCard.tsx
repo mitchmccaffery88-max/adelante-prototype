@@ -227,8 +227,8 @@ export function ReferralTrackerCard({
               onClick={() => setOpenRefId(r.id)}
               className="w-full text-left border-b last:border-0 pb-3 last:pb-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-teal rounded"
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0 text-sm">
                   <div className="font-medium text-navy">
                     {r.firstName} {r.lastName}
                   </div>
@@ -252,7 +252,7 @@ export function ReferralTrackerCard({
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                   {hasOpenOutreachTask(r) && (
                     <Badge className="bg-warning/20 text-navy border-0">Call needed</Badge>
                   )}
