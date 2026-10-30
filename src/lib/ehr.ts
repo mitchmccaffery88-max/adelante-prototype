@@ -1687,6 +1687,11 @@ export interface Patient {
   screeners: Record<string, ScreenerResult | undefined>;
   // Longitudinal screener trends (PHQ-9/GAD-7 at intake/30/60/90, AUDIT/DAST/PCL ad hoc)
   screenerHistory?: ScreenerResult[];
+  /**
+   * §R5 — screeners with a shown item left blank. No total, no severity band,
+   * never read by severity, reassessment, care-plan, content or report logic.
+   */
+  incompleteScreeners?: IncompleteScreener[];
   /** Screeners/assessments that were due and not completed (Tracking). */
   missedScreeners?: MissedScreener[];
   needs: {
@@ -2025,6 +2030,22 @@ export interface MissedScreener {
   reason?: string;
 }
 
+/** §R5 (Draft — pending clinical sign-off) — a screener left incomplete. No score. */
+export interface IncompleteScreener {
+  key: string;
+  status: "incomplete";
+  completedAt: string;
+  timepoint?: ScreenerResult["timepoint"];
+  context?: ScreenerResult["context"];
+  instrumentVersion?: string;
+  shownCount: number;
+  answeredCount: number;
+  /** Answered values; null = unanswered or not asked. */
+  responses: (number | null)[];
+  unansweredItems: number[];
+  notAskedItems: number[];
+}
+
 export interface ScreenerResult {
   key: string;
   score: number;
@@ -2063,6 +2084,15 @@ export interface ScreenerResult {
    */
   /** Raw item responses, in question order. */
   responses?: number[];
+  /**
+   * §R5 (30 Oct, Draft — pending clinical sign-off) — stamped on every result
+   * recorded after the screener-completeness fix. Absent = recorded before the
+   * fix ("may include unanswered items"). Incomplete screeners are never
+   * ScreenerResults; they live in `Patient.incompleteScreeners`.
+   */
+  completeness?: "complete";
+  /** Items hidden by the instrument's own skip logic (scored per the instrument). */
+  notAskedItems?: number[];
   /** True when the total met the instrument's standard positive cutoff. */
   positive?: boolean;
   /** Per-domain positivity for domain instruments (AHC-HRSN). */
@@ -10074,6 +10104,47 @@ export const AdelanteEHR = {
     });
     emit();
   },
+  /**
+   * §R5 (Draft — pending clinical sign-off) — store a screener with a shown
+   * item left blank. Never scored, never in `screeners`/`screenerHistory`.
+   * The unchanged crisis rule still fires on an ANSWERED PHQ-9 item 9 > 0.
+   * The item-9-unanswered follow-up task is created by the caller through
+   * the registry (`screener_item9_followup`).
+   */
+  recordIncompleteScreener(patientId: string, rec: IncompleteScreener) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const def = _defForResult(rec.key);
+    if (def?.retired) throw new Error(`${def.name} is retired and cannot be recorded.`);
+    const stored: IncompleteScreener = { ...rec, ...(def?.version && !rec.instrumentVersion ? { instrumentVersion: def.version } : {}) };
+    p.incompleteScreeners = [...(p.incompleteScreeners ?? []), stored];
+    appendAudit({
+      category: "clinical",
+      action: "screener_incomplete_recorded",
+      patientId,
+      actorId: rec.context === "patient_self" || rec.context === "intake" || !rec.context ? `patient:${patientId}` : "system",
+      detail: { screenerKey: rec.key, status: "incomplete", answeredCount: rec.answeredCount, shownCount: rec.shownCount, timepoint: rec.timepoint, context: rec.context },
+    });
+    if (rec.key === "phq-9" && (rec.responses[8] ?? 0) > 0) {
+      p.crisisFlag = { source: rec.key, raisedAt: rec.completedAt };
+      if (p.caseManagerId) {
+        AdelanteEHR.createCaseTask({
+          patientId: p.id,
+          assignedTo: p.caseManagerId,
+          title: `Crisis flag — ${rec.key.toUpperCase()}`,
+          detail: `Screener flagged elevated risk. Follow safety protocol and document contact today.`,
+          dueDate: new Date().toISOString().slice(0, 10),
+          origin: "screener_flag",
+          dedupeKey: `crisis:${p.id}:${rec.key}`,
+        });
+      }
+      AdelanteEHR.requestCssrs(patientId, "PHQ-9 item 9 > 0");
+    }
+    emit();
+  },
+  listIncompleteScreeners(patientId: string): IncompleteScreener[] {
+    return patients.find((x) => x.id === patientId)?.incompleteScreeners ?? [];
+  },
   recordScreener(patientId: string, result: ScreenerResult) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
@@ -10081,6 +10152,7 @@ export const AdelanteEHR = {
     // §Phase 10a — retired forms can never produce NEW results.
     if (def?.retired) throw new Error(`${def.name} is retired and cannot be recorded.`);
     _stampScreenerMeta(result);
+    if (!result.completeness) result.completeness = "complete";
     // §C3 — severity flag vs the previous result of the same instrument
     // (Draft rules in severityRules.ts). One flag per result, ever.
     const prevResult = _prevScreener(p, result);
@@ -10792,6 +10864,8 @@ export const AdelanteEHR = {
       completedAt: now,
       timepoint: "triggered",
       responses: input.answers.map((a) => (a === undefined ? -1 : a)),
+      // §R5 — gated items read as "not asked", never as a score.
+      notAskedItems: input.answers.flatMap((a, i) => (a === undefined ? [i] : [])),
       cssrsRisk: risk,
       positive: risk !== "none",
       context: input.mode === "staff" ? "clinic" : "patient_self",
@@ -11230,6 +11304,12 @@ export const AdelanteEHR = {
     for (const def of SHORT_FORM_SCREENERS) {
       const items = answers[def.key as "phq-2" | "gad-2"];
       if (!items || items.length === 0) continue;
+      // §R5 — a blank shown item makes the quick check incomplete: no score, no escalation.
+      const qc = assessCompleteness(def, items);
+      if (!qc.complete) {
+        AdelanteEHR.recordIncompleteScreener(patientId, { key: def.key, status: "incomplete", completedAt, timepoint: "adhoc", shownCount: qc.shownCount, answeredCount: qc.answeredCount, responses: qc.responses, unansweredItems: qc.unansweredItems, notAskedItems: qc.notAskedItems });
+        continue;
+      }
       const score = items.reduce((a, b) => a + (Number(b) || 0), 0);
       const result: ScreenerResult = {
         key: def.key,
@@ -14130,8 +14210,10 @@ export const AdelanteEHR = {
       throw new Error("This questionnaire needs substance-use consent on file.");
     if (!screenerComplete(def, answers))
       throw new Error(`Please answer all ${def.questions.length} questions.`);
-    // Skipped (gated) items are stored as 0 so answer arrays stay full-length.
-    answers = def.questions.map((_, i) => (typeof answers[i] === "number" ? answers[i] : 0));
+    // §R5 — gated items are "not asked" and take the instrument's published
+    // value (0) only for scoring; they are listed in notAskedItems.
+    const rc = assessCompleteness(def, answers);
+    answers = rc.scoringAnswers ?? answers;
     const due = AdelanteEHR.rescreensDue(patientId).find((d) => d.key === key);
     const scored = scoreScreener(def, answers);
     const result: ScreenerResult = {
@@ -14141,6 +14223,7 @@ export const AdelanteEHR = {
       completedAt: new Date().toISOString(),
       timepoint: due ? (`day${due.nextDue}` as const) : "adhoc",
       responses: answers,
+      ...(rc.notAskedItems.length ? { notAskedItems: rc.notAskedItems } : {}),
       context: "patient_self",
       ...(scored.domains ? { domains: scored.domains } : {}),
       // Same item-9 rule intake applies.
@@ -15756,7 +15839,7 @@ export const AdelanteEHR = {
       const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
       if (!gate.canProceed) throw new Error(gate.reason);
     }
-    if (input.answers.length !== def.questions.length)
+    if (input.answers.length !== def.questions.length || !screenerComplete(def, input.answers))
       throw new Error(`${def.name} requires all ${def.questions.length} items.`);
     const scored = scoreScreener(def, input.answers);
     const result: ScreenerResult = {
