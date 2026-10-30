@@ -25,7 +25,7 @@ function owner(patientId: string): string | undefined {
   return clin?.id ?? p.caseManagerId;
 }
 
-export function createItem9FollowupTask(input: { patientId: string; completedAt: string }): CaseTask {
+export function createItem9FollowupTask(input: { patientId: string; completedAt: string }): CaseTask | undefined {
   const assignedTo = owner(input.patientId);
   if (!assignedTo) throw new Error("No care team member to assign this to.");
   return AdelanteEHR.createCaseTask({
@@ -36,5 +36,5 @@ export function createItem9FollowupTask(input: { patientId: string; completedAt:
     dueDate: new Date().toISOString().slice(0, 10),
     origin: "screener_flag",
     dedupeKey: `screener-item9-unanswered:${input.patientId}:${input.completedAt}`,
-  }) as CaseTask;
+  });
 }
