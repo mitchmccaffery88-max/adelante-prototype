@@ -6,9 +6,9 @@
 //    "No" on the trauma item, C-SSRS gated items). Recorded as not asked and
 //    scored exactly as the instrument's published rule says.
 //  • UNANSWERED — the item was shown and the member left it blank. Stored as
-//    null, never 0. One unanswered shown item makes the screener incomplete:
-//    no total, no severity band, no prorating (prorating is a clinical
-//    decision pending Christi).
+//    null, never 0. Draft — pending clinical sign-off: PHQ-9 (1–2 missing)
+//    and GAD-7 (1 missing) may have estimated totals; no item is imputed.
+//    All other missing-answer results have no total or severity band.
 // Pure leaf module: imports only screener definitions.
 import { itemVisible, scoreScreener, severityFor, type ScreenerDef } from "./screeners";
 

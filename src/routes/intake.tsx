@@ -1,7 +1,7 @@
 import { buildIntakePacket, hasIntakePacket } from "@/lib/consentForms";
 import { FormsToSign } from "@/components/consent/FormsToSign";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Slim988Bar } from "@/components/patient/Slim988Bar";
 import { INTAKE_WELCOME_COPY, REASSESS_START_COPY } from "@/lib/intakeWelcomeCopy";
@@ -450,6 +450,13 @@ function IntakePage() {
   const due = JSON.parse(dueJson) as { key: string }[];
   const [step, setStep] = useState(0);
   const [item9Prompted, setItem9Prompted] = useState(false);
+  const itemsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!item9Prompted) return;
+    const item = itemsRef.current?.querySelector<HTMLElement>('[data-testid="screener-q-8"]');
+    item?.focus({ preventScroll: true });
+    item?.scrollIntoView({ block: "center" });
+  }, [item9Prompted]);
   // §E5 Phase A — reusable voice layer (off until the patient opts in).
   const voiceLang = lang9a === "es" ? "es" : "en";
   // Crisis card follows the page language, or Spanish when the crisis words were Spanish.
@@ -884,7 +891,8 @@ function IntakePage() {
       selfReported: [
         // Positive AHC-HRSN domains from the core questions just asked.
         ...(askCore && hrsnDef
-          ? (scoreScreener(hrsnDef, hrsnDef.questions.map((_, i) => answers["ahc-hrsn"]?.[i] ?? 0)).domains ?? [])
+          ? (assessCompleteness(hrsnDef, answers["ahc-hrsn"] ?? []).scoringAnswers
+              ? scoreScreener(hrsnDef, assessCompleteness(hrsnDef, answers["ahc-hrsn"] ?? []).scoringAnswers ?? []).domains ?? [] : [])
               .filter((d) => d.positive)
               .map((d) => ({
                 need: d.label,
@@ -1698,7 +1706,7 @@ function IntakePage() {
                   )}
                   <p className="mt-2 text-sm text-muted-foreground">{s.description}</p>
                 </div>
-                <ScreenerItems
+                <div ref={itemsRef}><ScreenerItems
                   def={s}
                   answers={answers[s.key] ?? []}
                   choices={choices[s.key]}
@@ -1706,8 +1714,8 @@ function IntakePage() {
                     setAnswers({ ...answers, [s.key]: next as number[] });
                     setChoices({ ...choices, [s.key]: ch });
                   }}
-                />
-                {s.key === "phq-9" && item9Prompted && <p role="status" data-testid="item9-reprompt" className="text-sm">{ITEM9_REPROMPT[langKey]}</p>}
+                  item9Prompt={s.key === "phq-9" && item9Prompted ? <div className="space-y-2"><p role="status" data-testid="item9-reprompt" className="text-sm">{ITEM9_REPROMPT[langKey]}</p><Slim988Bar /></div> : undefined}
+                /></div>
               </div>
             ),
         )}
@@ -2167,12 +2175,11 @@ function IntakePage() {
                 const raw = answers[s.key] ?? [];
                 // §R5 — an incomplete screener has no total or band.
                 const c = assessCompleteness(s, raw);
-                const scored = c.scoringAnswers ? scoreScreener(s, c.scoringAnswers) : undefined;
                 return (
                   <div key={s.key} className="flex justify-between">
                     <span>{s.name}</span>
                     <span className="font-medium text-navy">
-                      {scored ? `${scored.score} · ${scored.severity}` : `Incomplete · ${answeredLabel(c)}`}
+                      {langKey === "es" ? `${c.answeredCount} de ${c.shownCount} respondidas` : answeredLabel(c)}
                     </span>
                   </div>
                 );
