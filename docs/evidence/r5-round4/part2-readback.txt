@@ -1,0 +1,161 @@
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+SYNTHETIC READBACK {"id": "p1", "name": "Daniel", "incomplete": [{"key": "audit", "unansweredItems": [0]}, {"key": "dast-10", "unansweredItems": [0]}]}
+TAB BAR - navigation "Chart tabs":
+  - tab "Brief" [selected]
+  - tab "Notes & Documents"
+  - tab "Care plan & Needs"
+  - tab "Medications"
+  - tab "Measures"
+  - tab "Schedule & Messages"
+  - tab "Tasks & Contacts 5 due"
+  - tab "Record & Admin"
+GATE READBACK {"role": "therapist", "staffId": "s-th1", "gate": {"level": "read", "locked": false}, "seesSud": true}
+MEASURES SNAPSHOT therapist - main:
+  - navigation "Measures sections":
+    - button "Tracking"
+    - button "ASAM"
+  - button "Tracking" [expanded]
+  - heading "All screeners & assessments" [level=4]
+  - text: Instrument
+  - combobox "Instrument":
+    - option "All" [selected]
+    - option "GAD-7"
+    - option "PC-PTSD-5"
+    - option "PHQ-9"
+  - text: Status
+  - combobox "Status":
+    - option "Completed and missed" [selected]
+    - option "Completed"
+    - option "Missed or follow-up needed"
+  - text: From
+  - textbox "From"
+  - text: To
+  - textbox "To"
+  - table:
+    - rowgroup:
+      - row "Date Instrument Score Severity / level Status":
+        - cell "Date"
+        - cell "Instrument"
+        - cell "Score"
+        - cell "Severity / level"
+        - cell "Status"
+    - rowgroup:
+      - row "10/29/2026 PC-PTSD-5 3 Negative (draft cut-point 4) Completed":
+        - cell "10/29/2026"
+        - cell "PC-PTSD-5"
+        - cell "3"
+        - cell "Negative (draft cut-point 4)"
+        - cell "Completed"
+      - row "10/24/2026 PHQ-9 — — Missed":
+        - cell "10/24/2026"
+        - cell "PHQ-9"
+        - cell "—"
+        - cell "—"
+        - cell "Missed"
+      - row "10/10/2026 PC-PTSD-5 2 Negative (draft cut-point 4) Completed":
+        - cell "10/10/2026"
+        - cell "PC-PTSD-5"
+        - cell "2"
+        - cell "Negative (draft cut-point 4)"
+        - cell "Completed"
+      - row "9/21/2026 GAD-7 — — Missed":
+        - cell "9/21/2026"
+        - cell "GAD-7"
+        - cell "—"
+        - cell "—"
+        - cell "Missed"
+      - row "9/21/2026 PC-PTSD-5 2 Negative (draft cut-point 4) Completed":
+        - cell "9/21/2026"
+        - cell "PC-PTSD-5"
+        - cell "2"
+        - cell "Negative (draft cut-point 4)"
+        - cell "Completed"
+      - row "9/9/2026 PHQ-9 — — Follow-up needed":
+        - cell "9/9/2026"
+        - cell "PHQ-9"
+        - cell "—"
+        - cell "—"
+        - cell "Follow-up needed"
+      - row "9/9/2026 GAD-7 — — Follow-up needed":
+        - cell "9/9/2026"
+        - cell "GAD-7"
+        - cell "—"
+        - cell "—"
+        - cell "Follow-up needed"
+      - row "6/11/2026 PHQ-9 14 Moderate Completed":
+        - cell "6/11/2026"
+        - cell "PHQ-9"
+        - cell "14"
+        - cell "Moderate"
+        - cell "Completed"
+      - row "6/11/2026 GAD-7 11 Moderate Completed":
+        - cell "6/11/2026"
+        - cell "GAD-7"
+        - cell "11"
+        - cell "Moderate"
+        - cell "Completed"
+      - row "5/27/2026 PHQ-9 16 Moderately Severe Completed":
+        - cell "5/27/2026"
+        - cell "PHQ-9"
+        - cell "16"
+        - cell "Moderately Severe"
+        - cell "Completed"
+      - row "5/27/2026 GAD-7 13 Moderate Completed":
+        - cell "5/27/2026"
+        - cell "GAD-7"
+        - cell "13"
+        - cell "Moderate"
+        - cell "Completed"
+      - row "5/12/2026 PHQ-9 18 Moderately Severe Completed":
+        - cell "5/12/2026"
+        - cell "PHQ-9"
+        - cell "18"
+        - cell "Moderately Severe"
+        - cell "Completed"
+      - row "5/12/2026 GAD-7 13 Moderate Completed":
+        - cell "5/12/2026"
+        - cell "GAD-7"
+        - cell "13"
+        - cell "Moderate"
+        - cell "Completed"
+  - heading "Incomplete screeners" [level=4]
+  - paragraph: No total or severity is shown for an incomplete screener. Draft — pending clinical sign-off
+  - list:
+    - listitem: 10/31/2026 DAST-10 Incomplete · 9 of 10 answered
+    - listitem: 10/31/2026 AUDIT-10 Incomplete · 9 of 10 answered
+  - text: "DAST-10 · IncompleteItem 1: Not answered AUDIT-10 · IncompleteItem 1: Not answered"
+  - heading "Labs" [level=4]
+  - text: Simulated — not sent to a lab Placeholder lab — not sent
+  - paragraph: No lab orders.
+  - heading "C-SSRS Screener" [level=4]
+  - button "Administer C-SSRS"
+  - paragraph: No C-SSRS on file.
+  - heading "PHQ-9" [level=4]
+  - text: "Latest: 14 · Moderate · may include unanswered items"
+  - paragraph: Version PHQ-9 (Spitzer, Williams, Kroenke) · scoring sum-v1
+  - button "View as table"
+  - figure "PHQ-9 scores":
+    - img: 5/12/2026 5/27/2026 6/11/2026 0 5 10 15 20 intake day30
+  - heading "GAD-7" [level=4]
+  - text: "Latest: 11 · Moderate · may include unanswered items"
+  - paragraph: Version GAD-7 (Spitzer, Williams, Kroenke, Löwe) · scoring sum-v1
+  - button "View as table"
+  - figure "GAD-7 scores":
+    - img: 5/12/2026 5/27/2026 6/11/2026 0 4 8 12 16 intake day30
+  - heading "PC-PTSD-5" [level=4]
+  - text: "Latest: 3 · Negative (draft cut-point 4) · may include unanswered items"
+  - paragraph: Version PC-PTSD-5 (2022) · scoring count-yes-gated-v1 · cutoff draft pending clinical sign-off
+  - button "View as table"
+  - figure "PC-PTSD-5 scores":
+    - img: 9/21/2026 10/10/2026 10/29/2026 0 0.75 1.5 2.25 3
+  - button "ASAM No ASAM on file"
+TAB BAR - navigation "Chart tabs":
+  - tab "Brief" [selected]
+  - tab "Notes & Documents"
+  - tab "Care plan & Needs"
+  - tab "Medications"
+  - tab "Schedule & Messages"
+  - tab "Tasks & Contacts"
+  - tab "Record & Admin"
+GATE READBACK {"role": "clinical_coordinator", "staffId": "s-cc1", "gate": {"level": "none", "locked": true}, "seesSud": false}
+DENIED: Measures absent, Tracking deep link falls back to Brief; no SUD names/details/stub {"role": "clinical_coordinator", "staffId": "s-cc1", "gate": {"level": "none", "locked": true}, "seesSud": false}
