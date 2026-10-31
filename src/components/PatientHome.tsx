@@ -722,17 +722,11 @@ function ReassessmentOrCompleteTile({ patientId }: { patientId: string }) {
             </Button>
           </li>
         )}
-        {due.map((d) => (
-          <li key={d.key} className="flex items-center gap-2 rounded-md border bg-card p-2.5 text-sm">
-            <span className="flex-1">{rescreenName(d.key, L)}</span>
-            <Button asChild size="sm">
-              <Link to="/rescreen/$key" params={{ key: d.key }} data-testid={`reassess-start-${d.key}`}>
-                {c.start}
-              </Link>
-            </Button>
-          </li>
-        ))}
+        {due.map((d) => <li key={d.key} className="text-sm">{rescreenName(d.key, L)}</li>)}
       </ul>
+      {due.length > 0 && <Button asChild size="patient">
+        <Link to="/rescreen/$key" params={{ key: "bundle" }} data-testid="reassess-start-bundle">{c.bundleStart}</Link>
+      </Button>}
       <Button asChild size="sm" variant="outline">
         <Link to="/intake">{t("homeUpdateAnswers")}</Link>
       </Button>
