@@ -454,3 +454,6 @@ Total lines: 342. Unclassified: 0.
 
 ## 26 Oct Intake Phase A
 - `src/lib/intakePhaseA.ts` — three `isConsentCategoryAuthorized` entry-point lines: restricted referral boundary plus protected group store/projection require current treatment authorization. No ledger write or clinical scope projection.
+
+## R53 cadence (31 Oct, Mitch approved 18:25 CT)
+- `src/lib/ehr.ts:14165` — `isConsentCategoryAuthorized(p.id, "sud_treatment")`; category `sud_treatment`; purpose: gate AUDIT/DAST auto-prompts to members with SUD treatment consent (R53, Draft). Read-only, existing consent gate; entry-point count 46→47 only. No consent or permission writes.
