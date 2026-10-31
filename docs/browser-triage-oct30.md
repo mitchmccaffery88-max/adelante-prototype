@@ -106,3 +106,13 @@ The earlier harness stop was resolved in Round 4c; final Round 4d units passed 3
 
 ### Label-only follow-up — 31 Oct
 Shared singular/plural estimate label check: full units **3,770/3,770**; existing Tracking/clinician-dashboard browser specs **13/13**, one worker, no failures to mark against this triage list. Tracking screenshot saved under `docs/evidence/r5-round4/tracking-estimate-label-oct31.png`. Direct due-panel walkthrough is unavailable: `RescreenDuePanel` is defined but not mounted by the current clinician route; no product/tests changed to mount it. See screener report Label fix note. #16 approval, #20 unconfirmed cause and remaining known browser failures stay open; clinical review and State/CalOMS needs check unchanged.
+
+
+## Part 4 — 31 Oct (Mitch approved 15:46 CT)
+
+Draft. No product code, Supabase, permissions, permission snapshots, booking, access or role-rule changes. Persistence OFF; nothing published.
+
+### #16 approved test-only change
+Only the Today click setup in `e2e/accessClickThroughOct29.spec.ts:10` changes. The page reads the live acting staff, the host's `resolveWorkspaceActor`/appointment scope and `scheduleSegments(...).closed`, and selects an existing off-team patient whose unchanged chart entry requires a reason. No visit is created and no on-team/direct-entry substitute is accepted. A missing eligible row fails with “fixture prerequisite missing”. Every later reason-gate assertion remains byte-identical. New `browserTriagePart4Oct31Approved.ts` chains after Part 3, checks complete prior/replacement hashes and an exact-once anchor; its regression tests exact apply, drift and reapplication refusal. Earlier adapters remain unchanged.
+
+Validation results will be recorded immediately below. #20 remains investigation only; its spec and product code are unchanged. Evidence: `docs/evidence/triage-part4/`.

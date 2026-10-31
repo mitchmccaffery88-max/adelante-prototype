@@ -7,7 +7,29 @@ test("Today, Inbox, bell and quick peek share the pre-data reason gate", async (
   await expect(page.getByRole("tab", { name: "Dashboard", exact: true })).toBeVisible();
   const cancelled = page.getByRole("tab", { name: /^Cancelled · Missed visit · late cancel · rescheduled/ });
   await cancelled.click();
-  await page.getByRole("region", { name: "Today", exact: true }).getByRole("button", { name: "ADL-2026-002", exact: true }).click();
+  const closedFixture = await page.evaluate(async () => {
+    const roles = await import(/* @vite-ignore */ "/src/lib/roles.ts");
+    const { scheduleSegments } = await import(/* @vite-ignore */ "/src/lib/clinicianWorkspace.ts");
+    const { resolveWorkspaceActor } = await import(/* @vite-ignore */ "/src/lib/workspaceIdentity.ts");
+    const { myCaseload } = await import(/* @vite-ignore */ "/src/lib/myWork.ts");
+    const { onCareTeam, chartEntryFor } = await import(/* @vite-ignore */ "/src/lib/chartAccess.ts");
+    const { staffPatientLabel } = await import(/* @vite-ignore */ "/src/lib/staffPatientLabel.ts");
+    const staff = roles.getActingStaff();
+    const actor = resolveWorkspaceActor({ role: roles.getActingRole(), staffId: staff.id, staffName: staff.name, clinicianId: staff.clinicianId, caseManagerId: staff.caseManagerId });
+    const ehr = (window as any).__adelante.AdelanteEHR;
+    const mine = new Set(myCaseload(actor).map((p) => p.id));
+    const appointments = actor.clinicianId ? ehr.appointmentsForClinician(actor.clinicianId) : ehr.listAppointments().filter((a: { patientId: string }) => mine.has(a.patientId));
+    const closed = scheduleSegments(appointments).closed;
+    const visit = closed.find((a) => {
+      const patient = ehr.getPatient(a.patientId);
+      const entry = chartEntryFor(actor.role, actor.staffId, a.patientId);
+      return patient && !onCareTeam(actor.staffId, patient) && !entry.ok && entry.reason === "reason";
+    });
+    return { actor: { role: actor.role, staffId: actor.staffId }, closedVisitIds: closed.map((a) => a.id), eligible: visit ? { visitId: visit.id, patientId: visit.patientId, label: staffPatientLabel(actor, visit.patientId) } : null };
+  });
+  expect(closedFixture.eligible, `fixture prerequisite missing: Today/closed has no eligible off-team reason-gated visit for ${closedFixture.actor.staffId}; closed visits: ${closedFixture.closedVisitIds.join(", ") || "none"}`).not.toBeNull();
+  if (!closedFixture.eligible) throw new Error("fixture prerequisite missing: no eligible Today/closed visit");
+  await page.getByRole("region", { name: "Today", exact: true }).getByRole("button", { name: closedFixture.eligible.label, exact: true }).click();
   await expect(page.getByTestId("chart-access-gate")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Full patient record", exact: true })).toHaveCount(0);
   await page.evaluate(() => (window as any).__adelante.go("/inbox"));
