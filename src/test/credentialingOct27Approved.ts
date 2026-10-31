@@ -1,3 +1,4 @@
+import { withApprovedScreenerHarnessInputOct31 } from "./screenerHarnessInputOct31Approved";
 import { withApprovedScreenerHarnessOct31 } from "./screenerHarnessOct31Approved";
 import { withApprovedScreenerFinalAuditOct31 } from "./screenerFinalAuditOct31Approved";
 import { withApprovedScreenerReassessmentOct30 } from "./screenerReassessmentOct30Approved";
@@ -163,5 +164,5 @@ export function withApprovedCredentialingOct27(path: string, rollbackText: strin
     if (s.split(from).length !== 2) throw new Error(`Approved anchor not found once in ${path}`);
     s = s.replace(from, to);
   }
-  return withApprovedScreenerHarnessOct31(path, withApprovedScreenerFinalAuditOct31(path, withApprovedScreenerReassessmentOct30(path, withApprovedScreenerFollowupsOct30(path, withApprovedScreenerCompletenessOct30(path, withApprovedFamilyRequestOct30(path, withApprovedPatientSchedulingOct30(path, withApprovedPatientSchedulingOct29(path, withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s))))))))))))));
+  return withApprovedScreenerHarnessInputOct31(path, withApprovedScreenerHarnessOct31(path, withApprovedScreenerFinalAuditOct31(path, withApprovedScreenerReassessmentOct30(path, withApprovedScreenerFollowupsOct30(path, withApprovedScreenerCompletenessOct30(path, withApprovedFamilyRequestOct30(path, withApprovedPatientSchedulingOct30(path, withApprovedPatientSchedulingOct29(path, withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s)))))))))))))));
 }

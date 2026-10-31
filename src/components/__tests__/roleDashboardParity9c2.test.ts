@@ -34,7 +34,7 @@ describe("9c-2 unchanged values, IDs and handlers against rollback", () => {
   it.each(files)("%s preserves existing bindings", path => {
     // 26 Oct Phase A: one clinical-only triage row host in the existing Today tile; all prior bindings pinned.
     const priorBaseline = withApprovedChartSelectionOct29(path, withApprovedOpsWorkspaceB3b(path, withApprovedBillingB3b(path, withApprovedP3(path, old(path)))));
-    const baseline = path === "src/routes/clinician.tsx" ? withApprovedCredentialingOct27(path, priorBaseline) : priorBaseline;
+    const baseline = path === "src/routes/clinician.tsx" ? withApprovedCredentialingOct27(path, withApprovedConsentB2(path, old(path))) : priorBaseline;
     const from = 'return <div className="space-y-4">{!secondary &&';
     const expected = path === "src/components/clinician/WorkspaceDashboard.tsx" ? baseline.replace(from, 'return <div className="space-y-4">{!secondary && <PreChartTriageRows actor={actor} />}{!secondary &&') : baseline;
     if (path === "src/components/clinician/WorkspaceDashboard.tsx") expect(baseline.split(from)).toHaveLength(2);
