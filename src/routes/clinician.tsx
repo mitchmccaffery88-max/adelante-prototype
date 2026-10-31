@@ -872,8 +872,13 @@ function RescreenDuePanel({
           const hist = (fullPatient?.screenerHistory ?? [])
             .filter((h) => h.key === r.key)
             .sort((a, b) => +new Date(a.completedAt) - +new Date(b.completedAt));
-          const latest = hist[hist.length - 1];
-          const prev = hist[hist.length - 2];
+          // Draft — pending clinical sign-off: newest incomplete submission is not an older score.
+          const incomplete = [...(fullPatient?.incompleteScreeners ?? [])]
+            .filter((h) => h.key === r.key).sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
+          const scoredLatest = hist[hist.length - 1];
+          const currentIncomplete = incomplete && (!scoredLatest || incomplete.completedAt >= scoredLatest.completedAt) ? incomplete : undefined;
+          const latest = currentIncomplete ? undefined : scoredLatest;
+          const prev = currentIncomplete ? undefined : hist[hist.length - 2];
           let TrendIcon: typeof TrendingUp | null = null;
           let trendCls = "";
           if (latest && prev) {
@@ -898,6 +903,7 @@ function RescreenDuePanel({
                   {staffPatientLabel({ role: rescreenActor.role, staffId: rescreenActor.staffId }, r.patient.id)}
                 </span>
                 · {r.key.toUpperCase()}
+                {currentIncomplete && <span className="text-xs text-muted-foreground">· Incomplete · {currentIncomplete.answeredCount} of {currentIncomplete.shownCount} answered</span>}
                 {latest && (
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                     · {latest.score} {estimateLabel(latest)}
