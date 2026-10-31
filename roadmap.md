@@ -1,8 +1,5 @@
 # Roadmap
-- [ ] 31 Oct Round 4c R5 / browser Part 3: apply approved immutable-stage harness regression; focused then full units; proceed to approved #21/#19/#18 updates, #20/#16 investigations and screener/public one-worker checks only if A passes; keep clinical review and State/CalOMS needs check open.
-- [ ] 31 Oct R5 round 4b / browser triage Part 3: clinician-only full-source input and new exact-once adapter applied; parity/new regression 22/22; earlier unchanged regression conflicts at screenerHarnessOct31Approved.test.ts:10 (22 passed / 1 failed combined). STOP: approval needed for older-stage regression fixture; B–D skipped. Full units, browser updates/investigations, screener walkthroughs and targeted/public suites remain open. Draft; reviews and State/CalOMS needs check retained; no permissions/snapshots/persistence/Supabase changes or publishing.
-- [ ] 31 Oct browser triage Part 2: approved exact-once browser updates, five unresolved causes, affected-spec rerun and report; R5 stop remains untouched.
-- [ ] 31 Oct R5 round 4: approved clinician-only harness/exact-once chain applied; focused 19/20, full units 3,756 passed / 1 failed (3,757). STOP at unchanged accessRulesOct28Approved.ts:31 prior-source hash: partial inventory baseline is not the chain's full consent-approved source. Proposed clinician-only full-source input needs approval; every binding assertion retained. Intake/desktop/Spanish screenshots, QuickCheck/safety/Tracking readback and targeted/public one-worker suites remain open; clinical review stays Draft. See screener-completeness-report.md Round 4.
+- [x] 31 Oct R5 verification / browser triage Part 3 done: units 3,763/3,763; Part 3 11/11; public 53/53; screener sets 9/10 (#13) and 8/10 (#7/#13), both known. Open: #16 test-only fix pending approval; #20 cause unconfirmed; remaining known browser failures unwaived; Christi/Dr. Bagga clinical review; State/CalOMS estimate allowance needs check.
 
 ## 29 Oct patient scheduling (Draft, pending Christi)
 - [x] 20:00 item (a): SMHS treating-clinician dated/reason control and safe Billing/active-referral Intake funding drawer; real desktop/phone save/readback, full units 3,695/3,695; additional sixth Intake test passed.
@@ -296,7 +293,8 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 
 ## Screener completeness (R5, 30 Oct, Draft — pending Christi / Dr. Bagga)
 - [x] Blank shown items stay blank; incomplete screeners are unscored and stored apart; neutral item-9 follow-up task through the registry; crisis rule unchanged; staff "Incomplete" / "may include unanswered items" display; member skipped line. Report: docs/screener-completeness-report.md
-- [ ] runAction registry snapshot needs the new hidden row (waiting on Mitch's approval to update)
-- [ ] Full browser suite 246/270: 24 staff/chart failures listed in docs/screener-completeness-report.md (needs check whether they predate this batch)
-- [ ] Prorating, task wording/owner, and skip on /rescreen and the quick check (waiting on Christi)
+- [x] runAction hidden registry row approved and verified in prior batch.
+- [x] All 24 original browser failures confirmed pre-R5; remaining known cases are tracked in the close-out above.
+- [x] Prorating, clinician follow-up and member decline/skip implemented and verified; clinical review remains open above.
 - [x] 30 Oct browser triage: snapshot row added; 24 failures all pre-R5; 390px referral row fixed; test updates await Mitch (docs/browser-triage-oct30.md)
+- [ ] 31 Oct estimate label implemented and verified: EN/ES singular/plural, exact-once re-pin, units 3,770/3,770, Tracking/clinician-dashboard browsers 13/13 and screenshot saved. Only direct due-panel walkthrough unavailable: RescreenDuePanel is defined but not mounted; mounting requires separate scope. No scoring/access changes.

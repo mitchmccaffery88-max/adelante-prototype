@@ -96,6 +96,13 @@ No product or test changes. #21/#19/#18 remain completed: all eleven containing-
 
 **Public result recorded immediately:** **53/53 passed**, 20.2 minutes, all nine public/website specs, one worker. No failures to mark against the triage list. Log `docs/evidence/r5-round4/public-round4e.log`.
 
-Screener historical **9/10, known #13 only**, is retained, but its missing log requires a one-worker regeneration. No reconstructed log is claimed. Final screener result will be appended on completion.
+Screener run results and their different spec lists are recorded in the close-out below.
 
-The protected harness assertion and proposed narrowly scoped resolution are recorded in `screener-completeness-report.md`, Round 4b. Earlier browser failures remain unwaived.
+The earlier harness stop was resolved in Round 4c; final Round 4d units passed 3,763/3,763. Earlier browser failures remain unwaived.
+
+**Round 4e close-out — 31 Oct (docs only):** the screener runs used different spec sets, not a regression comparison. Round 4d ran `continuity.spec.ts`, `group2Pathways.spec.ts`, `advocateOnboardingActive.spec.ts`, `advocateSelfSeparation.spec.ts`, and `chartFoundation9b.spec.ts`: **9/10 passed**, known **#13** only. Round 4e ran `continuity.spec.ts`, `group2Pathways.spec.ts`, `advocateOnboardingActive.spec.ts`, `advocateSelfSeparation.spec.ts`, and `consentCaptureB2.spec.ts`: **8/10 passed**, known **#7 and #13**; log `docs/evidence/r5-round4/screeners-round4e.log`. Both #7 (consentCaptureB2) and #13 (group2Pathways) appear in the original triage table; **nothing is new**. Part 3 is 11/11 and public is 53/53 as recorded above; no reruns for this close-out.
+
+**R5 verification done. Exactly still open:** #16 projection-based test-only fix pending Mitch approval; #20 full-flow cause unconfirmed; remaining known browser failures in the triage table remain unwaived (latest screener set: #7/#13); Christi/Dr. Bagga clinical review; State/CalOMS estimate allowance **needs check** (estimates remain excluded absent explicit permission). No product/test/permission/persistence/Supabase changes in this close-out; nothing published.
+
+### Label-only follow-up — 31 Oct
+Shared singular/plural estimate label check: full units **3,770/3,770**; existing Tracking/clinician-dashboard browser specs **13/13**, one worker, no failures to mark against this triage list. Tracking screenshot saved under `docs/evidence/r5-round4/tracking-estimate-label-oct31.png`. Direct due-panel walkthrough is unavailable: `RescreenDuePanel` is defined but not mounted by the current clinician route; no product/tests changed to mount it. See screener report Label fix note. #16 approval, #20 unconfirmed cause and remaining known browser failures stay open; clinical review and State/CalOMS needs check unchanged.
