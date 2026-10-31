@@ -297,4 +297,4 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [x] All 24 original browser failures confirmed pre-R5; remaining known cases are tracked in the close-out above.
 - [x] Prorating, clinician follow-up and member decline/skip implemented and verified; clinical review remains open above.
 - [x] 30 Oct browser triage: snapshot row added; 24 failures all pre-R5; 390px referral row fixed; test updates await Mitch (docs/browser-triage-oct30.md)
-- [ ] 31 Oct estimated screener label fix: shared EN/ES singular/plural helper, approved exact-once source re-pin, units, Tracking/due-panel browsers and screenshot; scoring/access unchanged.
+- [ ] 31 Oct estimate label implemented and verified: EN/ES singular/plural, exact-once re-pin, units 3,770/3,770, Tracking/clinician-dashboard browsers 13/13 and screenshot saved. Only direct due-panel walkthrough unavailable: RescreenDuePanel is defined but not mounted; mounting requires separate scope. No scoring/access changes.
