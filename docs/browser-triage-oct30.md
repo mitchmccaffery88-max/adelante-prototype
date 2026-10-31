@@ -73,3 +73,18 @@ Draft — pending clinical sign-off. No publication, persistence change or Supab
 
 ### Validation
 Single-worker run of all touched and investigated specs started against :8080; no full browser suite requested. Final counts and every failure will be recorded below after completion. Any approved-update test that fails for another reason is stopped at that assertion without further changes.
+
+## Part 3 — 31 Oct (Mitch approved 08:28 CT): not started after mandatory A stop
+
+Draft — pending clinical sign-off. No publishing, persistence change, Supabase change, permission change or permission-snapshot change.
+
+The round-4b clinician comparison and new exact-once adapter passed **22/22**. The unchanged earlier harness regression then failed at `src/test/screenerHarnessOct31Approved.test.ts:10:31` (its older replacement anchor no longer appears in the approved final source): **22 passed / 1 failed** including that regression. This is not a failure on this browser-triage list. Per section A's mandatory stop, **sections B–D were skipped**; no browser specs were changed or run in Part 3.
+
+Still open, with approved scope retained:
+- **#21:** exact row-ID comparison using `listUnsignedWork({authorId:'c1', viewer:{role:'therapist', staffId:'s-th1'}})`, all existing filters retained, through a new exact-once adapter.
+- **#19:** valid roster Intake Coordinator for pool assertion, separate clinical-coordinator oversight assertion, no widened access.
+- **#18:** only the named Part 2 checkbox title replacement, seven-item count retained; stop on any subsequent legacy card/gate failure.
+- **#20 and #16:** report-only investigations still pending; Part 2's unresolved findings remain provisional, not newly confirmed causes. No invented visit or relaxed booking/access rule.
+- Every changed/investigated spec rerun with `--workers=1`, plus the requested screener-adjacent and public suites; combined failure report. No new browser count is claimed.
+
+The protected harness assertion and proposed narrowly scoped resolution are recorded in `screener-completeness-report.md`, Round 4b. Earlier browser failures remain unwaived.
