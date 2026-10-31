@@ -3429,13 +3429,13 @@ export function TrackingTab({ patientId }: { patientId: string }) {
         </div>
       )}
       <div className="space-y-2 text-sm" data-testid="tracking-answer-details">
-        {history.filter((h) => h.unansweredItems?.length && (!screenerByKey(h.key)?.isSud || seesSud)).map((h) => (
+        {history.filter((h) => h.unansweredItems?.length && (!screenerByKey(h.key)?.isSud || (seesSud && !sudGate.locked))).map((h) => (
           <div key={`${h.key}:${h.completedAt}`}>
             <span>{screenerByKey(h.key)?.name ?? h.key} · {h.score} · {estimateLabel(h)}</span>
             {h.unansweredItems?.map((i) => <span key={i} className="ml-2">Item {i + 1}: {itemDisplay(h, i)}</span>)}
           </div>
         ))}
-        {incomplete.filter((h) => !screenerByKey(h.key)?.isSud || seesSud).map((h) => (
+        {incomplete.filter((h) => !screenerByKey(h.key)?.isSud || (seesSud && !sudGate.locked)).map((h) => (
           <div key={`${h.key}:${h.completedAt}`}>
             <span>{screenerByKey(h.key)?.name ?? h.key} · Incomplete</span>
             {h.unansweredItems.map((i) => <span key={i} className="ml-2">Item {i + 1}: {itemDisplay(h, i)}</span>)}
