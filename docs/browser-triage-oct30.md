@@ -120,3 +120,5 @@ Validation results will be recorded immediately below. #20 remains investigation
 **Adapter validation recorded:** Part 4 + unchanged Part 3 regressions **4/4 passed**, 2 files, exit 0. Log `docs/evidence/triage-part4/adapter-tests.log`.
 
 **Full units recorded:** **3,771/3,771 passed**, 431/431 files, exit 0, 311.74s; no unhandled errors. Existing Radix accessibility warnings are in the log, not failed assertions. Log `docs/evidence/triage-part4/units.log`.
+
+**#16 spec recorded:** **0/1 passed**, exit 1, 12.4s, known triage **#16**. The approved prerequisite assertion at `accessClickThroughOct29.spec.ts:30` reports: `fixture prerequisite missing: Today/closed has no eligible off-team reason-gated visit for s-th1; closed visits: none`. This is the explicitly requested missing-fixture outcome; no later gate assertion was reached or changed. Stop on #16: no further edits or reruns. Log `docs/evidence/triage-part4/access-spec.log`; trace/context preserved below. #20 continues independently, investigation only.
