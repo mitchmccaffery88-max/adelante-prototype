@@ -1,3 +1,4 @@
+import "./screenerIntake";
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { disclose } from "./part2Disclosure";
 import { assertIntakeStagingBoundary } from "./intakeStagingBoundary";

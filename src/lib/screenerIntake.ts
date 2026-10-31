@@ -1,10 +1,9 @@
 // R5 follow-ups (30 Oct). Draft — pending clinical sign-off.
 // One writer for intake and rescreen; never imputes an individual answer.
 import { AdelanteEHR, type ScreenerResult, type IncompleteScreener } from "./ehr";
-import { runAction } from "./actions/runAction";
+import { enqueueItem9Followup } from "./screenerWriteBoundary";
 import { type ScreenerDef } from "./screeners";
 import { scoreAnsweredScreener, phq9Item9Positive, phq9Item9Unanswered, type ScreenerAnswer } from "./screenerCompleteness";
-import { screenerFollowupActor } from "./screenerFollowup";
 import { registerMemberScreenerWriter } from "./screenerWriteBoundary";
 
 export function recordMemberScreenerAnswers(patientId: string, def: ScreenerDef, raw: readonly ScreenerAnswer[],
@@ -28,9 +27,7 @@ export function recordMemberScreenerAnswers(patientId: string, def: ScreenerDef,
     AdelanteEHR.recordIncompleteScreener(patientId, result);
   }
   if (phq9Item9Unanswered(def.key, c)) {
-    runAction("screener_item9_followup", screenerFollowupActor, AdelanteEHR.getPatient(patientId), {
-      args: [{ patientId, completedAt }], auditReason: "Unanswered screening item follow-up",
-    });
+    enqueueItem9Followup({ patientId, completedAt });
   }
   return result;
 }
