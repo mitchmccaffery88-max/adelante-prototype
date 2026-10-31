@@ -39,16 +39,28 @@ const shot = (page: Page, name: string) => page.screenshot({ path: `${SHOTS}/${n
 test("J1 referral → chase task → peer fill → coordinator books on Anita → attended → timely-access line", async ({ page }) => {
   await boot(page, "s-cc1", "clinical_coordinator");
   const last = `Onebr${Date.now().toString(36).slice(-4)}`;
-  const r = await page.evaluate((lastName) => {
+  const intake = await page.evaluate(async () => {
+    const roles = await import(/* @vite-ignore */ "/src/lib/roles.ts");
+    const member = roles.staffForRole("intake_coordinator")[0];
+    if (!member) throw new Error("No assigned Intake Coordinator in roster");
+    return { staffId: member.id, name: member.name, role: "intake_coordinator" };
+  });
+  await as(page, intake.staffId, intake.role);
+  const r = await page.evaluate(({ lastName, intake }) => {
     const { j, AdelanteEHR } = (window as unknown as W).__adelante;
     const ref = AdelanteEHR.createReferral({ firstName: "Journey", lastName, dob: "1991-02-03", phone: "5595550111", referringAgency: "County Probation", referrerName: "Officer Diaz", referrerPhone: "5595550100", referralSource: "probation", consentToContact: true, channel: "public" }) as { id: string };
     const t = j.chaseTaskFor(ref.id) as { missing: string[]; status: string };
-    const coord = { role: "clinical_coordinator", staffId: "s-cc1", name: "Priya Raman" };
-    const inPool = (j.chaseRowsFor(coord) as { referral: { id: string }; lane: string }[]).some((x) => x.referral.id === ref.id && x.lane === "pool");
+    const inPool = (j.chaseRowsFor(intake) as { referral: { id: string }; lane: string }[]).some((x) => x.referral.id === ref.id && x.lane === "pool");
     return { id: ref.id, before: t.missing.length, open: t.status, inPool };
-  }, last);
+  }, { lastName: last, intake });
   expect(r.open).toBe("open");
   expect(r.inPool).toBe(true);
+  await as(page, "s-cc1", "clinical_coordinator");
+  const coordinatorOversight = await page.evaluate((id) => {
+    const { AdelanteEHR } = (window as unknown as W).__adelante;
+    return (AdelanteEHR.listReferrals() as { id: string }[]).some((ref) => ref.id === id);
+  }, r.id);
+  expect(coordinatorOversight).toBe(true);
   await go(page, "/referral-queue");
   await expect(page.getByText(last).first()).toBeVisible({ timeout: 20_000 });
   await shot(page, "j1-1-coordinator-pool");

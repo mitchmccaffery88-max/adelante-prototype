@@ -45,7 +45,7 @@ test("intake packet → sign 5, decline group → group gate → sign from promp
   await go(page, "/patient");
   const forms = page.getByTestId("forms-to-sign").first();
   await expect(forms.getByTestId("forms-progress")).toHaveText("0 of 7 done");
-  for (const t of ["HIPAA authorization", "Telehealth", "Patient portal", "Text reminders", "Sharing substance-use information (Part 2)"])
+  for (const t of ["HIPAA authorization", "Telehealth", "Patient portal", "Text reminders", "Sharing substance-use information for your care (Part 2)"])
     await forms.getByRole("checkbox", { name: `I agree to this form: ${t}` }).click();
   await expect(forms.getByTestId("part2-card")).toBeVisible();
   await forms.getByRole("button", { name: "No thanks: Group participation" }).click();
