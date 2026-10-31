@@ -1,0 +1,108 @@
+import { chromium, expect } from "/dev-server/node_modules/@playwright/test/index.mjs";
+import AxeBuilder from "/dev-server/node_modules/@axe-core/playwright/dist/index.mjs";
+import { writeFileSync } from "node:fs";
+const evidence = "/dev-server/docs/evidence/triage-part4";
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ viewport: {width:1280,height:1800} });
+const page = await context.newPage();
+expect.configure({timeout:15000});
+const cdp = await page.context().newCDPSession(page);
+const moduleUrls = new Map<string,string>();
+cdp.on("Debugger.scriptParsed", (event) => { for (const name of ["roles", "quickActions", "quickActionPrefs"]) if (event.url.includes("/src/lib/"+name+".ts")) moduleUrls.set(name,event.url); });
+await cdp.send("Debugger.enable");
+async function installInstrumentation() {
+ await page.evaluate(() => {
+   const w=window as any; w.__triage = {events:[], pending: new Map(), rows:[], sections:0};
+   const t=w.__triage;
+   const sample=() => { const el=document.querySelector('[data-testid="quick-action-settings"]'); const rows=Array.from(el?.querySelectorAll('li[data-testid^="pref-"]')??[]).map(x=>x.getAttribute("data-testid")); const count=el?1:0; if(JSON.stringify(rows)!==JSON.stringify(t.rows)||count!==t.sections) {t.events.push({time:performance.now(),url:location.pathname,rows,section:count,type:count<t.sections?"unmounted":count>t.sections?"mounted":"rows changed"});t.rows=rows;t.sections=count;} };
+   new MutationObserver(sample).observe(document.body,{subtree:true,childList:true,characterData:true}); sample();
+   window.addEventListener("adelante:quick-actions-changed",()=>t.events.push({type:"prefs changed",time:performance.now(),url:location.pathname}));
+   for(const [set,clear,repeat] of [["setTimeout","clearTimeout",false],["setInterval","clearInterval",true]] as const){const original=w[set].bind(w), cancel=w[clear].bind(w); w[set]=(fn:any,delay:any,...args:any[])=>{let id:any;id=original((...inner:any[])=>{if(!repeat)t.pending.delete(id);if(typeof fn==="function")fn(...inner);else (0,eval)(fn);},delay,...args);t.pending.set(id,{type:set,delay,created:performance.now(),stack:new Error().stack?.split("\n").slice(2,5)});return id;}; w[clear]=(id:any)=>{t.pending.delete(id);return cancel(id);};}
+ });
+}
+const snapshots:any[]=[];
+async function snapshot(label:string){
+ for(const name of ["roles","quickActions","quickActionPrefs"]) if(!moduleUrls.has(name))throw new Error("Loaded module URL missing: "+name);
+ const result=await page.evaluate(async (urls)=>{
+  const roles=await import(/* @vite-ignore */ urls.roles); const qa=await import(/* @vite-ignore */ urls.quickActions); const prefs=await import(/* @vite-ignore */ urls.quickActionPrefs);
+  const staff=roles.getActingStaff(); const actor={role:roles.getActingRole(),staffId:staff.id,staffName:staff.name,clinicianId:staff.clinicianId,caseManagerId:staff.caseManagerId};
+  const t=(window as any).__triage;const section=document.querySelector('[data-testid="quick-action-settings"]');
+  return {url:location.pathname,actor,preference:localStorage.getItem(prefs.preferenceKey(staff.id)),defaults:qa.quickActionsFor(actor).map((a:any)=>a.id),optionIds:prefs.personalActionOptions(staff).map((o:any)=>o.action.id),rows:Array.from(section?.querySelectorAll('li[data-testid^="pref-"]')??[]).map(x=>x.getAttribute("data-testid")),settingsMounted:!!section,events:t.events,pendingTimers:Array.from(t.pending.values()),timerScope:"Timers scheduled after initial dev-hook readiness; pre-existing timers not introspectable"};
+ },Object.fromEntries(moduleUrls));
+ snapshots.push({label,...result});writeFileSync(evidence+"/quick-flow-readback.json",JSON.stringify(snapshots,null,2));console.log(label,JSON.stringify(result));return result;
+}
+try {
+  await page.goto("http://localhost:8080/clinician");
+  await page.waitForFunction(() => !!(window as any).__adelante);
+  await installInstrumentation();
+  // Test-only multi-role identity via the real registry/store path; no roster mutation.
+  const creation = await page.evaluate(async () => {
+    const dev = (window as any).__adelante;
+    const { ra } = await dev.access();
+    const result = await ra.runAction("staff_add", { role: "sys_admin", staffId: "s-admin1" }, undefined, { via: "addStaffMemberWithReason", args: [
+      { role: "sys_admin", staffId: "s-admin1" },
+      { id: "s-batch4", name: "Batch four test staff", role: "therapist", roleAssignments: [{ role: "therapist" }, { role: "clinical_coordinator" }] },
+      "Test-only multi-role fixture",
+    ] });
+    return { ok: result.ok, reason: result.ok ? undefined : result.reason };
+  });
+  expect(creation, creation.reason).toMatchObject({ ok: true });
+  await page.evaluate(() => (window as any).__adelante.setActingStaff("s-batch4", "therapist"));
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Therapist · Batch four test staff");
+  await page.evaluate(() => (window as any).__adelante.go("/clinician-profile"));
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Therapist · Batch four test staff");
+  const section = page.getByTestId("quick-action-settings");
+  await expect(section).toBeVisible();
+  await expect(section.getByText("Prototype — Saved on this device only")).toBeVisible();
+  const before = await page.evaluate(() => (window as any).__adelante.AdelanteEHR.listAuditEvents({ category: "action" }).length);
+  await section.getByRole("combobox", { name: "Choose an action" }).click();
+  await page.getByRole("option", { name: "Edit consent form", exact: true }).click();
+  await section.getByRole("button", { name: "Add quick action" }).click();
+  await expect(section.getByTestId("pref-consent_form_author")).toBeVisible();
+  await section.getByRole("button", { name: "Move Edit consent form up", exact: true }).click();
+  const axe = await new AxeBuilder({ page }).include('[data-testid="quick-action-settings"]').analyze();
+  expect(axe.violations.filter((v) => v.impact === "critical" || v.impact === "serious")).toEqual([]);
+  expect(await page.evaluate(() => (window as any).__adelante.AdelanteEHR.listAuditEvents({ category: "action" }).length)).toBe(before);
+  await page.evaluate(() => (window as any).__adelante.go("/my-work"));
+  await page.getByTestId("staff-new-slot").getByRole("button").click();
+  const menu = page.getByTestId("new-action-menu");
+  await expect(menu.getByRole("button", { name: /Edit consent form/ })).toBeDisabled();
+  await expect(menu.getByText("Switch to Clinical coordinator to use this")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByTestId("staff-role-switcher").click();
+  await page.getByTestId("switch-s-batch4-clinical_coordinator").click();
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Clinical coordinator · Batch four test staff");
+  await page.getByTestId("staff-new-slot").getByRole("button").click();
+  await expect(menu.getByRole("button", { name: "Edit consent form", exact: true })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => (window as any).__adelante.go("/admin-content"));
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Clinical coordinator · Batch four test staff");
+  await page.getByTestId("content-new-button").click();
+  await expect(menu.getByRole("button", { name: "Edit consent form", exact: true })).toBeVisible();
+  await expect(menu.getByRole("button", { name: "Edit consent form", exact: true })).toBeEnabled();
+  await menu.getByRole("button", { name: "Edit consent form", exact: true }).click();
+  await expect(page.getByTestId("consent-form-library")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => (window as any).__adelante.go("/clinician-profile"));
+  await expect(section).toBeVisible();
+  await section.getByRole("button", { name: "Reset to role defaults" }).click();
+  expect(await page.evaluate(() => localStorage.getItem("adelante.quickActions.s-batch4"))).toBeNull();
+  await page.getByTestId("staff-role-switcher").click();
+  await snapshot("before-final-switch");
+  await page.getByTestId("switch-s-batch4-therapist").click();
+  await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Therapist · Batch four test staff");
+  await snapshot("immediately-before-original-line62");
+  await page.screenshot({ path: evidence + "/before-line62.png" });
+  try { await expect(section.getByTestId("pref-progress_note")).toBeVisible(); }
+  catch (error) { console.log("ORIGINAL_LINE62_FAILURE", String(error)); }
+  await expect(page).toHaveURL(/\/my-work$/);
+  await snapshot("settled-role-home");
+  await page.screenshot({ path: evidence + "/settled-role-home.png" });
+  await page.evaluate(() => (window as any).__adelante.go("/clinician-profile"));
+  await expect(section).toBeVisible();
+  const returned = await snapshot("returned-to-settings-settled");
+  await expect(section.getByTestId("pref-progress_note")).toBeVisible();
+  expect(returned.rows).toEqual(returned.defaults.map((id: string) => "pref-" + id));
+  await page.screenshot({ path: evidence + "/returned-settings.png" });
+  await expect(section.getByTestId("pref-consent_form_author")).toHaveCount(0);
+} finally { await browser.close(); }

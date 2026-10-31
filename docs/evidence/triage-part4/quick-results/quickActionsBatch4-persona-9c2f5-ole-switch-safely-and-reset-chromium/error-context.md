@@ -1,0 +1,264 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - region "Demo controls" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e9]: Demo controls
+        - generic [ref=e10]:
+          - 'button "Demo control: QA scenario" [ref=e12]':
+            - img [ref=e13]
+            - generic [ref=e15]: "QA: choose a scenario"
+            - img [ref=e16]
+          - 'button "Demo control: staff role" [active] [ref=e18]':
+            - img [ref=e19]
+            - generic [ref=e31]: "Role: Therapist · Batch four test staff"
+            - img [ref=e32]
+    - main [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - link "Adelante home" [ref=e37] [cursor=pointer]:
+            - /url: /
+            - img "Adelante" [ref=e38]
+          - button "Quick jump" [ref=e39] [cursor=pointer]:
+            - img
+          - 'generic "Acting as: Therapist · Batch four test staff" [ref=e40]':
+            - text: "Acting as: Therapist"
+            - generic [ref=e41]: · Batch four test staff
+          - button "Notifications — 5 unread" [ref=e42]:
+            - img [ref=e43]
+            - generic [ref=e46]: "5"
+          - button "Staff account" [ref=e47] [cursor=pointer]:
+            - img
+        - generic [ref=e48]:
+          - complementary "Staff navigation" [ref=e49]:
+            - generic [ref=e50]:
+              - button "Collapse staff navigation" [expanded] [ref=e51] [cursor=pointer]:
+                - img
+              - generic [ref=e52]: Therapist
+            - button "New" [ref=e55] [cursor=pointer]:
+              - img
+              - generic [ref=e56]: New
+            - generic [ref=e58]:
+              - img
+              - searchbox "Quick jump to a surface" [ref=e59]
+            - navigation "Staff surfaces" [ref=e60]:
+              - button "Care" [ref=e62] [cursor=pointer]:
+                - generic [ref=e63]: Care
+                - img
+              - generic [ref=e64]:
+                - button "Queues" [expanded] [ref=e65] [cursor=pointer]:
+                  - generic [ref=e66]: Queues
+                  - img
+                - list [ref=e67]:
+                  - listitem [ref=e68]:
+                    - link "My work" [ref=e69] [cursor=pointer]:
+                      - /url: /my-work
+                      - img [ref=e70]
+                      - generic [ref=e73]: My work
+                  - listitem [ref=e74]:
+                    - link "Worklist" [ref=e75] [cursor=pointer]:
+                      - /url: /worklist
+                      - img [ref=e76]
+                      - generic [ref=e79]: Worklist
+                  - listitem [ref=e80]:
+                    - link "Inbox" [ref=e81] [cursor=pointer]:
+                      - /url: /inbox
+                      - img [ref=e82]
+                      - generic [ref=e85]: Inbox
+                  - listitem [ref=e86]:
+                    - link "Unsigned notes" [ref=e87] [cursor=pointer]:
+                      - /url: /notes-queue
+                      - img [ref=e88]
+                      - generic [ref=e91]: Unsigned notes
+                  - listitem [ref=e92]:
+                    - link "Cosign inbox" [ref=e93] [cursor=pointer]:
+                      - /url: /cosign-inbox
+                      - img [ref=e94]
+                      - generic [ref=e99]: Cosign inbox
+                  - listitem [ref=e100]:
+                    - link "Clinical referrals" [ref=e101] [cursor=pointer]:
+                      - /url: /clinical-referrals
+                      - img [ref=e102]
+                      - generic [ref=e107]: Clinical referrals
+                  - listitem [ref=e108]:
+                    - link "Escalations" [ref=e109] [cursor=pointer]:
+                      - /url: /escalations
+                      - img [ref=e110]
+                      - generic [ref=e115]: Escalations
+                  - listitem [ref=e116]:
+                    - link "Team messages" [ref=e117] [cursor=pointer]:
+                      - /url: /team-messages
+                      - img [ref=e118]
+                      - generic [ref=e120]: Team messages
+                  - listitem [ref=e121]:
+                    - link "Crisis queue" [ref=e122] [cursor=pointer]:
+                      - /url: /crisis-queue
+                      - img [ref=e123]
+                      - generic [ref=e128]: Crisis queue
+                  - listitem [ref=e129]:
+                    - link "Urgent social needs" [ref=e130] [cursor=pointer]:
+                      - /url: /crisis-queue?lane=sdoh
+                      - img [ref=e131]
+                      - generic [ref=e136]: Urgent social needs
+                  - listitem [ref=e137]:
+                    - link "Message queue" [ref=e138] [cursor=pointer]:
+                      - /url: /message-queue
+                      - img [ref=e139]
+                      - generic [ref=e141]: Message queue
+              - button "Population health" [ref=e143] [cursor=pointer]:
+                - generic [ref=e144]: Population health
+                - img
+              - button "Consent & privacy" [ref=e146] [cursor=pointer]:
+                - generic [ref=e147]: Consent & privacy
+                - img
+              - button "Revenue & billing" [ref=e149] [cursor=pointer]:
+                - generic [ref=e150]: Revenue & billing
+                - img
+              - button "Administration" [ref=e152] [cursor=pointer]:
+                - generic [ref=e153]: Administration
+                - img
+              - button "My account" [ref=e155] [cursor=pointer]:
+                - generic [ref=e156]: My account
+                - img
+          - generic [ref=e157]:
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - navigation "Breadcrumb" [ref=e160]:
+                  - list [ref=e161]:
+                    - listitem [ref=e162]:
+                      - link "Adelante" [ref=e163] [cursor=pointer]:
+                        - /url: /
+                        - img [ref=e164]
+                        - generic [ref=e167]: Adelante
+                    - listitem [ref=e168]:
+                      - img [ref=e169]
+                      - generic [ref=e171]: Queues
+                    - listitem [ref=e172]:
+                      - img [ref=e173]
+                      - generic [ref=e175]: My work
+                - generic [ref=e176]:
+                  - img [ref=e177]
+                  - generic [ref=e180]: My work
+                  - generic [ref=e181]: · Everything open on you, plus caseload early warnings
+              - generic [ref=e182]:
+                - generic [ref=e183]:
+                  - img
+                  - combobox "Search patients by name, date of birth, program ID or CIN" [ref=e184]
+                - button "Ask Adel Prototype" [ref=e185]:
+                  - img [ref=e186]
+                  - text: Ask Adel
+                  - generic [ref=e189]: Prototype
+                - link "My work 0" [ref=e190] [cursor=pointer]:
+                  - /url: /my-work
+                  - img [ref=e191]
+                  - text: My work
+                  - generic [ref=e194]: "0"
+            - generic [ref=e195]:
+              - link "Reporting home" [ref=e196] [cursor=pointer]:
+                - /url: /reporting
+                - img
+                - text: Reporting home
+              - generic [ref=e197]:
+                - heading "My work" [level=1] [ref=e198]
+                - paragraph [ref=e199]: Everything currently open on Batch four test staff, plus two early-warning lists for the 0 patients on your caseload. Nothing here is shared work — every row is claimed by, assigned to, or authored by you.
+              - region "Needs you" [ref=e200]:
+                - heading "Needs you" [level=2] [ref=e201]
+                - region "Cosigns owed 0" [ref=e202]:
+                  - generic [ref=e203]:
+                    - heading "Cosigns owed 0" [level=2] [ref=e204]:
+                      - img [ref=e205]
+                      - text: Cosigns owed
+                      - generic [ref=e208]: "0"
+                    - paragraph [ref=e209]: Progress notes and ASAM assessments waiting on your cosignature — the same count as the Cosign inbox.
+                  - generic [ref=e210]: Nothing waiting on your cosignature.
+                - region "Crisis items for my patients 0" [ref=e211]:
+                  - generic [ref=e212]:
+                    - heading "Crisis items for my patients 0" [level=2] [ref=e213]:
+                      - img [ref=e214]
+                      - text: Crisis items for my patients
+                      - generic [ref=e219]: "0"
+                    - paragraph [ref=e220]: Open crisis items on your caseload, claimed or not.
+                  - generic [ref=e221]: No open crisis items for your patients.
+                - region "My open items 0" [ref=e222]:
+                  - generic [ref=e223]:
+                    - heading "My open items 0" [level=2] [ref=e224]:
+                      - img [ref=e225]
+                      - text: My open items
+                      - generic [ref=e228]: "0"
+                    - paragraph [ref=e229]: Crisis escalations you claimed, your unsigned notes and your overdue case tasks, in one rollup.
+                  - status [ref=e230]:
+                    - img [ref=e232]
+                    - generic [ref=e235]: Nothing open on you
+                    - paragraph [ref=e236]: No claimed escalations, no unsigned notes, no overdue tasks.
+                - region "ASAM 0" [ref=e237]:
+                  - generic [ref=e238]:
+                    - heading "ASAM 0" [level=2] [ref=e239]:
+                      - img [ref=e240]
+                      - text: ASAM
+                      - generic [ref=e244]: "0"
+                    - paragraph [ref=e245]: ASAM assessments assigned to you (needed, due, overdue), your drafts awaiting co-signature, and co-signatures waiting on you. 42 CFR Part 2 protected.
+                  - generic [ref=e246]: "Due windows and reassessment interval: Draft — pending clinical sign-off."
+                  - status [ref=e247]:
+                    - img [ref=e249]
+                    - generic [ref=e253]: No ASAM work on you
+                    - paragraph [ref=e254]: Nothing assigned, awaiting co-signature, or waiting on your signature.
+                - region "Re-screens due on my caseload 0" [ref=e255]:
+                  - generic [ref=e256]:
+                    - heading "Re-screens due on my caseload 0" [level=2] [ref=e257]:
+                      - img [ref=e258]
+                      - text: Re-screens due on my caseload
+                      - generic [ref=e262]: "0"
+                    - paragraph [ref=e263]: Caseload patients whose last completed screen is older than the draft re-screen cadence.
+                  - generic [ref=e264]: "Draft cadence assumption: 30 / 60 / 90 days from the last completed screen. There is no ratified re-screen schedule yet, so these are prompts, not due dates."
+                  - status [ref=e265]:
+                    - img [ref=e267]
+                    - generic [ref=e271]: No re-screens prompted
+                    - paragraph [ref=e272]: Nobody on your caseload has passed a draft cadence step since their last completed screen.
+                - region "Caseload going quiet 0" [ref=e273]:
+                  - generic [ref=e274]:
+                    - heading "Caseload going quiet 0" [level=2] [ref=e275]:
+                      - img [ref=e276]
+                      - text: Caseload going quiet
+                      - generic [ref=e279]: "0"
+                    - paragraph [ref=e280]: Early warning only. Contact means an attended appointment, a message the patient sent, or self-help activity.
+                  - generic [ref=e281]: "Draft: no contact for 14 days = watch, 30 days = at risk. Pending real outreach policy."
+                  - status [ref=e282]:
+                    - img [ref=e284]
+                    - generic [ref=e287]: Nobody flagged
+                    - paragraph [ref=e288]: Everyone on your caseload has a contact signal inside the draft 14-day window.
+              - region "Waiting on others" [ref=e289]:
+                - heading "Waiting on others" [level=2] [ref=e290]
+                - paragraph [ref=e291]: No items.
+              - region "Today" [ref=e292]:
+                - heading "Today" [level=2] [ref=e293]
+                - region "Today's visits 0" [ref=e294]:
+                  - generic [ref=e295]:
+                    - heading "Today's visits 0" [level=2] [ref=e296]:
+                      - img [ref=e297]
+                      - text: Today's visits
+                      - generic [ref=e301]: "0"
+                    - paragraph [ref=e302]: Your visits scheduled for today.
+                  - generic [ref=e303]: No visits on your schedule today.
+              - paragraph [ref=e304]:
+                - img [ref=e305]
+                - text: Re-screen cadence and disengagement thresholds are draft assumptions pending real operational policy. They prompt a look, they do not assert a due date.
+    - region "Crisis support" [ref=e308]:
+      - generic [ref=e309]:
+        - img [ref=e310]
+        - generic [ref=e312]:
+          - text: In crisis? Call or text
+          - link "988" [ref=e313] [cursor=pointer]:
+            - /url: tel:988
+          - text: anytime. Spanish-capable.
+    - contentinfo [ref=e314]:
+      - generic [ref=e315]:
+        - generic [ref=e316]: © 2026 Adelante · Built with care
+        - generic [ref=e317]:
+          - generic [ref=e318]: Demo data · no real PHI
+          - generic [ref=e320]: Demo scenarios · top-right control
+  - region "Notifications alt+T"
+```

@@ -1,0 +1,520 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - region "Demo controls" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e9]: Demo controls
+        - generic [ref=e10]:
+          - 'button "Demo control: QA scenario" [ref=e12]':
+            - img [ref=e13]
+            - generic [ref=e15]: "QA: choose a scenario"
+            - img [ref=e16]
+          - 'button "Demo control: staff role" [ref=e18]':
+            - img [ref=e19]
+            - generic [ref=e31]: "Role: Therapist · Marisol Reyes"
+            - img [ref=e32]
+    - main [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - link "Adelante home" [ref=e37] [cursor=pointer]:
+            - /url: /
+            - img "Adelante" [ref=e38]
+          - button "Quick jump" [ref=e39] [cursor=pointer]:
+            - img
+          - 'generic "Acting as: Therapist · Marisol Reyes" [ref=e40]':
+            - text: "Acting as: Therapist"
+            - generic [ref=e41]: · Marisol Reyes
+          - link "4 open crisis escalations" [ref=e42] [cursor=pointer]:
+            - /url: /escalations
+            - img
+            - generic [ref=e43]: "4"
+            - generic [ref=e44]: Crisis
+          - button "Notifications — 23 unread" [ref=e45]:
+            - img [ref=e46]
+            - generic [ref=e49]: 9+
+          - button "Staff account" [ref=e50] [cursor=pointer]:
+            - img
+        - generic [ref=e51]:
+          - complementary "Staff navigation" [ref=e52]:
+            - generic [ref=e53]:
+              - button "Collapse staff navigation" [expanded] [ref=e54] [cursor=pointer]:
+                - img
+              - generic [ref=e55]: Therapist
+            - button "New" [ref=e58] [cursor=pointer]:
+              - img
+              - generic [ref=e59]: New
+            - generic [ref=e61]:
+              - img
+              - searchbox "Quick jump to a surface" [ref=e62]
+            - navigation "Staff surfaces" [ref=e63]:
+              - generic [ref=e64]:
+                - button "Care" [expanded] [ref=e65] [cursor=pointer]:
+                  - generic [ref=e66]: Care
+                  - img
+                - list [ref=e67]:
+                  - listitem [ref=e68]:
+                    - link "Content library" [ref=e69] [cursor=pointer]:
+                      - /url: /content-library
+                      - img [ref=e70]
+                      - generic [ref=e72]: Content library
+                  - listitem [ref=e73]:
+                    - link "Referrals" [ref=e74] [cursor=pointer]:
+                      - /url: /referral-queue
+                      - img [ref=e75]
+                      - generic [ref=e79]: Referrals
+                  - listitem [ref=e80]:
+                    - link "Care Coordination" [ref=e81] [cursor=pointer]:
+                      - /url: /case-manager
+                      - img [ref=e82]
+                      - generic [ref=e87]: Care Coordination
+                  - listitem [ref=e88]:
+                    - link "Clinician" [ref=e89] [cursor=pointer]:
+                      - /url: /clinician
+                      - img [ref=e90]
+                      - generic [ref=e94]: Clinician
+                  - listitem [ref=e95]:
+                    - link "Clinician workspaces" [ref=e96] [cursor=pointer]:
+                      - /url: /clinician?view=as
+                      - img [ref=e97]
+                      - generic [ref=e101]: Clinician workspaces
+                  - listitem [ref=e102]:
+                    - link "Group sessions" [ref=e103] [cursor=pointer]:
+                      - /url: /group-sessions
+                      - img [ref=e104]
+                      - generic [ref=e109]: Group sessions
+                  - listitem [ref=e110]:
+                    - link "Group eligibility audit" [ref=e111] [cursor=pointer]:
+                      - /url: /group-audit
+                      - img [ref=e112]
+                      - generic [ref=e117]: Group eligibility audit
+              - button "Queues" [ref=e119] [cursor=pointer]:
+                - generic [ref=e120]: Queues
+                - img
+              - button "Population health" [ref=e122] [cursor=pointer]:
+                - generic [ref=e123]: Population health
+                - img
+              - button "Consent & privacy" [ref=e125] [cursor=pointer]:
+                - generic [ref=e126]: Consent & privacy
+                - img
+              - button "Revenue & billing" [ref=e128] [cursor=pointer]:
+                - generic [ref=e129]: Revenue & billing
+                - img
+              - button "Administration" [ref=e131] [cursor=pointer]:
+                - generic [ref=e132]: Administration
+                - img
+              - button "My account" [ref=e134] [cursor=pointer]:
+                - generic [ref=e135]: My account
+                - img
+          - generic [ref=e136]:
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - navigation "Breadcrumb" [ref=e139]:
+                  - list [ref=e140]:
+                    - listitem [ref=e141]:
+                      - link "Adelante" [ref=e142] [cursor=pointer]:
+                        - /url: /
+                        - img [ref=e143]
+                        - generic [ref=e146]: Adelante
+                    - listitem [ref=e147]:
+                      - img [ref=e148]
+                      - generic [ref=e150]: Care
+                    - listitem [ref=e151]:
+                      - img [ref=e152]
+                      - generic [ref=e154]: Clinician
+                - generic [ref=e155]:
+                  - img [ref=e156]
+                  - generic [ref=e160]: Clinician
+                  - generic [ref=e161]: · Caseload & sessions
+              - generic [ref=e162]:
+                - generic [ref=e163]:
+                  - img
+                  - combobox "Search patients by name, date of birth, program ID or CIN" [ref=e164]
+                - button "Ask Adel Prototype" [ref=e165]:
+                  - img [ref=e166]
+                  - text: Ask Adel
+                  - generic [ref=e169]: Prototype
+                - link "My work 3" [ref=e170] [cursor=pointer]:
+                  - /url: /my-work
+                  - img [ref=e171]
+                  - text: My work
+                  - generic [ref=e174]: "3"
+            - generic [ref=e175]:
+              - generic [ref=e176]:
+                - generic [ref=e177]:
+                  - generic [ref=e178]: Clinician
+                  - heading "Clinician workspace" [level=1] [ref=e179]
+                  - generic [ref=e180]:
+                    - img [ref=e181]
+                    - generic [ref=e184]: Your workspace — Marisol Reyes, LCSW
+                    - generic [ref=e185]: "Medi-Cal enrollment: active"
+                - combobox "View as clinician" [ref=e186] [cursor=pointer]:
+                  - generic: My own workspace
+                  - img [ref=e187]
+              - generic [ref=e189]:
+                - tablist [ref=e191]:
+                  - tab "Dashboard" [selected] [ref=e192] [cursor=pointer]:
+                    - img [ref=e193]
+                    - text: Dashboard
+                  - tab "Patient chart" [ref=e195] [cursor=pointer]:
+                    - img [ref=e196]
+                    - text: Patient chart
+                - tabpanel "Dashboard" [ref=e199]:
+                  - generic [ref=e200]:
+                    - generic "Today" [ref=e201]:
+                      - generic [ref=e202]: Today
+                      - button "Next visit 11:15 PM · Marcus L." [ref=e203] [cursor=pointer]:
+                        - generic [ref=e204]: Next visit
+                        - generic [ref=e205]: 11:15 PM · Marcus L.
+                      - button "Visits left today 1" [ref=e206] [cursor=pointer]:
+                        - generic [ref=e207]: Visits left today
+                        - generic [ref=e208]: "1"
+                      - button "Needs closing 2" [ref=e209] [cursor=pointer]:
+                        - generic [ref=e210]: Needs closing
+                        - generic [ref=e211]: "2"
+                      - button "Unsigned 4" [ref=e212] [cursor=pointer]:
+                        - generic [ref=e213]: Unsigned
+                        - generic [ref=e214]: "4"
+                      - button "Cosign 0" [ref=e215] [cursor=pointer]:
+                        - generic [ref=e216]: Cosign
+                        - generic [ref=e217]: "0"
+                      - button "Crisis · my patients 2" [ref=e218] [cursor=pointer]:
+                        - generic [ref=e219]: Crisis · my patients
+                        - generic [ref=e220]: "2"
+                    - region "Needs you" [ref=e221]:
+                      - heading "Needs you" [level=2] [ref=e222]
+                      - generic [ref=e224]:
+                        - button "Needs my action 40 open · 29 now" [expanded] [ref=e225] [cursor=pointer]:
+                          - generic [ref=e226]:
+                            - generic [ref=e227]: Needs my action
+                            - generic [ref=e228]: 40 open · 29 now
+                          - img
+                        - generic [ref=e231]:
+                          - link "See all escalations to" [ref=e232] [cursor=pointer]:
+                            - /url: /escalations
+                          - group "Action due group" [ref=e233]:
+                            - button "All · 40" [ref=e234] [cursor=pointer]
+                            - button "Now · 29" [ref=e235] [cursor=pointer]
+                            - button "Today · 0" [ref=e236] [cursor=pointer]
+                            - button "This week · 11" [ref=e237] [cursor=pointer]
+                          - generic [ref=e238]:
+                            - heading "Now · 23" [level=3] [ref=e239]
+                            - generic [ref=e240]:
+                              - generic [ref=e241]:
+                                - img [ref=e242]
+                                - generic [ref=e244]:
+                                  - paragraph [ref=e245]: Marcus L.
+                                  - paragraph [ref=e246]: Crisis follow-up — coordinator pool · 2h 0m left
+                                - generic [ref=e247]:
+                                  - button "Open crisis" [ref=e248] [cursor=pointer]
+                                  - button "Hand off" [ref=e249] [cursor=pointer]
+                              - generic [ref=e250]:
+                                - img [ref=e251]
+                                - generic [ref=e253]:
+                                  - paragraph [ref=e254]: Carmen Ibarra
+                                  - paragraph [ref=e255]: Crisis follow-up — coordinator pool · 24h 0m left
+                                - generic [ref=e256]:
+                                  - button "Open crisis" [ref=e257] [cursor=pointer]
+                                  - button "Hand off" [ref=e258] [cursor=pointer]
+                              - generic [ref=e259]:
+                                - img [ref=e260]
+                                - generic [ref=e263]:
+                                  - paragraph [ref=e264]: Marcus L.
+                                  - paragraph [ref=e265]: Visit needs a note · Due now
+                                - button "Write note" [ref=e267] [cursor=pointer]
+                              - generic [ref=e268]:
+                                - img [ref=e269]
+                                - generic [ref=e272]:
+                                  - paragraph [ref=e273]: Marcus L.
+                                  - paragraph [ref=e274]: ASAM assessment · Due now
+                                - button "Open ASAM" [ref=e276] [cursor=pointer]
+                              - generic [ref=e277]:
+                                - img [ref=e278]
+                                - generic [ref=e281]:
+                                  - paragraph [ref=e282]: Daniel M.
+                                  - paragraph [ref=e283]: Visit needs a note · Due now
+                                - button "Write note" [ref=e285] [cursor=pointer]
+                              - generic [ref=e286]:
+                                - img [ref=e287]
+                                - generic [ref=e290]:
+                                  - paragraph [ref=e291]: Alicia Serrano
+                                  - paragraph [ref=e292]: Visit needs a note · Due now
+                                - button "Write note" [ref=e294] [cursor=pointer]
+                              - generic [ref=e295]:
+                                - img [ref=e296]
+                                - generic [ref=e299]:
+                                  - paragraph [ref=e300]: Marcus L.
+                                  - paragraph [ref=e301]: Past visit needs closing · Due now
+                                - generic [ref=e302]:
+                                  - button "Mark attended" [ref=e303] [cursor=pointer]
+                                  - button "Other closing actions" [ref=e304] [cursor=pointer]:
+                                    - img
+                              - generic [ref=e305]:
+                                - img [ref=e306]
+                                - generic [ref=e309]:
+                                  - paragraph [ref=e310]: Daniel M.
+                                  - paragraph [ref=e311]: Outside event follow-up · Due now
+                                - button "Review event" [ref=e313] [cursor=pointer]
+                              - generic [ref=e314]:
+                                - img [ref=e315]
+                                - generic [ref=e318]:
+                                  - paragraph [ref=e319]: Rosa T.
+                                  - paragraph [ref=e320]: "Provider switch review: Rosa T. · Due now"
+                                - button "Open task" [ref=e322] [cursor=pointer]
+                              - generic [ref=e323]:
+                                - img [ref=e324]
+                                - generic [ref=e327]:
+                                  - paragraph [ref=e328]: Daniel M.
+                                  - paragraph [ref=e329]: "Provider switch review: Daniel M. · Due now"
+                                - button "Open task" [ref=e331] [cursor=pointer]
+                              - generic [ref=e332]:
+                                - img [ref=e333]
+                                - generic [ref=e336]:
+                                  - paragraph [ref=e337]: Carmen Ibarra
+                                  - paragraph [ref=e338]: "Refill request: Citalopram 20 mg · Due now"
+                                - button "Open task" [ref=e340] [cursor=pointer]
+                              - generic [ref=e341]:
+                                - img [ref=e342]
+                                - generic [ref=e345]:
+                                  - paragraph [ref=e346]: Luis Camacho
+                                  - paragraph [ref=e347]: "Refill request: protected medication (clinical staff only) · Due now"
+                                - button "Open task" [ref=e349] [cursor=pointer]
+                              - generic [ref=e350]:
+                                - img [ref=e351]
+                                - generic [ref=e354]:
+                                  - paragraph [ref=e355]: Luis Camacho
+                                  - paragraph [ref=e356]: CALOMS admission prompt · Due now
+                                - button "Open task" [ref=e358] [cursor=pointer]
+                              - generic [ref=e359]:
+                                - img [ref=e360]
+                                - generic [ref=e363]:
+                                  - paragraph [ref=e364]: Marcus L.
+                                  - paragraph [ref=e365]: Outside event follow-up · Due now
+                                - button "Review event" [ref=e367] [cursor=pointer]
+                              - generic [ref=e368]:
+                                - img [ref=e369]
+                                - generic [ref=e372]:
+                                  - paragraph [ref=e373]: Luis Camacho
+                                  - paragraph [ref=e374]: Visit needs a note · Due now
+                                - button "Write note" [ref=e376] [cursor=pointer]
+                              - generic [ref=e377]:
+                                - img [ref=e378]
+                                - generic [ref=e381]:
+                                  - paragraph [ref=e382]: Jasmine Holt
+                                  - paragraph [ref=e383]: Visit needs a note · Due now
+                                - button "Write note" [ref=e385] [cursor=pointer]
+                              - generic [ref=e386]:
+                                - img [ref=e387]
+                                - generic [ref=e390]:
+                                  - paragraph [ref=e391]: Daniel M.
+                                  - paragraph [ref=e392]: Provider switch review · Due now
+                                - button "Review" [ref=e394] [cursor=pointer]
+                              - generic [ref=e395]:
+                                - img [ref=e396]
+                                - generic [ref=e399]:
+                                  - paragraph [ref=e400]: Daniel M.
+                                  - paragraph [ref=e401]: Provider switch review · Due now
+                                - button "Review" [ref=e403] [cursor=pointer]
+                              - generic [ref=e404]:
+                                - img [ref=e405]
+                                - generic [ref=e408]:
+                                  - paragraph [ref=e409]: Rosa T.
+                                  - paragraph [ref=e410]: Provider switch review · Due now
+                                - button "Review" [ref=e412] [cursor=pointer]
+                              - generic [ref=e413]:
+                                - img [ref=e414]
+                                - generic [ref=e417]:
+                                  - paragraph [ref=e418]: Rosa T.
+                                  - paragraph [ref=e419]: Care plan review · Due now
+                                - button "Review plan" [ref=e421] [cursor=pointer]
+                              - generic [ref=e422]:
+                                - img [ref=e423]
+                                - generic [ref=e426]:
+                                  - paragraph [ref=e427]: Marcus L.
+                                  - paragraph [ref=e428]: PHQ-9 re-screen · Due now
+                                - button "Send re-screen" [ref=e430] [cursor=pointer]
+                              - generic [ref=e431]:
+                                - img [ref=e432]
+                                - generic [ref=e435]:
+                                  - paragraph [ref=e436]: Daniel M.
+                                  - paragraph [ref=e437]: PHQ-9 re-screen · Due now
+                                - button "Send re-screen" [ref=e439] [cursor=pointer]
+                              - generic [ref=e440]:
+                                - img [ref=e441]
+                                - generic [ref=e444]:
+                                  - paragraph [ref=e445]: Daniel M.
+                                  - paragraph [ref=e446]: GAD-7 re-screen · Due now
+                                - button "Send re-screen" [ref=e448] [cursor=pointer]
+                          - generic [ref=e449]:
+                            - heading "Today · 0" [level=3] [ref=e450]
+                            - paragraph [ref=e451]: No items.
+                          - generic [ref=e452]:
+                            - heading "This week · 7" [level=3] [ref=e453]
+                            - generic [ref=e454]:
+                              - generic [ref=e455]:
+                                - img [ref=e456]
+                                - generic [ref=e459]:
+                                  - paragraph [ref=e460]: Patient
+                                  - paragraph [ref=e461]: Follow up — protected item · Due Mon
+                                - button "Open task" [ref=e463] [cursor=pointer]
+                              - generic [ref=e464]:
+                                - img [ref=e465]
+                                - generic [ref=e468]:
+                                  - paragraph [ref=e469]: Carmen Ibarra
+                                  - paragraph [ref=e470]: New enrollment — assign care team and book intake · Due Tue
+                                - button "Open task" [ref=e472] [cursor=pointer]
+                              - generic [ref=e473]:
+                                - img [ref=e474]
+                                - generic [ref=e477]:
+                                  - paragraph [ref=e478]: Daniel M.
+                                  - paragraph [ref=e479]: Housing move follow-up call · Due Tue
+                                - button "Open task" [ref=e481] [cursor=pointer]
+                              - generic [ref=e482]:
+                                - img [ref=e483]
+                                - generic [ref=e486]:
+                                  - paragraph [ref=e487]: Daniel M.
+                                  - paragraph [ref=e488]: ASAM assessment · Due Sat
+                                - button "Open ASAM" [ref=e490] [cursor=pointer]
+                              - generic [ref=e491]:
+                                - img [ref=e492]
+                                - generic [ref=e495]:
+                                  - paragraph [ref=e496]: Jordan Vega
+                                  - paragraph [ref=e497]: ASAM assessment · Due Sat
+                                - button "Open ASAM" [ref=e499] [cursor=pointer]
+                              - generic [ref=e500]:
+                                - img [ref=e501]
+                                - generic [ref=e504]:
+                                  - paragraph [ref=e505]: Luis Camacho
+                                  - paragraph [ref=e506]: ASAM assessment · Due Fri
+                                - button "Open ASAM" [ref=e508] [cursor=pointer]
+                              - generic [ref=e509]:
+                                - img [ref=e510]
+                                - generic [ref=e513]:
+                                  - paragraph [ref=e514]: Luis Camacho
+                                  - paragraph [ref=e515]: ASAM reassessment due · Due Fri
+                                - button "Open task" [ref=e517] [cursor=pointer]
+                      - button "My caseload 6 patients · 6 need attention" [ref=e520] [cursor=pointer]:
+                        - generic [ref=e521]:
+                          - generic [ref=e522]: My caseload
+                          - generic [ref=e523]: 6 patients · 6 need attention
+                        - img
+                      - button "Requests & booking 1 appointment request waiting" [ref=e526] [cursor=pointer]:
+                        - generic [ref=e527]:
+                          - generic [ref=e528]: Requests & booking
+                          - generic [ref=e529]: 1 appointment request waiting
+                        - img
+                    - region "Waiting on others" [ref=e530]:
+                      - heading "Waiting on others" [level=2] [ref=e531]
+                      - generic [ref=e533]:
+                        - generic [ref=e534]:
+                          - heading "Now · 6" [level=3] [ref=e535]
+                          - generic [ref=e536]:
+                            - generic [ref=e537]:
+                              - img [ref=e538]
+                              - generic [ref=e541]:
+                                - paragraph [ref=e542]: Marcus L.
+                                - paragraph [ref=e543]: ASAM assessment needed · Due now
+                              - button "Open task" [ref=e545] [cursor=pointer]
+                            - generic [ref=e546]:
+                              - img [ref=e547]
+                              - generic [ref=e550]:
+                                - paragraph [ref=e551]: Daniel M.
+                                - paragraph [ref=e552]: Reach out — SMS delivery failed · Due now
+                              - button "Open task" [ref=e554] [cursor=pointer]
+                            - generic [ref=e555]:
+                              - img [ref=e556]
+                              - generic [ref=e559]:
+                                - paragraph [ref=e560]: Jordan Vega
+                                - paragraph [ref=e561]: Administer GAD-7 — positive GAD-2 (3/6) · Due now
+                              - button "Open task" [ref=e563] [cursor=pointer]
+                            - generic [ref=e564]:
+                              - img [ref=e565]
+                              - generic [ref=e568]:
+                                - paragraph [ref=e569]: Jordan Vega
+                                - paragraph [ref=e570]: Administer PHQ-9 — positive PHQ-2 (4/6) · Due now
+                              - button "Open task" [ref=e572] [cursor=pointer]
+                            - generic [ref=e573]:
+                              - img [ref=e574]
+                              - generic [ref=e577]:
+                                - paragraph [ref=e578]: Daniel M.
+                                - paragraph [ref=e579]: "Provider switch review: Daniel M. · Due now"
+                              - button "Open task" [ref=e581] [cursor=pointer]
+                            - generic [ref=e582]:
+                              - img [ref=e583]
+                              - generic [ref=e586]:
+                                - paragraph [ref=e587]: Daniel M.
+                                - paragraph [ref=e588]: "Coordinate provider switch: Daniel M. · Due now"
+                              - button "Open task" [ref=e590] [cursor=pointer]
+                        - generic [ref=e591]:
+                          - heading "Today · 0" [level=3] [ref=e592]
+                          - paragraph [ref=e593]: No items.
+                        - generic [ref=e594]:
+                          - heading "This week · 4" [level=3] [ref=e595]
+                          - generic [ref=e596]:
+                            - generic [ref=e597]:
+                              - img [ref=e598]
+                              - generic [ref=e601]:
+                                - paragraph [ref=e602]: Luis Camacho
+                                - paragraph [ref=e603]: Hemoglobin A1c result · Due Thu
+                              - button "Review lab" [ref=e605] [cursor=pointer]
+                            - generic [ref=e606]:
+                              - img [ref=e607]
+                              - generic [ref=e610]:
+                                - paragraph [ref=e611]: Daniel M.
+                                - paragraph [ref=e612]: ASAM assessment needed · Due Sat
+                              - button "Open task" [ref=e614] [cursor=pointer]
+                            - generic [ref=e615]:
+                              - img [ref=e616]
+                              - generic [ref=e619]:
+                                - paragraph [ref=e620]: Jordan Vega
+                                - paragraph [ref=e621]: ASAM assessment needed · Due Sat
+                              - button "Open task" [ref=e623] [cursor=pointer]
+                            - generic [ref=e624]:
+                              - img [ref=e625]
+                              - generic [ref=e628]:
+                                - paragraph [ref=e629]: Luis Camacho
+                                - paragraph [ref=e630]: Consider the Recovery Journey · Due Sat
+                              - button "Open task" [ref=e632] [cursor=pointer]
+                    - region "Today" [ref=e633]:
+                      - heading "Today" [level=2] [ref=e634]
+                      - generic [ref=e637]:
+                        - button "Schedule 1 upcoming · 0 checked in · 5 done" [expanded] [ref=e638] [cursor=pointer]:
+                          - generic [ref=e639]:
+                            - generic [ref=e640]: Schedule
+                            - generic [ref=e641]: 1 upcoming · 0 checked in · 5 done
+                          - img
+                        - generic [ref=e644]:
+                          - tablist "Schedule view" [ref=e645]:
+                            - tab "Up next 1" [ref=e646] [cursor=pointer]:
+                              - text: Up next
+                              - generic [ref=e647]: "1"
+                            - tab "In progress / checked in 0" [ref=e648] [cursor=pointer]:
+                              - text: In progress / checked in
+                              - generic [ref=e649]: "0"
+                            - tab "Done today 5" [ref=e650] [cursor=pointer]:
+                              - text: Done today
+                              - generic [ref=e651]: "5"
+                            - tab "Cancelled · Missed visit · late cancel · rescheduled 0" [active] [selected] [ref=e652] [cursor=pointer]:
+                              - text: Cancelled · Missed visit · late cancel · rescheduled
+                              - generic [ref=e653]: "0"
+                            - tab "This week · 2" [ref=e654] [cursor=pointer]
+                          - paragraph [ref=e655]: Nothing in this view.
+    - region "Crisis support" [ref=e656]:
+      - generic [ref=e657]:
+        - img [ref=e658]
+        - generic [ref=e660]:
+          - text: In crisis? Call or text
+          - link "988" [ref=e661] [cursor=pointer]:
+            - /url: tel:988
+          - text: anytime. Spanish-capable.
+    - contentinfo [ref=e662]:
+      - generic [ref=e663]:
+        - generic [ref=e664]: © 2026 Adelante · Built with care
+        - generic [ref=e665]:
+          - generic [ref=e666]: Demo data · no real PHI
+          - generic [ref=e668]: Demo scenarios · top-right control
+  - region "Notifications alt+T"
+```

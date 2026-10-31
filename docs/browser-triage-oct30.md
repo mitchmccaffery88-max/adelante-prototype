@@ -106,3 +106,53 @@ The earlier harness stop was resolved in Round 4c; final Round 4d units passed 3
 
 ### Label-only follow-up — 31 Oct
 Shared singular/plural estimate label check: full units **3,770/3,770**; existing Tracking/clinician-dashboard browser specs **13/13**, one worker, no failures to mark against this triage list. Tracking screenshot saved under `docs/evidence/r5-round4/tracking-estimate-label-oct31.png`. Direct due-panel walkthrough is unavailable: `RescreenDuePanel` is defined but not mounted by the current clinician route; no product/tests changed to mount it. See screener report Label fix note. #16 approval, #20 unconfirmed cause and remaining known browser failures stay open; clinical review and State/CalOMS needs check unchanged.
+
+
+## Part 4 — 31 Oct (Mitch approved 15:46 CT)
+
+Draft. No product code, Supabase, permissions, permission snapshots, booking, access or role-rule changes. Persistence OFF; nothing published.
+
+### #16 approved test-only change
+Only the Today click setup in `e2e/accessClickThroughOct29.spec.ts:10` changes. The page reads the live acting staff, the host's `resolveWorkspaceActor`/appointment scope and `scheduleSegments(...).closed`, and selects an existing off-team patient whose unchanged chart entry requires a reason. No visit is created and no on-team/direct-entry substitute is accepted. A missing eligible row fails with “fixture prerequisite missing”. Every later reason-gate assertion remains byte-identical. New `browserTriagePart4Oct31Approved.ts` chains after Part 3, checks complete prior/replacement hashes and an exact-once anchor; its regression tests exact apply, drift and reapplication refusal. Earlier adapters remain unchanged.
+
+Validation results will be recorded immediately below. #20 remains investigation only; its spec and product code are unchanged. Evidence: `docs/evidence/triage-part4/`.
+
+**Adapter validation recorded:** Part 4 + unchanged Part 3 regressions **4/4 passed**, 2 files, exit 0. Log `docs/evidence/triage-part4/adapter-tests.log`.
+
+**Full units recorded:** **3,771/3,771 passed**, 431/431 files, exit 0, 311.74s; no unhandled errors. Existing Radix accessibility warnings are in the log, not failed assertions. Log `docs/evidence/triage-part4/units.log`.
+
+**#16 spec recorded:** **0/1 passed**, exit 1, 12.4s, known triage **#16**. The approved prerequisite assertion at `accessClickThroughOct29.spec.ts:30` reports: `fixture prerequisite missing: Today/closed has no eligible off-team reason-gated visit for s-th1; closed visits: none`. This is the explicitly requested missing-fixture outcome; no later gate assertion was reached or changed. Stop on #16: no further edits or reruns. Log `docs/evidence/triage-part4/access-spec.log`; trace/context preserved below. #20 continues independently, investigation only.
+
+**#20 unchanged spec recorded:** **0/1 passed**, exit 1, 31.1s; known triage **#20**, original `quickActionsBatch4.spec.ts:62` missing `pref-progress_note` (30s test limit reached during visibility wait). No test changes. Log `docs/evidence/triage-part4/quick-spec.log`; original trace/context preserved. Full-flow instrumentation follows without repository test/product edits.
+
+### #20 real-flow diagnosis recorded immediately
+
+**Exact cause: deterministic role-switch navigation invalidates the test's settings host assumption — an out-of-date test, not a timing race, stale preference, wrong actor or demonstrated product defect.** `StaffRoleSwitcher.tsx:42–53` explicitly navigates a same-person/different-role switch to the role's permitted home. The real coordinator → therapist switch lands on `/my-work`; `QuickActionSettings` belongs to `/clinician-profile` and unmounts. The unchanged test checks its saved settings locator without returning to that page. Waiting longer cannot bring back an unmounted section.
+
+The standalone instrumentation copied the complete original flow (registry staff fixture, add/reorder, Axe, audit count, disabled-other-role check, actual role switches, content launch, reset) without modifying the original spec or app. It discovered the already-loaded module URLs through CDP and imported those exact URLs, avoiding duplicate bare-source module instances. A single checkpoint immediately before the original line 62 captured:
+- URL `/my-work`; live actor `{role:"therapist",staffId:"s-batch4",staffName:"Batch four test staff"}` (no clinician ID, correctly).
+- Device preference `null`.
+- `quickActionsFor(actor)` exactly `[progress_note, dashboard_book, message_patient, screener_request, dashboard_task]`.
+- Settings not mounted; rendered settings row IDs `[]`.
+- Mutation timeline confirms settings **did update** after the role switch: therapist default rows appeared at 16027.4ms, followed by host unmount at 16090.1ms. This is not an uncommitted preference/role read.
+- Pending tracked timers: two 4000ms Sonner toast timers and one 15000ms NotificationBell interval at the line-62 checkpoint. After the visibility wait, only the bell interval remained; host still absent. Timers scheduled before dev-hook readiness were not introspectable, and are explicitly outside this timer capture; no claim of globally exhaustive timer inventory.
+
+After the existing navigation settled, actor/preference/defaults remained identical and settings remained absent. Instrumentation then returned through existing `go('/clinician-profile')`, waited for the section and checked **exact ordered row equality** against the in-page current-role projection: `[pref-progress_note, pref-dashboard_book, pref-message_patient, pref-screener_request, pref-dashboard_task]`. Progress note visible; consent-form-author count zero. Script exit 0. This diagnostic navigation is not a change to the test. Temporary script initially needed an explicit browser context for the existing Axe check; corrected under `/tmp` only. Its copied visibility assertion used the standalone expect default (5s); the authoritative unchanged one-worker spec retained its existing 15s expectation/30s test limits.
+
+**Proposed fix — test-only host navigation plus state wait/projection assertion; not applied, awaiting Mitch approval:** after the therapist acting-role assertion, wait for the existing role-home navigation, return to `/clinician-profile`, wait for `quick-action-settings`, then keep the original `pref-progress_note` visibility and `pref-consent_form_author` zero assertions. Optionally also compare ordered rendered IDs with the existing in-page `quickActionsFor(actor)` projection after preferences are ready. A timing-only wait on `/my-work` is not sufficient. No product fix, role grant, permission change or navigation-rule change is justified.
+
+Evidence: `quick-flow-readback.json` (joint actor/preference/default/options/DOM/lifecycle/timer checkpoints), `quick-instrumented.log`, `before-line62.png`, `settled-role-home.png`, `returned-settings.png`, and original `quick-results/` trace/context, all under `docs/evidence/triage-part4/`. Screenshots were reviewed: role home has no settings; returned profile displays the five therapist defaults.
+
+### Part 4 final validation and remaining failures
+
+| Check | Result | Remaining failure |
+|---|---|---|
+| New Part 4 + unchanged Part 3 adapter tests | 4/4 passed | None |
+| Full units (final code) | 3,771/3,771 passed, 431 files, exit 0 | None; no unhandled errors |
+| #16 spec, one worker | 0/1 passed, exit 1 | Known **#16**: explicit missing fixture prerequisite; Today/closed empty for s-th1 |
+| #20 unchanged spec, one worker | 0/1 passed, exit 1 | Known **#20**: line 62 settings-host assertion after navigation to My work |
+| #20 diagnostic full-flow/checkpoints/readback | exit 0 | Reproduced original missing host, then exact settings projection verified after returning |
+
+Browser specs combined: **0 passed / 2 failed**, both already in this triage list; no new failure. No full/public suite requested or run. #16 stopped at its required missing-fixture assertion with no later changes. #20 cause is now confirmed; proposed test-only fix remains unapplied. Full units were run after the only test/adapter changes and before serial browser runs; subsequent work changed docs/evidence only. Latest preview signal: build OK.
+
+**Part 4 run/report scope done. Still open:** #16 needs an existing eligible Today/closed off-team fixture before its later gate assertions can run (no seed/visit fabricated); #20 proposed host-navigation test fix requires approval; remaining known browser failures stay unwaived. Prior Christi/Dr. Bagga Draft clinical reviews and State/CalOMS estimate allowance **needs check** remain unchanged. Persistence OFF; no product, Supabase, permission/snapshot, booking, access or role-rule changes; nothing published.
