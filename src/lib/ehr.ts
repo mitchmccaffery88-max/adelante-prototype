@@ -223,12 +223,14 @@ import {
   activeScreenerByKey,
   screenerComplete,
   rescreenRule,
-  RESCREEN_SCHEDULE,
   LEGACY_AUDIT_LABEL,
   type ScreenerDomainResult,
 } from "./screeners";
 import { estimateLabel, assessCompleteness, staffItemsRecorded, type ScreenerAnswer } from "./screenerCompleteness";
 import { writeMemberScreener } from "./screenerWriteBoundary";
+import { automaticBundle, cadenceDue, outstandingPromptGroups, RESCREEN_PROMPT_RULES, RESCREEN_REMINDER_TEXT, RESCREEN_TASK_TEXT } from "./rescreenCadence";
+import { sudSignalReason } from "./sudSignal";
+import { followupOwner, screenerFollowupActor } from "./screenerFollowup";
 export type { LibraryCategory, LibraryItem, Exercise, SavedToolkitItem } from "./library";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
 // ownership, Part 2 restriction messaging); imports nothing back from here.
@@ -4332,6 +4334,11 @@ export interface PatientTask {
   screenerKey?: string;
   createdAt: string;
   completedAt?: string;
+  /** R53 Draft — pending clinical sign-off: existing task-backed bundle metadata. */
+  automaticRescreen?: boolean;
+  rescreenPromptId?: string;
+  rescreenReminderDays?: number[];
+  rescreenFollowupTaskId?: string;
 }
 
 export type ApptNotificationKind =
@@ -14144,39 +14151,63 @@ export const AdelanteEHR = {
 
 
   // ----- Re-screening cadence -----
-  // §Phase 10a — ONE draft rule per instrument (RESCREEN_SCHEDULE). Fixed
-  // timepoints count from the FIRST validated result; after the last fixed
-  // timepoint, `repeatEveryDays` counts from the most recent result. Retired
-  // forms never make anything due. DRAFT pending clinical sign-off.
-  rescreensDue(
-    patientId: string,
-  ): { key: string; lastDays: number | null; nextDue: number }[] {
-    const p = patients.find((x) => x.id === patientId);
-    if (!p) return [];
-    const out: { key: string; lastDays: number | null; nextDue: number }[] = [];
-    const now = Date.now();
-    const DAY = 1000 * 60 * 60 * 24;
-    for (const rule of RESCREEN_SCHEDULE) {
-      const history = (p.screenerHistory ?? []).filter((h) => h.key === rule.key && !h.retiredForm);
-      if (history.length === 0) continue;
-      const sorted = [...history].sort((x, y) => +new Date(x.completedAt) - +new Date(y.completedAt));
-      const first = sorted[0];
-      const last = sorted[sorted.length - 1];
-      const sinceFirst = Math.floor((now - +new Date(first.completedAt)) / DAY);
-      const sinceLast = Math.floor((now - +new Date(last.completedAt)) / DAY);
-      // The most recent fixed timepoint already reached. A patient who is
-      // behind is due ONCE (for the latest step), not for every missed step.
-      const reached = [...rule.timepoints].reverse().find((d) => sinceFirst >= d);
-      const lastFixed = rule.timepoints[rule.timepoints.length - 1];
-      if (reached !== undefined && (reached < lastFixed || sinceFirst < lastFixed + (rule.repeatEveryDays ?? Infinity))) {
-        const dueFrom = +new Date(first.completedAt) + reached * DAY;
-        const satisfied = sorted.some((h) => h !== first && +new Date(h.completedAt) >= dueFrom);
-        if (!satisfied) out.push({ key: rule.key, lastDays: sinceLast, nextDue: reached });
-      } else if (reached !== undefined && rule.repeatEveryDays && sinceLast >= rule.repeatEveryDays) {
-        out.push({ key: rule.key, lastDays: sinceLast, nextDue: rule.repeatEveryDays });
+  // R53 Draft — pending clinical sign-off: last scored result, including estimates;
+  // incomplete submissions never reset the shared instrument clock.
+  rescreensDue(patientId: string): { key: string; lastDays: number | null; nextDue: number }[] {
+    const p = patients.find(x => x.id === patientId);
+    return p ? cadenceDue(p, Date.now()).map(({ dueAt: _at, ...row }) => row) : [];
+  },
+  /** R53 Draft — pending clinical sign-off. Pure plan; all writes go through runAction. */
+  automaticRescreenOperations(patientId: string, now = Date.now()): { kind: "prompt" | "reminder" | "followup"; keys?: string[]; promptId?: string; day?: number }[] {
+    const p = patients.find(x => x.id === patientId);
+    if (!p || !p.intakeCompletedAt) return [];
+    const sud = !!sudSignalReason(p) || !!p.flagSources?.sud;
+    const consent = AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment");
+    const visits = appointments.filter(a => a.patientId === p.id);
+    const operations: { kind: "prompt" | "reminder" | "followup"; keys?: string[]; promptId?: string; day?: number }[] = [];
+    const keys = automaticBundle(p, now, visits, sud, consent);
+    if (keys.length) operations.push({ kind: "prompt", keys });
+    const groups = outstandingPromptGroups(p, now, sud, consent);
+    for (const group of groups) {
+      for (const day of RESCREEN_PROMPT_RULES.reminderDays) {
+        if (group.ageDays === day && !group.tasks.some(t => t.rescreenReminderDays?.includes(day))) operations.push({ kind: "reminder", promptId: group.id, day });
       }
     }
-    return out;
+    const overdue = groups.find(g => g.ageDays >= RESCREEN_PROMPT_RULES.staffFollowupDays && !g.tasks.some(t => t.rescreenFollowupTaskId));
+    if (overdue) operations.push({ kind: "followup", promptId: overdue.id });
+    return operations;
+  },
+  /** R53 Draft — pending clinical sign-off: existing system-only gate, unchanged staff visibility. */
+  runAutomaticRescreenStep(patientId: string, operation: { kind: "prompt" | "reminder" | "followup"; keys?: string[]; promptId?: string; day?: number }, at: string, actor: { role: StaffRole; staffId?: string }) {
+    if (actor.role !== screenerFollowupActor.role || actor.staffId !== screenerFollowupActor.staffId) throw new Error("Created by the system only.");
+    const now = Date.parse(at);
+    if (!Number.isFinite(now)) throw new Error("Invalid screening follow-up date.");
+    const p = patients.find(x => x.id === patientId);
+    if (!p) throw new Error("Patient not found.");
+    const planned = AdelanteEHR.automaticRescreenOperations(patientId, now).find(o => o.kind === operation.kind && o.promptId === operation.promptId && o.day === operation.day);
+    if (!planned) return undefined;
+    if (planned.kind === "prompt") {
+      const promptId = uid();
+      p.tasks = [...(planned.keys ?? []).map(key => ({ id: uid(), kind: "rescreen" as const, label: RESCREEN_TASK_TEXT, screenerKey: key, createdAt: at, automaticRescreen: true, rescreenPromptId: promptId })), ...(p.tasks ?? [])];
+      emit();
+      return promptId;
+    }
+    const group = (p.tasks ?? []).filter(t => (t.rescreenPromptId ?? t.id) === planned.promptId);
+    if (planned.kind === "reminder" && planned.day !== undefined) {
+      const es = p.preferredLanguage === "es";
+      const text = es ? "Tienes una breve revisión pendiente." : RESCREEN_REMINDER_TEXT;
+      AdelanteEHR.notifyMember({ audience: "patient", recipientId: p.id, patientId: p.id, subject: text, body: text, linkRoute: "/home", dedupeKey: `rescreen-reminder:${planned.promptId}:${planned.day}`, createdAt: at });
+      for (const t of group) t.rescreenReminderDays = [...(t.rescreenReminderDays ?? []), planned.day];
+      emit();
+      return planned.promptId;
+    }
+    // Draft — pending clinical sign-off: one open day-10 task per member, not instrument.
+    const existing = caseTasks.find(t => t.patientId === p.id && t.taskType === "rescreen_followup" && t.status !== "done" && !t.completedAt);
+    const primary = STAFF_ROSTER.find(m => !!p.primaryClinicianId && (m.id === p.primaryClinicianId || m.clinicianId === p.primaryClinicianId));
+    const task = existing ?? AdelanteEHR.createCaseTask({ patientId: p.id, ...followupOwner(primary, onCallOwnerFor(new Date(at))), title: RESCREEN_TASK_TEXT, detail: RESCREEN_TASK_TEXT, dueDate: at, origin: "screener_flag", taskType: "rescreen_followup", dedupeKey: `rescreen-followup:${p.id}` });
+    for (const t of group) t.rescreenFollowupTaskId = task?.id;
+    emit();
+    return task;
   },
   sendRescreenTask(patientId: string, key: string) {
     const p = patients.find((x) => x.id === patientId);
@@ -14185,7 +14216,7 @@ export const AdelanteEHR = {
       {
         id: uid(),
         kind: "rescreen",
-        label: `Re-screen requested: ${key.toUpperCase()}`,
+        label: "Screening follow-up needed",
         screenerKey: key,
         createdAt: new Date().toISOString(),
       },
@@ -14210,14 +14241,16 @@ export const AdelanteEHR = {
       return !!def && !!rescreenRule(key) && (!def.isSud || sudOk);
     };
     const out = new Map<string, { key: string; taskIds: string[]; nextDue?: number }>();
-    for (const d of AdelanteEHR.rescreensDue(patientId)) {
-      if (allowed(d.key)) out.set(d.key, { key: d.key, taskIds: [], nextDue: d.nextDue });
-    }
-    for (const t of p.tasks ?? []) {
-      if (t.kind !== "rescreen" || t.completedAt || !t.screenerKey || !allowed(t.screenerKey)) continue;
-      const row = out.get(t.screenerKey) ?? { key: t.screenerKey, taskIds: [] };
-      row.taskIds.push(t.id);
-      out.set(t.screenerKey, row);
+    // R53 Draft — pending clinical sign-off: cadence becomes visible only through
+    // the registry-created bundle; a care-team request remains immediate.
+    const outstanding = outstandingPromptGroups(p, Date.now(), !!sudSignalReason(p) || !!p.flagSources?.sud, sudOk);
+    for (const { tasks } of outstanding) {
+      for (const t of tasks) {
+        if (!t.screenerKey || !allowed(t.screenerKey)) continue;
+        const row = out.get(t.screenerKey) ?? { key: t.screenerKey, taskIds: [] };
+        row.taskIds.push(t.id);
+        out.set(t.screenerKey, row);
+      }
     }
     return [...out.values()];
   },
