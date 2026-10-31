@@ -7,7 +7,7 @@ import { screenerFollowupActor } from "./screenerFollowup";
 export function runRescreenCadenceSweep(now = new Date()) {
   for (const p of AdelanteEHR.listPatients()) {
     for (const operation of AdelanteEHR.automaticRescreenOperations(p.id, now.getTime())) {
-      runActionOrThrow("screener_item9_followup", screenerFollowupActor, p, {
+      runActionOrThrow("rescreen_cadence_automation", screenerFollowupActor, p, {
         via: "runAutomaticRescreenStep", args: [p.id, operation, now.toISOString(), screenerFollowupActor],
         auditReason: "Scheduled screening follow-up",
       });
