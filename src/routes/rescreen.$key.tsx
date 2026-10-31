@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RescreenForm } from "@/components/reassessment/RescreenForm";
+import { RescreenBundle, RescreenForm } from "@/components/reassessment/RescreenForm";
 
 export const Route = createFileRoute("/rescreen/$key")({
   head: () => ({
@@ -17,5 +17,5 @@ export const Route = createFileRoute("/rescreen/$key")({
 
 function RescreenRoute() {
   const { key } = Route.useParams();
-  return <RescreenForm key={key} screenerKey={key} />;
+  return key === "bundle" ? <RescreenBundle /> : <RescreenForm key={key} screenerKey={key} />;
 }

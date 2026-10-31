@@ -10,7 +10,7 @@ import { planReviewDue, getStructuredPlan } from "./structuredCarePlan";
 // HARD RULE, same as every other reporting module here: nothing in this file
 // invents a tracking mechanism. Every row is read back out of a store that
 // already exists — crisis claims (`claimedBy`), draft notes
-// (`listDraftNotesBy`), case tasks (`listCaseTasks`), the existing 30/60/90
+// (`listDraftNotesBy`), case tasks (`listCaseTasks`), the configured per-instrument
 // re-screen cadence (`rescreensDue`), engagement activity
 // (`engagementRecords`), appointments and care messages.
 //
@@ -54,12 +54,12 @@ export const DISENGAGEMENT_DRAFT = {
 
 /**
  * The re-screen cadence is NOT invented here — `AdelanteEHR.rescreensDue`
- * already runs a 30/60/90-day cadence off `screenerHistory`. It has never been
+ * reads the configured last-scored intervals from `screenerHistory`. It has never been
  * clinically ratified, so it is surfaced as a draft assumption rather than as
  * a due date.
  */
 export const RESCREEN_CADENCE_DRAFT_NOTE =
-  "Draft cadence assumption: 30 / 60 / 90 days from the last completed screen. There is no ratified re-screen schedule yet, so these are prompts, not due dates.";
+  "Draft — pending clinical sign-off: per-instrument interval from the last scored result, including estimates; incomplete submissions do not restart the clock.";
 
 // ---------------------------------------------------------------------------
 // Identity — who counts as "me"
@@ -359,7 +359,7 @@ export interface ScreenerDueRow {
   screenerKey: string;
   /** Days since the last completed screen of this instrument. */
   daysSinceLast: number;
-  /** Which draft cadence step has been passed: 30, 60 or 90. */
+  /** Configured Draft interval passed since the last scored result. */
   cadenceStep: number;
   /** A re-screen task is already sitting on the patient's list. */
   taskAlreadySent: boolean;

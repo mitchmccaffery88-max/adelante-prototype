@@ -19,6 +19,7 @@
 import { useEffect } from "react";
 import { sendDueReminders, type ReminderRun } from "@/lib/reminders";
 import { sendPatientRefillNudges } from "@/lib/medContinuity";
+import { runRescreenCadenceSweep } from "@/lib/rescreenAutomation";
 
 /** Interval between sweeps. 20 min: often enough to look automatic inside a
  *  48h reminder lead window, rare enough to be cheap. */
@@ -28,6 +29,8 @@ export const REMINDER_SWEEP_INTERVAL_MS = 20 * 60 * 1000;
  *  button. Never call `sendDueReminders` directly from UI code. */
 export function runReminderSweep(): ReminderRun {
   // §B1 — neutral, deduped refill nudge rides the same sweep (no toast, no med name).
+  // R53 Draft — pending clinical sign-off: same active-browser sweep, registry-only writes.
+  runRescreenCadenceSweep();
   sendPatientRefillNudges();
   return sendDueReminders();
 }

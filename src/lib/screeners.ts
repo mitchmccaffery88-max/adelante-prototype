@@ -387,12 +387,12 @@ export function severityFor(def: ScreenerDef, score: number) {
 }
 
 // ---------------------------------------------------------------------------
-// §Phase 10a — ONE draft re-screen schedule per instrument. Every "due" view
+// R53 — ONE draft re-screen schedule per instrument. Every "due" view
 // (re-assess, My Work, clinician worklist, Ask Adel, agentic chart review)
 // reads `rescreensDue`, which reads this table. DRAFT pending clinical
 // sign-off.
-//   • `timepoints`: fixed day offsets from the FIRST result (intake).
-//   • `repeatEveryDays`: after the timepoints, repeat this long after the last.
+// Draft — pending clinical sign-off: intervals count from the LAST scored result.
+// Legacy timepoints remain a compatibility projection, not a second clock.
 // ---------------------------------------------------------------------------
 export interface RescreenRule {
   key: string;
@@ -401,15 +401,18 @@ export interface RescreenRule {
   note: string;
 }
 
-export const RESCREEN_SCHEDULE: RescreenRule[] = [
-  { key: "phq-9", timepoints: [30, 60, 90], repeatEveryDays: 90, note: "Intake, then day 30 / 60 / 90" },
-  { key: "gad-7", timepoints: [30, 60, 90], repeatEveryDays: 90, note: "Intake, then day 30 / 60 / 90" },
-  { key: "audit", timepoints: [90], repeatEveryDays: 90, note: "Intake, then day 90 (Part 2 consent required)" },
-  { key: "dast-10", timepoints: [90], repeatEveryDays: 90, note: "Intake, then day 90 (Part 2 consent required)" },
-  { key: "pc-ptsd-5", timepoints: [90], repeatEveryDays: 90, note: "Intake, then day 90" },
-  { key: "pcl-5-20", timepoints: [30], repeatEveryDays: 30, note: "After a positive PC-PTSD-5 or on staff request; repeat at day 30" },
-  { key: "ahc-hrsn", timepoints: [182], repeatEveryDays: 182, note: "Intake, then every 6 months" },
-];
+export const SCREENER_CADENCE = {
+  "phq-9": { intervalDays: 30, note: DRAFT_LABEL }, // Draft — pending clinical sign-off.
+  "gad-7": { intervalDays: 30, note: DRAFT_LABEL }, // Draft — pending clinical sign-off.
+  audit: { intervalDays: 90, note: DRAFT_LABEL }, // Draft — pending clinical sign-off; automatic prompts need SUD flag + consent.
+  "dast-10": { intervalDays: 90, note: DRAFT_LABEL }, // Draft — pending clinical sign-off; automatic prompts need SUD flag + consent.
+  "pc-ptsd-5": { intervalDays: 90, note: DRAFT_LABEL }, // Draft — pending clinical sign-off.
+  "pcl-5-20": { intervalDays: 30, note: DRAFT_LABEL }, // Draft — pending clinical sign-off; existing interval unchanged.
+  "ahc-hrsn": { intervalDays: 180, reentryIntervalDays: 90, reentryWindowDays: 90, note: DRAFT_LABEL }, // Draft — pending clinical sign-off.
+  "c-ssrs-screener": { intervalDays: null, note: DRAFT_LABEL }, // Draft — pending clinical sign-off; never automatic.
+} as const;
+export const RESCREEN_SCHEDULE: RescreenRule[] = Object.entries(SCREENER_CADENCE)
+  .flatMap(([key, rule]) => rule.intervalDays === null ? [] : [{ key, timepoints: [rule.intervalDays], repeatEveryDays: rule.intervalDays, note: rule.note }]);
 export const RESCREEN_SCHEDULE_STATUS = DRAFT_LABEL;
 
 export function rescreenRule(key: string): RescreenRule | undefined {

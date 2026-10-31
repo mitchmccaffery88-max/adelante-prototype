@@ -20,7 +20,24 @@ import { Slim988Bar } from "@/components/patient/Slim988Bar";
 import { ITEM9_REPROMPT } from "@/lib/screenerCompleteness";
 import "@/lib/screenerIntake";
 
-export function RescreenForm({ screenerKey }: { screenerKey: string }) {
+/** R53 bundles through the existing writer/questions, one instrument at a time. */
+export function RescreenBundle() {
+  const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const dueJson = useEhr(() => JSON.stringify(AdelanteEHR.patientReassessmentDue(patientId).map(d => d.key)));
+  const current = (JSON.parse(dueJson) as string[])[0];
+  const [remaining, setRemaining] = useState<string[] | undefined>();
+  const keys = remaining ?? (JSON.parse(dueJson) as string[]);
+  const key = keys[0] ?? current;
+  const navigate = useNavigate();
+  if (!key) return <RescreenForm screenerKey="bundle" />;
+  return <RescreenForm key={`${patientId}:${key}`} screenerKey={key} hasNext={keys.length > 1} onSaved={() => {
+    const next = keys.slice(1);
+    setRemaining(next);
+    if (!next.length) void navigate({ to: "/home" });
+  }} />;
+}
+
+export function RescreenForm({ screenerKey, hasNext = false, onSaved }: { screenerKey: string; hasNext?: boolean; onSaved?: () => void }) {
   const { lang } = useI18n();
   const L = lang === "es" ? "es" : "en";
   const c = REASSESS_COPY[L];
@@ -30,7 +47,7 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
     AdelanteEHR.patientReassessmentDue(patientId).some((d) => d.key === screenerKey) ||
     // A patient may also re-take a non-SUD instrument voluntarily.
     (!!rescreenRule(screenerKey) && !!activeScreenerByKey(screenerKey) &&
-      (!activeScreenerByKey(screenerKey)!.isSud ||
+      (!activeScreenerByKey(screenerKey)?.isSud ||
         AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment"))),
   );
   const def = rescreenRule(screenerKey) ? activeScreenerByKey(screenerKey) : undefined;
@@ -55,9 +72,9 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   // The draft can become readable after first render (hydration, patient id
   // resolving late). Restore it once, only if nothing has been answered yet.
   useEffect(() => {
-    if (resumed || !hasDraft(draft) || answers.some((a) => typeof a === "number")) return;
-    setAnswers([...draft!.answers]);
-    setChoices({ ...draft!.choices });
+    if (!draft || resumed || !hasDraft(draft) || answers.some((a) => typeof a === "number")) return;
+    setAnswers([...draft.answers]);
+    setChoices({ ...draft.choices });
     setResumed(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId, draft?.savedAt]);
@@ -87,7 +104,8 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
       });
       discardScreenerDraft(patientId, def.key);
       toast.success(c.done);
-      void navigate({ to: "/home" });
+      if (onSaved) onSaved();
+      else void navigate({ to: "/home" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not save.");
     }
@@ -130,7 +148,7 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
           item9Prompt={item9Prompted ? <div className="space-y-2"><p role="status" data-testid="item9-reprompt" className="text-sm">{ITEM9_REPROMPT[L]}</p><Slim988Bar /></div> : undefined}
         /></div>
         <Button size="patient" className="w-full" onClick={submit} data-testid="rescreen-submit">
-          {c.submit}
+          {hasNext ? c.bundleNext : c.submit}
         </Button>
       </Card>
     </PatientPage>
