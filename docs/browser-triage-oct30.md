@@ -118,3 +118,5 @@ Only the Today click setup in `e2e/accessClickThroughOct29.spec.ts:10` changes. 
 Validation results will be recorded immediately below. #20 remains investigation only; its spec and product code are unchanged. Evidence: `docs/evidence/triage-part4/`.
 
 **Adapter validation recorded:** Part 4 + unchanged Part 3 regressions **4/4 passed**, 2 files, exit 0. Log `docs/evidence/triage-part4/adapter-tests.log`.
+
+**Full units recorded:** **3,771/3,771 passed**, 431/431 files, exit 0, 311.74s; no unhandled errors. Existing Radix accessibility warnings are in the log, not failed assertions. Log `docs/evidence/triage-part4/units.log`.
