@@ -56,3 +56,5 @@ Subdirectories have their own AGENTS.md (`src/lib/`, `src/components/`) — read
 - Public mission uses one website dictionary key; core values/services/caption slots use dianaConfig and bilingual Diana strings, with one assistive values list and reduced-motion static output. Why: ongoing copy edits stay consistent across Home/About without changing clinical workflows.
 
 - Screener member writers initialize independently of the registry; item-9 follow-up commands queue until runAction registers its runner, then drain through that runner only. Why: store-only rescreen calls must score without bypassing task permissions or audits.
+
+- Screener estimate display wording is centralized in estimateLabel with an optional display language; source-label approvals extend the existing exact-once chain. Why: singular/plural fixes cannot diverge by screen or alter scoring.
