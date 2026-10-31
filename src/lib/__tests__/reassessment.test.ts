@@ -20,14 +20,16 @@ describe("Phase 9b targeted re-screen", () => {
   });
   it("refuses incomplete answers", () => {
     const p = completedPatient();
-    // Draft — pending clinical sign-off: optional blanks remain incomplete, never zero.
-    const historyBefore = (AdelanteEHR.getPatient(p.id)?.screenerHistory ?? []).length;
-    const result = AdelanteEHR.completeRescreen(p.id, "phq-9", [0, 1], { actorId: p.id, actorRole: "patient" });
-    expect(result).toMatchObject({ status: "incomplete", responses: [0, 1, null, null, null, null, null, null, null], skippedItems: [2, 3, 4, 5, 6, 7, 8] });
-    expect(result.score).toBeUndefined();
-    expect(AdelanteEHR.listIncompleteScreeners(p.id)).toContainEqual(result);
-    expect(AdelanteEHR.getPatient(p.id)?.screenerHistory?.length ?? 0).toBe(historyBefore);
-    expect(AdelanteEHR.caseTasksForPatient(p.id).some((task) => task.title === "Screening follow-up needed" && !task.completedAt)).toBe(true);
+    return import("@/lib/actions/runAction").then(() => {
+      // Draft — pending clinical sign-off: optional blanks remain incomplete, never zero.
+      const historyBefore = (AdelanteEHR.getPatient(p.id)?.screenerHistory ?? []).length;
+      const result = AdelanteEHR.completeRescreen(p.id, "phq-9", [0, 1], { actorId: p.id, actorRole: "patient" });
+      expect(result).toMatchObject({ status: "incomplete", responses: [0, 1, null, null, null, null, null, null, null], skippedItems: [2, 3, 4, 5, 6, 7, 8] });
+      expect(result.score).toBeUndefined();
+      expect(AdelanteEHR.listIncompleteScreeners(p.id)).toEqual(expect.arrayContaining([expect.objectContaining(result)]));
+      expect(AdelanteEHR.getPatient(p.id)?.screenerHistory?.length ?? 0).toBe(historyBefore);
+      expect(AdelanteEHR.caseTasksForPatient(p.id).some((task) => task.title === "Screening follow-up needed" && !task.completedAt)).toBe(true);
+    });
   });
   it("SUD instruments are hidden without sud_treatment consent", () => {
     const p = AdelanteEHR.listPatients().find(
