@@ -41,11 +41,12 @@ describe("R5 screener completeness", () => {
     const before = p.screeners["phq-9"];
     const r = recordIntakeScreenerAnswers(p.id, PHQ9, [1, 1, 1, null, 1, 1, 1, 0, 0]);
     expect(r.complete).toBe(false);
-    const inc = AdelanteEHR.listIncompleteScreeners(p.id).at(-1)!;
-    expect(inc.status).toBe("incomplete");
-    expect(answeredLabel(inc)).toBe("8 of 9 answered");
-    expect("score" in inc).toBe(false);
-    expect(AdelanteEHR.getPatient(p.id)!.screeners["phq-9"]).toBe(before);
+    const latest = AdelanteEHR.getPatient(p.id)?.screeners["phq-9"];
+    expect(latest?.estimated).toBe(true);
+    expect(latest?.missingItems).toEqual([3]);
+    expect(latest?.responses?.[3]).toBeNull();
+    expect(latest?.score).toBe(7);
+    expect(AdelanteEHR.listIncompleteScreeners(p.id)).toHaveLength(0);
   });
 
   it("a blank item 9 creates the neutral task and does not trip the crisis rule", () => {
@@ -56,8 +57,12 @@ describe("R5 screener completeness", () => {
     const tasks = AdelanteEHR.caseTasksForPatient(p.id);
     expect(tasks.some((t) => t.title === ITEM9_UNANSWERED_TASK_TITLE)).toBe(true);
     expect(tasks.some((t) => t.title.startsWith("Crisis flag"))).toBe(false);
-    const inc = AdelanteEHR.listIncompleteScreeners(p.id).at(-1)!;
-    expect(itemDisplay(inc, 8)).toBe("Not answered");
+    const result = pp.screeners["phq-9"];
+    expect(result?.estimated).toBe(true);
+    expect(result?.missingItems).toEqual([8]);
+    expect(result?.responses?.[8]).toBeNull();
+    expect(itemDisplay(result ?? {}, 8)).toBe("Not answered");
+    expect(result?.score).toBe(9);
   });
 
   it("an answered item 9 of 1+ still trips the crisis rule, complete or not", () => {
@@ -73,7 +78,11 @@ describe("R5 screener completeness", () => {
     const p = freshPatient();
     const flagsBefore = (AdelanteEHR.getPatient(p.id)!.severityFlags ?? []).length;
     recordIntakeScreenerAnswers(p.id, PHQ9, [3, 3, 3, 3, 3, 3, 3, null, 0]);
-    expect((AdelanteEHR.getPatient(p.id)!.severityFlags ?? []).length).toBe(flagsBefore);
+    const estimated = AdelanteEHR.getPatient(p.id)?.screeners["phq-9"];
+    expect(estimated?.score).toBe(24);
+    expect(estimated?.estimated).toBe(true);
+    expect(estimated?.missingItems).toEqual([7]);
+    expect(estimated && evaluateSeverity(undefined, estimated)?.kind).toBe("flag");
     // A complete result is stamped and still evaluated as today.
     recordIntakeScreenerAnswers(p.id, PHQ9, [3, 3, 3, 3, 3, 3, 3, 3, 0]);
     const latest = AdelanteEHR.getPatient(p.id)!.screeners["phq-9"]!;
