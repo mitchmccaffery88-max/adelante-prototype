@@ -1,0 +1,731 @@
+[
+  {
+    "label": "before-final-switch",
+    "url": "/clinician-profile",
+    "actor": {
+      "role": "clinical_coordinator",
+      "staffId": "s-batch4",
+      "staffName": "Batch four test staff"
+    },
+    "preference": null,
+    "defaults": [
+      "dashboard_task",
+      "dashboard_book",
+      "partner_link",
+      "message_team"
+    ],
+    "optionIds": [
+      "consent_form_author",
+      "content_create",
+      "progress_note",
+      "addendum",
+      "ntp_referral",
+      "partner_link",
+      "screener_request",
+      "screener_draft_save",
+      "asam",
+      "care_plan_goal",
+      "activity_assignment",
+      "sdoh_referral",
+      "hloc_referral",
+      "schedule_visit",
+      "message_patient",
+      "crisis_flag",
+      "discharge_episode",
+      "demographics_edit",
+      "dashboard_task",
+      "dashboard_book",
+      "dashboard_referral",
+      "note_template_create",
+      "note_template_clone",
+      "scheduling_rule_save",
+      "notification_resend",
+      "review_matching",
+      "reconfirm_consent_merged",
+      "afbi_contact",
+      "message_team"
+    ],
+    "rows": [
+      "pref-dashboard_task",
+      "pref-dashboard_book",
+      "pref-partner_link",
+      "pref-message_team"
+    ],
+    "settingsMounted": true,
+    "events": [
+      {
+        "time": 9245.70000000007,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      },
+      {
+        "type": "prefs changed",
+        "time": 9871.70000000007,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 9933.79999999993,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task",
+          "pref-consent_form_author"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "type": "prefs changed",
+        "time": 9989.599999999977,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 10059.400000000023,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-consent_form_author",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 11458.20000000007,
+        "url": "/my-work",
+        "rows": [],
+        "section": 0,
+        "type": "unmounted"
+      },
+      {
+        "time": 14997.999999999884,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-consent_form_author",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      },
+      {
+        "type": "prefs changed",
+        "time": 15072.599999999977,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 15091.79999999993,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-dashboard_task",
+          "pref-dashboard_book",
+          "pref-partner_link",
+          "pref-message_team"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      }
+    ],
+    "pendingTimers": [
+      {
+        "type": "setInterval",
+        "delay": 15000,
+        "created": 12515.29999999993,
+        "stack": [
+          "    at http://localhost:8080/src/components/NotificationBell.tsx:51:15",
+          "    at Object.react_stack_bottom_frame (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:18567:20)",
+          "    at runWithFiberInDEV (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:997:72)"
+        ]
+      },
+      {
+        "type": "setTimeout",
+        "delay": 4000,
+        "created": 12931.499999999884,
+        "stack": [
+          "    at startTimer (http://localhost:8080/node_modules/.vite/deps/sonner.js?v=14316666:578:19)",
+          "    at http://localhost:8080/node_modules/.vite/deps/sonner.js?v=14316666:586:7",
+          "    at Object.react_stack_bottom_frame (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:18567:20)"
+        ]
+      }
+    ],
+    "timerScope": "Timers scheduled after initial dev-hook readiness; pre-existing timers not introspectable"
+  },
+  {
+    "label": "immediately-before-original-line62",
+    "url": "/my-work",
+    "actor": {
+      "role": "therapist",
+      "staffId": "s-batch4",
+      "staffName": "Batch four test staff"
+    },
+    "preference": null,
+    "defaults": [
+      "progress_note",
+      "dashboard_book",
+      "message_patient",
+      "screener_request",
+      "dashboard_task"
+    ],
+    "optionIds": [
+      "consent_form_author",
+      "content_create",
+      "progress_note",
+      "addendum",
+      "ntp_referral",
+      "partner_link",
+      "screener_request",
+      "screener_draft_save",
+      "asam",
+      "care_plan_goal",
+      "activity_assignment",
+      "sdoh_referral",
+      "hloc_referral",
+      "schedule_visit",
+      "message_patient",
+      "crisis_flag",
+      "discharge_episode",
+      "demographics_edit",
+      "dashboard_task",
+      "dashboard_book",
+      "dashboard_referral",
+      "note_template_create",
+      "note_template_clone",
+      "scheduling_rule_save",
+      "notification_resend",
+      "review_matching",
+      "reconfirm_consent_merged",
+      "afbi_contact",
+      "message_team"
+    ],
+    "rows": [],
+    "settingsMounted": false,
+    "events": [
+      {
+        "time": 9245.70000000007,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      },
+      {
+        "type": "prefs changed",
+        "time": 9871.70000000007,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 9933.79999999993,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task",
+          "pref-consent_form_author"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "type": "prefs changed",
+        "time": 9989.599999999977,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 10059.400000000023,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-consent_form_author",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 11458.20000000007,
+        "url": "/my-work",
+        "rows": [],
+        "section": 0,
+        "type": "unmounted"
+      },
+      {
+        "time": 14997.999999999884,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-consent_form_author",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      },
+      {
+        "type": "prefs changed",
+        "time": 15072.599999999977,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 15091.79999999993,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-dashboard_task",
+          "pref-dashboard_book",
+          "pref-partner_link",
+          "pref-message_team"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 16027.400000000023,
+        "url": "/my-work",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 16090.099999999977,
+        "url": "/my-work",
+        "rows": [],
+        "section": 0,
+        "type": "unmounted"
+      }
+    ],
+    "pendingTimers": [
+      {
+        "type": "setTimeout",
+        "delay": 4000,
+        "created": 12931.499999999884,
+        "stack": [
+          "    at startTimer (http://localhost:8080/node_modules/.vite/deps/sonner.js?v=14316666:578:19)",
+          "    at http://localhost:8080/node_modules/.vite/deps/sonner.js?v=14316666:586:7",
+          "    at Object.react_stack_bottom_frame (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:18567:20)"
+        ]
+      },
+      {
+        "type": "setInterval",
+        "delay": 15000,
+        "created": 15801.29999999993,
+        "stack": [
+          "    at http://localhost:8080/src/components/NotificationBell.tsx:51:15",
+          "    at Object.react_stack_bottom_frame (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:18567:20)",
+          "    at runWithFiberInDEV (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:997:72)"
+        ]
+      },
+      {
+        "type": "setTimeout",
+        "delay": 4000,
+        "created": 16139.999999999884,
+        "stack": [
+          "    at startTimer (http://localhost:8080/node_modules/.vite/deps/sonner.js?v=14316666:578:19)",
+          "    at http://localhost:8080/node_modules/.vite/deps/sonner.js?v=14316666:586:7",
+          "    at Object.react_stack_bottom_frame (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:18567:20)"
+        ]
+      }
+    ],
+    "timerScope": "Timers scheduled after initial dev-hook readiness; pre-existing timers not introspectable"
+  },
+  {
+    "label": "settled-role-home",
+    "url": "/my-work",
+    "actor": {
+      "role": "therapist",
+      "staffId": "s-batch4",
+      "staffName": "Batch four test staff"
+    },
+    "preference": null,
+    "defaults": [
+      "progress_note",
+      "dashboard_book",
+      "message_patient",
+      "screener_request",
+      "dashboard_task"
+    ],
+    "optionIds": [
+      "consent_form_author",
+      "content_create",
+      "progress_note",
+      "addendum",
+      "ntp_referral",
+      "partner_link",
+      "screener_request",
+      "screener_draft_save",
+      "asam",
+      "care_plan_goal",
+      "activity_assignment",
+      "sdoh_referral",
+      "hloc_referral",
+      "schedule_visit",
+      "message_patient",
+      "crisis_flag",
+      "discharge_episode",
+      "demographics_edit",
+      "dashboard_task",
+      "dashboard_book",
+      "dashboard_referral",
+      "note_template_create",
+      "note_template_clone",
+      "scheduling_rule_save",
+      "notification_resend",
+      "review_matching",
+      "reconfirm_consent_merged",
+      "afbi_contact",
+      "message_team"
+    ],
+    "rows": [],
+    "settingsMounted": false,
+    "events": [
+      {
+        "time": 9245.70000000007,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      },
+      {
+        "type": "prefs changed",
+        "time": 9871.70000000007,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 9933.79999999993,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task",
+          "pref-consent_form_author"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "type": "prefs changed",
+        "time": 9989.599999999977,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 10059.400000000023,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-consent_form_author",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 11458.20000000007,
+        "url": "/my-work",
+        "rows": [],
+        "section": 0,
+        "type": "unmounted"
+      },
+      {
+        "time": 14997.999999999884,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-consent_form_author",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      },
+      {
+        "type": "prefs changed",
+        "time": 15072.599999999977,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 15091.79999999993,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-dashboard_task",
+          "pref-dashboard_book",
+          "pref-partner_link",
+          "pref-message_team"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 16027.400000000023,
+        "url": "/my-work",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 16090.099999999977,
+        "url": "/my-work",
+        "rows": [],
+        "section": 0,
+        "type": "unmounted"
+      }
+    ],
+    "pendingTimers": [
+      {
+        "type": "setInterval",
+        "delay": 15000,
+        "created": 15801.29999999993,
+        "stack": [
+          "    at http://localhost:8080/src/components/NotificationBell.tsx:51:15",
+          "    at Object.react_stack_bottom_frame (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:18567:20)",
+          "    at runWithFiberInDEV (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:997:72)"
+        ]
+      }
+    ],
+    "timerScope": "Timers scheduled after initial dev-hook readiness; pre-existing timers not introspectable"
+  },
+  {
+    "label": "returned-to-settings-settled",
+    "url": "/clinician-profile",
+    "actor": {
+      "role": "therapist",
+      "staffId": "s-batch4",
+      "staffName": "Batch four test staff"
+    },
+    "preference": null,
+    "defaults": [
+      "progress_note",
+      "dashboard_book",
+      "message_patient",
+      "screener_request",
+      "dashboard_task"
+    ],
+    "optionIds": [
+      "consent_form_author",
+      "content_create",
+      "progress_note",
+      "addendum",
+      "ntp_referral",
+      "partner_link",
+      "screener_request",
+      "screener_draft_save",
+      "asam",
+      "care_plan_goal",
+      "activity_assignment",
+      "sdoh_referral",
+      "hloc_referral",
+      "schedule_visit",
+      "message_patient",
+      "crisis_flag",
+      "discharge_episode",
+      "demographics_edit",
+      "dashboard_task",
+      "dashboard_book",
+      "dashboard_referral",
+      "note_template_create",
+      "note_template_clone",
+      "scheduling_rule_save",
+      "notification_resend",
+      "review_matching",
+      "reconfirm_consent_merged",
+      "afbi_contact",
+      "message_team"
+    ],
+    "rows": [
+      "pref-progress_note",
+      "pref-dashboard_book",
+      "pref-message_patient",
+      "pref-screener_request",
+      "pref-dashboard_task"
+    ],
+    "settingsMounted": true,
+    "events": [
+      {
+        "time": 9245.70000000007,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      },
+      {
+        "type": "prefs changed",
+        "time": 9871.70000000007,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 9933.79999999993,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task",
+          "pref-consent_form_author"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "type": "prefs changed",
+        "time": 9989.599999999977,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 10059.400000000023,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-consent_form_author",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 11458.20000000007,
+        "url": "/my-work",
+        "rows": [],
+        "section": 0,
+        "type": "unmounted"
+      },
+      {
+        "time": 14997.999999999884,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-consent_form_author",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      },
+      {
+        "type": "prefs changed",
+        "time": 15072.599999999977,
+        "url": "/clinician-profile"
+      },
+      {
+        "time": 15091.79999999993,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-dashboard_task",
+          "pref-dashboard_book",
+          "pref-partner_link",
+          "pref-message_team"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 16027.400000000023,
+        "url": "/my-work",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "rows changed"
+      },
+      {
+        "time": 16090.099999999977,
+        "url": "/my-work",
+        "rows": [],
+        "section": 0,
+        "type": "unmounted"
+      },
+      {
+        "time": 21913.599999999977,
+        "url": "/clinician-profile",
+        "rows": [
+          "pref-progress_note",
+          "pref-dashboard_book",
+          "pref-message_patient",
+          "pref-screener_request",
+          "pref-dashboard_task"
+        ],
+        "section": 1,
+        "type": "mounted"
+      }
+    ],
+    "pendingTimers": [
+      {
+        "type": "setInterval",
+        "delay": 15000,
+        "created": 15801.29999999993,
+        "stack": [
+          "    at http://localhost:8080/src/components/NotificationBell.tsx:51:15",
+          "    at Object.react_stack_bottom_frame (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:18567:20)",
+          "    at runWithFiberInDEV (http://localhost:8080/node_modules/.vite/deps/react-dom_client.js?v=14316666:997:72)"
+        ]
+      }
+    ],
+    "timerScope": "Timers scheduled after initial dev-hook readiness; pre-existing timers not introspectable"
+  }
+]
