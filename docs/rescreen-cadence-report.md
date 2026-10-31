@@ -32,3 +32,19 @@ Mitch, 31 Oct 2026, 16:36 CT. All new clinical rules: **Draft — pending clinic
 - Christi: confirm 90-day instrument intervals and whether needs-store events establish an HRSN completion signal.
 - Dr. Bagga/Christi: review all Draft cadence, prompt timing, reminder and outreach rules.
 - State/CalOMS estimate allowance remains **needs check**; existing estimate exclusions unchanged.
+
+## Approved finish — 31 Oct 18:25 CT
+
+- Applied the exact approved consent-call count 46→47 with a new hash-checked adapter chained after `rescreenCadenceOct31Approved`; no other consent-inventory test text changed. Inventory now records `ehr.ts:14165`, category `sud_treatment` and the R53 auto-prompt purpose.
+- Restored the item-9 registry entry from the immutable pre-R53 approval fixture, including its sole `createItem9FollowupTask` store reference. Cadence sweep now calls dedicated `rescreen_cadence_automation` using the same system actor; prompts/reminders/day-10 writes use that action.
+- Snapshot checkpoint: `vitest run src/lib/__tests__/runAction.test.ts -u` **7/7 passed**. Compared complete before/after text: exactly **18 added `"rescreen_cadence_automation": "hidden"` rows**, one per staff role; no other added/removed rows.
+- Reminders and day-10 tasks run only on the existing **app-open sweep**. Exact-day delivery needs a production server-side scheduler, build path **R48**; no scheduler was built here.
+
+### Full-unit result and mandatory stop (finish continuation)
+
+- Full units: **3,816 passed / 2 failed, 435 files (433 passed / 2 failed), 3,818 total**, exit 1. Approved consent inventory is green; new finish exact-once regressions (5/5), dedicated cadence audit/denial tests (19/19), and the registry snapshot are green.
+- **Protected conflict 1:** `src/lib/__tests__/rescreenCadenceR53.test.ts:82` still calls `runAction("screener_item9_followup", ..., { via: "runAutomaticRescreenStep" })` and expects success. The approved item-9 restoration correctly removes that store reference, so the call is refused. The same obsolete action call also appears at line 89 but execution stops at line 82. Proposed narrow follow-up: approve changing only those two action IDs to `rescreen_cadence_automation` through an exact-once chained re-pin, retaining every assertion and all inputs. Not applied: this existing test was not among the approved test edits, and this is not the standing earlier-adapter exception.
+- **Protected conflict 2:** `src/test/rescreenCadenceOct31Approved.test.ts:15` derives the earlier `chartActions.ts` baseline from current source; the later approved dedicated action supersedes that entry, so its earlier prior-source hash reconstruction fails. This is a candidate for the narrowly scoped standing earlier-adapter immutable-fixture exception; no change was applied after the mandatory conflict stop. Proposed follow-up: use the earlier immutable prior/replacement fixture only for this path, preserve exact/drift/reapplication assertions, and ensure the later regression verifies the final chart-action chain.
+- Both failures are **unit conflicts, not entries in the browser triage list**. No other failures were reported. No existing test assertion was changed beyond the approved consent count; no unrelated snapshot row changed.
+- **Browser suites and requested screenshots remain unrun** because the full-unit gate failed and the instructions require stopping on another conflicting assertion. Thus Home/bundle/intake/dashboard/public and immediate-staff-request UI proof are still open; no end-to-end completion claim is made.
+- All changes remain Draft; no dashboard part-2 tile, publishing, persistence or Supabase changes. Christi's 90-day interval confirmation and the HRSN member-update signal (**needs check**) remain open, as does R48 exact-day production scheduling.
