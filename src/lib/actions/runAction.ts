@@ -1,3 +1,5 @@
+import { registerItem9FollowupRunner } from "@/lib/screenerWriteBoundary";
+import { screenerFollowupActor } from "@/lib/screenerFollowup";
 // §Batch D — the ONE path for every registry action.
 //   1. resolve the registry entry (src/lib/chartActions.ts)
 //   2. check allowed() — the same function-level check the store enforces
@@ -235,3 +237,10 @@ export function recordBlockedAttempt(actionId: string, actor: RunActor, patient?
 }
 
 registerConsentMigrationRunner(runAction);
+
+// Draft — pending clinical sign-off: drain queued commands through the one registry runner.
+registerItem9FollowupRunner(input => {
+  runActionOrThrow("screener_item9_followup", screenerFollowupActor, AdelanteEHR.getPatient(input.patientId), {
+    args: [input], auditReason: "Unanswered screening item follow-up",
+  });
+});

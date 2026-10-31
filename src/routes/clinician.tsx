@@ -1,3 +1,4 @@
+import { estimateLabel } from "@/lib/screenerCompleteness";
 import { useConfirmDialog } from "@/components/staff/use-confirm-dialog";
 import { ChartAccessGate } from "@/components/chart/ChartAccessGate";
 import { chartEntryFor } from "@/lib/chartAccess";
@@ -899,9 +900,9 @@ function RescreenDuePanel({
                 · {r.key.toUpperCase()}
                 {latest && (
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    · {latest.score}
+                    · {latest.score} {estimateLabel(latest)}
                     {TrendIcon && <TrendIcon className={`h-3 w-3 ${trendCls}`} />}
-                    {prev && <span>vs {prev.score}</span>}
+                    {prev && <span>vs {prev.score} {estimateLabel(prev)}</span>}
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">(day {r.nextDue} due)</span>

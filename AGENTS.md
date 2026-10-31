@@ -53,3 +53,5 @@ Subdirectories have their own AGENTS.md (`src/lib/`, `src/components/`) — read
 - Intake Phase B uses intakePhaseB for capability-checked linked-patient form sends/captures and Billing-owned requests/status; intakePacket owns validated referral staging, source-bound checklist and restricted documents, with completion plus existing care-team record checks for handoff. Existing ledger/chart/importer grants remain denied and hooks fail closed. Why: administrative intake cannot become clinical access or result entry.
 
 - Public mission uses one website dictionary key; core values/services/caption slots use dianaConfig and bilingual Diana strings, with one assistive values list and reduced-motion static output. Why: ongoing copy edits stay consistent across Home/About without changing clinical workflows.
+
+- Screener member writers initialize independently of the registry; item-9 follow-up commands queue until runAction registers its runner, then drain through that runner only. Why: store-only rescreen calls must score without bypassing task permissions or audits.

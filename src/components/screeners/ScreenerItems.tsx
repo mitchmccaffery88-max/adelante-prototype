@@ -15,6 +15,7 @@ export function ScreenerItems({
   choices = {},
   onChange,
   testIdPrefix = "screener-q",
+  item9Prompt,
 }: {
   def: ScreenerDef;
   answers: (number | undefined)[];
@@ -23,6 +24,7 @@ export function ScreenerItems({
   /** Receives item-score answers plus the chosen option index per item. */
   onChange: (answers: (number | undefined)[], choiceIndex: Record<number, number>) => void;
   testIdPrefix?: string;
+  item9Prompt?: React.ReactNode;
 }) {
   const { lang } = useI18n();
   return (
@@ -33,7 +35,8 @@ export function ScreenerItems({
         const chosen =
           choices[qi] ?? (typeof answers[qi] === "number" ? opts.findIndex((o) => o.value === answers[qi]) : -1);
         return (
-          <div key={qi} className="rounded-lg border p-3" data-testid={`${testIdPrefix}-${qi}`}>
+          <div key={qi} className="rounded-lg border p-3" data-testid={`${testIdPrefix}-${qi}`} tabIndex={-1}>
+            {def.key === "phq-9" && qi === 8 && item9Prompt}
             <Label className="text-sm leading-snug">
               {def.gate && qi === def.gate.itemIndex ? "" : `${def.gate ? qi : qi + 1}. `}
               {q}

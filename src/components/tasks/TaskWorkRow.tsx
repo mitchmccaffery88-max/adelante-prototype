@@ -128,7 +128,7 @@ export function TaskWorkRow({
               </Badge>
               <StatusChip lang="en" state={status === "completed" ? "done" : status === "cancelled" ? "closed" : task.status === "snoozed" ? "upnext" : task.claimedBy ? (task.claimedBy === staffName ? "yourturn" : "team") : task.assignedTo === staffName || task.assignedTo === role ? "yourturn" : "team"} label={STATUS_LABEL[status]} />
             </span>
-            {task.detail && (
+            {task.detail && !task.dedupeKey?.startsWith("screener-item9-unanswered:") && (
               <span className="mt-0.5 block text-xs text-muted-foreground">{task.detail}</span>
             )}
             <span className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
@@ -158,6 +158,7 @@ export function TaskWorkRow({
               </div>
             )}
           </div>
+          {task.dedupeKey?.startsWith("screener-item9-unanswered:") && ["therapist", "pmhnp", "physician", "clinical_coordinator"].includes(role) && <p className="text-sm">{task.detail}</p>}
           <AutoCreatedFromNote task={task} />
 
           {canWrite && (

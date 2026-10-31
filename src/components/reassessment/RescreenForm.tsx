@@ -2,7 +2,7 @@
 // Uses the same instrument definitions (`SCREENERS`) and the same question/
 // option markup as intake's screener step; saving goes through
 // `AdelanteEHR.completeRescreen` → `scoreScreener` + `recordScreener`.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ClipboardList } from "lucide-react";
@@ -42,6 +42,13 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   // lost when the draft (patient id / storage) arrives after the first render.
   const [enteredHere, setEnteredHere] = useState(false);
   const [item9Prompted, setItem9Prompted] = useState(false);
+  const itemsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!item9Prompted) return;
+    const item = itemsRef.current?.querySelector<HTMLElement>('[data-testid="rescreen-q-8"]');
+    item?.focus({ preventScroll: true });
+    item?.scrollIntoView({ block: "center" });
+  }, [item9Prompted]);
   const showResume = resumed || (!enteredHere && hasDraft(draft));
   const [answers, setAnswers] = useState<(number | undefined)[]>(() => (draft ? [...draft.answers] : []));
   const [choices, setChoices] = useState<Record<number, number>>(() => (draft ? { ...draft.choices } : {}));
@@ -114,14 +121,14 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
             <p className="mt-1 text-[11px] text-muted-foreground">{DC.draftLabel}</p>
           </div>
         )}
-        <ScreenerItems
+        <div ref={itemsRef}><ScreenerItems
           def={def}
           answers={answers}
           choices={choices}
           testIdPrefix="rescreen-q"
           onChange={handleAnswerChange}
-        />
-        {item9Prompted && <p role="status" data-testid="item9-reprompt" className="text-sm">{ITEM9_REPROMPT[L]}</p>}
+          item9Prompt={item9Prompted ? <div className="space-y-2"><p role="status" data-testid="item9-reprompt" className="text-sm">{ITEM9_REPROMPT[L]}</p><Slim988Bar /></div> : undefined}
+        /></div>
         <Button size="patient" className="w-full" onClick={submit} data-testid="rescreen-submit">
           {c.submit}
         </Button>
