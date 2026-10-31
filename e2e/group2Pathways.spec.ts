@@ -1,6 +1,7 @@
 // §Group 2 — pathway journeys at identification, Part 2 chip, onboarding
 // contacts + advocate (EN then ES), read-only consent ledger. One page load;
 // setup through real store functions, role switches through the dev hook.
+import { openWithReason } from "./helpers/openWithReason";
 import { expect, test, type Page } from "@playwright/test";
 
 type W = Window & { __adelante: { AdelanteEHR: Record<string, (...a: unknown[]) => unknown>; setActingStaff: (id: string, r?: string) => void; go: (to: string) => void } };
@@ -9,6 +10,7 @@ test.describe.configure({ timeout: 180_000 });
 async function go(page: Page, to: string) {
   await page.evaluate((t) => (window as unknown as W).__adelante.go(t), to);
   await page.waitForURL((u) => u.pathname === to.split("?")[0], { timeout: 15_000 });
+  if (to.startsWith("/record/")) await openWithReason(page, "covering_consult");
 }
 const as = (page: Page, id: string, role: string) => page.evaluate(([i, r]) => (window as unknown as W).__adelante.setActingStaff(i, r), [id, role]);
 const ehr = (page: Page, fn: string, ...args: unknown[]) => page.evaluate(([f, a]) => ((window as unknown as W).__adelante.AdelanteEHR[f as string]!)(...(a as unknown[])), [fn, args] as const);

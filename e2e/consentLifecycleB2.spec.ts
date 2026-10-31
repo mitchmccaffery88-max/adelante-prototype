@@ -1,6 +1,7 @@
 // §B2-3 — staff revoke + renew in the chart Consents section, patient revoke
 // in Spanish at 390px, and the missing/expiring worklist name policy. Axe on
 // each surface. Enforcement stays OFF (B2-4); nothing here changes access.
+import { openWithReason } from "./helpers/openWithReason";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -51,6 +52,7 @@ test("B2-3 staff revoke and renew in the chart Consents section", async ({ page 
   expect(await capture(page, pid, "hipaa_authorization", "Valley Clinic")).toBe(true);
   expect(await capture(page, pid, "telehealth", "Valley Clinic")).toBe(true);
   await go(page, `/record/${pid}?section=consents`);
+  await openWithReason(page, "scheduling_admin");
   const panel = page.getByTestId("consent-capture-panel");
   await expect(panel).toBeVisible();
 

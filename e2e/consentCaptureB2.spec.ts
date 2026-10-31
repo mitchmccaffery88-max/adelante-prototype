@@ -1,5 +1,6 @@
 // §B2-2 — staff capture / paper upload (Simulated) / send for e-sign in the
 // chart Consents section, and patient e-sign in Spanish at 390px. Axe on each.
+import { openWithReason } from "./helpers/openWithReason";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -47,6 +48,7 @@ test("B2-2 staff capture, Part 2 validation, paper upload and send for e-sign", 
   await boot(page);
   const pid = await enroll(page, "CaptureStaff", "en");
   await go(page, `/record/${pid}?section=consents`);
+  await openWithReason(page, "scheduling_admin");
   const panel = page.getByTestId("consent-capture-panel");
   await expect(panel).toBeVisible();
   await axe(page, "consent-capture-panel");
