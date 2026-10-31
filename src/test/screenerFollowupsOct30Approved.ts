@@ -4,8 +4,12 @@ import { createHash } from "node:crypto";
 const APPROVED = {
   "src/lib/ehr.ts": {
     "prior": "68f4a0e7992b43f38102c0bee336071ab090662bf87ff1d52ed04735ba4ffacd",
-    "updated": "69da39da3f3344d043fbc04665ea9b70e1684f3d424258706732e7907bbc68af",
+    "updated": "e954134850e6ccc05dc98e9b1e1f1c2837ffbf8d1851274b39d4a89e0e9891a2",
     "pairs": [
+      [
+        "// AdelanteEHR \u2014 single seam for all clinical-backend reads/writes.\nimport { disclose } from \"./part2Disclosure\";\nimport { assertIntakeStagingBoundary } from \"./intakeStagingBoundary\";\n",
+        "import \"./screenerIntake\";\n// AdelanteEHR \u2014 single seam for all clinical-backend reads/writes.\nimport { disclose } from \"./part2Disclosure\";\nimport { assertIntakeStagingBoundary } from \"./intakeStagingBoundary\";\n"
+      ],
       [
         "  LEGACY_AUDIT_LABEL,\n  type ScreenerDomainResult,\n} from \"./screeners\";\nimport { assessCompleteness } from \"./screenerCompleteness\";\nexport type { LibraryCategory, LibraryItem, Exercise, SavedToolkitItem } from \"./library\";\n// \u00a7v3.0 Phase 5 \u2014 patient documents. Pure policy module (scan gate, queue\n// ownership, Part 2 restriction messaging); imports nothing back from here.\n",
         "  LEGACY_AUDIT_LABEL,\n  type ScreenerDomainResult,\n} from \"./screeners\";\nimport { estimateLabel, assessCompleteness, staffItemsRecorded, type ScreenerAnswer } from \"./screenerCompleteness\";\nimport { writeMemberScreener } from \"./screenerWriteBoundary\";\nexport type { LibraryCategory, LibraryItem, Exercise, SavedToolkitItem } from \"./library\";\n// \u00a7v3.0 Phase 5 \u2014 patient documents. Pure policy module (scan gate, queue\n// ownership, Part 2 restriction messaging); imports nothing back from here.\n"
@@ -95,6 +99,16 @@ const APPROVED = {
       [
         "                \u00b7 {r.key.toUpperCase()}\n                {latest && (\n                  <span className=\"inline-flex items-center gap-1 text-xs text-muted-foreground\">\n                    \u00b7 {latest.score}\n                    {TrendIcon && <TrendIcon className={`h-3 w-3 ${trendCls}`} />}\n                    {prev && <span>vs {prev.score}</span>}\n                  </span>\n                )}\n                <span className=\"text-xs text-muted-foreground\">(day {r.nextDue} due)</span>\n",
         "                \u00b7 {r.key.toUpperCase()}\n                {latest && (\n                  <span className=\"inline-flex items-center gap-1 text-xs text-muted-foreground\">\n                    \u00b7 {latest.score} {estimateLabel(latest)}\n                    {TrendIcon && <TrendIcon className={`h-3 w-3 ${trendCls}`} />}\n                    {prev && <span>vs {prev.score} {estimateLabel(prev)}</span>}\n                  </span>\n                )}\n                <span className=\"text-xs text-muted-foreground\">(day {r.nextDue} due)</span>\n"
+      ]
+    ]
+  },
+  "src/lib/populationHealth.ts": {
+    "prior": "6e5c89a30b73ef250aa7b35ded38f0a104fe29f0f0b5eca51ce457f1b271a697",
+    "updated": "d170c0c5d1b3f64e2b0a3f0458b2954eeeb26053337e5ce7eafcc2de8f45c38f",
+    "pairs": [
+      [
+        "  return uniq.map((k) => [k, PROGRAM_LABEL[k] ?? k]);\n}\n\nconst usable = (r: ScreenerResult | undefined): r is ScreenerResult => !!r && !r.retiredForm && !r.placeholderText;\n\nexport interface InstrumentTile {\n  key: string;\n",
+        "  return uniq.map((k) => [k, PROGRAM_LABEL[k] ?? k]);\n}\n\nconst usable = (r: ScreenerResult | undefined): r is ScreenerResult => !!r && !r.estimated && !r.retiredForm && !r.placeholderText;\n\nexport interface InstrumentTile {\n  key: string;\n"
       ]
     ]
   }

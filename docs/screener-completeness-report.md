@@ -54,30 +54,58 @@ Approved by Mitch 30 Oct. The clinical rules are **Draft — pending clinical si
 
 Mitch's follow-up decisions supersede the original no-prorating, case-manager fallback and member-required-item rules above. Every clinical rule below is **Draft — pending clinical sign-off** (Christi, Dr. Bagga).
 
-### Current checkpoint: stopped on existing assertion conflicts
+### 31 Oct completion attempt — stopped at a newly exposed existing assertion
 
-Implementation is partial, not accepted as complete. No existing tests or snapshots were edited. No new source re-pin was written after finding the conflicts. Nothing published; persistence OFF; no Supabase changes.
+Not complete; the roadmap remains open rather than incorrectly marked done. Nothing published; persistence OFF; no Supabase changes. Permission snapshot unchanged. Only the three approved assertion blocks in `screenerCompletenessR5.test.ts` were updated; no other existing test was edited.
 
-- Added a separate total-only estimator: PHQ-9 with 1–2 missing shown items and GAD-7 with exactly 1 missing item; rounded answered mean × instrument length. Other instruments remain unscored when incomplete. The original completeness assessment still reports the missing raw answers faithfully.
-- Intake and rescreen share the member writer. Estimated results carry `estimated: true`, `missingItems`, raw null responses and declined/skipped provenance in scored history. The item-9 crisis check reads only raw answers; the existing follow-up registry action is still called for a blank/declined item 9.
-- Follow-up routing now uses primary licensed clinician → licensed on-call clinician → clinical coordinator role pool, never case manager. Due at the next scheduled/checked-in contact within seven days, otherwise two business days for outreach (weekends excluded). Neutral task title: “Screening follow-up needed”; chart task detail uses Mitch's specified wording plus the Draft label.
-- Shared intake/rescreen controls and quick check offer “Prefer not to answer”; the member-required submit blocks were removed. Staff pre-release entry requires an explicit answer or decline for each shown item. Declines are stored as null responses with `declinedItems`; untouched blanks have `skippedItems`. C-SSRS was not changed.
-- Intake/rescreen have a once-only item-9 re-prompt; **remaining**: focus/scroll back to item 9 and visibly prove 988 on that prompt screen. Spanish copy is Draft.
-- Tracking rows/score tables carry estimate labels, and missing-item detail distinguishes Declined/Not answered. **Remaining**: audit every score display/tooltip and care-plan display, fully verify reassessment/caseload readers, and remove member intake score previews (the earlier “no scores” claim above was not true in source).
-- Unsupported agentic/content-tag readers and the population reporting projection exclude estimated results. No direct ScreenerResult field was found in the structured CalOMS export. **Needs check**: external state/CalOMS specifications explicitly allowing estimates; no such permission is assumed.
-- Store/registry module-cycle protection uses `screenerWriteBoundary`; the member writer registers itself without importing the registry into the EHR store. **Remaining**: verify all rescreen store entry points initialize that writer.
+**Implemented and checked before the stop:**
+- The approved R5 tests pass **6/6**. Added `screenerFollowupsR5.test.ts`: **18/18** pass (24 focused checks total), covering PHQ-9 one/two blanks, three-blank exclusion, GAD-7 thresholds/rounding, all other instrument exclusions including C-SSRS/AHC-HRSN, null item 9/crisis separation, clinician/on-call/coordinator ownership, contact/outreach dates, decline/skip storage, staff explicit recording, and incomplete severity exclusion.
+- Staff timeline/table/answer details retain estimate labels. Generic trend excludes estimates rather than displaying an unlabelled value. Per-series latest header shows a newer incomplete submission instead of the older score.
+- Care-plan screener highlights retain estimate metadata; staff badges and focus-area bands label it. Care-plan population averages and the older screener-population summary exclude estimates. Member intake review now shows answered counts, never scores. Incomplete HRSN no longer supplies a zero-filled domain preview at submission.
+- Severity may evaluate estimates as approved; derived score-change text labels both current/prior estimates. Clinician due-list score comparisons label both. Prerelease result displays distinguish newer incomplete submissions. Task-list collapsed text stays neutral; clinical item-9 detail appears only in the expanded clinician/coordinator view.
+- Intake/rescreen prompt moved inside item 9, with a local 988 call/text line and focus/scroll effect. **Not verified end-to-end**: the live mobile check was disrupted by Vite dependency reload/hydration recovery; do not treat it as a pass. Desktop/Spanish/intake checks remain open.
+- Fixed the store-only rescreen writer initialization gap: the writer no longer imports the registry; item-9 commands queue until the registry runner is available, then execute through `runActionOrThrow`. Focused tests prove the ordinary complete rescreen now saves/closes its task and the item-9 tests still pass.
+- Approved exact-once adapter: **`screenerFollowupsOct30Approved.ts`**, chained after the original R5 adapter via `credentialingOct27Approved.ts`; covers `ehr.ts`, `clinician.tsx`, and `populationHealth.ts`, with prior/replacement hashes and exact-once anchors. Final adapter updates after the stop have not been rerun.
 
-### Existing assertion conflicts (unchanged tests)
+### All validation failures together
 
-Focused run: `src/lib/__tests__/screenerCompletenessR5.test.ts`, **3 passed / 3 failed**.
+Full units (before writer-initialization fix/final adapter completion): **3,739 passed / 4 failed**, 423 files, 180.06 seconds.
+1. `billingProjectionB3b.test.ts:100` therapist source parity — clinician score-label source not yet included in adapter. Adapter added; focused rerun passed.
+2. Same line, sys_admin source parity — same cause and passing focused rerun.
+3. `statTileParity9a2.test.tsx:40` populationHealth source parity — earlier estimate exclusion not yet included in adapter. Added to final adapter; not rerun after the mandatory stop.
+4. `reassessment.test.ts:16` — “Screener writer not ready.” Fixed the actual initialization defect; this assertion passes in focused rerun.
 
-1. **Line 45** (related assertions 46–48): one missing PHQ-9 item previously had to be in `incompleteScreeners`, without a score. It now belongs in scored history as an estimate. Proposed assertion: latest scored PHQ-9 has `estimated: true`, `missingItems: [3]`, `responses[3] === null`, score **7**, and no new incomplete record.
-2. **Line 60** (source record lookup line 59): blank item 9 previously read from incomplete records. Proposed assertion: read latest scored PHQ-9, expect `estimated: true`, `missingItems: [8]`, raw item 9 null, `itemDisplay(result, 8) === "Not answered"`, estimated total **9**; retain existing task-present and no-crisis assertions.
-3. **Line 76**: one missing item previously could not create a severity flag. Proposed assertion: score **24**, estimated marker and missing index **7**, with severity allowed to evaluate the estimate; add a separate ≥3-missing case proving no score or severity action. No assertion is changed pending Mitch's approval.
+**Newly exposed blocking assertion (not changed):** `src/lib/__tests__/reassessment.test.ts:23`:
+```ts
+expect(() => AdelanteEHR.completeRescreen(p.id, "phq-9", [0, 1], { actorId: p.id, actorRole: "patient" })).toThrow();
+```
+Focused rerun: **26 passed / 1 failed** (reassessment 2/3 + R5 24/24). This expects missing answers to be refused and conflicts with Mitch’s approved member-optional rescreen rule. As instructed, stopped without changing it. Proposed approval: replace that assertion with an incomplete result assertion, `status === "incomplete"`, responses `[0, 1, null, null, null, null, null, null, null]`, seven skipped items, no score, no new scored history, and any existing rescreen task still open. Item 9 follow-up remains registry-only.
 
-### Remaining validation
+No requested targeted/public browser suite was started after the stop; no final full unit rerun. None of the unit failures above is a browser-triage-list entry. The prior 21 known browser failures remain unwaived.
 
-New follow-up rule tests, approved exact-once source adapter, full units, and the requested targeted/public browser run remain pending at this stop. No browser run was started. The earlier browser-triage failures were not rerun or waived.
+### Downstream audit inventory and remaining work
+
+| Production reader/display | Current handling / remaining check |
+|---|---|
+| `screenerIntake.ts`, `screenerCompleteness.ts`, `ehr.ts` result/history storage | Estimates preserve null answers, missing indices and decline/skip provenance; incomplete separate/unscored |
+| `ehr.ts` recordScreener/_applySeverity; `severityRules.ts`; Brief/severity task consumers | Estimates allowed; score-change text labelled; raw item 9 only for crisis |
+| `trackingTimeline.ts`; `RecordTabs.tsx` timeline, series tables/tooltips, missing-item detail | Estimate metadata carried; generic unsupported trend excludes; newest incomplete series header added; final browser check pending |
+| `ehr.ts` care-plan summary/highlights/focus/metrics; `CarePlanCard.tsx` | Staff highlights/focus labelled; member summary withholds estimated bands; population averages exclude |
+| `structuredCarePlan.ts` latestScore/planSuggestions | Approved estimates used in score-band suggestions; no numeric score display here |
+| `clinician.tsx` RescreensDueCard | Current/prior displayed scores labelled; newer incomplete fallback still needs final review |
+| `ehr.ts` rescreensDue/patientReassessmentDue/completeRescreen; `caseloadReview.ts` | Cadence uses scored dates (including estimates); incomplete does not reset it; caseload PHQ-2/GAD-2 cannot estimate; optional-blank test approval blocks final verification |
+| `contentTags.ts`; `agenticPrototype.ts` | Unsupported readers exclude estimates; hidden-count wording and historical fallback semantics still need final audit |
+| `populationHealth.ts`; `ehr.ts` screenerPopulationSummary/getPopulationCarePlanMetrics | Estimates excluded before numeric projection; final source-pin/unit rerun pending |
+| `ehr.ts` getScreenerResult/viewScreenerResult; `pre-release.tsx`; `PreReleaseScreenerDialog.tsx` | Existing Part 2 gate preserved; prerelease labels/incomplete fallback added; generic API unsupported-reader policy needs final audit |
+| Intake/re-screen/QuickCheckCard | No member scores; explicit decline allowed; item-9 prompt visual/one-time/skip verification pending |
+| `CssrsForm.tsx`, `CssrsStaffControl.tsx`, `/safety-check` | Unchanged administration/gating; no estimates; targeted browser verification pending |
+| `PatientHome.tsx`, `whatWouldHelp.ts`, `ehr.ts` HRSN materialization | HRSN domains only, never eligible for estimation; incomplete source exclusion final review pending |
+| `chartBrief.ts`, `BriefTab.tsx`, `adelDrafts.ts` latestFromHistory | C-SSRS risk-only reads; not eligible for estimates |
+| `reportingTotalsExport.ts`, admin caseload CSV, structured CalOMS/state projections | No direct screener score columns found; estimates excluded from shared population projections; external estimate allowance remains **needs check**, not assumed |
+| `notePdf.ts`, disclosure/packet exports | Authored note text/not live score projection; no stripping of signed narrative or change to disclosure gates |
+| Demo/version seeds and migration readers, `chartOrders.ts`, `patientMerge.ts`, `adelBrief.ts` cache key | Storage/version/existence/date consumers; no new estimate scoring or export authority |
+
+Remaining: Mitch approval of `reassessment.test.ts:23`; finish the audit gaps above and deeper store-level staff-entry/queue tests, confirm all UI score labels and incomplete fallback, verify prompt at 390/1280 EN/ES, rerun full units then targeted/public browser once with one worker, and only then mark done.
 
 ### Clinical review register (Christi / Dr. Bagga)
 
