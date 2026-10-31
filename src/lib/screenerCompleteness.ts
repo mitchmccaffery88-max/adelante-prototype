@@ -123,8 +123,12 @@ export function scoreAnsweredScreener(def: ScreenerDef, raw: readonly ScreenerAn
   return { assessment, scored: { score, severity: severityFor(def, score) }, estimated: true };
 }
 
-export function estimateLabel(r: { estimated?: boolean; missingItems?: number[] }): string {
-  return r.estimated ? `Estimated (${r.missingItems?.length ?? 0} items missing)` : "";
+/** Presentation only; Spanish is Draft — pending translation/clinical sign-off. */
+export function estimateLabel(r: { estimated?: boolean; missingItems?: number[] }, language: "en" | "es" = "en"): string {
+  if (!r.estimated) return "";
+  const missing = r.missingItems?.length ?? 0;
+  if (language === "es") return `Estimado (${missing} ${missing === 1 ? "ítem faltante" : "ítems faltantes"})`;
+  return `Estimated (${missing} ${missing === 1 ? "item" : "items"} missing)`;
 }
 
 /** Unsupported readers/exports fail closed; estimates require explicit opt-in. */
