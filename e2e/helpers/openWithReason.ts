@@ -13,7 +13,7 @@ export async function openWithReason(page: Page, reason: keyof typeof reasons) {
   // A chart can already be open for this actor. Wait for the actual gate or
   // chart content, not merely a changed URL or an unhydrated shell.
   const gate = page.getByTestId("chart-access-gate");
-  await expect(gate.or(page.getByRole("tablist"))).toBeVisible();
+  await expect(gate.or(page.getByTestId("chart-tab-bar"))).toBeVisible();
   if (!(await gate.isVisible())) return;
   await gate.getByRole("radio", { name: reasons[reason], exact: true }).check();
   await gate.getByRole("button", { name: "Open chart", exact: true }).click();
