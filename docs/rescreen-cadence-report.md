@@ -20,7 +20,11 @@ Mitch, 31 Oct 2026, 16:36 CT. All new clinical rules: **Draft — pending clinic
 
 ## Results and open review
 
-- Inspection recorded before product/test changes. Implementation and validation pending.
+- Inspection recorded before product/test changes. Focused checkpoint: 38/38 across new R53 rules, protected reassessment/My work/Part 2 and registry snapshot tests. No assertion or snapshot edits.
+- Shared `SCREENER_CADENCE` replaces fixed first-result steps; My work's interval projection now comes from the same last-scored clock. HRSN member-update completion signal is **needs check** (no verified signal found; none invented).
+- Existing system-only `screener_item9_followup` registry gate gains a cadence-operation store reference, without changing role checks, action rows or permission snapshot. Day-10 tasks reuse clinician/on-call/coordinator routing and existing case-task storage.
+- Automatic prompts use existing patient tasks as one bundle. Seven-day cap survives completion; staff requests are immediate. In-app reminders have neutral EN/ES text and day-specific dedupe; no outbound messaging. This runs on the existing app-open reminder sweep, not a continuously running production scheduler.
+- Patient Home retains the existing single Reassessment due tile with one bundled Start; `/rescreen/bundle` reuses the existing keyed route and questionnaire writer. No staff/dashboard part-2 tile built.
 - Christi: confirm 90-day instrument intervals and whether needs-store events establish an HRSN completion signal.
 - Dr. Bagga/Christi: review all Draft cadence, prompt timing, reminder and outreach rules.
 - State/CalOMS estimate allowance remains **needs check**; existing estimate exclusions unchanged.
