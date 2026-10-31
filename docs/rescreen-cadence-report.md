@@ -32,3 +32,10 @@ Mitch, 31 Oct 2026, 16:36 CT. All new clinical rules: **Draft — pending clinic
 - Christi: confirm 90-day instrument intervals and whether needs-store events establish an HRSN completion signal.
 - Dr. Bagga/Christi: review all Draft cadence, prompt timing, reminder and outreach rules.
 - State/CalOMS estimate allowance remains **needs check**; existing estimate exclusions unchanged.
+
+## Approved finish — 31 Oct 18:25 CT
+
+- Applied the exact approved consent-call count 46→47 with a new hash-checked adapter chained after `rescreenCadenceOct31Approved`; no other consent-inventory test text changed. Inventory now records `ehr.ts:14165`, category `sud_treatment` and the R53 auto-prompt purpose.
+- Restored the item-9 registry entry from the immutable pre-R53 approval fixture, including its sole `createItem9FollowupTask` store reference. Cadence sweep now calls dedicated `rescreen_cadence_automation` using the same system actor; prompts/reminders/day-10 writes use that action.
+- Snapshot checkpoint: `vitest run src/lib/__tests__/runAction.test.ts -u` **7/7 passed**. Compared complete before/after text: exactly **18 added `"rescreen_cadence_automation": "hidden"` rows**, one per staff role; no other added/removed rows.
+- Reminders and day-10 tasks run only on the existing **app-open sweep**. Exact-day delivery needs a production server-side scheduler, build path **R48**; no scheduler was built here.
