@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] R53 part 1 (31 Oct, Draft): current-cadence report recorded; implement configured last-scored cadence, bundled registry auto-prompts/reminders/outreach, focused/full units then targeted/public browsers and screenshots. No dashboard part 2, publication, persistence, Supabase or permission changes.
 - [x] 31 Oct triage Part 4 run/report done: #16 exact-once projection re-pin; units 3,771/3,771; browsers 0/2, both known (#16 missing eligible Today/closed fixture; #20 confirmed role-home navigation unmounts settings). Open: #16 fixture prerequisite and #20 test-only return-to-settings proposal awaiting approval; no product/permission changes. Evidence/report: docs/browser-triage-oct30.md Part 4.
 - [x] 31 Oct R5 verification / browser triage Part 3 done: units 3,763/3,763; Part 3 11/11; public 53/53; screener sets 9/10 (#13) and 8/10 (#7/#13), both known. Open: #16 test-only fix pending approval; #20 cause unconfirmed; remaining known browser failures unwaived; Christi/Dr. Bagga clinical review; State/CalOMS estimate allowance needs check.
 
