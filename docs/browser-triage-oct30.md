@@ -74,16 +74,18 @@ Draft — pending clinical sign-off. No publication, persistence change or Supab
 ### Validation
 Single-worker run of all touched and investigated specs started against :8080; no full browser suite requested. Final counts and every failure will be recorded below after completion. Any approved-update test that fails for another reason is stopped at that assertion without further changes.
 
-## Part 3 — 31 Oct (Mitch approved 08:28 CT): not started after mandatory A stop
+## Part 3 — 31 Oct (approved 08:28 CT; continued Round 4c/4d)
 
 Draft — pending clinical sign-off. No publishing, persistence change, Supabase change, permission change or permission-snapshot change.
 
-The round-4b clinician comparison and new exact-once adapter passed **22/22**. The unchanged earlier harness regression then failed at `src/test/screenerHarnessOct31Approved.test.ts:10:31` (its older replacement anchor no longer appears in the approved final source): **22 passed / 1 failed** including that regression. This is not a failure on this browser-triage list. Per section A's mandatory stop, **sections B–D were skipped**; no browser specs were changed or run in Part 3.
+Round 4b stopped at the earlier regression; Round 4c resolved that exact case under Mitch's narrowly scoped standing OK, with immutable-stage fixture, unchanged adapter logic/hashes/anchors and final-chain regression. Focused 23/23. Round 4c applied only the approved #21 viewer-scoped IDs, #19 roster Intake pool actor plus separate coordinator oversight, and #18 named Part 2 checkbox title through `browserTriagePart3Oct31Approved.ts`, chained after the earlier browser approval, with exact-once equality/drift/reapplication tests. Round 4d edits no product or tests.
+
+**Round 4d step 1:** isolated full units **3,763/3,763**, 428 files, exit 0, no unhandled errors. Earlier temporary error text is unavailable after restart; current run is clean.
+
+**Round 4d step 4, group 1 recorded immediately:** `remainingQueueTables8b2.spec.ts`, `crossRoleJourneys.spec.ts`, `consentWorkflow.spec.ts`, :8080 `--workers=1`: **11/11 passed**, exit 0, 4.0 minutes. #21 exact IDs, #19 pool/oversight and #18 seven-item packet plus later card/gate assertions all passed without further changes. Full log `docs/evidence/r5-round4/part3-round4d.log`.
 
 Still open, with approved scope retained:
-- **#21:** exact row-ID comparison using `listUnsignedWork({authorId:'c1', viewer:{role:'therapist', staffId:'s-th1'}})`, all existing filters retained, through a new exact-once adapter.
-- **#19:** valid roster Intake Coordinator for pool assertion, separate clinical-coordinator oversight assertion, no widened access.
-- **#18:** only the named Part 2 checkbox title replacement, seven-item count retained; stop on any subsequent legacy card/gate failure.
+- **#21/#19/#18:** completed as approved; all eleven containing-spec tests passed in Round 4d.
 - **#20 and #16:** report-only investigations still pending; Part 2's unresolved findings remain provisional, not newly confirmed causes. No invented visit or relaxed booking/access rule.
 - Every changed/investigated spec rerun with `--workers=1`, plus the requested screener-adjacent and public suites; combined failure report. No new browser count is claimed.
 
