@@ -3,13 +3,14 @@ import { describe, it, expect } from "vitest";
 import "@/lib/ehr-ext";
 import "@/lib/chartActions";
 import { AdelanteEHR } from "@/lib/ehr";
+import { CSSRS_DEF } from "@/lib/cssrs";
 import { screenerByKey } from "@/lib/screeners";
 import { STAFF_ROSTER } from "@/lib/roles";
 import { scoreAnsweredScreener, DECLINED_ANSWER, staffItemsRecorded, itemDisplay, phq9Item9Positive } from "@/lib/screenerCompleteness";
 import { followupOwner, followupDue } from "@/lib/screenerFollowup";
 import { recordMemberScreenerAnswers } from "@/lib/screenerIntake";
 import { evaluateSeverity } from "@/lib/severityRules";
-function def(key: string) { const d = screenerByKey(key); if (!d) throw new Error(key); return d; }
+function def(key: string) { const d = key === "cssrs" ? CSSRS_DEF : screenerByKey(key); if (!d) throw new Error(key); return d; }
 describe("R5 follow-up Draft rules", () => {
   it.each([1, 2])("PHQ-9 with %i blanks estimates the rounded mean times 9", (missing) => {
     const answers = Array.from({length:9}, (_, i) => i < missing ? null : 2);
@@ -27,7 +28,7 @@ describe("R5 follow-up Draft rules", () => {
     expect(scoreAnsweredScreener(def("gad-7"), [null,null,1,1,1,1,2]).scored).toBeUndefined();
   });
   it.each(["phq-2", "gad-2", "audit", "dast-10", "pc-ptsd-5", "cssrs", "ahc-hrsn"])("%s never prorates", (key) => {
-    const d = def(key); const answers = d.questions.map(() => 1); answers[answers.length-1] = null as unknown as number;
+    const d = def(key); const answers: (number | null)[] = d.questions.map(() => 1); answers[answers.length-1] = null;
     const r = scoreAnsweredScreener(d, answers); expect(r.scored).toBeUndefined(); expect(r.estimated).toBe(false);
   });
   it("item 9 remains null and cannot trip crisis from an estimated total", () => {
