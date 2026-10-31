@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] 31 Oct triage Part 4: approved #16 projection fixture re-pin + regression, full units and single-worker #16/#20 runs; #20 real-flow actor/preferences/projection/render/timer diagnosis report-only; record each result immediately.
+- [x] 31 Oct triage Part 4 run/report done: #16 exact-once projection re-pin; units 3,771/3,771; browsers 0/2, both known (#16 missing eligible Today/closed fixture; #20 confirmed role-home navigation unmounts settings). Open: #16 fixture prerequisite and #20 test-only return-to-settings proposal awaiting approval; no product/permission changes. Evidence/report: docs/browser-triage-oct30.md Part 4.
 - [x] 31 Oct R5 verification / browser triage Part 3 done: units 3,763/3,763; Part 3 11/11; public 53/53; screener sets 9/10 (#13) and 8/10 (#7/#13), both known. Open: #16 test-only fix pending approval; #20 cause unconfirmed; remaining known browser failures unwaived; Christi/Dr. Bagga clinical review; State/CalOMS estimate allowance needs check.
 
 ## 29 Oct patient scheduling (Draft, pending Christi)
