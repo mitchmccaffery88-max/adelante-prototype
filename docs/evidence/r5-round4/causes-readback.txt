@@ -1,0 +1,80 @@
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+TODAY {"now": "2026-10-31T19:46:46.515Z", "rosa": [{"id": "a6", "patientId": "p2", "clinicianId": "c2", "start": "2026-10-26T19:45:00.000Z", "durationMin": 50, "status": "attended", "source": "staff_scheduled"}, {"patientId": "p2", "clinicianId": "c4", "start": "2026-10-30T17:00:00.000Z", "durationMin": 50, "serviceType": "therapy_individual", "modality": "in_person", "locationId": "loc-visalia", "source": "staff_scheduled", "id": "n3t10ijd", "status": "attended", "fundingSource": {"source": "medi_cal_mcp", "coverageId": "covplan-p2-1", "payerKey": "Health Net Medi-Cal", "flags": [], "set": "resolved"}}, {"patientId": "p2", "clinicianId": "c1", "start": "2026-10-31T16:00:00.000Z", "durationMin": 50, "serviceType": "therapy_individual", "modality": "in_person", "locationId": "loc-visalia", "source": "staff_scheduled", "id": "gslh3ajh", "status": "attended", "fundingSource": {"source": "medi_cal_mcp", "coverageId": "covplan-p2-1", "payerKey": "Health Net Medi-Cal", "flags": [], "set": "resolved"}}, {"id": "a3", "patientId": "p2", "clinicianId": "c2", "start": "2026-10-31T23:45:00.000Z", "durationMin": 50, "status": "scheduled", "source": "staff_scheduled"}, {"patientId": "p2", "clinicianId": "c1", "start": "2026-11-01T15:00:00.000Z", "durationMin": 50, "serviceType": "therapy_individual", "modality": "video", "source": "staff_scheduled", "id": "8324zp2w", "status": "late_cancel", "fundingSource": {"source": "medi_cal_mcp", "coverageId": "covplan-p2-1", "payerKey": "Health Net Medi-Cal", "flags": [], "set": "resolved"}, "cancellation": {"at": "2026-10-31T19:46:33.953Z", "byName": "Priya Raman", "byRole": "clinical_coordinator", "byId": "s-cc1", "reason": "clinician_unavailable", "lateCancel": true, "fromRequest": false}}, {"patientId": "p2", "clinicianId": "c2", "start": "2026-11-04T23:00:00.000Z", "durationMin": 50, "serviceType": "therapy_individual", "modality": "video", "source": "staff_scheduled", "id": "pa8wkczb", "status": "scheduled", "fundingSource": {"source": "medi_cal_mcp", "coverageId": "covplan-p2-1", "payerKey": "Health Net Medi-Cal", "flags": [], "set": "resolved"}}], "closedForC1": []}
+FIXTURE {'ok': True}
+INITIAL - region "Quick actions":
+  - heading "Quick actions" [level=2]
+  - paragraph: Prototype — Saved on this device only
+  - button "Reset to role defaults"
+  - paragraph: 5 of 8 · Synthetic round4e staff
+  - list:
+    - listitem:
+      - text: Progress note
+      - paragraph: Therapist
+      - button "Move Progress note up" [disabled]
+      - button "Move Progress note down"
+      - button "Remove Progress note"
+    - listitem:
+      - text: Book a visit
+      - paragraph: Therapist, Clinical coordinator
+      - button "Move Book a visit up"
+      - button "Move Book a visit down"
+      - button "Remove Book a visit"
+    - listitem:
+      - text: Message patient
+      - paragraph: Therapist
+      - button "Move Message patient up"
+      - button "Move Message patient down"
+      - button "Remove Message patient"
+    - listitem:
+      - text: Request a screener
+      - paragraph: Therapist
+      - button "Move Request a screener up"
+      - button "Move Request a screener down"
+      - button "Remove Request a screener"
+    - listitem:
+      - text: Task for me / my team
+      - paragraph: Therapist, Clinical coordinator
+      - button "Move Task for me / my team up"
+      - button "Move Task for me / my team down" [disabled]
+      - button "Remove Task for me / my team"
+  - combobox "Choose an action"
+  - button "Add quick action" [disabled]
+AFTER - region "Quick actions":
+  - heading "Quick actions" [level=2]
+  - paragraph: Prototype — Saved on this device only
+  - button "Reset to role defaults"
+  - paragraph: 5 of 8 · Synthetic round4e staff
+  - list:
+    - listitem:
+      - text: Progress note
+      - paragraph: Therapist
+      - button "Move Progress note up" [disabled]
+      - button "Move Progress note down"
+      - button "Remove Progress note"
+    - listitem:
+      - text: Book a visit
+      - paragraph: Therapist, Clinical coordinator
+      - button "Move Book a visit up"
+      - button "Move Book a visit down"
+      - button "Remove Book a visit"
+    - listitem:
+      - text: Message patient
+      - paragraph: Therapist
+      - button "Move Message patient up"
+      - button "Move Message patient down"
+      - button "Remove Message patient"
+    - listitem:
+      - text: Request a screener
+      - paragraph: Therapist
+      - button "Move Request a screener up"
+      - button "Move Request a screener down"
+      - button "Remove Request a screener"
+    - listitem:
+      - text: Task for me / my team
+      - paragraph: Therapist, Clinical coordinator
+      - button "Move Task for me / my team up"
+      - button "Move Task for me / my team down" [disabled]
+      - button "Remove Task for me / my team"
+  - combobox "Choose an action"
+  - button "Add quick action" [disabled]
+PROJECTIONS {"acting": "therapist", "member": {"id": "s-round4e", "name": "Synthetic round4e staff", "role": "therapist", "roleAssignments": [{"role": "therapist"}, {"role": "clinical_coordinator"}], "active": true}, "defaults": ["progress_note", "dashboard_book", "message_patient", "screener_request", "dashboard_task"], "prefs": null}
