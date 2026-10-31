@@ -116,3 +116,5 @@ Draft. No product code, Supabase, permissions, permission snapshots, booking, ac
 Only the Today click setup in `e2e/accessClickThroughOct29.spec.ts:10` changes. The page reads the live acting staff, the host's `resolveWorkspaceActor`/appointment scope and `scheduleSegments(...).closed`, and selects an existing off-team patient whose unchanged chart entry requires a reason. No visit is created and no on-team/direct-entry substitute is accepted. A missing eligible row fails with “fixture prerequisite missing”. Every later reason-gate assertion remains byte-identical. New `browserTriagePart4Oct31Approved.ts` chains after Part 3, checks complete prior/replacement hashes and an exact-once anchor; its regression tests exact apply, drift and reapplication refusal. Earlier adapters remain unchanged.
 
 Validation results will be recorded immediately below. #20 remains investigation only; its spec and product code are unchanged. Evidence: `docs/evidence/triage-part4/`.
+
+**Adapter validation recorded:** Part 4 + unchanged Part 3 regressions **4/4 passed**, 2 files, exit 0. Log `docs/evidence/triage-part4/adapter-tests.log`.
