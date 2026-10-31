@@ -82,7 +82,7 @@ test('referral and chase queues retain rollback limits, ordering and denied-role
 test('unsigned, void, community and addressed inbox queues retain rollback projections and row menus', async ({ page }) => {
   await bootTables(page, 's-th1', 'therapist', '/inbox');
   await page.getByRole('tab', { name: 'Unsigned', exact: true }).click();
-  const unsigned = await page.evaluate(async () => (await import(/* @vite-ignore */ '/src/lib/unsignedWork.ts')).listUnsignedWork({ authorId: 'c1' }).map((r: any) => r.id));
+  const unsigned = await page.evaluate(async () => (await import(/* @vite-ignore */ '/src/lib/unsignedWork.ts')).listUnsignedWork({ authorId: 'c1', viewer: { role: 'therapist', staffId: 's-th1' } }).map((r: any) => r.id));
   expect(await rowIds(page, 'inbox-unsigned-table')).toEqual(unsigned);
   await phoneTable(page, 'inbox-unsigned-table');
   await page.evaluate(() => (window as any).__adelante.setActingStaff('s-cc2', 'clinical_coordinator'));
