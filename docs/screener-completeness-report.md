@@ -118,3 +118,30 @@ Each item is **Draft — pending clinical sign-off**:
 - Next-contact within seven days versus two-business-day outreach deadline (holiday calendar not yet specified).
 - One member item-9 re-prompt with visible 988, skip afterward, no other-item re-prompt; Draft Spanish/native-speaker review.
 - Explicit declined versus skipped provenance, member optional answers, staff explicit-answer-or-decline requirement; unchanged C-SSRS administration/gating.
+
+### Round 3 — 31 Oct: stopped at another protected assertion
+
+Mitch approved the reassessment assertion on 30 Oct, 21:20 CT. **Not done:** the required stop on any other existing assertion conflict applies. Nothing published; persistence OFF; no Supabase changes. Browser-triage specs and the permission snapshot were not edited.
+
+**Approved assertion completed:** only the former `reassessment.test.ts:23` assertion was replaced. It now proves a partial PHQ-9 is saved incomplete and unscored, seven skipped responses remain null, no scored-history entry is added, and the neutral item-9 follow-up task is open. The replacement initializes the actual registry runner before checking the task; storage comparison allows the existing instrument-version metadata. The old test title and all other lines outside the replacement remain unchanged. `screenerReassessmentOct30Approved.ts` checks prior/replacement hashes and one anchor, chained after the earlier follow-up approval; a new approval test proves exact-once application and refusal of drift/reapplication.
+
+**Validation:** focused R5/reassessment/approval tests **28/28 passed**. Final-code full unit run: **3,755 passed, 1 failed, 3,756 total**, **424 passed / 1 failed test files**, 149.91 seconds, EXIT 1 (`/tmp/r5-round3/units.log`). No other unit failures or permission-snapshot differences appeared.
+
+**Blocking untouched existing assertion:** `src/components/__tests__/roleDashboardParity9c2.test.ts:40`:
+```ts
+expect(inventory(readFileSync(path, "utf8"))).toEqual(inventory(expected));
+```
+The `src/routes/clinician.tsx preserves existing bindings` case compares the old scored-only due-panel expressions. Round 3's approved downstream fix adds `incomplete`, `scoredLatest`, `currentIncomplete` and changes `latest`/`prev` to suppress an older score/trend when a newer incomplete submission exists. This test's baseline at line 36 does not pass through the credentialing/R5 approval chain, although that chain is used by its separate byte-parity cases. The new exact-once source adapter passes the other parity tests, but cannot affect this baseline. **Proposed approval:** apply the existing chained source approvals to this clinician baseline only, before inventory comparison; retain every binding assertion and other baseline unchanged. Do not remove the incomplete fallback or alter permissions to satisfy the old assertion. No existing test was changed to resolve this failure.
+
+**Browser verification completed before the unit stop:** `/rescreen/phq-9`, English, **390×844**, eight actual “Not at all” answers and blank item 9. First submit showed exactly one safety prompt; focus was on `rescreen-q-8`; its Call 988 link was in the viewport; screenshot confirms the local call/text line; a second submit skipped and reached `/home`. Evidence: `/tmp/browser/r5-round3/rescreen390.png` and `out.txt`. This is not proof of intake, desktop or Spanish behavior. Those checks, QuickCheckCard and `/safety-check` walkthroughs, and the requested targeted/public one-worker suites **were not run after the mandatory stop**. No final browser count or new browser failure classification is claimed; the triage report's failures remain separate and unwaived.
+
+**Downstream audit disposition:**
+- Fixed clinician due-panel newest-incomplete fallback; estimated current/prior scores retain labels. Source change covered by `screenerFinalAuditOct31Approved.ts`, chained after reassessment approval. Awaiting the protected baseline approval above.
+- Fixed Tracking's new raw missing-answer detail branches to require both existing SUD visibility and an unlocked existing `screeners_sud` gate; no matrix/permission value changed. Final unit suite has no failure for this source. Browser readback remains pending.
+- Estimates are excluded by `contentTags.ts:201–204` and `agenticPrototype.ts:104–108`; historical validated results may remain recommendations/history, not the newest estimated score. The prototype retains its existing acting-viewer/Part 2 filters. No access redesign is authorized here.
+- Generic `getScreenerResult`/`viewScreenerResult` retain their existing result access gate. The production `viewScreenerResult` caller in pre-release explicitly labels estimates and handles newer incomplete submissions. No production `getScreenerResult` caller requiring estimate adaptation was identified. No new API permissions or export authority.
+- AHC-HRSN is never prorated; incomplete submissions remain outside scored/domain storage, so member needs projections do not materialize null answers as negative domains. The existing needs-source policy is unchanged.
+- State/CalOMS structured reporting sources have no live PHQ/GAD estimate columns; shared numeric population projections exclude estimates. External specification permission to export estimates remains **needs check** with Christi/Dr. Bagga; no permission is assumed and no estimated export field added. Authored signed narrative is not rewritten.
+- Still open: final browser readback of Tracking and all member flows; desktop/intake/Spanish prompt checks; targeted/public suite; final green full units after the protected baseline is reconciled. These are blocked by the mandatory existing-assertion stop, not marked done.
+
+The clinical review register above remains open in full; all clinical rules remain **Draft — pending clinical sign-off**.
