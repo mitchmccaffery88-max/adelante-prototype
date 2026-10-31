@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] 31 Oct R5 round 4b / browser triage Part 3: clinician-only full-source harness input and new exact-once re-pin; mandatory focused parity checkpoint before approved browser updates, screener walkthroughs and targeted/public suites. Draft; no permissions, snapshots, persistence or Supabase changes; no publishing.
 - [ ] 31 Oct browser triage Part 2: approved exact-once browser updates, five unresolved causes, affected-spec rerun and report; R5 stop remains untouched.
 - [ ] 31 Oct R5 round 4: approved clinician-only harness/exact-once chain applied; focused 19/20, full units 3,756 passed / 1 failed (3,757). STOP at unchanged accessRulesOct28Approved.ts:31 prior-source hash: partial inventory baseline is not the chain's full consent-approved source. Proposed clinician-only full-source input needs approval; every binding assertion retained. Intake/desktop/Spanish screenshots, QuickCheck/safety/Tracking readback and targeted/public one-worker suites remain open; clinical review stays Draft. See screener-completeness-report.md Round 4.
 
