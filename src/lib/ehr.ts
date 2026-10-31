@@ -226,7 +226,7 @@ import {
   LEGACY_AUDIT_LABEL,
   type ScreenerDomainResult,
 } from "./screeners";
-import { assessCompleteness, staffItemsRecorded, type ScreenerAnswer } from "./screenerCompleteness";
+import { estimateLabel, assessCompleteness, staffItemsRecorded, type ScreenerAnswer } from "./screenerCompleteness";
 import { writeMemberScreener } from "./screenerWriteBoundary";
 export type { LibraryCategory, LibraryItem, Exercise, SavedToolkitItem } from "./library";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
@@ -2960,7 +2960,9 @@ export interface CarePlanNextStep {
 export interface CarePlanScreenerHighlight {
   key: string;
   name: string;
-  score: number;
+  score?: number;
+  estimated?: boolean;
+  missingItems?: number[];
   band: string;
   takenAt: string;
   sensitive: boolean;
@@ -3023,6 +3025,8 @@ export interface CarePlanPreReleaseSlice {
 export interface CarePlanMetrics {
   phq9Latest?: number;
   gad7Latest?: number;
+  phq9Estimated?: boolean;
+  gad7Estimated?: boolean;
   goalsOpen: number;
   goalsDone: number;
   sdohOpen: number;
@@ -7444,8 +7448,8 @@ function _composeSummary(
   const out: string[] = [];
   const phq = p.screeners["phq-9"];
   const gad = p.screeners["gad-7"];
-  if (phq) out.push(`Your mood check (PHQ-9) shows ${phq.severity.toLowerCase()} symptoms.`);
-  if (gad) out.push(`Your worry check (GAD-7) shows ${gad.severity.toLowerCase()} anxiety.`);
+  if (phq && !phq.estimated) out.push(`Your mood check (PHQ-9) shows ${phq.severity.toLowerCase()} symptoms.`);
+  if (gad && !gad.estimated) out.push(`Your worry check (GAD-7) shows ${gad.severity.toLowerCase()} anxiety.`);
   if (parts.goalsOpen)
     out.push(
       `You're working on ${parts.goalsOpen} goal${parts.goalsOpen === 1 ? "" : "s"} with your care team.`,
@@ -7496,12 +7500,18 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
   const screenerHighlights: CarePlanScreenerHighlight[] = [];
   for (const key of ["phq-9", "gad-7", "audit", "dast-10", "pc-ptsd-5", "pcl-5-20", CSSRS_KEY, "pcl-5"]) {
     const r = p.screeners[key];
+    const incomplete = [...(p.incompleteScreeners ?? [])].filter(h => h.key === key).sort((a,b) => b.completedAt.localeCompare(a.completedAt))[0];
+    if (incomplete && (!r || incomplete.completedAt >= r.completedAt)) {
+      screenerHighlights.push({ key, name: _defForResult(key)?.name ?? key.toUpperCase(), band: "Incomplete", takenAt: incomplete.completedAt, sensitive: SUD_SCREENER_KEYS.has(key) });
+      continue;
+    }
     if (!r) continue;
     screenerHighlights.push({
       key,
       name: (_defForResult(key)?.name ?? key.toUpperCase()) + (r.retiredForm ? " — retired form" : ""),
       score: r.score,
       band: r.severity,
+      estimated: r.estimated, missingItems: r.missingItems,
       takenAt: r.completedAt,
       sensitive: SUD_SCREENER_KEYS.has(key),
     });
@@ -7550,9 +7560,9 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
   const phq = p.screeners["phq-9"];
   const gad = p.screeners["gad-7"];
   if (phq)
-    focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `PHQ-9 ${phq.severity}` });
+    focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `PHQ-9 ${phq.severity}${phq.estimated ? ` · ${estimateLabel(phq)}` : ""}` });
   else if (gad)
-    focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `GAD-7 ${gad.severity}` });
+    focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `GAD-7 ${gad.severity}${gad.estimated ? ` · ${estimateLabel(gad)}` : ""}` });
   const hasSud = p.needs?.substanceUse || p.screeners["audit"] || p.screeners["dast-10"];
   if (hasSud) focusAreas.push({ key: "sud", label: "Substance use support", sensitive: true });
   if (sdohOpen.length)
@@ -7603,6 +7613,7 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
   const metrics: CarePlanMetrics = {
     phq9Latest: phq?.score,
     gad7Latest: gad?.score,
+    phq9Estimated: phq?.estimated, gad7Estimated: gad?.estimated,
     goalsOpen,
     goalsDone,
     sdohOpen: sdohOpen.length,
@@ -8753,8 +8764,8 @@ export const AdelanteEHR = {
       sdohOpen += cp.metrics.sdohOpen;
       if (cp.metrics.crisisFlag) crisisFlags += 1;
       medsSensitive += cp.metrics.medsSensitive;
-      if (cp.metrics.phq9Latest !== undefined) phq.push(cp.metrics.phq9Latest);
-      if (cp.metrics.gad7Latest !== undefined) gad.push(cp.metrics.gad7Latest);
+      if (!cp.metrics.phq9Estimated && cp.metrics.phq9Latest !== undefined) phq.push(cp.metrics.phq9Latest);
+      if (!cp.metrics.gad7Estimated && cp.metrics.gad7Latest !== undefined) gad.push(cp.metrics.gad7Latest);
     }
     const avg = (arr: number[]) =>
       arr.length ? Math.round((arr.reduce((s, n) => s + n, 0) / arr.length) * 10) / 10 : undefined;
@@ -11091,7 +11102,7 @@ export const AdelanteEHR = {
       // Unverified-but-probably-correct wording (AUDIT, DAST-10) IS counted,
       // with a caveat; only retired forms and placeholder text are held out.
       const excluded = all.filter((r) => r.retiredForm || r.placeholderText);
-      const results = all.filter((r) => !excluded.includes(r));
+      const results = all.filter((r) => !excluded.includes(r) && !r.estimated);
       const positive = results.filter(
         (r) =>
           r.positive ?? (def?.positiveCutoff !== undefined ? r.score >= def.positiveCutoff : false),
@@ -11123,7 +11134,7 @@ export const AdelanteEHR = {
     for (const p of cohort) {
       for (const r of Object.values(p.screeners ?? {})) {
         if (!r?.domains) continue;
-        if (r.retiredForm || r.placeholderText) continue;
+        if (r.estimated || r.retiredForm || r.placeholderText) continue;
         if (opts.keys && !opts.keys.includes(r.key)) continue;
         for (const d of r.domains) {
           const row = tally.get(d.key) ?? { label: d.label, positive: 0, screened: 0 };

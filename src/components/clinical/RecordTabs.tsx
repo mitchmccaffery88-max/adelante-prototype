@@ -3274,7 +3274,7 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
   const trend =
     instrument !== "all"
       ? rows
-          .filter((r) => r.status === "completed" && r.trendable && typeof r.score === "number")
+          .filter((r) => r.status === "completed" && r.trendable && !r.estimated && typeof r.score === "number")
           .slice()
           .reverse()
           .map((r) => ({ date: new Date(r.date).toLocaleDateString(), score: r.score }))
@@ -3494,13 +3494,14 @@ export function TrackingTab({ patientId }: { patientId: string }) {
             timepoint: h.timepoint,
           }));
         const last = rows[rows.length - 1];
+        const pending = incomplete.filter(h => h.key === key).sort((a,b) => b.completedAt.localeCompare(a.completedAt))[0];
+        const newestIncomplete = pending && (!last || pending.completedAt >= last.completedAt) ? pending : undefined;
         return (
           <div key={sk} data-testid={`tracking-${sk}`}>
             <div className="flex items-baseline justify-between gap-2">
               <h4 className="font-medium text-navy text-sm">{title}</h4>
               <span className="text-[11px] text-muted-foreground">
-                Latest: {data[data.length - 1]?.score} · {data[data.length - 1]?.severity}
-                {last ? estimateLabel(last) : ""}
+                Latest: {newestIncomplete ? `Incomplete · ${answeredLabel(newestIncomplete)}` : `${data[data.length - 1]?.score} · ${data[data.length - 1]?.severity}`}
                 {mayIncludeUnanswered(last) ? ` · ${LEGACY_MAY_INCLUDE_UNANSWERED}` : ""}
               </span>
             </div>

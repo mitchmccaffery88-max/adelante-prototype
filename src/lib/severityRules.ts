@@ -1,3 +1,4 @@
+import { estimateLabel } from "./screenerCompleteness";
 // §C3 — Re-screen severity flag RULES (pure; no store import so ehr.ts can
 // call it inside recordScreener). Every threshold lives in SEVERITY_RULES.
 // Draft — pending clinical sign-off. PHQ-9 item 9 and C-SSRS keep routing
@@ -74,10 +75,13 @@ export function evaluateSeverity(
   const reasons: SeverityReason[] = [];
   const parts: string[] = [];
   const name = label(cur.key);
+  // Draft — pending clinical sign-off: estimates may trigger score-band review, always labelled.
+  const currentLabel = estimateLabel(cur);
+  const previousLabel = prev ? estimateLabel(prev) : "";
   const d = prev ? cur.score - prev.score : undefined;
   if (d !== undefined && d >= SEVERITY_RULES.risePoints) {
     reasons.push("rise");
-    parts.push(`${name} rose ${d} points (${prev!.score} → ${cur.score})`);
+    parts.push(`${name} rose ${d} points (${prev?.score} → ${cur.score})`);
   }
   const floor = SEVERITY_RULES.bandFloor[cur.key];
   if (floor !== undefined && cur.score >= floor && (!prev || prev.score < floor)) {
@@ -89,8 +93,8 @@ export function evaluateSeverity(
     parts.push("PHQ-9 item 9 answered above 0");
   }
   if (reasons.length)
-    return { ...base, kind: "flag", reasons, text: `${parts.join("; ")}.`, fromScore: prev?.score, toScore: cur.score };
+    return { ...base, kind: "flag", reasons, text: `${parts.join("; ")}.${currentLabel ? ` ${currentLabel}.` : ""}${previousLabel ? ` Previous: ${previousLabel}.` : ""}`, fromScore: prev?.score, toScore: cur.score };
   if (d !== undefined && -d >= SEVERITY_RULES.improvePoints)
-    return { ...base, kind: "improving", reasons: [], text: `${name} improving (${prev!.score} → ${cur.score}).`, fromScore: prev!.score, toScore: cur.score };
+    return { ...base, kind: "improving", reasons: [], text: `${name} improving (${prev?.score} → ${cur.score}). ${currentLabel} ${previousLabel}`, fromScore: prev?.score, toScore: cur.score };
   return undefined;
 }

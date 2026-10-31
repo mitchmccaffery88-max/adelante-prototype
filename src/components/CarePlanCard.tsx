@@ -1,3 +1,4 @@
+import { estimateLabel } from "@/lib/screenerCompleteness";
 import { isPrescriberRole } from "@/lib/roles";
 import { StatusChip } from "@/components/ui/status-chip";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
@@ -380,7 +381,7 @@ export function CarePlanCard({
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {filteredScreeners.map((s) => (
                   <Badge key={s.key} variant="secondary" className="text-[10px]">
-                    {s.name}: {s.score} · {s.band}
+                    {s.name}: {s.score === undefined ? "" : `${s.score} · `}{s.band} {estimateLabel(s)}
                   </Badge>
                 ))}
               </div>
