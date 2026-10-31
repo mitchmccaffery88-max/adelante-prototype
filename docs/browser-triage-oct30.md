@@ -51,3 +51,25 @@ None found that would require changing decided behaviour, permissions or Part 2 
 
 ## 7. Final run
 Affected specs re-run (overflow9c + staffTables8b1): 16 passed, 2 failed — only the two `/notes-queue` row-count cases (#22–23). A full 270-test browser run takes about two hours on one worker and was not completed in this round; the last full run remains 246/270 with the 24 above, of which 3 are now fixed.
+
+## Part 2 — 31 Oct (Mitch approved 30 Oct)
+
+Draft — pending clinical sign-off. No publication, persistence change or Supabase change. The open R5 stop at `reassessment.test.ts:23` and R5 screener sources are outside this batch and unchanged.
+
+### Approved changes
+- Access-group specs receive `openWithReason(page, "covering_consult" | "scheduling_admin")` after chart navigation, using the existing radio and Open chart UI. Direct-entry charts are left alone. Existing assertions, including J7 peer hidden count and text checks, are unchanged.
+- Roster count reads the in-page `STAFF_ROSTER.length`; notes-queue Everyone count reads `listUnsignedWork` with the acting role/staff viewer, not raw unrestricted rows.
+- `browserTriageOct30Approved.ts` chains the existing approval adapters, checks the complete prior SHA-256, requires each substitution exactly once and checks the resulting hash. No permission snapshot or unrelated test changed.
+- #17 receives the approved helper after the peer chart opens. Its separate program-ID restriction-picker failure is **not** repaired by changing that assertion; further scope requires review.
+
+### Investigation report before any unresolved-case changes
+| # | Cause / classification | Proposed fix (not yet applied) |
+|---|---|---|
+| 21 | Out-of-date scope comparison: Inbox calls `listUnsignedWork({authorId, viewer:{role,staffId}})` in `UnsignedNotesQueue.tsx`; test :85 calls `{authorId:'c1'}` without a viewer. Shared `viewerSeesUnsignedRow` checks chart entry and existing note/Part 2 gates. No evidence of a table/store parity defect. | Compare exact IDs to `listUnsignedWork({authorId:'c1', viewer:{role:'therapist',staffId:'s-th1'}})`. Retain all existing filters. Await Mitch approval; assertion unchanged. Live excluded-row evidence pending. |
+| 19 | Out-of-date actor: `crossRoleJourneys.spec.ts:39–51` checks the new referral's pool under clinical coordinator. `referralChase.ts` uses `CHASE_POOL_ROLE = intake_coordinator`, consistent with approved Intake ownership. | Read a valid Intake actor from the roster for the pool assertion; retain coordinator oversight separately. Do not widen pool access. Await approval; test unchanged. |
+| 18 | Out-of-date form title: named packet now offers `part2_standard`, not legacy `part2`. Current title is “Sharing substance-use information for your care (Part 2)”. The reentry+SUD fixture has seven items: hipaa, telehealth, portal, sms, part2_standard, group, po_release. | Replace only the legacy checkbox title with the current title; seven-item count stays seven. Audit subsequent legacy Part 2-card/gate assertions before requesting their approval. Test unchanged. |
+| 20 | Still investigating: the test **does switch back to therapist** before :62. No clinicianId is required by progress-note permission. Settings and launcher inventories are deliberately distinct; neither held-role permission unions nor a coordinator default explain this failure. | Reconcile live actor, default inventory, preference and settings state before proposing any change. Earlier “still acting as coordinator” theory is rejected. |
+| 16 | Still investigating: Rosa's late-cancel seed is attempted via real booking in `demoInboxSeed.ts:229–236` and silently omitted when current booking checks refuse it; the test targets a pinned program ID in a Today region. | Inspect actual appointments, acting clinician scope, bucket/date and region. Do not invent a visit or relax booking/access rules to satisfy a locator. |
+
+### Validation
+Single-worker run of all touched and investigated specs started against :8080; no full browser suite requested. Final counts and every failure will be recorded below after completion. Any approved-update test that fails for another reason is stopped at that assertion without further changes.
