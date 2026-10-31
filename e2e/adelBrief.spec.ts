@@ -1,5 +1,6 @@
 // Faster Adel Brief — open the Brief as Dr. Sample, a therapist and Luz (ECM) on
 // the same SUD patient (Luis). One tab, no reloads; clock frozen.
+import { openWithReason } from "./helpers/openWithReason";
 import { test, expect, type Page } from "@playwright/test";
 test.describe.configure({ timeout: 150_000 });
 const SHOTS = "/tmp/adel-brief/shots";
@@ -11,6 +12,7 @@ async function openBrief(page: Page, staffId: string, role: string, pid: string,
   await page.evaluate(([id, r]) => (window as unknown as W).__adelante.setActingStaff(id, r), [staffId, role]);
   await page.evaluate((t) => (window as unknown as W).__adelante.go(t), `/record/${pid}`);
   await page.waitForURL((u) => u.pathname === `/record/${pid}`);
+  await openWithReason(page, "covering_consult");
   const btn = page.getByTestId("adel-brief-button");
   await btn.waitFor();
   const t0 = Date.now();

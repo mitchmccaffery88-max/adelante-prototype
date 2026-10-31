@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] 31 Oct browser triage Part 2: approved exact-once browser updates, five unresolved causes, affected-spec rerun and report; R5 stop remains untouched.
 - [ ] 30 Oct R5 follow-ups: approved assertions updated; 24 focused checks passed; downstream fixes/source re-pin added; STOP at untouched reassessment.test.ts:23 (requires refusing optional blanks). Full units/targeted-public browser and final audit remain pending Mitch’s assertion approval; see screener-completeness-report.md.
 
 ## 29 Oct patient scheduling (Draft, pending Christi)

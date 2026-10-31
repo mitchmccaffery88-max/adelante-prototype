@@ -4,6 +4,7 @@
 
 - Phase 2 stays disconnected; commands/unproved reads stay closed. Access entry uses matched team/reason helpers; chartPart2Boundary self-registers relationship facts into the unchanged matrix gate. Reason-only Part 2 requires class-specific consent; direct internal-use is counsel-pending. Why: entry cannot replace matrix grants or split app/SQL rules.
 - Approved source re-pins hash-check prior text once. Why: no drift.
+- Browser triage approvals use a browser-only exact-once adapter chained after existing source approvals; setup changes preserve assertions and projection counts retain acting-viewer gates. Why: test reconciliation must not grant access or reopen unrelated R5 work.
 
 - Daylight public destinations use the existing AppShell public allowlist and WebsiteLayout; existing member resources keep their route and shell, and missing marketing destinations use WebsitePlaceholder with leaf metadata. Why: new public menus must resolve without reclassifying member/staff workflows.
 

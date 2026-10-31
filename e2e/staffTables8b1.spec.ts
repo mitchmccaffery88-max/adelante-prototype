@@ -37,7 +37,14 @@ for (const width of [1280, 390]) for (const pilot of pilots) {
       await expect(table).not.toContainText("Rosa T.");
     }
     if (pilot.path === "/eligibility-worklist") await expect(rows).toHaveCount(20);
-    if (pilot.path === "/notes-queue") await expect(rows).toHaveCount(7);
+    if (pilot.path === "/notes-queue") {
+      const count = await page.evaluate(async () => {
+        const roles = await import(/* @vite-ignore */ "/src/lib/roles.ts");
+        const { listUnsignedWork } = await import(/* @vite-ignore */ "/src/lib/unsignedWork.ts");
+        return listUnsignedWork({ viewer: { role: roles.getActingRole(), staffId: roles.getActingStaff().id } }).length;
+      });
+      await expect(rows).toHaveCount(count);
+    }
     if (pilot.path === "/worklist") {
       // The rollback discipline predicate: PMHNP-only rows are absent, not locked placeholders.
       const denied = await page.evaluate(() => (window as any).__adelante.AdelanteEHR.listCaseTasks().filter((t: any) => t.allowedRoles?.length && !t.allowedRoles.includes("therapist")).map((t: any) => t.id));

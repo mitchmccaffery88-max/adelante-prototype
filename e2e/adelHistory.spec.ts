@@ -1,6 +1,7 @@
 // Adel persistence — as Luis: chat, leave, come back and continue; share one
 // chat; the care team sees only the summary; delete history. One page load;
 // the chat endpoint is stubbed (Simulated — no model call).
+import { openWithReason } from "./helpers/openWithReason";
 import { expect, test, type Page } from "@playwright/test";
 
 type W = Window & { __adelante: { AdelanteEHR: Record<string, (...a: unknown[]) => unknown>; setActingStaff: (id: string, r?: string) => void; go: (to: string) => void } };
@@ -60,6 +61,7 @@ test("Luis: chat → leave → continue → share summary → delete history", a
   // care team (Luz, ECM) sees the summary only
   await page.evaluate(() => (window as unknown as W).__adelante.setActingStaff("s-cm1", "ecm_provider"));
   await go(page, `/record/${luisId}?section=messages`);
+  await openWithReason(page, "covering_consult");
   await expect(page.getByText(/Shared from Adel \(summary, Simulated\)/).first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(typed)).toHaveCount(0);
   await expect(page.getByText("A bus pass can help.")).toHaveCount(0);

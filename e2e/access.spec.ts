@@ -2,6 +2,7 @@
 // open charts; a Premier Visalia peer can; a restricted chart asks for a
 // reason and lands with compliance; Anita's @mention shows under Mentions and
 // a completed task clears its bell pointer; role broadcasts read per person.
+import { openWithReason } from "./helpers/openWithReason";
 import { expect, test, type Page } from "@playwright/test";
 
 type Api = { AdelanteEHR: Record<string, (...a: unknown[]) => unknown>; setActingStaff: (id: string, r?: string) => void; go: (to: string) => void; access: () => Promise<Record<string, Record<string, (...a: unknown[]) => unknown>>> };
@@ -39,6 +40,7 @@ test("access model + per-person notifications", async ({ page }) => {
   const found = await page.evaluate(async (pid) => { const { ca } = await (window as unknown as W).__adelante.access(); return (ca.searchablePatientsFor("peer_specialist", "s-peer1") as { id: string }[]).some((p) => p.id === pid); }, ids.luis);
   expect(found).toBe(true);
   await go(page, `/record/${ids.luis}`);
+  await openWithReason(page, "covering_consult");
   await expect(page.getByText("This chart isn't available").first()).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText("ASAM Criteria");
   await page.screenshot({ path: "e2e/screenshots/access-peer-chart.png" });

@@ -2,6 +2,7 @@
 // link; a consent-ledger viewer without chart access (billing) sees the program
 // ID, not the name, on the consent audit view. Axe on both surfaces. The link
 // is read-only: enforcement stays OFF (B2-4).
+import { openWithReason } from "./helpers/openWithReason";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -46,6 +47,7 @@ test("B2-6 capture → disclosure → record detail and consent audit list the l
 
   // Record detail (chart) lists the linked disclosure
   await go(page, `/record/${setup.pid}?section=consents`);
+  await openWithReason(page, "scheduling_admin");
   const panel = page.getByTestId("consent-capture-panel");
   await expect(panel).toBeVisible();
   await panel.getByTestId("consent-history-part2_specific_written").getByRole("button").click();

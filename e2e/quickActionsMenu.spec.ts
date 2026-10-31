@@ -1,3 +1,4 @@
+import { openWithReason } from "./helpers/openWithReason";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -52,6 +53,7 @@ test("medical_assistant on a chart: no Medication order, Escape closes and focus
   await actAs(page, "s-ma1", "medical_assistant", "/clinician");
   const patientId = await page.evaluate(() => (window as unknown as W).__adelante.AdelanteEHR.listPatients()[0]!.id);
   await page.evaluate((t) => (window as unknown as W).__adelante.go(t), `/record/${patientId}`);
+  await openWithReason(page, "scheduling_admin");
   await slotButton(page).click();
   const menu = page.getByTestId("chart-add-menu");
   await expect(menu.getByTestId("chart-add-med_order")).toHaveCount(0);

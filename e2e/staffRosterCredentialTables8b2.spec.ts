@@ -11,7 +11,8 @@ test("staff roster matches rollback roster projection and denied role sees no pl
   });
   const ids = await rowIds(page, "staff-members-table");
   for (const id of names) expect(ids).toContain(id);
-  expect(ids).toHaveLength(23);
+  const rosterLength = await page.evaluate(async () => (await import(/* @vite-ignore */ "/src/lib/roles.ts")).STAFF_ROSTER.length);
+  expect(ids).toHaveLength(rosterLength);
   await tableAxe(page, "staff-members-table");
   await phoneTable(page, "staff-members-table");
   await page.evaluate(() => (window as any).__adelante.setActingStaff("s-th1", "therapist"));

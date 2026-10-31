@@ -2,6 +2,7 @@
 // src/lib/__tests__/crossRoleJourneys.test.ts). Demo seed ids are random per
 // load, so each test finds the patient through the dev-only store hook and
 // navigates in-app (no reload, which would re-seed).
+import { openWithReason } from "./helpers/openWithReason";
 import { test, expect, type Page } from "@playwright/test";
 test.describe.configure({ timeout: 120_000 });
 import { STAFF_ROSTER, type StaffRole } from "../src/lib/roles";
@@ -42,6 +43,7 @@ async function openChartTab(page: Page, tab: RegExp, dob: string): Promise<boole
   if (!(await opt.isVisible({ timeout: 8_000 }).catch(() => false))) return false;
   await opt.click();
   await expect(page).toHaveURL(/\/record\//, { timeout: 30_000 });
+  await openWithReason(page, "covering_consult");
   const t = page.getByRole("tab", { name: tab }).first();
   if (!(await t.waitFor({ state: "visible", timeout: 15_000 }).then(() => true).catch(() => false))) return true;
   // The chart hydrates after the URL changes; retry until the tab is selected.

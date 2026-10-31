@@ -1,4 +1,5 @@
 // Phase 8a-1 — staff shell and compact density in the browser.
+import { openWithReason } from "./helpers/openWithReason";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -79,6 +80,7 @@ test.describe("8a-1 staff shell", () => {
   test("chart + New opens the existing launcher from the shell slot", async ({ page }) => {
     await page.goto("/record/p1");
     await ready(page);
+    await openWithReason(page, "scheduling_admin");
     const slot = page.getByTestId("staff-new-slot");
     await expect(slot.getByRole("button").first()).toBeVisible();
     await slot.getByRole("button").first().click();
