@@ -11,7 +11,7 @@ import { optionsForItem, scoreScreener, screenerByKey } from "@/lib/screeners";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { DECLINED_ANSWER, staffItemsRecorded, assessCompleteness } from "@/lib/screenerCompleteness";
+import { answeredLabel, estimateLabel, DECLINED_ANSWER, staffItemsRecorded, assessCompleteness } from "@/lib/screenerCompleteness";
 import {
   Dialog,
   DialogContent,
@@ -38,10 +38,12 @@ export function PreReleaseScreenerDialog({
     () => AdelanteEHR.viewScreenerResult(episode.patientId, screenerKey).result,
   );
   const [answers, setAnswers] = useState<(number | null | undefined)[]>(
-    () => existing?.responses ?? (def ? def.questions.map(() => undefined) : []),
+    () => existing?.responses?.map((v,i) => existing.declinedItems?.includes(i) ? DECLINED_ANSWER : v) ?? (def ? def.questions.map(() => undefined) : []),
   );
 
   if (!def) return null;
+  const pending = AdelanteEHR.screenerAccess(episode.patientId, screenerKey).allowed ? [...AdelanteEHR.listIncompleteScreeners(episode.patientId)].filter(h => h.key === screenerKey).sort((a,b) => b.completedAt.localeCompare(a.completedAt))[0] : undefined;
+  const latestIncomplete = pending && (!existing || pending.completedAt >= existing.completedAt) ? pending : undefined;
   const complete = staffItemsRecorded(def, answers);
   const evidence = assessCompleteness(def, answers);
   const preview = evidence.scoringAnswers ? scoreScreener(def, evidence.scoringAnswers) : undefined;
@@ -68,9 +70,10 @@ export function PreReleaseScreenerDialog({
           <DialogTitle>{def.name}</DialogTitle>
           <DialogDescription>{def.description}</DialogDescription>
         </DialogHeader>
-        {existing && (
+        {latestIncomplete && <p className="text-sm">Previous screening: Incomplete · {answeredLabel(latestIncomplete)}</p>}
+        {existing && !latestIncomplete && (
           <p className="text-xs text-muted-foreground">
-            A previous result is on file ({existing.severity}, score {existing.score}). Saving
+            A previous result is on file ({existing.severity}, score {existing.score} {estimateLabel(existing)}). Saving
             records a new result in the screener history.
           </p>
         )}

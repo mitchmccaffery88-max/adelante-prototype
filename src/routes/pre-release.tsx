@@ -1,3 +1,4 @@
+import { answeredLabel, estimateLabel } from "@/lib/screenerCompleteness";
 import { CircleAlert } from "lucide-react";
 import { CoverageAtReleasePanel } from "@/components/coverage/CoverageAtReleasePanel";
 // §v3.0 Phase 2 — CF Care Manager pre-release surface.
@@ -669,12 +670,14 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                           const view = AdelanteEHR.viewScreenerResult(episode.patientId, k);
                           const done = AdelanteEHR.hasScreenerResult(episode.patientId, k);
                           const name = screenerByKey(k)?.name ?? k;
+                          const pending = view.restricted ? undefined : [...AdelanteEHR.listIncompleteScreeners(episode.patientId)].filter(h => h.key === k).sort((a,b) => b.completedAt.localeCompare(a.completedAt))[0];
+                          const latestIncomplete = pending && (!view.result || pending.completedAt >= view.result.completedAt) ? pending : undefined;
                           const label = view.restricted
                             ? done
                               ? "recorded — Part 2 restricted"
                               : "not administered"
-                            : view.result
-                              ? `${view.result.score} — ${view.result.severity}`
+                            : latestIncomplete ? `Incomplete · ${answeredLabel(latestIncomplete)}` : view.result
+                              ? `${view.result.score} — ${view.result.severity} ${estimateLabel(view.result)}`
                               : "not administered";
                           return (
                             <span key={k} className="mr-3 inline-block">
