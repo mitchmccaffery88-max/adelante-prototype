@@ -83,6 +83,20 @@ const APPROVED = {
         "      const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;\n      if (!gate.canProceed) throw new Error(gate.reason);\n    }\n    if (input.answers.length !== def.questions.length || !staffItemsRecorded(def, input.answers))\n      throw new Error(`${def.name} requires all ${def.questions.length} items.`);\n    // Draft \u2014 pending clinical sign-off: staff must record each shown item, including declines.\n    const evidence = assessCompleteness(def, input.answers);\n    if (!evidence.complete) {\n      const incomplete: IncompleteScreener = { key: def.key, status: \"incomplete\", completedAt: new Date().toISOString(),\n        timepoint: \"intake\", context: \"pre_release\", ...evidence };\n      AdelanteEHR.recordIncompleteScreener(ep.patientId, incomplete);\n      return incomplete;\n    }\n    const scored = scoreScreener(def, evidence.scoringAnswers ?? []);\n    const result: ScreenerResult = {\n      key: def.key,\n      score: scored.score,\n      severity: scored.severity,\n      completedAt: new Date().toISOString(),\n      timepoint: \"intake\",\n      responses: evidence.responses,\n      notAskedItems: evidence.notAskedItems,\n      context: \"pre_release\",\n      episodeId: ep.id,\n      administeredBy: input.attribution,\n"
       ]
     ]
+  },
+  "src/routes/clinician.tsx": {
+    "prior": "39ed372e819d4da271829095c28bca6cbb2d51e40621220281516b74bbcd9de0",
+    "updated": "f7b04f574178b1cb07388023a9de3c76a7ad7bd92f5eb3d1062a1370f73b0653",
+    "pairs": [
+      [
+        "import { useConfirmDialog } from \"@/components/staff/use-confirm-dialog\";\nimport { ChartAccessGate } from \"@/components/chart/ChartAccessGate\";\nimport { chartEntryFor } from \"@/lib/chartAccess\";\n",
+        "import { estimateLabel } from \"@/lib/screenerCompleteness\";\nimport { useConfirmDialog } from \"@/components/staff/use-confirm-dialog\";\nimport { ChartAccessGate } from \"@/components/chart/ChartAccessGate\";\nimport { chartEntryFor } from \"@/lib/chartAccess\";\n"
+      ],
+      [
+        "                \u00b7 {r.key.toUpperCase()}\n                {latest && (\n                  <span className=\"inline-flex items-center gap-1 text-xs text-muted-foreground\">\n                    \u00b7 {latest.score}\n                    {TrendIcon && <TrendIcon className={`h-3 w-3 ${trendCls}`} />}\n                    {prev && <span>vs {prev.score}</span>}\n                  </span>\n                )}\n                <span className=\"text-xs text-muted-foreground\">(day {r.nextDue} due)</span>\n",
+        "                \u00b7 {r.key.toUpperCase()}\n                {latest && (\n                  <span className=\"inline-flex items-center gap-1 text-xs text-muted-foreground\">\n                    \u00b7 {latest.score} {estimateLabel(latest)}\n                    {TrendIcon && <TrendIcon className={`h-3 w-3 ${trendCls}`} />}\n                    {prev && <span>vs {prev.score} {estimateLabel(prev)}</span>}\n                  </span>\n                )}\n                <span className=\"text-xs text-muted-foreground\">(day {r.nextDue} due)</span>\n"
+      ]
+    ]
   }
 } as Record<string, {prior: string; updated: string; pairs: [string,string][]}>;
 export function withApprovedScreenerFollowupsOct30(path: string, source: string): string {
