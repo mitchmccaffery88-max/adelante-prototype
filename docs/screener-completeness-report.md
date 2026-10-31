@@ -145,3 +145,25 @@ The `src/routes/clinician.tsx preserves existing bindings` case compares the old
 - Still open: final browser readback of Tracking and all member flows; desktop/intake/Spanish prompt checks; targeted/public suite; final green full units after the protected baseline is reconciled. These are blocked by the mandatory existing-assertion stop, not marked done.
 
 The clinical review register above remains open in full; all clinical rules remain **Draft — pending clinical sign-off**.
+
+### Round 4 — 31 Oct: approved harness change applied; stopped at prior-source validation
+
+Mitch approved the clinician-only harness change on 31 Oct. **Not done:** the existing approval chain refuses this inventory baseline before it reaches the binding comparison. No product screener code, permissions, permission snapshot, browser-triage specs, persistence setting or Supabase data/schema changed. Nothing published. Every clinical rule remains **Draft — pending clinical sign-off**.
+
+**Applied scope:** `roleDashboardParity9c2.test.ts:36–37` now retains the former baseline as `priorBaseline`, then passes it through `withApprovedCredentialingOct27` **only for `src/routes/clinician.tsx`**. Every binding assertion and every other baseline remains unchanged. `screenerHarnessOct31Approved.ts` hash-checks the complete prior/replacement source and the one approved anchor, chained after `screenerFinalAuditOct31Approved`. Its new regression test proves exact application and refusal of drift/reapplication; **1/1 passed**. No earlier approval hashes or anchors were relaxed.
+
+**All validation failures together:**
+- Focused harness/parity run: **19 passed / 1 failed**, 20 total (`/tmp/r5-round4-focused.log`).
+- Final-code full units: **3,756 passed / 1 failed**, **3,757 total**, **425 passed / 1 failed files**, 198.74 seconds, EXIT 1 (`/tmp/r5-round4/units.log`).
+- The sole failure is `roleDashboardParity9c2.test.ts:37`, clinician inventory case: **`Access-rules prior pin mismatch: src/routes/clinician.tsx`**, thrown by the unchanged `accessRulesOct28Approved.ts:31` prior-source assertion. It is a unit harness conflict, **not** a failure listed in `docs/browser-triage-oct30.md`. No other existing assertion conflicts or snapshot differences appeared. App diagnostic: build OK at 12:40:22 UTC.
+
+**Cause and proposed next scoped approval (not applied):** the inventory baseline is an intentionally partial P3/chart-selection source, while the access adapter expects the fully approved consent/source baseline. Read-only checks (`/tmp/r5-round4/check-baseline.ts`) show the current chart-selection baseline hash `a6cf11e23f9e080a01915b58cfe35a65c423b2d4e75e1bc2b9747352dfd21c09` is refused. Passing `withApprovedConsentB2(path, old(path))` into the existing credentialing chain succeeds, yielding hash `502af6d266dab0851c935f36785e1f77e95ea96130da857809ad0e8d23e5f32b`. Proposed clinician-only replacement: `withApprovedCredentialingOct27(path, withApprovedConsentB2(path, old(path)))`; keep `priorBaseline` for every other file and retain every inventory assertion. This is a **different input baseline** from the approved round-4 change, so it was not substituted or re-pinned without approval. Acceptance by the chain is not yet proof of inventory equality; that comparison still needs its focused rerun after approval.
+
+**Exactly still open because of the mandatory assertion stop:**
+1. Approval of the clinician-only full-source input baseline above, then focused parity and final green full units.
+2. Intake prompt checks at 390px and 1280px in English and Spanish; rescreen desktop and Spanish checks at both widths: one prompt, item-9 focus, viewport-visible 988, skip after prompt, Draft Spanish, screenshots. Round-3 English rescreen 390px evidence remains the only completed prompt browser check; no new screenshots or passes claimed.
+3. QuickCheckCard decline plus blank-item save/readback; unchanged `/safety-check` gating walkthrough; Tracking Estimated/Incomplete labels and existing Part 2 lock on SUD details.
+4. Requested screener-adjacent and public browser specs, once with `--workers=1`, and combined failure classification against the triage list. **Not started this round** after the protected assertion stop; no full browser run.
+5. Final browser readback of downstream displays. Code-level disposition remains as recorded in Round 3; no additional scoring/export authority was added.
+
+The clinical review register remains open for Christi/Dr. Bagga: all estimate thresholds/use/labels, no imputed item 9 and unchanged crisis handling, clinical ownership/deadlines/text, optional decline/skip and staff-required provenance, one-time safety prompt/Draft Spanish, and unchanged C-SSRS. State/CalOMS estimate allowance still **needs check**; estimates remain excluded where no specification permits them. Holiday-calendar and native-speaker review remain external review items, not assumed approvals.
