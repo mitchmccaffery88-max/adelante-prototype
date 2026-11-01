@@ -170,7 +170,7 @@ Draft. Test-only #20 fix and demo-data-only #16 fix. No product logic, Supabase,
 **C. Validation.**
 | Run | Result | Triage |
 |---|---|---|
-| Full units (after seed + #20 changes) | 3,840/3,840, 439 files (`units.log`) | — |
+| Full units (after seed + #20 changes, incl. new Part 5 tests) | 3,842/3,842, 440 files (`units.log`) | — |
 | Part 5 focused unit tests | 2/2 + adapter chain 4 files passed | — |
 | #16 + #20 specs | 1/2 — #16 prerequisite missing (Sunday, above) | #16 known |
 | calendars, continuity, crossRoleJourneys, escalationsMessaging, roleDashboards9c, staffShell8a2 | 23/23 (`specs-related-a.log`) | — |
