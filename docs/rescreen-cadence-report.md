@@ -112,3 +112,16 @@ Draft — pending clinical sign-off. No publishing, persistence, Supabase, permi
 ### Browser results
 
 - **Clinician dashboard/workspace + chart specs** (`roleDashboards9c`, `chartFoundation9b`, `escalationsMessaging`, `crossRoleJourneys`, `overflow9c`, `hydrationStaff8c2`, `accessClickThroughOct29`; v1194, one worker): **31/32 passed**, 7.0m. Sole failure `accessClickThroughOct29.spec.ts:3` — "fixture prerequisite missing: Today/closed has no eligible off-team reason-gated visit for s-th1" — **known triage #16** (unchanged by this batch). `roleDashboards9c` (incl. therapist axe check on the staff shell with the new tile, 390/1280 above-fold) and `overflow9c` passed. Log `docs/evidence/rescreen-cadence/p2-staff.log`.
+- **Public suite** (9 public/website specs, v1194, one worker): **53/53 passed**, 14.0m, exit 0. Log `docs/evidence/rescreen-cadence/p2-public.log`.
+
+### Report only — "Back to top" (`scrollY = 1`)
+
+- On the project's expected browser (v1194, Chromium 141) the three checks — `websiteDaylight.spec.ts:7` at 1280 and 390, `websitePolish.spec.ts:14` on `/team` — **did not reproduce**; all passed. No test or code changed.
+- Likely cause: the previous run used a substituted Chromium 147 build, whose scroll-to-top settles at a fractional/rounded position (1px) under this headless setup. Browser-build difference, not a website regression. Recommend not adding them to the triage list; keep runs on v1194.
+
+### Status
+
+R53 part 2 is **done**: units 3,838/3,838; dashboard/chart browsers 31/32 (only known #16); public 53/53. Still open:
+- Christi/Dr. Bagga: review the Draft 7-day resend window and cadence-step notes; part 1 items remain (90-day intervals, HRSN member-update signal **needs check**).
+- Mitch: an open automatic member prompt counts as "Requested" and disables Send for 7 days — confirm, or allow staff re-send over it. "Overdue N days" wording kept per this batch (Voice rule otherwise prefers "Due N days ago").
+- R48 production scheduler (from part 1). Known triage #7, #13, #16, #20 unchanged.
