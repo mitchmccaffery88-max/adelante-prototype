@@ -59,6 +59,18 @@ test("personal quick actions stay disabled under another assigned role, switch s
   await page.getByTestId("staff-role-switcher").click();
   await page.getByTestId("switch-s-batch4-therapist").click();
   await expect(page.getByTestId("acting-role-indicator")).toHaveText("Acting as: Therapist · Batch four test staff");
+  await expect(page).toHaveURL(/\/my-work/);
+  await page.evaluate(() => (window as any).__adelante.go("/clinician-profile"));
+  await expect(page).toHaveURL(/\/clinician-profile/);
+  await expect(section).toBeVisible();
   await expect(section.getByTestId("pref-progress_note")).toBeVisible();
   await expect(section.getByTestId("pref-consent_form_author")).toHaveCount(0);
+  const projection = await page.evaluate(async () => {
+    const roles = await import(/* @vite-ignore */ "/src/lib/roles.ts");
+    const { quickActionsFor } = await import(/* @vite-ignore */ "/src/lib/quickActions.ts");
+    const staff = roles.getActingStaff();
+    return quickActionsFor({ role: roles.getActingRole(), staffId: staff.id, clinicianId: staff.clinicianId }).map((a: { id: string }) => a.id);
+  });
+  const rendered = await section.locator('[data-testid^="pref-"]').evaluateAll((rows) => rows.map((r) => (r.getAttribute("data-testid") ?? "").slice("pref-".length)));
+  expect(rendered).toEqual(projection);
 });
