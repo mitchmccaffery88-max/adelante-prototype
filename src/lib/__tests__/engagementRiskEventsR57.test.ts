@@ -1,5 +1,5 @@
 import { expect,it,vi,afterEach } from 'vitest';
-import { AdelanteEHR } from '../ehr';
+import { AdelanteEHR, type Appointment } from '../ehr';
 import { runAction } from '../actions/runAction';
 import { screenerFollowupActor } from '../screenerFollowup';
 import '../chartActions';
@@ -14,7 +14,7 @@ it.each(['phone','address','missed','needs'] as const)('real %s event makes one 
  const run=()=>runAction('engagement_risk_automation',screenerFollowupActor,p,{args:[p.id,new Date().toISOString(),screenerFollowupActor]});
  // Missed events require real recorded appointments; inject only the read seam here, not store rows.
  const original=AdelanteEHR.listAppointments;
- if(trigger==='missed')vi.spyOn(AdelanteEHR,'listAppointments').mockReturnValue([...original(),{id:'event-a',patientId:p.id,clinicianId:'c1',start:at,end:at,modality:'video',status:'no_show'},{id:'event-b',patientId:p.id,clinicianId:'c1',start:at,end:at,modality:'video',status:'late_cancel'}]);
+ if(trigger==='missed')vi.spyOn(AdelanteEHR,'listAppointments').mockReturnValue([...original(),{id:'event-a',patientId:p.id,clinicianId:'c1',start:at,end:at,modality:'video',status:'no_show'},{id:'event-b',patientId:p.id,clinicianId:'c1',start:at,end:at,modality:'video',status:'late_cancel'}] as unknown as Appointment[]);
  p.tasks=[{id:'cap',kind:'rescreen',screenerKey:'phq9',label:'',createdAt:at,automaticRescreen:true,completedAt:at}];
  expect(run().ok).toBe(true);expect(p.tasks.filter(t=>t.screenerKey==='ahc-hrsn')).toHaveLength(0);
  vi.setSystemTime(now+7*DAY);p.screeners={'ahc-hrsn':{key:'ahc-hrsn',score:0,severity:'',completedAt:new Date(now).toISOString()}};
