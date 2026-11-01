@@ -48,3 +48,25 @@ Mitch, 31 Oct 2026, 16:36 CT. All new clinical rules: **Draft — pending clinic
 - Both failures are **unit conflicts, not entries in the browser triage list**. No other failures were reported. No existing test assertion was changed beyond the approved consent count; no unrelated snapshot row changed.
 - **Browser suites and requested screenshots remain unrun** because the full-unit gate failed and the instructions require stopping on another conflicting assertion. Thus Home/bundle/intake/dashboard/public and immediate-staff-request UI proof are still open; no end-to-end completion claim is made.
 - All changes remain Draft; no dashboard part-2 tile, publishing, persistence or Supabase changes. Christi's 90-day interval confirmation and the HRSN member-update signal (**needs check**) remain open, as does R48 exact-day production scheduling.
+### Final reconciliation (approved 1 Nov 09:45 CT)
+
+- **Conflict 1 fixed:** `rescreenCadenceR53.test.ts` lines 82/89 action ID `screener_item9_followup` → `rescreen_cadence_automation` only (inputs/assertions unchanged), via new exact-once re-pin `src/test/rescreenCadenceReconcileNov01Approved.ts` chained after `rescreenCadenceFinishOct31Approved.ts` in `credentialingOct27Approved.ts`. Own regression (exact apply, drift, reapplication, only-two-IDs, chain) passes.
+- **Conflict 2 — standing OK used (1st recorded use):** `rescreenCadenceOct31Approved.test.ts` chartActions path now reads immutable prior/replacement fixture `rescreenCadenceOct31ChartActions.fixture.json` (prior hash matches the original adapter's `priorHash`; replacement equals the finish re-pin's `priorSource`) and calls its own adapter. Exact/drift/reapplication kept; no adapter hash, anchor or logic changed. The finish regression already verifies the final chartActions chain (`readFileSync === updatedSource` and byte-for-byte item-9 entry).
+- Focused: 5 files, 50/50 passed.
+- **Full units: 3,821/3,821 passed, 436 files.**
+- Browser env note: sandbox browser build mismatch (needed v1194); installed into /tmp/pw2 only, no project/config changes. First launch attempt failed before any test ran.
+- **Member/clinician browsers** (`continuity`, `group2Pathways`, `advocateOnboardingActive`, `advocateSelfSeparation`, `chartFoundation9b`, `consentCaptureB2`, `roleDashboards9c`; `--workers=1`, :8080): **21/23 passed**, EXIT 1, 7.2m. Failures: `consentCaptureB2.spec.ts:46` (Purpose is now a select — **known triage #7**) and `group2Pathways.spec.ts:18` (chip "Re-entry" vs "Re-entry + SUD" — **known triage #13**). No new failures. Log `docs/evidence/rescreen-cadence/member-clinician.log`.
+- **Public browsers** (9 public/website specs, `--workers=1`, :8080): **50/53 passed**, EXIT 1, 20.4m. All three failures are the same "Back to top" check ending at `scrollY = 1` instead of 0: `websiteDaylight.spec.ts:7` (1280 en), `websiteDaylight.spec.ts:7` (390 en), `websitePolish.spec.ts:14` (/team). **Not in `docs/browser-triage-oct30.md` — new to this run.** R53 changed no website code. These runs used Chromium 147 linked in place of the expected build (see env note), so a one-pixel scroll difference from the browser build is the likely cause, but **unconfirmed**; no test or code change made. Log `docs/evidence/rescreen-cadence/public.log`.
+- **Walkthrough screenshots** (`docs/evidence/rescreen-cadence/`), synthetic demo data via real store writers in the in-memory session:
+  - `1_bundled_phq9_gad7.png` — member p1 with PHQ-9 and GAD-7 due sees one "Reassessment due" tile with a single "Start check-ins" button.
+  - `2_no_sud_no_audit_dast.png` — same member p1 (no SUD flag) also had 400-day-old AUDIT/DAST-10 results; due list stayed `[phq-9, gad-7]`, AUDIT/DAST absent.
+  - `3_staff_request_immediate.png` + `3b_rescreen_bundle.png` — member p4: `runAction("rescreen_send")` for PC-PTSD-5 returned ok; due list changed from `[phq-9, gad-7]` to `[pc-ptsd-5, phq-9, gad-7]` at once, and `/rescreen/bundle` opens on PC-PTSD-5.
+- Reminders (day 3/7) and the day-10 task run on the existing app-open sweep; exact-day delivery needs a server-side scheduler in production (**R48**).
+
+### Status
+
+R53 part 1 is **done** apart from the items below:
+- New public "Back to top" failures (3 checks, above): need a decision — rerun on the expected browser build, or triage.
+- Christi: confirm the 90-day intervals (AUDIT/DAST, PC-PTSD-5, HRSN reentry) and the HRSN member-update signal (**needs check**).
+- R48: production scheduler for exact-day reminders and the day-10 task.
+- Known triage failures #7 and #13 unchanged.

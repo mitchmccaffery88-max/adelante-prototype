@@ -79,14 +79,14 @@ describe("R53 configured last-scored cadence", () => {
       vi.setSystemTime(now+day*DAY);
       const ops=AdelanteEHR.automaticRescreenOperations(base.id,now+day*DAY).filter(o=>o.kind==="reminder");
       expect(ops.length).toBeGreaterThanOrEqual(2);
-      for(const op of ops) expect(runAction("screener_item9_followup",screenerFollowupActor,base,{via:"runAutomaticRescreenStep",args:[base.id,op,new Date(now+day*DAY).toISOString(),screenerFollowupActor]}).ok).toBe(true);
+      for(const op of ops) expect(runAction("rescreen_cadence_automation",screenerFollowupActor,base,{via:"runAutomaticRescreenStep",args:[base.id,op,new Date(now+day*DAY).toISOString(),screenerFollowupActor]}).ok).toBe(true);
       const notices=AdelanteEHR.listMemberNotifications("patient",base.id).filter(n=>n.dedupeKey?.startsWith("rescreen-reminder:"));
       expect(notices.some(n=>n.subject==="You have a short check-in waiting.")).toBe(true);
       expect(AdelanteEHR.automaticRescreenOperations(base.id,now+day*DAY).filter(o=>o.kind==="reminder")).toHaveLength(0);
     }
     vi.setSystemTime(now+10*DAY);
     for(let i=0;i<3;i++) for(const op of AdelanteEHR.automaticRescreenOperations(base.id,now+10*DAY).filter(o=>o.kind==="followup")) {
-      expect(runAction("screener_item9_followup",screenerFollowupActor,base,{via:"runAutomaticRescreenStep",args:[base.id,op,new Date(now+10*DAY).toISOString(),screenerFollowupActor]}).ok).toBe(true);
+      expect(runAction("rescreen_cadence_automation",screenerFollowupActor,base,{via:"runAutomaticRescreenStep",args:[base.id,op,new Date(now+10*DAY).toISOString(),screenerFollowupActor]}).ok).toBe(true);
     }
     const tasks=AdelanteEHR.caseTasksForPatient(base.id).filter(t=>t.taskType==="rescreen_followup");
     expect(tasks).toHaveLength(1); expect(tasks[0].title).toBe("Screening follow-up needed"); expect(tasks[0].detail).toBe("Screening follow-up needed");
