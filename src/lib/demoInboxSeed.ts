@@ -16,6 +16,7 @@ import { GATE_GENERIC_MESSAGE } from "@/lib/dmcOdsReadiness";
 import { seedInboxActionsDemo } from "@/lib/inboxActions";
 import { seedCoordinationDemo } from "@/lib/coordination";
 import { seedCaseloadDemo } from "@/lib/caseloadReview";
+import { availableSlots } from "@/lib/clinicianAvailability";
 
 let seeded = false;
 
@@ -226,13 +227,24 @@ export function seedDemoInbox(): void {
   const carmenNext = upcoming(carmen)[0];
   if (carmen && carmenNext)
     safe(() => void AdelanteEHR.patientRequestCancel(carmen, carmenNext.id, "My daughter's school event moved to that day."));
-  // Staff-cancelled, LATE (inside 24 hours) — a visit for Rosa tomorrow morning.
+  // Staff-cancelled, LATE (inside 24 hours) — a visit for Rosa later TODAY on
+  // Marisol Reyes's (s-th1/c1) calendar, so it shows in her Today/closed list.
+  // Triage Part 5 (Mitch, 31 Oct): the slot comes from the real availability
+  // finder (today only, conflicts skipped, future only). If no slot is left
+  // today, the original tomorrow-morning visit is booked unchanged.
   const clin = AdelanteEHR.listClinicians().find((c) => AdelanteEHR.canBook(c.id).ok);
-  if (rosa && clin)
+  const lateClin = AdelanteEHR.listClinicians().find((c) => c.id === "c1" && AdelanteEHR.canBook(c.id).ok);
+  const todayKey = new Date().toDateString();
+  const laterToday = lateClin
+    ? availableSlots(lateClin.id, { now: new Date(Date.now() - 86400000), days: 1, serviceType: "therapy_individual", modality: "video" })
+        .filter((iso) => +new Date(iso) > Date.now() + 3600000 && new Date(iso).toDateString() === todayKey)[0]
+    : undefined;
+  if (rosa && (laterToday ? lateClin : clin))
     safe(() => {
       const soon = new Date(Date.now() + 20 * 3600000);
       soon.setMinutes(0, 0, 0);
-      const a = AdelanteEHR.bookAppointment({ patientId: rosa, clinicianId: clin.id, start: soon.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
+      const target = laterToday && lateClin ? { clinicianId: lateClin.id, start: laterToday } : { clinicianId: clin!.id, start: soon.toISOString() };
+      const a = AdelanteEHR.bookAppointment({ patientId: rosa, clinicianId: target.clinicianId, start: target.start, durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
       AdelanteEHR.staffCancelAppointment(a.id, { reason: "clinician_unavailable", actor: { name: "Priya Raman", role: "clinical_coordinator", id: "s-cc1" } });
     });
   // Luis — his ASAM-linked assessment visit was two days ago and he did not
