@@ -70,3 +70,13 @@ R53 part 1 is **done** apart from the items below:
 - Christi: confirm the 90-day intervals (AUDIT/DAST, PC-PTSD-5, HRSN reentry) and the HRSN member-update signal (**needs check**).
 - R48: production scheduler for exact-day reminders and the day-10 task.
 - Known triage failures #7 and #13 unchanged.
+
+## Part 2 — dashboard tile (Mitch, decided 31 Oct 16:36 CT; started 1 Nov)
+
+Draft — pending clinical sign-off. No publishing, persistence, Supabase, permission or snapshot changes.
+
+### Inspection (before changes)
+
+- Clinician workspace Today tiles come from `workspaceTileOrder` (`src/lib/clinicianWorkspace.ts`): clinician roles (therapist, PMHNP, physician and other non-care, non-coordinator roles) render **4 tiles** — Schedule, Needs my action, My caseload, Requests & booking. Care roles render 3 (Needs my action, Scheduling, My caseload); coordinators render 3 (Coordinator queue, Scheduling, Needs my action).
+- Screener rows today: `workspaceActionRows` adds one `screener` row per due instrument from `screenerDueRows(myCaseload(actor), { role })`; the same rows feed `attentionCaseload` (caseload badges). `screenerDueRows` already removes AUDIT/DAST per patient when the viewer's `screeners_sud` gate does not resolve.
+- Pinned files touched by this batch: `clinicianWorkspace.ts` (byte check through the credentialing chain), `WorkspaceDashboard.tsx` (binding inventory in `roleDashboardParity9c2`), `RecordTabs.tsx` (Tracking instrument filter). `workspaceTileOrder` has an existing exact assertion, so it stays unchanged; the new tile is added beside it.
