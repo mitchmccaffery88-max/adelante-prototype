@@ -293,6 +293,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] Christi/compliance confirmations, sliding-scale tiers, MOUD code mapping — waiting on Christi/compliance
 
 ## EHR/Admin inventory (30 Oct, report only)
+- [ ] R53 tile follow-up (1 Nov 11:50 CT): staff Send now over automatic requests, request provenance and Due N days ago; exact-once approval, units, clinician browsers, screenshot and report pending.
 - [x] docs/ehr-admin-inventory.md written (sections 1–10; "needs check" items listed at end)
 - [ ] Cleanup batches 1–11 from section 7 — not started, awaiting Mitch's walkthrough
 

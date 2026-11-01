@@ -125,3 +125,11 @@ R53 part 2 is **done**: units 3,838/3,838; dashboard/chart browsers 31/32 (only 
 - Christi/Dr. Bagga: review the Draft 7-day resend window and cadence-step notes; part 1 items remain (90-day intervals, HRSN member-update signal **needs check**).
 - Mitch: an open automatic member prompt counts as "Requested" and disables Send for 7 days — confirm, or allow staff re-send over it. "Overdue N days" wording kept per this batch (Voice rule otherwise prefers "Due N days ago").
 - R48 production scheduler (from part 1). Known triage #7, #13, #16, #20 unchanged.
+
+## Part 2 follow-up — approved 1 Nov 11:50 CT
+
+Draft — pending clinical sign-off. No publication, persistence, Supabase, permission or snapshot changes. Dashboard count, access gates, scoring and registry actions remain unchanged.
+
+- Inspection: `automaticRescreen` already identifies automatic tasks; `sendRescreenTask` creates a staff task without that flag and the existing member projection exposes staff requests immediately. No store change is needed.
+- Scope: only staff sends start the 7-day tile disable; automatic-only requests show enabled **Send now**. Requested chips identify automatic/staff provenance and age. Past-due tile/detail wording changes to **Due N days ago**, with **Due** retained today.
+- Verification and exact-once reconciliation: pending; results recorded below as available.
