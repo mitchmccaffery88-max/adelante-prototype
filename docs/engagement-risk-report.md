@@ -1,0 +1,60 @@
+# R57 engagement-risk flag and event-triggered needs re-screens
+
+Approved by Mitch, 1 Nov 2026. **Draft — pending clinical sign-off**; Christi tunes thresholds and weights. Explainable, non-punitive rules, not a prediction model. No publication, persistence or Supabase changes.
+
+## What exists (inventory before product changes)
+
+| Source | Current evidence / availability |
+| --- | --- |
+| Missed visits | `src/lib/ehr.ts:2200–2240` stores appointment start/status, `noShow.at` and `cancellation.at/lateCancel`; real cancellation/no-show paths are `staffCancelAppointment` and `markAppointmentNoShow` (`ehr.ts:9953` onward). Existing dated appointment status supplies the 30-day window; no new attendance fields. |
+| Outreach and replies | `src/lib/caseloadReview.ts:26–34,73–124` records attempted/no-answer versus actual call/text/in-person/video contacts, with dates. Patient `careMessages` (`ehr.ts:1870`, messaging methods near 16800) has staff/member authorship and timestamps. Use structured attempt logs plus staff messages, never infer unanswered calls from free text. |
+| Phone/address | `src/lib/demographics.ts:61–68` and `ehr.ts:1850` hold timestamped changed fields; `updatePatientDemographics` appends history (`ehr.ts:12276`). Phone change and address change exist. A structured disconnected-phone or confirmed SMS-undeliverable field has not been established: **needs data**, skip those branches; notification delivery errors are not automatically a disconnected phone. |
+| Coverage | `ehr.ts:1725–1760` stores coverage status and verification (`pending`, `not_found`, etc.), with dated coverage spans. Captured inactive/suspended or pending eligibility can be used; absent coverage is **needs data**, not an inferred gap. Eligibility transports remain Simulated. |
+| Release/reentry | Patient `releaseDate` plus provenance `releaseDateMeta` (`ehr.ts:1874–1875`); R53 already reads real release date in `rescreenCadence.ts:22–30`. No episode-day substitution. |
+| HRSN / needs | Scored results/history in `ehr.ts:1692`; CMS AHC-HRSN definition/domains in `screeners.ts:550` onward. Housing/food/transport domain positives and `sdohPlan.items` (`ehr.ts:792–813,1891`) have resolution status and provenance; packet needs are separate referral-staging evidence, not automatically a clinical HRSN result. Safety has its own `safetySensitive` boundary (`ehr.ts:696–699,807–813`) and is excluded here. |
+| Phone/data need | `whatWouldHelp.ts:40–58` captures optional topic `phone` with the canonical need “Phone or internet”; this exists in `sdohPlan` when actually selected. Absence is **needs data**, not a fabricated add-on answer. |
+| Member needs changes | Need source `intake_self_report` and dated updates exist (`ehr.ts:679–683,802–805`). Packet confirmation (`intakePacket.ts:146–151`) checks patient identity but changes only state, without an event timestamp: that path is **needs data** for event detection. Only actual attributable member writes may trigger; staff/advocate/partner imports never become member-reported changes. |
+| R53 overdue | `rescreenCadence.ts:65–80` groups outstanding tasks; `RESCREEN_PROMPT_RULES.staffFollowupDays` is 10. No instrument names or safety content belong in the engagement reason. |
+| App-open sweep | `useReminderSweep.ts:28–55` invokes the existing R53 sweep on mount and every 20 minutes while a browser is open. Exact timing/delivery needs the production scheduler, R54/R48. |
+| Caseload tile/list | `WorkspaceDashboard.tsx:95,149` renders the existing “My caseload” tile; `CaseloadTable.tsx:210–224` renders the staff member list, including a previous New/Steady presentation column. Caller scopes and chart gates must remain authoritative. |
+| Task lifecycle | Existing `CaseTask` (`ehr.ts:4427–4498`) and creation dedupe (`ehr.ts:16997–17029`) exist. Staff worklist completion calls the store directly: **no existing task-completion registry action was found**. Existing completion has no R57 outcome requirement. See mandatory stop below. |
+
+### Signal mapping (all Draft — pending clinical sign-off)
+
+- Missed visits: **exists** (dated no-show/late-cancel status).
+- Outreach not answered: **exists** (structured no-answer contacts and timestamped staff/member messages; message content never inspected).
+- Contact lost: **partial** (phone history exists; disconnected/confirmed undeliverable **needs data**, skipped).
+- Housing unstable: **exists** (living-situation item/HRSN domain + resolution; do not treat every housing-quality issue as loss of stable housing).
+- No phone or data: **exists if captured** as “Phone or internet”; otherwise **needs data**.
+- Transportation / food: **exists** (scored domain and unresolved plan evidence).
+- Re-screen overdue: **exists** (R53 day-10 groups; neutral reason only).
+- Early reentry: **exists if release date captured**; no stand-alone flag.
+- Coverage gap: **exists if captured** (status/verification); otherwise **needs data**.
+- Interpersonal safety: **excluded**, keeps existing clinician routing; never a flag reason.
+
+## Results
+
+- Inventory completed before application changes. No invented signal fields or demo events.
+- **Mandatory stop before application changes:** the requested existing staff task-completion registry action does not exist. `chartActions.ts:897–903` (`task`) and `:960–968` (`dashboard_task`) register creation only (`createCaseTask`). Neither `completeCaseTask` nor `setWorklistStatus` nor `addCaseTaskNote` has a registry store reference. Existing `TaskWorkRow.tsx:170–177,290–296` calls completion/status/note stores directly; `RecordTabs.tsx:2188` also directly completes a case task. A second read-only investigation confirmed the missing registry path.
+- `ehr.ts:17230–17255` completes/reopens a worklist task without requiring or recording one of the four R57 outcomes. Reusing the direct call would violate registry-only writes and would allow completion without an outcome. Registering a new staff completion action requires additional permission-snapshot rows, outside the approval for **only** 18 hidden `engagement_risk_automation` rows. Attaching completion to an existing creation action would change its behavior and is not a safe substitute.
+- **Scoped approval needed:** authorize an engagement-task-only staff completion registry path, preserving existing worklist/chart and ownership gates, requiring exactly the four approved outcomes, with explicit approval for its additional snapshot rows and exact-once source re-pins. Alternatively identify a different already-registered completion action to reuse. Nothing in the current approval or standing OK permits changing this behavior/permission prerequisite.
+- No R57 product, test, permission, snapshot, Supabase or persistence changes made; no engagement flags/tasks/prompts seeded. R57 full units, clinician/care-manager/caseload/role/advocate/public browsers and all four screenshots **not run** after this stop. No new test/browser failure is claimed. Latest preview diagnostics: **build OK**, 1 Nov 22:02:24 UTC; this is not R57 behavior validation.
+- Earlier completed R53 follow-up remains documented in `docs/rescreen-cadence-report.md`: units **3,858/3,858**, requested staff browsers **31/32** (only known triage **#16**), screenshot saved. These are prior R53 results, not R57 results.
+
+## Standing OKs
+
+- Superseded-anchor regression exception remains limited to immutable prior/replacement fixtures and direct adapter verification, retaining drift/reapplication checks. **R57 uses: none.**
+- 1 Nov type-only exception applies only to tests created 31 Oct / 1 Nov for R53/R57, with no assertion/input/expected-value/test-name changes, through an exact-once approved re-pin plus regression, each use recording file/line/error. **R57 uses: none.** The missing completion action is a behavior/permission prerequisite, not either exception.
+
+## Exactly what remains open
+
+- Approval blocker: engagement-task-only registry completion with mandatory outcomes (above).
+- After approval: pure signal settings/evaluation, staff-only badges/reasons, automated task dedupe/owner chain/clearing, event HRSN prompts/cap/skip, registry/snapshot/source approvals, all requested new tests/full units/browser suites/screenshots.
+- No app changes are running in the background; implementation is stopped, not complete.
+
+## Open clinical / production items
+
+- Christi: confirm thresholds, time windows, weights and early-reentry step-up; all remain Draft.
+- Disconnected phone / confirmed SMS undeliverable: needs structured data; do not infer from simulated delivery failure text.
+- Uncaptured phone/data need and absent coverage: needs data, skipped.
+- R54/R48 production scheduler: app-open sweeps cannot guarantee timing or delivery.
