@@ -105,7 +105,7 @@ describe("R53 part 2 placement", () => {
     }
   });
   it("clinician screener rows leave Needs my action but stay on caseload badges", () => {
-    const actor = STAFF_ROSTER.filter((s) => s.role === "therapist").map((s) => ({ staffId: s.id, staffName: s.name, clinicianId: s.clinicianId, role: s.role })).find((a) => myCaseload(a).length > 0)!;
+    const actor = STAFF_ROSTER.filter((s) => rescreenTileRole(s.role)).map((s) => ({ staffId: s.id, staffName: s.name, clinicianId: s.clinicianId, role: s.role })).find((a) => myCaseload(a).length > 0)!;
     expect(actor).toBeTruthy();
     vi.spyOn(AdelanteEHR, "rescreensDue").mockReturnValue([{ key: "phq-9", lastDays: 35, nextDue: 30 }]);
     const rows = workspaceActionRows({ actor, needsClosing: [] });
