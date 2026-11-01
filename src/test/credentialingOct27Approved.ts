@@ -1,3 +1,4 @@
+import { withApprovedEngagementRiskNov01 } from "./engagementRiskNov01Approved";
 import { withApprovedScreenerEstimateLabelOct31 } from "./screenerEstimateLabelOct31Approved";
 import { withApprovedRescreenCadenceOct31 } from "./rescreenCadenceOct31Approved";
 import { withApprovedRescreenCadenceFinishOct31 } from "./rescreenCadenceFinishOct31Approved";
@@ -171,5 +172,6 @@ export function withApprovedCredentialingOct27(path: string, rollbackText: strin
     if (s.split(from).length !== 2) throw new Error(`Approved anchor not found once in ${path}`);
     s = s.replace(from, to);
   }
-  return withApprovedRescreenTileActorNov01(path, withApprovedRescreenTileFollowupNov01(path, withApprovedRescreenTileNov01(path, withApprovedRescreenCadenceReconcileNov01(path, withApprovedRescreenCadenceFinishOct31(path, withApprovedRescreenCadenceOct31(path, withApprovedScreenerEstimateLabelOct31(path, withApprovedScreenerHarnessInputOct31(path, withApprovedScreenerHarnessOct31(path, withApprovedScreenerFinalAuditOct31(path, withApprovedScreenerReassessmentOct30(path, withApprovedScreenerFollowupsOct30(path, withApprovedScreenerCompletenessOct30(path, withApprovedFamilyRequestOct30(path, withApprovedPatientSchedulingOct30(path, withApprovedPatientSchedulingOct29(path, withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s))))))))))))))))))))));
+  const r57Prior = withApprovedRescreenTileActorNov01(path, withApprovedRescreenTileFollowupNov01(path, withApprovedRescreenTileNov01(path, withApprovedRescreenCadenceReconcileNov01(path, withApprovedRescreenCadenceFinishOct31(path, withApprovedRescreenCadenceOct31(path, withApprovedScreenerEstimateLabelOct31(path, withApprovedScreenerHarnessInputOct31(path, withApprovedScreenerHarnessOct31(path, withApprovedScreenerFinalAuditOct31(path, withApprovedScreenerReassessmentOct30(path, withApprovedScreenerFollowupsOct30(path, withApprovedScreenerCompletenessOct30(path, withApprovedFamilyRequestOct30(path, withApprovedPatientSchedulingOct30(path, withApprovedPatientSchedulingOct29(path, withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s))))))))))))))))))))));
+  return withApprovedEngagementRiskNov01(path, r57Prior);
 }
