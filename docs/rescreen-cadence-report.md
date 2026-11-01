@@ -54,3 +54,4 @@ Mitch, 31 Oct 2026, 16:36 CT. All new clinical rules: **Draft — pending clinic
 - **Conflict 2 — standing OK used (1st recorded use):** `rescreenCadenceOct31Approved.test.ts` chartActions path now reads immutable prior/replacement fixture `rescreenCadenceOct31ChartActions.fixture.json` (prior hash matches the original adapter's `priorHash`; replacement equals the finish re-pin's `priorSource`) and calls its own adapter. Exact/drift/reapplication kept; no adapter hash, anchor or logic changed. The finish regression already verifies the final chartActions chain (`readFileSync === updatedSource` and byte-for-byte item-9 entry).
 - Focused: 5 files, 50/50 passed.
 - **Full units: 3,821/3,821 passed, 436 files.**
+- Browser env note: sandbox browser build mismatch (needed v1194); installed into /tmp/pw only, no project/config changes. First launch attempt failed before any test ran.
