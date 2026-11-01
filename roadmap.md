@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] R57 engagement-risk flag and event-triggered HRSN — inventory first, Draft staff-only rules, registry automation, tests/browser evidence; no publication, persistence or Supabase changes.
 - [x] B5.0 content v2 inventory and mapping — done 1 Nov; docs/content-v2-plan.md covers schema, gates, file/pin/test plan, flag and R50/R51/R58 registry gaps; B5.1 not started; no source/test/Supabase changes.
 - [x] R53 part 1 re-screen cadence + member auto-prompts — done 1 Nov (units 3,821/3,821). Open: Christi 90-day intervals + HRSN signal; R48 production scheduler. Part 2 dashboard tile: see next line.
 - [x] R53 part 2 clinician Re-screens due tile — done 1 Nov (units 3,838/3,838; dashboard browsers 31/32, only known #16; public 53/53 on v1194, Back-to-top did not reproduce). Open: Christi/Dr. Bagga review of Draft 7-day resend; Mitch: re-send over an automatic member prompt?
