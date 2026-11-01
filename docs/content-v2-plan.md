@@ -1,6 +1,6 @@
 # Content import B5.0 — inventory and mapping
 
-**Approved:** Mitch, 1 Nov 2026, 11:07 CT. **Scope:** documentation only. **Status:** inventory and mapping in progress; B5.1–B5.4 not started or authorized here.
+**Approved:** Mitch, 1 Nov 2026, 11:07 CT. **Scope:** documentation only. **Status:** B5.0 complete; B5.1–B5.4 not started or authorized here.
 
 Clinical and policy proposals are **Draft — pending clinical sign-off**; proposed SUD self-report/flag access remains **Draft — pending counsel**. No publication, persistence, Supabase, source, test, role, access or permission-snapshot changes.
 
@@ -12,6 +12,7 @@ This report maps the supplied sections 3–4 prep proposal onto the current app.
 - Captured pre-work hashes of 1,631 files under `src/`, `e2e/` and `supabase/` to verify documentation-only scope at closeout.
 - Access investigation returned: current targeting is three any-match audiences, not the proposed six populations; the 14 Oct author exception does not grant patient-record access. Recommendation/deep-link gate inconsistencies are documented for B5.3, not changed here.
 - Resource investigation returned: existing managed directory, county crisis contacts and need-linked referrals are reusable, but no unified verified `resourceType` resolver exists. Existing advocate output already masks restricted provider names.
+- CMS/player investigation returned: eight managed types, two adapters into one shared renderer, independent clinical/Part 2 review and optional editorial review. Current runtime has no dedicated Content Author role or review/publish add-on.
 
 ## 1. Current content system
 
@@ -54,6 +55,28 @@ The approved 14 Oct plan is `.lovable/plan/content-audiences-and-part-2-for-auth
 | `docs/content-management-audit.md:1–6,10–32,59–67,73–90` | 7 Oct historical audit across 22 text families and a proposed hub. Four-type/governance gaps and old navigation/review descriptions are not today's source of truth. |
 | `docs/content-vocabulary.json:1–307` | No generation date; 11 category entries, 9 modules, 14 resource categories, 5 bands, 6 ASAM dimensions, 3 stages, 3 audiences, 10 activities, 2 flags, 3 reviewer roles. Category count differs from CSV; it contains both patient/advocate entries for advocate-support (`:49–58`), so do not deduplicate by bare id. |
 | `docs/sculptsoft-content-handoff.md:7–19,64–80` | Useful later CMS/revision/governance summary, but the old Part 2-only clinical predicate at :80 predates the all-author exception; use current predicates and tests. |
+
+### 1.5 Player and routes
+
+- `/library?item=<id>` and `?exercise=<id>` host LibraryBrowser (`src/routes/library.tsx:5–19`); `/recovery-journey?lesson=<id>` hosts RecoveryModuleBrowser (`src/routes/recovery-journey.tsx:6–16`). `/journeys` is the curriculum host; `/advocate/library` is separate supporter content, not a patient audience grant (`src/routes/advocate.library.tsx:39–92`).
+- LibraryLesson builds ModuleStep[] from LibraryItem (`src/components/library/LibraryLesson.tsx:80–112`); RecoveryLessonView adapts RecoveryLesson into the same ModuleTemplate (`src/components/recovery/RecoveryLessonView.tsx:200–239`). Current displayed steps already exceed the old eight/ten-field sequence because ratings/practice are inserted; this is not Cathy's merged five-step player.
+- Shared player has visited-only navigation and numeric stepIndex/stepTotal/maxVisited resume (`src/components/library/ModuleTemplate.tsx:323–360,919–969`). V2 must introduce stable step IDs with explicit legacy mapping; never apply old numeric index to reordered v2 steps.
+- Preview responses are local and never complete/write real progress (`LibraryLesson.tsx:38–53,73–75`; `RecoveryLessonView.tsx:94–109,125–126`). Registry wrappers own real response/toolkit/completion actions (`src/lib/patientPlayerActions.ts:9–28`). Engagement records actual completion timestamp and served published revision (`src/lib/engagement.ts:276–288,472,526–648`); unknown legacy versions stay unknown.
+
+### 1.6 Content center, editor and actual current roles
+
+`/admin-content` hosts ContentAdminWorkspace behind the existing global route/nav guard (`src/routes/admin-content.tsx:22–24`). `/content-library` checks canBrowseContent and uses the same workspace browse-only (`src/routes/content-library.tsx:6–18`). Manage/Review/Audit/Browse, inventory, local patient preview, structured editor and backup are current surfaces. Form field types include real activity/exercise/curriculum/stages/audiences controls (`src/components/admin/ContentForm.tsx:268–372`). Workspace uses reasoned runAction for mutations (`ContentAdminWorkspace.tsx:32–40,406–416`) and metadata clinical/Spanish/review-date controls (`:211–253`). Authoring defaults and inventory visibility are role-dependent (`src/lib/contentStaff.ts:46–57`).
+
+| Authority today | Roles and actual implementation |
+|---|---|
+| Author/create/edit/submit | **11** roles: sys_admin, clinical_coordinator, pmhnp, physician, therapist, sud_counselor, peer_specialist, community_health_worker, ecm_provider, cf_care_manager, clinical_trainee. Matrix at `src/lib/roles.ts:557–570`; physician inherits PMHNP at `:921–925`; `canAuthorContent` at `src/lib/contentPublishing.ts:243–246`. Medical assistant read is not author. |
+| Editorial publish/return | clinical_coordinator, sys_admin, pmhnp, physician, therapist (`src/lib/roles.ts:1051–1067`; `contentPublishing.ts:253–255`). Own general editorial work may publish directly from draft; optional review does not become universal separation-of-duties. |
+| Clinical / Part 2 publication sign-off | pmhnp, physician, clinical_coordinator **not the latest editor/author** (`src/lib/contentGovernance.ts:39,165–179`; `contentPublishing.ts:388–411`). A therapist/sys_admin publisher alone cannot approve clinical/Part 2. |
+| Mark reviewed | Existing author-level `content_mark_reviewed` action, **not equivalent to independent clinical approval** (`src/lib/chartActions.ts:298`). |
+| Approve vs publish | Both current `content_approve` and `content_publish` invoke publishContent (`src/lib/chartActions.ts:312–317`); a separate approved-but-not-published state is new. |
+| Content manager seat | clinical_coordinator, Cathy s-cc2 (`src/lib/roles.ts:1043–1060`). “Content Author (Cathy)” plus review/publish role add-ons are future requirements, not current roles/grants. Held roles never union access. |
+
+Validators supplied to current store writes are optional callbacks (`src/lib/contentPublishing.ts:284–294,367–397`); quarantined import must always call mandatory v2 validation, including referential/locale/safety checks, rather than trusting a caller to inject them. This changes no current product behavior in B5.0.
 
 ## 2. Schema v2 mapping
 
@@ -153,7 +176,7 @@ The approved 14 Oct plan is `.lovable/plan/content-audiences-and-part-2-for-auth
 | provenance.source, commit, sourceFiles, fieldsFromGenericFallback, importedAt, importBatch | **New** source string cathy_wireframe_39aaddf5 and truncated 8a84f1a2… are prep claims until full immutable package verified; list exact files, import time/batch and fallback paths. |
 | tag.value, source, confidence, needsReview | **Extend/New evidence** validated family values/source enum/range; derived review state cannot be overwritten by untrusted source. |
 
-**Safety/clinical conflict holds:** Private EmotionCheckIn currently offers Urge Surfing Timer when a patient chooses Craving regardless of a stored SUD flag (`mem/features/emotion-check-in` requirement; `src/lib/AGENTS.md:14`). Prep says it must never be offered to non-SUD members. Do not silently remove that approved private offer or turn it into a SUD flag; Mitch/clinical resolution is needed before B5.3. Likewise no new clinical advancement, pre-release content, permission union or Part 2 summary exemption is approved here.
+**Safety/clinical conflict holds:** Private EmotionCheckIn currently offers Urge Surfing Timer when a patient chooses Craving regardless of a stored SUD flag (`src/components/patient/EmotionCheckIn.tsx:57,81–91`; `src/lib/AGENTS.md:14`). Prep says it must never be offered to non-SUD members. Do not silently remove that approved private offer or turn it into a SUD flag; Mitch/clinical resolution is needed before B5.3. Likewise no new clinical advancement, pre-release content, permission union or Part 2 summary exemption is approved here.
 
 ### 2.5 Group defaults and dropped behaviors
 
@@ -209,3 +232,104 @@ Propose a validated `resourceConnections[]` on each need (or an explicitly mater
 `advocateCoordination` already projects provider/status/restricted, but no contact/resourceId (`src/lib/ehr.ts:19406–19465`). The UI displays provider — status or Restricted (`src/components/advocate/AdvocateWorkspace.tsx:213–224`). R58 may change separator to `resource · status`; contacts/IDs require an approved minimal projection extension, not a raw directory join. Existing sensitive-provider suppression and consent gates apply to **name, contact, identifier and status-context**; no lookup may fill a withheld name. Preserve `src/lib/__tests__/advocateNeedReferrals.test.ts:86–93,108–116,132–158`. Existing `referralLinks.ts:42–67` can resolve historical active/inactive/missing provider references without rewriting them.
 
 R50/R51 implementation file candidates: new registry/resolver/tests above; existing `src/lib/communityResources.ts`, `src/lib/outsideCrisisResources.ts`, `src/lib/referralLinks.ts`, `src/lib/ehr.ts`, `src/lib/chartActions.ts`, `src/components/patient/NeedConnect.tsx`, `src/components/advocate/AdvocateWorkspace.tsx`, `src/components/admin/ResourceVerificationQueue.tsx`, and corresponding new tests/docs. They are **not silently bundled into B5.1–B5.4**. B5 imports unresolved contact references into quarantine until R50 exposes its approved resolver contract. No directory launch defaults or crisis numbers changed here.
+
+## 5. Exact later-batch file plan
+
+This is a proposed bounded manifest, **not edit approval**. New paths below are proposed, not files found. Existing baseline/authored source files stay unchanged: a v2 compatibility layer reads them only for alias/progress mapping. Current player remains live until the B5.3 flag decision. If a required file falls outside this list, or a protected assertion/permission row conflicts, document and stop for scope approval. No Supabase files, migrations, generated route tree, source/test edits or architecture-rule changes in B5.0.
+
+### B5.1 — types, quarantined import, transforms, validators
+
+**Create:**
+- `src/lib/content-v2/types.ts` — canonical entities, all nested contracts and legacy aliases; no reuse of ehr.SelfHelpModule name.
+- `src/lib/content-v2/sourceManifest.ts` — final-source file/hash/commit/batch evidence, not full application/clinical data imports.
+- `src/lib/content-v2/transforms.ts` — source→v2 and old-app alias mapping, drop ledger and fallback provenance.
+- `src/lib/content-v2/validators.ts` — mandatory schema/reference/locale/population/contact/safety validation; no string evaluation or executable source payload.
+- `src/lib/content-v2/quarantine.ts` — inert staging only; reasoned import through the existing content_create/edit runAction/store path, not a second published CMS. If those actions cannot safely carry the new staging type, stop before adding a registry action.
+- `src/lib/content-v2/importManifest.json` — verified import inventory only after final source is supplied.
+- `src/lib/content-v2/__tests__/import.test.ts`, `transforms.test.ts`, `validators.test.ts` — new tests/fictional generated fixtures; no existing fixture replacement.
+
+**Extend existing:** `src/lib/contentPublishing.ts` (quarantine entity handling with no served override), `src/lib/contentTypes.ts` (v2 descriptors/mandatory validator bridge), `src/lib/contentBackup.ts` (quarantine/version-aware backup without publishing on restore), `scripts/export-content-inventory.ts` (explicit schema/import inventory columns). **Documentation outputs:** `docs/content-v2-plan.md`, `docs/content-v2-import-report.md`, `docs/content-inventory.csv`, `docs/content-vocabulary.json`, `docs/content-backup.md`, `roadmap.md`; regenerated outputs only in approved B5.1, not here. Final package raw files stay in temporary staging; normalized app data lives in the bounded manifest/data module, not arbitrary copied executable Cathy source.
+
+### B5.2 — auto-tag and review queue
+
+**Create:** `src/lib/content-v2/taxonomy.ts`, `autoTag.ts`, `tagReview.ts`, `src/components/admin/ContentTagReviewQueue.tsx`, `src/lib/content-v2/__tests__/autoTag.test.ts`, `tagReview.test.ts`.
+
+**Extend existing:** `src/lib/contentTags.ts` (compatibility projection from reviewed tag families, no new recommendation engine), `src/lib/contentGovernance.ts` (human-sign-off blockers), `src/lib/contentTypes.ts` (reviewable tag evidence fields), `src/lib/contentPublishing.ts` (review revisions), `src/components/admin/ContentAdminWorkspace.tsx` (existing Review host), `src/components/admin/ContentInventoryTable.tsx` (review provenance/status), `src/components/admin/ContentForm.tsx` (tag review inputs). Existing `content_edit`, `content_submit`, `content_return` own writes; no new permission. **Docs:** `docs/content-v2-tagging-report.md`, `docs/content-v2-plan.md`, `roadmap.md`.
+
+### B5.3 — gating and player behind the single flag
+
+**Create:** `src/lib/content-v2/eligibility.ts` (one fail-closed v2 projection atop existing audiences/consent/Part 2 gates), `catalog.ts` (reviewed-published-only overlay), `playerAdapter.ts` (five-step→shared renderer, stable step IDs), `progressCompatibility.ts` (served version/legacy mapping), `src/components/library/ContentV2Lesson.tsx`, `src/lib/content-v2/__tests__/eligibility.test.ts`, `progressCompatibility.test.ts`, `src/components/library/__tests__/contentV2Player.test.tsx`, `e2e/contentV2Player.spec.ts`.
+
+**Extend existing:** `src/lib/features.ts`, `src/lib/contentCatalog.ts`, `src/lib/lessonRecommends.ts`, `src/lib/adelPrompt.ts`, `src/lib/engagement.ts`, `src/lib/patientPlayerActions.ts`, `src/lib/curriculumProgress.ts`, `src/lib/contentTags.ts`, `src/components/library/LibraryBrowser.tsx`, `src/components/library/ExercisePlayer.tsx`, `src/components/library/ModuleTemplate.tsx`, `src/components/recovery/RecoveryModuleBrowser.tsx`, `src/components/admin/RealContentPreview.tsx`, `src/routes/library.tsx`, `src/routes/recovery-journey.tsx`, `src/routes/journeys.tsx`, `src/routes/advocate.library.tsx`, `src/lib/i18n.player.ts`. Existing LibraryLesson/RecoveryLessonView remain the flag-off path, unchanged. New eligibility uses existing shared signal and gate, no new direct consent reader; if mandatory inventory changes still occur, stop. R50 resolver injected as a reviewed contract; absent resolver blocks local-contact content, not emergency help. **Docs:** `docs/content-v2-player-report.md`, `docs/content-v2-plan.md`, `roadmap.md`.
+
+**Not authorized by B5.3 manifest:** modifying `EmotionCheckIn.tsx`, role/consent rules, stage spine, appointments, obligations, safety/crisis constants, or audit exports. Resolve conflicts listed above first; no member assignment or forced upgrade on flag activation.
+
+### B5.4 — author → review → publish
+
+**Create:** `src/lib/content-v2/reviewWorkflow.ts`, `src/components/admin/ContentV2ReviewPanel.tsx`, `src/lib/content-v2/__tests__/reviewWorkflow.test.ts`, `e2e/contentV2Governance.spec.ts`.
+
+**Extend existing (content-only):** `src/lib/contentPublishing.ts`, `src/lib/contentGovernance.ts`, `src/lib/contentTypes.ts`, `src/lib/contentStaff.ts`, `src/lib/contentBackup.ts`, `src/components/admin/ContentAdminWorkspace.tsx`, `src/components/admin/ContentForm.tsx`, `src/components/admin/ContentBrowse.tsx`, `src/components/admin/ContentInventoryTable.tsx`, `src/components/admin/ContentAudit.tsx`, `src/routes/admin-content.tsx`, `src/routes/content-library.tsx`. Reviewed Spanish is a named reviewer/evidence gate, not a staff checkbox alone. Preserve author Part 2 educational access and patient data separation; export/audit remain neutral/cohort-11.
+
+**Conditional, blocked until separate role/action approval:** `src/lib/roles.ts`, `src/lib/chartActions.ts`, `src/lib/navSections.ts`, `src/lib/quickActions.ts` if new held review/publish add-ons or distinct approval action are necessary. Current `content_approve` publishes; new separate approval cannot silently change its existing semantic contract. Propose scoped new capability/action rows first, no permission union. `src/lib/__tests__/__snapshots__/runAction.test.ts.snap` is **not an authorized touch**: stop and list proposed changed rows. This means B5.4 is not implementable exactly as the prep describes solely with today's role model.
+
+**Docs:** `docs/content-v2-governance-report.md`, `docs/content-v2-plan.md`, `docs/content-backup.md`, `docs/content-management-audit.md`, `docs/sculptsoft-content-handoff.md`, `roadmap.md`.
+
+### Supporting rules and approved re-pins (future only)
+
+Future architecture rules belong in `src/lib/AGENTS.md`, `src/components/AGENTS.md` (and new `src/lib/content-v2/AGENTS.md` if directory-specific rules are needed); root AGENTS stays unchanged unless a directory-reference update is necessary. These are not changed in B5.0.
+
+- **Verified byte pins:** `src/lib/roles.ts` is pinned by `src/lib/__tests__/billingProjectionB3b.test.ts:99–100` and `src/components/__tests__/roleDashboardParity9c2.test.ts:43–44`. Shared `ehr.ts` is pinned there plus `src/lib/__tests__/statTileParity9a2.test.tsx:20–40` and `billingParity9a3.test.tsx:17–23`. None is in the unconditional B5 manifest; R58 needs-store extension requires its own approved re-pin.
+- **Registry approved-anchor protection:** chartActions has prior hash-checked R53 fixtures (`src/test/rescreenCadenceFinishOct31Approved.ts`, its fixture/regression; R53 first adapter/fixture). Any proposed change is hash-checked after the **current latest source chain**, ending `withApprovedRescreenTileNov01` in `src/test/credentialingOct27Approved.ts:171`, not a new rollback baseline. Browser triage has its separate latest `browserTriagePart5Oct31Approved` chain; do not mix it into source approval.
+- **Future exact re-pin files, only if separately approved:** `src/test/contentV2B51Approved.ts` + `.fixture.json` + `.test.ts`; same triplet for `contentV2B52Approved`, `contentV2B53Approved`, `contentV2B54Approved`, chained in the verified applicable source consumer (`src/test/credentialingOct27Approved.ts` for its protected paths). Create only the needed approved triplet; no preemptive permission to edit assertions or hashes.
+- `contentTypes.ts`, `contentPublishing.ts`, catalog, player, editor, features and recommendation files have inspected **behavioral tests**, not a discovered universal whole-file byte pin. Do not call them unconditionally unprotected: source-regex/registry/consent inventory freezes can still fail. All conflicts stop unless expressly approved. Standing OK applies only when a later approved re-pin supersedes an earlier adapter's anchored-line regression; use its immutable own fixture and record that exact use, no adapter logic/hash change.
+
+## 6. Existing tests likely to conflict or require unchanged negative coverage
+
+No existing tests are edited or run in B5.0. “Likely conflict” means a proposed replacement can invalidate the named contract, **not a measured failure**. Add new tests in later batches; stop on old assertions rather than updating them implicitly.
+
+### Schema/import/governance contracts
+
+Under `src/lib/__tests__/`:
+- `contentPublishing.test.ts` — editorial direct/self-publish, draft/published status, history.
+- `contentContainers.test.ts` — category/module IDs, icon and positive order validation, live picker/retirement reference guards (`:64–169,173` onward).
+- `contentMigration.test.ts` — existing resource/naloxone seed provenance must not move into Cathy import or get re-dated.
+- `contentBackup.test.ts` — verbatim history/restore gates; new schema envelopes and unpublished imports must not grant publish.
+- `contentOriginality.test.ts` — existing lesson originality validation; five-step transforms/fallbacks must not bypass it.
+- `contentCenterWiring.test.ts` — real seed/store paths, tag-driven assignment and independent clinical approval (`:45–56,105–125`).
+- `contentCenterFinish.test.ts` — six education descriptors, validation, live exercises/curricula, sequential required-step locks and existing review cadence (`:27,43,56,64,72,88,112–125,148`).
+- `staffContentCenter.test.ts` — visibility and actual served-revision/private projection (`:13–19`).
+- `contentAudiences.test.ts` — any-match, existing lesson migration, no pre_release, author Part 2 exception and unchanged patient-role withheld set (`:34–147`).
+- `lessonAuthoringPhaseD.test.ts` — old empty optional baseline, teaching fallbacks, ratings and paired if/then (`:18,43,89,101`).
+- `lessonRatings.test.ts` — dimension semantics and existing recommend destinations (`:48–59`).
+- `selfHelpLibrary.test.ts`, `recoveryModules.test.ts`, `recoveryCatalogFinalSweep.test.ts`, `recoveryModuleOneAuthoring.test.ts`, `recoveryModuleTwoAuthoring.test.ts`, `recoveryModuleThreeAuthoring.test.ts`, `recoveryModuleFourAuthoring.test.ts`, `recoveryModuleFiveAuthoring.test.ts`, `recoveryModuleSixAuthoring.test.ts`, `recoveryModuleSevenAuthoring.test.ts`, `recoveryModuleEightAuthoring.test.ts`, `recoveryI18n.test.ts` — shipped inventories/IDs/required bodies/choices and bilingual behavior. Flag-off baseline must retain all these.
+
+### Access, private progress, resource and regression guardrails
+
+- `src/components/library/__tests__/playerEngagement.test.tsx:27–56` and `phaseDRendering.test.tsx` — toolkit exact values, saved responses, resumed numeric steps, preview no writes, exercises, voice/read-aloud, reduced motion and denied cross-patient writes.
+- `src/lib/__tests__/group2Pathways.test.ts:40–41,85,159` — protected SUD exercises and literal routing/source expectations; `crossRoleJourneys.test.ts`, `sudTriggers.test.ts`, `populationTrack.test.ts`, `populationNavGating.test.ts`, `justiceInvolvementGate.test.ts` — pathway/justice/flag rules remain authoritative.
+- `src/lib/__tests__/toolkitAggregation.test.ts`, `engagementReporting.test.ts`, `recoveryStages.test.ts`, `recoveryStartDate.test.ts` — private saves, real aggregation/cohort floor, care stage and sobriety-date privacy not replaced by content completion.
+- `src/lib/__tests__/adelPrompt.test.ts`, `adelDistress.test.ts`, `askAdel.test.ts`, `adelBriefConsistency.test.ts`, `adelBriefIncremental.test.ts` — context/action token/SUD safety/private derived output. New content hooks do not authorize patient context changes.
+- `src/lib/__tests__/consentInventoryB2.test.ts:9–11,97–110` — every new direct consent call/count conflicts unless separately approved; `consentEnforcementB2.test.ts:117–133`, `consentEnforcementB2Matrix.test.ts`, `consentAuditB2Parity.test.ts` — existing consent/Part 2 emergency and expected deltas stay fixed.
+- `src/lib/__tests__/runAction.test.ts` + snapshot — role/action outcome and one action event per attempt; `staffDialogs8c2Parity.test.ts`; `src/components/__tests__/roleDashboardParity9c2.test.ts` plus `billingProjectionB3b.test.ts`, `billingParity9a3.test.tsx`, `statTileParity9a2.test.tsx` byte pins as above.
+- `src/lib/__tests__/accessBatch.test.ts`, `privacyP3NameSweep.test.ts`, `privacyP3Names.test.ts`, `privacyP3Bundle.test.ts` — role guards, source disclosure checks, forbidden production inspection hooks. No dev hook added in import/player.
+- `src/components/__tests__/simulatedLabelsSL.test.tsx`, `src/lib/__tests__/opsLauncher.test.ts`, `quickActionPrefs.test.ts`, `part2SimulatedHardening.test.ts` — flags/launcher inventory/simulated label contracts relevant if later adding a flag/admin operation.
+- R50/R58 only: `src/lib/__tests__/sdohResourceMatch.test.ts`, `sdohNeedThread.test.ts`, `sdohReferralThread.test.ts`, `sdohReferralConsentAttribution.test.ts`, `advocateNeedReferrals.test.ts`, `needsStep2.test.ts`, `needsStep3.test.ts`, `src/lib/website/publicDirectory.test.ts`, `src/components/admin/ResourceVerificationQueue.test.tsx`, `src/lib/__tests__/inCrisisNow.test.ts`. Do not update these for the B5 mapping.
+
+### Existing browser specs likely affected
+
+`e2e/adminContent.spec.ts`, `staffContent.spec.ts`, `contentWiring.spec.ts`, `contentFinish.spec.ts`, `contentInventoryTables8b2.spec.ts`, `patientPlayer.spec.ts`, `group2Pathways.spec.ts`, `crossRole.spec.ts`, `crossRoleJourneys.spec.ts`, `adelHistory.spec.ts`, `adelBrief.spec.ts`. PatientPlayer pins real toolkit/resume/Adel and Spanish controls/protected advocate output (`:21,65`); contentFinish pins preview no-save and ordered curriculum (`:11,38`). Later shared shell/navigation changes would also require the approved dashboard/public coverage, not test edits. Known browser triage is separate; no new run or waiver claimed here.
+
+## 7. Readiness, unresolved inputs and closeout
+
+**B5.0 deliverables complete:** current system inventory with citations; field-by-field mapping and conflict holds; bounded B5.1–B5.4 file manifests/pins/test list; one flag proposal; existing registry/needs assessment and R50/R51/R58 extension proposal. **B5.1 not started.**
+
+Before implementation:
+1. Supply/verify Cathy's final immutable source package, full commit and relevant source files; establish real source counts, 17 need-tag names/11 exercise-tag vocabulary, care notes and source field completeness. Current app data is not a substitute for her final build.
+2. Resolve SUD self-report/flag admission versus existing consent; uphold the unchanged staff Part 2 matrix and author-only exception.
+3. Resolve private Craving→Urge Surfing offer versus prep's never-non-SUD exercise rule, without staff disclosure or derived SUD flags.
+4. Resolve pre_release hints versus released-only content; specify general/SUD/reentry conjunction, supervision and under_21 evidence, diagnosis assignment/member-choice provenance. Defaults cannot broaden eligibility via empty-list fallbacks.
+5. Approve future Content Author/reviewer/publisher add-on semantics and distinct approved→published action; currently not implemented. Native-speaker ES review and stronger imported-content review must not silently change editorial policy for old records.
+6. R50/R51 supplies verified resourceType resolver/Tulare area catalog and launch audit; R58 supplies need-linked public connection contract and minimal advocate projection. Crisis fallback unchanged until separately approved.
+7. Approve stable-step/legacy-ID/served-version migration; existing completed progress and unknown historic revisions never guessed or auto-advanced.
+
+Validation for this docs-only batch: no app suites, browser runs, builds, typechecks or source adapters invoked; no new pass count asserted. Protected-file hash verification is recorded at closeout. No source/test/Supabase/permission/snapshot modifications, persistence change or publication.
