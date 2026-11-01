@@ -22,11 +22,11 @@ describe("R53 part 2 rows", () => {
     const rows = groupRescreenRows([due("a", "phq-9"), due("b", "gad-7"), due("a", "gad-7")], [member("a"), member("b")], now);
     expect(rows.map((r) => [r.patientId, r.instruments.map((i) => i.key)])).toEqual([["a", ["phq-9", "gad-7"]], ["b", ["gad-7"]]]);
   });
-  it("shows Due, Overdue N days and Requested N days ago", () => {
+  it("shows Due, Due N days ago and Requested by staff N days ago", () => {
     expect(rescreenInstrumentView(member("a"), due("a", "phq-9", 30, 30), now).chipText).toBe("Due");
-    expect(rescreenInstrumentView(member("a"), due("a", "phq-9", 33, 30), now).chipText).toBe("Overdue 3 days");
+    expect(rescreenInstrumentView(member("a"), due("a", "phq-9", 33, 30), now).chipText).toBe("Due 3 days ago");
     const p = member("a", { tasks: [{ id: "t", kind: "rescreen", label: "x", screenerKey: "phq-9", createdAt: iso(2) }] });
-    expect(rescreenInstrumentView(p, due("a", "phq-9", 33, 30), now).chipText).toBe("Requested 2 days ago");
+    expect(rescreenInstrumentView(p, due("a", "phq-9", 33, 30), now).chipText).toBe("Requested by staff 2 days ago");
   });
   it("shows the estimate label and a trend against the previous scored result", () => {
     const p = member("a", { screenerHistory: [
@@ -80,7 +80,7 @@ describe("R53 part 2 actions", () => {
     sendRescreens(p.id, ["phq-9"], (id, via, pid, key) => { const r = runAction(id, { role: therapist.role, staffId: therapist.id, name: therapist.name }, AdelanteEHR.getPatient(pid), { via, args: [pid, key] }); expect(r.ok).toBe(true); });
     const after = AdelanteEHR.getPatient(p.id)!;
     expect((after.tasks ?? []).length).toBe(before + 1);
-    expect(rescreenInstrumentView(after, due(p.id, "phq-9"), Date.now()).chipText).toBe("Requested today");
+    expect(rescreenInstrumentView(after, due(p.id, "phq-9"), Date.now()).chipText).toBe("Requested by staff 0 days ago");
   });
   it("Send is disabled for 7 days, then shows Send again", () => {
     const at = (d: number) => rescreenInstrumentView(member("a", { tasks: [{ id: "t", kind: "rescreen", label: "x", screenerKey: "phq-9", createdAt: iso(d) }] }), due("a", "phq-9"), now);

@@ -293,6 +293,7 @@ Rollback: 9ddf890f292d97976fa34c042169eea200de99d1 (recorded first). Do not publ
 - [ ] Christi/compliance confirmations, sliding-scale tiers, MOUD code mapping — waiting on Christi/compliance
 
 ## EHR/Admin inventory (30 Oct, report only)
+- [ ] R53 tile follow-up (1 Nov 11:50 CT): changes implemented; first units 3,852/3,853, superseded chain regression reconciled under standing OK once; stopped on protected `rescreenDashboardR53p2.test.ts:80` actor `name` type conflict pending approval. Full rerun, clinician browsers and screenshot not run; report: docs/rescreen-cadence-report.md.
 - [x] docs/ehr-admin-inventory.md written (sections 1–10; "needs check" items listed at end)
 - [ ] Cleanup batches 1–11 from section 7 — not started, awaiting Mitch's walkthrough
 

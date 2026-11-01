@@ -125,3 +125,18 @@ R53 part 2 is **done**: units 3,838/3,838; dashboard/chart browsers 31/32 (only 
 - Christi/Dr. Bagga: review the Draft 7-day resend window and cadence-step notes; part 1 items remain (90-day intervals, HRSN member-update signal **needs check**).
 - Mitch: an open automatic member prompt counts as "Requested" and disables Send for 7 days — confirm, or allow staff re-send over it. "Overdue N days" wording kept per this batch (Voice rule otherwise prefers "Due N days ago").
 - R48 production scheduler (from part 1). Known triage #7, #13, #16, #20 unchanged.
+
+## Part 2 follow-up — approved 1 Nov 11:50 CT
+
+Draft — pending clinical sign-off. No publication, persistence, Supabase, permission or snapshot changes. Dashboard count, access gates, scoring and registry actions remain unchanged.
+
+- Inspection: `automaticRescreen` already identifies automatic tasks; `sendRescreenTask` creates a staff task without that flag and the existing member projection exposes staff requests immediately. No store change is needed.
+- Scope: only staff sends start the 7-day tile disable; automatic-only requests show enabled **Send now**. Requested chips identify automatic/staff provenance and age. Past-due tile/detail wording changes to **Due N days ago**, with **Due** retained today.
+- Verification and exact-once reconciliation: pending; results recorded below as available.
+- Implementation: shared `rescreenInstrumentView` now prioritizes the latest open staff request over automatic requests, so automatic-only chips leave **Send now** enabled and cannot reset a staff cooldown. Both the tile and non-clinician Needs my action detail use the same wording. No UI host/store/role changes.
+- New hash-checked exact-once approval: `rescreenTileFollowupNov01Approved.ts` + immutable fixture, chained immediately after `rescreenTileNov01Approved.ts`. Only three protected expected label strings and their test name are reconciled through this new pin; all other prior assertions remain unchanged. Own regression verifies exact application, final chain, drift/reapplication refusal and narrow test edits. Standing OK not used so far.
+- First full units: **3,852 passed / 1 failed (3,853 total; 442 files)**, exit 1, 214.44s. Sole failure: `rescreenTileNov01Approved.test.ts:16` expects the previous outermost chain anchor. All six new behavior tests and five new approval tests passed. Log: `docs/evidence/rescreen-cadence/followup-units.log`.
+- **Standing OK used once:** the earlier tile approval's chain-anchor regression now reads the immutable pre-follow-up chain fixture. Its direct adapter apply, live pinned-source equality, drift and reapplication checks are unchanged; the new follow-up regression checks the final live chain. No adapter logic or prior fixture changed.
+- **STOP — additional protected type conflict:** preview typecheck reports `src/lib/__tests__/rescreenDashboardR53p2.test.ts:80`: the existing `runAction` actor literal includes `name`, which is not a `RunActor` property. This line is byte-identical to the prior test; removing/changing it is outside this approval's three expected-label strings. It remains untouched pending approval. The same issue in the newly added test was corrected (own new test only).
+- Full-unit rerun, requested clinician/dashboard browsers and screenshot are **not run after this stop**. No browser failure is claimed or added to the triage list; prior triage remains unchanged. Preview is not green until the protected type conflict is resolved.
+- These two follow-up decisions resolve the previous Mitch questions about automatic prompts and overdue wording; clinical cadence/resend review, HRSN signal and R48 scheduler remain open. No publication or persistence/Supabase/permission/snapshot changes.

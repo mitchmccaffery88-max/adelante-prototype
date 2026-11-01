@@ -27,7 +27,7 @@ export interface RescreenInstrumentView {
   previousScore?: number;
   incomplete: boolean;
   cadenceNote: string;
-  sendLabel: "Send" | "Send again" | "Sent";
+  sendLabel: "Send" | "Send now" | "Send again" | "Sent";
   sendEnabled: boolean;
 }
 export interface RescreenPatientRow {
@@ -52,15 +52,18 @@ export function rescreenInstrumentView(p: Pick<Patient, "screenerHistory" | "scr
   const [last, previous] = scoredResults(p, key);
   const incomplete = [...(p.incompleteScreeners ?? [])].filter((r) => r.key === key).sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
   const newerIncomplete = !!incomplete && (!last || incomplete.completedAt > last.completedAt);
-  const request = (p.tasks ?? []).filter((t) => t.kind === "rescreen" && !t.completedAt && t.screenerKey === key && !!t.createdAt).sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))[0];
+  const requests = (p.tasks ?? []).filter((t) => t.kind === "rescreen" && !t.completedAt && t.screenerKey === key && !!t.createdAt).sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  // An automatic prompt cannot replace a care-team request or start its cooldown.
+  const staffRequest = requests.find((t) => !t.automaticRescreen);
+  const request = staffRequest ?? requests[0];
   const requestedDays = request?.createdAt ? Math.max(0, Math.floor((now - Date.parse(request.createdAt)) / DAY)) : undefined;
   const overdueDays = Math.max(0, due.daysSinceLast - due.cadenceStep);
   const chipState: RescreenChipState = requestedDays !== undefined ? "requested" : overdueDays > 0 ? "overdue" : "due";
-  const chipText = chipState === "requested" ? (requestedDays === 0 ? "Requested today" : `Requested ${plural(requestedDays!, "day")} ago`) : chipState === "overdue" ? `Overdue ${plural(overdueDays, "day")}` : "Due";
+  const chipText = requestedDays !== undefined ? `Requested ${request?.automaticRescreen ? "automatically" : "by staff"} ${plural(requestedDays, "day")} ago` : chipState === "overdue" ? `Due ${plural(overdueDays, "day")} ago` : "Due";
   const est = last ? estimateLabel(last) : "";
-  const lastText = newerIncomplete ? `Incomplete · ${answeredLabel(incomplete!)}` : last ? `${last.score}${est ? ` · ${est}` : ""}` : undefined;
+  const lastText = newerIncomplete && incomplete ? `Incomplete · ${answeredLabel(incomplete)}` : last ? `${last.score}${est ? ` · ${est}` : ""}` : undefined;
   const trend = !newerIncomplete && last && previous ? (last.score > previous.score ? "up" : last.score < previous.score ? "down" : "same") : undefined;
-  const sendEnabled = requestedDays === undefined || requestedDays >= RESCREEN_RESEND_DAYS;
+  const sendEnabled = !staffRequest || requestedDays === undefined || requestedDays >= RESCREEN_RESEND_DAYS;
   return {
     key,
     label: instrumentLabel(key),
@@ -68,10 +71,10 @@ export function rescreenInstrumentView(p: Pick<Patient, "screenerHistory" | "scr
     chipText,
     lastText,
     trend,
-    previousScore: trend ? previous!.score : undefined,
+    previousScore: trend ? previous?.score : undefined,
     incomplete: newerIncomplete,
     cadenceNote: `${due.cadenceStep}-day step`,
-    sendLabel: requestedDays === undefined ? "Send" : sendEnabled ? "Send again" : "Sent",
+    sendLabel: requestedDays === undefined ? "Send" : !staffRequest ? "Send now" : sendEnabled ? "Send again" : "Sent",
     sendEnabled,
   };
 }

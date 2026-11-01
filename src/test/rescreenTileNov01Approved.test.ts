@@ -12,7 +12,10 @@ describe("R53 part 2 tile exact-once approval", () => {
   });
   it("leaves other files untouched", () => expect(withApprovedRescreenTileNov01("src/lib/ehr.ts", "x")).toBe("x"));
   it("is chained last, after the R53 reconcile re-pin", () => {
-    const chain = readFileSync("src/test/credentialingOct27Approved.ts", "utf8");
+    // Standing OK (Mitch, 1 Nov): the later approved follow-up supersedes
+    // this chain anchor only. Verify the immutable prior chain here; the
+    // follow-up regression verifies the live final chain and both source hashes.
+    const chain = readFileSync("src/test/rescreenTileFollowupNov01ChainPrior.fixture.txt", "utf8");
     expect(chain).toContain("return withApprovedRescreenTileNov01(path, withApprovedRescreenCadenceReconcileNov01(path,");
   });
 });
