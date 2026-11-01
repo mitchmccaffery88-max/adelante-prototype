@@ -156,3 +156,26 @@ Evidence: `quick-flow-readback.json` (joint actor/preference/default/options/DOM
 Browser specs combined: **0 passed / 2 failed**, both already in this triage list; no new failure. No full/public suite requested or run. #16 stopped at its required missing-fixture assertion with no later changes. #20 cause is now confirmed; proposed test-only fix remains unapplied. Full units were run after the only test/adapter changes and before serial browser runs; subsequent work changed docs/evidence only. Latest preview signal: build OK.
 
 **Part 4 run/report scope done. Still open:** #16 needs an existing eligible Today/closed off-team fixture before its later gate assertions can run (no seed/visit fabricated); #20 proposed host-navigation test fix requires approval; remaining known browser failures stay unwaived. Prior Christi/Dr. Bagga Draft clinical reviews and State/CalOMS estimate allowance **needs check** remain unchanged. Persistence OFF; no product, Supabase, permission/snapshot, booking, access or role-rule changes; nothing published.
+
+## Part 5 — 31 Oct (Mitch approved 18:25 CT; run 1 Nov)
+
+Draft. Test-only #20 fix and demo-data-only #16 fix. No product logic, Supabase, permission/snapshot, booking, access or role-rule changes. Fictional demo data only. Nothing published; persistence OFF. Browser runs: project build v1194 (`/tmp/pw1194`, system libraries on `LD_LIBRARY_PATH`), `--workers=1`, `E2E_BASE_URL=http://localhost:8080`. Evidence `docs/evidence/triage-part5/`.
+
+**A. #20 — applied, PASSES.** `e2e/quickActionsBatch4.spec.ts`: after the therapist acting-role assertion the test waits for the existing role-home navigation (`/my-work`), returns with the existing `__adelante.go("/clinician-profile")`, waits for `quick-action-settings`, keeps the original `pref-progress_note` visible and `pref-consent_form_author` zero checks byte-identical, then checks the ordered rendered `pref-*` IDs equal the in-page `quickActionsFor(actor)` projection. Written through new `src/test/browserTriagePart5Oct31Approved.ts` (+ fixture) chained after `browserTriagePart4Oct31Approved.ts`; full prior/replacement hashes; regression `browserTriagePart5Oct31Approved.test.ts` checks exact apply, drift refusal, reapplication refusal and Part 4 pass-through. Browser triage adapter tests 4 files passed. Spec result: **passed** (log `specs-16-20.log`).
+
+**B. #16 — demo seed changed; prerequisite still missing today because 1 Nov is a Sunday.** `src/lib/demoInboxSeed.ts` (not pinned by any adapter/test path, so no re-pin needed): Rosa's staff-cancelled late visit now asks the real availability finder (`availableSlots`, today only, conflicts skipped, future only) for c1 (Marisol Reyes, `s-th1`), books it through `bookAppointment` and late-cancels it through `staffCancelAppointment` (same reason, actor, duration, service, modality). If no c1 slot is left today, the original tomorrow-morning visit is booked unchanged — no booking-rule relaxation, no past visit, no direct record writes. Rosa stays off-team for `s-th1`. c1's calendar is Mon/Wed/Fri only, so on this run (Sunday 1 Nov) the fallback applied and the spec reports the approved message: “fixture prerequisite missing: Today/closed has no eligible off-team reason-gated visit for s-th1; closed visits: none”. New unit test `demoLateCancelTodayPart5.test.ts` (fake clock) proves both paths: Wednesday 09:30 PT → visit later today on c1, late-cancel, in `scheduleSegments(...).closed`, Rosa not on s-th1's care team; Sunday → nothing today, late cancel still seeded. **2/2 passed.** The browser spec should be re-run on a Mon/Wed/Fri before c1's last slot (Wed 16:00, Mon 16:00, Fri 12:00 Pacific).
+
+**Scope check (old tomorrow visit):** no unit test, count or dashboard number referenced the tomorrow date; `cancelNoShow` reporting asserts `lateCancels > 0` only (still true on both paths). Only the visit's day/calendar moves on working days. Nothing to stop on.
+
+**C. Validation.**
+| Run | Result | Triage |
+|---|---|---|
+| Full units (after seed + #20 changes) | 3,840/3,840, 439 files (`units.log`) | — |
+| Part 5 focused unit tests | 2/2 + adapter chain 4 files passed | — |
+| #16 + #20 specs | 1/2 — #16 prerequisite missing (Sunday, above) | #16 known |
+| calendars, continuity, crossRoleJourneys, escalationsMessaging, roleDashboards9c, staffShell8a2 | 23/23 (`specs-related-a.log`) | — |
+| coordinatorEmergencyP2, queueTables8b2, remainingQueueTables8b2, statTiles9a3, quickActionsBatch3 | 18/19 — `statTiles9a3.spec.ts:39` (billing) 30s test timeout | **Not on triage list**; standalone 3/3 passed (`statTiles-billing-rerun1–3.log`); seed path was identical to the old one today, so not caused by this batch |
+
+**Standing OK uses:** none this batch.
+
+**Still open:** #16 re-run on a c1 working day; `statTiles9a3:39` one-off timeout (report-only, no change); #7/#13 known failures unchanged; Christi/Dr. Bagga Draft reviews and State/CalOMS “needs check” unchanged.
