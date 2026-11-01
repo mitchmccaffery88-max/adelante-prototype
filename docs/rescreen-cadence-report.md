@@ -70,3 +70,58 @@ R53 part 1 is **done** apart from the items below:
 - Christi: confirm the 90-day intervals (AUDIT/DAST, PC-PTSD-5, HRSN reentry) and the HRSN member-update signal (**needs check**).
 - R48: production scheduler for exact-day reminders and the day-10 task.
 - Known triage failures #7 and #13 unchanged.
+
+## Part 2 — dashboard tile (Mitch, decided 31 Oct 16:36 CT; started 1 Nov)
+
+Draft — pending clinical sign-off. No publishing, persistence, Supabase, permission or snapshot changes.
+
+### Inspection (before changes)
+
+- Clinician workspace Today tiles come from `workspaceTileOrder` (`src/lib/clinicianWorkspace.ts`): clinician roles (therapist, PMHNP, physician and other non-care, non-coordinator roles) render **4 tiles** — Schedule, Needs my action, My caseload, Requests & booking. Care roles render 3 (Needs my action, Scheduling, My caseload); coordinators render 3 (Coordinator queue, Scheduling, Needs my action).
+- Screener rows today: `workspaceActionRows` adds one `screener` row per due instrument from `screenerDueRows(myCaseload(actor), { role })`; the same rows feed `attentionCaseload` (caseload badges). `screenerDueRows` already removes AUDIT/DAST per patient when the viewer's `screeners_sud` gate does not resolve.
+- Pinned files touched by this batch: `clinicianWorkspace.ts` (byte check through the credentialing chain), `WorkspaceDashboard.tsx` (binding inventory in `roleDashboardParity9c2`), `RecordTabs.tsx` (Tracking instrument filter). `workspaceTileOrder` has an existing exact assertion, so it stays unchanged; the new tile is added beside it.
+
+### Implementation
+
+- New pure projection `src/lib/rescreenDashboard.ts` groups `screenerDueRows` (existing per-patient `screeners_sud` gate) into one row per patient: chip "Due" / "Overdue N days" / "Requested N days ago"; last scored result with `estimateLabel` and trend arrow vs the previous scored result; a newer incomplete submission shows "Incomplete · A of S answered" instead; cadence step from `SCREENER_CADENCE` ("30-day step", Draft). Send is disabled for 7 days after a request, then "Send again" (Draft).
+- New `src/components/clinician/RescreenDueTile.tsx`: tile rendered right after Needs my action for clinician roles (`rescreenTileRole`: not care, not coordinator); "Send" and "Send all due" run the existing `rescreen_send` once per visible instrument (no batch action, no new permission). Chips open `/record/$patientId?section=tracking#instrument=<key>` through the existing chart entry/reason gate; Tracking preselects that instrument only if it is a visible row. Keyboard-reachable buttons with screen-reader labels on every chip and button. Empty state "No re-screens due on your caseload."
+- Other roles keep screener rows in Needs my action with the same chip/score/cadence detail under the row (existing action button unchanged).
+- **Tile count:** clinician Today **4 → 5** (Schedule, Needs my action, Re-screens due, My caseload, Requests & booking). Care roles and coordinators unchanged at 3. `workspaceTileOrder` untouched; `workspaceTodayTiles` reports the rendered set.
+- Clinician screener rows removed from Needs my action; caseload badges still include them (`attentionCaseload`). Minor: badge order for those rows may differ (they are appended).
+- Pinned files changed only through new exact-once re-pin `src/test/rescreenTileNov01Approved.ts` + fixture (clinicianWorkspace.ts, WorkspaceDashboard.tsx, RecordTabs.tsx), chained last in `credentialingOct27Approved.ts` after the R53 reconcile; own regression (exact apply, drift, reapplication, chain) passes. `WorkspaceDashboard.tsx` binding inventory unchanged. Standing OK **not used** in this batch. No existing test edited; no snapshot or permission row changed.
+- `RescreenDuePanel` left in place (removal in EHR/Admin cleanup batch 3).
+- Wording note for Mitch: "Overdue N days" follows this batch's instruction; the Voice rule otherwise prefers "Due N days ago". Kept as instructed.
+- New unit tests `src/lib/__tests__/rescreenDashboardR53p2.test.ts`: 12/12.
+- **Full units: 3,838/3,838 passed, 438 files** (exit 0).
+
+### Walkthrough (synthetic demo data via real store writers, in-memory session; `docs/evidence/rescreen-cadence/`)
+
+- Therapist s-th1 Today tiles rendered: Schedule, Needs my action, **Re-screens due**, My caseload, Requests & booking (5). Needs my action had **0** screener rows for the therapist.
+- `p2_1_tile_1280.png`, `p2_2_tile_390.png`: tile at 1280 and 390 (tile 358px wide, page 390px — no sideways scroll). Daniel M. (p1) shows AUDIT · Overdue 10 days (Last 4), GAD-7 "Last: Incomplete · 5 of 7 answered", PHQ-9 "Last: 14 · Estimated (1 item missing)" with an up arrow (from 10).
+- `p2_3a_therapist_part2_p1.png`: therapist (Part 2 access resolves for p1) sees the AUDIT chip and score.
+- `p2_3b_no_part2_role_p1.png`: ECM provider s-cm2 (no `screeners_sud` for p1; not a tile role) — no Re-screens due tile; Needs my action keeps p1's PHQ-9/GAD-7 rows with the same chip/score/cadence detail; no AUDIT chip, score or stub for p1.
+- `p2_4_after_send.png`: therapist pressed Send on p1's AUDIT → chip "AUDIT · Requested today", button "Sent" (disabled).
+- `p2_5_chip_opens_tracking.png`: chip opened `/record/p1?section=tracking#instrument=audit`; Tracking instrument filter preselected **AUDIT**.
+- Observed: PHQ-9/GAD-7 already showed "Requested today" because the part-1 app-open sweep had just created the automatic member prompt; an open automatic prompt counts as a request, so Send stays disabled for 7 days. Flag for Mitch if staff should be able to re-send over an automatic prompt.
+- My first walkthrough seed for an incomplete GAD-7 omitted two required record fields and the chart Tracking page failed to render it; corrected the seed (test data only). Real writers always set those fields.
+
+### Browser environment (this run)
+
+- Project expects Playwright 1.56 chromium **build v1194 (Chromium 141.0.7390.37)**. The sandbox ships only v1217. Downloaded v1194 into `/tmp/pw-1194` (temporary; no project/config change) and ran it with the sandbox's system libraries on `LD_LIBRARY_PATH`. All browser suites below use v1194, `--workers=1`, against the running preview on :8080 (`E2E_BASE_URL`).
+
+### Browser results
+
+- **Clinician dashboard/workspace + chart specs** (`roleDashboards9c`, `chartFoundation9b`, `escalationsMessaging`, `crossRoleJourneys`, `overflow9c`, `hydrationStaff8c2`, `accessClickThroughOct29`; v1194, one worker): **31/32 passed**, 7.0m. Sole failure `accessClickThroughOct29.spec.ts:3` — "fixture prerequisite missing: Today/closed has no eligible off-team reason-gated visit for s-th1" — **known triage #16** (unchanged by this batch). `roleDashboards9c` (incl. therapist axe check on the staff shell with the new tile, 390/1280 above-fold) and `overflow9c` passed. Log `docs/evidence/rescreen-cadence/p2-staff.log`.
+- **Public suite** (9 public/website specs, v1194, one worker): **53/53 passed**, 14.0m, exit 0. Log `docs/evidence/rescreen-cadence/p2-public.log`.
+
+### Report only — "Back to top" (`scrollY = 1`)
+
+- On the project's expected browser (v1194, Chromium 141) the three checks — `websiteDaylight.spec.ts:7` at 1280 and 390, `websitePolish.spec.ts:14` on `/team` — **did not reproduce**; all passed. No test or code changed.
+- Likely cause: the previous run used a substituted Chromium 147 build, whose scroll-to-top settles at a fractional/rounded position (1px) under this headless setup. Browser-build difference, not a website regression. Recommend not adding them to the triage list; keep runs on v1194.
+
+### Status
+
+R53 part 2 is **done**: units 3,838/3,838; dashboard/chart browsers 31/32 (only known #16); public 53/53. Still open:
+- Christi/Dr. Bagga: review the Draft 7-day resend window and cadence-step notes; part 1 items remain (90-day intervals, HRSN member-update signal **needs check**).
+- Mitch: an open automatic member prompt counts as "Requested" and disables Send for 7 days — confirm, or allow staff re-send over it. "Overdue N days" wording kept per this batch (Voice rule otherwise prefers "Due N days ago").
+- R48 production scheduler (from part 1). Known triage #7, #13, #16, #20 unchanged.

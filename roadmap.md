@@ -1,5 +1,6 @@
 # Roadmap
-- [x] R53 part 1 re-screen cadence + member auto-prompts — done 1 Nov (units 3,821/3,821). Open: 3 new public Back-to-top failures (scrollY 1, not on triage list); Christi 90-day intervals + HRSN signal; R48 production scheduler. Part 2 dashboard tile not started.
+- [x] R53 part 1 re-screen cadence + member auto-prompts — done 1 Nov (units 3,821/3,821). Open: Christi 90-day intervals + HRSN signal; R48 production scheduler. Part 2 dashboard tile: see next line.
+- [x] R53 part 2 clinician Re-screens due tile — done 1 Nov (units 3,838/3,838; dashboard browsers 31/32, only known #16; public 53/53 on v1194, Back-to-top did not reproduce). Open: Christi/Dr. Bagga review of Draft 7-day resend; Mitch: re-send over an automatic member prompt?
 - [x] 31 Oct triage Part 4 run/report done: #16 exact-once projection re-pin; units 3,771/3,771; browsers 0/2, both known (#16 missing eligible Today/closed fixture; #20 confirmed role-home navigation unmounts settings). Open: #16 fixture prerequisite and #20 test-only return-to-settings proposal awaiting approval; no product/permission changes. Evidence/report: docs/browser-triage-oct30.md Part 4.
 - [x] 31 Oct R5 verification / browser triage Part 3 done: units 3,763/3,763; Part 3 11/11; public 53/53; screener sets 9/10 (#13) and 8/10 (#7/#13), both known. Open: #16 test-only fix pending approval; #20 cause unconfirmed; remaining known browser failures unwaived; Christi/Dr. Bagga clinical review; State/CalOMS estimate allowance needs check.
 

@@ -3265,6 +3265,13 @@ function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole
   const [to, setTo] = useState("");
   const all = buildTrackingRows(patient, role);
   const instruments = Array.from(new Set(all.map((r) => r.label))).sort();
+  // R53 part 2 — a Re-screens due chip opens Tracking at its instrument (#instrument=<key>); only visible rows match.
+  useEffect(() => {
+    const want = /instrument=([^&]+)/.exec(window.location.hash)?.[1];
+    const label = want ? all.find((r) => r.key === decodeURIComponent(want))?.label : undefined;
+    if (label) setInstrument(label);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patient.id]);
   const rows = filterTrackingRows(all, {
     instrument: instrument === "all" ? undefined : instrument,
     status,

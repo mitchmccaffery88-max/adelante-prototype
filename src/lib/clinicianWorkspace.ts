@@ -48,6 +48,14 @@ export interface WorkspaceActionRow {
 const CARE_ROLES: readonly StaffRole[] = ["ecm_provider", "cf_care_manager", "peer_specialist", "community_health_worker"];
 export const isCareRole = (role: StaffRole) => CARE_ROLES.includes(role);
 export const isCoordinatorRole = (role: StaffRole) => role === "clinical_coordinator" || role === "sys_admin";
+/** R53 part 2 (Draft — pending clinical sign-off): clinician workspaces show screener rows in the Re-screens due tile. */
+export const rescreenTileRole = (role: StaffRole) => !isCoordinatorRole(role) && !isCareRole(role);
+/** Today tiles as rendered (Today 4–6 tile rule): existing order plus Re-screens due after Needs my action. */
+export function workspaceTodayTiles(role: StaffRole): (WorkspaceTileId | "rescreens")[] {
+  const order: (WorkspaceTileId | "rescreens")[] = [...workspaceTileOrder(role)];
+  if (rescreenTileRole(role)) order.splice(order.indexOf("actions") + 1, 0, "rescreens");
+  return order;
+}
 
 export function workspaceTileOrder(role: StaffRole): WorkspaceTileId[] {
   // §Scheduling S4 — coordination roles schedule from the Scheduling tile
@@ -134,7 +142,7 @@ export function workspaceActionRows(input: {
     const label = owned ? "Crisis follow-up — yours" : pool ? "Crisis follow-up — coordinator pool" : `Crisis follow-up needed — owner ${e.ownerName ?? "assigned"}`;
     rows.push({ id: `crisis:${e.id}`, kind: "crisis", patientId: c.patient.id, patientName: `${c.patient.firstName} ${c.patient.lastName}`, label, dueAt: e.lastTriggeredAt ?? e.triggeredAt, due: countdown, group: "now", action: coord && !owned ? "Reassign" : "Open crisis", sourceId: e.id });
   }
-  for (const r of screenerDueRows(mine, { role: actor.role }))
+  if (!rescreenTileRole(actor.role)) for (const r of screenerDueRows(mine, { role: actor.role }))
     push({ id: `screener:${r.patientId}:${r.screenerKey}`, kind: "screener", patientId: r.patientId, patientName: r.patientName, label: `${r.screenerKey.toUpperCase()} re-screen`, dueAt: now.toISOString(), action: r.taskAlreadySent ? "Open chart" : "Send re-screen", sourceId: r.screenerKey });
   for (const r of asamTaskRows(actor.role, now) ?? []) {
     if (!mineIds.has(r.patientId)) continue;
@@ -243,7 +251,10 @@ export function workspaceActionRows(input: {
 
 export function attentionCaseload(actor: ActingIdentity & { role: StaffRole }, rows: WorkspaceActionRow[]) {
   const byPatient = new Map<string, WorkspaceActionRow[]>();
-  for (const r of rows) byPatient.set(r.patientId, [...(byPatient.get(r.patientId) ?? []), r]);
+  // R53 part 2 — screener rows moved to the Re-screens due tile; caseload badges keep them.
+  const now = new Date();
+  const badges = rescreenTileRole(actor.role) ? [...rows, ...screenerDueRows(myCaseload(actor), { role: actor.role }).map((r): WorkspaceActionRow => ({ id: `screener:${r.patientId}:${r.screenerKey}`, kind: "screener", patientId: r.patientId, patientName: r.patientName, label: `${r.screenerKey.toUpperCase()} re-screen`, dueAt: now.toISOString(), group: groupFor(now.toISOString(), now), due: dueText(now.toISOString(), now), action: r.taskAlreadySent ? "Open chart" : "Send re-screen", sourceId: r.screenerKey }))] : rows;
+  for (const r of badges) byPatient.set(r.patientId, [...(byPatient.get(r.patientId) ?? []), r]);
   return myCaseload(actor).map((patient) => ({ patient, reasons: byPatient.get(patient.id) ?? [] })).sort((a, b) => b.reasons.length - a.reasons.length || a.patient.lastName.localeCompare(b.patient.lastName));
 }
 
