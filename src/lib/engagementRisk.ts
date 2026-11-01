@@ -59,7 +59,7 @@ export function evaluateEngagement(facts: EngagementFacts, now: number): Engagem
   if (hrsn?.domains?.some(d => d.key === 'food' && d.positive) && domainOpen('food', 'Food insecurity')) add('food', 'food need');
   if (items.some(i => i.need === 'Phone or internet' && i.source === 'intake_self_report' && unresolved(i))) add('phoneData', 'phone or data need');
   const history = [...(p.screenerHistory ?? []), ...Object.values(p.screeners).filter((r): r is NonNullable<typeof r> => !!r)];
-  if ((p.tasks ?? []).some(t => t.kind === 'rescreen' && !t.completedAt && t.screenerKey && t.screenerKey !== 'cssrs' && inWindow(t.createdAt, now, Infinity) && now - Date.parse(t.createdAt) >= ENGAGEMENT_SETTINGS.rescreen.days * DAY && (lastScoredAt(t.screenerKey, history) ?? -Infinity) < Date.parse(t.createdAt))) add('rescreen', 'screening follow-up waiting');
+  if ((p.tasks ?? []).some(t => t.kind === 'rescreen' && !t.completedAt && t.screenerKey && !['cssrs', 'c-ssrs-screener'].includes(t.screenerKey) && inWindow(t.createdAt, now, Infinity) && now - Date.parse(t.createdAt) >= ENGAGEMENT_SETTINGS.rescreen.days * DAY && (lastScoredAt(t.screenerKey, history) ?? -Infinity) < Date.parse(t.createdAt))) add('rescreen', 'screening follow-up waiting');
   const c = p.coverage;
   if (c?.status && (['uninsured'].includes(c.status) || ((!c.coverageType || ['medi_cal', 'dual'].includes(c.coverageType)) && (c.status === 'suspended' || (c.verified === 'pending' && c.status !== 'not_applicable'))))) add('coverage', 'coverage gap');
   if (!signals.length) return undefined;
