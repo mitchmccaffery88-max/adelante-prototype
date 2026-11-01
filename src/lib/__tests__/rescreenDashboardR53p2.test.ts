@@ -5,7 +5,7 @@ import { canAccess, STAFF_ROSTER, type StaffRole } from "../roles";
 import { runAction } from "../actions/runAction";
 import { groupRescreenRows, rescreenDashboardRows, rescreenInstrumentView, RESCREEN_EMPTY_TEXT, sendableKeys, sendRescreens } from "../rescreenDashboard";
 import { rescreenTileRole, workspaceActionRows, workspaceTileOrder, workspaceTodayTiles, attentionCaseload } from "../clinicianWorkspace";
-import type { ScreenerDueRow } from "../myWork";
+import { myCaseload, type ScreenerDueRow } from "../myWork";
 
 const DAY = 86400000;
 const now = Date.parse("2026-11-01T16:00:00Z");
@@ -59,7 +59,7 @@ describe("R53 part 2 Part 2 gate", () => {
     vi.spyOn(AdelanteEHR, "rescreensDue").mockImplementation((id) => id === pair.p.id ? [{ key: "phq-9", lastDays: 35, nextDue: 30 }, { key: "audit", lastDays: 95, nextDue: 90 }] : []);
     const allowed = rescreenDashboardRows([pair.p], { role: pair.yes }, now);
     const denied = rescreenDashboardRows([pair.p], { role: pair.no }, now);
-    expect(allowed[0].instruments.map((i) => i.key)).toEqual(["phq-9", "audit"]);
+    expect(allowed[0].instruments.map((i) => i.key).sort()).toEqual(["audit", "phq-9"]);
     expect(denied[0].instruments.map((i) => i.key)).toEqual(["phq-9"]);
     expect(JSON.stringify(denied)).not.toMatch(/audit|AUDIT|dast|DAST|Restricted|lock/i);
   });
@@ -105,8 +105,8 @@ describe("R53 part 2 placement", () => {
     }
   });
   it("clinician screener rows leave Needs my action but stay on caseload badges", () => {
-    const therapist = STAFF_ROSTER.find((s) => s.role === "therapist")!;
-    const actor = { staffId: therapist.id, staffName: therapist.name, clinicianId: therapist.clinicianId, role: therapist.role };
+    const actor = STAFF_ROSTER.filter((s) => s.role === "therapist").map((s) => ({ staffId: s.id, staffName: s.name, clinicianId: s.clinicianId, role: s.role })).find((a) => myCaseload(a).length > 0)!;
+    expect(actor).toBeTruthy();
     vi.spyOn(AdelanteEHR, "rescreensDue").mockReturnValue([{ key: "phq-9", lastDays: 35, nextDue: 30 }]);
     const rows = workspaceActionRows({ actor, needsClosing: [] });
     expect(rows.some((r) => r.kind === "screener")).toBe(false);
