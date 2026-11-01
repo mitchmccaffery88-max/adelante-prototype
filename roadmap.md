@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] R57 part 2 — staff-only caseload flags and engagement Close picker; demo dependency check, full units, requested one-worker browsers and five screenshots pending. No publication, persistence, Supabase, registry or permission changes.
 - [x] R57 part 1 done — engagement logic, engagement-only task close and event HRSN; units 3,929/3,929, approved 36 snapshot additions only. Part 2 staff surfaces, browsers and screenshots next; Christi Draft review/missing data and R54/R48 scheduler open. docs/engagement-risk-report.md; no publication, persistence or Supabase changes.
 - [x] B5.0 content v2 inventory and mapping — done 1 Nov; docs/content-v2-plan.md covers schema, gates, file/pin/test plan, flag and R50/R51/R58 registry gaps; B5.1 not started; no source/test/Supabase changes.
 - [x] R53 part 1 re-screen cadence + member auto-prompts — done 1 Nov (units 3,821/3,821). Open: Christi 90-day intervals + HRSN signal; R48 production scheduler. Part 2 dashboard tile: see next line.

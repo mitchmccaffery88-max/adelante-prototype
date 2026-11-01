@@ -113,3 +113,8 @@ Snapshot update is pending; only these 36 additive rows are approved.
 - Closure notes are stored only on the task (maximum 280 characters); audit records actor, outcome and note presence, not its body. The four approved outcomes are the only accepted values.
 
 - Final preview diagnostics: **build OK**, 1 Nov 23:14:49 UTC; type checks clean after both recorded type-only reconciliations.
+
+## Part 2 — staff surfaces (1 Nov approval)
+
+- Started from the completed part 1 checkpoint. Scope: caller-gated staff caseload badges/reasons and engagement-only Close picker using the existing registry action; other task controls remain unchanged. No registry, permission, snapshot, Supabase, publication or persistence changes.
+- Demo real-path dependency investigation is in progress before changing any fictional records. Existing source/test pins remain protected through a new exact-once adapter chained after the latest R57 adapter. Units precede requested one-worker browser suites; part 2 results and evidence will be recorded here as obtained.
