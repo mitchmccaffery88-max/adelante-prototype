@@ -62,3 +62,36 @@ The completion-action blocker is resolved by Mitch's scoped approval. This part 
 - Disconnected phone / confirmed SMS undeliverable: needs structured data; do not infer from simulated delivery failure text.
 - Uncaptured phone/data need and absent coverage: needs data, skipped.
 - R54/R48 production scheduler: app-open sweeps cannot guarantee timing or delivery.
+## Part 1 implementation checkpoint
+
+- Pure settings/evaluator and metadata-only outreach projection built; **18/18** pure rule tests passed. Housing requires the living-situation item (quality-only positive is excluded). Only completed needs resolve a signal; not_completed means unresolved. Safety domains/items never enter stored flags or event reasons.
+- Real registry automation/close checks: **33/33** passed. Elevated task dedupe, Watch-without-task, clearing audit with open task retained, all four outcomes and actor provenance, chart/ownership refusals and patient/advocate denial verified. Audit keeps outcome/actor and note-presence only, never optional note body or message content.
+- Exact-once R57 adapter after rescreenTileActorNov01Approved: **8/8** passed. Approved source targets: ehr.ts, chartActions.ts, useReminderSweep.ts. Existing task completion and all staff UI untouched.
+- Event triggers derive real history/appointment IDs and actual intake_self_report selection timestamps. Packet confirmations, disconnected phone and SMS delivery remain skipped. Deferred events remain pending through shared 7-day cap and 14-day completion skip; existing open HRSN consumes pending events without duplicate prompt.
+
+### Approved new permission rows — before snapshot update
+
+All values below are role-only registry availability, not chart/worklist/ownership grants. Store closure still requires chart entry, worklist **write**, matching assignment/claim and task discipline. Read-only worklist roles may have the approved registry row but cannot close through the store; no existing worklist grant changes.
+
+| Staff role | engagement_risk_automation | engagement_task_close |
+| --- | --- | --- |
+| ecm_provider | hidden | allowed |
+| cf_care_manager | hidden | allowed |
+| sud_counselor | hidden | allowed |
+| clinical_trainee | hidden | allowed |
+| medical_assistant | hidden | hidden |
+| peer_specialist | hidden | allowed |
+| community_health_worker | hidden | allowed |
+| therapist | hidden | allowed |
+| physician | hidden | allowed |
+| pmhnp | hidden | allowed |
+| nurse_rn | hidden | allowed |
+| lvn | hidden | allowed |
+| billing | hidden | hidden |
+| clinical_coordinator | hidden | allowed |
+| intake_coordinator | hidden | hidden |
+| credentialing_coordinator | hidden | hidden |
+| billing_coordinator | hidden | hidden |
+| sys_admin | hidden | hidden |
+
+Snapshot update is pending; only these 36 additive rows are approved.
