@@ -93,3 +93,14 @@ Draft — pending clinical sign-off. No publishing, persistence, Supabase, permi
 - Wording note for Mitch: "Overdue N days" follows this batch's instruction; the Voice rule otherwise prefers "Due N days ago". Kept as instructed.
 - New unit tests `src/lib/__tests__/rescreenDashboardR53p2.test.ts`: 12/12.
 - **Full units: 3,838/3,838 passed, 438 files** (exit 0).
+
+### Walkthrough (synthetic demo data via real store writers, in-memory session; `docs/evidence/rescreen-cadence/`)
+
+- Therapist s-th1 Today tiles rendered: Schedule, Needs my action, **Re-screens due**, My caseload, Requests & booking (5). Needs my action had **0** screener rows for the therapist.
+- `p2_1_tile_1280.png`, `p2_2_tile_390.png`: tile at 1280 and 390 (tile 358px wide, page 390px — no sideways scroll). Daniel M. (p1) shows AUDIT · Overdue 10 days (Last 4), GAD-7 "Last: Incomplete · 5 of 7 answered", PHQ-9 "Last: 14 · Estimated (1 item missing)" with an up arrow (from 10).
+- `p2_3a_therapist_part2_p1.png`: therapist (Part 2 access resolves for p1) sees the AUDIT chip and score.
+- `p2_3b_no_part2_role_p1.png`: ECM provider s-cm2 (no `screeners_sud` for p1; not a tile role) — no Re-screens due tile; Needs my action keeps p1's PHQ-9/GAD-7 rows with the same chip/score/cadence detail; no AUDIT chip, score or stub for p1.
+- `p2_4_after_send.png`: therapist pressed Send on p1's AUDIT → chip "AUDIT · Requested today", button "Sent" (disabled).
+- `p2_5_chip_opens_tracking.png`: chip opened `/record/p1?section=tracking#instrument=audit`; Tracking instrument filter preselected **AUDIT**.
+- Observed: PHQ-9/GAD-7 already showed "Requested today" because the part-1 app-open sweep had just created the automatic member prompt; an open automatic prompt counts as a request, so Send stays disabled for 7 days. Flag for Mitch if staff should be able to re-send over an automatic prompt.
+- My first walkthrough seed for an incomplete GAD-7 omitted two required record fields and the chart Tracking page failed to render it; corrected the seed (test data only). Real writers always set those fields.
