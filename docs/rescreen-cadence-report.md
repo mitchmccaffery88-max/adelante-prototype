@@ -55,3 +55,4 @@ Mitch, 31 Oct 2026, 16:36 CT. All new clinical rules: **Draft — pending clinic
 - Focused: 5 files, 50/50 passed.
 - **Full units: 3,821/3,821 passed, 436 files.**
 - Browser env note: sandbox browser build mismatch (needed v1194); installed into /tmp/pw2 only, no project/config changes. First launch attempt failed before any test ran.
+- **Member/clinician browsers** (`continuity`, `group2Pathways`, `advocateOnboardingActive`, `advocateSelfSeparation`, `chartFoundation9b`, `consentCaptureB2`, `roleDashboards9c`; `--workers=1`, :8080): **21/23 passed**, EXIT 1, 7.2m. Failures: `consentCaptureB2.spec.ts:46` (Purpose is now a select — **known triage #7**) and `group2Pathways.spec.ts:18` (chip "Re-entry" vs "Re-entry + SUD" — **known triage #13**). No new failures. Log `docs/evidence/rescreen-cadence/member-clinician.log`.
