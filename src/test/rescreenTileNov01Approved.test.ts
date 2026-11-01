@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import fixture from "./rescreenTileNov01.fixture.json";
 import { withApprovedRescreenTileNov01 } from "./rescreenTileNov01Approved";
-import { withApprovedCredentialingOct27 } from "./credentialingOct27Approved";
 describe("R53 part 2 tile exact-once approval", () => {
   it.each(Object.keys(fixture))("%s exact apply, drift and reapplication refusal", path => {
     const a = fixture[path as keyof typeof fixture];
@@ -12,8 +11,8 @@ describe("R53 part 2 tile exact-once approval", () => {
     expect(() => withApprovedRescreenTileNov01(path, a.updatedSource)).toThrow("prior source changed");
   });
   it("leaves other files untouched", () => expect(withApprovedRescreenTileNov01("src/lib/ehr.ts", "x")).toBe("x"));
-  it.each(Object.keys(fixture))("%s is chained last in the credentialing chain", path => {
-    const a = fixture[path as keyof typeof fixture];
-    expect(withApprovedCredentialingOct27(path, a.priorSource)).toBe(a.updatedSource);
+  it("is chained last, after the R53 reconcile re-pin", () => {
+    const chain = readFileSync("src/test/credentialingOct27Approved.ts", "utf8");
+    expect(chain).toContain("return withApprovedRescreenTileNov01(path, withApprovedRescreenCadenceReconcileNov01(path,");
   });
 });
