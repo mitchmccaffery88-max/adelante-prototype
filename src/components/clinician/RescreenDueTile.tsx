@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const chipStatus = (s: RescreenInstrumentView["chipState"]) => (s === "requested" ? "team" : "yourturn") as const;
+const chipStatus = (s: RescreenInstrumentView["chipState"]): "team" | "yourturn" => (s === "requested" ? "team" : "yourturn");
 
 function useOpenTracking() {
   const navigate = useNavigate();
