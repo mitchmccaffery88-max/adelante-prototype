@@ -34,6 +34,10 @@ Approved by Mitch, 1 Nov 2026. **Draft — pending clinical sign-off**; Christi 
 
 ## Results
 
+### Part 1 — option A approved 1 Nov, 16:55 CT
+
+The completion-action blocker is resolved by Mitch's scoped approval. This part builds logic, registry, the app-open sweep and unit tests only. No staff surface is mounted; part 2 owns badges/reasons, browsers and screenshots. Earlier stop findings below describe the pre-approval state, not the current scope. Disconnected phone, SMS undeliverable and packet-confirmation needs-change events remain **needs data** and skipped. No publication, persistence or Supabase changes.
+
 - Inventory completed before application changes. No invented signal fields or demo events.
 - **Mandatory stop before application changes:** the requested existing staff task-completion registry action does not exist. `chartActions.ts:897–903` (`task`) and `:960–968` (`dashboard_task`) register creation only (`createCaseTask`). Neither `completeCaseTask` nor `setWorklistStatus` nor `addCaseTaskNote` has a registry store reference. Existing `TaskWorkRow.tsx:170–177,290–296` calls completion/status/note stores directly; `RecordTabs.tsx:2188` also directly completes a case task. A second read-only investigation confirmed the missing registry path.
 - `ehr.ts:17230–17255` completes/reopens a worklist task without requiring or recording one of the four R57 outcomes. Reusing the direct call would violate registry-only writes and would allow completion without an outcome. Registering a new staff completion action requires additional permission-snapshot rows, outside the approval for **only** 18 hidden `engagement_risk_automation` rows. Attaching completion to an existing creation action would change its behavior and is not a safe substitute.
