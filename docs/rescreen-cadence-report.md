@@ -104,3 +104,7 @@ Draft — pending clinical sign-off. No publishing, persistence, Supabase, permi
 - `p2_5_chip_opens_tracking.png`: chip opened `/record/p1?section=tracking#instrument=audit`; Tracking instrument filter preselected **AUDIT**.
 - Observed: PHQ-9/GAD-7 already showed "Requested today" because the part-1 app-open sweep had just created the automatic member prompt; an open automatic prompt counts as a request, so Send stays disabled for 7 days. Flag for Mitch if staff should be able to re-send over an automatic prompt.
 - My first walkthrough seed for an incomplete GAD-7 omitted two required record fields and the chart Tracking page failed to render it; corrected the seed (test data only). Real writers always set those fields.
+
+### Browser environment (this run)
+
+- Project expects Playwright 1.56 chromium **build v1194 (Chromium 141.0.7390.37)**. The sandbox ships only v1217. Downloaded v1194 into `/tmp/pw-1194` (temporary; no project/config change) and ran it with the sandbox's system libraries on `LD_LIBRARY_PATH`. All browser suites below use v1194, `--workers=1`, against the running preview on :8080 (`E2E_BASE_URL`).
