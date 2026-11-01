@@ -71,7 +71,7 @@ describe('R57 registry automation and engagement-only close',()=>{
   const {p}=member();elevate(p);expect(sweep(p).ok).toBe(true);expect(p.tasks?.filter(t=>t.screenerKey==='ahc-hrsn')).toHaveLength(1);expect(sweep(p).ok).toBe(true);expect(p.tasks?.filter(t=>t.screenerKey==='ahc-hrsn')).toHaveLength(1);
  });
  it('message bodies are never read by the metadata projector',()=>{
-  const {p}=member();p.careMessages=[{id:'m',threadPatientId:p.id,authorType:'staff',authorName:'Staff',createdAt:new Date().toISOString(),get body(){throw new Error('Content read forbidden');}}];
+  const {p}=member();p.careMessages=[{id:'m',threadPatientId:p.id,authorType:'staff',authorName:'Staff',createdAt:new Date().toISOString(),get body(): string {throw new Error('Content read forbidden');}}];
   expect(engagementFacts(p).outreach).toEqual([{id:'m',at:new Date().toISOString(),kind:'staff_message'}]);
  });
 });

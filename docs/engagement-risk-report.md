@@ -95,3 +95,9 @@ All values below are role-only registry availability, not chart/worklist/ownersh
 | sys_admin | hidden | hidden |
 
 Snapshot update is pending; only these 36 additive rows are approved.
+
+### Snapshot and first full-unit result
+
+- Snapshot-only update via `vitest -u` on `src/lib/__tests__/runAction.test.ts`: **7/7 passed**; diff inspection found exactly **36 additive rows** (18 automation hidden, 18 close rows as tabled), zero changed existing rows/other actions.
+- First full suite: **3,913 passed / 4 failed (3,917 total)**. All four failures were earlier approved source/chain baseline regressions superseded by R57, not product assertions. Standing superseded-anchor OK used four times: `rescreenCadenceOct31Approved.test.ts:16` (ehr baseline), `rescreenCadenceFinishOct31Approved.test.ts:12` (chartActions baseline), `rescreenTileActorNov01Approved.test.ts:26` and `rescreenTileFollowupNov01Approved.test.ts:21` (prior chain). Immutable R57 prior sources/prior-chain fixture now reconcile only those baselines; adapter exact-apply/drift/reapplication checks remain.
+- Type-only standing OK used once: newly created R57 `engagementRiskAutomationR57.test.ts:74`, TS2322 inferred throwing getter as void versus CareMessage.body string. Added only `: string` return annotation; no assertion/input/expected/test-name change. All five changes pass through their own hash-checked exact-once reconciliation adapter/regression.

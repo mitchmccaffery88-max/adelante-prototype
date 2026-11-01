@@ -14,7 +14,7 @@ describe('R57 approved exact-once source changes', () => {
   it('chains immediately after the latest actor approval', () => {
     const chain = readFileSync('src/test/credentialingOct27Approved.ts', 'utf8');
     expect(chain).toContain('const r57Prior = withApprovedRescreenTileActorNov01(path,');
-    expect(chain).toContain('return withApprovedEngagementRiskNov01(path, r57Prior);');
+    expect(chain).toContain('const r57Result = withApprovedEngagementRiskNov01(path, r57Prior);');
   });
   it('unrelated source is unchanged', () => expect(withApprovedEngagementRiskNov01('src/lib/roles.ts', 'same')).toBe('same'));
 });
