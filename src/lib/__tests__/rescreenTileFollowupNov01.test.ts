@@ -47,7 +47,7 @@ describe("R53 tile follow-up rules", () => {
     const p = AdelanteEHR.listPatients().find(p => p.intakeCompletedAt);
     const actor = STAFF_ROSTER.find(s => s.role === "therapist");
     if (!p || !actor) throw new Error("Missing real-store prerequisites");
-    const result = runAction("rescreen_send", { role: actor.role, staffId: actor.id, name: actor.name }, p, { via: "sendRescreenTask", args: [p.id, "phq-9"] });
+    const result = runAction("rescreen_send", { role: actor.role, staffId: actor.id }, p, { via: "sendRescreenTask", args: [p.id, "phq-9"] });
     expect(result.ok).toBe(true);
     const updated = AdelanteEHR.getPatient(p.id);
     if (!updated) throw new Error("Patient disappeared after send");
