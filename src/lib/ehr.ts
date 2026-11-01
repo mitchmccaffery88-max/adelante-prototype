@@ -1,4 +1,6 @@
 import "./screenerIntake";
+import { ENGAGEMENT_OUTCOMES, ENGAGEMENT_TASK_TITLE, type EngagementOutcome } from "./engagementRisk";
+import { assertEngagementCloseGate, type EngagementActor } from "./engagementRiskBoundary";
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { disclose } from "./part2Disclosure";
 import { assertIntakeStagingBoundary } from "./intakeStagingBoundary";
@@ -4425,6 +4427,8 @@ export type CaseTaskOrigin =
   | "recovery_journey_review";
 
 export interface CaseTask {
+  /** R57 Draft — pending clinical sign-off; engagement-only closure provenance. */
+  engagementClosure?: { outcome: EngagementOutcome; actorId: string; actorRole: StaffRole; at: string; note?: string };
   id: string;
   patientId: string;
   assignedTo: string; // caseManagerId
@@ -17092,6 +17096,31 @@ export const AdelanteEHR = {
     });
     emit();
     return task;
+  },
+  /** R57 Draft — pending clinical sign-off; no other completion path changes. */
+  closeEngagementTask(input: { taskId: string; actor: EngagementActor; outcome: string; note?: string }) {
+    const t = caseTasks.find(t => t.id === input.taskId);
+    if (!t || t.sourceAutomationId !== "engagement_risk_automation" || t.source !== "engagement_risk_automation" || t.title !== ENGAGEMENT_TASK_TITLE) throw new Error("Only engagement automation tasks can use this close action.");
+    assertEngagementCloseGate(input.actor, t.id);
+    const outcome = ENGAGEMENT_OUTCOMES.find(o => o === input.outcome);
+    if (!outcome) throw new Error("Choose one engagement outcome.");
+    if (!input.actor.staffId) throw new Error("Staff identity required.");
+    if (input.note && input.note.trim().length > 280) throw new Error("Keep the optional note to 280 characters.");
+    const at = new Date().toISOString();
+    t.engagementClosure = { outcome, actorId: input.actor.staffId, actorRole: input.actor.role, at, ...(input.note?.trim() ? { note: input.note.trim() } : {}) };
+    t.status = "done"; t.worklistStatus = "completed"; t.completedAt = at;
+    AdelanteEHR.closeTaskPointer(`task:${t.id}`, "case_task"); emit();
+    return { taskId: t.id, engagementOutcome: outcome, closedBy: input.actor.staffId, closedRole: input.actor.role, hasNote: !!input.note?.trim() };
+  },
+  /** R57 registry automation only; uses existing member rescreen task/bundle. */
+  createEngagementHrsnPrompt(patientId: string, at: string, actor: EngagementActor) {
+    if (actor.role !== screenerFollowupActor.role || actor.staffId !== screenerFollowupActor.staffId) throw new Error("System engagement automation actor only.");
+    const p = patients.find(p => p.id === patientId);
+    if (!p || !Number.isFinite(Date.parse(at))) throw new Error("Choose a member and valid date.");
+    if ((p.tasks ?? []).some(t => t.kind === "rescreen" && t.screenerKey === "ahc-hrsn" && !t.completedAt)) return;
+    const promptId = (p.tasks ?? []).find(t => t.automaticRescreen && t.createdAt === at && !t.completedAt)?.rescreenPromptId ?? uid();
+    p.tasks = [{ id: uid(), kind: "rescreen", label: RESCREEN_TASK_TEXT, screenerKey: "ahc-hrsn", createdAt: at, automaticRescreen: true, rescreenPromptId: promptId }, ...(p.tasks ?? [])]; emit();
+    return promptId;
   },
   completeCaseTask(id: string) {
     const t = caseTasks.find((x) => x.id === id);

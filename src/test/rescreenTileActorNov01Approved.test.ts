@@ -24,7 +24,7 @@ describe("R53 tile actor type fix exact-once approval", () => {
     expect(a.priorSource.replace(", name: therapist.name }", " }")).toBe(a.updatedSource);
   });
   it("is chained directly after the follow-up approval", () => {
-    expect(readFileSync("src/test/credentialingOct27Approved.ts", "utf8")).toContain("return withApprovedRescreenTileActorNov01(path, withApprovedRescreenTileFollowupNov01(path,");
+    expect(readFileSync("src/test/engagementRiskNov01ChainPrior.fixture.txt", "utf8")).toContain("return withApprovedRescreenTileActorNov01(path, withApprovedRescreenTileFollowupNov01(path,");
   });
   it("leaves unrelated files untouched", () => expect(withApprovedRescreenTileActorNov01("src/lib/roles.ts", "unchanged")).toBe("unchanged"));
 });

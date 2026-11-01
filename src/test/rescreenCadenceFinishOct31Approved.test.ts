@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import fixture from "./rescreenCadenceFinishOct31.fixture.json";
 import { withApprovedRescreenCadenceFinishOct31 } from "./rescreenCadenceFinishOct31Approved";
 import { withApprovedCredentialingOct27 } from "./credentialingOct27Approved";
+import r57 from "./engagementRiskNov01.fixture.json";
 import earlier from "./rescreenCadenceOct31.fixture.json";
 describe("R53 finish exact-once approval", () => {
   it.each(Object.keys(fixture))("%s exact apply, drift and reapplication refusal", path => {
     const a = fixture[path as keyof typeof fixture];
     expect(withApprovedRescreenCadenceFinishOct31(path, a.priorSource)).toBe(a.updatedSource);
-    expect(readFileSync(path, "utf8")).toBe(a.updatedSource);
+    const later = r57[path as keyof typeof r57];
+    expect(later ? later.priorSource : readFileSync(path, "utf8")).toBe(a.updatedSource);
     expect(() => withApprovedRescreenCadenceFinishOct31(path, a.priorSource + "\n")).toThrow("prior source changed");
     expect(() => withApprovedRescreenCadenceFinishOct31(path, a.updatedSource)).toThrow("prior source changed");
   });

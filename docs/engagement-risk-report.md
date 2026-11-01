@@ -34,6 +34,10 @@ Approved by Mitch, 1 Nov 2026. **Draft — pending clinical sign-off**; Christi 
 
 ## Results
 
+### Part 1 — option A approved 1 Nov, 16:55 CT
+
+The completion-action blocker is resolved by Mitch's scoped approval. This part builds logic, registry, the app-open sweep and unit tests only. No staff surface is mounted; part 2 owns badges/reasons, browsers and screenshots. Earlier stop findings below describe the pre-approval state, not the current scope. Disconnected phone, SMS undeliverable and packet-confirmation needs-change events remain **needs data** and skipped. No publication, persistence or Supabase changes.
+
 - Inventory completed before application changes. No invented signal fields or demo events.
 - **Mandatory stop before application changes:** the requested existing staff task-completion registry action does not exist. `chartActions.ts:897–903` (`task`) and `:960–968` (`dashboard_task`) register creation only (`createCaseTask`). Neither `completeCaseTask` nor `setWorklistStatus` nor `addCaseTaskNote` has a registry store reference. Existing `TaskWorkRow.tsx:170–177,290–296` calls completion/status/note stores directly; `RecordTabs.tsx:2188` also directly completes a case task. A second read-only investigation confirmed the missing registry path.
 - `ehr.ts:17230–17255` completes/reopens a worklist task without requiring or recording one of the four R57 outcomes. Reusing the direct call would violate registry-only writes and would allow completion without an outcome. Registering a new staff completion action requires additional permission-snapshot rows, outside the approval for **only** 18 hidden `engagement_risk_automation` rows. Attaching completion to an existing creation action would change its behavior and is not a safe substitute.
@@ -48,9 +52,8 @@ Approved by Mitch, 1 Nov 2026. **Draft — pending clinical sign-off**; Christi 
 
 ## Exactly what remains open
 
-- Approval blocker: engagement-task-only registry completion with mandatory outcomes (above).
-- After approval: pure signal settings/evaluation, staff-only badges/reasons, automated task dedupe/owner chain/clearing, event HRSN prompts/cap/skip, registry/snapshot/source approvals, all requested new tests/full units/browser suites/screenshots.
-- No app changes are running in the background; implementation is stopped, not complete.
+- Part 1 logic/registry/unit work is complete. Part 2 staff badges/reasons, browser suites and screenshots are next and not run or mounted here.
+- Clinical review and production scheduler remain open as listed below; no approval blocker remains for part 1.
 
 ## Open clinical / production items
 
@@ -58,3 +61,55 @@ Approved by Mitch, 1 Nov 2026. **Draft — pending clinical sign-off**; Christi 
 - Disconnected phone / confirmed SMS undeliverable: needs structured data; do not infer from simulated delivery failure text.
 - Uncaptured phone/data need and absent coverage: needs data, skipped.
 - R54/R48 production scheduler: app-open sweeps cannot guarantee timing or delivery.
+## Part 1 implementation checkpoint
+
+- Pure settings/evaluator and metadata-only outreach projection built; **18/18** pure rule tests passed. Housing requires the living-situation item (quality-only positive is excluded). Only completed needs resolve a signal; not_completed means unresolved. Safety domains/items never enter stored flags or event reasons.
+- Real registry automation/close checks: **33/33** passed. Elevated task dedupe, Watch-without-task, clearing audit with open task retained, all four outcomes and actor provenance, chart/ownership refusals and patient/advocate denial verified. Audit keeps outcome/actor and note-presence only, never optional note body or message content.
+- Exact-once R57 adapter after rescreenTileActorNov01Approved: **8/8** passed. Approved source targets: ehr.ts, chartActions.ts, useReminderSweep.ts. Existing task completion and all staff UI untouched.
+- Event triggers derive real history/appointment IDs and actual intake_self_report selection timestamps. Packet confirmations, disconnected phone and SMS delivery remain skipped. Deferred events remain pending through shared 7-day cap and 14-day completion skip; existing open HRSN consumes pending events without duplicate prompt.
+
+### Approved new permission rows — before snapshot update
+
+All values below are role-only registry availability, not chart/worklist/ownership grants. Store closure still requires chart entry, worklist **write**, matching assignment/claim and task discipline. Read-only worklist roles may have the approved registry row but cannot close through the store; no existing worklist grant changes.
+
+| Staff role | engagement_risk_automation | engagement_task_close |
+| --- | --- | --- |
+| ecm_provider | hidden | allowed |
+| cf_care_manager | hidden | allowed |
+| sud_counselor | hidden | allowed |
+| clinical_trainee | hidden | allowed |
+| medical_assistant | hidden | hidden |
+| peer_specialist | hidden | allowed |
+| community_health_worker | hidden | allowed |
+| therapist | hidden | allowed |
+| physician | hidden | allowed |
+| pmhnp | hidden | allowed |
+| nurse_rn | hidden | allowed |
+| lvn | hidden | allowed |
+| billing | hidden | hidden |
+| clinical_coordinator | hidden | allowed |
+| intake_coordinator | hidden | hidden |
+| credentialing_coordinator | hidden | hidden |
+| billing_coordinator | hidden | hidden |
+| sys_admin | hidden | hidden |
+
+Snapshot update is pending; only these 36 additive rows are approved.
+
+### Snapshot and first full-unit result
+
+- Snapshot-only update via `vitest -u` on `src/lib/__tests__/runAction.test.ts`: **7/7 passed**; diff inspection found exactly **36 additive rows** (18 automation hidden, 18 close rows as tabled), zero changed existing rows/other actions.
+- First full suite: **3,913 passed / 4 failed (3,917 total)**. All four failures were earlier approved source/chain baseline regressions superseded by R57, not product assertions. Standing superseded-anchor OK used four times: `rescreenCadenceOct31Approved.test.ts:16` (ehr baseline), `rescreenCadenceFinishOct31Approved.test.ts:12` (chartActions baseline), `rescreenTileActorNov01Approved.test.ts:26` and `rescreenTileFollowupNov01Approved.test.ts:21` (prior chain). Immutable R57 prior sources/prior-chain fixture now reconcile only those baselines; adapter exact-apply/drift/reapplication checks remain.
+- Type-only standing OK used once: newly created R57 `engagementRiskAutomationR57.test.ts:74`, TS2322 inferred throwing getter as void versus CareMessage.body string. Added only `: string` return annotation; no assertion/input/expected/test-name change. All five changes pass through their own hash-checked exact-once reconciliation adapter/regression.
+
+- Final event tests: **5/5 passed**, including all four HRSN triggers with cap/skip deferred delivery and C-SSRS exclusion. Full units then **3,928/3,928**. Preview found a second type-only error in new `engagementRiskEventsR57.test.ts:17`: mock read projection contains `end` and lacks full Appointment fields. Type-only standing OK use #2: added only type import and erased `unknown as Appointment[]` cast to this deliberate read-seam fixture; no runtime input/assertion/expected/test-name changed. Separate exact-once adapter/regression added.
+
+## Part 1 final validation
+
+- Full unit suite: **3,929/3,929 passed across 450 files**, final run 1 Nov 23:12 UTC. No unresolved unit failures; all four first-run failures were recorded superseded-baseline regressions reconciled under the standing OK.
+- Snapshot: exactly the approved **36 new rows**, no existing row/action changed. Existing tests were changed only for the four recorded superseded source baselines; the two type-only fixes were confined to new R57 tests through separate exact-once adapters.
+- App-open automation is hooked into the existing sweep before R53 cadence, so event HRSN uses the same member tasks and weekly cap; no staff UI, TaskWorkRow, RecordTabs or worklist completion path changed. No browser suites/screenshots in this logic-only part.
+- Standing OK totals: **4 superseded-anchor uses**, **2 type-only uses** (files/errors above). No permissions/matrix grants, Supabase changes, publication or persistence activation.
+- Christi open: all thresholds/weights/windows, early step-up, missing-data signals and HRSN interpretation remain Draft — pending clinical sign-off. Missing disconnected/SMS/packet events remain skipped. R54/R48 exact production scheduler remains required.
+- Closure notes are stored only on the task (maximum 280 characters); audit records actor, outcome and note presence, not its body. The four approved outcomes are the only accepted values.
+
+- Final preview diagnostics: **build OK**, 1 Nov 23:14:49 UTC; type checks clean after both recorded type-only reconciliations.
