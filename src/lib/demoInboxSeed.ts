@@ -237,7 +237,7 @@ export function seedDemoInbox(): void {
   const todayKey = new Date().toDateString();
   const laterToday = lateClin
     ? availableSlots(lateClin.id, { now: new Date(Date.now() - 86400000), days: 1, serviceType: "therapy_individual", modality: "video" })
-        .filter((iso) => +new Date(iso) > Date.now() + 3600000 && new Date(iso).toDateString() === todayKey)[0]
+        .filter((iso) => +new Date(iso) > Date.now() && new Date(iso).toDateString() === todayKey)[0]
     : undefined;
   if (rosa && (laterToday ? lateClin : clin))
     safe(() => {
