@@ -77,7 +77,7 @@ describe("R53 part 2 actions", () => {
     const p = AdelanteEHR.listPatients()[0];
     const therapist = STAFF_ROSTER.find((s) => s.role === "therapist")!;
     const before = (p.tasks ?? []).length;
-    sendRescreens(p.id, ["phq-9"], (id, via, pid, key) => { const r = runAction(id, { role: therapist.role, staffId: therapist.id, name: therapist.name }, AdelanteEHR.getPatient(pid), { via, args: [pid, key] }); expect(r.ok).toBe(true); });
+    sendRescreens(p.id, ["phq-9"], (id, via, pid, key) => { const r = runAction(id, { role: therapist.role, staffId: therapist.id }, AdelanteEHR.getPatient(pid), { via, args: [pid, key] }); expect(r.ok).toBe(true); });
     const after = AdelanteEHR.getPatient(p.id)!;
     expect((after.tasks ?? []).length).toBe(before + 1);
     expect(rescreenInstrumentView(after, due(p.id, "phq-9"), Date.now()).chipText).toBe("Requested by staff 0 days ago");
