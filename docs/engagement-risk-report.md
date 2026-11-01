@@ -52,9 +52,8 @@ The completion-action blocker is resolved by Mitch's scoped approval. This part 
 
 ## Exactly what remains open
 
-- Approval blocker: engagement-task-only registry completion with mandatory outcomes (above).
-- After approval: pure signal settings/evaluation, staff-only badges/reasons, automated task dedupe/owner chain/clearing, event HRSN prompts/cap/skip, registry/snapshot/source approvals, all requested new tests/full units/browser suites/screenshots.
-- No app changes are running in the background; implementation is stopped, not complete.
+- Part 1 logic/registry/unit work is complete. Part 2 staff badges/reasons, browser suites and screenshots are next and not run or mounted here.
+- Clinical review and production scheduler remain open as listed below; no approval blocker remains for part 1.
 
 ## Open clinical / production items
 
@@ -103,3 +102,12 @@ Snapshot update is pending; only these 36 additive rows are approved.
 - Type-only standing OK used once: newly created R57 `engagementRiskAutomationR57.test.ts:74`, TS2322 inferred throwing getter as void versus CareMessage.body string. Added only `: string` return annotation; no assertion/input/expected/test-name change. All five changes pass through their own hash-checked exact-once reconciliation adapter/regression.
 
 - Final event tests: **5/5 passed**, including all four HRSN triggers with cap/skip deferred delivery and C-SSRS exclusion. Full units then **3,928/3,928**. Preview found a second type-only error in new `engagementRiskEventsR57.test.ts:17`: mock read projection contains `end` and lacks full Appointment fields. Type-only standing OK use #2: added only type import and erased `unknown as Appointment[]` cast to this deliberate read-seam fixture; no runtime input/assertion/expected/test-name changed. Separate exact-once adapter/regression added.
+
+## Part 1 final validation
+
+- Full unit suite: **3,929/3,929 passed across 450 files**, final run 1 Nov 23:12 UTC. No unresolved unit failures; all four first-run failures were recorded superseded-baseline regressions reconciled under the standing OK.
+- Snapshot: exactly the approved **36 new rows**, no existing row/action changed. Existing tests were changed only for the four recorded superseded source baselines; the two type-only fixes were confined to new R57 tests through separate exact-once adapters.
+- App-open automation is hooked into the existing sweep before R53 cadence, so event HRSN uses the same member tasks and weekly cap; no staff UI, TaskWorkRow, RecordTabs or worklist completion path changed. No browser suites/screenshots in this logic-only part.
+- Standing OK totals: **4 superseded-anchor uses**, **2 type-only uses** (files/errors above). No permissions/matrix grants, Supabase changes, publication or persistence activation.
+- Christi open: all thresholds/weights/windows, early step-up, missing-data signals and HRSN interpretation remain Draft — pending clinical sign-off. Missing disconnected/SMS/packet events remain skipped. R54/R48 exact production scheduler remains required.
+- Closure notes are stored only on the task (maximum 280 characters); audit records actor, outcome and note presence, not its body. The four approved outcomes are the only accepted values.
