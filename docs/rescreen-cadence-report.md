@@ -92,3 +92,4 @@ Draft — pending clinical sign-off. No publishing, persistence, Supabase, permi
 - `RescreenDuePanel` left in place (removal in EHR/Admin cleanup batch 3).
 - Wording note for Mitch: "Overdue N days" follows this batch's instruction; the Voice rule otherwise prefers "Due N days ago". Kept as instructed.
 - New unit tests `src/lib/__tests__/rescreenDashboardR53p2.test.ts`: 12/12.
+- **Full units: 3,838/3,838 passed, 438 files** (exit 0).
