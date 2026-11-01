@@ -1,3 +1,5 @@
+import { EngagementTaskClose } from "@/components/tasks/EngagementTaskClose";
+import { ENGAGEMENT_TASK_TITLE } from "@/lib/engagementRisk";
 import { StatusChip } from "@/components/ui/status-chip";
 // §Dashboard Standardization Phase 5c — the one expandable task row.
 //
@@ -88,6 +90,7 @@ export function TaskWorkRow({
   const [followUp, setFollowUp] = useTaskDraftField(draftCache, draftKey, "followUp", null);
   const [followUpDue, setFollowUpDue] = useTaskDraftField(draftCache, draftKey, "followUpDue", new Date().toISOString().slice(0, 10));
 
+  const isEngagement = task.sourceAutomationId === "engagement_risk_automation" && task.source === "engagement_risk_automation" && task.title === ENGAGEMENT_TASK_TITLE;
   const status = worklistStatusFor(task);
   const today = new Date().toISOString().slice(0, 10);
   const overdue =
@@ -141,6 +144,7 @@ export function TaskWorkRow({
           </span>
         </Button>
         <div className="shrink-0 text-right">{patientSlot}</div>
+        {isEngagement && <EngagementTaskClose task={task} canWrite={canWrite} />}
         {tablePresentation && <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`More: ${task.id}`}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem onSelect={() => setOpen(true)}>Task details</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}
       </div>
 
@@ -161,7 +165,7 @@ export function TaskWorkRow({
           {task.dedupeKey?.startsWith("screener-item9-unanswered:") && ["therapist", "pmhnp", "physician", "clinical_coordinator"].includes(role) && <p className="text-sm">{task.detail}</p>}
           <AutoCreatedFromNote task={task} />
 
-          {canWrite && (
+          {canWrite && !isEngagement && (
             <>
               <div className="grid gap-2 sm:grid-cols-3">
                 <div className="space-y-1">
