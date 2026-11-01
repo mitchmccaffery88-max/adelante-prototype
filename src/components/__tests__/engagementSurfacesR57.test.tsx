@@ -31,7 +31,7 @@ describe('R57 staff-only presentation and outcome controls', () => {
   });
   it('requires one of the four outcomes before running the existing close action', () => {
     render(<EngagementTaskClose task={task} canWrite />);
-    fireEvent.click(screen.getByRole('button', { name: 'Close', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     const close = screen.getByRole('button', { name: 'Close check-in' });
     expect((close as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(close); expect(mocks.run).not.toHaveBeenCalled();

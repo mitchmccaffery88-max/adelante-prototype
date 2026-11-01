@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import surfaceFixture from "./engagementSurfacesNov01.fixture.json";
+import { withApprovedEngagementSurfacesNov01 } from "./engagementSurfacesNov01Approved";
 import { describe, expect, it } from "vitest";
 import fixture from "./rescreenTileNov01.fixture.json";
 import { withApprovedRescreenTileNov01 } from "./rescreenTileNov01Approved";
@@ -6,7 +8,12 @@ describe("R53 part 2 tile exact-once approval", () => {
   it.each(Object.keys(fixture))("%s exact apply, drift and reapplication refusal", path => {
     const a = fixture[path as keyof typeof fixture];
     expect(withApprovedRescreenTileNov01(path, a.priorSource)).toBe(a.updatedSource);
-    expect(readFileSync(path, "utf8")).toBe(a.updatedSource);
+    // Standing OK: the later R57 surface approval supersedes only this source anchor.
+    if (path === "src/components/clinician/WorkspaceDashboard.tsx") {
+      const approved = surfaceFixture[path];
+      expect(a.updatedSource).toBe(approved.priorSource);
+      expect(withApprovedEngagementSurfacesNov01(path, a.updatedSource)).toBe(approved.updatedSource);
+    } else expect(readFileSync(path, "utf8")).toBe(a.updatedSource);
     expect(() => withApprovedRescreenTileNov01(path, a.priorSource + "\n")).toThrow("prior source changed");
     expect(() => withApprovedRescreenTileNov01(path, a.updatedSource)).toThrow("prior source changed");
   });
