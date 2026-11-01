@@ -1,3 +1,4 @@
+import { EngagementFlag } from "@/components/staff/EngagementFlag";
 import { StatusChip } from "@/components/ui/status-chip";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, type Patient, type EpisodeType } from "@/lib/ehr";
@@ -41,7 +42,8 @@ export function CaseloadTable({
   // §Group A #2 — the SUD program is Part 2 classification: the option shows
   // only to roles with unconditional screeners_sud access, and matching keeps
   // the per-patient Part 2 check (hidden, like the chart's ASAM section).
-  const { role } = useActingStaff();
+  const caseloadActor = useActingStaff();
+  const { role } = caseloadActor;
   const showSudProgram = roleSeesSudProgram(role);
   const [clinicianFilter, setClinicianFilter] = useState<string>("all");
   const [careNeedFilter, setCareNeedFilter] = useState<string>("all");
@@ -217,7 +219,7 @@ export function CaseloadTable({
           { id: "episode", label: "Episode day", sortValue: (p) => p.episodeDay, cell: (p) => <span>{p.episodeDay}/90</span> },
           { id: "coverage", label: "Coverage", sortValue: (p) => p.coverage?.status ?? "", cell: (p) => <CoverageBadge status={p.coverage?.status} /> },
           { id: "visit", label: "Next appt", sortValue: (p) => nextAppointment(p.id)?.start ?? "", cell: (p) => { const next = nextAppointment(p.id); return next ? <ClientDate value={next.start} /> : "—"; } },
-          { id: "engagement", label: "Engagement", sortValue: (p) => p.episodeDay, cell: (p) => <Badge variant="outline">{p.episodeDay > 30 ? "Steady" : "New"}</Badge> },
+          { id: "engagement", label: "Engagement", sortValue: (p) => p.episodeDay, cell: (p) => <><Badge variant="outline">{p.episodeDay > 30 ? "Steady" : "New"}</Badge><EngagementFlag actor={caseloadActor} patientId={p.id} /></> },
           { id: "sms", label: "SMS", cell: (p) => AdelanteEHR.isSmsOn(p.id) ? <Badge className="bg-gold/30 text-on-gold border-0">On</Badge> : "Off" },
           ...(showAssignClinician ? [{ id: "clinician", label: "Primary clinician", cell: (p: Patient) => <span>{clinicians.find((c) => c.id === p.primaryClinicianId)?.name ?? <StatusChip lang="en" state="yourturn" label="Unassigned" />}</span> }] : []),
         ]}
