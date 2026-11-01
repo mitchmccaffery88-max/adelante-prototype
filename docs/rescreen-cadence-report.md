@@ -108,3 +108,7 @@ Draft — pending clinical sign-off. No publishing, persistence, Supabase, permi
 ### Browser environment (this run)
 
 - Project expects Playwright 1.56 chromium **build v1194 (Chromium 141.0.7390.37)**. The sandbox ships only v1217. Downloaded v1194 into `/tmp/pw-1194` (temporary; no project/config change) and ran it with the sandbox's system libraries on `LD_LIBRARY_PATH`. All browser suites below use v1194, `--workers=1`, against the running preview on :8080 (`E2E_BASE_URL`).
+
+### Browser results
+
+- **Clinician dashboard/workspace + chart specs** (`roleDashboards9c`, `chartFoundation9b`, `escalationsMessaging`, `crossRoleJourneys`, `overflow9c`, `hydrationStaff8c2`, `accessClickThroughOct29`; v1194, one worker): **31/32 passed**, 7.0m. Sole failure `accessClickThroughOct29.spec.ts:3` — "fixture prerequisite missing: Today/closed has no eligible off-team reason-gated visit for s-th1" — **known triage #16** (unchanged by this batch). `roleDashboards9c` (incl. therapist axe check on the staff shell with the new tile, 390/1280 above-fold) and `overflow9c` passed. Log `docs/evidence/rescreen-cadence/p2-staff.log`.
