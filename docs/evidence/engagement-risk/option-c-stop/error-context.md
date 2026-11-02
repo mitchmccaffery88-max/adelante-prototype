@@ -1,0 +1,973 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - region "Demo controls" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e9]: Demo controls
+        - generic [ref=e10]:
+          - 'button "Demo control: QA scenario" [ref=e12]':
+            - img [ref=e13]
+            - generic [ref=e15]: "QA: choose a scenario"
+            - img [ref=e16]
+          - 'button "Demo control: staff role" [active] [ref=e18]':
+            - img [ref=e19]
+            - generic [ref=e31]: "Role: ECM Provider · Lupita Sanchez, MSW"
+            - img [ref=e32]
+    - main [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - link "Adelante home" [ref=e37] [cursor=pointer]:
+            - /url: /
+            - img "Adelante" [ref=e38]
+          - button "Quick jump" [ref=e39] [cursor=pointer]:
+            - img
+          - 'generic "Acting as: ECM Provider · Lupita Sanchez, MSW" [ref=e40]':
+            - text: "Acting as: ECM Provider"
+            - generic [ref=e41]: · Lupita Sanchez, MSW
+          - button "Notifications — 17 unread" [ref=e42]:
+            - img [ref=e43]
+            - generic [ref=e46]: 9+
+          - button "Staff account" [ref=e47] [cursor=pointer]:
+            - img
+        - generic [ref=e48]:
+          - complementary "Staff navigation" [ref=e49]:
+            - generic [ref=e50]:
+              - button "Collapse staff navigation" [expanded] [ref=e51] [cursor=pointer]:
+                - img
+              - generic [ref=e52]: ECM Provider
+            - button "New" [ref=e55] [cursor=pointer]:
+              - img
+              - generic [ref=e56]: New
+            - generic [ref=e58]:
+              - img
+              - searchbox "Quick jump to a surface" [ref=e59]
+            - navigation "Staff surfaces" [ref=e60]:
+              - generic [ref=e61]:
+                - button "Care" [expanded] [ref=e62] [cursor=pointer]:
+                  - generic [ref=e63]: Care
+                  - img
+                - list [ref=e64]:
+                  - listitem [ref=e65]:
+                    - link "Content library" [ref=e66] [cursor=pointer]:
+                      - /url: /content-library
+                      - img [ref=e67]
+                      - generic [ref=e69]: Content library
+                  - listitem [ref=e70]:
+                    - link "Referrals" [ref=e71] [cursor=pointer]:
+                      - /url: /referral-queue
+                      - img [ref=e72]
+                      - generic [ref=e76]: Referrals
+                  - listitem [ref=e77]:
+                    - link "Care Coordination" [ref=e78] [cursor=pointer]:
+                      - /url: /case-manager
+                      - img [ref=e79]
+                      - generic [ref=e84]: Care Coordination
+                  - listitem [ref=e85]:
+                    - link "Assisted sign-up" [ref=e86] [cursor=pointer]:
+                      - /url: /assisted-signup
+                      - img [ref=e87]
+                      - generic [ref=e90]: Assisted sign-up
+                  - listitem [ref=e91]:
+                    - link "Clinician" [ref=e92] [cursor=pointer]:
+                      - /url: /clinician
+                      - img [ref=e93]
+                      - generic [ref=e97]: Clinician
+                  - listitem [ref=e98]:
+                    - link "Clinician workspaces" [ref=e99] [cursor=pointer]:
+                      - /url: /clinician?view=as
+                      - img [ref=e100]
+                      - generic [ref=e104]: Clinician workspaces
+                  - listitem [ref=e105]:
+                    - link "Group sessions" [ref=e106] [cursor=pointer]:
+                      - /url: /group-sessions
+                      - img [ref=e107]
+                      - generic [ref=e112]: Group sessions
+                  - listitem [ref=e113]:
+                    - link "Group eligibility audit" [ref=e114] [cursor=pointer]:
+                      - /url: /group-audit
+                      - img [ref=e115]
+                      - generic [ref=e120]: Group eligibility audit
+                  - listitem [ref=e121]:
+                    - link "Weekly caseload review" [ref=e122] [cursor=pointer]:
+                      - /url: /caseload-review
+                      - img [ref=e123]
+                      - generic [ref=e128]: Weekly caseload review
+              - button "Queues" [ref=e130] [cursor=pointer]:
+                - generic [ref=e131]: Queues
+                - img
+              - button "Population health" [ref=e133] [cursor=pointer]:
+                - generic [ref=e134]: Population health
+                - img
+              - button "Consent & privacy" [ref=e136] [cursor=pointer]:
+                - generic [ref=e137]: Consent & privacy
+                - img
+              - button "Revenue & billing" [ref=e139] [cursor=pointer]:
+                - generic [ref=e140]: Revenue & billing
+                - img
+              - button "Administration" [ref=e142] [cursor=pointer]:
+                - generic [ref=e143]: Administration
+                - img
+              - button "My account" [ref=e145] [cursor=pointer]:
+                - generic [ref=e146]: My account
+                - img
+          - generic [ref=e147]:
+            - generic [ref=e148]:
+              - generic [ref=e149]:
+                - navigation "Breadcrumb" [ref=e150]:
+                  - list [ref=e151]:
+                    - listitem [ref=e152]:
+                      - link "Adelante" [ref=e153] [cursor=pointer]:
+                        - /url: /
+                        - img [ref=e154]
+                        - generic [ref=e157]: Adelante
+                    - listitem [ref=e158]:
+                      - img [ref=e159]
+                      - generic [ref=e161]: Care
+                    - listitem [ref=e162]:
+                      - img [ref=e163]
+                      - generic [ref=e165]: Care Coordination
+                - generic [ref=e166]:
+                  - img [ref=e167]
+                  - generic [ref=e172]: Care Coordination
+                  - generic [ref=e173]: · Check-ins & resources
+              - generic [ref=e174]:
+                - generic [ref=e175]:
+                  - img
+                  - combobox "Search patients by name, date of birth, program ID or CIN" [ref=e176]
+                - button "Ask Adel Prototype" [ref=e177]:
+                  - img [ref=e178]
+                  - text: Ask Adel
+                  - generic [ref=e181]: Prototype
+                - link "My work 10" [ref=e182] [cursor=pointer]:
+                  - /url: /my-work
+                  - img [ref=e183]
+                  - text: My work
+                  - generic [ref=e186]: "10"
+            - generic [ref=e187]:
+              - generic [ref=e189]:
+                - generic [ref=e190]: Care Coordination
+                - heading "Care Coordination" [level=1] [ref=e191]
+                - paragraph [ref=e192]: Review assigned or program-wide clients. Opening a record shows the chart sections available to your role.
+              - region "Needs you" [ref=e193]:
+                - heading "Needs you" [level=2] [ref=e194]
+                - generic [ref=e195]:
+                  - generic [ref=e196]:
+                    - heading "My tasks" [level=2] [ref=e197]:
+                      - img [ref=e198]
+                      - text: My tasks
+                    - generic [ref=e201]:
+                      - generic [ref=e202]: 0 follow-up needed
+                      - generic [ref=e203]: 7 due today
+                      - generic [ref=e204]: 0 snoozed
+                      - button "Show all" [ref=e205] [cursor=pointer]
+                  - generic [ref=e207]:
+                    - group "Caseload view" [ref=e208]:
+                      - button "My caseload (7)" [ref=e209] [cursor=pointer]
+                      - button "All program patients (20)" [ref=e210] [cursor=pointer]
+                    - paragraph [ref=e211]: Default view only. This changes what's listed, not what you're allowed to open.
+                  - generic [ref=e212]:
+                    - group "Saved views" [ref=e213]:
+                      - button "Needs you (8)" [pressed] [ref=e214] [cursor=pointer]
+                    - table "My tasks" [ref=e215]:
+                      - rowgroup [ref=e216]:
+                        - row "Task" [ref=e217]:
+                          - columnheader "Task" [ref=e218]:
+                            - button "Task" [ref=e219] [cursor=pointer]:
+                              - text: Task
+                              - img
+                      - rowgroup [ref=e220]:
+                        - 'row "Same-day — ID and documents urgent Pending Patient said they need help with \"ID and documents\" today. Draft rule — pending clinical review. Due 2026-11-02 sdoh follow up Victor Hale More: uq9sqpxa" [ref=e221]':
+                          - 'cell "Same-day — ID and documents urgent Pending Patient said they need help with \"ID and documents\" today. Draft rule — pending clinical review. Due 2026-11-02 sdoh follow up Victor Hale More: uq9sqpxa" [ref=e222]':
+                            - list [ref=e223]:
+                              - listitem [ref=e224]:
+                                - generic [ref=e225]:
+                                  - button "Same-day — ID and documents urgent Pending Patient said they need help with \"ID and documents\" today. Draft rule — pending clinical review. Due 2026-11-02 sdoh follow up" [ref=e226] [cursor=pointer]:
+                                    - img
+                                    - generic [ref=e227]:
+                                      - generic [ref=e228]:
+                                        - generic [ref=e229]: Same-day — ID and documents
+                                        - generic [ref=e230]: urgent
+                                        - generic "Pending" [ref=e232]:
+                                          - img
+                                          - generic [ref=e233]: Pending
+                                      - generic [ref=e234]: Patient said they need help with "ID and documents" today. Draft rule — pending clinical review.
+                                      - generic [ref=e235]:
+                                        - generic [ref=e236]:
+                                          - img
+                                          - text: Due 2026-11-02
+                                        - generic [ref=e237]: sdoh follow up
+                                  - button "Victor Hale" [ref=e239] [cursor=pointer]
+                                  - 'button "More: uq9sqpxa" [ref=e240] [cursor=pointer]':
+                                    - img
+                        - 'row "Reach out — SMS delivery failed routine Pending reminder notification did not reach Daniel M. via sms. Due 2026-11-02 notification failed Daniel M. More: 9v0xfkkj" [ref=e241]':
+                          - 'cell "Reach out — SMS delivery failed routine Pending reminder notification did not reach Daniel M. via sms. Due 2026-11-02 notification failed Daniel M. More: 9v0xfkkj" [ref=e242]':
+                            - list [ref=e243]:
+                              - listitem [ref=e244]:
+                                - generic [ref=e245]:
+                                  - button "Reach out — SMS delivery failed routine Pending reminder notification did not reach Daniel M. via sms. Due 2026-11-02 notification failed" [ref=e246] [cursor=pointer]:
+                                    - img
+                                    - generic [ref=e247]:
+                                      - generic [ref=e248]:
+                                        - generic [ref=e249]: Reach out — SMS delivery failed
+                                        - generic [ref=e250]: routine
+                                        - generic "Pending" [ref=e252]:
+                                          - img
+                                          - generic [ref=e253]: Pending
+                                      - generic [ref=e254]: reminder notification did not reach Daniel M. via sms.
+                                      - generic [ref=e255]:
+                                        - generic [ref=e256]:
+                                          - img
+                                          - text: Due 2026-11-02
+                                        - generic [ref=e257]: notification failed
+                                  - button "Daniel M." [ref=e259] [cursor=pointer]
+                                  - 'button "More: 9v0xfkkj" [ref=e260] [cursor=pointer]':
+                                    - img
+                        - 'row "Reach out — SMS delivery failed routine Pending booked notification did not reach Daniel M. via sms. Due 2026-11-02 notification failed Daniel M. More: on2aakai" [ref=e261]':
+                          - 'cell "Reach out — SMS delivery failed routine Pending booked notification did not reach Daniel M. via sms. Due 2026-11-02 notification failed Daniel M. More: on2aakai" [ref=e262]':
+                            - list [ref=e263]:
+                              - listitem [ref=e264]:
+                                - generic [ref=e265]:
+                                  - button "Reach out — SMS delivery failed routine Pending booked notification did not reach Daniel M. via sms. Due 2026-11-02 notification failed" [ref=e266] [cursor=pointer]:
+                                    - img
+                                    - generic [ref=e267]:
+                                      - generic [ref=e268]:
+                                        - generic [ref=e269]: Reach out — SMS delivery failed
+                                        - generic [ref=e270]: routine
+                                        - generic "Pending" [ref=e272]:
+                                          - img
+                                          - generic [ref=e273]: Pending
+                                      - generic [ref=e274]: booked notification did not reach Daniel M. via sms.
+                                      - generic [ref=e275]:
+                                        - generic [ref=e276]:
+                                          - img
+                                          - text: Due 2026-11-02
+                                        - generic [ref=e277]: notification failed
+                                  - button "Daniel M." [ref=e279] [cursor=pointer]
+                                  - 'button "More: on2aakai" [ref=e280] [cursor=pointer]':
+                                    - img
+                        - 'row "C-SSRS indicated routine Pending Administer the C-SSRS Screener. Trigger: Crisis language detected in free text. Response protocol per risk level is a DRAFT pending clinical sign-off. Due 2026-11-02 screener flag Paloma Ortega More: i7vs76lk" [ref=e281]':
+                          - 'cell "C-SSRS indicated routine Pending Administer the C-SSRS Screener. Trigger: Crisis language detected in free text. Response protocol per risk level is a DRAFT pending clinical sign-off. Due 2026-11-02 screener flag Paloma Ortega More: i7vs76lk" [ref=e282]':
+                            - list [ref=e283]:
+                              - listitem [ref=e284]:
+                                - generic [ref=e285]:
+                                  - 'button "C-SSRS indicated routine Pending Administer the C-SSRS Screener. Trigger: Crisis language detected in free text. Response protocol per risk level is a DRAFT pending clinical sign-off. Due 2026-11-02 screener flag" [ref=e286] [cursor=pointer]':
+                                    - img
+                                    - generic [ref=e287]:
+                                      - generic [ref=e288]:
+                                        - generic [ref=e289]: C-SSRS indicated
+                                        - generic [ref=e290]: routine
+                                        - generic "Pending" [ref=e292]:
+                                          - img
+                                          - generic [ref=e293]: Pending
+                                      - generic [ref=e294]: "Administer the C-SSRS Screener. Trigger: Crisis language detected in free text. Response protocol per risk level is a DRAFT pending clinical sign-off."
+                                      - generic [ref=e295]:
+                                        - generic [ref=e296]:
+                                          - img
+                                          - text: Due 2026-11-02
+                                        - generic [ref=e297]: screener flag
+                                  - button "Paloma Ortega" [ref=e299] [cursor=pointer]
+                                  - 'button "More: i7vs76lk" [ref=e300] [cursor=pointer]':
+                                    - img
+                        - 'row "Coordinate provider switch: Rosa T. routine Pending Booked with a new provider. From James Okafor → Kayla Nguyen. Verify in-network status, funding lane, and continuity of care. Due 2026-11-02 provider switch Rosa T. More: 3nnnjn7w" [ref=e301]':
+                          - 'cell "Coordinate provider switch: Rosa T. routine Pending Booked with a new provider. From James Okafor → Kayla Nguyen. Verify in-network status, funding lane, and continuity of care. Due 2026-11-02 provider switch Rosa T. More: 3nnnjn7w" [ref=e302]':
+                            - list [ref=e303]:
+                              - listitem [ref=e304]:
+                                - generic [ref=e305]:
+                                  - 'button "Coordinate provider switch: Rosa T. routine Pending Booked with a new provider. From James Okafor → Kayla Nguyen. Verify in-network status, funding lane, and continuity of care. Due 2026-11-02 provider switch" [ref=e306] [cursor=pointer]':
+                                    - img
+                                    - generic [ref=e307]:
+                                      - generic [ref=e308]:
+                                        - generic [ref=e309]: "Coordinate provider switch: Rosa T."
+                                        - generic [ref=e310]: routine
+                                        - generic "Pending" [ref=e312]:
+                                          - img
+                                          - generic [ref=e313]: Pending
+                                      - generic [ref=e314]: Booked with a new provider. From James Okafor → Kayla Nguyen. Verify in-network status, funding lane, and continuity of care.
+                                      - generic [ref=e315]:
+                                        - generic [ref=e316]:
+                                          - img
+                                          - text: Due 2026-11-02
+                                        - generic [ref=e317]: provider switch
+                                  - button "Rosa T." [ref=e319] [cursor=pointer]
+                                  - 'button "More: 3nnnjn7w" [ref=e320] [cursor=pointer]':
+                                    - img
+                        - 'row "Coordinate provider switch: Daniel M. routine Pending Booked with a new provider. From Marisol Reyes → Anita Brooks. Verify in-network status, funding lane, and continuity of care. Due 2026-11-02 provider switch Daniel M. More: bdmv9tyt" [ref=e321]':
+                          - 'cell "Coordinate provider switch: Daniel M. routine Pending Booked with a new provider. From Marisol Reyes → Anita Brooks. Verify in-network status, funding lane, and continuity of care. Due 2026-11-02 provider switch Daniel M. More: bdmv9tyt" [ref=e322]':
+                            - list [ref=e323]:
+                              - listitem [ref=e324]:
+                                - generic [ref=e325]:
+                                  - 'button "Coordinate provider switch: Daniel M. routine Pending Booked with a new provider. From Marisol Reyes → Anita Brooks. Verify in-network status, funding lane, and continuity of care. Due 2026-11-02 provider switch" [ref=e326] [cursor=pointer]':
+                                    - img
+                                    - generic [ref=e327]:
+                                      - generic [ref=e328]:
+                                        - generic [ref=e329]: "Coordinate provider switch: Daniel M."
+                                        - generic [ref=e330]: routine
+                                        - generic "Pending" [ref=e332]:
+                                          - img
+                                          - generic [ref=e333]: Pending
+                                      - generic [ref=e334]: Booked with a new provider. From Marisol Reyes → Anita Brooks. Verify in-network status, funding lane, and continuity of care.
+                                      - generic [ref=e335]:
+                                        - generic [ref=e336]:
+                                          - img
+                                          - text: Due 2026-11-02
+                                        - generic [ref=e337]: provider switch
+                                  - button "Daniel M." [ref=e339] [cursor=pointer]
+                                  - 'button "More: bdmv9tyt" [ref=e340] [cursor=pointer]':
+                                    - img
+                        - 'row "Connect request — Work or job training routine Pending Paloma asked the care team to help connect them for \"Work or job training\". Use Refer on this need; making the referral closes this request. Due 2026-11-04 sdoh follow up Paloma Ortega More: igrqu8vv" [ref=e341]':
+                          - 'cell "Connect request — Work or job training routine Pending Paloma asked the care team to help connect them for \"Work or job training\". Use Refer on this need; making the referral closes this request. Due 2026-11-04 sdoh follow up Paloma Ortega More: igrqu8vv" [ref=e342]':
+                            - list [ref=e343]:
+                              - listitem [ref=e344]:
+                                - generic [ref=e345]:
+                                  - button "Connect request — Work or job training routine Pending Paloma asked the care team to help connect them for \"Work or job training\". Use Refer on this need; making the referral closes this request. Due 2026-11-04 sdoh follow up" [ref=e346] [cursor=pointer]:
+                                    - img
+                                    - generic [ref=e347]:
+                                      - generic [ref=e348]:
+                                        - generic [ref=e349]: Connect request — Work or job training
+                                        - generic [ref=e350]: routine
+                                        - generic "Pending" [ref=e352]:
+                                          - img
+                                          - generic [ref=e353]: Pending
+                                      - generic [ref=e354]: Paloma asked the care team to help connect them for "Work or job training". Use Refer on this need; making the referral closes this request.
+                                      - generic [ref=e355]:
+                                        - generic [ref=e356]:
+                                          - img
+                                          - text: Due 2026-11-04
+                                        - generic [ref=e357]: sdoh follow up
+                                  - button "Paloma Ortega" [ref=e359] [cursor=pointer]
+                                  - 'button "More: igrqu8vv" [ref=e360] [cursor=pointer]':
+                                    - img
+                        - 'row "Refill request: Trazodone 50 mg routine Pending at bedtime · prescriber Dr. R. Sample, M.D. · note: Walgreens on Main Due 2026-11-02 manual Rosa T. More: yizm21lc" [ref=e361]':
+                          - 'cell "Refill request: Trazodone 50 mg routine Pending at bedtime · prescriber Dr. R. Sample, M.D. · note: Walgreens on Main Due 2026-11-02 manual Rosa T. More: yizm21lc" [ref=e362]':
+                            - list [ref=e363]:
+                              - listitem [ref=e364]:
+                                - generic [ref=e365]:
+                                  - 'button "Refill request: Trazodone 50 mg routine Pending at bedtime · prescriber Dr. R. Sample, M.D. · note: Walgreens on Main Due 2026-11-02 manual" [ref=e366] [cursor=pointer]':
+                                    - img
+                                    - generic [ref=e367]:
+                                      - generic [ref=e368]:
+                                        - generic [ref=e369]: "Refill request: Trazodone 50 mg"
+                                        - generic [ref=e370]: routine
+                                        - generic "Pending" [ref=e372]:
+                                          - img
+                                          - generic [ref=e373]: Pending
+                                      - generic [ref=e374]: "at bedtime · prescriber Dr. R. Sample, M.D. · note: Walgreens on Main"
+                                      - generic [ref=e375]:
+                                        - generic [ref=e376]:
+                                          - img
+                                          - text: Due 2026-11-02
+                                        - generic [ref=e377]: manual
+                                  - button "Rosa T." [ref=e379] [cursor=pointer]
+                                  - 'button "More: yizm21lc" [ref=e380] [cursor=pointer]':
+                                    - img
+                    - navigation "My tasks pages" [ref=e381]:
+                      - generic [ref=e382]: Page 1 / 1 · 8
+                      - button "Previous page" [disabled]:
+                        - img
+                      - button "Next page" [disabled]:
+                        - img
+              - region "Waiting on others" [ref=e383]:
+                - heading "Waiting on others" [level=2] [ref=e384]
+                - paragraph [ref=e385]: No items.
+              - region "Today" [ref=e386]:
+                - heading "Today" [level=2] [ref=e387]
+                - paragraph [ref=e388]: No items.
+              - generic [ref=e389]:
+                - button "Upload caseload" [ref=e390] [cursor=pointer]:
+                  - img
+                  - text: Upload caseload
+                - combobox "Case manager" [ref=e391] [cursor=pointer]:
+                  - generic: Lupita Sanchez, MSW · ecm provider
+                  - img [ref=e392]
+              - generic [ref=e394]:
+                - generic [ref=e395]:
+                  - generic [ref=e396]:
+                    - heading "My assigned caseload" [level=2] [ref=e397]
+                    - generic [ref=e398]:
+                      - generic [ref=e399]: 7/7
+                      - button "Export CSV" [ref=e400] [cursor=pointer]:
+                        - img
+                        - text: Export CSV
+                  - generic [ref=e401]:
+                    - combobox "Episode day filter" [ref=e402] [cursor=pointer]:
+                      - generic: All days
+                      - img [ref=e403]
+                    - combobox "Coverage filter" [ref=e405] [cursor=pointer]:
+                      - generic: All coverage
+                      - img [ref=e406]
+                    - combobox "Program filter" [ref=e408] [cursor=pointer]:
+                      - generic: All programs
+                      - img [ref=e409]
+                    - combobox "Clinician filter" [ref=e411] [cursor=pointer]:
+                      - generic: All clinicians
+                      - img [ref=e412]
+                    - combobox "Care need filter" [ref=e414] [cursor=pointer]:
+                      - generic: All care needs
+                      - img [ref=e415]
+                  - generic [ref=e417]:
+                    - group "Saved views" [ref=e418]:
+                      - button "Current caseload (7)" [pressed] [ref=e419] [cursor=pointer]
+                    - table "My assigned caseload" [ref=e420]:
+                      - rowgroup [ref=e421]:
+                        - row "Patient ID CIN Episode day Coverage Next appt Engagement SMS Primary clinician Actions" [ref=e422]:
+                          - columnheader "Patient ID" [ref=e423]:
+                            - button "Patient ID" [ref=e424] [cursor=pointer]:
+                              - text: Patient ID
+                              - img
+                          - columnheader "CIN" [ref=e425]
+                          - columnheader "Episode day" [ref=e426]:
+                            - button "Episode day" [ref=e427] [cursor=pointer]:
+                              - text: Episode day
+                              - img
+                          - columnheader "Coverage" [ref=e428]:
+                            - button "Coverage" [ref=e429] [cursor=pointer]:
+                              - text: Coverage
+                              - img
+                          - columnheader "Next appt" [ref=e430]:
+                            - button "Next appt" [ref=e431] [cursor=pointer]:
+                              - text: Next appt
+                              - img
+                          - columnheader "Engagement" [ref=e432]:
+                            - button "Engagement" [ref=e433] [cursor=pointer]:
+                              - text: Engagement
+                              - img
+                          - columnheader "SMS" [ref=e434]
+                          - columnheader "Primary clinician" [ref=e435]
+                          - columnheader "Actions" [ref=e436]
+                      - rowgroup [ref=e437]:
+                        - 'row "ADL-2026-001 ••••001A 23/90 Active 11/2/2026, 5:00:00 PM New On Marisol Reyes Open profile More: p1" [ref=e438]':
+                          - cell "ADL-2026-001" [ref=e439]
+                          - cell "••••001A" [ref=e440]
+                          - cell "23/90" [ref=e441]:
+                            - generic [ref=e442]: 23/90
+                          - cell "Active" [ref=e443]:
+                            - generic [ref=e444]: Active
+                          - cell "11/2/2026, 5:00:00 PM" [ref=e445]
+                          - cell "New" [ref=e446]:
+                            - generic [ref=e447]: New
+                          - cell "On" [ref=e448]:
+                            - generic [ref=e449]: "On"
+                          - cell "Marisol Reyes" [ref=e450]
+                          - 'cell "Open profile More: p1" [ref=e451]':
+                            - generic [ref=e452]:
+                              - button "Open profile" [ref=e453] [cursor=pointer]
+                              - 'button "More: p1" [ref=e454] [cursor=pointer]':
+                                - img
+                        - 'row "ADL-2026-002 ••••002B 11/90 Suspended 11/2/2026, 11:00:00 PM New Engagement · Watch coverage gap Draft — pending clinical sign-off Off James Okafor Open profile More: p2" [ref=e455]':
+                          - cell "ADL-2026-002" [ref=e456]
+                          - cell "••••002B" [ref=e457]
+                          - cell "11/90" [ref=e458]:
+                            - generic [ref=e459]: 11/90
+                          - cell "Suspended" [ref=e460]:
+                            - generic [ref=e461]: Suspended
+                          - cell "11/2/2026, 11:00:00 PM" [ref=e462]
+                          - cell "New Engagement · Watch coverage gap Draft — pending clinical sign-off" [ref=e463]:
+                            - generic [ref=e464]: New
+                            - generic [ref=e465]:
+                              - generic "Engagement · Watch" [ref=e467]:
+                                - img [ref=e468]
+                                - generic [ref=e477]: Engagement · Watch
+                              - paragraph [ref=e478]: coverage gap
+                              - paragraph [ref=e479]: Draft — pending clinical sign-off
+                          - cell "Off" [ref=e480]
+                          - cell "James Okafor" [ref=e481]
+                          - 'cell "Open profile More: p2" [ref=e482]':
+                            - generic [ref=e483]:
+                              - button "Open profile" [ref=e484] [cursor=pointer]
+                              - 'button "More: p2" [ref=e485] [cursor=pointer]':
+                                - img
+                        - 'row "ADL-2026-900 — 12/90 — — New On Kayla Nguyen Open profile More: p-demo-refusal" [ref=e486]':
+                          - cell "ADL-2026-900" [ref=e487]
+                          - cell "—" [ref=e488]
+                          - cell "12/90" [ref=e489]:
+                            - generic [ref=e490]: 12/90
+                          - cell "—" [ref=e491]
+                          - cell "—" [ref=e492]
+                          - cell "New" [ref=e493]:
+                            - generic [ref=e494]: New
+                          - cell "On" [ref=e495]:
+                            - generic [ref=e496]: "On"
+                          - cell "Kayla Nguyen" [ref=e497]
+                          - 'cell "Open profile More: p-demo-refusal" [ref=e498]':
+                            - generic [ref=e499]:
+                              - button "Open profile" [ref=e500] [cursor=pointer]
+                              - 'button "More: p-demo-refusal" [ref=e501] [cursor=pointer]':
+                                - img
+                        - 'row "ADL-2026-901 — 19/90 — — New On Kayla Nguyen Open profile More: p-demo-mar-seed" [ref=e502]':
+                          - cell "ADL-2026-901" [ref=e503]
+                          - cell "—" [ref=e504]
+                          - cell "19/90" [ref=e505]:
+                            - generic [ref=e506]: 19/90
+                          - cell "—" [ref=e507]
+                          - cell "—" [ref=e508]
+                          - cell "New" [ref=e509]:
+                            - generic [ref=e510]: New
+                          - cell "On" [ref=e511]:
+                            - generic [ref=e512]: "On"
+                          - cell "Kayla Nguyen" [ref=e513]
+                          - 'cell "Open profile More: p-demo-mar-seed" [ref=e514]':
+                            - generic [ref=e515]:
+                              - button "Open profile" [ref=e516] [cursor=pointer]
+                              - 'button "More: p-demo-mar-seed" [ref=e517] [cursor=pointer]':
+                                - img
+                        - 'row "ADL-2026-902 — 20/90 — — New On Owen Tran Open profile More: p-demo-mar-seed-es" [ref=e518]':
+                          - cell "ADL-2026-902" [ref=e519]
+                          - cell "—" [ref=e520]
+                          - cell "20/90" [ref=e521]:
+                            - generic [ref=e522]: 20/90
+                          - cell "—" [ref=e523]
+                          - cell "—" [ref=e524]
+                          - cell "New" [ref=e525]:
+                            - generic [ref=e526]: New
+                          - cell "On" [ref=e527]:
+                            - generic [ref=e528]: "On"
+                          - cell "Owen Tran" [ref=e529]
+                          - 'cell "Open profile More: p-demo-mar-seed-es" [ref=e530]':
+                            - generic [ref=e531]:
+                              - button "Open profile" [ref=e532] [cursor=pointer]
+                              - 'button "More: p-demo-mar-seed-es" [ref=e533] [cursor=pointer]':
+                                - img
+                        - 'row "ADL-2026-010 — 1/90 — — New Off Unassigned Open profile More: 8tvlhtkx" [ref=e534]':
+                          - cell "ADL-2026-010" [ref=e535]
+                          - cell "—" [ref=e536]
+                          - cell "1/90" [ref=e537]:
+                            - generic [ref=e538]: 1/90
+                          - cell "—" [ref=e539]
+                          - cell "—" [ref=e540]
+                          - cell "New" [ref=e541]:
+                            - generic [ref=e542]: New
+                          - cell "Off" [ref=e543]
+                          - cell "Unassigned" [ref=e544]:
+                            - generic "Unassigned" [ref=e547]:
+                              - img [ref=e548]
+                              - generic [ref=e550]: Unassigned
+                          - 'cell "Open profile More: 8tvlhtkx" [ref=e551]':
+                            - generic [ref=e552]:
+                              - button "Open profile" [ref=e553] [cursor=pointer]
+                              - 'button "More: 8tvlhtkx" [ref=e554] [cursor=pointer]':
+                                - img
+                        - 'row "ADL-2026-013 — 1/90 Assistance 11/6/2026, 7:00:00 PM New Off Unassigned Open profile More: gob1z29h" [ref=e555]':
+                          - cell "ADL-2026-013" [ref=e556]
+                          - cell "—" [ref=e557]
+                          - cell "1/90" [ref=e558]:
+                            - generic [ref=e559]: 1/90
+                          - cell "Assistance" [ref=e560]:
+                            - generic [ref=e561]: Assistance
+                          - cell "11/6/2026, 7:00:00 PM" [ref=e562]
+                          - cell "New" [ref=e563]:
+                            - generic [ref=e564]: New
+                          - cell "Off" [ref=e565]
+                          - cell "Unassigned" [ref=e566]:
+                            - generic "Unassigned" [ref=e569]:
+                              - img [ref=e570]
+                              - generic [ref=e572]: Unassigned
+                          - 'cell "Open profile More: gob1z29h" [ref=e573]':
+                            - generic [ref=e574]:
+                              - button "Open profile" [ref=e575] [cursor=pointer]
+                              - 'button "More: gob1z29h" [ref=e576] [cursor=pointer]':
+                                - img
+                    - navigation "My assigned caseload pages" [ref=e577]:
+                      - generic [ref=e578]: Page 1 / 1 · 7
+                      - button "Previous page" [disabled]:
+                        - img
+                      - button "Next page" [disabled]:
+                        - img
+                  - paragraph [ref=e579]: Open the patient profile. No names, diagnoses, or care-plan narrative shown in the table — clinical detail lives only in Case Manager and Clinician workspaces.
+                - generic [ref=e580]:
+                  - generic [ref=e581]:
+                    - heading "Referral status" [level=3] [ref=e582]
+                    - generic [ref=e583]:
+                      - link "View all referrals" [ref=e584] [cursor=pointer]:
+                        - /url: /referral-queue
+                      - generic [ref=e585]: 4/4
+                  - generic [ref=e586]:
+                    - combobox "Status filter" [ref=e587] [cursor=pointer]:
+                      - generic: All statuses
+                      - img [ref=e588]
+                    - combobox "Program filter" [ref=e590] [cursor=pointer]:
+                      - generic: All programs
+                      - img [ref=e591]
+                    - combobox "Clinician filter" [ref=e593] [cursor=pointer]:
+                      - generic: All clinicians
+                      - img [ref=e594]
+                    - combobox "Care need filter" [ref=e596] [cursor=pointer]:
+                      - generic: All care needs
+                      - img [ref=e597]
+                  - generic [ref=e599]:
+                    - 'button "Carmen Ibarra Community-based organization · 11/2/2026, 3:24:38 AM Referred by Visalia Family Resource Center · Gloria Benítez Stage 7 — First visit attended · missing: paperwork not finished Waiting 0 days Referral progress Sent 11/2/2026, 3:24:38 AM Outreach 11/2/2026, 3:24:38 AM Enrolled 11/2/2026, 3:24:38 AM Last outreach: Reached the person · Luz Herrera · 11/2/2026, 3:24:38 AM Enrolled as ADL-2026-015" [ref=e600]':
+                      - generic [ref=e601]:
+                        - generic [ref=e602]:
+                          - generic [ref=e603]: Carmen Ibarra
+                          - generic [ref=e604]: Community-based organization · 11/2/2026, 3:24:38 AM
+                          - generic [ref=e605]: Referred by Visalia Family Resource Center · Gloria Benítez
+                        - generic [ref=e606]:
+                          - generic [ref=e608]:
+                            - 'generic "Stage 7 — First visit attended · missing: paperwork not finished" [ref=e609]':
+                              - img [ref=e610]
+                              - generic [ref=e612]: "Stage 7 — First visit attended · missing: paperwork not finished"
+                            - generic [ref=e613]: Waiting 0 days
+                          - img [ref=e614]
+                      - generic "Referral progress" [ref=e616]
+                      - generic [ref=e620]:
+                        - generic [ref=e621]:
+                          - generic [ref=e622]: Sent
+                          - generic [ref=e623]: 11/2/2026, 3:24:38 AM
+                        - generic [ref=e624]:
+                          - generic [ref=e625]: Outreach
+                          - generic [ref=e626]: 11/2/2026, 3:24:38 AM
+                        - generic [ref=e627]:
+                          - generic [ref=e628]: Enrolled
+                          - generic [ref=e629]: 11/2/2026, 3:24:38 AM
+                      - generic [ref=e630]:
+                        - img [ref=e631]
+                        - text: "Last outreach: Reached the person · Luz Herrera · 11/2/2026, 3:24:38 AM"
+                      - generic [ref=e633]: Enrolled as ADL-2026-015
+                    - button "Eli B. Parole · 11/2/2026, 1:24:38 AM Referred by Parole · Agent Yu No referrer contact Stage 2 — Record enrichment Waiting 0 days Referral progress Sent 11/2/2026, 1:24:38 AM Outreach 11/2/2026, 1:27:38 AM Enrolled Pending Welcome text sent" [ref=e634]:
+                      - generic [ref=e635]:
+                        - generic [ref=e636]:
+                          - generic [ref=e637]: Eli B.
+                          - generic [ref=e638]: Parole · 11/2/2026, 1:24:38 AM
+                          - generic [ref=e639]:
+                            - text: Referred by Parole · Agent Yu
+                            - generic [ref=e640]: No referrer contact
+                        - generic [ref=e641]:
+                          - generic [ref=e643]:
+                            - generic "Stage 2 — Record enrichment" [ref=e644]:
+                              - img [ref=e645]
+                              - generic [ref=e647]: Stage 2 — Record enrichment
+                            - generic [ref=e648]: Waiting 0 days
+                          - img [ref=e649]
+                      - generic "Referral progress" [ref=e651]
+                      - generic [ref=e655]:
+                        - generic [ref=e656]:
+                          - generic [ref=e657]: Sent
+                          - generic [ref=e658]: 11/2/2026, 1:24:38 AM
+                        - generic [ref=e659]:
+                          - generic [ref=e660]: Outreach
+                          - generic [ref=e661]: 11/2/2026, 1:27:38 AM
+                        - generic [ref=e662]:
+                          - generic [ref=e663]: Enrolled
+                          - generic [ref=e664]: Pending
+                      - generic [ref=e665]:
+                        - img [ref=e666]
+                        - text: Welcome text sent
+                    - button "Sasha K. Drug court / reentry court · 10/31/2026, 3:24:38 AM Referred by Drug Court · CM. Patel No referrer contact Stage 2 — Record enrichment Waiting 2 days Referral progress Sent 10/31/2026, 3:24:38 AM Outreach 10/31/2026, 3:27:38 AM Enrolled Pending Welcome text sent" [ref=e668]:
+                      - generic [ref=e669]:
+                        - generic [ref=e670]:
+                          - generic [ref=e671]: Sasha K.
+                          - generic [ref=e672]: Drug court / reentry court · 10/31/2026, 3:24:38 AM
+                          - generic [ref=e673]:
+                            - text: Referred by Drug Court · CM. Patel
+                            - generic [ref=e674]: No referrer contact
+                        - generic [ref=e675]:
+                          - generic [ref=e677]:
+                            - generic "Stage 2 — Record enrichment" [ref=e678]:
+                              - img [ref=e679]
+                              - generic [ref=e681]: Stage 2 — Record enrichment
+                            - generic [ref=e682]: Waiting 2 days
+                          - img [ref=e683]
+                      - generic "Referral progress" [ref=e685]
+                      - generic [ref=e689]:
+                        - generic [ref=e690]:
+                          - generic [ref=e691]: Sent
+                          - generic [ref=e692]: 10/31/2026, 3:24:38 AM
+                        - generic [ref=e693]:
+                          - generic [ref=e694]: Outreach
+                          - generic [ref=e695]: 10/31/2026, 3:27:38 AM
+                        - generic [ref=e696]:
+                          - generic [ref=e697]: Enrolled
+                          - generic [ref=e698]: Pending
+                      - generic [ref=e699]:
+                        - img [ref=e700]
+                        - text: Welcome text sent
+                    - button "Daniel M. Probation · 8/22/2026, 3:24:38 AM Referred by Tulare County Probation · Officer Hernandez No referrer contact Stage 2 — Record enrichment Waiting 72 days Referral progress Sent 8/22/2026, 3:24:38 AM Outreach 8/22/2026, 3:27:38 AM Enrolled 8/22/2026, 3:24:38 AM Welcome text sent" [ref=e702]:
+                      - generic [ref=e703]:
+                        - generic [ref=e704]:
+                          - generic [ref=e705]: Daniel M.
+                          - generic [ref=e706]: Probation · 8/22/2026, 3:24:38 AM
+                          - generic [ref=e707]:
+                            - text: Referred by Tulare County Probation · Officer Hernandez
+                            - generic [ref=e708]: No referrer contact
+                        - generic [ref=e709]:
+                          - generic [ref=e711]:
+                            - generic "Stage 2 — Record enrichment" [ref=e712]:
+                              - img [ref=e713]
+                              - generic [ref=e715]: Stage 2 — Record enrichment
+                            - generic [ref=e716]: Waiting 72 days
+                          - img [ref=e717]
+                      - generic "Referral progress" [ref=e719]
+                      - generic [ref=e723]:
+                        - generic [ref=e724]:
+                          - generic [ref=e725]: Sent
+                          - generic [ref=e726]: 8/22/2026, 3:24:38 AM
+                        - generic [ref=e727]:
+                          - generic [ref=e728]: Outreach
+                          - generic [ref=e729]: 8/22/2026, 3:27:38 AM
+                        - generic [ref=e730]:
+                          - generic [ref=e731]: Enrolled
+                          - generic [ref=e732]: 8/22/2026, 3:24:38 AM
+                      - generic [ref=e733]:
+                        - img [ref=e734]
+                        - text: Welcome text sent
+                  - paragraph [ref=e736]: "Aging badge — Draft: a referral with no staff action in 3 days reads as due and 7 days as overdue. A newly released person's phone number commonly stops being reachable inside a week. Not yet ratified by care operations."
+              - generic [ref=e737]:
+                - generic [ref=e738]:
+                  - generic [ref=e739]:
+                    - heading "Caseload" [level=2] [ref=e740]:
+                      - img [ref=e741]
+                      - text: Caseload
+                    - generic [ref=e746]: 7 clients
+                  - generic [ref=e748]:
+                    - generic [ref=e749]:
+                      - text: Search
+                      - textbox "Name, CIN, program ID, or DOB (YYYY-MM-DD)" [ref=e750]
+                    - generic [ref=e751]:
+                      - text: DOB from
+                      - textbox "DOB from" [ref=e752]
+                    - generic [ref=e753]:
+                      - text: DOB to
+                      - textbox "DOB to" [ref=e754]
+                  - table [ref=e757]:
+                    - rowgroup [ref=e758]:
+                      - row "Client CIN DOB Episode day Coverage Last contact Flags Action" [ref=e759]:
+                        - cell "Client" [ref=e760]
+                        - cell "CIN" [ref=e761]
+                        - cell "DOB" [ref=e762]
+                        - cell "Episode day" [ref=e763]
+                        - cell "Coverage" [ref=e764]
+                        - cell "Last contact" [ref=e765]
+                        - cell "Flags" [ref=e766]
+                        - cell "Action" [ref=e767]
+                    - rowgroup [ref=e768]:
+                      - row "Daniel M. ••••001A 1989-04-12 23/90 Coverage type unknown Check eligibility Active No contact ECM Switch·4 Open Profile Record" [ref=e769]:
+                        - cell "Daniel M." [ref=e770]
+                        - cell "••••001A" [ref=e771]
+                        - cell "1989-04-12" [ref=e772]
+                        - cell "23/90" [ref=e773]
+                        - cell "Coverage type unknown Check eligibility Active" [ref=e774]:
+                          - generic [ref=e775]:
+                            - generic [ref=e776]: Coverage type unknown
+                            - generic "Check eligibility" [ref=e778]:
+                              - img [ref=e779]
+                              - generic [ref=e781]: Check eligibility
+                            - generic "Active" [ref=e783]:
+                              - img [ref=e784]
+                              - generic [ref=e786]: Active
+                        - cell "No contact" [ref=e787]
+                        - cell "ECM Switch·4" [ref=e788]:
+                          - generic [ref=e789]: ECM
+                          - generic "Pending provider switch review" [ref=e790]: Switch·4
+                        - cell "Open Profile Record" [ref=e791]:
+                          - generic [ref=e792]:
+                            - button "Open" [ref=e793] [cursor=pointer]
+                            - button "Profile" [ref=e794] [cursor=pointer]
+                            - button "Record" [ref=e795] [cursor=pointer]
+                      - row "Rosa T. ••••002B 1995-09-03 11/90 Coverage type unknown Checking Suspended — renew No contact Switch·2 Open Profile Record" [ref=e796]:
+                        - cell "Rosa T." [ref=e797]
+                        - cell "••••002B" [ref=e798]
+                        - cell "1995-09-03" [ref=e799]
+                        - cell "11/90" [ref=e800]
+                        - cell "Coverage type unknown Checking Suspended — renew" [ref=e801]:
+                          - generic [ref=e802]:
+                            - generic [ref=e803]: Coverage type unknown
+                            - generic "Checking" [ref=e805]:
+                              - img [ref=e806]
+                              - generic [ref=e809]: Checking
+                            - generic "Suspended — renew" [ref=e811]:
+                              - img [ref=e812]
+                              - generic [ref=e814]: Suspended — renew
+                        - cell "No contact" [ref=e815]
+                        - cell "Switch·2" [ref=e816]:
+                          - generic "Pending provider switch review" [ref=e817]: Switch·2
+                        - cell "Open Profile Record" [ref=e818]:
+                          - generic [ref=e819]:
+                            - button "Open" [ref=e820] [cursor=pointer]
+                            - button "Profile" [ref=e821] [cursor=pointer]
+                            - button "Record" [ref=e822] [cursor=pointer]
+                      - row "Alicia R. — 1994-02-18 12/90 — No contact Open Profile Record" [ref=e823]:
+                        - cell "Alicia R." [ref=e824]
+                        - cell "—" [ref=e825]
+                        - cell "1994-02-18" [ref=e826]
+                        - cell "12/90" [ref=e827]
+                        - cell "—" [ref=e828]
+                        - cell "No contact" [ref=e829]
+                        - cell [ref=e830]
+                        - cell "Open Profile Record" [ref=e831]:
+                          - generic [ref=e832]:
+                            - button "Open" [ref=e833] [cursor=pointer]
+                            - button "Profile" [ref=e834] [cursor=pointer]
+                            - button "Record" [ref=e835] [cursor=pointer]
+                      - row "Marcus Whitfield — 1988-11-04 19/90 — No contact Open Profile Record" [ref=e836]:
+                        - cell "Marcus Whitfield" [ref=e837]
+                        - cell "—" [ref=e838]
+                        - cell "1988-11-04" [ref=e839]
+                        - cell "19/90" [ref=e840]
+                        - cell "—" [ref=e841]
+                        - cell "No contact" [ref=e842]
+                        - cell [ref=e843]
+                        - cell "Open Profile Record" [ref=e844]:
+                          - generic [ref=e845]:
+                            - button "Open" [ref=e846] [cursor=pointer]
+                            - button "Profile" [ref=e847] [cursor=pointer]
+                            - button "Record" [ref=e848] [cursor=pointer]
+                      - row "Lucía Moreno — 1991-03-22 20/90 — No contact Open Profile Record" [ref=e849]:
+                        - cell "Lucía Moreno" [ref=e850]
+                        - cell "—" [ref=e851]
+                        - cell "1991-03-22" [ref=e852]
+                        - cell "20/90" [ref=e853]
+                        - cell "—" [ref=e854]
+                        - cell "No contact" [ref=e855]
+                        - cell [ref=e856]
+                        - cell "Open Profile Record" [ref=e857]:
+                          - generic [ref=e858]:
+                            - button "Open" [ref=e859] [cursor=pointer]
+                            - button "Profile" [ref=e860] [cursor=pointer]
+                            - button "Record" [ref=e861] [cursor=pointer]
+                      - row "Paloma Ortega — 1987-11-19 1/90 — No contact Open Profile Record Assign clinician" [ref=e862]:
+                        - cell "Paloma Ortega" [ref=e863]
+                        - cell "—" [ref=e864]
+                        - cell "1987-11-19" [ref=e865]
+                        - cell "1/90" [ref=e866]
+                        - cell "—" [ref=e867]
+                        - cell "No contact" [ref=e868]
+                        - cell [ref=e869]
+                        - cell "Open Profile Record Assign clinician" [ref=e870]:
+                          - generic [ref=e871]:
+                            - button "Open" [ref=e872] [cursor=pointer]
+                            - button "Profile" [ref=e873] [cursor=pointer]
+                            - button "Record" [ref=e874] [cursor=pointer]
+                            - button "Assign clinician" [ref=e875] [cursor=pointer]:
+                              - img
+                              - text: Assign clinician
+                      - row "Victor Hale — 1985-09-30 1/90 Coverage type unknown Not found Needs coverage help No contact Open Profile Record Assign clinician" [ref=e876]:
+                        - cell "Victor Hale" [ref=e877]
+                        - cell "—" [ref=e878]
+                        - cell "1985-09-30" [ref=e879]
+                        - cell "1/90" [ref=e880]
+                        - cell "Coverage type unknown Not found Needs coverage help" [ref=e881]:
+                          - generic [ref=e882]:
+                            - generic [ref=e883]: Coverage type unknown
+                            - generic "Not found" [ref=e885]:
+                              - img [ref=e886]
+                              - generic [ref=e888]: Not found
+                            - generic "Needs coverage help" [ref=e890]:
+                              - img [ref=e891]
+                              - generic [ref=e893]: Needs coverage help
+                        - cell "No contact" [ref=e894]
+                        - cell [ref=e895]
+                        - cell "Open Profile Record Assign clinician" [ref=e896]:
+                          - generic [ref=e897]:
+                            - button "Open" [ref=e898] [cursor=pointer]
+                            - button "Profile" [ref=e899] [cursor=pointer]
+                            - button "Record" [ref=e900] [cursor=pointer]
+                            - button "Assign clinician" [ref=e901] [cursor=pointer]:
+                              - img
+                              - text: Assign clinician
+                - generic [ref=e902]:
+                  - generic [ref=e903]:
+                    - generic [ref=e904]:
+                      - generic [ref=e905]: Daniel M.
+                      - generic [ref=e906]: "Full record: SDOH, referrals, external coordination, peer notes."
+                    - generic [ref=e907]:
+                      - button "Quick peek" [ref=e908] [cursor=pointer]
+                      - link "Open record" [ref=e909] [cursor=pointer]:
+                        - /url: /record/p1
+                  - generic [ref=e910]:
+                    - heading "Follow-ups for this client" [level=3] [ref=e911]:
+                      - img [ref=e912]
+                      - text: Follow-ups for this client
+                    - paragraph [ref=e915]: 8 open follow-ups.
+                    - paragraph [ref=e916]: Follow-ups are added and worked on the client's record, alongside their other open items.
+                    - link "Open follow-ups on the record" [ref=e917] [cursor=pointer]:
+                      - /url: /record/p1?section=tasks
+                  - generic [ref=e918]:
+                    - heading "Weekly check-in" [level=3] [ref=e919]:
+                      - img [ref=e920]
+                      - text: Weekly check-in
+                    - paragraph [ref=e923]: "Goal: weekly contact during active treatment. CM: Lupita Sanchez, MSW."
+                    - generic [ref=e924]:
+                      - generic [ref=e925]:
+                        - generic [ref=e926]:
+                          - text: Date
+                          - textbox "Date" [ref=e927]: 2026-11-02
+                        - generic [ref=e928]:
+                          - text: Time
+                          - generic "Check-in time" [ref=e929]:
+                            - generic [ref=e930]:
+                              - combobox "Hour" [ref=e931] [cursor=pointer]:
+                                - generic: "3"
+                                - img [ref=e932]
+                              - combobox "Minute" [ref=e934] [cursor=pointer]:
+                                - img [ref=e935]
+                              - combobox "AM or PM" [ref=e937] [cursor=pointer]:
+                                - generic: AM
+                                - img [ref=e938]
+                      - generic [ref=e940]:
+                        - text: Modality
+                        - combobox "Modality" [ref=e941] [cursor=pointer]:
+                          - generic: Phone
+                          - img [ref=e942]
+                      - generic [ref=e944] [cursor=pointer]:
+                        - checkbox "Attended" [checked] [ref=e945]:
+                          - generic:
+                            - img
+                        - text: Attended
+                      - generic [ref=e946]:
+                        - text: Brief non-clinical notes
+                        - textbox "e.g. confirmed housing intake Friday; needs bus pass." [ref=e947]
+                      - button "Log check-in" [ref=e948] [cursor=pointer]
+                  - generic [ref=e949]:
+                    - heading "Recent check-ins" [level=3] [ref=e950]:
+                      - img [ref=e951]
+                      - text: Recent check-ins
+                    - paragraph [ref=e954]: No check-ins yet for this client.
+                  - generic [ref=e955]:
+                    - heading "Medi-Cal eligibility" [level=3] [ref=e956]:
+                      - img [ref=e957]
+                      - text: Medi-Cal eligibility
+                    - paragraph [ref=e960]: "Coverage: Medi-Cal active (self-reported, not verified). No verification is on file."
+                    - generic [ref=e961]:
+                      - link "Review and update client eligibility" [ref=e962] [cursor=pointer]:
+                        - /url: /record/p1?section=eligibility
+                      - link "Open verification worklist" [ref=e963] [cursor=pointer]:
+                        - /url: /eligibility-worklist
+                  - generic [ref=e964]:
+                    - heading "Refer for a need" [level=3] [ref=e965]:
+                      - img [ref=e966]
+                      - text: Refer for a need
+                    - list [ref=e971]:
+                      - listitem [ref=e972]:
+                        - generic [ref=e973]:
+                          - text: Transitional housing placement
+                          - generic [ref=e974]: sent
+                        - button "Refer" [ref=e975] [cursor=pointer]
+                      - listitem [ref=e976]:
+                        - generic [ref=e977]:
+                          - text: Rides to appointments
+                          - generic [ref=e978]: scheduled
+                        - button "Refer" [ref=e979] [cursor=pointer]
+                      - listitem [ref=e980]:
+                        - generic [ref=e981]:
+                          - text: Job readiness program
+                          - generic [ref=e982]: identified
+                        - button "Refer" [ref=e983] [cursor=pointer]
+    - region "Crisis support" [ref=e984]:
+      - generic [ref=e985]:
+        - img [ref=e986]
+        - generic [ref=e988]:
+          - text: In crisis? Call or text
+          - link "988" [ref=e989] [cursor=pointer]:
+            - /url: tel:988
+          - text: anytime. Spanish-capable.
+    - contentinfo [ref=e990]:
+      - generic [ref=e991]:
+        - generic [ref=e992]: © 2026 Adelante · Built with care
+        - generic [ref=e993]:
+          - generic [ref=e994]: Demo data · no real PHI
+          - generic [ref=e996]: Demo scenarios · top-right control
+  - region "Notifications alt+T"
+```
