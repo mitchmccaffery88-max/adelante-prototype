@@ -173,3 +173,17 @@ Snapshot update is pending; only these 36 additive rows are approved.
 - Screenshots (`docs/evidence/engagement-risk/`): `rosa-watch-member-list.png`, `daniel-elevated-member-list.png`, `daniel-elevated-task.png`, `daniel-close-picker.png`, `daniel-advocate-no-engagement.png`, `daniel-patient-no-engagement.png`.
 - Observation for Mitch (not changed): the task shows in Daniel's chart Tasks and in My work, but not in the Care Coordination "My tasks" list, which keys on the caseload ID (`cm1`) while the task's owner is the staff ID (`s-cm2`).
 - Open for Christi: signal thresholds and levels, the four close outcomes, event HRSN cadence, and 90-day re-screen intervals — all still Draft — pending clinical sign-off.
+
+## R57 follow-up: trainees can't close engagement check-ins (Mitch, 1 Nov 18:05 CT; Christi confirms Tue 3 Nov)
+
+Draft — pending clinical sign-off. Not published; persistence OFF; no Supabase changes.
+
+- **Close action:** `clinical_trainee` removed from `ENGAGEMENT_CLOSE_ROLES` (`src/lib/engagementRisk.ts:9`). `engagement_task_close` is now hidden for trainees with the existing neutral refusal ("This engagement task is not available for this staff member."). No other role changed. Trainee outreach/contact logging (`contact_log`) unchanged.
+- **Supervisor link exists today:** `StaffMember.supervisedBy` (`src/lib/roles.ts:1101`); Kayla Nguyen `s-tr1` → `s-th1` (`roles.ts:1200`); Owen Tran `s-tr2` has none (`roles.ts:1212-1219`). No new field added.
+- **Owner chain** (`engagementOwnerFor`, `src/lib/engagementRiskAutomation.ts`): primary care manager → ECM → primary clinician. If the result is a trainee: the recorded supervisor when they hold a close-allowed role and `chartEntryFor` passes for the member; otherwise the coordinator queue. The automation result (and so its one `engagement_risk_automation` audit row via `successAuditMeta`) carries `ownerRouting` (`supervisor` | `coordinator_queue`), `skippedTraineeId` (staff ID only) and `reassigned`.
+- **Existing trainee-owned open tasks** are re-routed the same way on the next sweep/re-check, in the same automation step, audited as above; no second task is created.
+- **Permission snapshot:** `vitest -u` on `runAction.test.ts` changed exactly one row: `clinical_trainee`: `"engagement_task_close": "allowed"` → `"hidden"`. No other row changed.
+- **Unit tests** (`src/lib/__tests__/engagementTraineeCloseR57.test.ts`, 6/6): trainee refused neutrally; owner chain skip to supervisor-or-queue; unsupervised trainee → coordinator queue, audited; existing trainee task reassigned on sweep with audit. Full suite **3,960/3,960 passed**.
+- **STOP — LVN / nurse RN close (not changed):** registry access stays "allowed" with chart access (tested), but the existing store gate `engagementTaskGate` (`engagementRiskAutomation.ts:15`) also requires worklist **write**, and nursing roles hold worklist **read** (`src/lib/roles.ts:845`). So an actual LVN/RN close is refused today, and the demo roster has no nursing staff. Making it work means widening nursing worklist access or relaxing that gate — a permission decision for Mitch. The LVN/RN test asserts registry access only and notes this.
+- **Browsers** (`--workers=1`, dev server :8080, Chromium 1194 in a temp folder): roleDashboards9c, statTiles9a1/9a2/9a3 (clinician/care manager dashboards), staffTables8b1 (caseload) and engagementRiskR57: **33/33 passed**. No failures; none from docs/browser-triage-oct30.md.
+- Standing-OK uses: **none**. No pinned files changed; no re-pins needed.
