@@ -7,6 +7,9 @@ import { TaskQueueCard } from "@/components/tasks/TaskQueueCard";
 // 26 Oct Phase A adds isolated triage rows; this existing paging fixture has no triage items.
 vi.mock("@/components/staff/PreChartTriageRows", () => ({ PreChartTriageRows: () => null }));
 
+// Mitch, 1 Nov 18:32 CT: isolate the engagement-only child in this paging fixture.
+vi.mock("@/components/tasks/EngagementTaskClose", () => ({ EngagementTaskClose: () => null }));
+
 vi.mock("@/lib/roles", () => ({ useActingStaff: () => ({ staffId: "staff-one", role: "ecm_provider", staffName: "Test owner" }) }));
 vi.mock("@/lib/staffPatientLabel", () => ({ staffPatientLabel: () => "Client", viewerCanOpenChart: () => false }));
 vi.mock("@/lib/actions/act", () => ({ act: vi.fn(), actFor: vi.fn() }));
