@@ -7,7 +7,6 @@ import { AdelanteEHR, registerCaseManagerResolver, type Patient } from "@/lib/eh
 import { STAFF_ROSTER, canAccess, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { isShortFormPositive, shortFormByKey } from "@/lib/screeners";
-import { runActionOrThrow } from "@/lib/actions/runAction";
 
 /** DRAFT — pending clinical sign-off. The only place the cadence lives. */
 export const CONTACT_CADENCE = {
@@ -301,16 +300,6 @@ export function seedCaseloadDemo(now: Date = new Date()) {
     if (since !== null)
       logContact(actor, { patientId: p.id, type: since < 3 ? "call" : "in_person", date: ago(since), note: "Checked in about housing paperwork.", now });
     if (attempt) logContact(actor, { patientId: p.id, type: "attempt", date: ago(1), now });
-    // Mitch, 1 Nov 18:32 CT: fictional Tomás reaches three unanswered attempts.
-    // Draft — pending clinical sign-off. The sweep, not this seed, creates his flag/task.
-    if (first === "Tomás" && last === "Reyna") {
-      for (const daysAgo of [2, 3]) {
-        runActionOrThrow("contact_log", { role: actor.role, staffId: actor.id }, p, {
-          via: "logContact", args: [actor, { patientId: p.id, type: "attempt", date: ago(daysAgo), now }],
-          auditReason: "Approved fictional demo outreach attempt",
-        });
-      }
-    }
   }
   // Quick checks (normal patient function): participation + trend; Jordan's
   // latest is positive → "Clinical follow-up suggested" (reason never shown).
