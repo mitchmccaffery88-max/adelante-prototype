@@ -22,10 +22,11 @@ import { TaskWorkRow } from "@/components/tasks/TaskWorkRow";
 import { type TaskWorkDraftCache } from "@/components/tasks/taskWorkDraft";
 import { useActingStaff } from "@/lib/roles";
 import { isInFacilityTask } from "@/lib/inFacility";
+import { withDirectStaffTasks, type MyTaskViewer } from "@/lib/myTaskQueue";
 
 export type TaskQueueSource =
   /** Tasks assigned to this case manager — the real `assignedTo` field. */
-  | { kind: "case_manager"; cmId: string }
+  | { kind: "case_manager"; cmId: string; staff?: MyTaskViewer }
   /** Open follow-ups on the patients clinically assigned to this clinician. */
   | { kind: "clinician_patients"; patientIds: string[] }
   /** No assignment identity at all. */
@@ -43,7 +44,7 @@ export function outpatientQueueTasks(source: TaskQueueSource): CaseTask[] {
 }
 
 function tasksFor(source: TaskQueueSource): CaseTask[] {
-  if (source.kind === "case_manager") return AdelanteEHR.caseTasksForCM(source.cmId);
+  if (source.kind === "case_manager") return withDirectStaffTasks(AdelanteEHR.caseTasksForCM(source.cmId), source.staff);
   if (source.kind === "clinician_patients") {
     const seen = new Set<string>();
     const out: CaseTask[] = [];
@@ -67,7 +68,7 @@ export function TaskQueueCard({
   summary?: ReactNode;
 }) {
   const { staffId, role } = useActingStaff();
-  return <TaskQueueContent key={`${staffId}:${role}`} {...props} />;
+  return <TaskQueueContent key={`${staffId}:${role}`} {...props} {...(props.source.kind === "case_manager" ? { source: { ...props.source, staff: { staffId, role } } } : {})} />;
 }
 
 function TaskQueueContent({

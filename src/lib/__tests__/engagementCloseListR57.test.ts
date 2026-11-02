@@ -26,7 +26,7 @@ function memberWithTeam(staffId: string) {
   return p;
 }
 function engagementTask(patientId: string, assignedTo: string, allowedRoles: StaffRole[]) {
-  return AdelanteEHR.createCaseTask({ patientId, assignedTo, allowedRoles, title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${patientId}` });
+  return AdelanteEHR.createCaseTask({ patientId, assignedTo, allowedRoles, title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${patientId}` })!;
 }
 const close = (role: StaffRole, staffId: string, p: { id: string }, taskId: string) =>
   runAction('engagement_task_close', { role, staffId }, p as never, { args: [{ taskId, actor: { role, staffId }, outcome: ENGAGEMENT_OUTCOMES[0] }] });
@@ -68,7 +68,7 @@ describe('R57 follow-up 3: final close list and worklist write', () => {
   it.each(['nurse_rn', 'lvn', 'clinical_coordinator'] as const)('%s holds worklist write and can claim and update an ordinary row', role => {
     expect(canAccess(role, 'worklist').level).toBe('write');
     const s = role === 'clinical_coordinator' ? coord() : staffFor(role); const p = memberWithTeam(s.id);
-    const t = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: '', title: 'Fictional follow-up call', detail: 'Fictional', dueDate: new Date().toISOString() } as never);
+    const t = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: '', title: 'Fictional follow-up call', detail: 'Fictional', dueDate: new Date().toISOString() } as never)!;
     expect(AdelanteEHR.claimWorklistTask(t.id, s.name, role)).toBe(true);
     expect(AdelanteEHR.setWorklistStatus(t.id, 'completed', s.name, role)).toBe(true);
   });

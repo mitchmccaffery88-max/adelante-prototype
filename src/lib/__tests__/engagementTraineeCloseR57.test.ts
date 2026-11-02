@@ -45,7 +45,7 @@ describe('R57 follow-up: trainee close and owner routing', () => {
     expect(chartAction('engagement_task_close').allowed({ role, staffId: s.id }, p).state).toBe('allowed');
     // Superseded 2 Nov (Mitch option B, standing-OK superseded path): nursing now holds
     // worklist write, so the registry-only check is extended to a real close.
-    const t = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: s.id, allowedRoles: [role], title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${p.id}` });
+    const t = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: s.id, allowedRoles: [role], title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${p.id}` })!;
     expect(runAction('engagement_task_close', { role, staffId: s.id }, p, { args: [{ taskId: t.id, actor: { role, staffId: s.id }, outcome: 'Reached, re-engaged' }] }).ok).toBe(true);
     expect(AdelanteEHR.listCaseTasks().find(x => x.id === t.id)!.status).toBe('done');
   });
@@ -66,13 +66,13 @@ describe('R57 follow-up: trainee close and owner routing', () => {
     const r = sweep(p); expect(r.ok).toBe(true);
     const t = engagementTask(p)!;
     expect(t.assignedTo).toBe(''); expect(t.allowedRoles).toEqual(['clinical_coordinator']);
-    const audit = AdelanteEHR.listAudit?.().filter(e => e.patientId === p.id).at(-1) as { meta?: Record<string, unknown> } | undefined;
+    const audit = (AdelanteEHR as unknown as { listAudit?: () => { patientId?: string }[] }).listAudit?.().filter(e => e.patientId === p.id).at(-1) as { meta?: Record<string, unknown> } | undefined;
     expect(JSON.stringify(audit ?? r)).toContain('coordinator_queue');
   });
 
   it('an existing trainee-owned task is reassigned on the next sweep with an audit entry', () => {
     const p = member(staff('s-tr2').clinicianId); elevate(p);
-    const t = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: 's-tr2', allowedRoles: ['clinical_trainee'], title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${p.id}` });
+    const t = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: 's-tr2', allowedRoles: ['clinical_trainee'], title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${p.id}` })!;
     const r = sweep(p); expect(r.ok).toBe(true);
     const after = AdelanteEHR.caseTasksForPatient(p.id).filter(x => x.sourceAutomationId === 'engagement_risk_automation' && x.status !== 'done');
     expect(after).toHaveLength(1); expect(after[0]!.id).toBe(t.id);

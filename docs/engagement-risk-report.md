@@ -233,3 +233,24 @@ Draft — pending clinical sign-off. Not published; persistence OFF. Physicians 
 - Browsers (:8080, `--workers=1`): engagementRiskR57, roleDashboards9c, statTiles9a1/9a2, first 29 of 33 passed before the 10-minute command limit; re-run of statTiles9a3 + staffTables8b1: 12/13. The failure was `statTiles9a3.spec.ts:39` (billing, then billing_coordinator on standalone re-run) — page-open timeout, each role passed in the other run; billing roles have no worklist grants. Not listed in docs/browser-triage-oct30.md; not a triage item. Sandbox Monday 2 Nov: #16's spec was not in this run.
 
 **Final close list for Christi:** ecm_provider, cf_care_manager, community_health_worker, clinical_coordinator, therapist, sud_counselor, pmhnp, physician, nurse_rn, lvn.
+
+## R57 follow-up 2: Care Coordination "My tasks" includes tasks assigned to my staff ID (Mitch, 2 Nov 09:28 CT; Draft)
+
+### 1. Report first (measured before any change)
+- **Source of "My tasks":** `src/components/tasks/TaskQueueCard.tsx:45-46` (`tasksFor` → `AdelanteEHR.caseTasksForCM(cmId)`, which is `src/lib/ehr.ts:16531-16533`, `assignedTo === cmId`). Rendered from `src/routes/case-manager.tsx:242`; `cmId` is the acting staff's `caseManagerId` (`case-manager.tsx:147`).
+- **Counts from the same source:** only the card's own badges — "follow-up needed", "due today", "snoozed" (`TaskQueueCard.tsx:86-92, 110-113`) and the "Show all" list. No StatTile, Today count or Worklist statistic reads `caseTasksForCM`; `rg` finds no other caller outside tests. They derive from the same `tasks` array, so they match the list automatically.
+- **Who sees the card:** staff with a caseload link — `s-cm2` Lupita → `cm1` and `s-peer2` → `cm2`.
+- **Demo tasks assigned by staff ID (measured from the seeded store):** 10 — `s-sudc1` ×7 (ASAM assessment needed, Consider the Recovery Journey), `s-th1` ×3 (ASAM reassessment, CALOMS prompt). Neither `s-sudc1` nor `s-th1` has a caseload link, so they never render this card. **No seeded task newly appears** for Lupita or `s-peer2`. The only new rows are engagement check-ins routed to `s-cm2` (or `s-peer2`) by the sweep/re-check at run time.
+- **Tests / numbers that would change:** none expected. `groupAAccessFixes` and `staffTable8b1Closeout` call the card without a staff identity / with no staff-ID tasks; `roleDashboardParity9c2` inventories `TaskQueueCard.tsx` bindings — the change adds no variable declarations or inventoried attributes.
+
+### 2. Change (applied)
+- New read-only helper `src/lib/myTaskQueue.ts` (`withDirectStaffTasks`): caseload rows unchanged and first, then tasks with `assignedTo === staffId`, de-duplicated by id, kept only when `viewerCanOpenChart` passes (chart/Part 2/restricted gates unchanged). No ownership, close-right, registry, permission or snapshot change.
+- `TaskQueueCard.tsx`: four anchors — import, optional `staff` on the `case_manager` source, `tasksFor` wraps `caseTasksForCM`, and the outer card passes the acting `{ staffId, role }`. Badges ("follow-up needed / due today / snoozed") read the same array, so they match the list. No other count reads this source.
+- Re-pin: `src/test/myTasksNov02Approved.ts` + fixture + its own regression test, chained after `withApprovedWorklistGrantNov02` in `credentialingOct27Approved.ts` (the existing literal chain line is kept intact inside `latest`, so the worklist adapter's chain assertion still holds).
+- Unit tests `src/lib/__tests__/myTasksDirectR57.test.ts` (5): s-cm2 task appears for Lupita; appears once; hidden without chart access; caseload rows unchanged.
+- **Full units: 3,992/3,992 passed (460 files).** No existing test edited; no standing OK used.
+
+### 3. Browser validation (--workers=1, dev server :8080)
+- `engagementRiskR57` extended with one check: after Daniel's third attempt, his "Engagement check-in needed" task appears exactly once in Care Coordination "My tasks" (screenshot `docs/evidence/engagement-risk/daniel-task-in-my-tasks.png`). **2/2 passed.**
+- `roleDashboards9c`, `staffTables8b1` (covers `/case-manager` caseload and `/worklist`), `statTiles9a1/9a2/9a3`: **30/31.** One failure: `statTiles9a3.spec.ts:39` billing_coordinator, 30s test timeout — billing route, does not render "My tasks". Re-run standalone: passed. Not on the numbered triage list; it is the same report-only `statTiles9a3:39` one-off timeout already recorded in `docs/browser-triage-oct30.md:177,181`. No separate care-manager dashboard spec exists beyond `roleDashboards9c` ecm_provider and `staffTables8b1 /case-manager`.
+- Not published. Persistence OFF. No Supabase, registry, permission or snapshot change. No standing OK used.

@@ -89,6 +89,13 @@ test('Daniel reaches Elevated on the third logged attempt; Close picker; advocat
   await page.keyboard.press('Escape');
   await expect(profile).toHaveCount(0);
 
+  // R57 follow-up 2: the s-cm2 check-in also shows in Care Coordination "My tasks".
+  const myTasks = page.getByTestId('task-queue-card');
+  await expect(myTasks.getByRole('heading', { name: 'My tasks' })).toBeVisible();
+  const myTask = myTasks.getByTestId('task-work-row').filter({ hasText: 'Engagement check-in needed' });
+  await expect(myTask).toHaveCount(1);
+  await myTask.screenshot({ path: resolve(evidence, 'daniel-task-in-my-tasks.png') });
+
   // Advocate for Daniel (existing 6a demo session, in-app navigation).
   await page.getByRole('button', { name: 'Demo control: QA scenario' }).click();
   await page.getByRole('menuitem', { name: /^6a · Advocate only/ }).click();
