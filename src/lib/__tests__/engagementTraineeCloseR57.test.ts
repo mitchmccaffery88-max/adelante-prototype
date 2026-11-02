@@ -5,6 +5,7 @@ import { runAction } from '../actions/runAction';
 import { chartAction } from '../chartActions';
 import { STAFF_ROSTER } from '../roles';
 import { chartEntryFor } from '../chartAccess';
+import { saveAdditionalTeamAssignment } from '../chartRelationships';
 import { screenerFollowupActor } from '../screenerFollowup';
 import { engagementOwnerFor } from '../engagementRiskAutomation';
 import { ENGAGEMENT_CLOSE_ROLES, ENGAGEMENT_TASK_TITLE } from '../engagementRisk';
@@ -35,7 +36,10 @@ describe('R57 follow-up: trainee close and owner routing', () => {
 
   it.each(['lvn', 'nurse_rn'] as const)('%s can still close with chart access', (role) => {
     const s = STAFF_ROSTER.find(s => s.role === role && s.active !== false); if (!s) throw new Error(`no ${role}`);
-    const p = AdelanteEHR.listPatients().find(p => chartEntryFor(role, s.id, p.id).ok); if (!p) throw new Error(`no chart for ${role}`);
+    const p = member();
+    const coord = STAFF_ROSTER.find(c => c.role === 'clinical_coordinator' && c.active !== false)!;
+    saveAdditionalTeamAssignment({ role: 'clinical_coordinator', staffId: coord.id }, { staffId: s.id, patientId: p.id, start: new Date(clock - 86400000).toISOString() });
+    expect(chartEntryFor(role, s.id, p.id).ok).toBe(true);
     expect(chartAction('engagement_task_close').allowed({ role, staffId: s.id }, p).state).toBe('allowed');
     const t = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: s.id, allowedRoles: [role], title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement-test:${role}:${p.id}` });
     const r = runAction('engagement_task_close', { role, staffId: s.id }, p, { args: [{ taskId: t.id, actor: { role, staffId: s.id }, outcome: 'Reached, re-engaged' }] });
