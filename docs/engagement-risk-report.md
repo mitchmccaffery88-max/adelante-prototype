@@ -128,3 +128,9 @@ Snapshot update is pending; only these 36 additive rows are approved.
 - Post-reconciliation focused validation: **40/40 passed across five files** (new surfaces, both exact-once adapters, superseded R53 regression and unchanged dashboard bindings). Latest preview **build OK**, 1 Nov 23:51:15 UTC; type checks clean. Full units are not rerun after the mandatory older-test STOP. Part 2 remains open, not done.
 - Part 2 standing-OK totals: **one superseded-anchor use; one type-only use**, both detailed above. Part 1 totals remain separate (four anchor/two type-only).
 - Christi still owns confirmation of thresholds, weights, all time windows, early-reentry step-up and HRSN interpretation. Disconnected phone, SMS undeliverable, packet confirmation events, uncaptured phone/data and absent coverage remain needs-data skips; production scheduling remains R54/R48.
+
+## Part 2 finish — Mitch's explicit 1 Nov 18:32 CT approval
+
+- Approved older paging fixture isolation applied through `engagementFinishNov01Approved.ts`, chained after `engagementSurfacesReconcileNov01Approved.ts`. Only a new `EngagementTaskClose` null module mock was added; all prior mocks, assertions, inputs, expectations and names remain unchanged. This is **explicit approval, not a standing OK**. Exact-apply/drift/reapplication regression plus paging fixture: **4/4 passed**.
+- Full units after paging isolation: **3,947/3,947 passed, 454 files**, 2 Nov 00:33–00:37 UTC. No other failure or standing-OK use.
+- Before demo seed changes: read-only dependency inspection found no fixed test/count/dashboard expectation dependent on Tomás's contacts or caseload counts. Attempt rows do not affect successful-contact totals or the contact-cadence status; live attempt totals and engagement projections intentionally derive from records. `caseloadReview.ts` is not a target of any existing approved-source adapter; `demoInboxSeed.ts` is pinned and will remain unchanged. Rosa remains untouched.
