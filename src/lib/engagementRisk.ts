@@ -6,7 +6,7 @@ export const ENGAGEMENT_DRAFT = 'Draft — pending clinical sign-off';
 export const ENGAGEMENT_TASK_TITLE = 'Engagement check-in needed';
 export const ENGAGEMENT_OUTCOMES = ['Reached, re-engaged', 'Reached, needs help', 'Unable to reach', 'Member declined'] as const;
 export type EngagementOutcome = typeof ENGAGEMENT_OUTCOMES[number];
-export const ENGAGEMENT_CLOSE_ROLES: readonly StaffRole[] = ['ecm_provider', 'cf_care_manager', 'community_health_worker', 'peer_specialist', 'clinical_coordinator', 'therapist', 'sud_counselor', 'pmhnp', 'physician', 'nurse_rn', 'lvn'];
+export const ENGAGEMENT_CLOSE_ROLES: readonly StaffRole[] = ['ecm_provider', 'cf_care_manager', 'community_health_worker', 'clinical_coordinator', 'therapist', 'sud_counselor', 'pmhnp', 'physician', 'nurse_rn', 'lvn'];
 export const ENGAGEMENT_SETTINGS = {
   missed: { days: 30, minimum: 2, weight: 'High', label: ENGAGEMENT_DRAFT },
   outreach: { days: 7, minimum: 3, weight: 'High', label: ENGAGEMENT_DRAFT },

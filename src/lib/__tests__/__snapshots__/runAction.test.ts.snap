@@ -3418,7 +3418,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "document_upload": "hidden",
     "eligibility_check": "hidden",
     "engagement_risk_automation": "hidden",
-    "engagement_task_close": "allowed",
+    "engagement_task_close": "hidden",
     "escalation_acknowledge": "allowed",
     "escalation_handoff": "allowed",
     "escalation_reassign": "hidden",

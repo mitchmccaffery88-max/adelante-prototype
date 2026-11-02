@@ -2367,7 +2367,7 @@
   {
     "role": "nurse_rn",
     "record_class": "worklist",
-    "level": "read"
+    "level": "write"
   },
   {
     "role": "nurse_rn",
@@ -2587,7 +2587,7 @@
   {
     "role": "lvn",
     "record_class": "worklist",
-    "level": "read"
+    "level": "write"
   },
   {
     "role": "lvn",
@@ -3027,7 +3027,7 @@
   {
     "role": "clinical_coordinator",
     "record_class": "worklist",
-    "level": "read"
+    "level": "write"
   },
   {
     "role": "clinical_coordinator",
