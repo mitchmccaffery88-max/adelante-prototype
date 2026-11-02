@@ -35,6 +35,7 @@ import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { needsFirstIntake, isOnboardingComplete } from "@/lib/onboarding";
 import { recoveryJourneyVisible } from "@/lib/seeking";
 import { useReminderSweep } from "@/hooks/useReminderSweep";
+import { installEngagementRecheck } from "@/lib/engagementRecheck";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,8 @@ function AppShellContent() {
   // swept while the app is open. NOT a background service; production needs a
   // server-side scheduled job. See src/hooks/useReminderSweep.ts.
   useReminderSweep();
+  // R57 Draft — immediate per-member engagement re-check after staff writes.
+  useEffect(() => installEngagementRecheck(), []);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
