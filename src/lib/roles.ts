@@ -726,7 +726,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
-    clinical_coordinator: "read",
+    // R57 follow-up 3 (Mitch 2 Nov, option B): coordinators claim and close
+    // coordinator-queue rows. Draft — pending clinical sign-off.
+    clinical_coordinator: "write",
     peer_specialist: "read",
     community_health_worker: "write",
     sys_admin: "read",
@@ -842,7 +844,10 @@ const NURSE_GRANTS: Partial<Record<RecordClass, [AccessLevel, AccessLevel]>> = {
   allergies: ["write", "read"],
   alerts: ["read", "read"],
   documents: ["read", "read"],
-  worklist: ["read", "read"],
+  // R57 follow-up 3 (Mitch 2 Nov, option B): nurses do real follow-up and
+  // coordination work, so RN and LVN claim/update worklist rows. Draft —
+  // pending clinical sign-off (Christi confirms LVN scope).
+  worklist: ["write", "write"],
   provider_requests: ["write", "none"],
   consent_ledger: ["read", "none"],
   // Same level as meds_erx (shift-count stock rule).
