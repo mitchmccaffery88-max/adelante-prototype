@@ -40,7 +40,7 @@ describe('R57 immediate engagement re-check', () => {
     expect(attempt(p, 0).ok).toBe(true);
     expect(flag(p, s)?.level).toBe('Elevated');
     expect(engagementTasks(p)).toHaveLength(1);
-    expect(engagementTasks(p)[0]!.ownerId ?? engagementTasks(p)[0]!.assigneeId).toBeTruthy();
+    expect(engagementTasks(p)[0]!.assignedTo).toBe(s.id);
   });
   it('a fourth attempt does not create a second task', () => {
     const { p } = member();
