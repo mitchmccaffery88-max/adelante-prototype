@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { AdelanteEHR } from '../ehr';
 import { runAction } from '../actions/runAction';
 import { chartAction } from '../chartActions';
-import { STAFF_ROSTER } from '../roles';
+import { STAFF_ROSTER, addStaffMember } from '../roles';
 import { chartEntryFor } from '../chartAccess';
 import { saveAdditionalTeamAssignment } from '../chartRelationships';
 import { screenerFollowupActor } from '../screenerFollowup';
@@ -35,7 +35,9 @@ describe('R57 follow-up: trainee close and owner routing', () => {
   });
 
   it.each(['lvn', 'nurse_rn'] as const)('%s can still close with chart access', (role) => {
-    const s = STAFF_ROSTER.find(s => s.role === role && s.active !== false); if (!s) throw new Error(`no ${role}`);
+    // The demo roster has no nursing staff; add a fictional one through the real roster store.
+    const admin = STAFF_ROSTER.find(a => a.role === 'sys_admin' && a.active !== false)!;
+    const s = STAFF_ROSTER.find(x => x.id === `s-test-${role}`) ?? addStaffMember({ role: 'sys_admin', staffId: admin.id }, { id: `s-test-${role}`, name: `Fictional ${role}`, role, credential: role === 'lvn' ? 'LVN' : 'RN' });
     const p = member();
     const coord = STAFF_ROSTER.find(c => c.role === 'clinical_coordinator' && c.active !== false)!;
     saveAdditionalTeamAssignment({ role: 'clinical_coordinator', staffId: coord.id }, { staffId: s.id, patientId: p.id, start: new Date(clock - 86400000).toISOString() });
