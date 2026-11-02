@@ -726,7 +726,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
-    clinical_coordinator: "write",
+    clinical_coordinator: "read",
     peer_specialist: "read",
     community_health_worker: "write",
     sys_admin: "read",
@@ -842,7 +842,7 @@ const NURSE_GRANTS: Partial<Record<RecordClass, [AccessLevel, AccessLevel]>> = {
   allergies: ["write", "read"],
   alerts: ["read", "read"],
   documents: ["read", "read"],
-  worklist: ["write", "write"],
+  worklist: ["read", "read"],
   provider_requests: ["write", "none"],
   consent_ledger: ["read", "none"],
   // Same level as meds_erx (shift-count stock rule).
