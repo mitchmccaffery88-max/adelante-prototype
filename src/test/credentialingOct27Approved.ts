@@ -181,5 +181,9 @@ export function withApprovedCredentialingOct27(path: string, rollbackText: strin
   }
   const r57Prior = withApprovedRescreenTileActorNov01(path, withApprovedRescreenTileFollowupNov01(path, withApprovedRescreenTileNov01(path, withApprovedRescreenCadenceReconcileNov01(path, withApprovedRescreenCadenceFinishOct31(path, withApprovedRescreenCadenceOct31(path, withApprovedScreenerEstimateLabelOct31(path, withApprovedScreenerHarnessInputOct31(path, withApprovedScreenerHarnessOct31(path, withApprovedScreenerFinalAuditOct31(path, withApprovedScreenerReassessmentOct30(path, withApprovedScreenerFollowupsOct30(path, withApprovedScreenerCompletenessOct30(path, withApprovedFamilyRequestOct30(path, withApprovedPatientSchedulingOct30(path, withApprovedPatientSchedulingOct29(path, withApprovedCoverageRulesOct29(path, withApprovedMoudServiceOct28(path, withApprovedCredentialingDeaOct28(path, withApprovedCredentialingAsOfOct28(path, withApprovedAccessRulesOct28(path, withApprovedCredentialingReconciliationOct28(path, s))))))))))))))))))))));
   const r57Result = withApprovedEngagementRiskNov01(path, r57Prior);
-  return withApprovedMyTasksNov02(path, withApprovedWorklistGrantNov02(path, withApprovedEngagementFinishNov01(path, withApprovedEngagementSurfacesReconcileNov01(path, withApprovedEngagementSurfacesNov01(path, withApprovedEngagementRiskEventsTypeNov01(path, withApprovedEngagementRiskReconcileNov01(path, r57Result)))))));
+  const latest = (() => {
+    return withApprovedWorklistGrantNov02(path, withApprovedEngagementFinishNov01(path, withApprovedEngagementSurfacesReconcileNov01(path, withApprovedEngagementSurfacesNov01(path, withApprovedEngagementRiskEventsTypeNov01(path, withApprovedEngagementRiskReconcileNov01(path, r57Result))))));
+  })();
+  // R57 follow-up 2 (Mitch 2 Nov 09:28 CT): chained after the worklist grant re-pin.
+  return withApprovedMyTasksNov02(path, latest);
 }

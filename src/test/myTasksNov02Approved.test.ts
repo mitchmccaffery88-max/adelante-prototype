@@ -19,7 +19,9 @@ describe('R57 follow-up 2 approved exact-once TaskQueueCard re-pin', () => {
   });
   it('chains immediately after the latest adapter', () => {
     const chain = readFileSync('src/test/credentialingOct27Approved.ts', 'utf8');
-    expect(chain).toContain('return withApprovedMyTasksNov02(path, withApprovedWorklistGrantNov02(path, withApprovedEngagementFinishNov01(path,');
+    expect(chain).toContain('return withApprovedWorklistGrantNov02(path, withApprovedEngagementFinishNov01(path,');
+    expect(chain).toContain('return withApprovedMyTasksNov02(path, latest);');
+    expect(chain.indexOf('return withApprovedWorklistGrantNov02(')).toBeLessThan(chain.indexOf('return withApprovedMyTasksNov02(path, latest);'));
   });
   it('unrelated source is unchanged', () => expect(withApprovedMyTasksNov02('src/lib/ehr.ts', 'same')).toBe('same'));
 });
