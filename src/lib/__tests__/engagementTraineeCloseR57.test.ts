@@ -46,7 +46,8 @@ describe('R57 follow-up: trainee close and owner routing', () => {
     // Superseded 2 Nov (Mitch option B, standing-OK superseded path): nursing now holds
     // worklist write, so the registry-only check is extended to a real close.
     const t = AdelanteEHR.createCaseTask({ patientId: p.id, assignedTo: s.id, allowedRoles: [role], title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${p.id}` });
-    expect(runAction('engagement_task_close', { role, staffId: s.id }, p, { args: [{ taskId: t.id, actor: { role, staffId: s.id }, outcome: 'Reached member' }] }).ok).toBe(true);
+    expect(runAction('engagement_task_close', { role, staffId: s.id }, p, { args: [{ taskId: t.id, actor: { role, staffId: s.id }, outcome: 'Reached, re-engaged' }] }).ok).toBe(true);
+    expect(AdelanteEHR.listCaseTasks().find(x => x.id === t.id)!.status).toBe('done');
   });
 
   it('owner chain skips a supervised trainee to the supervisor when close-allowed with chart entry, else coordinator queue', () => {
