@@ -27,13 +27,24 @@ export function engagementFacts(p: Patient): EngagementFacts {
     ...(p.careMessages ?? []).flatMap(({ id, createdAt, authorType }) => authorType === 'advocate' ? [] : [{ id, at: createdAt, kind: authorType === 'staff' ? 'staff_message' as const : 'member_reply' as const }]),
   ] };
 }
-export function engagementOwnerFor(p: Patient, now: Date) {
+export type EngagementOwnerRouting = { skippedTraineeId: string; branch: 'supervisor' | 'coordinator_queue' };
+/** Chain: primary care manager -> ECM -> primary clinician. A trainee owner is skipped to a recorded
+ *  close-allowed supervisor with chart entry, else the coordinator queue (Draft — pending clinical sign-off). */
+export function engagementOwnerFor(p: Patient, now: Date): ReturnType<typeof engagementOwner> & { routing?: EngagementOwnerRouting } {
   const active = STAFF_ROSTER.filter(s => s.active !== false);
   const primary = active.find(s => !!p.caseManagerId && caseManagerIdFor(s.id) === p.caseManagerId);
   const ecm = active.find(s => s.role === 'ecm_provider' && (s.id === primary?.id || listAdditionalTeam().some(r => r.patientId === p.id && r.staffId === s.id && activeAt(r.start, r.end, now))));
-  const clinician = active.find(s => ENGAGEMENT_CLOSE_ROLES.includes(s.role) && !!p.primaryClinicianId && [s.id, s.clinicianId].includes(p.primaryClinicianId));
-  return engagementOwner(primary ? { id: primary.id, role: primary.role } : undefined, ecm ? { id: ecm.id, role: ecm.role } : undefined, clinician ? { id: clinician.id, role: clinician.role } : undefined);
+  const clinician = active.find(s => (ENGAGEMENT_CLOSE_ROLES.includes(s.role) || s.role === 'clinical_trainee') && !!p.primaryClinicianId && [s.id, s.clinicianId].includes(p.primaryClinicianId));
+  const chosen = primary ?? ecm ?? clinician;
+  if (chosen?.role === 'clinical_trainee') {
+    const sup = chosen.supervisedBy ? active.find(s => s.id === chosen.supervisedBy) : undefined;
+    if (sup && ENGAGEMENT_CLOSE_ROLES.includes(sup.role) && chartEntryFor(sup.role, sup.id, p.id).ok)
+      return { ...engagementOwner({ id: sup.id, role: sup.role }), routing: { skippedTraineeId: chosen.id, branch: 'supervisor' } };
+    return { ...engagementOwner(), routing: { skippedTraineeId: chosen.id, branch: 'coordinator_queue' } };
+  }
+  return engagementOwner(chosen ? { id: chosen.id, role: chosen.role } : undefined);
 }
+const traineeIdentity = (id?: string) => !!id && STAFF_ROSTER.some(s => s.role === 'clinical_trainee' && [s.id, s.clinicianId].includes(id));
 /** Staff-only projection; no individual export, member or advocate read. */
 export function engagementFlagFor(a: EngagementActor, patientId: string): EngagementFlag | undefined {
   const p = AdelanteEHR.getPatient(patientId);
@@ -49,14 +60,21 @@ export function runEngagementRiskStep(patientId: string, at: string, actor: Enga
   const facts = engagementFacts(p); const flag = evaluateEngagement(facts, now); const previous = states.get(patientId);
   const events = engagementEvents(facts, now); const pending = events.filter(e => !previous?.consumed.includes(e));
   const changed = JSON.stringify(previous?.flag) !== JSON.stringify(flag);
-  let task: CaseTask | undefined;
-  if (flag?.level === 'Elevated') task = AdelanteEHR.caseTasksForPatient(p.id).find(t => t.sourceAutomationId === 'engagement_risk_automation' && t.title === ENGAGEMENT_TASK_TITLE && t.status !== 'done' && !t.completedAt) ?? AdelanteEHR.createCaseTask({ patientId, ...engagementOwnerFor(p, new Date(at)), title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: at, origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${p.id}` });
+  let task: CaseTask | undefined; let routing: EngagementOwnerRouting | undefined; let reassigned = false;
+  const openTask = AdelanteEHR.caseTasksForPatient(p.id).find(t => t.sourceAutomationId === 'engagement_risk_automation' && t.title === ENGAGEMENT_TASK_TITLE && t.status !== 'done' && !t.completedAt);
+  if (openTask && (traineeIdentity(openTask.assignedTo) || traineeIdentity(openTask.claimedBy) || openTask.allowedRoles?.includes('clinical_trainee'))) {
+    const o = engagementOwnerFor(p, new Date(at));
+    routing = o.routing ?? { skippedTraineeId: openTask.assignedTo, branch: o.assignedTo ? 'supervisor' : 'coordinator_queue' };
+    openTask.assignedTo = o.assignedTo; openTask.allowedRoles = o.allowedRoles; openTask.claimedBy = undefined; reassigned = true;
+  }
+  if (flag?.level === 'Elevated') task = openTask;
+  if (flag?.level === 'Elevated' && !task) { const { routing: r, ...o } = engagementOwnerFor(p, new Date(at)); routing = r; task = AdelanteEHR.createCaseTask({ patientId, ...o, title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: at, origin: 'screener_flag', source: 'engagement_risk_automation', sourceAutomationId: 'engagement_risk_automation', taskType: 'engagement_checkin', dedupeKey: `engagement:${p.id}` }); }
   let prompted = false;
   let consumed = previous?.consumed ?? [];
   const open = (p.tasks ?? []).some(t => t.kind === 'rescreen' && t.screenerKey === 'ahc-hrsn' && !t.completedAt);
   if (pending.length && open) consumed = [...new Set([...consumed, ...pending])];
   else if (pending.length && eventHrsnAllowed(p, now)) { AdelanteEHR.createEngagementHrsnPrompt(p.id, at, actor); prompted = true; consumed = [...new Set([...consumed, ...pending])]; }
   states.set(patientId, { flag, consumed });
-  if (changed || prompted) AdelanteEHR._emit();
-  return { patientId, transition: changed ? flag ? previous?.flag ? 'changed' : 'flagged' : 'cleared' : 'unchanged', level: flag?.level ?? 'Clear', taskId: task?.id, prompted };
+  if (changed || prompted || reassigned) AdelanteEHR._emit();
+  return { patientId, transition: changed ? flag ? previous?.flag ? 'changed' : 'flagged' : 'cleared' : 'unchanged', level: flag?.level ?? 'Clear', taskId: task?.id ?? (reassigned ? openTask?.id : undefined), prompted, ...(routing ? { ownerRouting: routing.branch, skippedTraineeId: routing.skippedTraineeId, reassigned } : {}) };
 }
