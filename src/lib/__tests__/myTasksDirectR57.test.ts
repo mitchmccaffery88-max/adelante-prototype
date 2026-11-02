@@ -11,7 +11,7 @@ const lupita = getStaffMember('s-cm2')!;
 const viewer = { staffId: lupita.id, role: lupita.role };
 const ids = (src: Parameters<typeof outpatientQueueTasks>[0]) => outpatientQueueTasks(src).map(t => t.id);
 const task = (patientId: string, assignedTo: string) =>
-  AdelanteEHR.createCaseTask({ patientId, assignedTo, title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', allowedRoles: [lupita.role] });
+  AdelanteEHR.createCaseTask({ patientId, assignedTo, title: ENGAGEMENT_TASK_TITLE, detail: ENGAGEMENT_TASK_TITLE, dueDate: new Date().toISOString(), origin: 'screener_flag', source: 'engagement_risk_automation', allowedRoles: [lupita.role] })!;
 
 describe('My tasks: caseload ID or direct staff ID', () => {
   it('Lupita is linked to caseload cm1', () => expect(lupita.caseManagerId).toBe('cm1'));
