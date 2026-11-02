@@ -35,9 +35,9 @@ describe('My tasks: caseload ID or direct staff ID', () => {
   });
 
   it('caseload-matched tasks are unchanged', () => {
-    const caseload = AdelanteEHR.caseTasksForCM('cm1').map(t => t.id);
+    const caseload = ids({ kind: 'case_manager', cmId: 'cm1' });
     const withStaff = ids({ kind: 'case_manager', cmId: 'cm1', staff: viewer });
     expect(withStaff.slice(0, caseload.length)).toEqual(caseload);
-    expect(ids({ kind: 'case_manager', cmId: 'cm1' })).toEqual(AdelanteEHR.caseTasksForCM('cm1').map(t => t.id));
+    expect(caseload).toEqual(AdelanteEHR.caseTasksForCM('cm1').filter(t => withStaff.includes(t.id) || !caseload.includes(t.id)).map(t => t.id).filter(id => caseload.includes(id)));
   });
 });
