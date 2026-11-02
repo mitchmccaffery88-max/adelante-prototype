@@ -187,3 +187,32 @@ Draft — pending clinical sign-off. Not published; persistence OFF; no Supabase
 - **STOP — LVN / nurse RN close (not changed):** registry access stays "allowed" with chart access (tested), but the existing store gate `engagementTaskGate` (`engagementRiskAutomation.ts:15`) also requires worklist **write**, and nursing roles hold worklist **read** (`src/lib/roles.ts:845`). So an actual LVN/RN close is refused today, and the demo roster has no nursing staff. Making it work means widening nursing worklist access or relaxing that gate — a permission decision for Mitch. The LVN/RN test asserts registry access only and notes this.
 - **Browsers** (`--workers=1`, dev server :8080, Chromium 1194 in a temp folder): roleDashboards9c, statTiles9a1/9a2/9a3 (clinician/care manager dashboards), staffTables8b1 (caseload) and engagementRiskR57: **33/33 passed**. No failures; none from docs/browser-triage-oct30.md.
 - Standing-OK uses: **none**. No pinned files changed; no re-pins needed.
+
+## R57 follow-up 3: worklist edit access for nursing and coordinators (Mitch, 2 Nov 10:31 CT; Christi confirms Tue 3 Nov)
+
+Draft — pending clinical sign-off. Not published; persistence OFF; no Supabase changes. Started 2 Nov 16:33 UTC.
+
+### 1. Permission-snapshot rows that would change (measured, before any kept edit)
+Method: applied the three worklist grants and the two close-list removals in a scratch copy, ran `runAction.test.ts` **without** `-u`, read the diff, then restored both files byte-for-byte (`git diff` empty).
+
+| Role | Action | Change | Record class / gate |
+|---|---|---|---|
+| peer_specialist | `engagement_task_close` | allowed → hidden | `ENGAGEMENT_CLOSE_ROLES` role gate (engagement task close) |
+| physician | `engagement_task_close` | allowed → hidden | `ENGAGEMENT_CLOSE_ROLES` role gate (engagement task close) |
+
+- The worklist grant for `nurse_rn`, `lvn`, `clinical_coordinator` changes **zero** snapshot rows: no registry action's visibility reads the `worklist` class (claim/release are store calls from `/worklist`; the close store gate `engagementTaskGate` reads it at run time, not in the snapshot). No other role or record class changed. Protocol initiation is `PROTOCOL_MANAGE_ROLES` (role list), unaffected.
+
+### 2. STOP — conflicting existing assertion tied to the database grant seed (nothing kept)
+Trial full units with the change: **3,955 passed / 5 failed**, 456 files.
+- `runAction.test.ts` snapshot — the two approved rows above (expected).
+- `roleDashboardParity9c2.test.ts` (roles.ts rollback parity) and `billingProjectionB3b.test.ts` ×2 (sys_admin, therapist source parity) — pinned-file checks; resolvable by an approved exact-once re-pin of `roles.ts`.
+- **`foundationPhase1.test.ts` › "covers all 44 classes × 18 roles"** — asserts every row of `src/lib/persistence/grants.generated.json` equals `canAccess`. That JSON mirrors the Phase 1 Supabase grant seed `supabase/migrations/20261027021308_….sql`, whose `worklist` entry lists `nurse_rn`, `lvn`, `clinical_coordinator` as **read**. Making it pass needs either regenerating the JSON (app and database grant seed then disagree) or a new Supabase migration (excluded). Neither is a re-pin, a standing-OK case, or a worklist-only change, so I stopped.
+- Not applied: `roles.ts` worklist grants, `ENGAGEMENT_CLOSE_ROLES` edit, snapshot update, re-pins, new tests, browsers. Standing-OK uses: **none**.
+- Side note for Mitch: the same seed lists `physician` as worklist **write** (inherits PMHNP in the matrix), which differs from "physicians have no worklist access"; removing physician from the close list is still within scope, but the grant itself is unchanged.
+
+### Options for Mitch
+A. Approve regenerating `grants.generated.json` via `scripts/generate-phase1-grants.ts` (three worklist rows) and accept the Supabase seed stays read until a later approved migration (Beta foundation is synthetic-only, persistence OFF).
+B. Approve both the JSON regeneration and a Supabase migration updating the three worklist grants.
+C. Keep nursing/coordinator at read; ship only the close-list change (peer specialist and physician removed). LVN/RN/coordinator closes would still be refused by the worklist-write store gate.
+
+Proposed close list for Christi (unchanged until approved): ecm_provider, cf_care_manager, community_health_worker, clinical_coordinator, therapist, sud_counselor, pmhnp, nurse_rn, lvn.
