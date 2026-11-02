@@ -216,3 +216,20 @@ B. Approve both the JSON regeneration and a Supabase migration updating the thre
 C. Keep nursing/coordinator at read; ship only the close-list change (peer specialist and physician removed). LVN/RN/coordinator closes would still be refused by the worklist-write store gate.
 
 Proposed close list for Christi (unchanged until approved): ecm_provider, cf_care_manager, community_health_worker, clinical_coordinator, therapist, sud_counselor, pmhnp, nurse_rn, lvn.
+
+## R57 follow-up 3, option B — applied (Mitch, 2 Nov 12:52 CT; Christi confirms Tue 3 Nov)
+
+Draft — pending clinical sign-off. Not published; persistence OFF. Physicians stay on the close list (clinical care team).
+
+- `src/lib/roles.ts`: worklist `read` → `write` for `clinical_coordinator` (worklist matrix) and `nurse_rn`/`lvn` (`NURSE_GRANTS`), with Draft comments. No other grant changed.
+- `src/lib/persistence/grants.generated.json` regenerated with `scripts/generate-phase1-grants.ts`: exactly three rows changed (worklist × nurse_rn, lvn, clinical_coordinator, read → write). `foundationPhase1.test.ts` passes unchanged.
+- **Migration file written, not applied:** `supabase/migrations/20261102190000_r57_worklist_write_nursing_coordinator.sql` — updates only those three `app.record_class_grants` rows. Header: "Draft — pending clinical sign-off and the go-live permissions audit; not applied". No migration tool used; no project connected; nothing run.
+- `ENGAGEMENT_CLOSE_ROLES`: `peer_specialist` removed only.
+- Permission snapshot (`vitest -u` on `runAction.test.ts`): exactly one row, `peer_specialist` `engagement_task_close` allowed → hidden.
+- `roles.ts` pin checks resolved by a new exact-once re-pin `src/test/worklistGrantNov02Approved.ts` (fixture `worklistGrantNov02.fixture.json`, two anchors: the three grant lines and their comments), chained after `withApprovedEngagementFinishNov01` in `credentialingOct27Approved.ts`; regression test `worklistGrantNov02Approved.test.ts`.
+- Superseded-path standing OK used once: `engagementTraineeCloseR57.test.ts` LVN/RN case extended from registry-only to a real close (task status done).
+- New `engagementCloseListR57.test.ts`: real `runAction('engagement_task_close')` closes with outcome and chart access for every close-list role (RN/LVN via `addStaffMember`; coordinator on a coordinator-queue task; physician); peer specialist and trainee refused neutrally; RN/LVN/coordinator claim and complete an ordinary worklist row; peer specialist stays worklist read. Note: worklist claim/update are store calls with no role check of their own; the read/write difference is enforced by `canAccess` in the worklist screen and the engagement close gate.
+- Full units: **3,982/3,982**, 458 files.
+- Browsers (:8080, `--workers=1`): engagementRiskR57, roleDashboards9c, statTiles9a1/9a2, first 29 of 33 passed before the 10-minute command limit; re-run of statTiles9a3 + staffTables8b1: 12/13. The failure was `statTiles9a3.spec.ts:39` (billing, then billing_coordinator on standalone re-run) — page-open timeout, each role passed in the other run; billing roles have no worklist grants. Not listed in docs/browser-triage-oct30.md; not a triage item. Sandbox Monday 2 Nov: #16's spec was not in this run.
+
+**Final close list for Christi:** ecm_provider, cf_care_manager, community_health_worker, clinical_coordinator, therapist, sud_counselor, pmhnp, physician, nurse_rn, lvn.
