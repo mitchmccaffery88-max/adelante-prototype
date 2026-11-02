@@ -242,3 +242,10 @@ Draft — pending clinical sign-off. Not published; persistence OFF. Physicians 
 - **Who sees the card:** staff with a caseload link — `s-cm2` Lupita → `cm1` and `s-peer2` → `cm2`.
 - **Demo tasks assigned by staff ID (measured from the seeded store):** 10 — `s-sudc1` ×7 (ASAM assessment needed, Consider the Recovery Journey), `s-th1` ×3 (ASAM reassessment, CALOMS prompt). Neither `s-sudc1` nor `s-th1` has a caseload link, so they never render this card. **No seeded task newly appears** for Lupita or `s-peer2`. The only new rows are engagement check-ins routed to `s-cm2` (or `s-peer2`) by the sweep/re-check at run time.
 - **Tests / numbers that would change:** none expected. `groupAAccessFixes` and `staffTable8b1Closeout` call the card without a staff identity / with no staff-ID tasks; `roleDashboardParity9c2` inventories `TaskQueueCard.tsx` bindings — the change adds no variable declarations or inventoried attributes.
+
+### 2. Change (applied)
+- New read-only helper `src/lib/myTaskQueue.ts` (`withDirectStaffTasks`): caseload rows unchanged and first, then tasks with `assignedTo === staffId`, de-duplicated by id, kept only when `viewerCanOpenChart` passes (chart/Part 2/restricted gates unchanged). No ownership, close-right, registry, permission or snapshot change.
+- `TaskQueueCard.tsx`: four anchors — import, optional `staff` on the `case_manager` source, `tasksFor` wraps `caseTasksForCM`, and the outer card passes the acting `{ staffId, role }`. Badges ("follow-up needed / due today / snoozed") read the same array, so they match the list. No other count reads this source.
+- Re-pin: `src/test/myTasksNov02Approved.ts` + fixture + its own regression test, chained after `withApprovedWorklistGrantNov02` in `credentialingOct27Approved.ts` (the existing literal chain line is kept intact inside `latest`, so the worklist adapter's chain assertion still holds).
+- Unit tests `src/lib/__tests__/myTasksDirectR57.test.ts` (5): s-cm2 task appears for Lupita; appears once; hidden without chart access; caseload rows unchanged.
+- **Full units: 3,992/3,992 passed (460 files).** No existing test edited; no standing OK used.
