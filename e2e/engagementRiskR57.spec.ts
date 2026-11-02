@@ -39,7 +39,7 @@ test('Rosa Watch is visible in the authorized member list', async ({ page }) => 
   await expect(flag).toContainText('Engagement · Watch');
   await expect(flag).toContainText('coverage gap');
   await expect(flag).toContainText('Draft — pending clinical sign-off');
-  await page.getByTestId('caseload-table').getByRole('row').filter({ has: flag }).screenshot({ path: resolve(evidence, 'rosa-watch-member-list.png') });
+  await page.getByTestId('caseload-table').getByRole('row').filter({ hasText: 'ADL-2026-002' }).screenshot({ path: resolve(evidence, 'rosa-watch-member-list.png') });
 });
 
 test('Daniel reaches Elevated on the third logged attempt; Close picker; advocate and patient see nothing', async ({ page }) => {
