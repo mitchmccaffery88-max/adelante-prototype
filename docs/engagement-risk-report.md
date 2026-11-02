@@ -249,3 +249,8 @@ Draft — pending clinical sign-off. Not published; persistence OFF. Physicians 
 - Re-pin: `src/test/myTasksNov02Approved.ts` + fixture + its own regression test, chained after `withApprovedWorklistGrantNov02` in `credentialingOct27Approved.ts` (the existing literal chain line is kept intact inside `latest`, so the worklist adapter's chain assertion still holds).
 - Unit tests `src/lib/__tests__/myTasksDirectR57.test.ts` (5): s-cm2 task appears for Lupita; appears once; hidden without chart access; caseload rows unchanged.
 - **Full units: 3,992/3,992 passed (460 files).** No existing test edited; no standing OK used.
+
+### 3. Browser validation (--workers=1, dev server :8080)
+- `engagementRiskR57` extended with one check: after Daniel's third attempt, his "Engagement check-in needed" task appears exactly once in Care Coordination "My tasks" (screenshot `docs/evidence/engagement-risk/daniel-task-in-my-tasks.png`). **2/2 passed.**
+- `roleDashboards9c`, `staffTables8b1` (covers `/case-manager` caseload and `/worklist`), `statTiles9a1/9a2/9a3`: **30/31.** One failure: `statTiles9a3.spec.ts:39` billing_coordinator, 30s test timeout — billing route, does not render "My tasks". Re-run standalone: passed. Not on the numbered triage list; it is the same report-only `statTiles9a3:39` one-off timeout already recorded in `docs/browser-triage-oct30.md:177,181`. No separate care-manager dashboard spec exists beyond `roleDashboards9c` ecm_provider and `staffTables8b1 /case-manager`.
+- Not published. Persistence OFF. No Supabase, registry, permission or snapshot change. No standing OK used.
